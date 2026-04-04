@@ -1,0 +1,6 @@
+# __PLUGIN_TITLE__
+
+Generated plugin scaffold for Armada POC.
+
+- Keep imports on `@armada/plugin-contracts` public exports.
+- Start with `src/index.ts` and evolve contributions as needed.
