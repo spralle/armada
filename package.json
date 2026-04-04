@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "typecheck": "npx tsc -b --pretty false"
+    "typecheck": "tsc -b --pretty false"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
