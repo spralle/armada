@@ -3,3 +3,18 @@
 .dolt/
 *.db
 .beads-credential-key
+
+# Local dependencies and generated output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local worktrees
+worktrees/
+
+# Local OpenCode runtime files
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/bun.lock
+.opencode/.gitignore
