@@ -34,13 +34,42 @@ npm run build
 
 ## Inner-loop mode
 
-Run one app stub at a time with file watching:
+Run one app at a time with file watching:
 
 ```bash
 bun run dev:shell
 bun run dev:backend
 bun run dev:plugin
 ```
+
+### Browser shell testing (Vite)
+
+The shell now runs through a Vite dev server for browser testing.
+
+1. Start backend API server:
+
+```bash
+npm run dev:backend
+```
+
+2. In a second terminal, start shell Vite server:
+
+```bash
+npm run dev:shell
+```
+
+3. Open the shell in your browser:
+
+```text
+http://127.0.0.1:5173
+```
+
+Expected dev ports:
+
+- Shell (Vite): `5173`
+- Backend API (Bun.serve, with Node `node:http` fallback): `8787`
+
+In dev, requests to `/api/*` from the shell are proxied by Vite to `http://127.0.0.1:8787`.
 
 ## Integration mode (POC)
 
