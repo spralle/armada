@@ -1,21 +1,31 @@
 import {
-  parseTenantPluginManifest,
   type PluginContract,
 } from "@armada/plugin-contracts";
+import { createDragSessionBroker } from "./dnd-session-broker.js";
 import {
   applyPaneResize,
   createDefaultLayoutState,
   type ShellLayoutState,
 } from "./layout.js";
-import { localMockParts } from "./mock-parts.js";
+import { localMockParts, type LocalMockPart } from "./mock-parts.js";
+import {
+  createLocalStorageLayoutPersistence,
+  type ShellLayoutPersistence,
+} from "./persistence.js";
 import {
   createShellPluginRegistry,
   type ShellPluginRegistry,
 } from "./plugin-registry.js";
 import {
-  createLocalStorageLayoutPersistence,
-  type ShellLayoutPersistence,
-} from "./persistence.js";
+  createWindowBridge,
+  type ContextSyncEvent,
+  type SelectionSyncEvent,
+  type WindowBridge,
+} from "./window-bridge.js";
+
+const BRIDGE_CHANNEL = "armada.shell.window-bridge.v1";
+const DRAG_REF_PREFIX = "armada-dnd-ref:";
+const DRAG_INLINE_PREFIX = "armada-dnd-inline:";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -27,6 +37,40 @@ export interface ShellBootstrapOptions {
   tenantId: string;
   fetchManifest?: (manifestUrl: string) => Promise<unknown>;
   enableByDefault?: boolean;
+}
+
+interface ShellRuntime {
+  layout: ShellLayoutState;
+  persistence: ShellLayoutPersistence;
+  registry: ShellPluginRegistry;
+  bridge: WindowBridge;
+  windowId: string;
+  hostWindowId: string | null;
+  partId: string | null;
+  isPopout: boolean;
+  selectedPartId: string | null;
+  selectedPartTitle: string | null;
+  contextKey: string;
+  contextValue: string;
+  notice: string;
+  popoutHandles: Map<string, Window>;
+  poppedOutPartIds: Set<string>;
+  dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
+}
+
+interface TenantPluginDescriptor {
+  id: string;
+  version: string;
+  entry: string;
+  compatibility: {
+    shell: string;
+    pluginContract: string;
+  };
+}
+
+interface TenantPluginManifestResponse {
+  tenantId: string;
+  plugins: TenantPluginDescriptor[];
 }
 
 async function fetchManifestFromEndpoint(manifestUrl: string): Promise<unknown> {
@@ -49,20 +93,13 @@ export async function bootstrapShellWithTenantManifest(
   const manifestUrl = `/api/tenants/${encodeURIComponent(tenantId)}/plugin-manifest`;
   const fetchManifest = options.fetchManifest ?? fetchManifestFromEndpoint;
   const rawManifest = await fetchManifest(manifestUrl);
-  const parsedManifest = parseTenantPluginManifest(rawManifest);
-
-  if (!parsedManifest.success) {
-    const details = parsedManifest.errors
-      .map((error) => `${error.path || "<root>"}: ${error.message}`)
-      .join("; ");
-    throw new Error(`Invalid tenant manifest response from '${manifestUrl}': ${details}`);
-  }
+  const parsedManifest = parseTenantManifestFallback(rawManifest);
 
   const registry = createShellPluginRegistry();
-  registry.registerManifestDescriptors(parsedManifest.data.tenantId, parsedManifest.data.plugins);
+  registry.registerManifestDescriptors(parsedManifest.tenantId, parsedManifest.plugins);
 
   if (options.enableByDefault) {
-    for (const descriptor of parsedManifest.data.plugins) {
+    for (const descriptor of parsedManifest.plugins) {
       await registry.setEnabled(descriptor.id, true);
     }
   }
@@ -70,7 +107,7 @@ export async function bootstrapShellWithTenantManifest(
   const snapshot = registry.getSnapshot();
 
   return {
-    mode: parsedManifest.data.plugins.some((plugin) => !plugin.entry.startsWith("local://"))
+    mode: parsedManifest.plugins.some((plugin: TenantPluginDescriptor) => !plugin.entry.startsWith("local://"))
       ? "integration"
       : "inner-loop",
     loadedPlugins: snapshot.plugins
@@ -89,11 +126,9 @@ export const shellBootstrapState: ShellBootstrapState = {
   registry: emptyRegistry,
 };
 
-interface ShellRuntime {
-  layout: ShellLayoutState;
-  persistence: ShellLayoutPersistence;
-  registry: ShellPluginRegistry;
-}
+const popoutParams = readPopoutParams();
+const windowId = createWindowId();
+const bridge = createWindowBridge(BRIDGE_CHANNEL);
 
 const shellRuntime: ShellRuntime = {
   layout: createDefaultLayoutState(),
@@ -101,20 +136,46 @@ const shellRuntime: ShellRuntime = {
     userId: getCurrentUserId(),
   }),
   registry: createShellPluginRegistry(),
+  bridge,
+  windowId,
+  hostWindowId: popoutParams.hostWindowId,
+  partId: popoutParams.partId,
+  isPopout: popoutParams.isPopout,
+  selectedPartId: null,
+  selectedPartTitle: null,
+  contextKey: "demo.selection",
+  contextValue: "none",
+  notice: "",
+  popoutHandles: new Map<string, Window>(),
+  poppedOutPartIds: new Set<string>(),
+  dragSessionBroker: createDragSessionBroker(bridge, windowId),
 };
 
 shellRuntime.registry.registerManifestDescriptors("local", []);
-
 shellRuntime.layout = shellRuntime.persistence.load();
 
 if (typeof document !== "undefined") {
   mountShell(document.body, shellRuntime);
-  void hydratePluginRegistry(document.body, shellRuntime);
+
+  if (!shellRuntime.isPopout) {
+    void hydratePluginRegistry(document.body, shellRuntime);
+  }
 }
 
 console.log("[shell] POC shell stub ready", shellBootstrapState.mode);
 
 function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
+  if (runtime.isPopout) {
+    mountPopout(root, runtime);
+  } else {
+    mountMainWindow(root, runtime);
+    startPopoutWatchdog(root, runtime);
+  }
+
+  bindBridgeSync(root, runtime);
+}
+
+function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
   root.innerHTML = `
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
@@ -127,49 +188,446 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
     .slot-secondary { border-top: 1px solid #2b3040; background: #121922; }
     .splitter { background: #2b3040; cursor: col-resize; user-select: none; touch-action: none; }
     .splitter[data-pane="secondary"] { cursor: row-resize; }
+    .card { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; }
     .part-root { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; container-type: inline-size; }
-    .part-root h2 { margin: 0 0 6px; font-size: 14px; }
-    .part-root p { margin: 0; color: #c6d0e0; font-size: 13px; }
+    .part-root.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff33 inset; }
+    .part-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+    .part-actions button { background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 4px 8px; cursor: pointer; }
+    .part-actions button:hover { border-color: #7cb4ff; }
+    .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
+    .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
+    .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
   </style>
   <main class="shell" id="shell-root">
-    <section class="slot slot-side" id="slot-side" data-slot="side">
-      <section class="part-root" id="plugin-controls"></section>
+    <section class="slot slot-side" data-slot="side">
+      <section class="card" id="plugin-controls"></section>
+      <section class="card" id="sync-status"></section>
+      <section class="card" id="context-controls"></section>
       <section id="slot-side-parts"></section>
     </section>
     <div class="splitter" id="splitter-side" data-pane="side" aria-label="Resize side pane"></div>
     <section class="main-stack">
-      <section class="slot slot-master" id="slot-master" data-slot="master"><section id="slot-master-parts"></section></section>
+      <section class="slot slot-master" data-slot="master"><section id="slot-master-parts"></section></section>
       <div class="splitter" id="splitter-secondary" data-pane="secondary" aria-label="Resize secondary pane"></div>
-      <section class="slot slot-secondary" id="slot-secondary" data-slot="secondary"><section id="slot-secondary-parts"></section></section>
+      <section class="slot slot-secondary" data-slot="secondary"><section id="slot-secondary-parts"></section></section>
     </section>
   </main>
   `;
 
   applyLayout(root, runtime.layout);
-  renderMockParts(root);
+  renderParts(root, runtime);
   renderPluginControls(root, runtime);
+  renderSyncStatus(root, runtime);
+  renderContextControls(root, runtime);
   setupResize(root, runtime);
+}
+
+function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
+  root.innerHTML = `
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; background: #14161a; color: #e9edf3; }
+    .popout { padding: 12px; }
+    .card { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; }
+    .part-root { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; }
+    .part-root.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff33 inset; }
+    .part-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+    .part-actions button { background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 4px 8px; cursor: pointer; }
+    .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
+    .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
+  </style>
+  <main class="popout">
+    <section class="card" id="sync-status"></section>
+    <section class="card" id="context-controls"></section>
+    <section id="popout-slot"></section>
+  </main>
+  `;
+
+  renderParts(root, runtime);
+  renderSyncStatus(root, runtime);
+  renderContextControls(root, runtime);
+
+  window.addEventListener("beforeunload", () => {
+    if (!runtime.partId || !runtime.hostWindowId) {
+      return;
+    }
+
+    runtime.bridge.publish({
+      type: "popout-restore-request",
+      hostWindowId: runtime.hostWindowId,
+      partId: runtime.partId,
+      sourceWindowId: runtime.windowId,
+    });
+  });
+}
+
+function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
+  if (runtime.isPopout) {
+    const slot = root.querySelector<HTMLElement>("#popout-slot");
+    if (!slot) {
+      return;
+    }
+
+    const part = runtime.partId ? localMockParts.find((item) => item.id === runtime.partId) : null;
+    if (!part) {
+      slot.innerHTML = `<article class="part-root"><h2>Popout unavailable</h2><p>Unable to resolve requested part.</p></article>`;
+      return;
+    }
+
+    slot.innerHTML = renderPartCard(part, runtime, { showPopoutButton: false, showRestoreButton: true });
+    wirePartActions(root, runtime);
+    wireDragDrop(root, runtime);
+    updateSelectedStyles(root, runtime.selectedPartId);
+    return;
+  }
+
+  const partsBySlot = {
+    master: root.querySelector<HTMLElement>("#slot-master-parts"),
+    secondary: root.querySelector<HTMLElement>("#slot-secondary-parts"),
+    side: root.querySelector<HTMLElement>("#slot-side-parts"),
+  };
+
+  for (const slotNode of Object.values(partsBySlot)) {
+    if (slotNode) {
+      slotNode.innerHTML = "";
+    }
+  }
+
+  for (const part of localMockParts) {
+    if (runtime.poppedOutPartIds.has(part.id)) {
+      continue;
+    }
+
+    const slotNode = partsBySlot[part.slot];
+    if (!slotNode) {
+      continue;
+    }
+
+    slotNode.insertAdjacentHTML("beforeend", renderPartCard(part, runtime, { showPopoutButton: true }));
+  }
+
+  wirePartActions(root, runtime);
+  wireDragDrop(root, runtime);
+  updateSelectedStyles(root, runtime.selectedPartId);
+}
+
+function renderPartCard(
+  part: LocalMockPart,
+  runtime: ShellRuntime,
+  options: { showPopoutButton: boolean; showRestoreButton?: boolean },
+): string {
+  const popoutButton = options.showPopoutButton
+    ? `<button type="button" data-action="popout" data-part-id="${part.id}">Pop out</button>`
+    : "";
+  const restoreButton = options.showRestoreButton
+    ? `<button type="button" data-action="restore" data-part-id="${part.id}">Restore to host</button>`
+    : "";
+
+  return `
+    <article class="part-root" data-part-id="${part.id}" draggable="true">
+      <h2>${part.title}</h2>
+      <div class="part-actions">
+        <button type="button" data-action="select" data-part-id="${part.id}" data-part-title="${part.title}">Select</button>
+        ${popoutButton}
+        ${restoreButton}
+      </div>
+      ${part.render()}
+      <div class="dropzone" data-dropzone-for="${part.id}">Drop cross-window payload here</div>
+      <p class="runtime-note" data-drop-result-for="${part.id}"></p>
+      <p class="runtime-note">Window: ${runtime.windowId}</p>
+    </article>
+  `;
+}
+
+function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
+  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='select']")) {
+    button.addEventListener("click", () => {
+      const partId = button.dataset.partId;
+      const partTitle = button.dataset.partTitle;
+      if (!partId || !partTitle) {
+        return;
+      }
+
+      applySelection(root, runtime, {
+        selectedPartId: partId,
+        selectedPartTitle: partTitle,
+        sourceWindowId: runtime.windowId,
+        type: "selection",
+      });
+
+      runtime.bridge.publish({
+        type: "selection",
+        selectedPartId: partId,
+        selectedPartTitle: partTitle,
+        sourceWindowId: runtime.windowId,
+      });
+    });
+  }
+
+  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='popout']")) {
+    button.addEventListener("click", () => {
+      const partId = button.dataset.partId;
+      if (!partId) {
+        return;
+      }
+
+      openPopout(partId, root, runtime);
+    });
+  }
+
+  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='restore']")) {
+    button.addEventListener("click", () => {
+      const partId = button.dataset.partId;
+      if (!partId) {
+        return;
+      }
+
+      if (runtime.hostWindowId) {
+        runtime.bridge.publish({
+          type: "popout-restore-request",
+          partId,
+          hostWindowId: runtime.hostWindowId,
+          sourceWindowId: runtime.windowId,
+        });
+      }
+
+      window.close();
+    });
+  }
+}
+
+function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
+  for (const partNode of root.querySelectorAll<HTMLElement>("article[data-part-id]")) {
+    partNode.addEventListener("dragstart", (event) => {
+      const dataTransfer = event.dataTransfer;
+      const partId = partNode.dataset.partId;
+      if (!dataTransfer || !partId) {
+        return;
+      }
+
+      const payload = {
+        partId,
+        partTitle: resolvePartTitle(partId),
+        sourceWindowId: runtime.windowId,
+        createdAt: new Date().toISOString(),
+      };
+
+      if (runtime.dragSessionBroker.available) {
+        const ref = runtime.dragSessionBroker.create(payload);
+        dataTransfer.setData("text/plain", `${DRAG_REF_PREFIX}${ref.id}`);
+      } else {
+        dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
+      }
+
+      dataTransfer.effectAllowed = "copyMove";
+    });
+
+    partNode.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "copy";
+      }
+    });
+
+    partNode.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const dataTransfer = event.dataTransfer;
+      const targetPartId = partNode.dataset.partId;
+      if (!dataTransfer || !targetPartId) {
+        return;
+      }
+
+      const raw = dataTransfer.getData("text/plain");
+      const resultNode = root.querySelector<HTMLElement>(`[data-drop-result-for='${targetPartId}']`);
+      if (!resultNode) {
+        return;
+      }
+
+      if (raw.startsWith(DRAG_REF_PREFIX)) {
+        const id = raw.slice(DRAG_REF_PREFIX.length);
+        const payload = runtime.dragSessionBroker.consume({ id });
+        if (!payload) {
+          resultNode.textContent = "Drop failed: session missing/expired (bridge unavailable or stale ref).";
+          return;
+        }
+
+        resultNode.textContent = `Dropped via session ref: ${safeJson(payload)}`;
+        return;
+      }
+
+      if (raw.startsWith(DRAG_INLINE_PREFIX)) {
+        const payload = safeParse(raw.slice(DRAG_INLINE_PREFIX.length));
+        resultNode.textContent = payload
+          ? `Dropped via inline fallback: ${safeJson(payload)}`
+          : "Drop failed: invalid inline payload.";
+        return;
+      }
+
+      resultNode.textContent = "Drop ignored: unsupported payload format.";
+    });
+  }
+}
+
+function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
+  runtime.bridge.subscribe((event) => {
+    if (event.sourceWindowId === runtime.windowId) {
+      return;
+    }
+
+    if (event.type === "selection") {
+      applySelection(root, runtime, event);
+      return;
+    }
+
+    if (event.type === "context") {
+      applyContext(root, runtime, event);
+      return;
+    }
+
+    if (event.type === "popout-restore-request" && !runtime.isPopout) {
+      if (event.hostWindowId !== runtime.windowId) {
+        return;
+      }
+
+      restorePart(event.partId, root, runtime);
+    }
+  });
+}
+
+function applySelection(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  event: SelectionSyncEvent,
+): void {
+  runtime.selectedPartId = event.selectedPartId;
+  runtime.selectedPartTitle = event.selectedPartTitle;
+  updateSelectedStyles(root, runtime.selectedPartId);
+  renderSyncStatus(root, runtime);
+}
+
+function applyContext(root: HTMLElement, runtime: ShellRuntime, event: ContextSyncEvent): void {
+  runtime.contextKey = event.contextKey;
+  runtime.contextValue = event.contextValue;
+  renderContextControls(root, runtime);
+  renderSyncStatus(root, runtime);
+}
+
+function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
+  const node = root.querySelector<HTMLElement>("#sync-status");
+  if (!node) {
+    return;
+  }
+
+  const warning = renderBridgeWarning(runtime);
+  const selected = runtime.selectedPartTitle ?? "none";
+  const notice = runtime.notice ? `<p class="runtime-note">${runtime.notice}</p>` : "";
+
+  node.innerHTML = `
+    <h2>Cross-window sync</h2>
+    ${warning}
+    <p class="runtime-note"><strong>Selected part:</strong> ${selected}</p>
+    <p class="runtime-note"><strong>Context:</strong> ${runtime.contextKey} = ${runtime.contextValue}</p>
+    <p class="runtime-note"><strong>Window ID:</strong> ${runtime.windowId}</p>
+    ${notice}
+  `;
+}
+
+function renderBridgeWarning(runtime: ShellRuntime): string {
+  if (runtime.bridge.available && runtime.dragSessionBroker.available) {
+    return "";
+  }
+
+  return `<div class="bridge-warning">BroadcastChannel is unavailable. Sync/popout restore/dnd ref fall back to local-only behavior.</div>`;
+}
+
+function renderContextControls(root: HTMLElement, runtime: ShellRuntime): void {
+  const node = root.querySelector<HTMLElement>("#context-controls");
+  if (!node) {
+    return;
+  }
+
+  node.innerHTML = `
+    <h2>Shared context (demo)</h2>
+    <label class="runtime-note" for="context-value-input">${runtime.contextKey}</label>
+    <input id="context-value-input" value="${escapeHtml(runtime.contextValue)}" style="width:100%;box-sizing:border-box;margin:6px 0;padding:4px;background:#0f1319;border:1px solid #334564;color:#e9edf3;" />
+    <button type="button" id="context-apply" style="background:#1d2635;border:1px solid #334564;border-radius:4px;color:#e9edf3;padding:4px 8px;cursor:pointer;">Apply + sync</button>
+  `;
+
+  const applyButton = node.querySelector<HTMLButtonElement>("#context-apply");
+  const inputNode = node.querySelector<HTMLInputElement>("#context-value-input");
+  if (!applyButton || !inputNode) {
+    return;
+  }
+
+  applyButton.addEventListener("click", () => {
+    runtime.contextValue = inputNode.value.trim() || "none";
+    runtime.bridge.publish({
+      type: "context",
+      contextKey: runtime.contextKey,
+      contextValue: runtime.contextValue,
+      sourceWindowId: runtime.windowId,
+    });
+    renderSyncStatus(root, runtime);
+  });
+}
+
+function openPopout(partId: string, root: HTMLElement, runtime: ShellRuntime): void {
+  if (runtime.isPopout) {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("popout", "1");
+  url.searchParams.set("partId", partId);
+  url.searchParams.set("hostWindowId", runtime.windowId);
+
+  const popout = window.open(url.toString(), `armada-popout-${sanitizeForWindowName(partId)}`);
+  if (!popout) {
+    runtime.notice = `Popup blocked. Could not pop out '${partId}'.`;
+    renderSyncStatus(root, runtime);
+    return;
+  }
+
+  runtime.popoutHandles.set(partId, popout);
+  runtime.poppedOutPartIds.add(partId);
+  runtime.notice = `Part '${partId}' opened in a new window.`;
+  renderParts(root, runtime);
+  renderSyncStatus(root, runtime);
+}
+
+function restorePart(partId: string, root: HTMLElement, runtime: ShellRuntime): void {
+  runtime.poppedOutPartIds.delete(partId);
+
+  const handle = runtime.popoutHandles.get(partId);
+  if (handle && !handle.closed) {
+    handle.close();
+  }
+
+  runtime.popoutHandles.delete(partId);
+  runtime.notice = `Part '${partId}' restored to host window.`;
+  renderParts(root, runtime);
+  renderSyncStatus(root, runtime);
+}
+
+function startPopoutWatchdog(root: HTMLElement, runtime: ShellRuntime): void {
+  window.setInterval(() => {
+    for (const [partId, handle] of runtime.popoutHandles.entries()) {
+      if (handle.closed) {
+        runtime.popoutHandles.delete(partId);
+        if (runtime.poppedOutPartIds.has(partId)) {
+          runtime.poppedOutPartIds.delete(partId);
+          runtime.notice = `Part '${partId}' restored (popout closed).`;
+          renderParts(root, runtime);
+          renderSyncStatus(root, runtime);
+        }
+      }
+    }
+  }, 1_000);
 }
 
 function applyLayout(root: HTMLElement, layout: ShellLayoutState): void {
   root.style.setProperty("--side-size", `${Math.round(layout.sideSize * 100)}vw`);
   root.style.setProperty("--secondary-size", `${Math.round(layout.secondarySize * 100)}vh`);
-}
-
-function renderMockParts(root: HTMLElement): void {
-  for (const part of localMockParts) {
-    const slotNode = root.querySelector<HTMLElement>(`#slot-${part.slot}-parts`);
-    if (!slotNode) {
-      continue;
-    }
-
-    const wrapper = document.createElement("article");
-    wrapper.className = "part-root";
-    wrapper.dataset.partId = part.id;
-    wrapper.style.containerName = `part-${part.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
-    wrapper.innerHTML = part.render();
-    slotNode.appendChild(wrapper);
-  }
 }
 
 function renderPluginControls(root: HTMLElement, runtime: ShellRuntime): void {
@@ -195,7 +653,7 @@ function renderPluginControls(root: HTMLElement, runtime: ShellRuntime): void {
 
   controlsNode.innerHTML = `<h2>Plugins (${snapshot.tenantId})</h2>
   <p style="margin:0 0 8px;font-size:12px;color:#c6d0e0;">Loaded: ${loadedContracts || "none"}</p>
-  ${rows || "<p style=\"margin:0;color:#c6d0e0;\">No registered plugin descriptors.</p>"}`;
+  ${rows || '<p style="margin:0;color:#c6d0e0;">No registered plugin descriptors.</p>'}`;
 
   for (const input of controlsNode.querySelectorAll<HTMLInputElement>("input[data-plugin-toggle]")) {
     input.addEventListener("change", async () => {
@@ -286,6 +744,50 @@ function axisValue(event: PointerEvent, pane: string | undefined): number {
   return pane === "secondary" ? event.clientY : event.clientX;
 }
 
+function updateSelectedStyles(root: HTMLElement, selectedPartId: string | null): void {
+  for (const node of root.querySelectorAll<HTMLElement>("article[data-part-id]")) {
+    const partId = node.dataset.partId;
+    if (partId && partId === selectedPartId) {
+      node.classList.add("is-selected");
+    } else {
+      node.classList.remove("is-selected");
+    }
+  }
+}
+
+function resolvePartTitle(partId: string): string {
+  return localMockParts.find((part) => part.id === partId)?.title ?? partId;
+}
+
+function safeParse(input: string): unknown | null {
+  try {
+    return JSON.parse(input);
+  } catch {
+    return null;
+  }
+}
+
+function safeJson(value: unknown): string {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "[unserializable payload]";
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function sanitizeForWindowName(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]/g, "-");
+}
+
 function getStorage(): Storage | undefined {
   if (typeof window === "undefined") {
     return undefined;
@@ -295,4 +797,82 @@ function getStorage(): Storage | undefined {
 
 function getCurrentUserId(): string {
   return "local-user";
+}
+
+function createWindowId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `window-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function readPopoutParams(): {
+  isPopout: boolean;
+  partId: string | null;
+  hostWindowId: string | null;
+} {
+  if (typeof window === "undefined") {
+    return {
+      isPopout: false,
+      partId: null,
+      hostWindowId: null,
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const isPopout = params.get("popout") === "1";
+  return {
+    isPopout,
+    partId: isPopout ? params.get("partId") : null,
+    hostWindowId: isPopout ? params.get("hostWindowId") : null,
+  };
+}
+
+function parseTenantManifestFallback(input: unknown): TenantPluginManifestResponse {
+  if (!input || typeof input !== "object") {
+    throw new Error("Invalid tenant manifest response: expected object");
+  }
+
+  const manifest = input as Partial<TenantPluginManifestResponse>;
+  if (typeof manifest.tenantId !== "string" || !manifest.tenantId.trim()) {
+    throw new Error("Invalid tenant manifest response: tenantId is required");
+  }
+
+  if (!Array.isArray(manifest.plugins)) {
+    throw new Error("Invalid tenant manifest response: plugins must be an array");
+  }
+
+  const plugins = manifest.plugins.map((plugin: unknown, index: number): TenantPluginDescriptor => {
+    if (!plugin || typeof plugin !== "object") {
+      throw new Error(`Invalid tenant manifest response: plugins[${index}] must be an object`);
+    }
+
+    const descriptor = plugin as Partial<TenantPluginDescriptor>;
+    if (
+      typeof descriptor.id !== "string" ||
+      typeof descriptor.version !== "string" ||
+      typeof descriptor.entry !== "string" ||
+      !descriptor.compatibility ||
+      typeof descriptor.compatibility.shell !== "string" ||
+      typeof descriptor.compatibility.pluginContract !== "string"
+    ) {
+      throw new Error(`Invalid tenant manifest response: plugins[${index}] has invalid descriptor shape`);
+    }
+
+    return {
+      id: descriptor.id,
+      version: descriptor.version,
+      entry: descriptor.entry,
+      compatibility: {
+        shell: descriptor.compatibility.shell,
+        pluginContract: descriptor.compatibility.pluginContract,
+      },
+    };
+  });
+
+  return {
+    tenantId: manifest.tenantId,
+    plugins,
+  };
 }
