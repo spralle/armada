@@ -20,6 +20,12 @@ import {
   createActionCatalogFromRegistrySnapshot,
   resolveIntent,
 } from "./intent-runtime.js";
+import {
+  clampChooserFocusIndex,
+  formatDegradedModeAnnouncement,
+  formatSelectionAnnouncement,
+  resolveChooserKeyboardAction,
+} from "./keyboard-a11y.js";
 import { createLocalStorageContextStatePersistence } from "./persistence.js";
 
 type TestCase = {
@@ -749,6 +755,55 @@ test("context persistence rejects unsupported schema version with fallback", () 
 
   assertTruthy(loaded.warning, "unsupported version should surface warning");
   assertEqual(loaded.state.activeTabId, "fallback-tab", "unsupported version should use fallback state");
+});
+
+test("chooser keyboard flow resolves focus and execute deterministically", () => {
+  assertEqual(clampChooserFocusIndex(-2, 3), 0, "focus index should clamp lower bound");
+  assertEqual(clampChooserFocusIndex(9, 3), 2, "focus index should clamp upper bound");
+
+  const down = resolveChooserKeyboardAction("ArrowDown", 0, 3);
+  assertEqual(down.kind, "focus", "ArrowDown should move chooser focus");
+  if (down.kind === "focus") {
+    assertEqual(down.index, 1, "ArrowDown should move to next option");
+  }
+
+  const upWrap = resolveChooserKeyboardAction("ArrowUp", 0, 3);
+  assertEqual(upWrap.kind, "focus", "ArrowUp should move chooser focus");
+  if (upWrap.kind === "focus") {
+    assertEqual(upWrap.index, 2, "ArrowUp should wrap to last option");
+  }
+
+  const execute = resolveChooserKeyboardAction("Enter", 2, 3);
+  assertEqual(execute.kind, "execute", "Enter should execute focused option");
+  if (execute.kind === "execute") {
+    assertEqual(execute.index, 2, "Enter should execute current focus index");
+  }
+
+  const dismiss = resolveChooserKeyboardAction("Escape", 1, 3);
+  assertEqual(dismiss.kind, "dismiss", "Escape should dismiss chooser");
+});
+
+test("announcement helpers produce explicit context and degraded messages", () => {
+  assertEqual(
+    formatSelectionAnnouncement({
+      selectedPartTitle: "Unplanned Orders",
+      selectedOrderId: "o-1",
+      selectedVesselId: "v-1",
+    }),
+    "Context updated. Part Unplanned Orders. Order priority o-1. Vessel priority v-1.",
+    "selection announcement should include context and priorities",
+  );
+
+  assertEqual(
+    formatDegradedModeAnnouncement(true, "publish-failed"),
+    "Cross-window sync degraded (publish-failed). Window is now read-only.",
+    "degraded announcement should include reason",
+  );
+  assertEqual(
+    formatDegradedModeAnnouncement(false, null),
+    "Cross-window sync restored. Window is writable again.",
+    "recovery announcement should be explicit",
+  );
 });
 
 let passed = 0;

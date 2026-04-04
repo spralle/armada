@@ -56,6 +56,11 @@ import {
   type IntentActionMatch,
   type ShellIntent,
 } from "./intent-runtime.js";
+import {
+  formatDegradedModeAnnouncement,
+  formatSelectionAnnouncement,
+  resolveChooserKeyboardAction,
+} from "./keyboard-a11y.js";
 
 const BRIDGE_CHANNEL = "armada.shell.window-bridge.v1";
 const DRAG_REF_PREFIX = "armada-dnd-ref:";
@@ -103,6 +108,9 @@ interface ShellRuntime {
   syncDegraded: boolean;
   syncDegradedReason: WindowBridgeHealth["reason"];
   pendingProbeId: string | null;
+  announcement: string;
+  chooserFocusIndex: number;
+  pendingFocusSelector: string | null;
 }
 
 interface TenantPluginDescriptor {
@@ -211,6 +219,9 @@ const shellRuntime: ShellRuntime = {
   syncDegraded: !bridge.available,
   syncDegradedReason: bridge.available ? null : "unavailable",
   pendingProbeId: null,
+  announcement: "",
+  chooserFocusIndex: 0,
+  pendingFocusSelector: null,
 };
 
 shellRuntime.registry.registerManifestDescriptors("local", []);
@@ -240,6 +251,7 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
   }
 
   bindBridgeSync(root, runtime);
+  bindKeyboardShortcuts(root, runtime);
 }
 
 function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
@@ -279,6 +291,7 @@ function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
     .intent-chooser { margin-top: 8px; border: 1px solid #334564; border-radius: 6px; padding: 8px; background: #101723; }
     .intent-chooser button { display: block; width: 100%; text-align: left; margin: 4px 0; background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 6px; cursor: pointer; }
     .intent-chooser button:hover { border-color: #7cb4ff; }
+    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
     @container (max-width: 420px) {
       .part-actions { flex-wrap: wrap; }
       .domain-row { font-size: 12px; padding: 6px; }
@@ -299,6 +312,7 @@ function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
       <section class="slot slot-secondary" data-slot="secondary"><section id="slot-secondary-parts"></section></section>
     </section>
   </main>
+  <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   `;
 
   applyLayout(root, runtime.layout);
@@ -332,6 +346,7 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
     .domain-row.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff44 inset; }
     .intent-chooser { margin-top: 8px; border: 1px solid #334564; border-radius: 6px; padding: 8px; background: #101723; }
     .intent-chooser button { display: block; width: 100%; text-align: left; margin: 4px 0; background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 6px; cursor: pointer; }
+    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
     @container (max-width: 420px) {
       .part-actions { flex-wrap: wrap; }
       .domain-row { font-size: 12px; padding: 6px; }
@@ -343,6 +358,7 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
     <section class="card" id="context-controls"></section>
     <section id="popout-slot"></section>
   </main>
+  <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   `;
 
   renderParts(root, runtime);
@@ -765,6 +781,7 @@ function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
       runtime.syncDegraded = true;
       runtime.syncDegradedReason = health.reason;
       runtime.pendingProbeId = null;
+      announce(root, runtime, formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
       updateWindowReadOnlyState(root, runtime);
       renderSyncStatus(root, runtime);
       renderContextControls(root, runtime);
@@ -780,6 +797,7 @@ function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
     }
 
     runtime.syncDegradedReason = null;
+    announce(root, runtime, formatDegradedModeAnnouncement(false, null));
     updateWindowReadOnlyState(root, runtime);
   });
 
@@ -823,6 +841,91 @@ function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
   });
 }
 
+function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
+  root.addEventListener("keydown", (event) => {
+    if (handleChooserKeyboardEvent(root, runtime, event)) {
+      return;
+    }
+
+    if (runtime.syncDegraded) {
+      return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if ((event.key === "ArrowDown" || event.key === "ArrowUp") && isSelectionActionNode(target)) {
+      const selector = `[data-action='${target.dataset.action ?? ""}']`;
+      const nodes = [...root.querySelectorAll<HTMLElement>(selector)];
+      const index = nodes.indexOf(target);
+      if (index < 0 || nodes.length <= 1) {
+        return;
+      }
+
+      const nextIndex = event.key === "ArrowDown"
+        ? (index + 1) % nodes.length
+        : (index - 1 + nodes.length) % nodes.length;
+      nodes[nextIndex]?.focus();
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key === "Enter" && target.id === "context-value-input") {
+      const apply = root.querySelector<HTMLButtonElement>("#context-apply");
+      apply?.click();
+      event.preventDefault();
+    }
+  });
+}
+
+function handleChooserKeyboardEvent(root: HTMLElement, runtime: ShellRuntime, event: KeyboardEvent): boolean {
+  if (!runtime.pendingIntentMatches.length) {
+    return false;
+  }
+
+  const result = resolveChooserKeyboardAction(
+    event.key,
+    runtime.chooserFocusIndex,
+    runtime.pendingIntentMatches.length,
+  );
+
+  if (result.kind === "none") {
+    return false;
+  }
+
+  event.preventDefault();
+  if (result.kind === "focus") {
+    runtime.chooserFocusIndex = result.index;
+    runtime.pendingFocusSelector = `button[data-action='choose-intent-action'][data-intent-index='${result.index}']`;
+    renderSyncStatus(root, runtime);
+    return true;
+  }
+
+  if (result.kind === "execute") {
+    runtime.chooserFocusIndex = result.index;
+    const selected = runtime.pendingIntentMatches[result.index];
+    if (selected) {
+      executeResolvedAction(root, runtime, selected, runtime.pendingIntent);
+    }
+    return true;
+  }
+
+  runtime.pendingIntentMatches = [];
+  runtime.pendingIntent = null;
+  runtime.chooserFocusIndex = 0;
+  runtime.intentNotice = "Action chooser dismissed.";
+  announce(root, runtime, runtime.intentNotice);
+  renderSyncStatus(root, runtime);
+  return true;
+}
+
+function isSelectionActionNode(target: HTMLElement): target is HTMLButtonElement {
+  const action = target.dataset.action;
+  return target instanceof HTMLButtonElement && (action === "select-order" || action === "select-vessel");
+}
+
 function applySelection(
   root: HTMLElement,
   runtime: ShellRuntime,
@@ -859,6 +962,11 @@ function applySelection(
   renderParts(root, runtime);
   updateSelectedStyles(root, runtime.selectedPartId);
   renderSyncStatus(root, runtime);
+  announce(root, runtime, formatSelectionAnnouncement({
+    selectedPartTitle: runtime.selectedPartTitle,
+    selectedOrderId: runtime.selectedOrderId,
+    selectedVesselId: runtime.selectedVesselId,
+  }));
 }
 
 function applyContext(root: HTMLElement, runtime: ShellRuntime, event: ContextSyncEvent): void {
@@ -905,12 +1013,12 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
     ? `<p class="runtime-note"><strong>Intent runtime:</strong> ${escapeHtml(runtime.intentNotice)}</p>`
     : "";
   const chooser = runtime.pendingIntentMatches.length
-    ? `<section class="intent-chooser"><h3 style="margin:0 0 6px;">Choose action</h3>${runtime.pendingIntentMatches
+    ? `<section class="intent-chooser" aria-label="Intent action chooser"><h3 style="margin:0 0 6px;">Choose action</h3><div role="listbox" aria-label="Available actions">${runtime.pendingIntentMatches
         .map(
           (match, index) =>
-            `<button type="button" data-action="choose-intent-action" data-intent-index="${index}" ${index === 0 ? "autofocus" : ""}>${escapeHtml(match.title)} <small>(${escapeHtml(match.pluginName)})</small></button>`,
+            `<button type="button" role="option" aria-selected="${index === runtime.chooserFocusIndex ? "true" : "false"}" data-action="choose-intent-action" data-intent-index="${index}">${escapeHtml(match.title)} <small>(${escapeHtml(match.pluginName)})</small></button>`,
         )
-        .join("")}</section>`
+        .join("")}</div></section>`
     : "";
 
   node.innerHTML = `
@@ -934,9 +1042,12 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
       if (!selected) {
         return;
       }
+      runtime.chooserFocusIndex = index;
       executeResolvedAction(root, runtime, selected, runtime.pendingIntent);
     });
   }
+
+  applyPendingFocus(root, runtime);
 }
 
 function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: ShellIntent): void {
@@ -946,18 +1057,25 @@ function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: She
 
   if (resolution.kind === "no-match") {
     runtime.pendingIntentMatches = [];
+    runtime.chooserFocusIndex = 0;
     runtime.intentNotice = resolution.feedback;
+    announce(root, runtime, runtime.intentNotice);
     return;
   }
 
   if (resolution.kind === "single-match") {
     runtime.pendingIntentMatches = [];
+    runtime.chooserFocusIndex = 0;
+    announce(root, runtime, resolution.feedback);
     executeResolvedAction(root, runtime, resolution.matches[0], intent);
     return;
   }
 
   runtime.pendingIntentMatches = resolution.matches;
+  runtime.chooserFocusIndex = 0;
+  runtime.pendingFocusSelector = "button[data-action='choose-intent-action'][data-intent-index='0']";
   runtime.intentNotice = resolution.feedback;
+  announce(root, runtime, `${resolution.feedback} Use arrow keys and Enter to choose an action.`);
 }
 
 function executeResolvedAction(
@@ -980,7 +1098,9 @@ function executeResolvedAction(
   }
 
   runtime.pendingIntentMatches = [];
+  runtime.chooserFocusIndex = 0;
   runtime.intentNotice = `Executed '${match.title}' via ${match.pluginId}.${match.handler}.`;
+  announce(root, runtime, runtime.intentNotice);
   renderParts(root, runtime);
 }
 
@@ -1629,6 +1749,29 @@ function updateWindowReadOnlyState(root: HTMLElement, runtime: ShellRuntime): vo
   }
 }
 
+function announce(root: HTMLElement, runtime: ShellRuntime, message: string): void {
+  runtime.announcement = message;
+  const node = root.querySelector<HTMLElement>("#live-announcer");
+  if (!node) {
+    return;
+  }
+  node.textContent = message;
+}
+
+function applyPendingFocus(root: HTMLElement, runtime: ShellRuntime): void {
+  const selector = runtime.pendingFocusSelector;
+  if (!selector) {
+    return;
+  }
+
+  const node = root.querySelector<HTMLElement>(selector);
+  if (node) {
+    node.focus();
+  }
+
+  runtime.pendingFocusSelector = null;
+}
+
 function publishWithDegrade(root: HTMLElement, runtime: ShellRuntime, event: Parameters<WindowBridge["publish"]>[0]): boolean {
   if (runtime.syncDegraded) {
     return false;
@@ -1639,6 +1782,7 @@ function publishWithDegrade(root: HTMLElement, runtime: ShellRuntime, event: Par
     runtime.syncDegraded = true;
     runtime.syncDegradedReason = "publish-failed";
     runtime.pendingProbeId = null;
+    announce(root, runtime, formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
     updateWindowReadOnlyState(root, runtime);
     renderSyncStatus(root, runtime);
     renderContextControls(root, runtime);
@@ -1665,6 +1809,7 @@ function requestSyncProbe(root: HTMLElement, runtime: ShellRuntime): void {
     runtime.syncDegraded = true;
     runtime.syncDegradedReason = "publish-failed";
     runtime.pendingProbeId = null;
+    announce(root, runtime, formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
     updateWindowReadOnlyState(root, runtime);
     renderSyncStatus(root, runtime);
     renderContextControls(root, runtime);
@@ -1697,6 +1842,7 @@ function handleSyncAck(root: HTMLElement, runtime: ShellRuntime, event: SyncAckE
   runtime.syncDegraded = false;
   runtime.syncDegradedReason = null;
   runtime.bridge.recover();
+  announce(root, runtime, formatDegradedModeAnnouncement(false, null));
   updateWindowReadOnlyState(root, runtime);
   renderSyncStatus(root, runtime);
   renderContextControls(root, runtime);
