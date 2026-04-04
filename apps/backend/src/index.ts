@@ -1,7 +1,17 @@
-import type {
-  TenantPluginDescriptor,
-  TenantPluginManifestResponse,
-} from "@armada/plugin-contracts";
+interface TenantPluginDescriptor {
+  id: string;
+  version: string;
+  entry: string;
+  compatibility: {
+    shell: string;
+    pluginContract: string;
+  };
+}
+
+interface TenantPluginManifestResponse {
+  tenantId: string;
+  plugins: TenantPluginDescriptor[];
+}
 
 const DEFAULT_TENANT = "demo";
 
@@ -20,6 +30,24 @@ const inMemoryTenantPluginDescriptors: Readonly<Record<string, TenantPluginDescr
       id: "com.armada.sample.contract-consumer",
       version: "0.1.0",
       entry: "local://apps/sample-contract-consumer-plugin/src/index.ts",
+      compatibility: {
+        shell: "^1.0.0",
+        pluginContract: "^1.0.0",
+      },
+    },
+    {
+      id: "com.armada.domain.unplanned-orders",
+      version: "0.1.0",
+      entry: "local://apps/shell/src/local-plugin-sources.ts#unplanned-orders",
+      compatibility: {
+        shell: "^1.0.0",
+        pluginContract: "^1.0.0",
+      },
+    },
+    {
+      id: "com.armada.domain.vessel-view",
+      version: "0.1.0",
+      entry: "local://apps/shell/src/local-plugin-sources.ts#vessel-view",
       compatibility: {
         shell: "^1.0.0",
         pluginContract: "^1.0.0",

@@ -1,30 +1,79 @@
 import type { ShellSlot } from "./layout.js";
+import {
+  demoUnplannedOrders,
+  demoVessels,
+  getOrdersForVessel,
+} from "./domain-demo-data.js";
+
+export interface LocalMockRenderContext {
+  selectedOrderId: string | null;
+  selectedVesselId: string | null;
+}
 
 export interface LocalMockPart {
   id: string;
   title: string;
   slot: ShellSlot;
-  render(): string;
+  render(context: LocalMockRenderContext): string;
 }
 
 export const localMockParts: LocalMockPart[] = [
   {
-    id: "workbench.master.overview",
-    title: "Overview",
+    id: "domain.unplanned-orders.part",
+    title: "Unplanned Orders",
     slot: "master",
-    render: () => "<section><h2>Master</h2><p>Local mock primary content.</p></section>",
+    render: (context) => {
+      const rows = demoUnplannedOrders
+        .map((order) => {
+          const selectedClass =
+            context.selectedOrderId === order.id ? "domain-row is-selected" : "domain-row";
+          return `<button type="button" class="${selectedClass}" data-action="select-order" data-order-id="${order.id}" data-vessel-id="${order.vesselId}">
+            <strong>${order.reference}</strong>
+            <span>${order.cargoType.toUpperCase()} · ${order.destination}</span>
+          </button>`;
+        })
+        .join("");
+
+      return `<section class="domain-panel" data-domain-panel="orders">
+        <h3>Unplanned orders</h3>
+        <p class="domain-hint">Select an order to focus the related vessel.</p>
+        <div class="domain-list">${rows}</div>
+      </section>`;
+    },
   },
   {
-    id: "workbench.secondary.logs",
-    title: "Logs",
+    id: "domain.vessel-view.part",
+    title: "Vessel View (RORO/ROPAX)",
     slot: "secondary",
-    render: () =>
-      "<section><h2>Secondary</h2><p>Local mock detail/log stream.</p></section>",
+    render: (context) => {
+      const rows = demoVessels
+        .map((vessel) => {
+          const orderCount = getOrdersForVessel(vessel.id).length;
+          const selectedClass =
+            context.selectedVesselId === vessel.id ? "domain-row is-selected" : "domain-row";
+          return `<button type="button" class="${selectedClass}" data-action="select-vessel" data-vessel-id="${vessel.id}">
+            <strong>${vessel.name}</strong>
+            <span>${vessel.vesselClass} · ${vessel.route} · ${orderCount} unplanned</span>
+          </button>`;
+        })
+        .join("");
+
+      return `<section class="domain-panel" data-domain-panel="vessels">
+        <h3>Vessel view</h3>
+        <p class="domain-hint">Select a vessel to focus matching unplanned orders.</p>
+        <div class="domain-list">${rows}</div>
+      </section>`;
+    },
   },
   {
     id: "workbench.side.navigator",
     title: "Navigator",
     slot: "side",
-    render: () => "<section><h2>Side</h2><p>Local mock tree/navigation.</p></section>",
+    render: (context) =>
+      `<section>
+        <h3>Shared domain context</h3>
+        <p>Selected order: ${context.selectedOrderId ?? "none"}</p>
+        <p>Selected vessel: ${context.selectedVesselId ?? "none"}</p>
+      </section>`,
   },
 ];

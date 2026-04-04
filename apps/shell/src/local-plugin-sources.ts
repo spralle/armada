@@ -35,6 +35,50 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
       ],
     },
   }),
+  "com.armada.domain.unplanned-orders": async () => ({
+    manifest: {
+      id: "com.armada.domain.unplanned-orders",
+      name: "Unplanned Orders",
+      version: "0.1.0",
+    },
+    contributes: {
+      views: [
+        {
+          id: "domain.unplanned-orders.view",
+          title: "Unplanned Orders",
+          component: "UnplannedOrdersView",
+        },
+      ],
+      selection: [
+        {
+          id: "domain.unplanned-orders.selection",
+          target: "vessel",
+        },
+      ],
+    },
+  }),
+  "com.armada.domain.vessel-view": async () => ({
+    manifest: {
+      id: "com.armada.domain.vessel-view",
+      name: "Vessel View (RORO/ROPAX)",
+      version: "0.1.0",
+    },
+    contributes: {
+      views: [
+        {
+          id: "domain.vessel.view",
+          title: "Vessel View",
+          component: "VesselView",
+        },
+      ],
+      selection: [
+        {
+          id: "domain.vessel.selection",
+          target: "order",
+        },
+      ],
+    },
+  }),
 };
 
 export function resolveLocalPluginContractLoader(
