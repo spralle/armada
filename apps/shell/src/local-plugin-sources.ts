@@ -78,7 +78,7 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
           },
         },
       ],
-    } as PluginContract["contributes"],
+    },
   }),
   "com.armada.domain.vessel-view": async () => ({
     manifest: {
@@ -124,7 +124,7 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
           },
         },
       ],
-    } as PluginContract["contributes"],
+    },
   }),
 };
 
