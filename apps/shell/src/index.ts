@@ -59,6 +59,7 @@ interface ShellRuntime {
   contextKey: string;
   contextValue: string;
   notice: string;
+  pluginNotice: string;
   popoutHandles: Map<string, Window>;
   poppedOutPartIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
@@ -154,6 +155,7 @@ const shellRuntime: ShellRuntime = {
   contextKey: "demo.selection",
   contextValue: "none",
   notice: "",
+  pluginNotice: "",
   popoutHandles: new Map<string, Window>(),
   poppedOutPartIds: new Set<string>(),
   dragSessionBroker: createDragSessionBroker(bridge, windowId),
@@ -205,6 +207,11 @@ function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
     .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
     .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
     .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
+    .plugin-row { display:block; margin: 6px 0; }
+    .plugin-error { margin: 4px 0 0 22px; color: #f5b8b8; font-size: 12px; }
+    .plugin-notice { margin:0 0 8px; font-size:12px; color:#f5d7b5; }
+    .plugin-diag-list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: #c6d0e0; }
+    .plugin-diag-list li { margin: 2px 0; }
     .domain-panel { display: grid; gap: 6px; }
     .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
     .domain-list { display: grid; gap: 6px; }
@@ -761,9 +768,10 @@ function renderPluginControls(root: HTMLElement, runtime: ShellRuntime): void {
   const snapshot = runtime.registry.getSnapshot();
   const rows = snapshot.plugins
     .map(
-      (plugin) => `<label style="display:block;margin:4px 0;">
+      (plugin) => `<label class="plugin-row">
       <input type="checkbox" data-plugin-toggle="${plugin.id}" ${plugin.enabled ? "checked" : ""} />
       <strong>${plugin.id}</strong> <small>(${plugin.loadMode})</small>
+      ${plugin.failure ? `<p class="plugin-error">${escapeHtml(plugin.failure.code)}: ${escapeHtml(plugin.failure.message)}</p>` : ""}
     </label>`,
     )
     .join("");
@@ -773,9 +781,22 @@ function renderPluginControls(root: HTMLElement, runtime: ShellRuntime): void {
     .map((plugin) => plugin.contract?.manifest.name ?? plugin.id)
     .join(", ");
 
+  const diagnostics = snapshot.diagnostics
+    .slice(0, 5)
+    .map(
+      (item) => `<li><strong>${escapeHtml(item.code)}</strong> [${escapeHtml(item.level)}] ${escapeHtml(item.message)}</li>`,
+    )
+    .join("");
+
+  const pluginNotice = runtime.pluginNotice
+    ? `<p class="plugin-notice">${escapeHtml(runtime.pluginNotice)}</p>`
+    : "";
+
   controlsNode.innerHTML = `<h2>Plugins (${snapshot.tenantId})</h2>
   <p style="margin:0 0 8px;font-size:12px;color:#c6d0e0;">Loaded: ${loadedContracts || "none"}</p>
-  ${rows || '<p style="margin:0;color:#c6d0e0;">No registered plugin descriptors.</p>'}`;
+  ${pluginNotice}
+  ${rows || '<p style="margin:0;color:#c6d0e0;">No registered plugin descriptors.</p>'}
+  ${diagnostics ? `<details><summary style="cursor:pointer;font-size:12px;color:#c6d0e0;">Diagnostics (dev/demo)</summary><ul class="plugin-diag-list">${diagnostics}</ul></details>` : ""}`;
 
   for (const input of controlsNode.querySelectorAll<HTMLInputElement>("input[data-plugin-toggle]")) {
     input.addEventListener("change", async () => {
@@ -785,9 +806,11 @@ function renderPluginControls(root: HTMLElement, runtime: ShellRuntime): void {
       }
 
       try {
+        runtime.pluginNotice = "";
         await runtime.registry.setEnabled(pluginId, input.checked);
       } catch (error) {
         input.checked = !input.checked;
+        runtime.pluginNotice = `Unable to toggle plugin '${pluginId}'. See console diagnostics.`;
         console.error("[shell] failed to toggle plugin", pluginId, error);
       }
 
