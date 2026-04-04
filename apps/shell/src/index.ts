@@ -1,7 +1,6 @@
 import {
   parseTenantPluginManifest,
   type PluginContract,
-  type TenantPluginDescriptor,
 } from "@armada/plugin-contracts";
 import {
   applyPaneResize,
@@ -10,6 +9,10 @@ import {
 } from "./layout.js";
 import { localMockParts } from "./mock-parts.js";
 import {
+  createShellPluginRegistry,
+  type ShellPluginRegistry,
+} from "./plugin-registry.js";
+import {
   createLocalStorageLayoutPersistence,
   type ShellLayoutPersistence,
 } from "./persistence.js";
@@ -17,24 +20,13 @@ import {
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
   loadedPlugins: PluginContract[];
-  registry: TenantPluginRegistry;
-}
-
-export interface TenantPluginRegistry {
-  tenantId: string;
-  byId: Record<string, TenantPluginDescriptor>;
+  registry: ShellPluginRegistry;
 }
 
 export interface ShellBootstrapOptions {
   tenantId: string;
   fetchManifest?: (manifestUrl: string) => Promise<unknown>;
-}
-
-function createRegistry(tenantId: string, plugins: TenantPluginDescriptor[]): TenantPluginRegistry {
-  return {
-    tenantId,
-    byId: Object.fromEntries(plugins.map((plugin) => [plugin.id, plugin])),
-  };
+  enableByDefault?: boolean;
 }
 
 async function fetchManifestFromEndpoint(manifestUrl: string): Promise<unknown> {
@@ -66,22 +58,41 @@ export async function bootstrapShellWithTenantManifest(
     throw new Error(`Invalid tenant manifest response from '${manifestUrl}': ${details}`);
   }
 
+  const registry = createShellPluginRegistry();
+  registry.registerManifestDescriptors(parsedManifest.data.tenantId, parsedManifest.data.plugins);
+
+  if (options.enableByDefault) {
+    for (const descriptor of parsedManifest.data.plugins) {
+      await registry.setEnabled(descriptor.id, true);
+    }
+  }
+
+  const snapshot = registry.getSnapshot();
+
   return {
-    mode: "integration",
-    loadedPlugins: [],
-    registry: createRegistry(parsedManifest.data.tenantId, parsedManifest.data.plugins),
+    mode: parsedManifest.data.plugins.some((plugin) => !plugin.entry.startsWith("local://"))
+      ? "integration"
+      : "inner-loop",
+    loadedPlugins: snapshot.plugins
+      .map((plugin) => plugin.contract)
+      .filter((plugin): plugin is PluginContract => plugin !== null),
+    registry,
   };
 }
+
+const emptyRegistry = createShellPluginRegistry();
+emptyRegistry.registerManifestDescriptors("local", []);
 
 export const shellBootstrapState: ShellBootstrapState = {
   mode: "inner-loop",
   loadedPlugins: [],
-  registry: createRegistry("local", []),
+  registry: emptyRegistry,
 };
 
 interface ShellRuntime {
   layout: ShellLayoutState;
   persistence: ShellLayoutPersistence;
+  registry: ShellPluginRegistry;
 }
 
 const shellRuntime: ShellRuntime = {
@@ -89,12 +100,16 @@ const shellRuntime: ShellRuntime = {
   persistence: createLocalStorageLayoutPersistence(getStorage(), {
     userId: getCurrentUserId(),
   }),
+  registry: createShellPluginRegistry(),
 };
+
+shellRuntime.registry.registerManifestDescriptors("local", []);
 
 shellRuntime.layout = shellRuntime.persistence.load();
 
 if (typeof document !== "undefined") {
   mountShell(document.body, shellRuntime);
+  void hydratePluginRegistry(document.body, shellRuntime);
 }
 
 console.log("[shell] POC shell stub ready", shellBootstrapState.mode);
@@ -117,18 +132,22 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
     .part-root p { margin: 0; color: #c6d0e0; font-size: 13px; }
   </style>
   <main class="shell" id="shell-root">
-    <section class="slot slot-side" id="slot-side" data-slot="side"></section>
+    <section class="slot slot-side" id="slot-side" data-slot="side">
+      <section class="part-root" id="plugin-controls"></section>
+      <section id="slot-side-parts"></section>
+    </section>
     <div class="splitter" id="splitter-side" data-pane="side" aria-label="Resize side pane"></div>
     <section class="main-stack">
-      <section class="slot slot-master" id="slot-master" data-slot="master"></section>
+      <section class="slot slot-master" id="slot-master" data-slot="master"><section id="slot-master-parts"></section></section>
       <div class="splitter" id="splitter-secondary" data-pane="secondary" aria-label="Resize secondary pane"></div>
-      <section class="slot slot-secondary" id="slot-secondary" data-slot="secondary"></section>
+      <section class="slot slot-secondary" id="slot-secondary" data-slot="secondary"><section id="slot-secondary-parts"></section></section>
     </section>
   </main>
   `;
 
   applyLayout(root, runtime.layout);
   renderMockParts(root);
+  renderPluginControls(root, runtime);
   setupResize(root, runtime);
 }
 
@@ -139,7 +158,7 @@ function applyLayout(root: HTMLElement, layout: ShellLayoutState): void {
 
 function renderMockParts(root: HTMLElement): void {
   for (const part of localMockParts) {
-    const slotNode = root.querySelector<HTMLElement>(`#slot-${part.slot}`);
+    const slotNode = root.querySelector<HTMLElement>(`#slot-${part.slot}-parts`);
     if (!slotNode) {
       continue;
     }
@@ -150,6 +169,62 @@ function renderMockParts(root: HTMLElement): void {
     wrapper.style.containerName = `part-${part.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
     wrapper.innerHTML = part.render();
     slotNode.appendChild(wrapper);
+  }
+}
+
+function renderPluginControls(root: HTMLElement, runtime: ShellRuntime): void {
+  const controlsNode = root.querySelector<HTMLElement>("#plugin-controls");
+  if (!controlsNode) {
+    return;
+  }
+
+  const snapshot = runtime.registry.getSnapshot();
+  const rows = snapshot.plugins
+    .map(
+      (plugin) => `<label style="display:block;margin:4px 0;">
+      <input type="checkbox" data-plugin-toggle="${plugin.id}" ${plugin.enabled ? "checked" : ""} />
+      <strong>${plugin.id}</strong> <small>(${plugin.loadMode})</small>
+    </label>`,
+    )
+    .join("");
+
+  const loadedContracts = snapshot.plugins
+    .filter((plugin) => plugin.contract !== null)
+    .map((plugin) => plugin.contract?.manifest.name ?? plugin.id)
+    .join(", ");
+
+  controlsNode.innerHTML = `<h2>Plugins (${snapshot.tenantId})</h2>
+  <p style="margin:0 0 8px;font-size:12px;color:#c6d0e0;">Loaded: ${loadedContracts || "none"}</p>
+  ${rows || "<p style=\"margin:0;color:#c6d0e0;\">No registered plugin descriptors.</p>"}`;
+
+  for (const input of controlsNode.querySelectorAll<HTMLInputElement>("input[data-plugin-toggle]")) {
+    input.addEventListener("change", async () => {
+      const pluginId = input.dataset.pluginToggle;
+      if (!pluginId) {
+        return;
+      }
+
+      try {
+        await runtime.registry.setEnabled(pluginId, input.checked);
+      } catch (error) {
+        input.checked = !input.checked;
+        console.error("[shell] failed to toggle plugin", pluginId, error);
+      }
+
+      renderPluginControls(root, runtime);
+    });
+  }
+}
+
+async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
+  try {
+    const state = await bootstrapShellWithTenantManifest({
+      tenantId: "demo",
+    });
+    runtime.registry = state.registry;
+    renderPluginControls(root, runtime);
+  } catch (error) {
+    console.warn("[shell] plugin registry hydration skipped", error);
   }
 }
 

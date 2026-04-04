@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@armada/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@armada/plugin-contracts": "file:../../packages/plugin-contracts",
+    "@module-federation/enhanced": "^2.3.1"
   }
 }
