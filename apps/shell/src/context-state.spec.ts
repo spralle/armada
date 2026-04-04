@@ -161,6 +161,49 @@ test("global lanes remain separate from group lanes", () => {
   );
 });
 
+test("global lane LWW uses timestamp and writer tie-break deterministically", () => {
+  let state = createInitialShellContextState({ initialTabId: "tab-a" });
+
+  state = writeGlobalLane(state, {
+    key: "shell.selection",
+    value: "writer-b",
+    revision: { timestamp: 50, writer: "writer-b" },
+  });
+
+  state = writeGlobalLane(state, {
+    key: "shell.selection",
+    value: "older-ts",
+    revision: { timestamp: 49, writer: "writer-z" },
+  });
+  assertEqual(
+    readGlobalLane(state, "shell.selection")?.value,
+    "writer-b",
+    "older timestamp should not overwrite global lane",
+  );
+
+  state = writeGlobalLane(state, {
+    key: "shell.selection",
+    value: "same-ts-lower-writer",
+    revision: { timestamp: 50, writer: "writer-a" },
+  });
+  assertEqual(
+    readGlobalLane(state, "shell.selection")?.value,
+    "writer-b",
+    "lower writer should lose at same timestamp for global lane",
+  );
+
+  state = writeGlobalLane(state, {
+    key: "shell.selection",
+    value: "same-ts-higher-writer",
+    revision: { timestamp: 50, writer: "writer-z" },
+  });
+  assertEqual(
+    readGlobalLane(state, "shell.selection")?.value,
+    "same-ts-higher-writer",
+    "higher writer should win at same timestamp for global lane",
+  );
+});
+
 let passed = 0;
 for (const caseItem of tests) {
   try {

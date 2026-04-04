@@ -19,8 +19,11 @@ import {
 import {
   createWindowBridge,
   type ContextSyncEvent,
+  type SyncAckEvent,
+  type SyncProbeEvent,
   type SelectionSyncEvent,
   type WindowBridge,
+  type WindowBridgeHealth,
 } from "./window-bridge.js";
 import {
   resolveOrder,
@@ -79,6 +82,9 @@ interface ShellRuntime {
   popoutHandles: Map<string, Window>;
   poppedOutPartIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
+  syncDegraded: boolean;
+  syncDegradedReason: WindowBridgeHealth["reason"];
+  pendingProbeId: string | null;
 }
 
 interface TenantPluginDescriptor {
@@ -178,6 +184,9 @@ const shellRuntime: ShellRuntime = {
   popoutHandles: new Map<string, Window>(),
   poppedOutPartIds: new Set<string>(),
   dragSessionBroker: createDragSessionBroker(bridge, windowId),
+  syncDegraded: !bridge.available,
+  syncDegradedReason: bridge.available ? null : "unavailable",
+  pendingProbeId: null,
 };
 
 shellRuntime.registry.registerManifestDescriptors("local", []);
@@ -225,6 +234,7 @@ function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
     .part-actions button:hover { border-color: #7cb4ff; }
     .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
     .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
+    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); pointer-events: none; }
     .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
     .plugin-row { display:block; margin: 6px 0; }
     .plugin-error { margin: 4px 0 0 22px; color: #f5b8b8; font-size: 12px; }
@@ -264,6 +274,7 @@ function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
   renderPluginControls(root, runtime);
   renderSyncStatus(root, runtime);
   renderContextControls(root, runtime);
+  updateWindowReadOnlyState(root, runtime);
   setupResize(root, runtime);
 }
 
@@ -280,6 +291,7 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
     .part-actions button { background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 4px 8px; cursor: pointer; }
     .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
     .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
+    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); pointer-events: none; }
     .domain-panel { display: grid; gap: 6px; }
     .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
     .domain-list { display: grid; gap: 6px; }
@@ -302,13 +314,14 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
   renderParts(root, runtime);
   renderSyncStatus(root, runtime);
   renderContextControls(root, runtime);
+  updateWindowReadOnlyState(root, runtime);
 
   window.addEventListener("beforeunload", () => {
     if (!runtime.partId || !runtime.hostWindowId) {
       return;
     }
 
-    runtime.bridge.publish({
+    publishWithDegrade(root, runtime, {
       type: "popout-restore-request",
       hostWindowId: runtime.hostWindowId,
       partId: runtime.partId,
@@ -337,6 +350,7 @@ function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
     wirePartActions(root, runtime);
     wireDragDrop(root, runtime);
     updateSelectedStyles(root, runtime.selectedPartId);
+    updateWindowReadOnlyState(root, runtime);
     return;
   }
 
@@ -368,6 +382,7 @@ function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
   wirePartActions(root, runtime);
   wireDragDrop(root, runtime);
   updateSelectedStyles(root, runtime.selectedPartId);
+  updateWindowReadOnlyState(root, runtime);
 }
 
 function renderPartCard(
@@ -404,39 +419,52 @@ function renderPartCard(
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='select']")) {
     button.addEventListener("click", () => {
+      if (runtime.syncDegraded) {
+        return;
+      }
+
       const partId = button.dataset.partId;
       const partTitle = button.dataset.partTitle;
       if (!partId || !partTitle) {
         return;
       }
 
+      const selectionRevision = createRevision(runtime.windowId);
+
       applySelection(root, runtime, {
         selectedPartId: partId,
         selectedPartTitle: partTitle,
         selectedOrderId: runtime.selectedOrderId,
         selectedVesselId: runtime.selectedVesselId,
+        revision: selectionRevision,
         sourceWindowId: runtime.windowId,
         type: "selection",
       });
 
-      runtime.bridge.publish({
+      publishWithDegrade(root, runtime, {
         type: "selection",
         selectedPartId: partId,
         selectedPartTitle: partTitle,
         selectedOrderId: runtime.selectedOrderId,
         selectedVesselId: runtime.selectedVesselId,
+        revision: selectionRevision,
         sourceWindowId: runtime.windowId,
       });
 
       writeGlobalSelectionLane(runtime, {
         selectedPartId: partId,
         selectedPartTitle: partTitle,
+        revision: selectionRevision,
       });
     });
   }
 
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='select-order']")) {
     button.addEventListener("click", () => {
+      if (runtime.syncDegraded) {
+        return;
+      }
+
       const orderId = button.dataset.orderId;
       if (!orderId) {
         return;
@@ -450,12 +478,15 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
       runtime.selectedOrderId = order.id;
       runtime.selectedVesselId = order.vesselId;
 
+      const selectionRevision = createRevision(runtime.windowId);
+
       applySelection(root, runtime, {
         type: "selection",
         selectedPartId: "domain.unplanned-orders.part",
         selectedPartTitle: `Order ${order.reference}`,
         selectedOrderId: order.id,
         selectedVesselId: order.vesselId,
+        revision: selectionRevision,
         sourceWindowId: runtime.windowId,
       });
 
@@ -464,15 +495,16 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
       renderContextControls(root, runtime);
       renderSyncStatus(root, runtime);
 
-      runtime.bridge.publish({
+      publishWithDegrade(root, runtime, {
         type: "selection",
         selectedPartId: "domain.unplanned-orders.part",
         selectedPartTitle: `Order ${order.reference}`,
         selectedOrderId: order.id,
         selectedVesselId: order.vesselId,
+        revision: selectionRevision,
         sourceWindowId: runtime.windowId,
       });
-      runtime.bridge.publish({
+      publishWithDegrade(root, runtime, {
         type: "context",
         scope: "group",
         tabId: runtime.selectedPartId ?? undefined,
@@ -485,12 +517,17 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
       writeGlobalSelectionLane(runtime, {
         selectedPartId: "domain.unplanned-orders.part",
         selectedPartTitle: `Order ${order.reference}`,
+        revision: selectionRevision,
       });
     });
   }
 
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='select-vessel']")) {
     button.addEventListener("click", () => {
+      if (runtime.syncDegraded) {
+        return;
+      }
+
       const vesselId = button.dataset.vesselId;
       if (!vesselId) {
         return;
@@ -507,12 +544,15 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
         runtime.selectedOrderId = null;
       }
 
+      const selectionRevision = createRevision(runtime.windowId);
+
       applySelection(root, runtime, {
         type: "selection",
         selectedPartId: "domain.vessel-view.part",
         selectedPartTitle: `Vessel ${vessel.name}`,
         selectedOrderId: runtime.selectedOrderId,
         selectedVesselId: vessel.id,
+        revision: selectionRevision,
         sourceWindowId: runtime.windowId,
       });
 
@@ -521,15 +561,16 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
       renderContextControls(root, runtime);
       renderSyncStatus(root, runtime);
 
-      runtime.bridge.publish({
+      publishWithDegrade(root, runtime, {
         type: "selection",
         selectedPartId: "domain.vessel-view.part",
         selectedPartTitle: `Vessel ${vessel.name}`,
         selectedOrderId: runtime.selectedOrderId,
         selectedVesselId: vessel.id,
+        revision: selectionRevision,
         sourceWindowId: runtime.windowId,
       });
-      runtime.bridge.publish({
+      publishWithDegrade(root, runtime, {
         type: "context",
         scope: "group",
         tabId: runtime.selectedPartId ?? undefined,
@@ -542,12 +583,17 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
       writeGlobalSelectionLane(runtime, {
         selectedPartId: "domain.vessel-view.part",
         selectedPartTitle: `Vessel ${vessel.name}`,
+        revision: selectionRevision,
       });
     });
   }
 
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='popout']")) {
     button.addEventListener("click", () => {
+      if (runtime.syncDegraded) {
+        return;
+      }
+
       const partId = button.dataset.partId;
       if (!partId) {
         return;
@@ -559,13 +605,17 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
 
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='restore']")) {
     button.addEventListener("click", () => {
+      if (runtime.syncDegraded) {
+        return;
+      }
+
       const partId = button.dataset.partId;
       if (!partId) {
         return;
       }
 
       if (runtime.hostWindowId) {
-        runtime.bridge.publish({
+        publishWithDegrade(root, runtime, {
           type: "popout-restore-request",
           partId,
           hostWindowId: runtime.hostWindowId,
@@ -651,8 +701,46 @@ function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
+  runtime.bridge.subscribeHealth((health) => {
+    if (health.degraded) {
+      runtime.syncDegraded = true;
+      runtime.syncDegradedReason = health.reason;
+      runtime.pendingProbeId = null;
+      updateWindowReadOnlyState(root, runtime);
+      renderSyncStatus(root, runtime);
+      renderContextControls(root, runtime);
+      return;
+    }
+
+    if (runtime.syncDegraded) {
+      requestSyncProbe(root, runtime);
+      renderSyncStatus(root, runtime);
+      renderContextControls(root, runtime);
+      updateWindowReadOnlyState(root, runtime);
+      return;
+    }
+
+    runtime.syncDegradedReason = null;
+    updateWindowReadOnlyState(root, runtime);
+  });
+
   runtime.bridge.subscribe((event) => {
     if (event.sourceWindowId === runtime.windowId) {
+      return;
+    }
+
+    if (event.type === "sync-probe") {
+      handleSyncProbe(runtime, event);
+      return;
+    }
+
+    if (event.type === "sync-ack") {
+      if (handleSyncAck(root, runtime, event)) {
+        return;
+      }
+    }
+
+    if (runtime.syncDegraded) {
       return;
     }
 
@@ -681,6 +769,7 @@ function applySelection(
   runtime: ShellRuntime,
   event: SelectionSyncEvent,
 ): void {
+  const revision = event.revision ?? createRevision(event.sourceWindowId);
   runtime.selectedPartId = event.selectedPartId;
   runtime.selectedPartTitle = event.selectedPartTitle;
   runtime.contextState = registerTab(runtime.contextState, {
@@ -692,6 +781,7 @@ function applySelection(
   writeGlobalSelectionLane(runtime, {
     selectedPartId: event.selectedPartId,
     selectedPartTitle: event.selectedPartTitle,
+    revision,
   });
   if (event.selectedOrderId !== undefined) {
     runtime.selectedOrderId = event.selectedOrderId;
@@ -755,8 +845,12 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function renderBridgeWarning(runtime: ShellRuntime): string {
-  if (runtime.bridge.available && runtime.dragSessionBroker.available) {
+  if (!runtime.syncDegraded && runtime.bridge.available && runtime.dragSessionBroker.available) {
     return "";
+  }
+
+  if (runtime.syncDegraded) {
+    return `<div class="bridge-warning">Cross-window sync degraded (${runtime.syncDegradedReason ?? "unknown"}). This window is read-only until resync succeeds.</div>`;
   }
 
   return `<div class="bridge-warning">BroadcastChannel is unavailable. Sync/popout restore/dnd ref fall back to local-only behavior.</div>`;
@@ -772,7 +866,7 @@ function renderContextControls(root: HTMLElement, runtime: ShellRuntime): void {
     <h2>Group context (demo)</h2>
     <label class="runtime-note" for="context-value-input">${DOMAIN_CONTEXT_KEY}</label>
     <input id="context-value-input" value="${escapeHtml(readDomainGroupContext(runtime))}" style="width:100%;box-sizing:border-box;margin:6px 0;padding:4px;background:#0f1319;border:1px solid #334564;color:#e9edf3;" />
-    <button type="button" id="context-apply" style="background:#1d2635;border:1px solid #334564;border-radius:4px;color:#e9edf3;padding:4px 8px;cursor:pointer;">Apply + sync</button>
+    <button type="button" id="context-apply" style="background:#1d2635;border:1px solid #334564;border-radius:4px;color:#e9edf3;padding:4px 8px;cursor:pointer;" ${runtime.syncDegraded ? "disabled" : ""}>Apply + sync</button>
   `;
 
   const applyButton = node.querySelector<HTMLButtonElement>("#context-apply");
@@ -782,8 +876,11 @@ function renderContextControls(root: HTMLElement, runtime: ShellRuntime): void {
   }
 
   applyButton.addEventListener("click", () => {
+    if (runtime.syncDegraded) {
+      return;
+    }
     writeDomainGroupContext(runtime, inputNode.value.trim() || "none");
-    runtime.bridge.publish({
+    publishWithDegrade(root, runtime, {
       type: "context",
       scope: "group",
       tabId: runtime.selectedPartId ?? undefined,
@@ -794,6 +891,8 @@ function renderContextControls(root: HTMLElement, runtime: ShellRuntime): void {
     });
     renderSyncStatus(root, runtime);
   });
+
+  updateWindowReadOnlyState(root, runtime);
 }
 
 function openPopout(partId: string, root: HTMLElement, runtime: ShellRuntime): void {
@@ -1093,13 +1192,111 @@ function writeDomainGroupContext(runtime: ShellRuntime, value: string): void {
 
 function writeGlobalSelectionLane(
   runtime: ShellRuntime,
-  input: { selectedPartId: string; selectedPartTitle: string },
+  input: { selectedPartId: string; selectedPartTitle: string; revision?: RevisionMeta },
 ): void {
   runtime.contextState = writeGlobalLane(runtime.contextState, {
     key: GLOBAL_CONTEXT_KEY,
     value: `${input.selectedPartId}|${input.selectedPartTitle}`,
-    revision: createRevision(runtime.windowId),
+    revision: input.revision ?? createRevision(runtime.windowId),
   });
+}
+
+function updateWindowReadOnlyState(root: HTMLElement, runtime: ShellRuntime): void {
+  const shellNode = root.querySelector<HTMLElement>("#shell-root") ?? root.querySelector<HTMLElement>(".popout");
+  if (!shellNode) {
+    return;
+  }
+
+  shellNode.classList.toggle("sync-degraded", runtime.syncDegraded);
+
+  for (const node of shellNode.querySelectorAll<HTMLElement>("button, input, select, textarea")) {
+    const bridgeControl = node.id === "context-apply" || node.id === "context-value-input";
+    if (runtime.syncDegraded) {
+      node.setAttribute("disabled", "disabled");
+      if (bridgeControl) {
+        node.setAttribute("aria-disabled", "true");
+      }
+    } else {
+      node.removeAttribute("disabled");
+      if (bridgeControl) {
+        node.removeAttribute("aria-disabled");
+      }
+    }
+  }
+}
+
+function publishWithDegrade(root: HTMLElement, runtime: ShellRuntime, event: Parameters<WindowBridge["publish"]>[0]): boolean {
+  if (runtime.syncDegraded) {
+    return false;
+  }
+
+  const success = runtime.bridge.publish(event);
+  if (!success) {
+    runtime.syncDegraded = true;
+    runtime.syncDegradedReason = "publish-failed";
+    runtime.pendingProbeId = null;
+    updateWindowReadOnlyState(root, runtime);
+    renderSyncStatus(root, runtime);
+    renderContextControls(root, runtime);
+    return false;
+  }
+
+  return true;
+}
+
+function requestSyncProbe(root: HTMLElement, runtime: ShellRuntime): void {
+  if (!runtime.bridge.available) {
+    return;
+  }
+
+  const probeId = createWindowId();
+  runtime.pendingProbeId = probeId;
+  const ok = runtime.bridge.publish({
+    type: "sync-probe",
+    probeId,
+    sourceWindowId: runtime.windowId,
+  });
+
+  if (!ok) {
+    runtime.syncDegraded = true;
+    runtime.syncDegradedReason = "publish-failed";
+    runtime.pendingProbeId = null;
+    updateWindowReadOnlyState(root, runtime);
+    renderSyncStatus(root, runtime);
+    renderContextControls(root, runtime);
+  }
+}
+
+function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent): void {
+  if (runtime.syncDegraded) {
+    return;
+  }
+
+  runtime.bridge.publish({
+    type: "sync-ack",
+    probeId: event.probeId,
+    targetWindowId: event.sourceWindowId,
+    sourceWindowId: runtime.windowId,
+  });
+}
+
+function handleSyncAck(root: HTMLElement, runtime: ShellRuntime, event: SyncAckEvent): boolean {
+  if (event.targetWindowId !== runtime.windowId) {
+    return false;
+  }
+
+  if (!runtime.syncDegraded || !runtime.pendingProbeId || event.probeId !== runtime.pendingProbeId) {
+    return true;
+  }
+
+  runtime.pendingProbeId = null;
+  runtime.syncDegraded = false;
+  runtime.syncDegradedReason = null;
+  runtime.bridge.recover();
+  updateWindowReadOnlyState(root, runtime);
+  renderSyncStatus(root, runtime);
+  renderContextControls(root, runtime);
+  return true;
 }
 
 function escapeHtml(value: string): string {

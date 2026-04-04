@@ -4,6 +4,10 @@ export interface SelectionSyncEvent {
   selectedPartTitle: string;
   selectedOrderId?: string | null;
   selectedVesselId?: string | null;
+  revision?: {
+    timestamp: number;
+    writer: string;
+  };
   sourceWindowId: string;
 }
 
@@ -42,17 +46,39 @@ export interface DndSessionDeleteEvent {
   sourceWindowId: string;
 }
 
+export interface SyncProbeEvent {
+  type: "sync-probe";
+  probeId: string;
+  sourceWindowId: string;
+}
+
+export interface SyncAckEvent {
+  type: "sync-ack";
+  probeId: string;
+  targetWindowId: string;
+  sourceWindowId: string;
+}
+
+export interface WindowBridgeHealth {
+  degraded: boolean;
+  reason: "unavailable" | "channel-error" | "publish-failed" | null;
+}
+
 export type WindowBridgeEvent =
   | SelectionSyncEvent
   | ContextSyncEvent
   | PopoutRestoreRequestEvent
   | DndSessionUpsertEvent
-  | DndSessionDeleteEvent;
+  | DndSessionDeleteEvent
+  | SyncProbeEvent
+  | SyncAckEvent;
 
 export interface WindowBridge {
   readonly available: boolean;
-  publish(event: WindowBridgeEvent): void;
+  publish(event: WindowBridgeEvent): boolean;
   subscribe(listener: (event: WindowBridgeEvent) => void): () => void;
+  subscribeHealth(listener: (health: WindowBridgeHealth) => void): () => void;
+  recover(): void;
 }
 
 export function createWindowBridge(channelName: string): WindowBridge {
@@ -62,8 +88,29 @@ export function createWindowBridge(channelName: string): WindowBridge {
 
   const channel = new BroadcastChannel(channelName);
   const listeners = new Set<(event: WindowBridgeEvent) => void>();
+  const healthListeners = new Set<(health: WindowBridgeHealth) => void>();
+  let health: WindowBridgeHealth = {
+    degraded: false,
+    reason: null,
+  };
+
+  const setHealth = (next: WindowBridgeHealth) => {
+    if (health.degraded === next.degraded && health.reason === next.reason) {
+      return;
+    }
+
+    health = next;
+    for (const listener of healthListeners) {
+      listener(health);
+    }
+  };
 
   channel.addEventListener("message", (messageEvent: MessageEvent<unknown>) => {
+    setHealth({
+      degraded: false,
+      reason: null,
+    });
+
     const event = parseBridgeEvent(messageEvent.data);
     if (!event) {
       return;
@@ -74,10 +121,30 @@ export function createWindowBridge(channelName: string): WindowBridge {
     }
   });
 
+  channel.addEventListener("messageerror", () => {
+    setHealth({
+      degraded: true,
+      reason: "channel-error",
+    });
+  });
+
   return {
     available: true,
     publish(event) {
-      channel.postMessage(event);
+      try {
+        channel.postMessage(event);
+        setHealth({
+          degraded: false,
+          reason: null,
+        });
+        return true;
+      } catch {
+        setHealth({
+          degraded: true,
+          reason: "publish-failed",
+        });
+        return false;
+      }
     },
     subscribe(listener) {
       listeners.add(listener);
@@ -85,19 +152,46 @@ export function createWindowBridge(channelName: string): WindowBridge {
         listeners.delete(listener);
       };
     },
+    subscribeHealth(listener) {
+      healthListeners.add(listener);
+      listener(health);
+      return () => {
+        healthListeners.delete(listener);
+      };
+    },
+    recover() {
+      setHealth({
+        degraded: false,
+        reason: null,
+      });
+    },
   };
 }
 
 function createUnavailableBridge(): WindowBridge {
+  const health: WindowBridgeHealth = {
+    degraded: true,
+    reason: "unavailable",
+  };
+
   return {
     available: false,
     publish() {
-      // no-op fallback
+      return false;
     },
     subscribe() {
       return () => {
         // no-op fallback
       };
+    },
+    subscribeHealth(listener) {
+      listener(health);
+      return () => {
+        // no-op fallback
+      };
+    },
+    recover() {
+      // unavailable transport cannot recover at runtime
     },
   };
 }
@@ -114,6 +208,7 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
       typeof event.selectedPartTitle === "string" &&
       isOptionalNullableString(event.selectedOrderId) &&
       isOptionalNullableString(event.selectedVesselId) &&
+      isOptionalRevision(event.revision) &&
       typeof event.sourceWindowId === "string"
     ) {
       return event as SelectionSyncEvent;
@@ -161,6 +256,24 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
   if (event.type === "dnd-session-delete") {
     if (typeof event.id === "string" && typeof event.sourceWindowId === "string") {
       return event as DndSessionDeleteEvent;
+    }
+    return null;
+  }
+
+  if (event.type === "sync-probe") {
+    if (typeof event.probeId === "string" && typeof event.sourceWindowId === "string") {
+      return event as SyncProbeEvent;
+    }
+    return null;
+  }
+
+  if (event.type === "sync-ack") {
+    if (
+      typeof event.probeId === "string" &&
+      typeof event.targetWindowId === "string" &&
+      typeof event.sourceWindowId === "string"
+    ) {
+      return event as SyncAckEvent;
     }
     return null;
   }
