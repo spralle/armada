@@ -604,6 +604,125 @@ test("intent runtime returns clear feedback for no matches", () => {
   }
 });
 
+test("demo local plugins resolve single-match autorun for order->vessel intent", () => {
+  const catalog = createActionCatalogFromRegistrySnapshot({
+    plugins: [
+      {
+        id: "com.armada.domain.unplanned-orders",
+        enabled: true,
+        loadMode: "local-source",
+        contract: {
+          manifest: {
+            id: "com.armada.domain.unplanned-orders",
+            name: "Unplanned Orders",
+            version: "0.1.0",
+          },
+          contributes: {
+            actions: [
+              {
+                id: "domain.orders.assign-to-vessel",
+                title: "Assign order to selected vessel",
+                handler: "assignOrderToVessel",
+                intentType: "domain.orders.assign-to-vessel",
+                when: {
+                  sourceType: "order",
+                  targetType: "vessel",
+                },
+              },
+            ],
+          },
+        } as any,
+      },
+    ],
+  });
+
+  const resolution = resolveIntent(catalog, {
+    type: "domain.orders.assign-to-vessel",
+    facts: {
+      sourceType: "order",
+      targetType: "vessel",
+      target: {
+        vesselClass: "ROPAX",
+      },
+    },
+  });
+
+  assertEqual(resolution.kind, "single-match", "demo unplanned orders action should autorun as single match");
+});
+
+test("demo local plugins resolve chooser for order->vessel intent on RORO", () => {
+  const catalog = createActionCatalogFromRegistrySnapshot({
+    plugins: [
+      {
+        id: "com.armada.domain.unplanned-orders",
+        enabled: true,
+        loadMode: "local-source",
+        contract: {
+          manifest: {
+            id: "com.armada.domain.unplanned-orders",
+            name: "Unplanned Orders",
+            version: "0.1.0",
+          },
+          contributes: {
+            actions: [
+              {
+                id: "domain.orders.assign-to-vessel",
+                title: "Assign order to selected vessel",
+                handler: "assignOrderToVessel",
+                intentType: "domain.orders.assign-to-vessel",
+                when: {
+                  sourceType: "order",
+                  targetType: "vessel",
+                },
+              },
+            ],
+          },
+        } as any,
+      },
+      {
+        id: "com.armada.domain.vessel-view",
+        enabled: true,
+        loadMode: "local-source",
+        contract: {
+          manifest: {
+            id: "com.armada.domain.vessel-view",
+            name: "Vessel View (RORO/ROPAX)",
+            version: "0.1.0",
+          },
+          contributes: {
+            actions: [
+              {
+                id: "domain.vessel.assign-roro",
+                title: "Assign order to RORO vessel",
+                handler: "assignOrderToRoroVessel",
+                intentType: "domain.orders.assign-to-vessel",
+                when: {
+                  sourceType: "order",
+                  targetType: "vessel",
+                  "target.vesselClass": "RORO",
+                },
+              },
+            ],
+          },
+        } as any,
+      },
+    ],
+  });
+
+  const resolution = resolveIntent(catalog, {
+    type: "domain.orders.assign-to-vessel",
+    facts: {
+      sourceType: "order",
+      targetType: "vessel",
+      target: {
+        vesselClass: "RORO",
+      },
+    },
+  });
+
+  assertEqual(resolution.kind, "multiple-matches", "demo order->vessel flow should open chooser for RORO");
+});
+
 test("context persistence restores full required state payload after reload", () => {
   const storage = new MemoryStorage();
   const persistence = createLocalStorageContextStatePersistence(storage, {
