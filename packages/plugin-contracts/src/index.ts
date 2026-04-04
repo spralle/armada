@@ -19,10 +19,14 @@ export interface PluginPartContribution {
   component: string;
 }
 
-export interface PluginCommandContribution {
+export type PluginActionWhenPredicate = Record<string, unknown>;
+
+export interface PluginActionContribution {
   id: string;
   title: string;
   handler: string;
+  intentType: string;
+  when: PluginActionWhenPredicate;
 }
 
 export interface PluginSelectionContribution {
@@ -43,7 +47,7 @@ export interface PluginPopoutCapabilityFlags {
 export interface PluginContributions {
   views?: PluginViewContribution[] | undefined;
   parts?: PluginPartContribution[] | undefined;
-  commands?: PluginCommandContribution[] | undefined;
+  actions?: PluginActionContribution[] | undefined;
   selection?: PluginSelectionContribution[] | undefined;
   dragDropSessionReferences?: PluginDragDropSessionReference[] | undefined;
   popoutCapabilities?: PluginPopoutCapabilityFlags | undefined;
@@ -98,11 +102,15 @@ export const pluginPartContributionSchema = z
   })
   .strict();
 
-export const pluginCommandContributionSchema = z
+export const pluginActionWhenPredicateSchema = z.object({}).catchall(z.unknown());
+
+export const pluginActionContributionSchema = z
   .object({
     id: nonEmptyString,
     title: nonEmptyString,
     handler: nonEmptyString,
+    intentType: nonEmptyString,
+    when: pluginActionWhenPredicateSchema,
   })
   .strict();
 
@@ -131,7 +139,7 @@ export const pluginContributionsSchema = z
   .object({
     views: z.array(pluginViewContributionSchema).optional(),
     parts: z.array(pluginPartContributionSchema).optional(),
-    commands: z.array(pluginCommandContributionSchema).optional(),
+    actions: z.array(pluginActionContributionSchema).optional(),
     selection: z.array(pluginSelectionContributionSchema).optional(),
     dragDropSessionReferences: z
       .array(pluginDragDropSessionReferenceSchema)

@@ -29,11 +29,16 @@ test("returns typed data for a valid plugin contract", () => {
           component: "ValidPart",
         },
       ],
-      commands: [
+      actions: [
         {
-          id: "valid.command",
+          id: "valid.action",
           title: "Run Valid",
           handler: "runValid",
+          intentType: "workbench.run-valid",
+          when: {
+            entityType: "workbench.node",
+            hasSelection: true,
+          },
         },
       ],
       selection: [
@@ -145,6 +150,33 @@ test("rejects unexpected top-level fields", () => {
       (error) => error.path === "" && error.code === "unrecognized_keys",
     );
     assert.equal(hasUnexpectedFieldError, true);
+  }
+});
+
+test("rejects legacy contributes.commands in favor of contributes.actions", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "com.armada.legacy-commands",
+      name: "Legacy Commands Plugin",
+      version: "1.0.0",
+    },
+    contributes: {
+      commands: [
+        {
+          id: "legacy.command",
+          title: "Legacy Command",
+          handler: "runLegacy",
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    const hasLegacyCommandsError = result.errors.some(
+      (error) => error.path === "contributes" && error.code === "unrecognized_keys",
+    );
+    assert.equal(hasLegacyCommandsError, true);
   }
 });
 
