@@ -1,0 +1,8 @@
+{
+  "name": "@armada/shell-app",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@armada/plugin-contracts": "file:../../packages/plugin-contracts"
+  }
+}
