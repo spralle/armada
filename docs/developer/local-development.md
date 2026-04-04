@@ -67,7 +67,7 @@ http://127.0.0.1:5173
 Expected dev ports:
 
 - Shell (Vite): `5173`
-- Backend API (Bun.serve): `8787`
+- Backend API (Bun.serve, with Node `node:http` fallback): `8787`
 
 In dev, requests to `/api/*` from the shell are proxied by Vite to `http://127.0.0.1:8787`.
 
