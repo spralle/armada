@@ -22,6 +22,10 @@ import {
   type SelectionSyncEvent,
   type WindowBridge,
 } from "./window-bridge.js";
+import {
+  resolveOrder,
+  resolveVessel,
+} from "./domain-demo-data.js";
 
 const BRIDGE_CHANNEL = "armada.shell.window-bridge.v1";
 const DRAG_REF_PREFIX = "armada-dnd-ref:";
@@ -50,6 +54,8 @@ interface ShellRuntime {
   isPopout: boolean;
   selectedPartId: string | null;
   selectedPartTitle: string | null;
+  selectedOrderId: string | null;
+  selectedVesselId: string | null;
   contextKey: string;
   contextValue: string;
   notice: string;
@@ -143,6 +149,8 @@ const shellRuntime: ShellRuntime = {
   isPopout: popoutParams.isPopout,
   selectedPartId: null,
   selectedPartTitle: null,
+  selectedOrderId: null,
+  selectedVesselId: null,
   contextKey: "demo.selection",
   contextValue: "none",
   notice: "",
@@ -197,6 +205,17 @@ function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
     .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
     .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
     .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
+    .domain-panel { display: grid; gap: 6px; }
+    .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
+    .domain-list { display: grid; gap: 6px; }
+    .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 6px; padding: 8px; cursor: pointer; }
+    .domain-row:hover { border-color: #7cb4ff; }
+    .domain-row.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff44 inset; }
+    @container (max-width: 420px) {
+      .part-actions { flex-wrap: wrap; }
+      .domain-row { font-size: 12px; padding: 6px; }
+      .domain-row span { white-space: normal; }
+    }
   </style>
   <main class="shell" id="shell-root">
     <section class="slot slot-side" data-slot="side">
@@ -229,12 +248,23 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
     body { margin: 0; background: #14161a; color: #e9edf3; }
     .popout { padding: 12px; }
     .card { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; }
-    .part-root { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; }
+    .part-root { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; container-type: inline-size; }
     .part-root.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff33 inset; }
     .part-actions { display: flex; gap: 8px; margin-bottom: 8px; }
     .part-actions button { background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 4px 8px; cursor: pointer; }
     .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
     .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
+    .domain-panel { display: grid; gap: 6px; }
+    .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
+    .domain-list { display: grid; gap: 6px; }
+    .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 6px; padding: 8px; cursor: pointer; }
+    .domain-row:hover { border-color: #7cb4ff; }
+    .domain-row.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff44 inset; }
+    @container (max-width: 420px) {
+      .part-actions { flex-wrap: wrap; }
+      .domain-row { font-size: 12px; padding: 6px; }
+      .domain-row span { white-space: normal; }
+    }
   </style>
   <main class="popout">
     <section class="card" id="sync-status"></section>
@@ -331,7 +361,10 @@ function renderPartCard(
         ${popoutButton}
         ${restoreButton}
       </div>
-      ${part.render()}
+      ${part.render({
+    selectedOrderId: runtime.selectedOrderId,
+    selectedVesselId: runtime.selectedVesselId,
+  })}
       <div class="dropzone" data-dropzone-for="${part.id}">Drop cross-window payload here</div>
       <p class="runtime-note" data-drop-result-for="${part.id}"></p>
       <p class="runtime-note">Window: ${runtime.windowId}</p>
@@ -359,6 +392,95 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
         type: "selection",
         selectedPartId: partId,
         selectedPartTitle: partTitle,
+        sourceWindowId: runtime.windowId,
+      });
+    });
+  }
+
+  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='select-order']")) {
+    button.addEventListener("click", () => {
+      const orderId = button.dataset.orderId;
+      if (!orderId) {
+        return;
+      }
+
+      const order = resolveOrder(orderId);
+      if (!order) {
+        return;
+      }
+
+      runtime.selectedOrderId = order.id;
+      runtime.selectedVesselId = order.vesselId;
+
+      applySelection(root, runtime, {
+        type: "selection",
+        selectedPartId: "domain.unplanned-orders.part",
+        selectedPartTitle: `Order ${order.reference}`,
+        sourceWindowId: runtime.windowId,
+      });
+
+      runtime.contextKey = "domain.selection";
+      runtime.contextValue = `order:${order.id}|vessel:${order.vesselId}`;
+      renderParts(root, runtime);
+      renderContextControls(root, runtime);
+      renderSyncStatus(root, runtime);
+
+      runtime.bridge.publish({
+        type: "selection",
+        selectedPartId: "domain.unplanned-orders.part",
+        selectedPartTitle: `Order ${order.reference}`,
+        sourceWindowId: runtime.windowId,
+      });
+      runtime.bridge.publish({
+        type: "context",
+        contextKey: runtime.contextKey,
+        contextValue: runtime.contextValue,
+        sourceWindowId: runtime.windowId,
+      });
+    });
+  }
+
+  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='select-vessel']")) {
+    button.addEventListener("click", () => {
+      const vesselId = button.dataset.vesselId;
+      if (!vesselId) {
+        return;
+      }
+
+      const vessel = resolveVessel(vesselId);
+      if (!vessel) {
+        return;
+      }
+
+      runtime.selectedVesselId = vessel.id;
+      const selectedOrder = runtime.selectedOrderId ? resolveOrder(runtime.selectedOrderId) : null;
+      if (!selectedOrder || selectedOrder.vesselId !== vessel.id) {
+        runtime.selectedOrderId = null;
+      }
+
+      applySelection(root, runtime, {
+        type: "selection",
+        selectedPartId: "domain.vessel-view.part",
+        selectedPartTitle: `Vessel ${vessel.name}`,
+        sourceWindowId: runtime.windowId,
+      });
+
+      runtime.contextKey = "domain.selection";
+      runtime.contextValue = `vessel:${vessel.id}`;
+      renderParts(root, runtime);
+      renderContextControls(root, runtime);
+      renderSyncStatus(root, runtime);
+
+      runtime.bridge.publish({
+        type: "selection",
+        selectedPartId: "domain.vessel-view.part",
+        selectedPartTitle: `Vessel ${vessel.name}`,
+        sourceWindowId: runtime.windowId,
+      });
+      runtime.bridge.publish({
+        type: "context",
+        contextKey: runtime.contextKey,
+        contextValue: runtime.contextValue,
         sourceWindowId: runtime.windowId,
       });
     });
