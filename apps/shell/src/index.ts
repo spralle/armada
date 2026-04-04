@@ -1,5 +1,6 @@
 import {
   type PluginContract,
+  type PluginSelectionContribution,
 } from "@armada/plugin-contracts";
 import { createDragSessionBroker } from "./dnd-session-broker.js";
 import {
@@ -26,17 +27,20 @@ import {
   type WindowBridgeHealth,
 } from "./window-bridge.js";
 import {
+  getOrdersForVessel,
   resolveOrder,
   resolveVessel,
 } from "./domain-demo-data.js";
 import {
-  addEntityTypeSelectionId,
+  applySelectionUpdate,
   createInitialShellContextState,
+  type DerivedLaneDefinition,
   getTabGroupId,
   readEntityTypeSelection,
   readGlobalLane,
   readGroupLaneForTab,
   registerTab,
+  type SelectionPropagationRule,
   setActiveTab,
   writeGlobalLane,
   writeGroupLaneByGroup,
@@ -791,7 +795,14 @@ function applySelection(
   if (event.selectedVesselId !== undefined) {
     runtime.selectedVesselId = event.selectedVesselId;
   }
-  runtime.contextState = syncSelectionGraphFromEvent(runtime.contextState, event);
+  const selectionPropagation = applySelectionPropagation(root, runtime, event, revision);
+  runtime.contextState = selectionPropagation.state;
+  runtime.selectedOrderId = readEntityTypeSelection(runtime.contextState, "order").priorityId;
+  runtime.selectedVesselId = readEntityTypeSelection(runtime.contextState, "vessel").priorityId;
+
+  if (selectionPropagation.derivedLaneFailures.length > 0) {
+    runtime.notice = `Derived lane failures: ${selectionPropagation.derivedLaneFailures.join(", ")}`;
+  }
   renderParts(root, runtime);
   updateSelectedStyles(root, runtime.selectedPartId);
   renderSyncStatus(root, runtime);
@@ -851,28 +862,260 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
   `;
 }
 
-function syncSelectionGraphFromEvent(
-  state: ShellContextState,
+function applySelectionPropagation(
+  _root: HTMLElement,
+  runtime: ShellRuntime,
   event: SelectionSyncEvent,
-): ShellContextState {
-  let next = state;
-  if (event.selectedOrderId !== undefined && event.selectedOrderId !== null) {
-    next = addEntityTypeSelectionId(next, {
+  revision: RevisionMeta,
+): { state: ShellContextState; derivedLaneFailures: string[] } {
+  const { propagationRules, derivedLanes } = resolveSelectionGraphExtensions(runtime);
+  const writes = resolveSelectionWritesFromEvent(event);
+  const derivedGroupId = resolveDerivedGroupId(runtime, event.selectedPartId);
+  let next = runtime.contextState;
+  const failures: string[] = [];
+
+  for (const write of writes) {
+    const result = applySelectionUpdate(next, {
+      entityType: write.entityType,
+      selectedIds: write.selectedIds,
+      priorityId: write.priorityId,
+      revision,
+    }, {
+      propagationRules,
+      derivedLanes,
+      derivedGroupId,
+    });
+    next = result.state;
+    failures.push(...result.derivedLaneFailures);
+  }
+
+  return {
+    state: next,
+    derivedLaneFailures: failures,
+  };
+}
+
+function resolveSelectionWritesFromEvent(event: SelectionSyncEvent): Array<{
+  entityType: string;
+  selectedIds: string[];
+  priorityId: string | null;
+}> {
+  const writes: Array<{
+    entityType: string;
+    selectedIds: string[];
+    priorityId: string | null;
+  }> = [];
+
+  if (event.selectedOrderId !== undefined) {
+    writes.push({
       entityType: "order",
-      id: event.selectedOrderId,
-      prioritize: true,
+      selectedIds: event.selectedOrderId ? [event.selectedOrderId] : [],
+      priorityId: event.selectedOrderId,
     });
   }
 
-  if (event.selectedVesselId !== undefined && event.selectedVesselId !== null) {
-    next = addEntityTypeSelectionId(next, {
+  if (event.selectedVesselId !== undefined) {
+    writes.push({
       entityType: "vessel",
-      id: event.selectedVesselId,
-      prioritize: true,
+      selectedIds: event.selectedVesselId ? [event.selectedVesselId] : [],
+      priorityId: event.selectedVesselId,
     });
   }
 
-  return next;
+  return writes;
+}
+
+function resolveDerivedGroupId(runtime: ShellRuntime, tabId: string | null): string | undefined {
+  const fromTab = tabId ? getTabGroupId(runtime.contextState, tabId) : null;
+  if (fromTab) {
+    return fromTab;
+  }
+
+  const activeTabId = runtime.contextState.activeTabId;
+  if (!activeTabId) {
+    return undefined;
+  }
+
+  return getTabGroupId(runtime.contextState, activeTabId) ?? undefined;
+}
+
+function resolveSelectionGraphExtensions(runtime: ShellRuntime): {
+  propagationRules: SelectionPropagationRule[];
+  derivedLanes: DerivedLaneDefinition[];
+} {
+  const snapshot = runtime.registry.getSnapshot();
+  const propagationRules: SelectionPropagationRule[] = [];
+  const derivedLanes: DerivedLaneDefinition[] = [];
+
+  for (const plugin of snapshot.plugins) {
+    if (!plugin.enabled || !plugin.contract?.contributes) {
+      continue;
+    }
+
+    const source = plugin.contract.contributes.selection ?? [];
+    for (const contribution of source) {
+      const rule = createSelectionPropagationRule(plugin.id, contribution);
+      if (rule) {
+        propagationRules.push(rule);
+      }
+    }
+
+    const derived = readPluginDerivedLaneContributions(plugin.contract);
+    for (const lane of derived) {
+      derivedLanes.push(createDerivedLaneDefinition(plugin.id, lane));
+    }
+  }
+
+  return {
+    propagationRules,
+    derivedLanes,
+  };
+}
+
+function createSelectionPropagationRule(
+  pluginId: string,
+  contribution: PluginSelectionContribution,
+): SelectionPropagationRule | null {
+  const sourceEntityType =
+    readSelectionSourceEntityType(contribution) ?? inferSourceEntityType(contribution.target);
+  if (!sourceEntityType) {
+    return null;
+  }
+
+  return {
+    id: `${pluginId}:${contribution.id}`,
+    sourceEntityType,
+    propagate: ({ sourceSelection, state }) => {
+      const sourcePriorityId = sourceSelection.priorityId;
+      if (!sourcePriorityId) {
+        return {
+          entityType: contribution.target,
+          selectedIds: [],
+          priorityId: null,
+        };
+      }
+
+      if (sourceEntityType === "order" && contribution.target === "vessel") {
+        const order = resolveOrder(sourcePriorityId);
+        if (!order) {
+          return {
+            entityType: "vessel",
+            selectedIds: [],
+            priorityId: null,
+          };
+        }
+
+        return {
+          entityType: "vessel",
+          selectedIds: [order.vesselId],
+          priorityId: order.vesselId,
+        };
+      }
+
+      if (sourceEntityType === "vessel" && contribution.target === "order") {
+        const orderIds = getOrdersForVessel(sourcePriorityId).map((order) => order.id);
+        const previousPriority = readEntityTypeSelection(state, "order").priorityId;
+        return {
+          entityType: "order",
+          selectedIds: orderIds,
+          priorityId: previousPriority && orderIds.includes(previousPriority) ? previousPriority : (orderIds[0] ?? null),
+        };
+      }
+
+      return {
+        entityType: contribution.target,
+        selectedIds: sourceSelection.selectedIds,
+        priorityId: sourceSelection.priorityId,
+      };
+    },
+  };
+}
+
+function createDerivedLaneDefinition(
+  pluginId: string,
+  lane: RuntimeDerivedLaneContribution,
+): DerivedLaneDefinition {
+  return {
+    key: lane.key,
+    valueType: lane.valueType,
+    sourceEntityType: lane.sourceEntityType,
+    scope: lane.scope,
+    derive: ({ sourceSelection }) => {
+      if (lane.strategy === "priority-id") {
+        return sourceSelection.priorityId ?? "none";
+      }
+
+      return sourceSelection.selectedIds.join(",");
+    },
+  };
+}
+
+interface RuntimeDerivedLaneContribution {
+  id: string;
+  key: string;
+  sourceEntityType: string;
+  scope: "global" | "group";
+  valueType: string;
+  strategy: "priority-id" | "joined-selected-ids";
+}
+
+function readSelectionSourceEntityType(contribution: PluginSelectionContribution): string | null {
+  const value = (contribution as PluginSelectionContribution & { source?: unknown }).source;
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function readPluginDerivedLaneContributions(contract: PluginContract): RuntimeDerivedLaneContribution[] {
+  const raw = (contract.contributes as { derivedLanes?: unknown } | undefined)?.derivedLanes;
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const lanes: RuntimeDerivedLaneContribution[] = [];
+  for (const item of raw) {
+    const parsed = parseRuntimeDerivedLaneContribution(item);
+    if (parsed) {
+      lanes.push(parsed);
+    }
+  }
+
+  return lanes;
+}
+
+function parseRuntimeDerivedLaneContribution(value: unknown): RuntimeDerivedLaneContribution | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const lane = value as Partial<RuntimeDerivedLaneContribution>;
+  if (
+    typeof lane.id !== "string" ||
+    typeof lane.key !== "string" ||
+    typeof lane.sourceEntityType !== "string" ||
+    (lane.scope !== "global" && lane.scope !== "group") ||
+    typeof lane.valueType !== "string" ||
+    (lane.strategy !== "priority-id" && lane.strategy !== "joined-selected-ids")
+  ) {
+    return null;
+  }
+
+  return {
+    id: lane.id,
+    key: lane.key,
+    sourceEntityType: lane.sourceEntityType,
+    scope: lane.scope,
+    valueType: lane.valueType,
+    strategy: lane.strategy,
+  };
+}
+
+function inferSourceEntityType(target: string): string | null {
+  if (target === "vessel") {
+    return "order";
+  }
+  if (target === "order") {
+    return "vessel";
+  }
+  return null;
 }
 
 function renderBridgeWarning(runtime: ShellRuntime): string {
