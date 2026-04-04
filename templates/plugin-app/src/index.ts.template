@@ -1,0 +1,18 @@
+import type { PluginContract } from "@armada/plugin-contracts";
+
+export const pluginContract: PluginContract = {
+  manifest: {
+    id: "com.armada.__PLUGIN_NAME__",
+    name: "__PLUGIN_TITLE__",
+    version: "0.1.0",
+  },
+  contributes: {
+    views: [
+      {
+        id: "__PLUGIN_NAME__.view",
+        title: "__PLUGIN_TITLE__ View",
+        component: "__PLUGIN_COMPONENT__",
+      },
+    ],
+  },
+};

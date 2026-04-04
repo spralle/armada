@@ -5,7 +5,19 @@
       "path": "./packages/plugin-contracts"
     },
     {
+      "path": "./apps/shell"
+    },
+    {
+      "path": "./apps/backend"
+    },
+    {
+      "path": "./apps/plugin-starter"
+    },
+    {
       "path": "./apps/typecheck-fixture"
+    },
+    {
+      "path": "./apps/sample-contract-consumer-plugin"
     }
   ]
 }

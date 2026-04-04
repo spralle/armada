@@ -4,10 +4,10 @@
 *.db
 .beads-credential-key
 
-# Local dependencies and generated output
+# Dependencies and local build artifacts
 node_modules/
-dist/
-*.tsbuildinfo
+**/dist/
+**/*.tsbuildinfo
 
 # Local worktrees
 worktrees/
