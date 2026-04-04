@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parsePluginContract } from "../dist/index.js";
+import {
+  evaluateShellPluginCompatibility,
+  parsePluginContract,
+} from "../dist/index.js";
 
 test("returns typed data for a valid plugin contract", () => {
   const result = parsePluginContract({
@@ -121,4 +124,29 @@ test("rejects unexpected top-level fields", () => {
     );
     assert.equal(hasUnexpectedFieldError, true);
   }
+});
+
+test("compatibility: major mismatch returns actionable reason", () => {
+  const result = evaluateShellPluginCompatibility("^2.1.0", "^1.9.0");
+
+  assert.equal(result.compatible, false);
+  if (!result.compatible) {
+    assert.equal(result.code, "MAJOR_MISMATCH");
+    assert.match(result.message, /major versions/i);
+  }
+});
+
+test("compatibility: minor-forward overlap is allowed", () => {
+  const result = evaluateShellPluginCompatibility("^1.4.0", "^1.2.0");
+
+  assert.equal(result.compatible, true);
+  if (result.compatible) {
+    assert.match(result.message, /semver-compatible/i);
+  }
+});
+
+test("compatibility: exact and patch-safe range is allowed", () => {
+  const result = evaluateShellPluginCompatibility("~1.2.0", "1.2.5");
+
+  assert.equal(result.compatible, true);
 });
