@@ -14,6 +14,8 @@ interface TenantPluginManifestResponse {
 }
 
 const DEFAULT_TENANT = "demo";
+const BACKEND_DEV_HOST = "127.0.0.1";
+const BACKEND_DEV_PORT = 8787;
 
 const inMemoryTenantPluginDescriptors: Readonly<Record<string, TenantPluginDescriptor[]>> = {
   demo: [
@@ -81,6 +83,50 @@ export function resolveTenantManifestRequest(
   const tenantId = decodeURIComponent(match[1]);
   return getTenantManifestResponse(tenantId);
 }
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+    },
+  });
+}
+
+function startBackendDevServer(): void {
+  const bun = (globalThis as { Bun?: { serve: (options: { hostname: string; port: number; fetch: (request: Request) => Response; }) => unknown; }; }).Bun;
+  if (!bun) {
+    return;
+  }
+
+  bun.serve({
+    hostname: BACKEND_DEV_HOST,
+    port: BACKEND_DEV_PORT,
+    fetch(request) {
+      const url = new URL(request.url);
+      const manifest = resolveTenantManifestRequest(url.pathname);
+      if (manifest) {
+        return jsonResponse(manifest);
+      }
+
+      return jsonResponse(
+        {
+          error: "not_found",
+          message: `No route for ${url.pathname}`,
+        },
+        404,
+      );
+    },
+  });
+
+  console.log("[backend] dev server listening", {
+    host: BACKEND_DEV_HOST,
+    port: BACKEND_DEV_PORT,
+    examplePath: getTenantManifestEndpointPath(DEFAULT_TENANT),
+  });
+}
+
+startBackendDevServer();
 
 console.log("[backend] tenant manifest endpoint ready", {
   examplePath: getTenantManifestEndpointPath(DEFAULT_TENANT),
