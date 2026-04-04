@@ -25,6 +25,30 @@ export interface IntentActionMatch extends RuntimeActionDescriptor {
   sortKey: string;
 }
 
+export interface PredicateFailureTrace {
+  path: string;
+  actual: unknown;
+  condition: unknown;
+}
+
+export interface IntentActionTrace extends RuntimeActionDescriptor {
+  intentTypeMatch: boolean;
+  predicateMatched: boolean;
+  failedPredicates: PredicateFailureTrace[];
+}
+
+export interface IntentResolutionTrace {
+  intentType: string;
+  evaluatedAt: number;
+  actions: IntentActionTrace[];
+  matched: IntentActionMatch[];
+}
+
+export interface IntentResolutionWithTrace {
+  resolution: IntentResolution;
+  trace: IntentResolutionTrace;
+}
+
 export type IntentResolution =
   | {
       kind: "no-match";
@@ -79,35 +103,81 @@ export function createActionCatalogFromRegistrySnapshot(snapshot: {
 }
 
 export function resolveIntent(catalog: RuntimeActionDescriptor[], intent: ShellIntent): IntentResolution {
-  const matches = catalog
-    .filter((action) => action.intentType === intent.type)
-    .filter((action) => evaluatePredicate(action.when, intent.facts))
-    .map((action) => ({
+  return resolveIntentWithTrace(catalog, intent).resolution;
+}
+
+export function resolveIntentWithTrace(
+  catalog: RuntimeActionDescriptor[],
+  intent: ShellIntent,
+): IntentResolutionWithTrace {
+  const traces: IntentActionTrace[] = [];
+  const matches: IntentActionMatch[] = [];
+
+  for (const action of catalog) {
+    if (action.intentType !== intent.type) {
+      traces.push({
+        ...action,
+        intentTypeMatch: false,
+        predicateMatched: false,
+        failedPredicates: [],
+      });
+      continue;
+    }
+
+    const predicate = evaluatePredicate(action.when, intent.facts);
+    traces.push({
       ...action,
-      sortKey: `${action.pluginId}::${action.actionId}::${action.handler}::${action.registrationOrder}`,
-    }))
-    .sort(compareMatchesDeterministically);
+      intentTypeMatch: true,
+      predicateMatched: predicate.matched,
+      failedPredicates: predicate.failedPredicates,
+    });
+
+    if (predicate.matched) {
+      matches.push({
+        ...action,
+        sortKey: `${action.pluginId}::${action.actionId}::${action.handler}::${action.registrationOrder}`,
+      });
+    }
+  }
+
+  matches.sort(compareMatchesDeterministically);
+
+  const trace: IntentResolutionTrace = {
+    intentType: intent.type,
+    evaluatedAt: Date.now(),
+    actions: traces,
+    matched: [...matches],
+  };
 
   if (matches.length === 0) {
     return {
-      kind: "no-match",
-      feedback: `No actions matched intent '${intent.type}'.`,
-      matches: [],
+      resolution: {
+        kind: "no-match",
+        feedback: `No actions matched intent '${intent.type}'.`,
+        matches: [],
+      },
+      trace,
     };
   }
 
   if (matches.length === 1) {
     return {
-      kind: "single-match",
-      feedback: `Running '${matches[0].title}' automatically.`,
-      matches: [matches[0]],
+      resolution: {
+        kind: "single-match",
+        feedback: `Running '${matches[0].title}' automatically.`,
+        matches: [matches[0]],
+      },
+      trace,
     };
   }
 
   return {
-    kind: "multiple-matches",
-    feedback: `Choose an action for intent '${intent.type}' (${matches.length} matches).`,
-    matches,
+    resolution: {
+      kind: "multiple-matches",
+      feedback: `Choose an action for intent '${intent.type}' (${matches.length} matches).`,
+      matches,
+    },
+    trace,
   };
 }
 
@@ -137,14 +207,26 @@ function readPluginActions(contract: PluginContract): {
   return contributes?.actions ?? [];
 }
 
-function evaluatePredicate(predicate: Record<string, unknown>, facts: IntentFactBag): boolean {
+function evaluatePredicate(
+  predicate: Record<string, unknown>,
+  facts: IntentFactBag,
+): { matched: boolean; failedPredicates: PredicateFailureTrace[] } {
+  const failedPredicates: PredicateFailureTrace[] = [];
   for (const [key, condition] of Object.entries(predicate)) {
     const value = getFactValue(facts, key);
     if (!matchesCondition(value, condition)) {
-      return false;
+      failedPredicates.push({
+        path: key,
+        actual: value,
+        condition,
+      });
     }
   }
-  return true;
+
+  return {
+    matched: failedPredicates.length === 0,
+    failedPredicates,
+  };
 }
 
 function getFactValue(facts: IntentFactBag, path: string): unknown {
