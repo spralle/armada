@@ -15,6 +15,10 @@ import {
   writeGroupLaneByTab,
   writeTabSubcontext,
 } from "./context-state.js";
+import {
+  createActionCatalogFromRegistrySnapshot,
+  resolveIntent,
+} from "./intent-runtime.js";
 
 type TestCase = {
   name: string;
@@ -298,6 +302,170 @@ test("global lane LWW uses timestamp and writer tie-break deterministically", ()
     "same-ts-higher-writer",
     "higher writer should win at same timestamp for global lane",
   );
+});
+
+test("intent runtime resolves actions by when predicate and autoruns single match", () => {
+  const catalog = createActionCatalogFromRegistrySnapshot({
+    plugins: [
+      {
+        id: "plugin-orders",
+        enabled: true,
+        loadMode: "local-source",
+        contract: {
+          manifest: {
+            id: "plugin-orders",
+            name: "Orders",
+            version: "0.1.0",
+          },
+          contributes: {
+            actions: [
+              {
+                id: "orders.assign",
+                title: "Assign",
+                handler: "assignOrderToVessel",
+                intentType: "domain.orders.assign-to-vessel",
+                when: {
+                  sourceType: "order",
+                  targetType: "vessel",
+                  "target.vesselClass": "RORO",
+                },
+              },
+            ],
+          },
+        } as any,
+      },
+    ],
+  });
+
+  const resolution = resolveIntent(catalog, {
+    type: "domain.orders.assign-to-vessel",
+    facts: {
+      sourceType: "order",
+      targetType: "vessel",
+      target: {
+        vesselClass: "RORO",
+      },
+    },
+  });
+
+  assertEqual(resolution.kind, "single-match", "single matching action should autorun");
+  if (resolution.kind === "single-match") {
+    assertEqual(resolution.matches[0].handler, "assignOrderToVessel", "single match should resolve expected handler");
+  }
+});
+
+test("intent runtime returns chooser for deterministic multiple matches", () => {
+  const catalog = createActionCatalogFromRegistrySnapshot({
+    plugins: [
+      {
+        id: "plugin-b",
+        enabled: true,
+        loadMode: "local-source",
+        contract: {
+          manifest: {
+            id: "plugin-b",
+            name: "Plugin B",
+            version: "0.1.0",
+          },
+          contributes: {
+            actions: [
+              {
+                id: "z-handler",
+                title: "Action Z",
+                handler: "zHandler",
+                intentType: "domain.orders.assign-to-vessel",
+                when: { sourceType: "order" },
+              },
+            ],
+          },
+        } as any,
+      },
+      {
+        id: "plugin-a",
+        enabled: true,
+        loadMode: "local-source",
+        contract: {
+          manifest: {
+            id: "plugin-a",
+            name: "Plugin A",
+            version: "0.1.0",
+          },
+          contributes: {
+            actions: [
+              {
+                id: "a-handler",
+                title: "Action A",
+                handler: "aHandler",
+                intentType: "domain.orders.assign-to-vessel",
+                when: { sourceType: "order" },
+              },
+            ],
+          },
+        } as any,
+      },
+    ],
+  });
+
+  const resolution = resolveIntent(catalog, {
+    type: "domain.orders.assign-to-vessel",
+    facts: {
+      sourceType: "order",
+    },
+  });
+
+  assertEqual(resolution.kind, "multiple-matches", "multiple matching actions should open chooser");
+  if (resolution.kind === "multiple-matches") {
+    assertEqual(resolution.matches[0].pluginId, "plugin-a", "matches must be deterministic by plugin/action sort");
+    assertEqual(resolution.matches[1].pluginId, "plugin-b", "matches must be deterministic by plugin/action sort");
+  }
+});
+
+test("intent runtime returns clear feedback for no matches", () => {
+  const catalog = createActionCatalogFromRegistrySnapshot({
+    plugins: [
+      {
+        id: "plugin-orders",
+        enabled: true,
+        loadMode: "local-source",
+        contract: {
+          manifest: {
+            id: "plugin-orders",
+            name: "Orders",
+            version: "0.1.0",
+          },
+          contributes: {
+            actions: [
+              {
+                id: "orders.assign",
+                title: "Assign",
+                handler: "assignOrderToVessel",
+                intentType: "domain.orders.assign-to-vessel",
+                when: {
+                  sourceType: "order",
+                },
+              },
+            ],
+          },
+        } as any,
+      },
+    ],
+  });
+
+  const resolution = resolveIntent(catalog, {
+    type: "domain.orders.assign-to-vessel",
+    facts: {
+      sourceType: "vessel",
+    },
+  });
+
+  assertEqual(resolution.kind, "no-match", "non-matching intent facts should produce no-match");
+  if (resolution.kind === "no-match") {
+    assertEqual(
+      resolution.feedback,
+      "No actions matched intent 'domain.orders.assign-to-vessel'.",
+      "no-match feedback should be explicit",
+    );
+  }
 });
 
 let passed = 0;
