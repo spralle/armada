@@ -52,7 +52,8 @@ import {
 } from "./context-state.js";
 import {
   createActionCatalogFromRegistrySnapshot,
-  resolveIntent,
+  resolveIntentWithTrace,
+  type IntentResolutionTrace,
   type IntentActionMatch,
   type ShellIntent,
 } from "./intent-runtime.js";
@@ -71,6 +72,7 @@ const DEFAULT_GROUP_ID = "group-main";
 const DEFAULT_GROUP_COLOR = "blue";
 const DOMAIN_CONTEXT_KEY = "domain.selection";
 const GLOBAL_CONTEXT_KEY = "shell.selection";
+const DEV_MODE = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -104,6 +106,7 @@ interface ShellRuntime {
   intentNotice: string;
   pendingIntentMatches: IntentActionMatch[];
   pendingIntent: ShellIntent | null;
+  lastIntentTrace: IntentResolutionTrace | null;
   popoutHandles: Map<string, Window>;
   poppedOutPartIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
@@ -216,6 +219,7 @@ const shellRuntime: ShellRuntime = {
   intentNotice: "",
   pendingIntentMatches: [],
   pendingIntent: null,
+  lastIntentTrace: null,
   popoutHandles: new Map<string, Window>(),
   poppedOutPartIds: new Set<string>(),
   dragSessionBroker: createDragSessionBroker(bridge, windowId),
@@ -286,6 +290,11 @@ function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
     .plugin-notice { margin:0 0 8px; font-size:12px; color:#f5d7b5; }
     .plugin-diag-list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: #c6d0e0; }
     .plugin-diag-list li { margin: 2px 0; }
+    .dev-inspector { border-color: #495f87; background: #0f1622; }
+    .dev-inspector details { margin-bottom: 6px; }
+    .dev-inspector pre { margin: 6px 0; max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; border: 1px solid #334564; background: #0a111c; color: #cfe3ff; font-size: 11px; }
+    .dev-inspector ul { margin: 6px 0; padding-left: 18px; }
+    .dev-inspector li { margin: 3px 0; }
     .domain-panel { display: grid; gap: 6px; }
     .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
     .domain-list { display: grid; gap: 6px; }
@@ -307,6 +316,7 @@ function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
       <section class="card" id="plugin-controls"></section>
       <section class="card" id="sync-status"></section>
       <section class="card" id="context-controls"></section>
+      ${DEV_MODE ? '<section class="card dev-inspector" id="dev-context-inspector"></section>' : ""}
       <section id="slot-side-parts"></section>
     </section>
     <div class="splitter" id="splitter-side" data-pane="side" aria-label="Resize side pane"></div>
@@ -324,6 +334,7 @@ function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
   renderPluginControls(root, runtime);
   renderSyncStatus(root, runtime);
   renderContextControls(root, runtime);
+  renderDevContextInspector(root, runtime);
   updateWindowReadOnlyState(root, runtime);
   setupResize(root, runtime);
 }
@@ -342,6 +353,12 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
     .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
     .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
     .sync-degraded { opacity: 0.62; filter: grayscale(0.5); pointer-events: none; }
+    .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
+    .dev-inspector { border-color: #495f87; background: #0f1622; }
+    .dev-inspector details { margin-bottom: 6px; }
+    .dev-inspector pre { margin: 6px 0; max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; border: 1px solid #334564; background: #0a111c; color: #cfe3ff; font-size: 11px; }
+    .dev-inspector ul { margin: 6px 0; padding-left: 18px; }
+    .dev-inspector li { margin: 3px 0; }
     .domain-panel { display: grid; gap: 6px; }
     .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
     .domain-list { display: grid; gap: 6px; }
@@ -360,6 +377,7 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
   <main class="popout">
     <section class="card" id="sync-status"></section>
     <section class="card" id="context-controls"></section>
+    ${DEV_MODE ? '<section class="card dev-inspector" id="dev-context-inspector"></section>' : ""}
     <section id="popout-slot"></section>
   </main>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -368,6 +386,7 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
   renderParts(root, runtime);
   renderSyncStatus(root, runtime);
   renderContextControls(root, runtime);
+  renderDevContextInspector(root, runtime);
   updateWindowReadOnlyState(root, runtime);
 
   window.addEventListener("beforeunload", () => {
@@ -1070,13 +1089,16 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
     });
   }
 
+  renderDevContextInspector(root, runtime);
   applyPendingFocus(root, runtime);
 }
 
 function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: ShellIntent): void {
   const catalog = createActionCatalogFromRegistrySnapshot(runtime.registry.getSnapshot());
-  const resolution = resolveIntent(catalog, intent);
+  const resolved = resolveIntentWithTrace(catalog, intent);
+  const resolution = resolved.resolution;
   runtime.pendingIntent = intent;
+  runtime.lastIntentTrace = resolved.trace;
 
   if (resolution.kind === "no-match") {
     runtime.pendingIntentMatches = [];
@@ -1100,6 +1122,57 @@ function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: She
   runtime.pendingFocusSelector = "button[data-action='choose-intent-action'][data-intent-index='0']";
   runtime.intentNotice = resolution.feedback;
   announce(root, runtime, `${resolution.feedback} Use arrow keys and Enter to choose an action.`);
+}
+
+function renderDevContextInspector(root: HTMLElement, runtime: ShellRuntime): void {
+  if (!DEV_MODE) {
+    return;
+  }
+
+  const node = root.querySelector<HTMLElement>("#dev-context-inspector");
+  if (!node) {
+    return;
+  }
+
+  const laneMetadata = collectLaneMetadata(runtime.contextState)
+    .map(
+      (item) => `<li><strong>${escapeHtml(item.scope)}</strong> ${escapeHtml(item.key)} = ${escapeHtml(item.value)}<br/><small>revision=${item.revision.timestamp}:${escapeHtml(item.revision.writer)}${item.sourceSelection ? ` | source=${escapeHtml(item.sourceSelection.entityType)}@${item.sourceSelection.revision.timestamp}:${escapeHtml(item.sourceSelection.revision.writer)}` : ""}</small></li>`,
+    )
+    .join("");
+
+  const trace = runtime.lastIntentTrace;
+  const traceSummary = trace
+    ? `<p class="runtime-note"><strong>Intent trace:</strong> ${escapeHtml(trace.intentType)} (${trace.matched.length} matches)</p>`
+    : `<p class="runtime-note"><strong>Intent trace:</strong> none yet</p>`;
+  const traceActions = trace
+    ? trace.actions
+        .map((action) => {
+          const failures = action.failedPredicates.length
+            ? `<pre>${escapeHtml(toPrettyJson(action.failedPredicates))}</pre>`
+            : "<p class=\"runtime-note\">No predicate failures.</p>";
+          return `<details><summary>${escapeHtml(action.pluginId)}.${escapeHtml(action.actionId)} — ${action.intentTypeMatch && action.predicateMatched ? "matched" : "not matched"}</summary>${failures}</details>`;
+        })
+        .join("")
+    : "";
+
+  node.innerHTML = `
+    <h2>Dev context inspector</h2>
+    <p class="runtime-note"><strong>Mode:</strong> development only</p>
+    ${traceSummary}
+    <details>
+      <summary>Current context snapshot</summary>
+      <pre>${escapeHtml(toPrettyJson(runtime.contextState))}</pre>
+    </details>
+    <details>
+      <summary>Revision/source metadata</summary>
+      <ul>${laneMetadata || "<li>No lanes written yet.</li>"}</ul>
+    </details>
+    <details>
+      <summary>Intent/action matching traces</summary>
+      ${traceActions || "<p class=\"runtime-note\">No intent evaluations recorded.</p>"}
+      ${trace ? `<p class="runtime-note"><strong>Matched actions:</strong> ${escapeHtml(trace.matched.map((item) => `${item.pluginId}.${item.actionId}`).join(", ") || "none")}</p>` : ""}
+    </details>
+  `;
 }
 
 function executeResolvedAction(
@@ -1453,6 +1526,7 @@ function renderContextControls(root: HTMLElement, runtime: ShellRuntime): void {
   });
 
   updateWindowReadOnlyState(root, runtime);
+  renderDevContextInspector(root, runtime);
 }
 
 function openPopout(partId: string, root: HTMLElement, runtime: ShellRuntime): void {
@@ -1698,6 +1772,66 @@ function safeJson(value: unknown): string {
   } catch {
     return "[unserializable payload]";
   }
+}
+
+function toPrettyJson(value: unknown): string {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return "[unserializable payload]";
+  }
+}
+
+function collectLaneMetadata(state: ShellContextState): Array<{
+  scope: string;
+  key: string;
+  value: string;
+  revision: RevisionMeta;
+  sourceSelection: { entityType: string; revision: RevisionMeta } | undefined;
+}> {
+  const entries: Array<{
+    scope: string;
+    key: string;
+    value: string;
+    revision: RevisionMeta;
+    sourceSelection: { entityType: string; revision: RevisionMeta } | undefined;
+  }> = [];
+
+  for (const [key, lane] of Object.entries(state.globalLanes)) {
+    entries.push({
+      scope: "global",
+      key,
+      value: lane.value,
+      revision: lane.revision,
+      sourceSelection: lane.sourceSelection,
+    });
+  }
+
+  for (const [groupId, lanes] of Object.entries(state.groupLanes)) {
+    for (const [key, lane] of Object.entries(lanes)) {
+      entries.push({
+        scope: `group:${groupId}`,
+        key,
+        value: lane.value,
+        revision: lane.revision,
+        sourceSelection: lane.sourceSelection,
+      });
+    }
+  }
+
+  for (const [tabId, lanes] of Object.entries(state.subcontextsByTab)) {
+    for (const [key, lane] of Object.entries(lanes)) {
+      entries.push({
+        scope: `subcontext:${tabId}`,
+        key,
+        value: lane.value,
+        revision: lane.revision,
+        sourceSelection: lane.sourceSelection,
+      });
+    }
+  }
+
+  return entries;
 }
 
 function createRevision(writer: string): RevisionMeta {

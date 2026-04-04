@@ -19,6 +19,7 @@ import {
 import {
   createActionCatalogFromRegistrySnapshot,
   resolveIntent,
+  resolveIntentWithTrace,
 } from "./intent-runtime.js";
 import {
   clampChooserFocusIndex,
@@ -610,6 +611,72 @@ test("intent runtime returns clear feedback for no matches", () => {
       "no-match feedback should be explicit",
     );
   }
+});
+
+test("intent runtime trace includes matched actions and failed predicates", () => {
+  const catalog = createActionCatalogFromRegistrySnapshot({
+    plugins: [
+      {
+        id: "plugin-orders",
+        enabled: true,
+        loadMode: "local-source",
+        contract: {
+          manifest: {
+            id: "plugin-orders",
+            name: "Orders",
+            version: "0.1.0",
+          },
+          contributes: {
+            actions: [
+              {
+                id: "orders.assign-roro",
+                title: "Assign RORO",
+                handler: "assignOrderToRoroVessel",
+                intentType: "domain.orders.assign-to-vessel",
+                when: {
+                  sourceType: "order",
+                  "target.vesselClass": "RORO",
+                },
+              },
+              {
+                id: "orders.assign-tanker",
+                title: "Assign tanker",
+                handler: "assignOrderToTanker",
+                intentType: "domain.orders.assign-to-vessel",
+                when: {
+                  sourceType: "order",
+                  "target.vesselClass": "TANKER",
+                },
+              },
+            ],
+          },
+        } as any,
+      },
+    ],
+  });
+
+  const traced = resolveIntentWithTrace(catalog, {
+    type: "domain.orders.assign-to-vessel",
+    facts: {
+      sourceType: "order",
+      target: {
+        vesselClass: "RORO",
+      },
+    },
+  });
+
+  assertEqual(traced.resolution.kind, "single-match", "trace resolution should keep original single-match behavior");
+  assertEqual(traced.trace.matched.length, 1, "trace should contain exactly one matched action");
+  assertEqual(traced.trace.matched[0].actionId, "orders.assign-roro", "matched action should be captured in trace");
+
+  const failed = traced.trace.actions.find((item) => item.actionId === "orders.assign-tanker");
+  assertTruthy(failed, "non-matching action should exist in action trace");
+  assertEqual(failed?.failedPredicates.length, 1, "trace should include failed predicate details for non-match");
+  assertEqual(
+    failed?.failedPredicates[0]?.path,
+    "target.vesselClass",
+    "failed predicate path should identify predicate location",
+  );
 });
 
 test("context persistence restores full required state payload after reload", () => {
