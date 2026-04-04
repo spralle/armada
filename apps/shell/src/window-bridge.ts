@@ -9,8 +9,15 @@ export interface SelectionSyncEvent {
 
 export interface ContextSyncEvent {
   type: "context";
+  scope?: "group" | "global";
+  tabId?: string;
+  groupId?: string;
   contextKey: string;
   contextValue: string;
+  revision?: {
+    timestamp: number;
+    writer: string;
+  };
   sourceWindowId: string;
 }
 
@@ -116,8 +123,12 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
 
   if (event.type === "context") {
     if (
+      isOptionalContextScope(event.scope) &&
+      isOptionalString(event.tabId) &&
+      isOptionalString(event.groupId) &&
       typeof event.contextKey === "string" &&
       typeof event.contextValue === "string" &&
+      isOptionalRevision(event.revision) &&
       typeof event.sourceWindowId === "string"
     ) {
       return event as ContextSyncEvent;
@@ -159,4 +170,27 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
 
 function isOptionalNullableString(value: unknown): value is string | null | undefined {
   return value === undefined || value === null || typeof value === "string";
+}
+
+function isOptionalString(value: unknown): value is string | undefined {
+  return value === undefined || typeof value === "string";
+}
+
+function isOptionalContextScope(value: unknown): value is "group" | "global" | undefined {
+  return value === undefined || value === "group" || value === "global";
+}
+
+function isOptionalRevision(
+  value: unknown,
+): value is { timestamp: number; writer: string } | undefined {
+  if (value === undefined) {
+    return true;
+  }
+
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const revision = value as { timestamp?: unknown; writer?: unknown };
+  return typeof revision.timestamp === "number" && typeof revision.writer === "string";
 }

@@ -26,10 +26,27 @@ import {
   resolveOrder,
   resolveVessel,
 } from "./domain-demo-data.js";
+import {
+  createInitialShellContextState,
+  getTabGroupId,
+  readGlobalLane,
+  readGroupLaneForTab,
+  registerTab,
+  setActiveTab,
+  writeGlobalLane,
+  writeGroupLaneByGroup,
+  writeGroupLaneByTab,
+  type RevisionMeta,
+  type ShellContextState,
+} from "./context-state.js";
 
 const BRIDGE_CHANNEL = "armada.shell.window-bridge.v1";
 const DRAG_REF_PREFIX = "armada-dnd-ref:";
 const DRAG_INLINE_PREFIX = "armada-dnd-inline:";
+const DEFAULT_GROUP_ID = "group-main";
+const DEFAULT_GROUP_COLOR = "blue";
+const DOMAIN_CONTEXT_KEY = "domain.selection";
+const GLOBAL_CONTEXT_KEY = "shell.selection";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -56,8 +73,7 @@ interface ShellRuntime {
   selectedPartTitle: string | null;
   selectedOrderId: string | null;
   selectedVesselId: string | null;
-  contextKey: string;
-  contextValue: string;
+  contextState: ShellContextState;
   notice: string;
   pluginNotice: string;
   popoutHandles: Map<string, Window>;
@@ -152,8 +168,11 @@ const shellRuntime: ShellRuntime = {
   selectedPartTitle: null,
   selectedOrderId: null,
   selectedVesselId: null,
-  contextKey: "demo.selection",
-  contextValue: "none",
+  contextState: createInitialShellContextState({
+    initialTabId: "tab-main",
+    initialGroupId: DEFAULT_GROUP_ID,
+    initialGroupColor: DEFAULT_GROUP_COLOR,
+  }),
   notice: "",
   pluginNotice: "",
   popoutHandles: new Map<string, Window>(),
@@ -300,6 +319,7 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
   const visibleParts = getVisibleMockParts(runtime);
+  runtime.contextState = ensureTabsRegistered(runtime.contextState, visibleParts);
 
   if (runtime.isPopout) {
     const slot = root.querySelector<HTMLElement>("#popout-slot");
@@ -407,6 +427,11 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
         selectedVesselId: runtime.selectedVesselId,
         sourceWindowId: runtime.windowId,
       });
+
+      writeGlobalSelectionLane(runtime, {
+        selectedPartId: partId,
+        selectedPartTitle: partTitle,
+      });
     });
   }
 
@@ -434,8 +459,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
         sourceWindowId: runtime.windowId,
       });
 
-      runtime.contextKey = "domain.selection";
-      runtime.contextValue = `order:${order.id}|vessel:${order.vesselId}`;
+      writeDomainGroupContext(runtime, `order:${order.id}|vessel:${order.vesselId}`);
       renderParts(root, runtime);
       renderContextControls(root, runtime);
       renderSyncStatus(root, runtime);
@@ -450,9 +474,17 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
       });
       runtime.bridge.publish({
         type: "context",
-        contextKey: runtime.contextKey,
-        contextValue: runtime.contextValue,
+        scope: "group",
+        tabId: runtime.selectedPartId ?? undefined,
+        contextKey: DOMAIN_CONTEXT_KEY,
+        contextValue: readDomainGroupContext(runtime),
+        revision: createRevision(runtime.windowId),
         sourceWindowId: runtime.windowId,
+      });
+
+      writeGlobalSelectionLane(runtime, {
+        selectedPartId: "domain.unplanned-orders.part",
+        selectedPartTitle: `Order ${order.reference}`,
       });
     });
   }
@@ -484,8 +516,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
         sourceWindowId: runtime.windowId,
       });
 
-      runtime.contextKey = "domain.selection";
-      runtime.contextValue = `vessel:${vessel.id}`;
+      writeDomainGroupContext(runtime, `vessel:${vessel.id}`);
       renderParts(root, runtime);
       renderContextControls(root, runtime);
       renderSyncStatus(root, runtime);
@@ -500,9 +531,17 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
       });
       runtime.bridge.publish({
         type: "context",
-        contextKey: runtime.contextKey,
-        contextValue: runtime.contextValue,
+        scope: "group",
+        tabId: runtime.selectedPartId ?? undefined,
+        contextKey: DOMAIN_CONTEXT_KEY,
+        contextValue: readDomainGroupContext(runtime),
+        revision: createRevision(runtime.windowId),
         sourceWindowId: runtime.windowId,
+      });
+
+      writeGlobalSelectionLane(runtime, {
+        selectedPartId: "domain.vessel-view.part",
+        selectedPartTitle: `Vessel ${vessel.name}`,
       });
     });
   }
@@ -644,6 +683,16 @@ function applySelection(
 ): void {
   runtime.selectedPartId = event.selectedPartId;
   runtime.selectedPartTitle = event.selectedPartTitle;
+  runtime.contextState = registerTab(runtime.contextState, {
+    tabId: event.selectedPartId,
+    groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
+    groupColor: DEFAULT_GROUP_COLOR,
+  });
+  runtime.contextState = setActiveTab(runtime.contextState, event.selectedPartId);
+  writeGlobalSelectionLane(runtime, {
+    selectedPartId: event.selectedPartId,
+    selectedPartTitle: event.selectedPartTitle,
+  });
   if (event.selectedOrderId !== undefined) {
     runtime.selectedOrderId = event.selectedOrderId;
   }
@@ -656,8 +705,28 @@ function applySelection(
 }
 
 function applyContext(root: HTMLElement, runtime: ShellRuntime, event: ContextSyncEvent): void {
-  runtime.contextKey = event.contextKey;
-  runtime.contextValue = event.contextValue;
+  const revision = event.revision ?? createRevision(event.sourceWindowId);
+  if (event.scope === "global") {
+    runtime.contextState = writeGlobalLane(runtime.contextState, {
+      key: event.contextKey,
+      value: event.contextValue,
+      revision,
+    });
+  } else if (event.groupId) {
+    runtime.contextState = writeGroupLaneByGroup(runtime.contextState, {
+      groupId: event.groupId,
+      key: event.contextKey,
+      value: event.contextValue,
+      revision,
+    });
+  } else if (event.tabId) {
+    runtime.contextState = writeGroupLaneByTab(runtime.contextState, {
+      tabId: event.tabId,
+      key: event.contextKey,
+      value: event.contextValue,
+      revision,
+    });
+  }
   renderContextControls(root, runtime);
   renderSyncStatus(root, runtime);
 }
@@ -670,13 +739,16 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
 
   const warning = renderBridgeWarning(runtime);
   const selected = runtime.selectedPartTitle ?? "none";
+  const groupContext = readDomainGroupContext(runtime);
+  const globalContext = readGlobalContext(runtime);
   const notice = runtime.notice ? `<p class="runtime-note">${runtime.notice}</p>` : "";
 
   node.innerHTML = `
     <h2>Cross-window sync</h2>
     ${warning}
     <p class="runtime-note"><strong>Selected part:</strong> ${selected}</p>
-    <p class="runtime-note"><strong>Context:</strong> ${runtime.contextKey} = ${runtime.contextValue}</p>
+    <p class="runtime-note"><strong>Group context:</strong> ${DOMAIN_CONTEXT_KEY} = ${groupContext}</p>
+    <p class="runtime-note"><strong>Global lane:</strong> ${GLOBAL_CONTEXT_KEY} = ${globalContext}</p>
     <p class="runtime-note"><strong>Window ID:</strong> ${runtime.windowId}</p>
     ${notice}
   `;
@@ -697,9 +769,9 @@ function renderContextControls(root: HTMLElement, runtime: ShellRuntime): void {
   }
 
   node.innerHTML = `
-    <h2>Shared context (demo)</h2>
-    <label class="runtime-note" for="context-value-input">${runtime.contextKey}</label>
-    <input id="context-value-input" value="${escapeHtml(runtime.contextValue)}" style="width:100%;box-sizing:border-box;margin:6px 0;padding:4px;background:#0f1319;border:1px solid #334564;color:#e9edf3;" />
+    <h2>Group context (demo)</h2>
+    <label class="runtime-note" for="context-value-input">${DOMAIN_CONTEXT_KEY}</label>
+    <input id="context-value-input" value="${escapeHtml(readDomainGroupContext(runtime))}" style="width:100%;box-sizing:border-box;margin:6px 0;padding:4px;background:#0f1319;border:1px solid #334564;color:#e9edf3;" />
     <button type="button" id="context-apply" style="background:#1d2635;border:1px solid #334564;border-radius:4px;color:#e9edf3;padding:4px 8px;cursor:pointer;">Apply + sync</button>
   `;
 
@@ -710,11 +782,14 @@ function renderContextControls(root: HTMLElement, runtime: ShellRuntime): void {
   }
 
   applyButton.addEventListener("click", () => {
-    runtime.contextValue = inputNode.value.trim() || "none";
+    writeDomainGroupContext(runtime, inputNode.value.trim() || "none");
     runtime.bridge.publish({
       type: "context",
-      contextKey: runtime.contextKey,
-      contextValue: runtime.contextValue,
+      scope: "group",
+      tabId: runtime.selectedPartId ?? undefined,
+      contextKey: DOMAIN_CONTEXT_KEY,
+      contextValue: readDomainGroupContext(runtime),
+      revision: createRevision(runtime.windowId),
       sourceWindowId: runtime.windowId,
     });
     renderSyncStatus(root, runtime);
@@ -964,6 +1039,67 @@ function safeJson(value: unknown): string {
   } catch {
     return "[unserializable payload]";
   }
+}
+
+function createRevision(writer: string): RevisionMeta {
+  return {
+    timestamp: Date.now(),
+    writer,
+  };
+}
+
+function ensureTabsRegistered(state: ShellContextState, parts: LocalMockPart[]): ShellContextState {
+  let next = state;
+  for (const part of parts) {
+    next = registerTab(next, {
+      tabId: part.id,
+      groupId: getTabGroupId(next, part.id) ?? DEFAULT_GROUP_ID,
+      groupColor: DEFAULT_GROUP_COLOR,
+    });
+  }
+  return next;
+}
+
+function readDomainGroupContext(runtime: ShellRuntime): string {
+  if (!runtime.selectedPartId) {
+    return "none";
+  }
+
+  const value = readGroupLaneForTab(runtime.contextState, {
+    tabId: runtime.selectedPartId,
+    key: DOMAIN_CONTEXT_KEY,
+  });
+
+  return value?.value ?? "none";
+}
+
+function readGlobalContext(runtime: ShellRuntime): string {
+  return readGlobalLane(runtime.contextState, GLOBAL_CONTEXT_KEY)?.value ?? "none";
+}
+
+function writeDomainGroupContext(runtime: ShellRuntime, value: string): void {
+  const activeTabId = runtime.selectedPartId ?? runtime.contextState.activeTabId;
+  if (!activeTabId) {
+    return;
+  }
+
+  runtime.contextState = writeGroupLaneByTab(runtime.contextState, {
+    tabId: activeTabId,
+    key: DOMAIN_CONTEXT_KEY,
+    value,
+    revision: createRevision(runtime.windowId),
+  });
+}
+
+function writeGlobalSelectionLane(
+  runtime: ShellRuntime,
+  input: { selectedPartId: string; selectedPartTitle: string },
+): void {
+  runtime.contextState = writeGlobalLane(runtime.contextState, {
+    key: GLOBAL_CONTEXT_KEY,
+    value: `${input.selectedPartId}|${input.selectedPartTitle}`,
+    revision: createRevision(runtime.windowId),
+  });
 }
 
 function escapeHtml(value: string): string {
