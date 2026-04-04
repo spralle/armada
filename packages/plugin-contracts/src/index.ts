@@ -31,7 +31,17 @@ export interface PluginActionContribution {
 
 export interface PluginSelectionContribution {
   id: string;
+  source?: string;
   target: string;
+}
+
+export interface PluginDerivedLaneContribution {
+  id: string;
+  key: string;
+  sourceEntityType: string;
+  scope: "global" | "group";
+  valueType: "entity-id" | "entity-id-list";
+  strategy: "priority-id" | "joined-selected-ids";
 }
 
 export interface PluginDragDropSessionReference {
@@ -49,6 +59,7 @@ export interface PluginContributions {
   parts?: PluginPartContribution[] | undefined;
   actions?: PluginActionContribution[] | undefined;
   selection?: PluginSelectionContribution[] | undefined;
+  derivedLanes?: PluginDerivedLaneContribution[] | undefined;
   dragDropSessionReferences?: PluginDragDropSessionReference[] | undefined;
   popoutCapabilities?: PluginPopoutCapabilityFlags | undefined;
 }
@@ -117,7 +128,19 @@ export const pluginActionContributionSchema = z
 export const pluginSelectionContributionSchema = z
   .object({
     id: nonEmptyString,
+    source: nonEmptyString.optional(),
     target: nonEmptyString,
+  })
+  .strict();
+
+export const pluginDerivedLaneContributionSchema = z
+  .object({
+    id: nonEmptyString,
+    key: nonEmptyString,
+    sourceEntityType: nonEmptyString,
+    scope: z.enum(["global", "group"]),
+    valueType: z.enum(["entity-id", "entity-id-list"]),
+    strategy: z.enum(["priority-id", "joined-selected-ids"]),
   })
   .strict();
 
@@ -141,6 +164,7 @@ export const pluginContributionsSchema = z
     parts: z.array(pluginPartContributionSchema).optional(),
     actions: z.array(pluginActionContributionSchema).optional(),
     selection: z.array(pluginSelectionContributionSchema).optional(),
+    derivedLanes: z.array(pluginDerivedLaneContributionSchema).optional(),
     dragDropSessionReferences: z
       .array(pluginDragDropSessionReferenceSchema)
       .optional(),

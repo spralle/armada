@@ -6,6 +6,11 @@ export interface RevisionMeta {
 export interface ContextLaneValue {
   value: string;
   revision: RevisionMeta;
+  valueType?: string;
+  sourceSelection?: {
+    entityType: string;
+    revision: RevisionMeta;
+  };
 }
 
 export interface ContextGroup {
@@ -21,6 +26,49 @@ export interface ContextTab {
 export interface EntityTypeSelection {
   selectedIds: string[];
   priorityId: string | null;
+}
+
+export interface SelectionWriteInput {
+  entityType: string;
+  selectedIds: string[];
+  priorityId?: string | null;
+  revision: RevisionMeta;
+}
+
+export interface SelectionPropagationRule {
+  id: string;
+  sourceEntityType: string;
+  propagate: (input: {
+    state: ShellContextState;
+    sourceEntityType: string;
+    sourceSelection: EntityTypeSelection;
+    sourceRevision: RevisionMeta;
+  }) => Omit<SelectionWriteInput, "revision"> | null;
+}
+
+export interface DerivedLaneDefinition {
+  key: string;
+  valueType: string;
+  sourceEntityType: string;
+  scope: "global" | "group";
+  derive: (input: {
+    state: ShellContextState;
+    sourceEntityType: string;
+    sourceSelection: EntityTypeSelection;
+    sourceRevision: RevisionMeta;
+  }) => string;
+}
+
+export interface SelectionUpdateOptions {
+  propagationRules?: SelectionPropagationRule[];
+  derivedLanes?: DerivedLaneDefinition[];
+  derivedGroupId?: string;
+}
+
+export interface SelectionUpdateResult {
+  state: ShellContextState;
+  changedEntityTypes: string[];
+  derivedLaneFailures: string[];
 }
 
 export interface ShellContextState {
@@ -192,6 +240,166 @@ export function readEntityTypeSelection(
   };
 }
 
+export function applySelectionUpdate(
+  state: ShellContextState,
+  input: SelectionWriteInput,
+  options?: SelectionUpdateOptions,
+): SelectionUpdateResult {
+  const propagationRules = [...(options?.propagationRules ?? [])].sort((a, b) =>
+    compareDeterministicKeys(a.id, b.id),
+  );
+  const derivedLanes = [...(options?.derivedLanes ?? [])].sort((a, b) =>
+    compareDeterministicKeys(`${a.scope}:${a.key}`, `${b.scope}:${b.key}`),
+  );
+
+  const queue: string[] = [input.entityType];
+  const pendingByEntityType = new Map<string, SelectionWriteInput>([
+    [
+      input.entityType,
+      {
+        entityType: input.entityType,
+        selectedIds: input.selectedIds,
+        priorityId: input.priorityId ?? null,
+        revision: input.revision,
+      },
+    ],
+  ]);
+  const changedEntityTypes: string[] = [];
+  const revisionByEntityType = new Map<string, RevisionMeta>();
+  let next = state;
+
+  while (queue.length > 0) {
+    const entityType = queue.shift() as string;
+    const item = pendingByEntityType.get(entityType);
+    if (!item) {
+      continue;
+    }
+    pendingByEntityType.delete(entityType);
+
+    const updated = setEntityTypeSelection(next, {
+      entityType: item.entityType,
+      selectedIds: item.selectedIds,
+      priorityId: item.priorityId ?? null,
+    });
+    const didChange = updated !== next;
+    next = updated;
+
+    if (!didChange) {
+      continue;
+    }
+
+    if (!changedEntityTypes.includes(item.entityType)) {
+      changedEntityTypes.push(item.entityType);
+    }
+    revisionByEntityType.set(item.entityType, item.revision);
+
+    const sourceSelection = readEntityTypeSelection(next, item.entityType);
+    for (const rule of propagationRules) {
+      if (rule.sourceEntityType !== item.entityType) {
+        continue;
+      }
+
+      let propagated: Omit<SelectionWriteInput, "revision"> | null = null;
+      try {
+        propagated = rule.propagate({
+          state: next,
+          sourceEntityType: item.entityType,
+          sourceSelection,
+          sourceRevision: item.revision,
+        });
+      } catch {
+        propagated = null;
+      }
+
+      if (!propagated) {
+        continue;
+      }
+
+      const targetCurrent = readEntityTypeSelection(next, propagated.entityType);
+      const targetNext = {
+        selectedIds: normalizeSelectionIds(propagated.selectedIds),
+        priorityId: normalizePriorityId(
+          normalizeSelectionIds(propagated.selectedIds),
+          propagated.priorityId ?? null,
+        ),
+      };
+
+      if (areEqualSelections(targetCurrent, targetNext)) {
+        continue;
+      }
+
+      if (!pendingByEntityType.has(propagated.entityType)) {
+        queue.push(propagated.entityType);
+      }
+      pendingByEntityType.set(propagated.entityType, {
+        entityType: propagated.entityType,
+        selectedIds: targetNext.selectedIds,
+        priorityId: targetNext.priorityId,
+        revision: item.revision,
+      });
+    }
+  }
+
+  const derivedLaneFailures: string[] = [];
+  for (const lane of derivedLanes) {
+    const sourceRevision = revisionByEntityType.get(lane.sourceEntityType);
+    if (!sourceRevision) {
+      continue;
+    }
+
+    const sourceSelection = readEntityTypeSelection(next, lane.sourceEntityType);
+    let laneValue: string;
+    try {
+      laneValue = lane.derive({
+        state: next,
+        sourceEntityType: lane.sourceEntityType,
+        sourceSelection,
+        sourceRevision,
+      });
+    } catch {
+      derivedLaneFailures.push(lane.key);
+      continue;
+    }
+
+    if (lane.scope === "global") {
+      next = writeGlobalLane(next, {
+        key: lane.key,
+        value: laneValue,
+        revision: sourceRevision,
+        valueType: lane.valueType,
+        sourceSelection: {
+          entityType: lane.sourceEntityType,
+          revision: sourceRevision,
+        },
+      });
+      continue;
+    }
+
+    const groupId = options?.derivedGroupId;
+    if (!groupId) {
+      continue;
+    }
+
+    next = writeGroupLaneByGroup(next, {
+      groupId,
+      key: lane.key,
+      value: laneValue,
+      revision: sourceRevision,
+      valueType: lane.valueType,
+      sourceSelection: {
+        entityType: lane.sourceEntityType,
+        revision: sourceRevision,
+      },
+    });
+  }
+
+  return {
+    state: next,
+    changedEntityTypes,
+    derivedLaneFailures,
+  };
+}
+
 export function registerTab(
   state: ShellContextState,
   input: { tabId: string; groupId: string; groupColor?: string },
@@ -257,7 +465,16 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
 
 export function writeGlobalLane(
   state: ShellContextState,
-  input: { key: string; value: string; revision: RevisionMeta },
+  input: {
+    key: string;
+    value: string;
+    revision: RevisionMeta;
+    valueType?: string;
+    sourceSelection?: {
+      entityType: string;
+      revision: RevisionMeta;
+    };
+  },
 ): ShellContextState {
   const current = state.globalLanes[input.key];
   if (!shouldApplyRevision(current?.revision, input.revision)) {
@@ -268,6 +485,8 @@ export function writeGlobalLane(
   next.globalLanes[input.key] = {
     value: input.value,
     revision: input.revision,
+    valueType: input.valueType,
+    sourceSelection: input.sourceSelection,
   };
   return next;
 }
@@ -291,7 +510,18 @@ export function writeGroupLaneByTab(
 
 export function writeGroupLaneByGroup(
   state: ShellContextState,
-  input: { groupId: string; key: string; value: string; revision: RevisionMeta; groupColor?: string },
+  input: {
+    groupId: string;
+    key: string;
+    value: string;
+    revision: RevisionMeta;
+    groupColor?: string;
+    valueType?: string;
+    sourceSelection?: {
+      entityType: string;
+      revision: RevisionMeta;
+    };
+  },
 ): ShellContextState {
   const next = cloneContextState(state);
   ensureGroup(next, input.groupId, input.groupColor);
@@ -303,6 +533,8 @@ export function writeGroupLaneByGroup(
   next.groupLanes[input.groupId][input.key] = {
     value: input.value,
     revision: input.revision,
+    valueType: input.valueType,
+    sourceSelection: input.sourceSelection,
   };
   return next;
 }
@@ -362,6 +594,13 @@ function shouldApplyRevision(current: RevisionMeta | undefined, incoming: Revisi
     return incoming.writer > current.writer;
   }
   return false;
+}
+
+function compareDeterministicKeys(a: string, b: string): number {
+  if (a === b) {
+    return 0;
+  }
+  return a < b ? -1 : 1;
 }
 
 function cloneContextState(state: ShellContextState): ShellContextState {

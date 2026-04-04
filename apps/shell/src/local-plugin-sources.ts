@@ -52,7 +52,18 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
       selection: [
         {
           id: "domain.unplanned-orders.selection",
+          source: "order",
           target: "vessel",
+        },
+      ],
+      derivedLanes: [
+        {
+          id: "domain.unplanned-orders.priority-vessel",
+          key: "domain.derived.vessel.priority",
+          sourceEntityType: "vessel",
+          scope: "group",
+          valueType: "entity-id",
+          strategy: "priority-id",
         },
       ],
     },
@@ -74,7 +85,18 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
       selection: [
         {
           id: "domain.vessel.selection",
+          source: "vessel",
           target: "order",
+        },
+      ],
+      derivedLanes: [
+        {
+          id: "domain.vessel.selected-orders",
+          key: "domain.derived.order.selected",
+          sourceEntityType: "order",
+          scope: "group",
+          valueType: "entity-id-list",
+          strategy: "joined-selected-ids",
         },
       ],
     },

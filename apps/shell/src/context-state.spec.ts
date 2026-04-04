@@ -1,4 +1,5 @@
 import {
+  applySelectionUpdate,
   addEntityTypeSelectionId,
   closeTab,
   createInitialShellContextState,
@@ -297,6 +298,122 @@ test("global lane LWW uses timestamp and writer tie-break deterministically", ()
     readGlobalLane(state, "shell.selection")?.value,
     "same-ts-higher-writer",
     "higher writer should win at same timestamp for global lane",
+  );
+});
+
+test("selection propagation updates dependent entity type deterministically", () => {
+  const initial = createInitialShellContextState({ initialTabId: "tab-a" });
+  const result = applySelectionUpdate(
+    initial,
+    {
+      entityType: "order",
+      selectedIds: ["o-2"],
+      priorityId: "o-2",
+      revision: { timestamp: 100, writer: "writer-a" },
+    },
+    {
+      propagationRules: [
+        {
+          id: "rule.order->vessel",
+          sourceEntityType: "order",
+          propagate: ({ sourceSelection }) => ({
+            entityType: "vessel",
+            selectedIds: sourceSelection.priorityId ? [`v-for-${sourceSelection.priorityId}`] : [],
+            priorityId: sourceSelection.priorityId ? `v-for-${sourceSelection.priorityId}` : null,
+          }),
+        },
+      ],
+    },
+  );
+
+  assertEqual(
+    readEntityTypeSelection(result.state, "vessel").priorityId,
+    "v-for-o-2",
+    "dependent vessel selection should follow primary order selection",
+  );
+  assertEqual(
+    result.changedEntityTypes.join(","),
+    "order,vessel",
+    "propagation stage should process source then dependent deterministically",
+  );
+});
+
+test("derived lanes are revision-linked and typed to selection write", () => {
+  const initial = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+  const revision = { timestamp: 200, writer: "writer-b" };
+  const result = applySelectionUpdate(
+    initial,
+    {
+      entityType: "vessel",
+      selectedIds: ["v-9", "v-4"],
+      priorityId: "v-9",
+      revision,
+    },
+    {
+      derivedGroupId: "group-main",
+      derivedLanes: [
+        {
+          key: "domain.derived.vessel.priority",
+          valueType: "entity-id",
+          sourceEntityType: "vessel",
+          scope: "group",
+          derive: ({ sourceSelection }) => sourceSelection.priorityId ?? "none",
+        },
+      ],
+    },
+  );
+
+  const lane = result.state.groupLanes["group-main"]["domain.derived.vessel.priority"];
+  assertEqual(lane?.value, "v-9", "derived group lane value mismatch");
+  assertEqual(lane?.valueType, "entity-id", "derived lane value type metadata mismatch");
+  assertEqual(lane?.sourceSelection?.entityType, "vessel", "derived lane source entity metadata mismatch");
+  assertEqual(
+    lane?.sourceSelection?.revision.timestamp,
+    revision.timestamp,
+    "derived lane source revision timestamp mismatch",
+  );
+  assertEqual(
+    lane?.sourceSelection?.revision.writer,
+    revision.writer,
+    "derived lane source revision writer mismatch",
+  );
+});
+
+test("derived lane failures are isolated from context core updates", () => {
+  const initial = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+  const result = applySelectionUpdate(
+    initial,
+    {
+      entityType: "order",
+      selectedIds: ["o-1"],
+      priorityId: "o-1",
+      revision: { timestamp: 300, writer: "writer-c" },
+    },
+    {
+      derivedGroupId: "group-main",
+      derivedLanes: [
+        {
+          key: "domain.derived.fail",
+          valueType: "entity-id",
+          sourceEntityType: "order",
+          scope: "group",
+          derive: () => {
+            throw new Error("boom");
+          },
+        },
+      ],
+    },
+  );
+
+  assertEqual(
+    readEntityTypeSelection(result.state, "order").priorityId,
+    "o-1",
+    "selection write should succeed despite derived lane failure",
+  );
+  assertEqual(
+    result.derivedLaneFailures.join(","),
+    "domain.derived.fail",
+    "failed derived lane should be reported",
   );
 });
 
