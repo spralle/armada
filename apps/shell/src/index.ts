@@ -299,13 +299,15 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
+  const visibleParts = getVisibleMockParts(runtime);
+
   if (runtime.isPopout) {
     const slot = root.querySelector<HTMLElement>("#popout-slot");
     if (!slot) {
       return;
     }
 
-    const part = runtime.partId ? localMockParts.find((item) => item.id === runtime.partId) : null;
+    const part = runtime.partId ? visibleParts.find((item) => item.id === runtime.partId) : null;
     if (!part) {
       slot.innerHTML = `<article class="part-root"><h2>Popout unavailable</h2><p>Unable to resolve requested part.</p></article>`;
       return;
@@ -330,7 +332,7 @@ function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
     }
   }
 
-  for (const part of localMockParts) {
+  for (const part of visibleParts) {
     if (runtime.poppedOutPartIds.has(part.id)) {
       continue;
     }
@@ -391,6 +393,8 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
       applySelection(root, runtime, {
         selectedPartId: partId,
         selectedPartTitle: partTitle,
+        selectedOrderId: runtime.selectedOrderId,
+        selectedVesselId: runtime.selectedVesselId,
         sourceWindowId: runtime.windowId,
         type: "selection",
       });
@@ -399,6 +403,8 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
         type: "selection",
         selectedPartId: partId,
         selectedPartTitle: partTitle,
+        selectedOrderId: runtime.selectedOrderId,
+        selectedVesselId: runtime.selectedVesselId,
         sourceWindowId: runtime.windowId,
       });
     });
@@ -423,6 +429,8 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
         type: "selection",
         selectedPartId: "domain.unplanned-orders.part",
         selectedPartTitle: `Order ${order.reference}`,
+        selectedOrderId: order.id,
+        selectedVesselId: order.vesselId,
         sourceWindowId: runtime.windowId,
       });
 
@@ -436,6 +444,8 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
         type: "selection",
         selectedPartId: "domain.unplanned-orders.part",
         selectedPartTitle: `Order ${order.reference}`,
+        selectedOrderId: order.id,
+        selectedVesselId: order.vesselId,
         sourceWindowId: runtime.windowId,
       });
       runtime.bridge.publish({
@@ -469,6 +479,8 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
         type: "selection",
         selectedPartId: "domain.vessel-view.part",
         selectedPartTitle: `Vessel ${vessel.name}`,
+        selectedOrderId: runtime.selectedOrderId,
+        selectedVesselId: vessel.id,
         sourceWindowId: runtime.windowId,
       });
 
@@ -482,6 +494,8 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
         type: "selection",
         selectedPartId: "domain.vessel-view.part",
         selectedPartTitle: `Vessel ${vessel.name}`,
+        selectedOrderId: runtime.selectedOrderId,
+        selectedVesselId: vessel.id,
         sourceWindowId: runtime.windowId,
       });
       runtime.bridge.publish({
@@ -630,6 +644,13 @@ function applySelection(
 ): void {
   runtime.selectedPartId = event.selectedPartId;
   runtime.selectedPartTitle = event.selectedPartTitle;
+  if (event.selectedOrderId !== undefined) {
+    runtime.selectedOrderId = event.selectedOrderId;
+  }
+  if (event.selectedVesselId !== undefined) {
+    runtime.selectedVesselId = event.selectedVesselId;
+  }
+  renderParts(root, runtime);
   updateSelectedStyles(root, runtime.selectedPartId);
   renderSyncStatus(root, runtime);
 }
@@ -815,6 +836,7 @@ function renderPluginControls(root: HTMLElement, runtime: ShellRuntime): void {
       }
 
       renderPluginControls(root, runtime);
+      renderParts(root, runtime);
     });
   }
 }
@@ -826,9 +848,31 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): 
     });
     runtime.registry = state.registry;
     renderPluginControls(root, runtime);
+    renderParts(root, runtime);
   } catch (error) {
     console.warn("[shell] plugin registry hydration skipped", error);
   }
+}
+
+function getVisibleMockParts(runtime: ShellRuntime): LocalMockPart[] {
+  const enabledPluginIds = new Set(
+    runtime.registry
+      .getSnapshot()
+      .plugins.filter((plugin) => plugin.enabled)
+      .map((plugin) => plugin.id),
+  );
+
+  return localMockParts.filter((part) => {
+    if (part.alwaysVisible) {
+      return true;
+    }
+
+    if (!part.ownerPluginId) {
+      return true;
+    }
+
+    return enabledPluginIds.has(part.ownerPluginId);
+  });
 }
 
 function setupResize(root: HTMLElement, runtime: ShellRuntime): void {

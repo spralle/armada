@@ -2,6 +2,8 @@ export interface SelectionSyncEvent {
   type: "selection";
   selectedPartId: string;
   selectedPartTitle: string;
+  selectedOrderId?: string | null;
+  selectedVesselId?: string | null;
   sourceWindowId: string;
 }
 
@@ -103,6 +105,8 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
     if (
       typeof event.selectedPartId === "string" &&
       typeof event.selectedPartTitle === "string" &&
+      isOptionalNullableString(event.selectedOrderId) &&
+      isOptionalNullableString(event.selectedVesselId) &&
       typeof event.sourceWindowId === "string"
     ) {
       return event as SelectionSyncEvent;
@@ -151,4 +155,8 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
   }
 
   return null;
+}
+
+function isOptionalNullableString(value: unknown): value is string | null | undefined {
+  return value === undefined || value === null || typeof value === "string";
 }

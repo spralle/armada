@@ -14,6 +14,8 @@ export interface LocalMockPart {
   id: string;
   title: string;
   slot: ShellSlot;
+  ownerPluginId?: string;
+  alwaysVisible?: boolean;
   render(context: LocalMockRenderContext): string;
 }
 
@@ -22,6 +24,7 @@ export const localMockParts: LocalMockPart[] = [
     id: "domain.unplanned-orders.part",
     title: "Unplanned Orders",
     slot: "master",
+    ownerPluginId: "com.armada.domain.unplanned-orders",
     render: (context) => {
       const rows = demoUnplannedOrders
         .map((order) => {
@@ -45,6 +48,7 @@ export const localMockParts: LocalMockPart[] = [
     id: "domain.vessel-view.part",
     title: "Vessel View (RORO/ROPAX)",
     slot: "secondary",
+    ownerPluginId: "com.armada.domain.vessel-view",
     render: (context) => {
       const rows = demoVessels
         .map((vessel) => {
@@ -69,6 +73,7 @@ export const localMockParts: LocalMockPart[] = [
     id: "workbench.side.navigator",
     title: "Navigator",
     slot: "side",
+    alwaysVisible: true,
     render: (context) =>
       `<section>
         <h3>Shared domain context</h3>
