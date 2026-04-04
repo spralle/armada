@@ -54,6 +54,23 @@ export interface PluginContract {
   contributes?: PluginContributions | undefined;
 }
 
+export interface PluginCompatibilityMetadata {
+  shell: string;
+  pluginContract: string;
+}
+
+export interface TenantPluginDescriptor {
+  id: string;
+  version: string;
+  entry: string;
+  compatibility: PluginCompatibilityMetadata;
+}
+
+export interface TenantPluginManifestResponse {
+  tenantId: string;
+  plugins: TenantPluginDescriptor[];
+}
+
 const nonEmptyString = z.string().trim().min(1);
 
 export const pluginManifestIdentitySchema = z
@@ -130,6 +147,29 @@ export const pluginContractSchema = z
   })
   .strict();
 
+export const pluginCompatibilityMetadataSchema = z
+  .object({
+    shell: nonEmptyString,
+    pluginContract: nonEmptyString,
+  })
+  .strict();
+
+export const tenantPluginDescriptorSchema = z
+  .object({
+    id: nonEmptyString,
+    version: nonEmptyString,
+    entry: nonEmptyString,
+    compatibility: pluginCompatibilityMetadataSchema,
+  })
+  .strict();
+
+export const tenantPluginManifestResponseSchema = z
+  .object({
+    tenantId: nonEmptyString,
+    plugins: z.array(tenantPluginDescriptorSchema),
+  })
+  .strict();
+
 export interface PluginContractValidationIssue {
   path: string;
   code: string;
@@ -140,6 +180,16 @@ export type ParsePluginContractResult =
   | {
       success: true;
       data: PluginContract;
+    }
+  | {
+      success: false;
+      errors: PluginContractValidationIssue[];
+    };
+
+export type ParseTenantPluginManifestResult =
+  | {
+      success: true;
+      data: TenantPluginManifestResponse;
     }
   | {
       success: false;
@@ -158,12 +208,34 @@ export function parsePluginContract(input: unknown): ParsePluginContractResult {
 
   return {
     success: false,
-    errors: result.error.issues.map((issue: z.ZodIssue) => ({
-      path: issue.path.map(String).join("."),
-      code: issue.code,
-      message: issue.message,
-    })),
+    errors: mapValidationIssues(result.error.issues),
   };
+}
+
+export function parseTenantPluginManifest(
+  input: unknown,
+): ParseTenantPluginManifestResult {
+  const result = tenantPluginManifestResponseSchema.safeParse(input);
+
+  if (result.success) {
+    return {
+      success: true,
+      data: result.data as TenantPluginManifestResponse,
+    };
+  }
+
+  return {
+    success: false,
+    errors: mapValidationIssues(result.error.issues),
+  };
+}
+
+function mapValidationIssues(issues: z.ZodIssue[]): PluginContractValidationIssue[] {
+  return issues.map((issue: z.ZodIssue) => ({
+    path: issue.path.map(String).join("."),
+    code: issue.code,
+    message: issue.message,
+  }));
 }
 
 interface SemVer {

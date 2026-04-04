@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   evaluateShellPluginCompatibility,
   parsePluginContract,
+  parseTenantPluginManifest,
 } from "../dist/index.js";
 
 test("returns typed data for a valid plugin contract", () => {
@@ -170,4 +171,56 @@ test("compatibility: exact and patch-safe range is allowed", () => {
   const result = evaluateShellPluginCompatibility("~1.2.0", "1.2.5");
 
   assert.equal(result.compatible, true);
+});
+
+test("tenant manifest parser accepts typed plugin descriptors", () => {
+  const result = parseTenantPluginManifest({
+    tenantId: "demo",
+    plugins: [
+      {
+        id: "com.armada.plugin-starter",
+        version: "0.1.0",
+        entry: "local://apps/plugin-starter/src/index.ts",
+        compatibility: {
+          shell: "^1.0.0",
+          pluginContract: "^1.0.0",
+        },
+      },
+    ],
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.plugins[0].compatibility.shell, "^1.0.0");
+  }
+});
+
+test("tenant manifest parser reports nested field validation errors", () => {
+  const result = parseTenantPluginManifest({
+    tenantId: "demo",
+    plugins: [
+      {
+        id: "com.armada.plugin-starter",
+        version: "0.1.0",
+        entry: "local://apps/plugin-starter/src/index.ts",
+        compatibility: {
+          shell: "",
+        },
+      },
+    ],
+  });
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    assert.equal(
+      result.errors.some(
+        (error) => error.path === "plugins.0.compatibility.pluginContract",
+      ),
+      true,
+    );
+    assert.equal(
+      result.errors.some((error) => error.path === "plugins.0.compatibility.shell"),
+      true,
+    );
+  }
 });
