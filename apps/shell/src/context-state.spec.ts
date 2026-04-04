@@ -24,7 +24,9 @@ import {
   clampChooserFocusIndex,
   formatDegradedModeAnnouncement,
   formatSelectionAnnouncement,
+  resolveChooserFocusRestoration,
   resolveChooserKeyboardAction,
+  resolveDegradedKeyboardInteraction,
 } from "./keyboard-a11y.js";
 import { createLocalStorageContextStatePersistence } from "./persistence.js";
 
@@ -781,6 +783,47 @@ test("chooser keyboard flow resolves focus and execute deterministically", () =>
 
   const dismiss = resolveChooserKeyboardAction("Escape", 1, 3);
   assertEqual(dismiss.kind, "dismiss", "Escape should dismiss chooser");
+});
+
+test("chooser completion and dismiss restore trigger focus selector", () => {
+  assertEqual(
+    resolveChooserFocusRestoration("dismiss", "button[data-action='select-order'][data-order-id='o-1']"),
+    "button[data-action='select-order'][data-order-id='o-1']",
+    "dismiss should restore caller focus",
+  );
+  assertEqual(
+    resolveChooserFocusRestoration("execute", "button[data-action='select-vessel'][data-vessel-id='v-1']"),
+    "button[data-action='select-vessel'][data-vessel-id='v-1']",
+    "execute should restore caller focus",
+  );
+  assertEqual(
+    resolveChooserFocusRestoration("focus", "button[data-action='select-order'][data-order-id='o-1']"),
+    null,
+    "focus movement should not restore",
+  );
+});
+
+test("degraded-mode keyboard interactions are safely blocked or dismissed", () => {
+  assertEqual(
+    resolveDegradedKeyboardInteraction("Enter", false),
+    "block",
+    "degraded mode should block Enter when no chooser is open",
+  );
+  assertEqual(
+    resolveDegradedKeyboardInteraction("ArrowDown", true),
+    "block",
+    "degraded mode should block chooser navigation keys",
+  );
+  assertEqual(
+    resolveDegradedKeyboardInteraction("Escape", true),
+    "dismiss-chooser",
+    "degraded mode should still allow chooser dismissal via Escape",
+  );
+  assertEqual(
+    resolveDegradedKeyboardInteraction("Tab", false),
+    "allow",
+    "degraded mode should allow non-mutating navigation keys",
+  );
 });
 
 test("announcement helpers produce explicit context and degraded messages", () => {

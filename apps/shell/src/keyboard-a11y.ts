@@ -4,6 +4,8 @@ export type ChooserKeyboardResult =
   | { kind: "dismiss" }
   | { kind: "none" };
 
+export type DegradedKeyboardInteraction = "allow" | "block" | "dismiss-chooser";
+
 export function clampChooserFocusIndex(index: number, itemCount: number): number {
   if (itemCount <= 0) {
     return 0;
@@ -55,6 +57,36 @@ export function resolveChooserKeyboardAction(
   }
 
   return { kind: "none" };
+}
+
+export function resolveChooserFocusRestoration(
+  resultKind: ChooserKeyboardResult["kind"],
+  returnFocusSelector: string | null,
+): string | null {
+  if ((resultKind === "dismiss" || resultKind === "execute") && returnFocusSelector) {
+    return returnFocusSelector;
+  }
+
+  return null;
+}
+
+export function resolveDegradedKeyboardInteraction(
+  key: string,
+  hasOpenChooser: boolean,
+): DegradedKeyboardInteraction {
+  if (hasOpenChooser) {
+    if (key === "Escape") {
+      return "dismiss-chooser";
+    }
+
+    return "block";
+  }
+
+  if (key === "ArrowDown" || key === "ArrowUp" || key === "Enter" || key === " ") {
+    return "block";
+  }
+
+  return "allow";
 }
 
 export function formatSelectionAnnouncement(input: {

@@ -59,7 +59,9 @@ import {
 import {
   formatDegradedModeAnnouncement,
   formatSelectionAnnouncement,
+  resolveChooserFocusRestoration,
   resolveChooserKeyboardAction,
+  resolveDegradedKeyboardInteraction,
 } from "./keyboard-a11y.js";
 
 const BRIDGE_CHANNEL = "armada.shell.window-bridge.v1";
@@ -111,6 +113,7 @@ interface ShellRuntime {
   announcement: string;
   chooserFocusIndex: number;
   pendingFocusSelector: string | null;
+  chooserReturnFocusSelector: string | null;
 }
 
 interface TenantPluginDescriptor {
@@ -222,6 +225,7 @@ const shellRuntime: ShellRuntime = {
   announcement: "",
   chooserFocusIndex: 0,
   pendingFocusSelector: null,
+  chooserReturnFocusSelector: null,
 };
 
 shellRuntime.registry.registerManifestDescriptors("local", []);
@@ -848,6 +852,18 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
     }
 
     if (runtime.syncDegraded) {
+      const degradedInteraction = resolveDegradedKeyboardInteraction(event.key, runtime.pendingIntentMatches.length > 0);
+      if (degradedInteraction === "dismiss-chooser") {
+        event.preventDefault();
+        dismissIntentChooser(root, runtime);
+        return;
+      }
+
+      if (degradedInteraction === "block") {
+        event.preventDefault();
+        return;
+      }
+
       return;
     }
 
@@ -912,13 +928,20 @@ function handleChooserKeyboardEvent(root: HTMLElement, runtime: ShellRuntime, ev
     return true;
   }
 
+  dismissIntentChooser(root, runtime);
+  return true;
+}
+
+function dismissIntentChooser(root: HTMLElement, runtime: ShellRuntime): void {
   runtime.pendingIntentMatches = [];
   runtime.pendingIntent = null;
   runtime.chooserFocusIndex = 0;
   runtime.intentNotice = "Action chooser dismissed.";
+  const restoreSelector = resolveChooserFocusRestoration("dismiss", runtime.chooserReturnFocusSelector);
+  runtime.chooserReturnFocusSelector = null;
+  runtime.pendingFocusSelector = restoreSelector;
   announce(root, runtime, runtime.intentNotice);
   renderSyncStatus(root, runtime);
-  return true;
 }
 
 function isSelectionActionNode(target: HTMLElement): target is HTMLButtonElement {
@@ -1073,6 +1096,7 @@ function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: She
 
   runtime.pendingIntentMatches = resolution.matches;
   runtime.chooserFocusIndex = 0;
+  runtime.chooserReturnFocusSelector = resolveEventTargetSelector(root);
   runtime.pendingFocusSelector = "button[data-action='choose-intent-action'][data-intent-index='0']";
   runtime.intentNotice = resolution.feedback;
   announce(root, runtime, `${resolution.feedback} Use arrow keys and Enter to choose an action.`);
@@ -1099,9 +1123,29 @@ function executeResolvedAction(
 
   runtime.pendingIntentMatches = [];
   runtime.chooserFocusIndex = 0;
+  const restoreSelector = resolveChooserFocusRestoration("execute", runtime.chooserReturnFocusSelector);
+  runtime.chooserReturnFocusSelector = null;
+  runtime.pendingFocusSelector = restoreSelector;
   runtime.intentNotice = `Executed '${match.title}' via ${match.pluginId}.${match.handler}.`;
   announce(root, runtime, runtime.intentNotice);
   renderParts(root, runtime);
+}
+
+function resolveEventTargetSelector(root: HTMLElement): string | null {
+  const active = root.ownerDocument?.activeElement;
+  if (!(active instanceof HTMLElement)) {
+    return null;
+  }
+
+  if (active.matches("button[data-action='select-order']") && active.dataset.orderId) {
+    return `button[data-action='select-order'][data-order-id='${active.dataset.orderId}']`;
+  }
+
+  if (active.matches("button[data-action='select-vessel']") && active.dataset.vesselId) {
+    return `button[data-action='select-vessel'][data-vessel-id='${active.dataset.vesselId}']`;
+  }
+
+  return null;
 }
 
 function applySelectionPropagation(
