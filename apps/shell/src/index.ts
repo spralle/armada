@@ -866,11 +866,13 @@ function registerDrag(
 ): void {
   splitter.addEventListener("pointerdown", (event) => {
     splitter.setPointerCapture(event.pointerId);
-    const start = axisValue(event, splitter.dataset.pane);
+    // Use incremental deltas so drag follows the pointer continuously.
+    let previous = axisValue(event, splitter.dataset.pane);
 
     const onMove = (moveEvent: PointerEvent) => {
       const current = axisValue(moveEvent, splitter.dataset.pane);
-      onDelta(current - start);
+      onDelta(current - previous);
+      previous = current;
     };
 
     const onUp = () => {
