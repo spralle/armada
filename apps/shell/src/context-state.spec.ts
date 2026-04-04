@@ -20,6 +20,7 @@ import {
   createActionCatalogFromRegistrySnapshot,
   resolveIntent,
 } from "./intent-runtime.js";
+import { createLocalStorageContextStatePersistence } from "./persistence.js";
 
 type TestCase = {
   name: string;
@@ -35,6 +36,24 @@ function test(name: string, run: () => void): void {
 function assertEqual(actual: unknown, expected: unknown, message: string): void {
   if (actual !== expected) {
     throw new Error(`${message}. expected=${String(expected)} actual=${String(actual)}`);
+  }
+}
+
+function assertTruthy(value: unknown, message: string): void {
+  if (!value) {
+    throw new Error(message);
+  }
+}
+
+class MemoryStorage {
+  private readonly map = new Map<string, string>();
+
+  getItem(key: string): string | null {
+    return this.map.has(key) ? (this.map.get(key) as string) : null;
+  }
+
+  setItem(key: string, value: string): void {
+    this.map.set(key, value);
   }
 }
 
@@ -583,6 +602,153 @@ test("intent runtime returns clear feedback for no matches", () => {
       "no-match feedback should be explicit",
     );
   }
+});
+
+test("context persistence restores full required state payload after reload", () => {
+  const storage = new MemoryStorage();
+  const persistence = createLocalStorageContextStatePersistence(storage, {
+    userId: "spec-user",
+  });
+
+  let state = createInitialShellContextState({
+    initialTabId: "tab-a",
+    initialGroupId: "group-main",
+    initialGroupColor: "blue",
+  });
+  state = registerTab(state, {
+    tabId: "tab-b",
+    groupId: "group-alt",
+    groupColor: "purple",
+  });
+  state = setEntityTypeSelection(state, {
+    entityType: "order",
+    selectedIds: ["o-2", "o-1"],
+    priorityId: "o-1",
+  });
+  state = writeGroupLaneByTab(state, {
+    tabId: "tab-a",
+    key: "domain.selection",
+    value: "order:o-2",
+    revision: { timestamp: 10, writer: "writer-a" },
+  });
+  state = writeGlobalLane(state, {
+    key: "shell.selection",
+    value: "tab-a|Orders",
+    revision: { timestamp: 11, writer: "writer-a" },
+    valueType: "selection",
+    sourceSelection: {
+      entityType: "order",
+      revision: { timestamp: 11, writer: "writer-a" },
+    },
+  });
+  state = writeTabSubcontext(state, {
+    tabId: "tab-a",
+    key: "draft.filters",
+    value: "cargo=roro",
+    revision: { timestamp: 12, writer: "writer-a" },
+  });
+
+  const saveResult = persistence.save(state);
+  assertEqual(saveResult.warning, null, "save should not produce warning for valid state");
+
+  const loaded = persistence.load(createInitialShellContextState({ initialTabId: "fallback-tab" }));
+  assertEqual(loaded.warning, null, "load should not produce warning for valid envelope");
+  assertEqual(loaded.state.groups["group-alt"]?.color, "purple", "groups should restore");
+  assertEqual(loaded.state.selectionByEntityType.order.priorityId, "o-1", "selection priority should restore");
+  assertEqual(
+    loaded.state.selectionByEntityType.order.selectedIds.join(","),
+    "o-2,o-1",
+    "selection ordering should restore",
+  );
+  assertEqual(
+    loaded.state.subcontextsByTab["tab-a"]["draft.filters"]?.value,
+    "cargo=roro",
+    "subcontext lanes should restore",
+  );
+  assertEqual(
+    loaded.state.groupLanes["group-main"]["domain.selection"]?.value,
+    "order:o-2",
+    "group lanes should restore",
+  );
+  assertEqual(
+    loaded.state.globalLanes["shell.selection"]?.sourceSelection?.entityType,
+    "order",
+    "derived/global lane metadata should restore",
+  );
+});
+
+test("context persistence migrates v1 envelope to current schema", () => {
+  const storage = new MemoryStorage();
+  const userId = "spec-user";
+  const storageKey = `armada.shell.context-state.v2.${userId}`;
+  storage.setItem(storageKey, JSON.stringify({
+    version: 1,
+    state: {
+      groups: {
+        "group-main": { id: "group-main", color: "blue" },
+      },
+      tabs: {
+        "tab-main": { id: "tab-main", groupId: "group-main" },
+      },
+      tabOrder: ["tab-main"],
+      activeTabId: "tab-main",
+      globalLanes: {
+        "shell.selection": {
+          value: "legacy",
+          revision: { timestamp: 1, writer: "legacy-writer" },
+        },
+      },
+      groupLanes: {},
+      subcontextsByTab: {},
+      selectionByEntityType: {
+        order: { selectedIds: ["o-1"], priorityId: "o-1" },
+      },
+    },
+  }));
+
+  const persistence = createLocalStorageContextStatePersistence(storage, { userId });
+  const loaded = persistence.load(createInitialShellContextState({ initialTabId: "fallback-tab" }));
+
+  assertTruthy(loaded.warning, "v1 migration should produce migration warning");
+  assertEqual(
+    loaded.state.globalLanes["shell.selection"]?.value,
+    "legacy",
+    "v1 payload should be migrated into current envelope",
+  );
+  assertEqual(
+    loaded.state.selectionByEntityType.order.priorityId,
+    "o-1",
+    "v1 selection payload should be migrated",
+  );
+});
+
+test("context persistence handles corruption with warning and safe fallback", () => {
+  const storage = new MemoryStorage();
+  const userId = "spec-user";
+  const storageKey = `armada.shell.context-state.v2.${userId}`;
+  storage.setItem(storageKey, "{invalid-json");
+  const fallback = createInitialShellContextState({ initialTabId: "fallback-tab" });
+
+  const persistence = createLocalStorageContextStatePersistence(storage, { userId });
+  const loaded = persistence.load(fallback);
+
+  assertTruthy(loaded.warning, "corrupted payload should surface warning");
+  assertEqual(loaded.state.activeTabId, "fallback-tab", "runtime should continue with fallback state");
+  assertEqual(Object.keys(loaded.state.groups).length, 1, "fallback context should remain usable");
+});
+
+test("context persistence rejects unsupported schema version with fallback", () => {
+  const storage = new MemoryStorage();
+  const userId = "spec-user";
+  const storageKey = `armada.shell.context-state.v2.${userId}`;
+  storage.setItem(storageKey, JSON.stringify({ version: 99, contextState: {} }));
+
+  const fallback = createInitialShellContextState({ initialTabId: "fallback-tab" });
+  const persistence = createLocalStorageContextStatePersistence(storage, { userId });
+  const loaded = persistence.load(fallback);
+
+  assertTruthy(loaded.warning, "unsupported version should surface warning");
+  assertEqual(loaded.state.activeTabId, "fallback-tab", "unsupported version should use fallback state");
 });
 
 let passed = 0;

@@ -10,7 +10,9 @@ import {
 } from "./layout.js";
 import { localMockParts, type LocalMockPart } from "./mock-parts.js";
 import {
+  createLocalStorageContextStatePersistence,
   createLocalStorageLayoutPersistence,
+  type ShellContextStatePersistence,
   type ShellLayoutPersistence,
 } from "./persistence.js";
 import {
@@ -78,6 +80,7 @@ export interface ShellBootstrapOptions {
 interface ShellRuntime {
   layout: ShellLayoutState;
   persistence: ShellLayoutPersistence;
+  contextPersistence: ShellContextStatePersistence;
   registry: ShellPluginRegistry;
   bridge: WindowBridge;
   windowId: string;
@@ -179,6 +182,9 @@ const shellRuntime: ShellRuntime = {
   persistence: createLocalStorageLayoutPersistence(getStorage(), {
     userId: getCurrentUserId(),
   }),
+  contextPersistence: createLocalStorageContextStatePersistence(getStorage(), {
+    userId: getCurrentUserId(),
+  }),
   registry: createShellPluginRegistry(),
   bridge,
   windowId,
@@ -209,6 +215,11 @@ const shellRuntime: ShellRuntime = {
 
 shellRuntime.registry.registerManifestDescriptors("local", []);
 shellRuntime.layout = shellRuntime.persistence.load();
+const contextLoad = shellRuntime.contextPersistence.load(shellRuntime.contextState);
+shellRuntime.contextState = contextLoad.state;
+if (contextLoad.warning) {
+  shellRuntime.notice = contextLoad.warning;
+}
 
 if (typeof document !== "undefined") {
   mountShell(document.body, shellRuntime);
@@ -355,7 +366,7 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
   const visibleParts = getVisibleMockParts(runtime);
-  runtime.contextState = ensureTabsRegistered(runtime.contextState, visibleParts);
+  updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
 
   if (runtime.isPopout) {
     const slot = root.querySelector<HTMLElement>("#popout-slot");
@@ -820,12 +831,12 @@ function applySelection(
   const revision = event.revision ?? createRevision(event.sourceWindowId);
   runtime.selectedPartId = event.selectedPartId;
   runtime.selectedPartTitle = event.selectedPartTitle;
-  runtime.contextState = registerTab(runtime.contextState, {
+  updateContextState(runtime, registerTab(runtime.contextState, {
     tabId: event.selectedPartId,
     groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
     groupColor: DEFAULT_GROUP_COLOR,
-  });
-  runtime.contextState = setActiveTab(runtime.contextState, event.selectedPartId);
+  }));
+  updateContextState(runtime, setActiveTab(runtime.contextState, event.selectedPartId));
   writeGlobalSelectionLane(runtime, {
     selectedPartId: event.selectedPartId,
     selectedPartTitle: event.selectedPartTitle,
@@ -838,7 +849,7 @@ function applySelection(
     runtime.selectedVesselId = event.selectedVesselId;
   }
   const selectionPropagation = applySelectionPropagation(root, runtime, event, revision);
-  runtime.contextState = selectionPropagation.state;
+  updateContextState(runtime, selectionPropagation.state);
   runtime.selectedOrderId = readEntityTypeSelection(runtime.contextState, "order").priorityId;
   runtime.selectedVesselId = readEntityTypeSelection(runtime.contextState, "vessel").priorityId;
 
@@ -853,25 +864,25 @@ function applySelection(
 function applyContext(root: HTMLElement, runtime: ShellRuntime, event: ContextSyncEvent): void {
   const revision = event.revision ?? createRevision(event.sourceWindowId);
   if (event.scope === "global") {
-    runtime.contextState = writeGlobalLane(runtime.contextState, {
+    updateContextState(runtime, writeGlobalLane(runtime.contextState, {
       key: event.contextKey,
       value: event.contextValue,
       revision,
-    });
+    }));
   } else if (event.groupId) {
-    runtime.contextState = writeGroupLaneByGroup(runtime.contextState, {
+    updateContextState(runtime, writeGroupLaneByGroup(runtime.contextState, {
       groupId: event.groupId,
       key: event.contextKey,
       value: event.contextValue,
       revision,
-    });
+    }));
   } else if (event.tabId) {
-    runtime.contextState = writeGroupLaneByTab(runtime.contextState, {
+    updateContextState(runtime, writeGroupLaneByTab(runtime.contextState, {
       tabId: event.tabId,
       key: event.contextKey,
       value: event.contextValue,
       revision,
-    });
+    }));
   }
   renderContextControls(root, runtime);
   renderSyncStatus(root, runtime);
@@ -1567,23 +1578,31 @@ function writeDomainGroupContext(runtime: ShellRuntime, value: string): void {
     return;
   }
 
-  runtime.contextState = writeGroupLaneByTab(runtime.contextState, {
+  updateContextState(runtime, writeGroupLaneByTab(runtime.contextState, {
     tabId: activeTabId,
     key: DOMAIN_CONTEXT_KEY,
     value,
     revision: createRevision(runtime.windowId),
-  });
+  }));
 }
 
 function writeGlobalSelectionLane(
   runtime: ShellRuntime,
   input: { selectedPartId: string; selectedPartTitle: string; revision?: RevisionMeta },
 ): void {
-  runtime.contextState = writeGlobalLane(runtime.contextState, {
+  updateContextState(runtime, writeGlobalLane(runtime.contextState, {
     key: GLOBAL_CONTEXT_KEY,
     value: `${input.selectedPartId}|${input.selectedPartTitle}`,
     revision: input.revision ?? createRevision(runtime.windowId),
-  });
+  }));
+}
+
+function updateContextState(runtime: ShellRuntime, nextState: ShellContextState): void {
+  runtime.contextState = nextState;
+  const result = runtime.contextPersistence.save(nextState);
+  if (result.warning) {
+    runtime.notice = result.warning;
+  }
 }
 
 function updateWindowReadOnlyState(root: HTMLElement, runtime: ShellRuntime): void {
