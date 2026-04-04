@@ -1,4 +1,9 @@
-import { createDefaultLayoutState, type ShellLayoutState } from "./layout.js";
+import {
+  createDefaultLayoutState,
+  sanitizeLayoutState,
+  type PartialLayoutState,
+  type ShellLayoutState,
+} from "./layout.js";
 
 export interface ShellLayoutPersistence {
   load(): ShellLayoutState;
@@ -12,16 +17,23 @@ interface StorageLike {
 
 const LAYOUT_STORAGE_KEY = "armada.shell.layout.v1";
 
+interface LayoutPersistenceOptions {
+  userId: string;
+}
+
 export function createLocalStorageLayoutPersistence(
   storage: StorageLike | undefined,
+  options: LayoutPersistenceOptions,
 ): ShellLayoutPersistence {
+  const storageKey = `${LAYOUT_STORAGE_KEY}.${options.userId}`;
+
   return {
     load() {
       if (!storage) {
         return createDefaultLayoutState();
       }
 
-      const raw = storage.getItem(LAYOUT_STORAGE_KEY);
+      const raw = storage.getItem(storageKey);
       if (!raw) {
         return createDefaultLayoutState();
       }
@@ -31,26 +43,20 @@ export function createLocalStorageLayoutPersistence(
         return createDefaultLayoutState();
       }
 
-      const fallback = createDefaultLayoutState();
-      return {
-        sideSize:
-          typeof parsed.sideSize === "number" ? parsed.sideSize : fallback.sideSize,
-        secondarySize:
-          typeof parsed.secondarySize === "number"
-            ? parsed.secondarySize
-            : fallback.secondarySize,
-      };
+      return sanitizeLayoutState(parsed);
     },
     save(state) {
       if (!storage) {
         return;
       }
-      storage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(state));
+
+      const safeState = sanitizeLayoutState(state);
+      storage.setItem(storageKey, JSON.stringify(safeState));
     },
   };
 }
 
-function safeParse(input: string): Partial<ShellLayoutState> | null {
+function safeParse(input: string): PartialLayoutState | null {
   try {
     return JSON.parse(input) as Partial<ShellLayoutState>;
   } catch {

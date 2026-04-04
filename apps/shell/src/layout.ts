@@ -5,6 +5,8 @@ export interface ShellLayoutState {
   secondarySize: number;
 }
 
+export type PartialLayoutState = Partial<ShellLayoutState>;
+
 export interface PaneResizeRequest {
   pane: "side" | "secondary";
   deltaPx: number;
@@ -23,6 +25,21 @@ const MAX_SECONDARY = 0.65;
 
 export function createDefaultLayoutState(): ShellLayoutState {
   return { ...DEFAULT_LAYOUT };
+}
+
+export function sanitizeLayoutState(
+  value: PartialLayoutState,
+  fallback: ShellLayoutState = createDefaultLayoutState(),
+): ShellLayoutState {
+  return {
+    sideSize: sanitizeRatio(value.sideSize, fallback.sideSize, MIN_SIDE, MAX_SIDE),
+    secondarySize: sanitizeRatio(
+      value.secondarySize,
+      fallback.secondarySize,
+      MIN_SECONDARY,
+      MAX_SECONDARY,
+    ),
+  };
 }
 
 export function applyPaneResize(
@@ -51,4 +68,17 @@ export function applyPaneResize(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function sanitizeRatio(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return fallback;
+  }
+
+  return clamp(value, min, max);
 }

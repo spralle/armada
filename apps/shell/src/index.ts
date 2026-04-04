@@ -27,7 +27,9 @@ interface ShellRuntime {
 
 const shellRuntime: ShellRuntime = {
   layout: createDefaultLayoutState(),
-  persistence: createLocalStorageLayoutPersistence(getStorage()),
+  persistence: createLocalStorageLayoutPersistence(getStorage(), {
+    userId: getCurrentUserId(),
+  }),
 };
 
 shellRuntime.layout = shellRuntime.persistence.load();
@@ -155,4 +157,8 @@ function getStorage(): Storage | undefined {
     return undefined;
   }
   return window.localStorage;
+}
+
+function getCurrentUserId(): string {
+  return "local-user";
 }
