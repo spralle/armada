@@ -152,7 +152,7 @@ export function parsePluginContract(input: unknown): ParsePluginContractResult {
   if (result.success) {
     return {
       success: true,
-      data: result.data,
+      data: result.data as PluginContract,
     };
   }
 
