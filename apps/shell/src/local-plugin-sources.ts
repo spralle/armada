@@ -66,7 +66,19 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
           strategy: "priority-id",
         },
       ],
-    },
+      actions: [
+        {
+          id: "domain.orders.assign-to-vessel",
+          title: "Assign order to selected vessel",
+          handler: "assignOrderToVessel",
+          intentType: "domain.orders.assign-to-vessel",
+          when: {
+            sourceType: "order",
+            targetType: "vessel",
+          },
+        },
+      ],
+    } as PluginContract["contributes"],
   }),
   "com.armada.domain.vessel-view": async () => ({
     manifest: {
@@ -99,7 +111,20 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
           strategy: "joined-selected-ids",
         },
       ],
-    },
+      actions: [
+        {
+          id: "domain.vessel.assign-roro",
+          title: "Assign order to RORO vessel",
+          handler: "assignOrderToRoroVessel",
+          intentType: "domain.orders.assign-to-vessel",
+          when: {
+            sourceType: "order",
+            targetType: "vessel",
+            "target.vesselClass": "RORO",
+          },
+        },
+      ],
+    } as PluginContract["contributes"],
   }),
 };
 

@@ -48,6 +48,12 @@ import {
   type RevisionMeta,
   type ShellContextState,
 } from "./context-state.js";
+import {
+  createActionCatalogFromRegistrySnapshot,
+  resolveIntent,
+  type IntentActionMatch,
+  type ShellIntent,
+} from "./intent-runtime.js";
 
 const BRIDGE_CHANNEL = "armada.shell.window-bridge.v1";
 const DRAG_REF_PREFIX = "armada-dnd-ref:";
@@ -85,6 +91,9 @@ interface ShellRuntime {
   contextState: ShellContextState;
   notice: string;
   pluginNotice: string;
+  intentNotice: string;
+  pendingIntentMatches: IntentActionMatch[];
+  pendingIntent: ShellIntent | null;
   popoutHandles: Map<string, Window>;
   poppedOutPartIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
@@ -187,6 +196,9 @@ const shellRuntime: ShellRuntime = {
   }),
   notice: "",
   pluginNotice: "",
+  intentNotice: "",
+  pendingIntentMatches: [],
+  pendingIntent: null,
   popoutHandles: new Map<string, Window>(),
   poppedOutPartIds: new Set<string>(),
   dragSessionBroker: createDragSessionBroker(bridge, windowId),
@@ -253,6 +265,9 @@ function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 6px; padding: 8px; cursor: pointer; }
     .domain-row:hover { border-color: #7cb4ff; }
     .domain-row.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff44 inset; }
+    .intent-chooser { margin-top: 8px; border: 1px solid #334564; border-radius: 6px; padding: 8px; background: #101723; }
+    .intent-chooser button { display: block; width: 100%; text-align: left; margin: 4px 0; background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 6px; cursor: pointer; }
+    .intent-chooser button:hover { border-color: #7cb4ff; }
     @container (max-width: 420px) {
       .part-actions { flex-wrap: wrap; }
       .domain-row { font-size: 12px; padding: 6px; }
@@ -304,6 +319,8 @@ function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 6px; padding: 8px; cursor: pointer; }
     .domain-row:hover { border-color: #7cb4ff; }
     .domain-row.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff44 inset; }
+    .intent-chooser { margin-top: 8px; border: 1px solid #334564; border-radius: 6px; padding: 8px; background: #101723; }
+    .intent-chooser button { display: block; width: 100%; text-align: left; margin: 4px 0; background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 6px; cursor: pointer; }
     @container (max-width: 420px) {
       .part-actions { flex-wrap: wrap; }
       .domain-row { font-size: 12px; padding: 6px; }
@@ -497,6 +514,20 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
       });
 
       writeDomainGroupContext(runtime, `order:${order.id}|vessel:${order.vesselId}`);
+      resolveIntentFlow(root, runtime, {
+        type: "domain.orders.assign-to-vessel",
+        facts: {
+          sourceType: "order",
+          targetType: "vessel",
+          source: {
+            orderId: order.id,
+          },
+          target: {
+            vesselId: order.vesselId,
+            vesselClass: resolveVessel(order.vesselId)?.vesselClass ?? null,
+          },
+        },
+      });
       renderParts(root, runtime);
       renderContextControls(root, runtime);
       renderSyncStatus(root, runtime);
@@ -563,6 +594,17 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
       });
 
       writeDomainGroupContext(runtime, `vessel:${vessel.id}`);
+      resolveIntentFlow(root, runtime, {
+        type: "domain.vessels.focus-related-order",
+        facts: {
+          sourceType: "vessel",
+          targetType: "order",
+          source: {
+            vesselId: vessel.id,
+            vesselClass: vessel.vesselClass,
+          },
+        },
+      });
       renderParts(root, runtime);
       renderContextControls(root, runtime);
       renderSyncStatus(root, runtime);
@@ -848,6 +890,17 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
   const orderPriority = readEntityTypeSelection(runtime.contextState, "order").priorityId ?? "none";
   const vesselPriority = readEntityTypeSelection(runtime.contextState, "vessel").priorityId ?? "none";
   const notice = runtime.notice ? `<p class="runtime-note">${runtime.notice}</p>` : "";
+  const intentNotice = runtime.intentNotice
+    ? `<p class="runtime-note"><strong>Intent runtime:</strong> ${escapeHtml(runtime.intentNotice)}</p>`
+    : "";
+  const chooser = runtime.pendingIntentMatches.length
+    ? `<section class="intent-chooser"><h3 style="margin:0 0 6px;">Choose action</h3>${runtime.pendingIntentMatches
+        .map(
+          (match, index) =>
+            `<button type="button" data-action="choose-intent-action" data-intent-index="${index}" ${index === 0 ? "autofocus" : ""}>${escapeHtml(match.title)} <small>(${escapeHtml(match.pluginName)})</small></button>`,
+        )
+        .join("")}</section>`
+    : "";
 
   node.innerHTML = `
     <h2>Cross-window sync</h2>
@@ -858,8 +911,66 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
     <p class="runtime-note"><strong>Group context:</strong> ${DOMAIN_CONTEXT_KEY} = ${groupContext}</p>
     <p class="runtime-note"><strong>Global lane:</strong> ${GLOBAL_CONTEXT_KEY} = ${globalContext}</p>
     <p class="runtime-note"><strong>Window ID:</strong> ${runtime.windowId}</p>
+    ${intentNotice}
+    ${chooser}
     ${notice}
   `;
+
+  for (const button of node.querySelectorAll<HTMLButtonElement>("button[data-action='choose-intent-action']")) {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.intentIndex ?? "-1");
+      const selected = runtime.pendingIntentMatches[index];
+      if (!selected) {
+        return;
+      }
+      executeResolvedAction(root, runtime, selected, runtime.pendingIntent);
+    });
+  }
+}
+
+function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: ShellIntent): void {
+  const catalog = createActionCatalogFromRegistrySnapshot(runtime.registry.getSnapshot());
+  const resolution = resolveIntent(catalog, intent);
+  runtime.pendingIntent = intent;
+
+  if (resolution.kind === "no-match") {
+    runtime.pendingIntentMatches = [];
+    runtime.intentNotice = resolution.feedback;
+    return;
+  }
+
+  if (resolution.kind === "single-match") {
+    runtime.pendingIntentMatches = [];
+    executeResolvedAction(root, runtime, resolution.matches[0], intent);
+    return;
+  }
+
+  runtime.pendingIntentMatches = resolution.matches;
+  runtime.intentNotice = resolution.feedback;
+}
+
+function executeResolvedAction(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  match: IntentActionMatch,
+  intent: ShellIntent | null,
+): void {
+  const orderId = intent?.facts && typeof intent.facts === "object"
+    ? ((intent.facts.source as { orderId?: string } | undefined)?.orderId ?? null)
+    : null;
+  const vesselId = intent?.facts && typeof intent.facts === "object"
+    ? ((intent.facts.target as { vesselId?: string } | undefined)?.vesselId ?? null)
+    : null;
+
+  if ((match.handler === "assignOrderToVessel" || match.handler === "assignOrderToRoroVessel") && orderId && vesselId) {
+    runtime.selectedOrderId = orderId;
+    runtime.selectedVesselId = vesselId;
+    writeDomainGroupContext(runtime, `order:${orderId}|vessel:${vesselId}`);
+  }
+
+  runtime.pendingIntentMatches = [];
+  runtime.intentNotice = `Executed '${match.title}' via ${match.pluginId}.${match.handler}.`;
+  renderParts(root, runtime);
 }
 
 function applySelectionPropagation(
