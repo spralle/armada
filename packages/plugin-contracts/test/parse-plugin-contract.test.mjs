@@ -61,6 +61,27 @@ test("returns typed data for a valid plugin contract", () => {
   }
 });
 
+test("accepts the minimal sample contract-consumer plugin manifest", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "com.armada.sample.contract-consumer",
+      name: "Sample Contract Consumer",
+      version: "0.1.0",
+    },
+    contributes: {
+      views: [
+        {
+          id: "sample.view",
+          title: "Sample View",
+          component: "SampleView",
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.success, true);
+});
+
 test("returns structured errors for missing required manifest fields", () => {
   const result = parsePluginContract({
     manifest: {

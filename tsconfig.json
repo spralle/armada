@@ -6,6 +6,9 @@
     },
     {
       "path": "./apps/typecheck-fixture"
+    },
+    {
+      "path": "./apps/sample-contract-consumer-plugin"
     }
   ]
 }
