@@ -27,8 +27,10 @@ import {
   resolveVessel,
 } from "./domain-demo-data.js";
 import {
+  addEntityTypeSelectionId,
   createInitialShellContextState,
   getTabGroupId,
+  readEntityTypeSelection,
   readGlobalLane,
   readGroupLaneForTab,
   registerTab,
@@ -699,6 +701,7 @@ function applySelection(
   if (event.selectedVesselId !== undefined) {
     runtime.selectedVesselId = event.selectedVesselId;
   }
+  runtime.contextState = syncSelectionGraphFromEvent(runtime.contextState, event);
   renderParts(root, runtime);
   updateSelectedStyles(root, runtime.selectedPartId);
   renderSyncStatus(root, runtime);
@@ -741,17 +744,45 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
   const selected = runtime.selectedPartTitle ?? "none";
   const groupContext = readDomainGroupContext(runtime);
   const globalContext = readGlobalContext(runtime);
+  const orderPriority = readEntityTypeSelection(runtime.contextState, "order").priorityId ?? "none";
+  const vesselPriority = readEntityTypeSelection(runtime.contextState, "vessel").priorityId ?? "none";
   const notice = runtime.notice ? `<p class="runtime-note">${runtime.notice}</p>` : "";
 
   node.innerHTML = `
     <h2>Cross-window sync</h2>
     ${warning}
     <p class="runtime-note"><strong>Selected part:</strong> ${selected}</p>
+    <p class="runtime-note"><strong>Order priority:</strong> ${orderPriority}</p>
+    <p class="runtime-note"><strong>Vessel priority:</strong> ${vesselPriority}</p>
     <p class="runtime-note"><strong>Group context:</strong> ${DOMAIN_CONTEXT_KEY} = ${groupContext}</p>
     <p class="runtime-note"><strong>Global lane:</strong> ${GLOBAL_CONTEXT_KEY} = ${globalContext}</p>
     <p class="runtime-note"><strong>Window ID:</strong> ${runtime.windowId}</p>
     ${notice}
   `;
+}
+
+function syncSelectionGraphFromEvent(
+  state: ShellContextState,
+  event: SelectionSyncEvent,
+): ShellContextState {
+  let next = state;
+  if (event.selectedOrderId !== undefined && event.selectedOrderId !== null) {
+    next = addEntityTypeSelectionId(next, {
+      entityType: "order",
+      id: event.selectedOrderId,
+      prioritize: true,
+    });
+  }
+
+  if (event.selectedVesselId !== undefined && event.selectedVesselId !== null) {
+    next = addEntityTypeSelectionId(next, {
+      entityType: "vessel",
+      id: event.selectedVesselId,
+      prioritize: true,
+    });
+  }
+
+  return next;
 }
 
 function renderBridgeWarning(runtime: ShellRuntime): string {
