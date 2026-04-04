@@ -22,11 +22,16 @@ const fixturePlugin: PluginContract = {
         component: "FixturePart"
       }
     ],
-    commands: [
+    actions: [
       {
-        id: "fixture.command",
+        id: "fixture.action",
         title: "Run Fixture",
-        handler: "runFixture"
+        handler: "runFixture",
+        intentType: "workbench.fixture.run",
+        when: {
+          entityType: "workbench.item",
+          hasSelection: true
+        }
       }
     ],
     selection: [
