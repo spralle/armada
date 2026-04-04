@@ -254,6 +254,50 @@ test("selection graph deduplicates selected IDs and stores ID-only payload", () 
   const selection = readEntityTypeSelection(state, "order");
   assertEqual(selection.selectedIds.join(","), "o-1,o-2", "selection should be de-duplicated and keep order");
   assertEqual(typeof selection.selectedIds[0], "string", "selection should store string IDs only");
+  assertEqual(selection.priorityId, "o-2", "priority should remain valid after de-duplication");
+});
+
+test("global lane LWW uses timestamp and writer tie-break deterministically", () => {
+  let state = createInitialShellContextState({ initialTabId: "tab-a" });
+
+  state = writeGlobalLane(state, {
+    key: "shell.selection",
+    value: "writer-b",
+    revision: { timestamp: 50, writer: "writer-b" },
+  });
+
+  state = writeGlobalLane(state, {
+    key: "shell.selection",
+    value: "older-ts",
+    revision: { timestamp: 49, writer: "writer-z" },
+  });
+  assertEqual(
+    readGlobalLane(state, "shell.selection")?.value,
+    "writer-b",
+    "older timestamp should not overwrite global lane",
+  );
+
+  state = writeGlobalLane(state, {
+    key: "shell.selection",
+    value: "same-ts-lower-writer",
+    revision: { timestamp: 50, writer: "writer-a" },
+  });
+  assertEqual(
+    readGlobalLane(state, "shell.selection")?.value,
+    "writer-b",
+    "lower writer should lose at same timestamp for global lane",
+  );
+
+  state = writeGlobalLane(state, {
+    key: "shell.selection",
+    value: "same-ts-higher-writer",
+    revision: { timestamp: 50, writer: "writer-z" },
+  });
+  assertEqual(
+    readGlobalLane(state, "shell.selection")?.value,
+    "same-ts-higher-writer",
+    "higher writer should win at same timestamp for global lane",
+  );
 });
 
 let passed = 0;
