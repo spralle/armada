@@ -1,17 +1,59 @@
-export interface TenantPluginManifestEntry {
-  id: string;
-  version: string;
-  entry: string;
-}
+import type {
+  TenantPluginDescriptor,
+  TenantPluginManifestResponse,
+} from "@armada/plugin-contracts";
 
-export function getTenantManifest(tenantId: string): TenantPluginManifestEntry[] {
-  return [
+const DEFAULT_TENANT = "demo";
+
+const inMemoryTenantPluginDescriptors: Readonly<Record<string, TenantPluginDescriptor[]>> = {
+  demo: [
     {
-      id: `tenant.${tenantId}.sample`,
-      version: "0.0.0",
+      id: "com.armada.plugin-starter",
+      version: "0.1.0",
       entry: "local://apps/plugin-starter/src/index.ts",
+      compatibility: {
+        shell: "^1.0.0",
+        pluginContract: "^1.0.0",
+      },
     },
-  ];
+    {
+      id: "com.armada.sample.contract-consumer",
+      version: "0.1.0",
+      entry: "local://apps/sample-contract-consumer-plugin/src/index.ts",
+      compatibility: {
+        shell: "^1.0.0",
+        pluginContract: "^1.0.0",
+      },
+    },
+  ],
+};
+
+export function getTenantManifestEndpointPath(tenantId: string): string {
+  return `/api/tenants/${encodeURIComponent(tenantId)}/plugin-manifest`;
 }
 
-console.log("[backend] POC backend stub ready");
+export function getTenantManifestResponse(tenantId: string): TenantPluginManifestResponse {
+  const normalizedTenantId = tenantId.trim() || DEFAULT_TENANT;
+  const plugins = inMemoryTenantPluginDescriptors[normalizedTenantId] ?? [];
+
+  return {
+    tenantId: normalizedTenantId,
+    plugins,
+  };
+}
+
+export function resolveTenantManifestRequest(
+  pathname: string,
+): TenantPluginManifestResponse | null {
+  const match = pathname.match(/^\/api\/tenants\/([^/]+)\/plugin-manifest$/);
+  if (!match) {
+    return null;
+  }
+
+  const tenantId = decodeURIComponent(match[1]);
+  return getTenantManifestResponse(tenantId);
+}
+
+console.log("[backend] tenant manifest endpoint ready", {
+  examplePath: getTenantManifestEndpointPath(DEFAULT_TENANT),
+});
