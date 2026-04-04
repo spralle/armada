@@ -1,4 +1,14 @@
 import type { PluginContract } from "@armada/plugin-contracts";
+import {
+  applyPaneResize,
+  createDefaultLayoutState,
+  type ShellLayoutState,
+} from "./layout.js";
+import { localMockParts } from "./mock-parts.js";
+import {
+  createLocalStorageLayoutPersistence,
+  type ShellLayoutPersistence,
+} from "./persistence.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -10,4 +20,145 @@ export const shellBootstrapState: ShellBootstrapState = {
   loadedPlugins: [],
 };
 
+interface ShellRuntime {
+  layout: ShellLayoutState;
+  persistence: ShellLayoutPersistence;
+}
+
+const shellRuntime: ShellRuntime = {
+  layout: createDefaultLayoutState(),
+  persistence: createLocalStorageLayoutPersistence(getStorage(), {
+    userId: getCurrentUserId(),
+  }),
+};
+
+shellRuntime.layout = shellRuntime.persistence.load();
+
+if (typeof document !== "undefined") {
+  mountShell(document.body, shellRuntime);
+}
+
 console.log("[shell] POC shell stub ready", shellBootstrapState.mode);
+
+function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
+  root.innerHTML = `
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; background: #14161a; color: #e9edf3; }
+    .shell { display: grid; grid-template-columns: var(--side-size) 6px 1fr; height: 100vh; }
+    .slot-side { border-right: 1px solid #2b3040; background: #181c24; }
+    .main-stack { display: grid; grid-template-rows: 1fr 6px var(--secondary-size); min-width: 0; min-height: 0; }
+    .slot { min-width: 0; min-height: 0; overflow: auto; padding: 10px 12px; }
+    .slot-master { background: #11151c; }
+    .slot-secondary { border-top: 1px solid #2b3040; background: #121922; }
+    .splitter { background: #2b3040; cursor: col-resize; user-select: none; touch-action: none; }
+    .splitter[data-pane="secondary"] { cursor: row-resize; }
+    .part-root { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; container-type: inline-size; }
+    .part-root h2 { margin: 0 0 6px; font-size: 14px; }
+    .part-root p { margin: 0; color: #c6d0e0; font-size: 13px; }
+  </style>
+  <main class="shell" id="shell-root">
+    <section class="slot slot-side" id="slot-side" data-slot="side"></section>
+    <div class="splitter" id="splitter-side" data-pane="side" aria-label="Resize side pane"></div>
+    <section class="main-stack">
+      <section class="slot slot-master" id="slot-master" data-slot="master"></section>
+      <div class="splitter" id="splitter-secondary" data-pane="secondary" aria-label="Resize secondary pane"></div>
+      <section class="slot slot-secondary" id="slot-secondary" data-slot="secondary"></section>
+    </section>
+  </main>
+  `;
+
+  applyLayout(root, runtime.layout);
+  renderMockParts(root);
+  setupResize(root, runtime);
+}
+
+function applyLayout(root: HTMLElement, layout: ShellLayoutState): void {
+  root.style.setProperty("--side-size", `${Math.round(layout.sideSize * 100)}vw`);
+  root.style.setProperty("--secondary-size", `${Math.round(layout.secondarySize * 100)}vh`);
+}
+
+function renderMockParts(root: HTMLElement): void {
+  for (const part of localMockParts) {
+    const slotNode = root.querySelector<HTMLElement>(`#slot-${part.slot}`);
+    if (!slotNode) {
+      continue;
+    }
+
+    const wrapper = document.createElement("article");
+    wrapper.className = "part-root";
+    wrapper.dataset.partId = part.id;
+    wrapper.style.containerName = `part-${part.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+    wrapper.innerHTML = part.render();
+    slotNode.appendChild(wrapper);
+  }
+}
+
+function setupResize(root: HTMLElement, runtime: ShellRuntime): void {
+  const sideSplitter = root.querySelector<HTMLElement>("#splitter-side");
+  const secondarySplitter = root.querySelector<HTMLElement>("#splitter-secondary");
+
+  if (sideSplitter) {
+    registerDrag(sideSplitter, (delta) => {
+      runtime.layout = applyPaneResize(runtime.layout, {
+        pane: "side",
+        deltaPx: delta,
+        containerPx: window.innerWidth,
+      });
+      applyLayout(root, runtime.layout);
+      runtime.persistence.save(runtime.layout);
+    });
+  }
+
+  if (secondarySplitter) {
+    registerDrag(secondarySplitter, (delta) => {
+      runtime.layout = applyPaneResize(runtime.layout, {
+        pane: "secondary",
+        deltaPx: -delta,
+        containerPx: window.innerHeight,
+      });
+      applyLayout(root, runtime.layout);
+      runtime.persistence.save(runtime.layout);
+    });
+  }
+}
+
+function registerDrag(
+  splitter: HTMLElement,
+  onDelta: (delta: number) => void,
+): void {
+  splitter.addEventListener("pointerdown", (event) => {
+    splitter.setPointerCapture(event.pointerId);
+    const start = axisValue(event, splitter.dataset.pane);
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const current = axisValue(moveEvent, splitter.dataset.pane);
+      onDelta(current - start);
+    };
+
+    const onUp = () => {
+      splitter.removeEventListener("pointermove", onMove);
+      splitter.removeEventListener("pointerup", onUp);
+      splitter.removeEventListener("pointercancel", onUp);
+    };
+
+    splitter.addEventListener("pointermove", onMove);
+    splitter.addEventListener("pointerup", onUp);
+    splitter.addEventListener("pointercancel", onUp);
+  });
+}
+
+function axisValue(event: PointerEvent, pane: string | undefined): number {
+  return pane === "secondary" ? event.clientY : event.clientX;
+}
+
+function getStorage(): Storage | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+  return window.localStorage;
+}
+
+function getCurrentUserId(): string {
+  return "local-user";
+}
