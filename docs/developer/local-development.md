@@ -82,11 +82,11 @@ Expected dev ports:
 
 In dev, requests to `/api/*` from the shell are proxied by Vite to `http://127.0.0.1:8787`.
 
-### MF2 local plugin flow (shell + backend + remotes)
+### MF2 local plugin override quickstart (backend + remotes + shell)
 
 Start local runtime in this order:
 
-1. Backend manifest server
+1. Backend manifest server (all local plugin overrides disabled by default)
 
 ```bash
 npm run dev:backend
@@ -104,30 +104,61 @@ npm run dev:plugin:all
 npm run dev:shell
 ```
 
-The backend tenant manifest now points plugin descriptors for:
+Default local plugin URL map used by backend:
 
 - `com.armada.plugin-starter` -> `http://127.0.0.1:4171/mf-manifest.json`
 - `com.armada.sample.contract-consumer` -> `http://127.0.0.1:4172/mf-manifest.json`
 - `com.armada.domain.unplanned-orders` -> `http://127.0.0.1:4173/mf-manifest.json`
 - `com.armada.domain.vessel-view` -> `http://127.0.0.1:4174/mf-manifest.json`
 
-When these remotes are running, toggling plugins in the shell will load contract modules from MF remotes (`./pluginContract`) instead of shell-bundled local source maps.
+Select override targets by repeating `--local-plugin <pluginId>` on backend startup.
 
-### Troubleshooting MF2 local development
+Single plugin example:
 
-- **Plugin shows `REMOTE_UNAVAILABLE` in shell diagnostics**
-  - Verify backend and plugin remote processes are running.
-  - Open the manifest URLs directly in browser to confirm reachability.
-- Ensure ports `4171`/`4172`/`4173`/`4174` are free (plugin dev servers use `strictPort`).
+```bash
+npm run dev:backend -- --local-plugin com.armada.plugin-starter
+```
 
-- **Plugin not listed or wrong entry URL**
-  - Check backend endpoint: `http://127.0.0.1:8787/api/tenants/demo/plugin-manifest`.
-  - Confirm `entry` values are HTTP MF manifest URLs, not `local://`.
+Multiple plugins example:
 
-- **No hot updates while editing plugin contract**
-  - Confirm plugin dev servers were started with Vite (`npm run dev:plugin*`).
-  - Hard-refresh the shell tab if browser cached stale remote chunks.
-  - Re-toggle the plugin checkbox in shell to force a fresh runtime load path.
+```bash
+npm run dev:backend -- --local-plugin com.armada.plugin-starter --local-plugin com.armada.domain.vessel-view
+```
+
+When selected remotes are running, toggling those plugins in shell loads contracts from MF remotes (`./pluginContract`).
+
+### Diagnostics, startup summary, and warnings
+
+- Backend always logs a startup summary:
+  - no selection: `[backend] local plugin overrides: none selected`
+  - with selection: `[backend] local plugin overrides (N): <pluginId> -> <entry>; ...`
+- Duplicate `--local-plugin` values are normalized and warned once:
+  - `[backend] duplicate --local-plugin values ignored after normalization: ...`
+- Shell plugin diagnostics typically indicate runtime state:
+  - `REMOTE_LOAD_RETRY` / `REMOTE_LOAD_EXHAUSTED` -> remote retry behavior
+  - `REMOTE_UNAVAILABLE` -> remote could not be loaded
+  - `INVALID_CONTRACT` -> remote responded but contract payload failed validation
+
+### Troubleshooting MF2 local plugin overrides
+
+- **Unknown local plugin ID when starting backend**
+  - Use one of the IDs from the default URL map above.
+  - Backend fails fast with `Unknown local plugin id(s)` and lists available IDs.
+
+- **Selected plugin missing from tenant manifest**
+  - Check `http://127.0.0.1:8787/api/tenants/demo/plugin-manifest`.
+  - Backend throws `Selected local plugin id(s) not present in tenant manifest` when a selected ID is not in the tenant plugin list.
+
+- **Plugin remote unavailable in shell**
+  - Confirm backend + shell + remote processes are running.
+  - Open remote URLs directly (for example `http://127.0.0.1:4171/mf-manifest.json`).
+  - Ensure ports `4171`-`4174` are free (plugin dev servers use `strictPort`).
+
+### Non-goals / deferred scope
+
+- This workflow only supports selecting plugins from the built-in default local URL map.
+- Custom URL override flags are intentionally out of scope in this bead.
+- Broader mode-strategy redesign and wider shell-core expansion are deferred to later beads.
 
 ## Integration mode (POC)
 
