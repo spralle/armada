@@ -77,6 +77,8 @@ Expected dev ports:
 - Backend API (Bun.serve, with Node `node:http` fallback): `8787`
 - Plugin starter MF manifest: `4171` (`http://127.0.0.1:4171/mf-manifest.json`)
 - Sample contract consumer MF manifest: `4172` (`http://127.0.0.1:4172/mf-manifest.json`)
+- Domain Unplanned Orders MF manifest: `4173` (`http://127.0.0.1:4173/mf-manifest.json`)
+- Domain Vessel View MF manifest: `4174` (`http://127.0.0.1:4174/mf-manifest.json`)
 
 In dev, requests to `/api/*` from the shell are proxied by Vite to `http://127.0.0.1:8787`.
 
@@ -106,6 +108,8 @@ The backend tenant manifest now points plugin descriptors for:
 
 - `com.armada.plugin-starter` -> `http://127.0.0.1:4171/mf-manifest.json`
 - `com.armada.sample.contract-consumer` -> `http://127.0.0.1:4172/mf-manifest.json`
+- `com.armada.domain.unplanned-orders` -> `http://127.0.0.1:4173/mf-manifest.json`
+- `com.armada.domain.vessel-view` -> `http://127.0.0.1:4174/mf-manifest.json`
 
 When these remotes are running, toggling plugins in the shell will load contract modules from MF remotes (`./pluginContract`) instead of shell-bundled local source maps.
 
@@ -114,7 +118,7 @@ When these remotes are running, toggling plugins in the shell will load contract
 - **Plugin shows `REMOTE_UNAVAILABLE` in shell diagnostics**
   - Verify backend and plugin remote processes are running.
   - Open the manifest URLs directly in browser to confirm reachability.
-  - Ensure ports `4171`/`4172` are free (plugin dev servers use `strictPort`).
+- Ensure ports `4171`/`4172`/`4173`/`4174` are free (plugin dev servers use `strictPort`).
 
 - **Plugin not listed or wrong entry URL**
   - Check backend endpoint: `http://127.0.0.1:8787/api/tenants/demo/plugin-manifest`.

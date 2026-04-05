@@ -18,6 +18,8 @@ const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
 const PLUGIN_STARTER_DEV_PORT = 4171;
 const SAMPLE_PLUGIN_DEV_PORT = 4172;
+const DOMAIN_UNPLANNED_ORDERS_DEV_PORT = 4173;
+const DOMAIN_VESSEL_VIEW_DEV_PORT = 4174;
 
 function createMfManifestEntry(port: number): string {
   return `http://127.0.0.1:${port}/mf-manifest.json`;
@@ -46,7 +48,7 @@ const inMemoryTenantPluginDescriptors: Readonly<Record<string, TenantPluginDescr
     {
       id: "com.armada.domain.unplanned-orders",
       version: "0.1.0",
-      entry: "local://apps/shell/src/local-plugin-sources.ts#unplanned-orders",
+      entry: createMfManifestEntry(DOMAIN_UNPLANNED_ORDERS_DEV_PORT),
       compatibility: {
         shell: "^1.0.0",
         pluginContract: "^1.0.0",
@@ -55,7 +57,7 @@ const inMemoryTenantPluginDescriptors: Readonly<Record<string, TenantPluginDescr
     {
       id: "com.armada.domain.vessel-view",
       version: "0.1.0",
-      entry: "local://apps/shell/src/local-plugin-sources.ts#vessel-view",
+      entry: createMfManifestEntry(DOMAIN_VESSEL_VIEW_DEV_PORT),
       compatibility: {
         shell: "^1.0.0",
         pluginContract: "^1.0.0",

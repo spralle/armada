@@ -7,12 +7,8 @@ import {
   createShellFederationRuntime,
   type ShellFederationRuntime,
 } from "./federation-runtime.js";
-import {
-  resolveLocalPluginContractLoader,
-  type LocalPluginContractLoader,
-} from "./local-plugin-sources.js";
 
-export type ShellPluginLoadMode = "local-source" | "remote-manifest";
+export type ShellPluginLoadMode = "remote-manifest";
 
 export interface PluginLoadDiagnostic {
   pluginId: string;
@@ -20,8 +16,7 @@ export interface PluginLoadDiagnostic {
   code:
     | "REMOTE_LOAD_RETRY"
     | "REMOTE_LOAD_EXHAUSTED"
-    | "INVALID_CONTRACT"
-    | "LOCAL_SOURCE_MISSING";
+    | "REMOTE_INVALID_CONTRACT";
   message: string;
   attempt?: number;
   maxAttempts?: number;
@@ -33,8 +28,7 @@ export interface PluginLoadErrorContext {
   mode: ShellPluginLoadMode;
   reason:
     | "REMOTE_UNAVAILABLE"
-    | "INVALID_CONTRACT"
-    | "LOCAL_SOURCE_UNAVAILABLE";
+    | "INVALID_REMOTE_CONTRACT";
   message: string;
   attempts: number;
   maxAttempts: number;
@@ -58,7 +52,6 @@ export interface RuntimeFirstPluginLoader {
 
 export interface RuntimeFirstPluginLoaderOptions {
   federationRuntime?: ShellFederationRuntime;
-  resolveLocalLoader?: (pluginId: string) => LocalPluginContractLoader | null;
   remoteLoadMaxAttempts?: number;
   remoteLoadRetryDelayMs?: number;
   onDiagnostic?: (diagnostic: PluginLoadDiagnostic) => void;
@@ -68,105 +61,51 @@ export function createRuntimeFirstPluginLoader(
   options: RuntimeFirstPluginLoaderOptions = {},
 ): RuntimeFirstPluginLoader {
   const federationRuntime = options.federationRuntime ?? createShellFederationRuntime();
-  const localResolver = options.resolveLocalLoader ?? resolveLocalPluginContractLoader;
   const remoteLoadMaxAttempts = clampAttempts(options.remoteLoadMaxAttempts ?? 3);
   const remoteLoadRetryDelayMs = Math.max(0, options.remoteLoadRetryDelayMs ?? 300);
   const onDiagnostic = options.onDiagnostic;
 
   return {
-    loadModeFor(descriptor) {
-      return descriptor.entry.startsWith("local://") ? "local-source" : "remote-manifest";
+    loadModeFor() {
+      return "remote-manifest";
     },
     async loadPluginContract(descriptor) {
-      const mode = descriptor.entry.startsWith("local://") ? "local-source" : "remote-manifest";
-
-      if (mode === "local-source") {
-        const localLoader = localResolver(descriptor.id);
-        if (!localLoader) {
-          const message = `No local plugin source mapped for '${descriptor.id}'.`;
-          emitDiagnostic(onDiagnostic, {
-            pluginId: descriptor.id,
-            level: "warn",
-            code: "LOCAL_SOURCE_MISSING",
-            message,
-          });
-          throw new PluginLoadError({
-            pluginId: descriptor.id,
-            mode,
-            reason: "LOCAL_SOURCE_UNAVAILABLE",
-            message,
-            attempts: 1,
-            maxAttempts: 1,
-          });
-        }
-
-        const rawContract = await localLoader();
-        return parseLoadedContract({
-          pluginId: descriptor.id,
-          mode,
-          rawContract,
-          attempts: 1,
-          maxAttempts: 1,
-          onDiagnostic,
-        });
-      }
+      const mode: ShellPluginLoadMode = "remote-manifest";
 
       federationRuntime.registerRemote({ id: descriptor.id, entry: descriptor.entry });
-      const remoteLoadResult = await loadRemoteContractWithRetry({
+      const rawContract = await loadRemoteContractWithRetry({
         descriptor,
         federationRuntime,
         remoteLoadMaxAttempts,
         remoteLoadRetryDelayMs,
         onDiagnostic,
       });
-      return parseLoadedContract({
-        pluginId: descriptor.id,
-        mode,
-        rawContract: remoteLoadResult.contract,
-        attempts: remoteLoadResult.attempt,
-        maxAttempts: remoteLoadMaxAttempts,
-        onDiagnostic,
-      });
+      const parsed = parsePluginContract(rawContract);
+
+      if (!parsed.success) {
+        const details = parsed.errors
+          .map((error) => `${error.path || "<root>"}: ${error.message}`)
+          .join("; ");
+        const message = `Remote plugin '${descriptor.id}' returned invalid contract: ${details}`;
+        emitDiagnostic(onDiagnostic, {
+          pluginId: descriptor.id,
+          level: "warn",
+          code: "REMOTE_INVALID_CONTRACT",
+          message,
+        });
+        throw new PluginLoadError({
+          pluginId: descriptor.id,
+          mode,
+          reason: "INVALID_REMOTE_CONTRACT",
+          message,
+          attempts: remoteLoadMaxAttempts,
+          maxAttempts: remoteLoadMaxAttempts,
+        });
+      }
+
+      return parsed.data;
     },
   };
-}
-
-interface ParseLoadedContractOptions {
-  pluginId: string;
-  mode: ShellPluginLoadMode;
-  rawContract: unknown;
-  attempts: number;
-  maxAttempts: number;
-  onDiagnostic?: (diagnostic: PluginLoadDiagnostic) => void;
-}
-
-function parseLoadedContract(options: ParseLoadedContractOptions): PluginContract {
-  const parsed = parsePluginContract(options.rawContract);
-
-  if (parsed.success) {
-    return parsed.data;
-  }
-
-  const details = parsed.errors
-    .map((error) => `${error.path || "<root>"}: ${error.message}`)
-    .join("; ");
-  const origin = options.mode === "local-source" ? "Local" : "Remote";
-  const message = `${origin} plugin '${options.pluginId}' returned invalid contract: ${details}`;
-  emitDiagnostic(options.onDiagnostic, {
-    pluginId: options.pluginId,
-    level: "warn",
-    code: "INVALID_CONTRACT",
-    message,
-  });
-
-  throw new PluginLoadError({
-    pluginId: options.pluginId,
-    mode: options.mode,
-    reason: "INVALID_CONTRACT",
-    message,
-    attempts: options.attempts,
-    maxAttempts: options.maxAttempts,
-  });
 }
 
 interface RemoteRetryLoadOptions {
@@ -177,22 +116,13 @@ interface RemoteRetryLoadOptions {
   onDiagnostic?: (diagnostic: PluginLoadDiagnostic) => void;
 }
 
-interface RemoteLoadResult {
-  contract: unknown;
-  attempt: number;
-}
-
-async function loadRemoteContractWithRetry(options: RemoteRetryLoadOptions): Promise<RemoteLoadResult> {
+async function loadRemoteContractWithRetry(options: RemoteRetryLoadOptions): Promise<unknown> {
   let latestError: unknown;
 
   for (let attempt = 1; attempt <= options.remoteLoadMaxAttempts; attempt += 1) {
     try {
-      const contract = await options.federationRuntime.loadPluginContract(options.descriptor.id);
-      return {
-        contract,
-        attempt,
-      };
-    } catch (error: unknown) {
+      return await options.federationRuntime.loadPluginContract(options.descriptor.id);
+    } catch (error) {
       latestError = error;
       if (attempt < options.remoteLoadMaxAttempts) {
         emitDiagnostic(options.onDiagnostic, {

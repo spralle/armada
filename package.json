@@ -16,7 +16,9 @@
     "dev:backend": "node --watch --experimental-strip-types apps/backend/src/index.ts",
     "dev:plugin": "npm run dev --workspace @armada/plugin-starter",
     "dev:plugin-sample": "npm run dev --workspace @armada/sample-contract-consumer-plugin",
-    "dev:plugin:all": "npx concurrently -n starter,sample -c magenta,cyan \"npm run dev:plugin\" \"npm run dev:plugin-sample\"",
+    "dev:plugin-unplanned-orders": "npm run dev --workspace @armada/domain-unplanned-orders-plugin",
+    "dev:plugin-vessel-view": "npm run dev --workspace @armada/domain-vessel-view-plugin",
+    "dev:plugin:all": "npx concurrently -n starter,sample,unplanned,vessel -c magenta,cyan,yellow,green \"npm run dev:plugin\" \"npm run dev:plugin-sample\" \"npm run dev:plugin-unplanned-orders\" \"npm run dev:plugin-vessel-view\"",
     "dev:integration": "bun --watch apps/shell/src/index.ts",
     "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs"
   },
