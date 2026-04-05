@@ -82,19 +82,20 @@ import {
   updateWindowReadOnlyState,
 } from "./ui/context-controls.js";
 
-const shellRuntime = createShellRuntime();
-
-if (typeof document !== "undefined") {
-  mountShell(document.body, shellRuntime);
+export function startShell(root: HTMLElement): ShellRuntime {
+  const shellRuntime = createShellRuntime();
+  mountShell(root, shellRuntime);
 
   if (!shellRuntime.isPopout) {
-    void hydratePluginRegistry(document.body, shellRuntime, {
-      renderParts: () => renderParts(document.body, shellRuntime),
+    void hydratePluginRegistry(root, shellRuntime, {
+      renderParts: () => renderParts(root, shellRuntime),
     });
   }
-}
 
-console.log("[shell] POC shell stub ready", shellBootstrapState.mode);
+  console.log("[shell] POC shell stub ready", shellBootstrapState.mode);
+
+  return shellRuntime;
+}
 
 function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
   if (runtime.isPopout) {
