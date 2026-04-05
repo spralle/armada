@@ -31,8 +31,13 @@ export interface PluginActionContribution {
 
 export interface PluginSelectionContribution {
   id: string;
-  source?: string;
-  target: string;
+  receiverEntityType: string;
+  interests: PluginSelectionInterest[];
+}
+
+export interface PluginSelectionInterest {
+  sourceEntityType: string;
+  adapter?: string;
 }
 
 export interface PluginDerivedLaneContribution {
@@ -128,8 +133,15 @@ export const pluginActionContributionSchema = z
 export const pluginSelectionContributionSchema = z
   .object({
     id: nonEmptyString,
-    source: nonEmptyString.optional(),
-    target: nonEmptyString,
+    receiverEntityType: nonEmptyString,
+    interests: z.array(
+      z
+        .object({
+          sourceEntityType: nonEmptyString,
+          adapter: nonEmptyString.optional(),
+        })
+        .strict(),
+    ),
   })
   .strict();
 

@@ -1311,11 +1311,12 @@ function resolveSelectionGraphExtensions(runtime: ShellRuntime): {
       continue;
     }
 
-    const source = plugin.contract.contributes.selection ?? [];
-    for (const contribution of source) {
-      const rule = createSelectionPropagationRule(plugin.id, contribution);
-      if (rule) {
-        propagationRules.push(rule);
+    const selections = plugin.contract.contributes.selection ?? [];
+    for (const contribution of selections) {
+      for (const interest of contribution.interests) {
+        propagationRules.push(
+          createSelectionPropagationRule(plugin.id, contribution, interest),
+        );
       }
     }
 
@@ -1334,60 +1335,104 @@ function resolveSelectionGraphExtensions(runtime: ShellRuntime): {
 function createSelectionPropagationRule(
   pluginId: string,
   contribution: PluginSelectionContribution,
-): SelectionPropagationRule | null {
-  const sourceEntityType =
-    readSelectionSourceEntityType(contribution) ?? inferSourceEntityType(contribution.target);
-  if (!sourceEntityType) {
-    return null;
-  }
+  interest: PluginSelectionContribution["interests"][number],
+): SelectionPropagationRule {
+  const adapterId = readSelectionInterestAdapterId(interest);
+  const adapter = resolveSelectionInterestAdapter(adapterId);
 
   return {
-    id: `${pluginId}:${contribution.id}`,
-    sourceEntityType,
+    id: `${pluginId}:${contribution.id}:${interest.sourceEntityType}:${adapterId ?? "identity"}`,
+    sourceEntityType: interest.sourceEntityType,
     propagate: ({ sourceSelection, state }) => {
-      const sourcePriorityId = sourceSelection.priorityId;
-      if (!sourcePriorityId) {
-        return {
-          entityType: contribution.target,
-          selectedIds: [],
-          priorityId: null,
-        };
-      }
+      const mapped = adapter({
+        state,
+        sourceEntityType: interest.sourceEntityType,
+        receiverEntityType: contribution.receiverEntityType,
+        sourceSelection,
+      });
 
-      if (sourceEntityType === "order" && contribution.target === "vessel") {
-        const order = resolveOrder(sourcePriorityId);
-        if (!order) {
-          return {
-            entityType: "vessel",
-            selectedIds: [],
-            priorityId: null,
-          };
-        }
-
-        return {
-          entityType: "vessel",
-          selectedIds: [order.vesselId],
-          priorityId: order.vesselId,
-        };
-      }
-
-      if (sourceEntityType === "vessel" && contribution.target === "order") {
-        const orderIds = getOrdersForVessel(sourcePriorityId).map((order) => order.id);
-        const previousPriority = readEntityTypeSelection(state, "order").priorityId;
-        return {
-          entityType: "order",
-          selectedIds: orderIds,
-          priorityId: previousPriority && orderIds.includes(previousPriority) ? previousPriority : (orderIds[0] ?? null),
-        };
+      if (!mapped) {
+        return null;
       }
 
       return {
-        entityType: contribution.target,
-        selectedIds: sourceSelection.selectedIds,
-        priorityId: sourceSelection.priorityId,
+        entityType: contribution.receiverEntityType,
+        selectedIds: mapped.selectedIds,
+        priorityId: mapped.priorityId ?? null,
       };
     },
   };
+}
+
+type SelectionInterestAdapterInput = {
+  state: ShellContextState;
+  sourceEntityType: string;
+  receiverEntityType: string;
+  sourceSelection: ReturnType<typeof readEntityTypeSelection>;
+};
+
+type SelectionInterestAdapter = (
+  input: SelectionInterestAdapterInput,
+) => {
+  selectedIds: string[];
+  priorityId?: string | null;
+} | null;
+
+const selectionInterestAdapters: Readonly<Record<string, SelectionInterestAdapter>> = {
+  "domain.order-priority-to-vessel": ({ sourceSelection }) => {
+    const sourcePriorityId = sourceSelection.priorityId;
+    if (!sourcePriorityId) {
+      return {
+        selectedIds: [],
+        priorityId: null,
+      };
+    }
+
+    const order = resolveOrder(sourcePriorityId);
+    if (!order) {
+      return {
+        selectedIds: [],
+        priorityId: null,
+      };
+    }
+
+    return {
+      selectedIds: [order.vesselId],
+      priorityId: order.vesselId,
+    };
+  },
+  "domain.vessel-priority-to-orders": ({ state, receiverEntityType, sourceSelection }) => {
+    const sourcePriorityId = sourceSelection.priorityId;
+    if (!sourcePriorityId) {
+      return {
+        selectedIds: [],
+        priorityId: null,
+      };
+    }
+
+    const orderIds = getOrdersForVessel(sourcePriorityId).map((order) => order.id);
+    const previousPriority = readEntityTypeSelection(state, receiverEntityType).priorityId;
+    return {
+      selectedIds: orderIds,
+      priorityId:
+        previousPriority && orderIds.includes(previousPriority)
+          ? previousPriority
+          : (orderIds[0] ?? null),
+    };
+  },
+};
+
+const passthroughSelectionInterestAdapter: SelectionInterestAdapter = ({ sourceSelection }) => ({
+  selectedIds: sourceSelection.selectedIds,
+  priorityId: sourceSelection.priorityId,
+});
+
+function resolveSelectionInterestAdapter(adapterId: string | null): SelectionInterestAdapter {
+  if (!adapterId) {
+    return passthroughSelectionInterestAdapter;
+  }
+
+  return selectionInterestAdapters[adapterId] ?? passthroughSelectionInterestAdapter;
 }
 
 function createDerivedLaneDefinition(
@@ -1418,8 +1463,10 @@ interface RuntimeDerivedLaneContribution {
   strategy: "priority-id" | "joined-selected-ids";
 }
 
-function readSelectionSourceEntityType(contribution: PluginSelectionContribution): string | null {
-  const value = (contribution as PluginSelectionContribution & { source?: unknown }).source;
+function readSelectionInterestAdapterId(
+  interest: PluginSelectionContribution["interests"][number],
+): string | null {
+  const value = interest.adapter;
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
@@ -1465,16 +1512,6 @@ function parseRuntimeDerivedLaneContribution(value: unknown): RuntimeDerivedLane
     valueType: lane.valueType,
     strategy: lane.strategy,
   };
-}
-
-function inferSourceEntityType(target: string): string | null {
-  if (target === "vessel") {
-    return "order";
-  }
-  if (target === "order") {
-    return "vessel";
-  }
-  return null;
 }
 
 function renderBridgeWarning(runtime: ShellRuntime): string {
