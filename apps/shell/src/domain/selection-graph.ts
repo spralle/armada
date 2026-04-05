@@ -8,7 +8,6 @@ import {
   type ShellContextState,
 } from "../context-state.js";
 import {
-  inferSourceEntityType,
   resolveDomainPropagationSelection,
   resolveSelectionWritesFromSyncEvent,
 } from "../domain-demo-adapter.js";
@@ -134,7 +133,7 @@ export function resolveSelectionGraphExtensions(runtime: ShellRuntime): Selectio
         continue;
       }
 
-      for (const interest of readSelectionContributionInterests(contribution, receiverEntityType)) {
+      for (const interest of readSelectionContributionInterests(contribution)) {
         propagationRules.push(
           createSelectionPropagationRule(plugin.id, contribution, receiverEntityType, interest),
         );
@@ -231,17 +230,11 @@ function readSelectionInterestAdapterId(interest: SelectionInterestDescriptor): 
 
 function readSelectionReceiverEntityType(contribution: PluginSelectionContribution): string | null {
   const receiver = (contribution as PluginSelectionContribution & { receiverEntityType?: unknown }).receiverEntityType;
-  if (typeof receiver === "string" && receiver.length > 0) {
-    return receiver;
-  }
-
-  const target = (contribution as PluginSelectionContribution & { target?: unknown }).target;
-  return typeof target === "string" && target.length > 0 ? target : null;
+  return typeof receiver === "string" && receiver.length > 0 ? receiver : null;
 }
 
 function readSelectionContributionInterests(
   contribution: PluginSelectionContribution,
-  receiverEntityType: string,
 ): SelectionInterestDescriptor[] {
   const rawInterests = (contribution as PluginSelectionContribution & { interests?: unknown }).interests;
   if (Array.isArray(rawInterests) && rawInterests.length > 0) {
@@ -275,13 +268,7 @@ function readSelectionContributionInterests(
     }
   }
 
-  const legacySource = (contribution as PluginSelectionContribution & { source?: unknown }).source;
-  if (typeof legacySource === "string" && legacySource.length > 0) {
-    return [{ sourceEntityType: legacySource }];
-  }
-
-  const inferredSource = inferSourceEntityType(receiverEntityType);
-  return inferredSource ? [{ sourceEntityType: inferredSource }] : [];
+  return [];
 }
 
 function readPluginDerivedLaneContributions(contract: PluginContract): RuntimeDerivedLaneContribution[] {

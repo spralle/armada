@@ -10,9 +10,7 @@ import {
 import {
   buildGroupSelectionContextValue,
   domainDemoAdapter,
-  readSelectionFromSyncEvent,
   resolveSelectionFromIntentFacts,
-  toSelectionSyncFields,
 } from "./domain-demo-adapter.js";
 import {
   createActionCatalogFromRegistrySnapshot,
@@ -394,9 +392,6 @@ function applySelection(root: HTMLElement, runtime: ShellRuntime, event: Selecti
     revision,
   });
 
-  const eventSelection = readSelectionFromSyncEvent(event);
-  runtime.selectedPrimaryEntityId = eventSelection.primaryEntityId;
-  runtime.selectedSecondaryEntityId = eventSelection.secondaryEntityId;
   const selectionPropagation = applySelectionPropagation(runtime, event, revision);
   updateContextState(runtime, selectionPropagation.state);
   runtime.selectedPrimaryEntityId = readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.primary).priorityId;
@@ -411,8 +406,8 @@ function applySelection(root: HTMLElement, runtime: ShellRuntime, event: Selecti
   renderSyncStatus(root, runtime);
   announce(root, runtime, formatSelectionAnnouncement({
     selectedPartTitle: runtime.selectedPartTitle,
-    selectedOrderId: runtime.selectedPrimaryEntityId,
-    selectedVesselId: runtime.selectedSecondaryEntityId,
+    selectedPrimaryEntityId: runtime.selectedPrimaryEntityId,
+    selectedSecondaryEntityId: runtime.selectedSecondaryEntityId,
   }));
 }
 

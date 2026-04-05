@@ -5,7 +5,6 @@ import {
   domainDemoAdapter,
   resolvePrimaryEntity,
   resolveSecondaryEntity,
-  toSelectionSyncFields,
 } from "../domain-demo-adapter.js";
 import {
   createRevision,
@@ -13,6 +12,7 @@ import {
   writeGlobalSelectionLane,
   writeGroupSelectionContext,
 } from "../context/runtime-state.js";
+import { readEntityTypeSelection } from "../context-state.js";
 import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
 import { safeJson, safeParse, sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
@@ -88,6 +88,13 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   updateSelectedStyles(root, runtime.selectedPartId);
 }
 
+function buildSelectionByEntityType(runtime: ShellRuntime): SelectionSyncEvent["selectionByEntityType"] {
+  return {
+    [domainDemoAdapter.entityTypes.primary]: readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.primary),
+    [domainDemoAdapter.entityTypes.secondary]: readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.secondary),
+  };
+}
+
 export function startPopoutWatchdog(root: HTMLElement, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {
   window.setInterval(() => {
     for (const [partId, handle] of runtime.popoutHandles.entries()) {
@@ -118,15 +125,12 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       }
 
       const selectionRevision = createRevision(runtime.windowId);
-      const selection = toSelectionSyncFields({
-        primaryEntityId: runtime.selectedPrimaryEntityId,
-        secondaryEntityId: runtime.selectedSecondaryEntityId,
-      });
+      const selectionByEntityType = buildSelectionByEntityType(runtime);
 
       deps.applySelection({
         selectedPartId: partId,
         selectedPartTitle: partTitle,
-        ...selection,
+        selectionByEntityType,
         revision: selectionRevision,
         sourceWindowId: runtime.windowId,
         type: "selection",
@@ -136,7 +140,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         type: "selection",
         selectedPartId: partId,
         selectedPartTitle: partTitle,
-        ...selection,
+        selectionByEntityType,
         revision: selectionRevision,
         sourceWindowId: runtime.windowId,
       });
@@ -174,10 +178,16 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         type: "selection",
         selectedPartId: domainDemoAdapter.partIds.primary,
         selectedPartTitle: buildPrimarySelectionTitle(primaryEntity),
-        ...toSelectionSyncFields({
-          primaryEntityId: primaryEntity.id,
-          secondaryEntityId: primaryEntity.vesselId,
-        }),
+        selectionByEntityType: {
+          [domainDemoAdapter.entityTypes.primary]: {
+            selectedIds: [primaryEntity.id],
+            priorityId: primaryEntity.id,
+          },
+          [domainDemoAdapter.entityTypes.secondary]: {
+            selectedIds: [primaryEntity.vesselId],
+            priorityId: primaryEntity.vesselId,
+          },
+        },
         revision: selectionRevision,
         sourceWindowId: runtime.windowId,
       });
@@ -208,10 +218,16 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         type: "selection",
         selectedPartId: domainDemoAdapter.partIds.primary,
         selectedPartTitle: buildPrimarySelectionTitle(primaryEntity),
-        ...toSelectionSyncFields({
-          primaryEntityId: primaryEntity.id,
-          secondaryEntityId: primaryEntity.vesselId,
-        }),
+        selectionByEntityType: {
+          [domainDemoAdapter.entityTypes.primary]: {
+            selectedIds: [primaryEntity.id],
+            priorityId: primaryEntity.id,
+          },
+          [domainDemoAdapter.entityTypes.secondary]: {
+            selectedIds: [primaryEntity.vesselId],
+            priorityId: primaryEntity.vesselId,
+          },
+        },
         revision: selectionRevision,
         sourceWindowId: runtime.windowId,
       });
@@ -263,10 +279,16 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         type: "selection",
         selectedPartId: domainDemoAdapter.partIds.secondary,
         selectedPartTitle: buildSecondarySelectionTitle(secondaryEntity),
-        ...toSelectionSyncFields({
-          primaryEntityId: runtime.selectedPrimaryEntityId,
-          secondaryEntityId: secondaryEntity.id,
-        }),
+        selectionByEntityType: {
+          [domainDemoAdapter.entityTypes.primary]: {
+            selectedIds: runtime.selectedPrimaryEntityId ? [runtime.selectedPrimaryEntityId] : [],
+            priorityId: runtime.selectedPrimaryEntityId,
+          },
+          [domainDemoAdapter.entityTypes.secondary]: {
+            selectedIds: [secondaryEntity.id],
+            priorityId: secondaryEntity.id,
+          },
+        },
         revision: selectionRevision,
         sourceWindowId: runtime.windowId,
       });
@@ -294,10 +316,16 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         type: "selection",
         selectedPartId: domainDemoAdapter.partIds.secondary,
         selectedPartTitle: buildSecondarySelectionTitle(secondaryEntity),
-        ...toSelectionSyncFields({
-          primaryEntityId: runtime.selectedPrimaryEntityId,
-          secondaryEntityId: secondaryEntity.id,
-        }),
+        selectionByEntityType: {
+          [domainDemoAdapter.entityTypes.primary]: {
+            selectedIds: runtime.selectedPrimaryEntityId ? [runtime.selectedPrimaryEntityId] : [],
+            priorityId: runtime.selectedPrimaryEntityId,
+          },
+          [domainDemoAdapter.entityTypes.secondary]: {
+            selectedIds: [secondaryEntity.id],
+            priorityId: secondaryEntity.id,
+          },
+        },
         revision: selectionRevision,
         sourceWindowId: runtime.windowId,
       });

@@ -2,8 +2,10 @@ export interface SelectionSyncEvent {
   type: "selection";
   selectedPartId: string;
   selectedPartTitle: string;
-  selectedOrderId?: string | null;
-  selectedVesselId?: string | null;
+  selectionByEntityType: Record<string, {
+    selectedIds: string[];
+    priorityId?: string | null;
+  }>;
   revision?: {
     timestamp: number;
     writer: string;
@@ -206,8 +208,7 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
     if (
       typeof event.selectedPartId === "string" &&
       typeof event.selectedPartTitle === "string" &&
-      isOptionalNullableString(event.selectedOrderId) &&
-      isOptionalNullableString(event.selectedVesselId) &&
+      isSelectionByEntityType(event.selectionByEntityType) &&
       isOptionalRevision(event.revision) &&
       typeof event.sourceWindowId === "string"
     ) {
@@ -281,8 +282,35 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
   return null;
 }
 
-function isOptionalNullableString(value: unknown): value is string | null | undefined {
-  return value === undefined || value === null || typeof value === "string";
+function isSelectionByEntityType(
+  value: unknown,
+): value is Record<string, { selectedIds: string[]; priorityId?: string | null }> {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  for (const raw of Object.values(value as Record<string, unknown>)) {
+    if (!raw || typeof raw !== "object") {
+      return false;
+    }
+
+    const selection = raw as { selectedIds?: unknown; priorityId?: unknown };
+    if (!Array.isArray(selection.selectedIds)) {
+      return false;
+    }
+
+    const idsAreStrings = selection.selectedIds.every((item) => typeof item === "string");
+    if (!idsAreStrings) {
+      return false;
+    }
+
+    const priority = selection.priorityId;
+    if (priority !== undefined && priority !== null && typeof priority !== "string") {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function isOptionalString(value: unknown): value is string | undefined {

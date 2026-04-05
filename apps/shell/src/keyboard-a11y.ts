@@ -91,13 +91,13 @@ export function resolveDegradedKeyboardInteraction(
 
 export function formatSelectionAnnouncement(input: {
   selectedPartTitle: string | null;
-  selectedOrderId: string | null;
-  selectedVesselId: string | null;
+  selectedPrimaryEntityId: string | null;
+  selectedSecondaryEntityId: string | null;
 }): string {
   const partLabel = input.selectedPartTitle ?? "none";
-  const orderLabel = input.selectedOrderId ?? "none";
-  const vesselLabel = input.selectedVesselId ?? "none";
-  return `Context updated. Part ${partLabel}. Order priority ${orderLabel}. Vessel priority ${vesselLabel}.`;
+  const primaryLabel = input.selectedPrimaryEntityId ?? "none";
+  const secondaryLabel = input.selectedSecondaryEntityId ?? "none";
+  return `Context updated. Part ${partLabel}. Primary priority ${primaryLabel}. Secondary priority ${secondaryLabel}.`;
 }
 
 export function formatDegradedModeAnnouncement(degraded: boolean, reason: string | null): string {

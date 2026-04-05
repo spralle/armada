@@ -132,8 +132,16 @@ test("bridge parses sync events and selection revisions", () => {
       type: "selection",
       selectedPartId: "part-a",
       selectedPartTitle: "Part A",
-      selectedOrderId: "o-1",
-      selectedVesselId: "v-1",
+      selectionByEntityType: {
+        order: {
+          selectedIds: ["o-1"],
+          priorityId: "o-1",
+        },
+        vessel: {
+          selectedIds: ["v-1"],
+          priorityId: "v-1",
+        },
+      },
       revision: { timestamp: 10, writer: "w-a" },
       sourceWindowId: "window-a",
     });

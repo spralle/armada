@@ -40,36 +40,39 @@ export interface DemoEntitySelection {
   secondaryEntityId: string | null;
 }
 
-export function readSelectionFromSyncEvent(event: SelectionSyncEvent): DemoEntitySelection {
-  return {
-    primaryEntityId: event.selectedOrderId ?? null,
-    secondaryEntityId: event.selectedVesselId ?? null,
-  };
-}
-
-export function toSelectionSyncFields(selection: DemoEntitySelection): Pick<SelectionSyncEvent, "selectedOrderId" | "selectedVesselId"> {
-  return {
-    selectedOrderId: selection.primaryEntityId,
-    selectedVesselId: selection.secondaryEntityId,
-  };
-}
-
 export function resolveSelectionWritesFromSyncEvent(event: SelectionSyncEvent): Array<{
   entityType: string;
   selectedIds: string[];
   priorityId: string | null;
 }> {
-  const selection = readSelectionFromSyncEvent(event);
+  const selectionByEntityType = event.selectionByEntityType;
+  const primary = selectionByEntityType[domainDemoAdapter.entityTypes.primary];
+  const secondary = selectionByEntityType[domainDemoAdapter.entityTypes.secondary];
+
+  const primaryIds = Array.isArray(primary?.selectedIds)
+    ? primary.selectedIds.filter((item): item is string => typeof item === "string" && item.length > 0)
+    : [];
+  const secondaryIds = Array.isArray(secondary?.selectedIds)
+    ? secondary.selectedIds.filter((item): item is string => typeof item === "string" && item.length > 0)
+    : [];
+
+  const primaryPriority = typeof primary?.priorityId === "string" && primaryIds.includes(primary.priorityId)
+    ? primary.priorityId
+    : (primaryIds[0] ?? null);
+  const secondaryPriority = typeof secondary?.priorityId === "string" && secondaryIds.includes(secondary.priorityId)
+    ? secondary.priorityId
+    : (secondaryIds[0] ?? null);
+
   return [
     {
       entityType: domainDemoAdapter.entityTypes.primary,
-      selectedIds: selection.primaryEntityId ? [selection.primaryEntityId] : [],
-      priorityId: selection.primaryEntityId,
+      selectedIds: primaryIds,
+      priorityId: primaryPriority,
     },
     {
       entityType: domainDemoAdapter.entityTypes.secondary,
-      selectedIds: selection.secondaryEntityId ? [selection.secondaryEntityId] : [],
-      priorityId: selection.secondaryEntityId,
+      selectedIds: secondaryIds,
+      priorityId: secondaryPriority,
     },
   ];
 }
@@ -112,16 +115,6 @@ export function buildGroupSelectionContextValue(input: DemoEntitySelection): str
     return `vessel:${input.secondaryEntityId}`;
   }
   return "none";
-}
-
-export function inferSourceEntityType(targetEntityType: string): string | null {
-  if (targetEntityType === domainDemoAdapter.entityTypes.secondary) {
-    return domainDemoAdapter.entityTypes.primary;
-  }
-  if (targetEntityType === domainDemoAdapter.entityTypes.primary) {
-    return domainDemoAdapter.entityTypes.secondary;
-  }
-  return null;
 }
 
 export function resolveDomainPropagationSelection(input: {
