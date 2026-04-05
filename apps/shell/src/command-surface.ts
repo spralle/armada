@@ -240,61 +240,13 @@ export function evaluatePredicate(
     return true;
   }
 
-  if (typeof predicate === "object") {
-    for (const [key, value] of Object.entries(predicate)) {
-      if ((context[key] ?? "") !== String(value ?? "")) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  const clauses = predicate
-    .split("&&")
-    .map((clause) => clause.trim())
-    .filter((clause) => clause.length > 0);
-
-  if (clauses.length === 0) {
-    return true;
-  }
-
-  for (const clause of clauses) {
-    const negated = clause.startsWith("!");
-    const raw = negated ? clause.slice(1).trim() : clause;
-    if (!raw) {
-      continue;
-    }
-
-    const equalityIndex = raw.indexOf("==");
-    let matched = false;
-    if (equalityIndex >= 0) {
-      const key = raw.slice(0, equalityIndex).trim();
-      const expected = raw.slice(equalityIndex + 2).trim();
-      if (!key) {
-        matched = false;
-      } else {
-        matched = (context[key] ?? "") === stripQuotes(expected);
-      }
-    } else {
-      matched = Boolean(context[raw]);
-    }
-
-    if (negated ? matched : !matched) {
+  for (const [key, value] of Object.entries(predicate)) {
+    if ((context[key] ?? "") !== String(value ?? "")) {
       return false;
     }
   }
 
   return true;
-}
-
-function stripQuotes(input: string): string {
-  if (
-    (input.startsWith("\"") && input.endsWith("\"")) ||
-    (input.startsWith("'") && input.endsWith("'"))
-  ) {
-    return input.slice(1, -1);
-  }
-  return input;
 }
 
 function normalizeKeybinding(key: string): string {

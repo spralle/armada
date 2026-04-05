@@ -486,9 +486,12 @@ test("action-surface dispatch predicate semantics stay in parity with default ma
   for (const testCase of cases) {
     let calls = 0;
     const runtime = {
-      async dispatchIntent(intentId) {
+      resolveAndExecute({ intent }) {
         calls += 1;
-        assert.equal(intentId, "demo.run");
+        assert.equal(intent, "demo.run");
+        return {
+          executed: true,
+        };
       },
     };
 
