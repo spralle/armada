@@ -7,4 +7,5 @@
 # Dependencies and local build artifacts
 node_modules/
 **/dist/
+**/dist-test/
 **/*.tsbuildinfo

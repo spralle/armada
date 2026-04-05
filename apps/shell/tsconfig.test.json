@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": false,
+    "skipLibCheck": true,
+    "outDir": "dist-test",
+    "rootDir": "."
+  },
+  "references": [
+    {
+      "path": "../../packages/plugin-contracts"
+    }
+  ],
+  "include": [
+    "src/plugin-loader.ts",
+    "src/plugin-registry.ts",
+    "src/federation-runtime.ts",
+    "src/local-plugin-sources.ts"
+  ]
+}

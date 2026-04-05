@@ -19,7 +19,7 @@ interface PluginRuntimeFailure {
   code:
     | CompatibilityReasonCode
     | "REMOTE_UNAVAILABLE"
-    | "INVALID_REMOTE_CONTRACT"
+    | "INVALID_CONTRACT"
     | "LOCAL_SOURCE_UNAVAILABLE"
     | "UNKNOWN_PLUGIN_LOAD_ERROR";
   message: string;
