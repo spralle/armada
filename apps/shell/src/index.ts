@@ -151,13 +151,13 @@ function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
       renderParts(root, runtime);
       renderCommandSurface(root, runtime);
     },
-    onChooseIntentAction: (index) => {
+    onChooseIntentAction: async (index) => {
       runtime.chooserFocusIndex = index;
       const selectedMatch = runtime.pendingIntentMatches[index];
       if (!selectedMatch) {
         return;
       }
-      executeResolvedAction(root, runtime, selectedMatch, runtime.pendingIntent);
+      await executeResolvedAction(root, runtime, selectedMatch, runtime.pendingIntent);
     },
     onDismissChooser: () => {
       dismissIntentChooser(root, runtime);
@@ -389,7 +389,7 @@ function handleChooserKeyboardEvent(root: HTMLElement, runtime: ShellRuntime, ev
     runtime.chooserFocusIndex = result.index;
     const selected = runtime.pendingIntentMatches[result.index];
     if (selected) {
-      executeResolvedAction(root, runtime, selected, runtime.pendingIntent);
+      void executeResolvedAction(root, runtime, selected, runtime.pendingIntent);
     }
     return true;
   }
@@ -493,7 +493,7 @@ function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: She
     runtime.pendingIntentMatches = [];
     runtime.chooserFocusIndex = 0;
     announce(root, runtime, resolution.feedback);
-    executeResolvedAction(root, runtime, resolution.matches[0], intent);
+    void executeResolvedAction(root, runtime, resolution.matches[0], intent);
     return;
   }
 
@@ -509,12 +509,26 @@ function renderDevContextInspector(root: HTMLElement, runtime: ShellRuntime): vo
   renderPanels(root, runtime);
 }
 
-function executeResolvedAction(
+async function executeResolvedAction(
   root: HTMLElement,
   runtime: ShellRuntime,
   match: IntentActionMatch,
   intent: ShellIntent | null,
-): void {
+): Promise<void> {
+  const triggerId = intent?.type ?? match.intentType;
+  const activated = await activatePluginForBoundary(root, runtime, {
+    pluginId: match.pluginId,
+    triggerType: "intent",
+    triggerId,
+  });
+
+  if (!activated) {
+    runtime.intentNotice = `Intent '${triggerId}' blocked: plugin '${match.pluginId}' is not active.`;
+    announce(root, runtime, runtime.intentNotice);
+    renderSyncStatus(root, runtime);
+    return;
+  }
+
   const genericContextValue = intent ? `intent:${intent.type}` : "none";
   writeGroupSelectionContext(runtime, genericContextValue);
 
