@@ -8,6 +8,7 @@ import {
   executeKeybinding,
 } from "../dist/command-runtime.js";
 import { createActivationRuntime } from "../dist/activation-runtime.js";
+import { bootstrapShellWithTenantManifest } from "../dist/app/bootstrap.js";
 
 const DOMAIN_UNPLANNED = {
   id: "com.armada.domain.unplanned-orders",
@@ -214,4 +215,55 @@ test("lazy activation triggers activate plugin once and track latest trigger", a
   assert.equal(snapshot[0].state, "active");
   assert.equal(snapshot[0].activationCount, 1);
   assert.deepEqual(snapshot[0].lastTrigger, { type: "intent", id: "domain.order.focus" });
+});
+
+test("shell bootstrap keeps inner-loop mode for loopback override entries", async () => {
+  const manifest = {
+    tenantId: "demo",
+    plugins: [
+      {
+        ...DOMAIN_UNPLANNED,
+        entry: "http://127.0.0.1:4173/mf-manifest.json",
+      },
+      {
+        ...DOMAIN_VESSEL,
+        entry: "http://localhost:4174/mf-manifest.json",
+      },
+    ],
+  };
+
+  const state = await bootstrapShellWithTenantManifest({
+    tenantId: "demo",
+    fetchManifest: async () => manifest,
+  });
+
+  assert.equal(state.mode, "inner-loop");
+  assert.equal(state.registry.getSnapshot().plugins.length, 2);
+});
+
+test("shell bootstrap keeps integration mode when non-loopback plugin entries exist", async () => {
+  const manifest = {
+    tenantId: "demo",
+    plugins: [
+      {
+        ...DOMAIN_UNPLANNED,
+        entry: "http://127.0.0.1:4173/mf-manifest.json",
+      },
+      {
+        ...DOMAIN_VESSEL,
+        entry: "https://plugins.armada.example/mf-manifest.json",
+      },
+    ],
+  };
+
+  const state = await bootstrapShellWithTenantManifest({
+    tenantId: "demo",
+    fetchManifest: async () => manifest,
+  });
+
+  assert.equal(state.mode, "integration");
+  assert.deepEqual(
+    state.registry.getSnapshot().plugins.map((plugin) => plugin.id).sort(),
+    [DOMAIN_UNPLANNED.id, DOMAIN_VESSEL.id],
+  );
 });
