@@ -1,68 +1,11 @@
-import { discoverLocalUiPlugins } from "./local-ui-plugin-discovery.js";
+import {
+  getTenantManifestEndpointPath,
+  resolveTenantManifestRequest,
+} from "./tenant-manifest.js";
 
-interface TenantPluginDescriptor {
-  id: string;
-  version: string;
-  entry: string;
-  compatibility: {
-    shell: string;
-    pluginContract: string;
-  };
-}
-
-interface TenantPluginManifestResponse {
-  tenantId: string;
-  plugins: TenantPluginDescriptor[];
-}
-
-const DEFAULT_TENANT = "demo";
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
-const inMemoryTenantPluginDescriptors: Readonly<Record<string, TenantPluginDescriptor[]>> = {
-  demo: createCanonicalLocalTenantDescriptors(),
-};
-
-function createCanonicalLocalTenantDescriptors(): TenantPluginDescriptor[] {
-  const plugins = discoverLocalUiPlugins({
-    appsRoot: "apps",
-  });
-
-  return Array.from(plugins.values()).map((plugin) => ({
-    id: plugin.id,
-    version: plugin.version,
-    entry: plugin.entry,
-    compatibility: {
-      shell: "^1.0.0",
-      pluginContract: "^1.0.0",
-    },
-  }));
-}
-
-export function getTenantManifestEndpointPath(tenantId: string): string {
-  return `/api/tenants/${encodeURIComponent(tenantId)}/plugin-manifest`;
-}
-
-export function getTenantManifestResponse(tenantId: string): TenantPluginManifestResponse {
-  const normalizedTenantId = tenantId.trim() || DEFAULT_TENANT;
-  const plugins = inMemoryTenantPluginDescriptors[normalizedTenantId] ?? [];
-
-  return {
-    tenantId: normalizedTenantId,
-    plugins,
-  };
-}
-
-export function resolveTenantManifestRequest(
-  pathname: string,
-): TenantPluginManifestResponse | null {
-  const match = pathname.match(/^\/api\/tenants\/([^/]+)\/plugin-manifest$/);
-  if (!match) {
-    return null;
-  }
-
-  const tenantId = decodeURIComponent(match[1]);
-  return getTenantManifestResponse(tenantId);
-}
+const DEFAULT_TENANT = "demo";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {

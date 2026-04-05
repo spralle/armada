@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "npm run check:architecture-guardrails --silent && tsc --pretty false -p tsconfig.json --noEmit",
     "typecheck": "tsc --pretty false -p tsconfig.json --noEmit",
-    "test": "npm run build --silent && tsc --pretty false -p apps/shell/tsconfig.test.json && tsc --pretty false -p apps/backend/tsconfig.test.json && node --test packages/plugin-contracts/test/parse-plugin-contract.test.mjs apps/shell/test/plugin-loader-parity.test.mjs apps/shell/test/plugin-registry-parity.test.mjs apps/shell/test/integration-hardening.test.mjs apps/shell/test/intent-activation-boundary.test.mjs apps/shell/src/action-runtime.integration.test.mjs apps/backend/test/local-ui-plugin-discovery.test.mjs",
+    "test": "npm run build --silent && tsc --pretty false -p apps/shell/tsconfig.test.json && tsc --pretty false -p apps/backend/tsconfig.test.json && node --test packages/plugin-contracts/test/parse-plugin-contract.test.mjs apps/shell/test/plugin-loader-parity.test.mjs apps/shell/test/plugin-registry-parity.test.mjs apps/shell/test/integration-hardening.test.mjs apps/shell/test/intent-activation-boundary.test.mjs apps/shell/src/action-runtime.integration.test.mjs apps/backend/test/local-ui-plugin-discovery.test.mjs apps/backend/test/tenant-manifest-overrides.test.mjs",
     "build": "tsc -b --pretty false",
     "check:architecture-guardrails": "node ./scripts/check-architecture-guardrails.mjs",
     "dev:shell": "npm run dev --workspace @armada/shell-app",

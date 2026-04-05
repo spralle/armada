@@ -15,6 +15,7 @@
     }
   ],
   "include": [
-    "src/local-ui-plugin-discovery.ts"
+    "src/local-ui-plugin-discovery.ts",
+    "src/tenant-manifest.ts"
   ]
 }
