@@ -14,7 +14,10 @@ import {
   DEFAULT_GROUP_ID,
 } from "../app/constants.js";
 import type { DevLaneMetadata, ShellRuntime } from "../app/types.js";
-import type { LocalMockPart } from "../mock-parts.js";
+
+interface ShellTabPartRef {
+  id: string;
+}
 
 export function createRevision(writer: string): RevisionMeta {
   return {
@@ -23,7 +26,7 @@ export function createRevision(writer: string): RevisionMeta {
   };
 }
 
-export function ensureTabsRegistered(state: ShellContextState, parts: LocalMockPart[]): ShellContextState {
+export function ensureTabsRegistered(state: ShellContextState, parts: ShellTabPartRef[]): ShellContextState {
   let next = state;
   for (const part of parts) {
     next = registerTab(next, {

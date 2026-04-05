@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  composeEnabledPluginContributions,
   evaluateShellPluginCompatibility,
   parsePluginContract,
   parseTenantPluginManifest,
@@ -260,4 +261,90 @@ test("tenant manifest parser reports nested field validation errors", () => {
       true,
     );
   }
+});
+
+test("composeEnabledPluginContributions composes parts from enabled plugin contracts only", () => {
+  const composed = composeEnabledPluginContributions([
+    {
+      id: "com.armada.domain.unplanned-orders",
+      enabled: true,
+      contract: {
+        manifest: {
+          id: "com.armada.domain.unplanned-orders",
+          name: "Unplanned Orders",
+          version: "0.1.0",
+        },
+        contributes: {
+          views: [
+            {
+              id: "domain.unplanned-orders.view",
+              title: "Unplanned Orders",
+              component: "UnplannedOrdersView",
+            },
+          ],
+          parts: [
+            {
+              id: "domain.unplanned-orders.part",
+              title: "Unplanned Orders",
+              slot: "main",
+              component: "UnplannedOrdersPart",
+            },
+          ],
+        },
+      },
+    },
+    {
+      id: "com.armada.domain.vessel-view",
+      enabled: true,
+      contract: {
+        manifest: {
+          id: "com.armada.domain.vessel-view",
+          name: "Vessel View",
+          version: "0.1.0",
+        },
+        contributes: {
+          parts: [
+            {
+              id: "domain.vessel-view.part",
+              title: "Vessel View",
+              slot: "secondary",
+              component: "VesselViewPart",
+            },
+          ],
+        },
+      },
+    },
+    {
+      id: "com.armada.disabled-plugin",
+      enabled: false,
+      contract: {
+        manifest: {
+          id: "com.armada.disabled-plugin",
+          name: "Disabled",
+          version: "0.1.0",
+        },
+        contributes: {
+          parts: [
+            {
+              id: "disabled.part",
+              title: "Disabled Part",
+              slot: "side",
+              component: "DisabledPart",
+            },
+          ],
+        },
+      },
+    },
+  ]);
+
+  assert.equal(composed.parts.length, 2);
+  assert.deepEqual(
+    composed.parts.map((part) => `${part.pluginId}:${part.id}:${part.slot}`),
+    [
+      "com.armada.domain.unplanned-orders:domain.unplanned-orders.part:main",
+      "com.armada.domain.vessel-view:domain.vessel-view.part:secondary",
+    ],
+  );
+  assert.equal(composed.views.length, 1);
+  assert.equal(composed.views[0].pluginId, "com.armada.domain.unplanned-orders");
 });

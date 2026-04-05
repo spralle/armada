@@ -18,7 +18,7 @@ import { safeJson, safeParse, sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
 import {
-  getVisibleMockParts,
+  getVisibleComposedParts,
   renderPartCard,
   resolvePartTitle,
   updateSelectedStyles,
@@ -37,7 +37,7 @@ type PartsControllerDeps = {
 };
 
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
-  const visibleParts = getVisibleMockParts(runtime);
+  const visibleParts = getVisibleComposedParts(runtime);
 
   if (runtime.isPopout) {
     const slot = root.querySelector<HTMLElement>("#popout-slot");
@@ -398,7 +398,7 @@ function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
 
       const payload = {
         partId,
-        partTitle: resolvePartTitle(partId),
+        partTitle: resolvePartTitle(partId, runtime),
         sourceWindowId: runtime.windowId,
         createdAt: new Date().toISOString(),
       };

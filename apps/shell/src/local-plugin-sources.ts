@@ -49,6 +49,14 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
           component: "UnplannedOrdersView",
         },
       ],
+      parts: [
+        {
+          id: "domain.unplanned-orders.part",
+          title: "Unplanned Orders",
+          slot: "main",
+          component: "UnplannedOrdersPart",
+        },
+      ],
       selection: [
         {
           id: "domain.unplanned-orders.selection",
@@ -98,6 +106,14 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
           id: "domain.vessel.view",
           title: "Vessel View",
           component: "VesselView",
+        },
+      ],
+      parts: [
+        {
+          id: "domain.vessel-view.part",
+          title: "Vessel View (RORO/ROPAX)",
+          slot: "secondary",
+          component: "VesselViewPart",
         },
       ],
       selection: [

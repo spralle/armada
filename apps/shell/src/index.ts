@@ -53,7 +53,7 @@ import {
 } from "./context/runtime-state.js";
 import { applySelectionPropagation } from "./domain/selection-graph.js";
 import {
-  getVisibleMockParts,
+  getVisibleComposedParts,
   isSelectionActionNode,
   updateSelectedStyles,
 } from "./ui/parts-rendering.js";
@@ -195,7 +195,7 @@ function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
-  const visibleParts = getVisibleMockParts(runtime);
+  const visibleParts = getVisibleComposedParts(runtime);
   updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
   renderPartsView(root, runtime, {
     applySelection: (event) => applySelection(root, runtime, event),
