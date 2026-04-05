@@ -1,3 +1,5 @@
+import { discoverLocalUiPlugins } from "./local-ui-plugin-discovery.js";
+
 interface TenantPluginDescriptor {
   id: string;
   version: string;
@@ -16,55 +18,25 @@ interface TenantPluginManifestResponse {
 const DEFAULT_TENANT = "demo";
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
-const PLUGIN_STARTER_DEV_PORT = 4171;
-const SAMPLE_PLUGIN_DEV_PORT = 4172;
-const DOMAIN_UNPLANNED_ORDERS_DEV_PORT = 4173;
-const DOMAIN_VESSEL_VIEW_DEV_PORT = 4174;
-
-function createMfManifestEntry(port: number): string {
-  return `http://127.0.0.1:${port}/mf-manifest.json`;
-}
-
 const inMemoryTenantPluginDescriptors: Readonly<Record<string, TenantPluginDescriptor[]>> = {
-  demo: [
-    {
-      id: "com.armada.plugin-starter",
-      version: "0.1.0",
-      entry: createMfManifestEntry(PLUGIN_STARTER_DEV_PORT),
-      compatibility: {
-        shell: "^1.0.0",
-        pluginContract: "^1.0.0",
-      },
-    },
-    {
-      id: "com.armada.sample.contract-consumer",
-      version: "0.1.0",
-      entry: createMfManifestEntry(SAMPLE_PLUGIN_DEV_PORT),
-      compatibility: {
-        shell: "^1.0.0",
-        pluginContract: "^1.0.0",
-      },
-    },
-    {
-      id: "com.armada.domain.unplanned-orders",
-      version: "0.1.0",
-      entry: createMfManifestEntry(DOMAIN_UNPLANNED_ORDERS_DEV_PORT),
-      compatibility: {
-        shell: "^1.0.0",
-        pluginContract: "^1.0.0",
-      },
-    },
-    {
-      id: "com.armada.domain.vessel-view",
-      version: "0.1.0",
-      entry: createMfManifestEntry(DOMAIN_VESSEL_VIEW_DEV_PORT),
-      compatibility: {
-        shell: "^1.0.0",
-        pluginContract: "^1.0.0",
-      },
-    },
-  ],
+  demo: createCanonicalLocalTenantDescriptors(),
 };
+
+function createCanonicalLocalTenantDescriptors(): TenantPluginDescriptor[] {
+  const plugins = discoverLocalUiPlugins({
+    appsRoot: "apps",
+  });
+
+  return Array.from(plugins.values()).map((plugin) => ({
+    id: plugin.id,
+    version: plugin.version,
+    entry: plugin.entry,
+    compatibility: {
+      shell: "^1.0.0",
+      pluginContract: "^1.0.0",
+    },
+  }));
+}
 
 export function getTenantManifestEndpointPath(tenantId: string): string {
   return `/api/tenants/${encodeURIComponent(tenantId)}/plugin-manifest`;
