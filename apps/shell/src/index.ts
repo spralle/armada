@@ -2,31 +2,14 @@ import {
   type PluginContract,
   type PluginSelectionContribution,
 } from "@armada/plugin-contracts";
-import { createDragSessionBroker } from "./dnd-session-broker.js";
 import {
   applyPaneResize,
-  createDefaultLayoutState,
   type ShellLayoutState,
 } from "./layout.js";
 import { localMockParts, type LocalMockPart } from "./mock-parts.js";
 import {
-  createLocalStorageContextStatePersistence,
-  createLocalStorageLayoutPersistence,
-  type ShellContextStatePersistence,
-  type ShellLayoutPersistence,
-} from "./persistence.js";
-import {
-  createShellPluginRegistry,
-  type ShellPluginRegistry,
-} from "./plugin-registry.js";
-import {
-  createWindowBridge,
   type ContextSyncEvent,
-  type SyncAckEvent,
-  type SyncProbeEvent,
   type SelectionSyncEvent,
-  type WindowBridge,
-  type WindowBridgeHealth,
 } from "./window-bridge.js";
 import {
   getOrdersForVessel,
@@ -35,7 +18,6 @@ import {
 } from "./domain-demo-data.js";
 import {
   applySelectionUpdate,
-  createInitialShellContextState,
   type DerivedLaneDefinition,
   getTabGroupId,
   readEntityTypeSelection,
@@ -53,7 +35,6 @@ import {
 import {
   createActionCatalogFromRegistrySnapshot,
   resolveIntentWithTrace,
-  type IntentResolutionTrace,
   type IntentActionMatch,
   type ShellIntent,
 } from "./intent-runtime.js";
@@ -64,181 +45,42 @@ import {
   resolveChooserKeyboardAction,
   resolveDegradedKeyboardInteraction,
 } from "./keyboard-a11y.js";
+import { shellBootstrapState, bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
+import {
+  DEFAULT_GROUP_COLOR,
+  DEFAULT_GROUP_ID,
+  DEV_MODE,
+  DOMAIN_CONTEXT_KEY,
+  DRAG_INLINE_PREFIX,
+  DRAG_REF_PREFIX,
+  GLOBAL_CONTEXT_KEY,
+} from "./app/constants.js";
+import { createShellRuntime } from "./app/runtime.js";
+import type {
+  DevLaneMetadata,
+  RuntimeDerivedLaneContribution,
+  SelectionGraphExtensions,
+  SelectionPropagationResult,
+  SelectionWrite,
+  ShellRuntime,
+} from "./app/types.js";
+import {
+  createWindowId,
+  escapeHtml,
+  safeJson,
+  safeParse,
+  sanitizeForWindowName,
+  toPrettyJson,
+} from "./app/utils.js";
+import {
+  handleSyncAck as handleSyncAckState,
+  handleSyncProbe as handleSyncProbeState,
+  publishWithDegrade as publishWithDegradeState,
+  renderBridgeWarning as renderBridgeWarningState,
+  requestSyncProbe as requestSyncProbeState,
+} from "./sync/bridge-degraded.js";
 
-const BRIDGE_CHANNEL = "armada.shell.window-bridge.v1";
-const DRAG_REF_PREFIX = "armada-dnd-ref:";
-const DRAG_INLINE_PREFIX = "armada-dnd-inline:";
-const DEFAULT_GROUP_ID = "group-main";
-const DEFAULT_GROUP_COLOR = "blue";
-const DOMAIN_CONTEXT_KEY = "domain.selection";
-const GLOBAL_CONTEXT_KEY = "shell.selection";
-const DEV_MODE = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
-
-export interface ShellBootstrapState {
-  mode: "inner-loop" | "integration";
-  loadedPlugins: PluginContract[];
-  registry: ShellPluginRegistry;
-}
-
-export interface ShellBootstrapOptions {
-  tenantId: string;
-  fetchManifest?: (manifestUrl: string) => Promise<unknown>;
-  enableByDefault?: boolean;
-}
-
-interface ShellRuntime {
-  layout: ShellLayoutState;
-  persistence: ShellLayoutPersistence;
-  contextPersistence: ShellContextStatePersistence;
-  registry: ShellPluginRegistry;
-  bridge: WindowBridge;
-  windowId: string;
-  hostWindowId: string | null;
-  partId: string | null;
-  isPopout: boolean;
-  selectedPartId: string | null;
-  selectedPartTitle: string | null;
-  selectedOrderId: string | null;
-  selectedVesselId: string | null;
-  contextState: ShellContextState;
-  notice: string;
-  pluginNotice: string;
-  intentNotice: string;
-  pendingIntentMatches: IntentActionMatch[];
-  pendingIntent: ShellIntent | null;
-  lastIntentTrace: IntentResolutionTrace | null;
-  popoutHandles: Map<string, Window>;
-  poppedOutPartIds: Set<string>;
-  dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
-  syncDegraded: boolean;
-  syncDegradedReason: WindowBridgeHealth["reason"];
-  pendingProbeId: string | null;
-  announcement: string;
-  chooserFocusIndex: number;
-  pendingFocusSelector: string | null;
-  chooserReturnFocusSelector: string | null;
-}
-
-interface TenantPluginDescriptor {
-  id: string;
-  version: string;
-  entry: string;
-  compatibility: {
-    shell: string;
-    pluginContract: string;
-  };
-}
-
-interface TenantPluginManifestResponse {
-  tenantId: string;
-  plugins: TenantPluginDescriptor[];
-}
-
-async function fetchManifestFromEndpoint(manifestUrl: string): Promise<unknown> {
-  const response = await fetch(manifestUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch tenant manifest from '${manifestUrl}' (${response.status})`);
-  }
-
-  return response.json();
-}
-
-export async function bootstrapShellWithTenantManifest(
-  options: ShellBootstrapOptions,
-): Promise<ShellBootstrapState> {
-  const tenantId = options.tenantId.trim();
-  if (!tenantId) {
-    throw new Error("tenantId is required");
-  }
-
-  const manifestUrl = `/api/tenants/${encodeURIComponent(tenantId)}/plugin-manifest`;
-  const fetchManifest = options.fetchManifest ?? fetchManifestFromEndpoint;
-  const rawManifest = await fetchManifest(manifestUrl);
-  const parsedManifest = parseTenantManifestFallback(rawManifest);
-
-  const registry = createShellPluginRegistry();
-  registry.registerManifestDescriptors(parsedManifest.tenantId, parsedManifest.plugins);
-
-  if (options.enableByDefault) {
-    for (const descriptor of parsedManifest.plugins) {
-      await registry.setEnabled(descriptor.id, true);
-    }
-  }
-
-  const snapshot = registry.getSnapshot();
-
-  return {
-    mode: parsedManifest.plugins.some((plugin: TenantPluginDescriptor) => !plugin.entry.startsWith("local://"))
-      ? "integration"
-      : "inner-loop",
-    loadedPlugins: snapshot.plugins
-      .map((plugin) => plugin.contract)
-      .filter((plugin): plugin is PluginContract => plugin !== null),
-    registry,
-  };
-}
-
-const emptyRegistry = createShellPluginRegistry();
-emptyRegistry.registerManifestDescriptors("local", []);
-
-export const shellBootstrapState: ShellBootstrapState = {
-  mode: "inner-loop",
-  loadedPlugins: [],
-  registry: emptyRegistry,
-};
-
-const popoutParams = readPopoutParams();
-const windowId = createWindowId();
-const bridge = createWindowBridge(BRIDGE_CHANNEL);
-
-const shellRuntime: ShellRuntime = {
-  layout: createDefaultLayoutState(),
-  persistence: createLocalStorageLayoutPersistence(getStorage(), {
-    userId: getCurrentUserId(),
-  }),
-  contextPersistence: createLocalStorageContextStatePersistence(getStorage(), {
-    userId: getCurrentUserId(),
-  }),
-  registry: createShellPluginRegistry(),
-  bridge,
-  windowId,
-  hostWindowId: popoutParams.hostWindowId,
-  partId: popoutParams.partId,
-  isPopout: popoutParams.isPopout,
-  selectedPartId: null,
-  selectedPartTitle: null,
-  selectedOrderId: null,
-  selectedVesselId: null,
-  contextState: createInitialShellContextState({
-    initialTabId: "tab-main",
-    initialGroupId: DEFAULT_GROUP_ID,
-    initialGroupColor: DEFAULT_GROUP_COLOR,
-  }),
-  notice: "",
-  pluginNotice: "",
-  intentNotice: "",
-  pendingIntentMatches: [],
-  pendingIntent: null,
-  lastIntentTrace: null,
-  popoutHandles: new Map<string, Window>(),
-  poppedOutPartIds: new Set<string>(),
-  dragSessionBroker: createDragSessionBroker(bridge, windowId),
-  syncDegraded: !bridge.available,
-  syncDegradedReason: bridge.available ? null : "unavailable",
-  pendingProbeId: null,
-  announcement: "",
-  chooserFocusIndex: 0,
-  pendingFocusSelector: null,
-  chooserReturnFocusSelector: null,
-};
-
-shellRuntime.registry.registerManifestDescriptors("local", []);
-shellRuntime.layout = shellRuntime.persistence.load();
-const contextLoad = shellRuntime.contextPersistence.load(shellRuntime.contextState);
-shellRuntime.contextState = contextLoad.state;
-if (contextLoad.warning) {
-  shellRuntime.notice = contextLoad.warning;
-}
+const shellRuntime = createShellRuntime();
 
 if (typeof document !== "undefined") {
   mountShell(document.body, shellRuntime);
@@ -1409,15 +1251,6 @@ function createDerivedLaneDefinition(
   };
 }
 
-interface RuntimeDerivedLaneContribution {
-  id: string;
-  key: string;
-  sourceEntityType: string;
-  scope: "global" | "group";
-  valueType: string;
-  strategy: "priority-id" | "joined-selected-ids";
-}
-
 function readSelectionSourceEntityType(contribution: PluginSelectionContribution): string | null {
   const value = (contribution as PluginSelectionContribution & { source?: unknown }).source;
   return typeof value === "string" && value.length > 0 ? value : null;
@@ -1478,15 +1311,7 @@ function inferSourceEntityType(target: string): string | null {
 }
 
 function renderBridgeWarning(runtime: ShellRuntime): string {
-  if (!runtime.syncDegraded && runtime.bridge.available && runtime.dragSessionBroker.available) {
-    return "";
-  }
-
-  if (runtime.syncDegraded) {
-    return `<div class="bridge-warning">Cross-window sync degraded (${runtime.syncDegradedReason ?? "unknown"}). This window is read-only until resync succeeds.</div>`;
-  }
-
-  return `<div class="bridge-warning">BroadcastChannel is unavailable. Sync/popout restore/dnd ref fall back to local-only behavior.</div>`;
+  return renderBridgeWarningState(runtime);
 }
 
 function renderContextControls(root: HTMLElement, runtime: ShellRuntime): void {
@@ -1758,30 +1583,6 @@ function resolvePartTitle(partId: string): string {
   return localMockParts.find((part) => part.id === partId)?.title ?? partId;
 }
 
-function safeParse(input: string): unknown | null {
-  try {
-    return JSON.parse(input);
-  } catch {
-    return null;
-  }
-}
-
-function safeJson(value: unknown): string {
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return "[unserializable payload]";
-  }
-}
-
-function toPrettyJson(value: unknown): string {
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return "[unserializable payload]";
-  }
-}
-
 function collectLaneMetadata(state: ShellContextState): Array<{
   scope: string;
   key: string;
@@ -1950,181 +1751,51 @@ function applyPendingFocus(root: HTMLElement, runtime: ShellRuntime): void {
   runtime.pendingFocusSelector = null;
 }
 
-function publishWithDegrade(root: HTMLElement, runtime: ShellRuntime, event: Parameters<WindowBridge["publish"]>[0]): boolean {
-  if (runtime.syncDegraded) {
-    return false;
-  }
-
-  const success = runtime.bridge.publish(event);
-  if (!success) {
-    runtime.syncDegraded = true;
-    runtime.syncDegradedReason = "publish-failed";
-    runtime.pendingProbeId = null;
-    announce(root, runtime, formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
-    updateWindowReadOnlyState(root, runtime);
-    renderSyncStatus(root, runtime);
-    renderContextControls(root, runtime);
-    return false;
-  }
-
-  return true;
+function publishWithDegrade(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  event: Parameters<ShellRuntime["bridge"]["publish"]>[0],
+): boolean {
+  return publishWithDegradeState(runtime, event, {
+    announce: (message) => announce(root, runtime, message),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+    renderSyncStatus: () => renderSyncStatus(root, runtime),
+    renderContextControls: () => renderContextControls(root, runtime),
+  });
 }
 
 function requestSyncProbe(root: HTMLElement, runtime: ShellRuntime): void {
-  if (!runtime.bridge.available) {
-    return;
-  }
-
-  const probeId = createWindowId();
-  runtime.pendingProbeId = probeId;
-  const ok = runtime.bridge.publish({
-    type: "sync-probe",
-    probeId,
-    sourceWindowId: runtime.windowId,
-  });
-
-  if (!ok) {
-    runtime.syncDegraded = true;
-    runtime.syncDegradedReason = "publish-failed";
-    runtime.pendingProbeId = null;
-    announce(root, runtime, formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
-    updateWindowReadOnlyState(root, runtime);
-    renderSyncStatus(root, runtime);
-    renderContextControls(root, runtime);
-  }
+  requestSyncProbeState(runtime, {
+    announce: (message) => announce(root, runtime, message),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+    renderSyncStatus: () => renderSyncStatus(root, runtime),
+    renderContextControls: () => renderContextControls(root, runtime),
+  }, createWindowId);
 }
 
-function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent): void {
-  if (runtime.syncDegraded) {
+function handleSyncProbe(
+  runtime: ShellRuntime,
+  event: Parameters<ShellRuntime["bridge"]["subscribe"]>[0] extends (event: infer T) => void ? T : never,
+): void {
+  if (event.type !== "sync-probe") {
     return;
   }
-
-  runtime.bridge.publish({
-    type: "sync-ack",
-    probeId: event.probeId,
-    targetWindowId: event.sourceWindowId,
-    sourceWindowId: runtime.windowId,
-  });
+  handleSyncProbeState(runtime, event);
 }
 
-function handleSyncAck(root: HTMLElement, runtime: ShellRuntime, event: SyncAckEvent): boolean {
-  if (event.targetWindowId !== runtime.windowId) {
+function handleSyncAck(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  event: Parameters<ShellRuntime["bridge"]["subscribe"]>[0] extends (event: infer T) => void ? T : never,
+): boolean {
+  if (event.type !== "sync-ack") {
     return false;
   }
-
-  if (!runtime.syncDegraded || !runtime.pendingProbeId || event.probeId !== runtime.pendingProbeId) {
-    return true;
-  }
-
-  runtime.pendingProbeId = null;
-  runtime.syncDegraded = false;
-  runtime.syncDegradedReason = null;
-  runtime.bridge.recover();
-  announce(root, runtime, formatDegradedModeAnnouncement(false, null));
-  updateWindowReadOnlyState(root, runtime);
-  renderSyncStatus(root, runtime);
-  renderContextControls(root, runtime);
-  return true;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function sanitizeForWindowName(value: string): string {
-  return value.replace(/[^a-zA-Z0-9_-]/g, "-");
-}
-
-function getStorage(): Storage | undefined {
-  if (typeof window === "undefined") {
-    return undefined;
-  }
-  return window.localStorage;
-}
-
-function getCurrentUserId(): string {
-  return "local-user";
-}
-
-function createWindowId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-
-  return `window-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function readPopoutParams(): {
-  isPopout: boolean;
-  partId: string | null;
-  hostWindowId: string | null;
-} {
-  if (typeof window === "undefined") {
-    return {
-      isPopout: false,
-      partId: null,
-      hostWindowId: null,
-    };
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  const isPopout = params.get("popout") === "1";
-  return {
-    isPopout,
-    partId: isPopout ? params.get("partId") : null,
-    hostWindowId: isPopout ? params.get("hostWindowId") : null,
-  };
-}
-
-function parseTenantManifestFallback(input: unknown): TenantPluginManifestResponse {
-  if (!input || typeof input !== "object") {
-    throw new Error("Invalid tenant manifest response: expected object");
-  }
-
-  const manifest = input as Partial<TenantPluginManifestResponse>;
-  if (typeof manifest.tenantId !== "string" || !manifest.tenantId.trim()) {
-    throw new Error("Invalid tenant manifest response: tenantId is required");
-  }
-
-  if (!Array.isArray(manifest.plugins)) {
-    throw new Error("Invalid tenant manifest response: plugins must be an array");
-  }
-
-  const plugins = manifest.plugins.map((plugin: unknown, index: number): TenantPluginDescriptor => {
-    if (!plugin || typeof plugin !== "object") {
-      throw new Error(`Invalid tenant manifest response: plugins[${index}] must be an object`);
-    }
-
-    const descriptor = plugin as Partial<TenantPluginDescriptor>;
-    if (
-      typeof descriptor.id !== "string" ||
-      typeof descriptor.version !== "string" ||
-      typeof descriptor.entry !== "string" ||
-      !descriptor.compatibility ||
-      typeof descriptor.compatibility.shell !== "string" ||
-      typeof descriptor.compatibility.pluginContract !== "string"
-    ) {
-      throw new Error(`Invalid tenant manifest response: plugins[${index}] has invalid descriptor shape`);
-    }
-
-    return {
-      id: descriptor.id,
-      version: descriptor.version,
-      entry: descriptor.entry,
-      compatibility: {
-        shell: descriptor.compatibility.shell,
-        pluginContract: descriptor.compatibility.pluginContract,
-      },
-    };
+  return handleSyncAckState(runtime, event, {
+    announce: (message) => announce(root, runtime, message),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+    renderSyncStatus: () => renderSyncStatus(root, runtime),
+    renderContextControls: () => renderContextControls(root, runtime),
   });
-
-  return {
-    tenantId: manifest.tenantId,
-    plugins,
-  };
 }
+
