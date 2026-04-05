@@ -37,8 +37,11 @@ interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
+const SHELL_PERSISTENCE_STORAGE_KEY = "armada.shell.persistence";
 const LAYOUT_STORAGE_KEY = "armada.shell.layout.v1";
 const CONTEXT_STATE_STORAGE_KEY = "armada.shell.context-state";
+const SHELL_PERSISTENCE_SCHEMA_VERSION = 1;
+const LAYOUT_SECTION_SCHEMA_VERSION = 1;
 const CONTEXT_STATE_SCHEMA_VERSION = 2;
 
 interface LayoutPersistenceOptions {
@@ -47,6 +50,17 @@ interface LayoutPersistenceOptions {
 
 interface ContextStatePersistenceOptions {
   userId: string;
+}
+
+interface UnifiedShellPersistenceEnvelopeV1 {
+  version: 1;
+  layout?: unknown;
+  context?: unknown;
+}
+
+interface LayoutEnvelopeV1 {
+  version: 1;
+  state: unknown;
 }
 
 interface ContextStateEnvelopeV2 {
@@ -63,7 +77,8 @@ export function createLocalStorageLayoutPersistence(
   storage: StorageLike | undefined,
   options: LayoutPersistenceOptions,
 ): ShellLayoutPersistence {
-  const storageKey = `${LAYOUT_STORAGE_KEY}.${options.userId}`;
+  const storageKey = getUnifiedStorageKey(options.userId);
+  const legacyStorageKey = getLegacyLayoutStorageKey(options.userId);
 
   return {
     load() {
@@ -71,17 +86,25 @@ export function createLocalStorageLayoutPersistence(
         return createDefaultLayoutState();
       }
 
-      const raw = storage.getItem(storageKey);
-      if (!raw) {
+      const persistedEnvelope = loadUnifiedEnvelope(storage, storageKey);
+      if (persistedEnvelope.ok) {
+        const section = migrateLayoutSectionEnvelope(persistedEnvelope.value.layout);
+        if (section.ok) {
+          return sanitizeLayoutState(section.value.state as PartialLayoutState);
+        }
+      }
+
+      const rawLegacy = storage.getItem(legacyStorageKey);
+      if (!rawLegacy) {
         return createDefaultLayoutState();
       }
 
-      const parsed = safeParse(raw);
-      if (!parsed) {
+      const legacy = safeParse(rawLegacy);
+      if (!legacy) {
         return createDefaultLayoutState();
       }
 
-      return sanitizeLayoutState(parsed);
+      return sanitizeLayoutState(legacy);
     },
     save(state) {
       if (!storage) {
@@ -89,7 +112,22 @@ export function createLocalStorageLayoutPersistence(
       }
 
       const safeState = sanitizeLayoutState(state);
-      storage.setItem(storageKey, JSON.stringify(safeState));
+      const existingEnvelope = loadUnifiedEnvelope(storage, storageKey);
+      const nextEnvelope: UnifiedShellPersistenceEnvelopeV1 = {
+        version: SHELL_PERSISTENCE_SCHEMA_VERSION,
+        ...(existingEnvelope.ok
+          ? {
+              layout: existingEnvelope.value.layout,
+              context: existingEnvelope.value.context,
+            }
+          : {}),
+        layout: {
+          version: LAYOUT_SECTION_SCHEMA_VERSION,
+          state: safeState,
+        } satisfies LayoutEnvelopeV1,
+      };
+
+      storage.setItem(storageKey, JSON.stringify(nextEnvelope));
     },
   };
 }
@@ -98,7 +136,8 @@ export function createLocalStorageContextStatePersistence(
   storage: StorageLike | undefined,
   options: ContextStatePersistenceOptions,
 ): ShellContextStatePersistence {
-  const storageKey = `${CONTEXT_STATE_STORAGE_KEY}.v${CONTEXT_STATE_SCHEMA_VERSION}.${options.userId}`;
+  const storageKey = getUnifiedStorageKey(options.userId);
+  const legacyStorageKey = getLegacyContextStorageKey(options.userId);
 
   return {
     load(fallback) {
@@ -110,33 +149,52 @@ export function createLocalStorageContextStatePersistence(
         };
       }
 
-      const raw = storage.getItem(storageKey);
-      if (!raw) {
+      const persistedEnvelope = loadUnifiedEnvelope(storage, storageKey);
+      let sectionWarning: string | null = null;
+      if (persistedEnvelope.ok) {
+        const migration = migrateContextStateEnvelope(persistedEnvelope.value.context);
+        if (migration.ok) {
+          return {
+            state: sanitizeContextState(migration.value.contextState, safeFallback),
+            warning: migration.warning,
+          };
+        }
+
+        sectionWarning = migration.warning;
+      }
+
+      const legacy = loadLegacyContextState(storage, legacyStorageKey);
+      if (legacy.ok) {
         return {
-          state: safeFallback,
-          warning: null,
+          state: sanitizeContextState(legacy.value.contextState, safeFallback),
+          warning: legacy.warning,
         };
       }
 
-      const parsed = safeParseUnknown(raw);
-      if (!parsed.ok) {
+      if (legacy.warning) {
         return {
           state: safeFallback,
-          warning: "Persisted context state was unreadable. Using defaults.",
+          warning: legacy.warning,
         };
       }
 
-      const migration = migrateContextStateEnvelope(parsed.value);
-      if (!migration.ok) {
+      if (persistedEnvelope.warning) {
         return {
           state: safeFallback,
-          warning: migration.warning,
+          warning: persistedEnvelope.warning,
+        };
+      }
+
+      if (sectionWarning) {
+        return {
+          state: safeFallback,
+          warning: sectionWarning,
         };
       }
 
       return {
-        state: sanitizeContextState(migration.value.contextState, safeFallback),
-        warning: migration.warning,
+        state: safeFallback,
+        warning: null,
       };
     },
     save(state) {
@@ -145,13 +203,24 @@ export function createLocalStorageContextStatePersistence(
       }
 
       const safeState = sanitizeContextState(state, createInitialShellContextState());
-      const envelope: ContextStateEnvelopeV2 = {
-        version: 2,
+      const contextEnvelope: ContextStateEnvelopeV2 = {
+        version: CONTEXT_STATE_SCHEMA_VERSION,
         contextState: safeState,
+      };
+      const existingEnvelope = loadUnifiedEnvelope(storage, storageKey);
+      const nextEnvelope: UnifiedShellPersistenceEnvelopeV1 = {
+        version: SHELL_PERSISTENCE_SCHEMA_VERSION,
+        ...(existingEnvelope.ok
+          ? {
+              layout: existingEnvelope.value.layout,
+              context: existingEnvelope.value.context,
+            }
+          : {}),
+        context: contextEnvelope,
       };
 
       try {
-        storage.setItem(storageKey, JSON.stringify(envelope));
+        storage.setItem(storageKey, JSON.stringify(nextEnvelope));
         return { warning: null };
       } catch {
         return {
@@ -160,6 +229,18 @@ export function createLocalStorageContextStatePersistence(
       }
     },
   };
+}
+
+function getUnifiedStorageKey(userId: string): string {
+  return `${SHELL_PERSISTENCE_STORAGE_KEY}.v${SHELL_PERSISTENCE_SCHEMA_VERSION}.${userId}`;
+}
+
+function getLegacyLayoutStorageKey(userId: string): string {
+  return `${LAYOUT_STORAGE_KEY}.${userId}`;
+}
+
+function getLegacyContextStorageKey(userId: string): string {
+  return `${CONTEXT_STATE_STORAGE_KEY}.v${CONTEXT_STATE_SCHEMA_VERSION}.${userId}`;
 }
 
 function safeParse(input: string): PartialLayoutState | null {
@@ -181,9 +262,145 @@ function safeParseUnknown(input: string): { ok: true; value: unknown } | { ok: f
   }
 }
 
+function loadUnifiedEnvelope(
+  storage: StorageLike,
+  storageKey: string,
+):
+  | { ok: true; value: UnifiedShellPersistenceEnvelopeV1; warning: null }
+  | { ok: false; warning: string | null } {
+  const raw = storage.getItem(storageKey);
+  if (!raw) {
+    return { ok: false, warning: null };
+  }
+
+  const parsed = safeParseUnknown(raw);
+  if (!parsed.ok) {
+    return {
+      ok: false,
+      warning: "Persisted shell state was unreadable. Using defaults.",
+    };
+  }
+
+  return migrateUnifiedShellEnvelope(parsed.value);
+}
+
+function migrateUnifiedShellEnvelope(input: unknown):
+  | { ok: true; value: UnifiedShellPersistenceEnvelopeV1; warning: null }
+  | { ok: false; warning: string } {
+  if (!isRecord(input) || typeof input.version !== "number") {
+    return {
+      ok: false,
+      warning: "Persisted shell state had invalid schema envelope. Using defaults.",
+    };
+  }
+
+  if (input.version !== SHELL_PERSISTENCE_SCHEMA_VERSION) {
+    return {
+      ok: false,
+      warning: `Persisted shell state schema v${String(input.version)} is unsupported. Using defaults.`,
+    };
+  }
+
+  return {
+    ok: true,
+    value: {
+      version: SHELL_PERSISTENCE_SCHEMA_VERSION,
+      layout: input.layout,
+      context: input.context,
+    },
+    warning: null,
+  };
+}
+
+function migrateLayoutSectionEnvelope(input: unknown):
+  | { ok: true; value: LayoutEnvelopeV1; warning: string | null }
+  | { ok: false; warning: string } {
+  if (input === undefined) {
+    return {
+      ok: false,
+      warning: "Persisted layout section was missing. Using defaults.",
+    };
+  }
+
+  if (isRecord(input) && typeof input.version === "number") {
+    if (input.version === LAYOUT_SECTION_SCHEMA_VERSION && "state" in input) {
+      return {
+        ok: true,
+        value: {
+          version: LAYOUT_SECTION_SCHEMA_VERSION,
+          state: input.state,
+        },
+        warning: null,
+      };
+    }
+
+    return {
+      ok: false,
+      warning: `Persisted layout section schema v${String(input.version)} is unsupported. Using defaults.`,
+    };
+  }
+
+  if (isRecord(input)) {
+    return {
+      ok: true,
+      value: {
+        version: LAYOUT_SECTION_SCHEMA_VERSION,
+        state: input,
+      },
+      warning: "Migrated persisted layout section from legacy schema.",
+    };
+  }
+
+  return {
+    ok: false,
+    warning: "Persisted layout section payload was invalid. Using defaults.",
+  };
+}
+
+function loadLegacyContextState(
+  storage: StorageLike,
+  legacyStorageKey: string,
+):
+  | { ok: true; value: ContextStateEnvelopeV2; warning: string | null }
+  | { ok: false; warning: string | null } {
+  const legacyRaw = storage.getItem(legacyStorageKey);
+  if (!legacyRaw) {
+    return { ok: false, warning: null };
+  }
+
+  const parsedLegacy = safeParseUnknown(legacyRaw);
+  if (!parsedLegacy.ok) {
+    return {
+      ok: false,
+      warning: "Persisted context state was unreadable. Using defaults.",
+    };
+  }
+
+  const migration = migrateContextStateEnvelope(parsedLegacy.value);
+  if (!migration.ok) {
+    return {
+      ok: false,
+      warning: migration.warning,
+    };
+  }
+
+  return {
+    ok: true,
+    value: migration.value,
+    warning: migration.warning,
+  };
+}
+
 function migrateContextStateEnvelope(input: unknown):
   | { ok: true; value: ContextStateEnvelopeV2; warning: string | null }
-  | { ok: false; warning: string } {
+  | { ok: false; warning: string | null } {
+  if (input === undefined) {
+    return {
+      ok: false,
+      warning: null,
+    };
+  }
+
   if (!isRecord(input) || typeof input.version !== "number") {
     return {
       ok: false,
