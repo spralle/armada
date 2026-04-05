@@ -17,7 +17,8 @@ const pluginContract: PluginContract = {
     selection: [
       {
         id: "domain.unplanned-orders.selection",
-        target: "vessel",
+        receiverEntityType: "vessel",
+        interests: [],
       },
     ],
   },

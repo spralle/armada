@@ -16,7 +16,7 @@ export interface PluginLoadDiagnostic {
   code:
     | "REMOTE_LOAD_RETRY"
     | "REMOTE_LOAD_EXHAUSTED"
-    | "REMOTE_INVALID_CONTRACT";
+    | "INVALID_CONTRACT";
   message: string;
   attempt?: number;
   maxAttempts?: number;
@@ -28,7 +28,7 @@ export interface PluginLoadErrorContext {
   mode: ShellPluginLoadMode;
   reason:
     | "REMOTE_UNAVAILABLE"
-    | "INVALID_REMOTE_CONTRACT";
+    | "INVALID_CONTRACT";
   message: string;
   attempts: number;
   maxAttempts: number;
@@ -90,13 +90,13 @@ export function createRuntimeFirstPluginLoader(
         emitDiagnostic(onDiagnostic, {
           pluginId: descriptor.id,
           level: "warn",
-          code: "REMOTE_INVALID_CONTRACT",
+          code: "INVALID_CONTRACT",
           message,
         });
         throw new PluginLoadError({
           pluginId: descriptor.id,
           mode,
-          reason: "INVALID_REMOTE_CONTRACT",
+          reason: "INVALID_CONTRACT",
           message,
           attempts: remoteLoadMaxAttempts,
           maxAttempts: remoteLoadMaxAttempts,

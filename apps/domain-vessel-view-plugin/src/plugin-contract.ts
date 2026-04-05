@@ -17,7 +17,8 @@ const pluginContract: PluginContract = {
     selection: [
       {
         id: "domain.vessel.selection",
-        target: "order",
+        receiverEntityType: "order",
+        interests: [],
       },
     ],
   },
