@@ -17,6 +17,29 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
           component: "StarterView",
         },
       ],
+      commands: [
+        {
+          id: "starter.command.open-view",
+          title: "Starter: Open View",
+          intent: "starter.openView",
+          when: "selection.partId",
+          enablement: "selection.partId",
+        },
+      ],
+      menus: [
+        {
+          command: "starter.command.open-view",
+          menu: "sidePanel",
+          group: "starter",
+        },
+      ],
+      keybindings: [
+        {
+          command: "starter.command.open-view",
+          key: "ctrl+shift+p",
+          when: "selection.partId",
+        },
+      ],
     },
   }),
   "com.armada.sample.contract-consumer": async () => ({
@@ -92,6 +115,30 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
           },
         },
       ],
+      commands: [
+        {
+          id: "domain.orders.command.focus-selected",
+          title: "Orders: Focus Selected Order",
+          intent: "orders.focusSelected",
+          when: "selection.orderId",
+          enablement: "selection.orderId && context.domain.selection",
+        },
+      ],
+      menus: [
+        {
+          command: "domain.orders.command.focus-selected",
+          menu: "sidePanel",
+          group: "orders",
+          when: "selection.orderId",
+        },
+      ],
+      keybindings: [
+        {
+          command: "domain.orders.command.focus-selected",
+          key: "ctrl+shift+o",
+          when: "selection.orderId",
+        },
+      ],
     },
   }),
   "com.armada.domain.vessel-view": async () => ({
@@ -150,6 +197,30 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
             targetType: "vessel",
             "target.vesselClass": "RORO",
           },
+        },
+      ],
+      commands: [
+        {
+          id: "domain.vessel.command.focus-selected",
+          title: "Vessel: Focus Selected Vessel",
+          intent: "vessel.focusSelected",
+          when: "selection.vesselId",
+          enablement: "selection.vesselId",
+        },
+      ],
+      menus: [
+        {
+          command: "domain.vessel.command.focus-selected",
+          menu: "sidePanel",
+          group: "vessel",
+          when: "selection.vesselId",
+        },
+      ],
+      keybindings: [
+        {
+          command: "domain.vessel.command.focus-selected",
+          key: "ctrl+shift+v",
+          when: "selection.vesselId",
         },
       ],
     },

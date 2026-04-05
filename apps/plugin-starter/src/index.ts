@@ -14,6 +14,25 @@ export const pluginStarterContract: PluginContract = {
         component: "StarterView",
       },
     ],
+    commands: [
+      {
+        id: "starter.command.open-view",
+        title: "Starter: Open View",
+        intent: "starter.openView",
+      },
+    ],
+    menus: [
+      {
+        command: "starter.command.open-view",
+        menu: "commandPalette",
+      },
+    ],
+    keybindings: [
+      {
+        command: "starter.command.open-view",
+        key: "ctrl+shift+p",
+      },
+    ],
   },
 };
 
