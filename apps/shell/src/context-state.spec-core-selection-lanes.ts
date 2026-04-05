@@ -1,0 +1,457 @@
+import {
+  applySelectionUpdate,
+  addEntityTypeSelectionId,
+  closeTab,
+  createInitialShellContextState,
+  moveEntityTypeSelectionId,
+  moveTabToGroup,
+  readEntityTypeSelection,
+  readGlobalLane,
+  readGroupLaneForTab,
+  removeEntityTypeSelectionId,
+  registerTab,
+  setEntityTypePriority,
+  setEntityTypeSelection,
+  writeGlobalLane,
+  writeGroupLaneByTab,
+  writeTabSubcontext,
+} from "./context-state.js";
+import type { SpecHarness } from "./context-state.spec-harness.js";
+
+export function registerContextStateCoreSelectionLanesSpecs(harness: SpecHarness): void {
+  const { test, assertEqual } = harness;
+
+  test("tabs in same group share context lane", () => {
+    let state = createInitialShellContextState({
+      initialTabId: "tab-a",
+      initialGroupId: "group-1",
+      initialGroupColor: "red",
+    });
+
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-1", groupColor: "green" });
+    state = writeGroupLaneByTab(state, {
+      tabId: "tab-a",
+      key: "entity.selection",
+      value: "order:o-1",
+      revision: { timestamp: 100, writer: "writer-a" },
+    });
+
+    assertEqual(
+      readGroupLaneForTab(state, { tabId: "tab-b", key: "entity.selection" })?.value,
+      "order:o-1",
+      "tab in same group should read shared context",
+    );
+  });
+
+  test("moving tab adopts target group context without carrying source link", () => {
+    let state = createInitialShellContextState({
+      initialTabId: "tab-a",
+      initialGroupId: "group-source",
+    });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-target" });
+    state = writeGroupLaneByTab(state, {
+      tabId: "tab-a",
+      key: "entity.selection",
+      value: "order:source",
+      revision: { timestamp: 1, writer: "a" },
+    });
+    state = writeGroupLaneByTab(state, {
+      tabId: "tab-b",
+      key: "entity.selection",
+      value: "order:target",
+      revision: { timestamp: 2, writer: "b" },
+    });
+
+    state = moveTabToGroup(state, {
+      tabId: "tab-a",
+      targetGroupId: "group-target",
+    });
+
+    assertEqual(
+      readGroupLaneForTab(state, { tabId: "tab-a", key: "entity.selection" })?.value,
+      "order:target",
+      "moved tab should adopt target group context",
+    );
+  });
+
+  test("lww tie-break applies by timestamp then writer", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = writeGroupLaneByTab(state, {
+      tabId: "tab-a",
+      key: "entity.selection",
+      value: "older",
+      revision: { timestamp: 10, writer: "writer-z" },
+    });
+
+    state = writeGroupLaneByTab(state, {
+      tabId: "tab-a",
+      key: "entity.selection",
+      value: "newer",
+      revision: { timestamp: 11, writer: "writer-a" },
+    });
+    assertEqual(
+      readGroupLaneForTab(state, { tabId: "tab-a", key: "entity.selection" })?.value,
+      "newer",
+      "newer timestamp should win",
+    );
+
+    state = writeGroupLaneByTab(state, {
+      tabId: "tab-a",
+      key: "entity.selection",
+      value: "same-time-lower-writer",
+      revision: { timestamp: 11, writer: "writer-0" },
+    });
+    assertEqual(
+      readGroupLaneForTab(state, { tabId: "tab-a", key: "entity.selection" })?.value,
+      "newer",
+      "lower writer should lose at same timestamp",
+    );
+
+    state = writeGroupLaneByTab(state, {
+      tabId: "tab-a",
+      key: "entity.selection",
+      value: "same-time-higher-writer",
+      revision: { timestamp: 11, writer: "writer-z" },
+    });
+    assertEqual(
+      readGroupLaneForTab(state, { tabId: "tab-a", key: "entity.selection" })?.value,
+      "same-time-higher-writer",
+      "higher writer should win at same timestamp",
+    );
+  });
+
+  test("closing tab removes its owned subcontexts", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = writeTabSubcontext(state, {
+      tabId: "tab-a",
+      key: "draft.filters",
+      value: "cargo=ro-ro",
+      revision: { timestamp: 3, writer: "writer-a" },
+    });
+
+    state = closeTab(state, "tab-a");
+    assertEqual(state.subcontextsByTab["tab-a"], undefined, "subcontexts should be deleted on tab close");
+  });
+
+  test("global lanes remain separate from group lanes", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = writeGlobalLane(state, {
+      key: "shell.selection",
+      value: "global-value",
+      revision: { timestamp: 9, writer: "writer-a" },
+    });
+    state = writeGroupLaneByTab(state, {
+      tabId: "tab-a",
+      key: "shell.selection",
+      value: "group-value",
+      revision: { timestamp: 9, writer: "writer-a" },
+    });
+
+    assertEqual(readGlobalLane(state, "shell.selection")?.value, "global-value", "global lane value mismatch");
+    assertEqual(
+      readGroupLaneForTab(state, { tabId: "tab-a", key: "shell.selection" })?.value,
+      "group-value",
+      "group lane value mismatch",
+    );
+  });
+
+  test("selection graph stores ordered IDs per entity type concurrently", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = setEntityTypeSelection(state, {
+      entityType: "order",
+      selectedIds: ["o-3", "o-1", "o-2"],
+      priorityId: "o-1",
+    });
+    state = setEntityTypeSelection(state, {
+      entityType: "vessel",
+      selectedIds: ["v-9", "v-2"],
+      priorityId: "v-2",
+    });
+
+    const orderSelection = readEntityTypeSelection(state, "order");
+    const vesselSelection = readEntityTypeSelection(state, "vessel");
+
+    assertEqual(orderSelection.selectedIds.join(","), "o-3,o-1,o-2", "order selection order mismatch");
+    assertEqual(orderSelection.priorityId, "o-1", "order priority mismatch");
+    assertEqual(vesselSelection.selectedIds.join(","), "v-9,v-2", "vessel selection order mismatch");
+    assertEqual(vesselSelection.priorityId, "v-2", "vessel priority mismatch");
+  });
+
+  test("selection graph keeps priority member of selected IDs", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = setEntityTypeSelection(state, {
+      entityType: "order",
+      selectedIds: ["o-1", "o-2"],
+      priorityId: "o-99",
+    });
+
+    let selection = readEntityTypeSelection(state, "order");
+    assertEqual(selection.priorityId, "o-1", "invalid priority should fall back to first selected id");
+
+    state = removeEntityTypeSelectionId(state, {
+      entityType: "order",
+      id: "o-1",
+    });
+    selection = readEntityTypeSelection(state, "order");
+    assertEqual(selection.priorityId, "o-2", "priority should shift when current priority is removed");
+
+    state = setEntityTypePriority(state, {
+      entityType: "order",
+      priorityId: "o-404",
+    });
+    selection = readEntityTypeSelection(state, "order");
+    assertEqual(selection.priorityId, "o-2", "priority setter should enforce membership");
+  });
+
+  test("selection graph supports ordered add and move operations", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = addEntityTypeSelectionId(state, {
+      entityType: "order",
+      id: "o-1",
+    });
+    state = addEntityTypeSelectionId(state, {
+      entityType: "order",
+      id: "o-2",
+    });
+    state = addEntityTypeSelectionId(state, {
+      entityType: "order",
+      id: "o-3",
+      index: 1,
+      prioritize: true,
+    });
+
+    state = moveEntityTypeSelectionId(state, {
+      entityType: "order",
+      id: "o-1",
+      toIndex: 2,
+    });
+
+    const selection = readEntityTypeSelection(state, "order");
+    assertEqual(selection.selectedIds.join(","), "o-3,o-2,o-1", "ordered operations should maintain deterministic order");
+    assertEqual(selection.priorityId, "o-3", "priority should remain explicit unless invalidated");
+  });
+
+  test("selection graph deduplicates selected IDs and stores ID-only payload", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = setEntityTypeSelection(state, {
+      entityType: "order",
+      selectedIds: ["o-1", "o-1", "o-2", "", "o-2"],
+      priorityId: "o-2",
+    });
+
+    const selection = readEntityTypeSelection(state, "order");
+    assertEqual(selection.selectedIds.join(","), "o-1,o-2", "selection should be de-duplicated and keep order");
+    assertEqual(typeof selection.selectedIds[0], "string", "selection should store string IDs only");
+    assertEqual(selection.priorityId, "o-2", "priority should remain valid after de-duplication");
+  });
+
+  test("global lane LWW uses timestamp and writer tie-break deterministically", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+
+    state = writeGlobalLane(state, {
+      key: "shell.selection",
+      value: "writer-b",
+      revision: { timestamp: 50, writer: "writer-b" },
+    });
+
+    state = writeGlobalLane(state, {
+      key: "shell.selection",
+      value: "older-ts",
+      revision: { timestamp: 49, writer: "writer-z" },
+    });
+    assertEqual(
+      readGlobalLane(state, "shell.selection")?.value,
+      "writer-b",
+      "older timestamp should not overwrite global lane",
+    );
+
+    state = writeGlobalLane(state, {
+      key: "shell.selection",
+      value: "same-ts-lower-writer",
+      revision: { timestamp: 50, writer: "writer-a" },
+    });
+    assertEqual(
+      readGlobalLane(state, "shell.selection")?.value,
+      "writer-b",
+      "lower writer should lose at same timestamp for global lane",
+    );
+
+    state = writeGlobalLane(state, {
+      key: "shell.selection",
+      value: "same-ts-higher-writer",
+      revision: { timestamp: 50, writer: "writer-z" },
+    });
+    assertEqual(
+      readGlobalLane(state, "shell.selection")?.value,
+      "same-ts-higher-writer",
+      "higher writer should win at same timestamp for global lane",
+    );
+  });
+
+  test("selection propagation updates dependent entity type deterministically", () => {
+    const initial = createInitialShellContextState({ initialTabId: "tab-a" });
+    const result = applySelectionUpdate(
+      initial,
+      {
+        entityType: "order",
+        selectedIds: ["o-2"],
+        priorityId: "o-2",
+        revision: { timestamp: 100, writer: "writer-a" },
+      },
+      {
+        propagationRules: [
+          {
+            id: "rule.order->vessel",
+            sourceEntityType: "order",
+            propagate: ({ sourceSelection }) => ({
+              entityType: "vessel",
+              selectedIds: sourceSelection.priorityId ? [`v-for-${sourceSelection.priorityId}`] : [],
+              priorityId: sourceSelection.priorityId ? `v-for-${sourceSelection.priorityId}` : null,
+            }),
+          },
+        ],
+      },
+    );
+
+    assertEqual(
+      readEntityTypeSelection(result.state, "vessel").priorityId,
+      "v-for-o-2",
+      "dependent vessel selection should follow primary order selection",
+    );
+    assertEqual(
+      result.changedEntityTypes.join(","),
+      "order,vessel",
+      "propagation stage should process source then dependent deterministically",
+    );
+  });
+
+  test("selection propagation supports generic receiver interests across multiple entity targets", () => {
+    const initial = createInitialShellContextState({ initialTabId: "tab-a" });
+    const result = applySelectionUpdate(
+      initial,
+      {
+        entityType: "order",
+        selectedIds: ["o-2"],
+        priorityId: "o-2",
+        revision: { timestamp: 110, writer: "writer-a" },
+      },
+      {
+        propagationRules: [
+          {
+            id: "rule.order->vessel",
+            sourceEntityType: "order",
+            propagate: ({ sourceSelection }) => ({
+              entityType: "vessel",
+              selectedIds: sourceSelection.priorityId ? [`v-for-${sourceSelection.priorityId}`] : [],
+              priorityId: sourceSelection.priorityId ? `v-for-${sourceSelection.priorityId}` : null,
+            }),
+          },
+          {
+            id: "rule.order->terminal",
+            sourceEntityType: "order",
+            propagate: ({ sourceSelection }) => ({
+              entityType: "terminal",
+              selectedIds: sourceSelection.priorityId ? [`t-for-${sourceSelection.priorityId}`] : [],
+              priorityId: sourceSelection.priorityId ? `t-for-${sourceSelection.priorityId}` : null,
+            }),
+          },
+        ],
+      },
+    );
+
+    assertEqual(
+      readEntityTypeSelection(result.state, "vessel").priorityId,
+      "v-for-o-2",
+      "receiver vessel should be derived from order interest",
+    );
+    assertEqual(
+      readEntityTypeSelection(result.state, "terminal").priorityId,
+      "t-for-o-2",
+      "receiver terminal should be derived from order interest",
+    );
+    assertEqual(
+      result.changedEntityTypes.join(","),
+      "order,terminal,vessel",
+      "receiver processing should be deterministic across multiple interests",
+    );
+  });
+
+  test("derived lanes are revision-linked and typed to selection write", () => {
+    const initial = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    const revision = { timestamp: 200, writer: "writer-b" };
+    const result = applySelectionUpdate(
+      initial,
+      {
+        entityType: "vessel",
+        selectedIds: ["v-9", "v-4"],
+        priorityId: "v-9",
+        revision,
+      },
+      {
+        derivedGroupId: "group-main",
+        derivedLanes: [
+          {
+            key: "selection.derived.secondary.priority",
+            valueType: "entity-id",
+            sourceEntityType: "vessel",
+            scope: "group",
+            derive: ({ sourceSelection }) => sourceSelection.priorityId ?? "none",
+          },
+        ],
+      },
+    );
+
+    const lane = result.state.groupLanes["group-main"]["selection.derived.secondary.priority"];
+    assertEqual(lane?.value, "v-9", "derived group lane value mismatch");
+    assertEqual(lane?.valueType, "entity-id", "derived lane value type metadata mismatch");
+    assertEqual(lane?.sourceSelection?.entityType, "vessel", "derived lane source entity metadata mismatch");
+    assertEqual(
+      lane?.sourceSelection?.revision.timestamp,
+      revision.timestamp,
+      "derived lane source revision timestamp mismatch",
+    );
+    assertEqual(
+      lane?.sourceSelection?.revision.writer,
+      revision.writer,
+      "derived lane source revision writer mismatch",
+    );
+  });
+
+  test("derived lane failures are isolated from context core updates", () => {
+    const initial = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    const result = applySelectionUpdate(
+      initial,
+      {
+        entityType: "order",
+        selectedIds: ["o-1"],
+        priorityId: "o-1",
+        revision: { timestamp: 300, writer: "writer-c" },
+      },
+      {
+        derivedGroupId: "group-main",
+        derivedLanes: [
+          {
+            key: "selection.derived.fail",
+            valueType: "entity-id",
+            sourceEntityType: "order",
+            scope: "group",
+            derive: () => {
+              throw new Error("boom");
+            },
+          },
+        ],
+      },
+    );
+
+    assertEqual(
+      readEntityTypeSelection(result.state, "order").priorityId,
+      "o-1",
+      "selection write should succeed despite derived lane failure",
+    );
+    assertEqual(
+      result.derivedLaneFailures.join(","),
+      "selection.derived.fail",
+      "failed derived lane should be reported",
+    );
+  });
+}
