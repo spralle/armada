@@ -1,9 +1,16 @@
-import type { PluginContract } from "@armada/plugin-contracts";
-
 export type ActivationTrigger =
   | { type: "command"; id: string }
   | { type: "view"; id: string }
   | { type: "intent"; id: string };
+
+export interface ActivationContract {
+  manifest: {
+    id: string;
+  };
+  contributes?: {
+    activationEvents?: string[];
+  };
+}
 
 export interface ActivationRegistryEntry {
   pluginId: string;
@@ -14,7 +21,7 @@ export interface ActivationRegistryEntry {
 }
 
 export interface ActivationRuntime {
-  registerContract(contract: PluginContract): void;
+  registerContract(contract: ActivationContract): void;
   trigger(trigger: ActivationTrigger): Promise<boolean>;
   snapshot(): ActivationRegistryEntry[];
 }

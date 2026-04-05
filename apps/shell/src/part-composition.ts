@@ -1,4 +1,10 @@
-import type { LocalMockPart } from "./mock-parts.js";
+export interface ComposablePart {
+  id: string;
+  title: string;
+  slot: string;
+  ownerPluginId?: string;
+  alwaysVisible?: boolean;
+}
 
 export interface PluginEnablementSnapshot {
   plugins: Array<{
@@ -8,9 +14,9 @@ export interface PluginEnablementSnapshot {
 }
 
 export function composeVisibleParts(
-  parts: readonly LocalMockPart[],
+  parts: readonly ComposablePart[],
   snapshot: PluginEnablementSnapshot,
-): LocalMockPart[] {
+): ComposablePart[] {
   const enabledPluginIds = new Set(
     snapshot.plugins
       .filter((plugin) => plugin.enabled)

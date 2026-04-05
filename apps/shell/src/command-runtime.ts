@@ -1,7 +1,21 @@
-import type { PluginContract } from "@armada/plugin-contracts";
-
 export interface CommandRuntimeContext {
   values: Record<string, string | boolean | number | null | undefined>;
+}
+
+export interface CommandContract {
+  manifest: {
+    id: string;
+  };
+  contributes?: {
+    commands?: Array<{
+      id: string;
+      title: string;
+      handler: string;
+      keybinding?: string;
+      when?: string;
+      enablement?: string;
+    }>;
+  };
 }
 
 export interface RuntimeCommand {
@@ -17,7 +31,7 @@ export interface RuntimeCommand {
 }
 
 export function composeRuntimeCommands(
-  contracts: PluginContract[],
+  contracts: CommandContract[],
   context: CommandRuntimeContext,
 ): RuntimeCommand[] {
   const commands: RuntimeCommand[] = [];
