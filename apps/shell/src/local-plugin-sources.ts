@@ -3,61 +3,6 @@ import type { PluginContract } from "@armada/plugin-contracts";
 export type LocalPluginContractLoader = () => Promise<PluginContract>;
 
 const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> = {
-  "com.armada.plugin-starter": async () => ({
-    manifest: {
-      id: "com.armada.plugin-starter",
-      name: "Plugin Starter",
-      version: "0.1.0",
-    },
-    contributes: {
-      views: [
-        {
-          id: "starter.view",
-          title: "Starter View",
-          component: "StarterView",
-        },
-      ],
-      commands: [
-        {
-          id: "starter.command.open-view",
-          title: "Starter: Open View",
-          intent: "starter.openView",
-          when: "selection.partId",
-          enablement: "selection.partId",
-        },
-      ],
-      menus: [
-        {
-          command: "starter.command.open-view",
-          menu: "sidePanel",
-          group: "starter",
-        },
-      ],
-      keybindings: [
-        {
-          command: "starter.command.open-view",
-          key: "ctrl+shift+p",
-          when: "selection.partId",
-        },
-      ],
-    },
-  }),
-  "com.armada.sample.contract-consumer": async () => ({
-    manifest: {
-      id: "com.armada.sample.contract-consumer",
-      name: "Sample Contract Consumer",
-      version: "0.1.0",
-    },
-    contributes: {
-      views: [
-        {
-          id: "sample.view",
-          title: "Sample View",
-          component: "SampleView",
-        },
-      ],
-    },
-  }),
   "com.armada.domain.unplanned-orders": async () => ({
     manifest: {
       id: "com.armada.domain.unplanned-orders",

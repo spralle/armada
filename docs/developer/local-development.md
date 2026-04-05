@@ -40,6 +40,13 @@ Run one app at a time with file watching:
 bun run dev:shell
 bun run dev:backend
 bun run dev:plugin
+bun run dev:plugin-sample
+```
+
+For MF2 plugin runtime testing, run all local plugin remotes in parallel:
+
+```bash
+npm run dev:plugin:all
 ```
 
 ### Browser shell testing (Vite)
@@ -68,8 +75,55 @@ Expected dev ports:
 
 - Shell (Vite): `5173`
 - Backend API (Bun.serve, with Node `node:http` fallback): `8787`
+- Plugin starter MF manifest: `4171` (`http://127.0.0.1:4171/mf-manifest.json`)
+- Sample contract consumer MF manifest: `4172` (`http://127.0.0.1:4172/mf-manifest.json`)
 
 In dev, requests to `/api/*` from the shell are proxied by Vite to `http://127.0.0.1:8787`.
+
+### MF2 local plugin flow (shell + backend + remotes)
+
+Start local runtime in this order:
+
+1. Backend manifest server
+
+```bash
+npm run dev:backend
+```
+
+2. Plugin remotes (MF2)
+
+```bash
+npm run dev:plugin:all
+```
+
+3. Shell
+
+```bash
+npm run dev:shell
+```
+
+The backend tenant manifest now points plugin descriptors for:
+
+- `com.armada.plugin-starter` -> `http://127.0.0.1:4171/mf-manifest.json`
+- `com.armada.sample.contract-consumer` -> `http://127.0.0.1:4172/mf-manifest.json`
+
+When these remotes are running, toggling plugins in the shell will load contract modules from MF remotes (`./pluginContract`) instead of shell-bundled local source maps.
+
+### Troubleshooting MF2 local development
+
+- **Plugin shows `REMOTE_UNAVAILABLE` in shell diagnostics**
+  - Verify backend and plugin remote processes are running.
+  - Open the manifest URLs directly in browser to confirm reachability.
+  - Ensure ports `4171`/`4172` are free (plugin dev servers use `strictPort`).
+
+- **Plugin not listed or wrong entry URL**
+  - Check backend endpoint: `http://127.0.0.1:8787/api/tenants/demo/plugin-manifest`.
+  - Confirm `entry` values are HTTP MF manifest URLs, not `local://`.
+
+- **No hot updates while editing plugin contract**
+  - Confirm plugin dev servers were started with Vite (`npm run dev:plugin*`).
+  - Hard-refresh the shell tab if browser cached stale remote chunks.
+  - Re-toggle the plugin checkbox in shell to force a fresh runtime load path.
 
 ## Integration mode (POC)
 

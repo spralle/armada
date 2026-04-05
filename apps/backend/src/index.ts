@@ -16,13 +16,19 @@ interface TenantPluginManifestResponse {
 const DEFAULT_TENANT = "demo";
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
+const PLUGIN_STARTER_DEV_PORT = 4171;
+const SAMPLE_PLUGIN_DEV_PORT = 4172;
+
+function createMfManifestEntry(port: number): string {
+  return `http://127.0.0.1:${port}/mf-manifest.json`;
+}
 
 const inMemoryTenantPluginDescriptors: Readonly<Record<string, TenantPluginDescriptor[]>> = {
   demo: [
     {
       id: "com.armada.plugin-starter",
       version: "0.1.0",
-      entry: "local://apps/plugin-starter/src/index.ts",
+      entry: createMfManifestEntry(PLUGIN_STARTER_DEV_PORT),
       compatibility: {
         shell: "^1.0.0",
         pluginContract: "^1.0.0",
@@ -31,7 +37,7 @@ const inMemoryTenantPluginDescriptors: Readonly<Record<string, TenantPluginDescr
     {
       id: "com.armada.sample.contract-consumer",
       version: "0.1.0",
-      entry: "local://apps/sample-contract-consumer-plugin/src/index.ts",
+      entry: createMfManifestEntry(SAMPLE_PLUGIN_DEV_PORT),
       compatibility: {
         shell: "^1.0.0",
         pluginContract: "^1.0.0",
