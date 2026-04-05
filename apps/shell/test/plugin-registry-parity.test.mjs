@@ -49,6 +49,7 @@ test("registry maps remote invalid contracts to INVALID_CONTRACT", async () => {
   registry.registerManifestDescriptors("demo", [remoteDescriptor]);
 
   await registry.setEnabled(remoteDescriptor.id, true);
+  await registry.activateByView(remoteDescriptor.id, "test.view");
 
   const snapshot = registry.getSnapshot();
   const remoteState = snapshot.plugins.find((plugin) => plugin.id === remoteDescriptor.id);
