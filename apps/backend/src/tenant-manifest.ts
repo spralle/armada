@@ -26,6 +26,10 @@ const DEFAULT_LOCAL_PLUGIN_ENTRY_URL_MAP = createDefaultLocalPluginEntryUrlMap({
   appsRoot: "apps",
 });
 
+export function getDefaultLocalPluginEntryUrlMap(): ReadonlyMap<string, string> {
+  return DEFAULT_LOCAL_PLUGIN_ENTRY_URL_MAP;
+}
+
 const inMemoryTenantPluginDescriptors: Readonly<
   Record<string, TenantPluginDescriptor[]>
 > = {
@@ -64,8 +68,8 @@ export function applyLocalPluginEntryOverrides(
   plugins: readonly TenantPluginDescriptor[],
   overrideOptions?: TenantManifestOverrideOptions,
 ): TenantPluginDescriptor[] {
-  const selectedPluginIds = normalizeSelectedPluginIds(
-    overrideOptions?.selectedLocalPluginIds,
+  const selectedPluginIds = new Set(
+    normalizeSelectedPluginIds(overrideOptions?.selectedLocalPluginIds),
   );
 
   if (selectedPluginIds.size === 0) {
@@ -127,20 +131,18 @@ export function resolveTenantManifestRequest(
   return getTenantManifestResponse(tenantId, overrideOptions);
 }
 
-function normalizeSelectedPluginIds(
+export function normalizeSelectedPluginIds(
   selectedPluginIds: readonly string[] | undefined,
-): ReadonlySet<string> {
+): string[] {
   if (!selectedPluginIds || selectedPluginIds.length === 0) {
-    return new Set();
+    return [];
   }
 
-  const orderedUniquePluginIds = Array.from(
+  return Array.from(
     new Set(
       selectedPluginIds
         .map((pluginId) => pluginId.trim())
         .filter((pluginId) => pluginId.length > 0),
     ),
   ).sort((left, right) => left.localeCompare(right));
-
-  return new Set(orderedUniquePluginIds);
 }

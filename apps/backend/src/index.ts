@@ -2,10 +2,13 @@ import {
   getTenantManifestEndpointPath,
   resolveTenantManifestRequest,
 } from "./tenant-manifest.js";
+import { parseBackendDevCliOptions } from "./dev-cli-options.js";
 
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
 const DEFAULT_TENANT = "demo";
+
+const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -28,7 +31,9 @@ function startBackendDevServer(): void {
     port: BACKEND_DEV_PORT,
     fetch(request) {
       const url = new URL(request.url);
-      const manifest = resolveTenantManifestRequest(url.pathname);
+      const manifest = resolveTenantManifestRequest(url.pathname, {
+        selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
+      });
       if (manifest) {
         return jsonResponse(manifest);
       }
@@ -57,7 +62,9 @@ function startNodeBackendDevServer(): void {
     .then(({ createServer }) => {
       const server = createServer((req: any, res: any) => {
         const requestPath = req.url ? new URL(req.url, `http://${BACKEND_DEV_HOST}:${BACKEND_DEV_PORT}`).pathname : "/";
-        const manifest = resolveTenantManifestRequest(requestPath);
+        const manifest = resolveTenantManifestRequest(requestPath, {
+          selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
+        });
 
         res.setHeader("content-type", "application/json; charset=utf-8");
 
@@ -92,6 +99,15 @@ function startNodeBackendDevServer(): void {
         runtimeProcess.exitCode = 1;
       }
     });
+}
+
+function getRuntimeArgv(): string[] {
+  const runtimeProcess = (globalThis as { process?: { argv?: unknown } }).process;
+  if (!runtimeProcess || !Array.isArray(runtimeProcess.argv)) {
+    return [];
+  }
+
+  return runtimeProcess.argv.slice(2);
 }
 
 startBackendDevServer();
