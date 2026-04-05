@@ -1,4 +1,4 @@
-export type ShellSlot = "master" | "secondary" | "side";
+export type ShellSlot = "main" | "secondary" | "side";
 
 export interface ShellLayoutState {
   sideSize: number;

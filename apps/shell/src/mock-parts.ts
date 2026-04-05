@@ -23,7 +23,7 @@ export const localMockParts: LocalMockPart[] = [
   {
     id: "domain.unplanned-orders.part",
     title: "Unplanned Orders",
-    slot: "master",
+    slot: "main",
     ownerPluginId: "com.armada.domain.unplanned-orders",
     render: (context) => {
       const rows = demoUnplannedOrders

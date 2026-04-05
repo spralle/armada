@@ -15,7 +15,7 @@ export interface PluginViewContribution {
 export interface PluginPartContribution {
   id: string;
   title: string;
-  slot: "left" | "right" | "bottom";
+  slot: "main" | "secondary" | "side";
   component: string;
 }
 
@@ -113,7 +113,7 @@ export const pluginPartContributionSchema = z
   .object({
     id: nonEmptyString,
     title: nonEmptyString,
-    slot: z.enum(["left", "right", "bottom"]),
+    slot: z.enum(["main", "secondary", "side"]),
     component: nonEmptyString,
   })
   .strict();

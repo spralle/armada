@@ -25,7 +25,7 @@ test("returns typed data for a valid plugin contract", () => {
         {
           id: "valid.part",
           title: "Valid Part",
-          slot: "right",
+          slot: "side",
           component: "ValidPart",
         },
       ],
@@ -68,7 +68,7 @@ test("returns typed data for a valid plugin contract", () => {
   assert.equal(result.success, true);
   if (result.success) {
     assert.equal(result.data.manifest.id, "com.armada.valid");
-    assert.equal(result.data.contributes?.parts?.[0]?.slot, "right");
+    assert.equal(result.data.contributes?.parts?.[0]?.slot, "side");
   }
 });
 

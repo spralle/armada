@@ -59,7 +59,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   }
 
   const partsBySlot = {
-    master: root.querySelector<HTMLElement>("#slot-master-parts"),
+    main: root.querySelector<HTMLElement>("#slot-main-parts"),
     secondary: root.querySelector<HTMLElement>("#slot-secondary-parts"),
     side: root.querySelector<HTMLElement>("#slot-side-parts"),
   };
