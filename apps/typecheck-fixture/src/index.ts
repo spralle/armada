@@ -34,6 +34,28 @@ const fixturePlugin: PluginContract = {
         }
       }
     ],
+    commands: [
+      {
+        id: "fixture.command",
+        title: "Run Fixture Command",
+        intent: "fixture.run",
+        when: "selection.partId",
+        enablement: "selection.partId"
+      }
+    ],
+    menus: [
+      {
+        command: "fixture.command",
+        menu: "commandPalette"
+      }
+    ],
+    keybindings: [
+      {
+        command: "fixture.command",
+        key: "ctrl+shift+f",
+        when: "selection.partId"
+      }
+    ],
     selection: [
       {
         id: "fixture.selection",

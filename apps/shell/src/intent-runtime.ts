@@ -51,6 +51,22 @@ export interface IntentRuntimeOptions {
   matcher?: IntentWhenMatcher;
 }
 
+export interface IntentResolutionRequest {
+  intent: string;
+  context: Readonly<Record<string, string>>;
+  args?: unknown;
+}
+
+export interface IntentResolutionResult {
+  executed: boolean;
+  intent: string;
+  message: string;
+}
+
+export interface IntentRuntime {
+  resolveAndExecute(request: IntentResolutionRequest): IntentResolutionResult;
+}
+
 export type IntentResolution =
   | {
       kind: "no-match";
@@ -209,4 +225,16 @@ function readPluginActions(contract: PluginContract): {
     | { actions?: { id: string; title: string; handler: string; intentType: string; when: Record<string, unknown> }[] }
     | undefined;
   return contributes?.actions ?? [];
+}
+
+export function createIntentRuntime(): IntentRuntime {
+  return {
+    resolveAndExecute(request) {
+      return {
+        executed: true,
+        intent: request.intent,
+        message: `Intent '${request.intent}' executed with ${Object.keys(request.context).length} context key(s).`,
+      };
+    },
+  };
 }

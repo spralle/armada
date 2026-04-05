@@ -24,6 +24,7 @@ import type {
   IntentResolutionTrace,
   ShellIntent,
 } from "../intent-runtime.js";
+import type { ShellCommandSurface } from "../command-surface.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -66,6 +67,8 @@ export interface ShellRuntime {
   chooserFocusIndex: number;
   pendingFocusSelector: string | null;
   chooserReturnFocusSelector: string | null;
+  commandSurface: ShellCommandSurface;
+  commandNotice: string;
 }
 
 export interface TenantPluginDescriptor {

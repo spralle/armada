@@ -42,6 +42,30 @@ test("returns typed data for a valid plugin contract", () => {
           },
         },
       ],
+      commands: [
+        {
+          id: "valid.command",
+          title: "Run Valid Command",
+          intent: "valid.run",
+          when: "selection.partId",
+          enablement: "selection.partId",
+        },
+      ],
+      menus: [
+        {
+          command: "valid.command",
+          menu: "sidePanel",
+          group: "valid",
+          when: "selection.partId",
+        },
+      ],
+      keybindings: [
+        {
+          command: "valid.command",
+          key: "ctrl+shift+v",
+          when: "selection.partId",
+        },
+      ],
       selection: [
         {
           id: "valid.selection",
@@ -159,30 +183,39 @@ test("rejects unexpected top-level fields", () => {
   }
 });
 
-test("rejects legacy contributes.commands in favor of contributes.actions", () => {
+test("accepts contributes.commands/menu/keybindings for command surface", () => {
   const result = parsePluginContract({
     manifest: {
-      id: "com.armada.legacy-commands",
-      name: "Legacy Commands Plugin",
+      id: "com.armada.command-surface",
+      name: "Command Surface Plugin",
       version: "1.0.0",
     },
     contributes: {
       commands: [
         {
-          id: "legacy.command",
-          title: "Legacy Command",
-          handler: "runLegacy",
+          id: "surface.command",
+          title: "Surface Command",
+          intent: "surface.open",
+        },
+      ],
+      menus: [
+        {
+          command: "surface.command",
+          menu: "commandPalette",
+        },
+      ],
+      keybindings: [
+        {
+          command: "surface.command",
+          key: "ctrl+shift+s",
         },
       ],
     },
   });
 
-  assert.equal(result.success, false);
-  if (!result.success) {
-    const hasLegacyCommandsError = result.errors.some(
-      (error) => error.path === "contributes" && error.code === "unrecognized_keys",
-    );
-    assert.equal(hasLegacyCommandsError, true);
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.contributes?.commands?.[0]?.id, "surface.command");
   }
 });
 

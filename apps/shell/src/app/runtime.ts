@@ -6,6 +6,8 @@ import {
   createLocalStorageLayoutPersistence,
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
+import { createShellCommandSurface } from "../command-surface.js";
+import { createIntentRuntime } from "../intent-runtime.js";
 import { createWindowBridge } from "../window-bridge.js";
 import {
   BRIDGE_CHANNEL,
@@ -62,6 +64,10 @@ export function createShellRuntime(): ShellRuntime {
     chooserFocusIndex: 0,
     pendingFocusSelector: null,
     chooserReturnFocusSelector: null,
+    commandSurface: createShellCommandSurface({
+      intentRuntime: createIntentRuntime(),
+    }),
+    commandNotice: "",
   };
 
   runtime.registry.registerManifestDescriptors("local", []);

@@ -10,6 +10,7 @@ import {
   CORE_GROUP_CONTEXT_KEY,
   createRevision,
   ensureTabsRegistered,
+  readGroupSelectionContext,
   updateContextState,
   writeGlobalSelectionLane,
   writeGroupSelectionContext,
@@ -35,6 +36,7 @@ import { createShellRuntime } from "./app/runtime.js";
 import type { ShellRuntime } from "./app/types.js";
 import {
   createWindowId,
+  escapeHtml,
 } from "./app/utils.js";
 import {
   type ContextSyncEvent,
@@ -138,6 +140,7 @@ function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
       try {
         runtime.pluginNotice = "";
         await runtime.registry.setEnabled(pluginId, enabled);
+        refreshCommandContributions(runtime);
       } catch (error) {
         runtime.pluginNotice = `Unable to toggle plugin '${pluginId}'. See console diagnostics.`;
         console.error("[shell] failed to toggle plugin", pluginId, error);
@@ -145,6 +148,7 @@ function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
 
       renderPanels(root, runtime);
       renderParts(root, runtime);
+      renderCommandSurface(root, runtime);
     },
     onChooseIntentAction: (index) => {
       runtime.chooserFocusIndex = index;
@@ -163,7 +167,9 @@ function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
   });
 
   panelsByRuntime.set(runtime, host);
+  refreshCommandContributions(runtime);
   renderPanels(root, runtime);
+  renderCommandSurface(root, runtime);
 }
 
 async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
@@ -172,11 +178,24 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): 
       tenantId: "demo",
     });
     runtime.registry = state.registry;
+    refreshCommandContributions(runtime);
     renderPanels(root, runtime);
     renderParts(root, runtime);
+    renderCommandSurface(root, runtime);
   } catch (error) {
     console.warn("[shell] plugin registry hydration skipped", error);
   }
+}
+
+function refreshCommandContributions(runtime: ShellRuntime): void {
+  const contracts = runtime.registry
+    .getSnapshot()
+    .plugins
+    .filter((plugin) => plugin.enabled && plugin.contract !== null)
+    .map((plugin) => plugin.contract)
+    .filter((plugin): plugin is NonNullable<typeof plugin> => plugin !== null);
+
+  runtime.commandSurface.registerContracts(contracts);
 }
 
 function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
@@ -296,6 +315,17 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
       return;
+    }
+
+    const normalizedKey = normalizeKeyEvent(event);
+    if (normalizedKey) {
+      const keyResult = runtime.commandSurface.dispatchKeybinding(normalizedKey, toCommandContext(runtime));
+      if (keyResult?.executed) {
+        event.preventDefault();
+        runtime.commandNotice = `Keybinding (${normalizedKey}): ${keyResult.message}`;
+        renderCommandSurface(root, runtime);
+        return;
+      }
     }
 
     if ((event.key === "ArrowDown" || event.key === "ArrowUp") && isSelectionActionNode(target)) {
@@ -427,6 +457,7 @@ function applyContext(root: HTMLElement, runtime: ShellRuntime, event: ContextSy
   }
   renderContextControlsPanel(root, runtime);
   renderSyncStatus(root, runtime);
+  renderCommandSurface(root, runtime);
 }
 
 function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
@@ -504,6 +535,76 @@ function renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): v
   renderPanels(root, runtime);
 }
 
+function renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void {
+  const node = root.querySelector<HTMLElement>("#command-surface");
+  if (!node) {
+    return;
+  }
+
+  const context = toCommandContext(runtime);
+  const menuCommands = runtime.commandSurface.evaluateMenu("sidePanel", context);
+  const commandRows = menuCommands
+    .map(
+      (item) => `<button
+        type="button"
+        data-command-run="${escapeHtml(item.command.id)}"
+        ${item.enabled ? "" : "disabled"}
+        style="display:block;width:100%;text-align:left;margin:0 0 6px;background:#1d2635;border:1px solid #334564;border-radius:4px;color:#e9edf3;padding:4px 8px;cursor:pointer;"
+      >${escapeHtml(item.command.title)}</button>`,
+    )
+    .join("");
+
+  const visibleCommands = runtime.commandSurface
+    .evaluateCommands(context)
+    .filter((item) => item.visible)
+    .map((item) => `<li>${escapeHtml(item.command.id)}</li>`)
+    .join("");
+
+  node.innerHTML = `<h2>Commands</h2>
+    ${runtime.commandNotice ? `<p class="runtime-note">${escapeHtml(runtime.commandNotice)}</p>` : ""}
+    ${commandRows || '<p class="runtime-note">No visible command contributions for current context.</p>'}
+    <details>
+      <summary class="runtime-note" style="cursor:pointer;">Visible commands (debug)</summary>
+      <ul class="plugin-diag-list">${visibleCommands || "<li>none</li>"}</ul>
+    </details>`;
+
+  for (const button of node.querySelectorAll<HTMLButtonElement>("button[data-command-run]")) {
+    button.addEventListener("click", () => {
+      const commandId = button.dataset.commandRun;
+      if (!commandId) {
+        return;
+      }
+
+      const result = runtime.commandSurface.dispatchCommand(commandId, toCommandContext(runtime));
+      runtime.commandNotice = result.message;
+      renderCommandSurface(root, runtime);
+    });
+  }
+}
+
+function toCommandContext(runtime: ShellRuntime): Record<string, string> {
+  const context: Record<string, string> = {
+    [CORE_GROUP_CONTEXT_KEY]: readGroupSelectionContext(runtime),
+    "context.domain.selection": readGroupSelectionContext(runtime),
+  };
+
+  if (runtime.selectedPartId) {
+    context["selection.partId"] = runtime.selectedPartId;
+  }
+
+  const orderPriorityId = runtime.contextState.selectionByEntityType.order?.priorityId;
+  if (orderPriorityId) {
+    context["selection.orderId"] = orderPriorityId;
+  }
+
+  const vesselPriorityId = runtime.contextState.selectionByEntityType.vessel?.priorityId;
+  if (vesselPriorityId) {
+    context["selection.vesselId"] = vesselPriorityId;
+  }
+
+  return context;
+}
+
 function summarizeSelectionPriorities(runtime: ShellRuntime): string {
   const entries = Object.entries(runtime.contextState.selectionByEntityType)
     .map(([entityType, selection]) => `${entityType}:${selection.priorityId ?? "none"}`);
@@ -569,6 +670,30 @@ function registerDrag(splitter: HTMLElement, onDelta: (delta: number) => void): 
 
 function axisValue(event: PointerEvent, pane: string | undefined): number {
   return pane === "secondary" ? event.clientY : event.clientX;
+}
+
+function normalizeKeyEvent(event: KeyboardEvent): string | null {
+  const key = event.key.toLowerCase();
+  if (!key || key === "shift" || key === "control" || key === "alt" || key === "meta") {
+    return null;
+  }
+
+  const parts: string[] = [];
+  if (event.ctrlKey) {
+    parts.push("ctrl");
+  }
+  if (event.shiftKey) {
+    parts.push("shift");
+  }
+  if (event.altKey) {
+    parts.push("alt");
+  }
+  if (event.metaKey) {
+    parts.push("meta");
+  }
+  parts.push(key);
+
+  return parts.join("+");
 }
 
 function announce(root: HTMLElement, runtime: ShellRuntime, message: string): void {
