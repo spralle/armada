@@ -67,32 +67,38 @@ export function discoverLocalUiPlugins(
   const definitions =
     options.definitions ?? CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS;
 
-  const orderedDefinitions = [...definitions].sort((left, right) =>
-    left.id.localeCompare(right.id),
+  const normalizedDefinitions = definitions.map((definition) => ({
+    ...definition,
+    normalizedId: normalizeAndAssertValidPluginId(
+      definition.id,
+      definition.folderName,
+    ),
+  }));
+
+  const orderedDefinitions = normalizedDefinitions.sort((left, right) =>
+    left.normalizedId.localeCompare(right.normalizedId),
   );
 
   const discovered = new Map<string, DiscoveredLocalUiPlugin>();
 
   for (const definition of orderedDefinitions) {
-    assertValidPluginId(definition.id, definition.folderName);
-
     const folderPath = resolveLocalFolderPath(
       options.appsRoot,
       definition.folderName,
     );
     const entry = `${protocol}://${host}:${definition.devPort}${definition.entryPath}`;
 
-    assertValidEntryUrl(entry, definition.id, definition.folderName);
+    assertValidEntryUrl(entry, definition.normalizedId, definition.folderName);
 
-    const existing = discovered.get(definition.id);
+    const existing = discovered.get(definition.normalizedId);
     if (existing) {
       throw new Error(
-        `Duplicate local plugin id '${definition.id}' detected for folders '${existing.folderName}' and '${definition.folderName}'. Ensure each local plugin uses a unique manifest id.`,
+        `Duplicate local plugin id '${definition.normalizedId}' detected for folders '${existing.folderName}' and '${definition.folderName}'. Ensure each local plugin uses a unique manifest id.`,
       );
     }
 
-    discovered.set(definition.id, {
-      id: definition.id,
+    discovered.set(definition.normalizedId, {
+      id: definition.normalizedId,
       folderName: definition.folderName,
       folderPath,
       version: definition.version,
@@ -108,7 +114,7 @@ function resolveLocalFolderPath(appsRoot: string, folderName: string): string {
   return `${withoutTrailingSlash}/${folderName}`;
 }
 
-function assertValidPluginId(id: string, folderName: string): void {
+function normalizeAndAssertValidPluginId(id: string, folderName: string): string {
   const normalizedId = id.trim();
   const validPluginIdPattern =
     /^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)*$/;
@@ -124,6 +130,8 @@ function assertValidPluginId(id: string, folderName: string): void {
       `Invalid local plugin id '${id}' for folder '${folderName}'. Expected dot-separated lowercase segments (letters, numbers, hyphens).`,
     );
   }
+
+  return normalizedId;
 }
 
 function assertValidEntryUrl(

@@ -47,6 +47,52 @@ test("discoverLocalUiPlugins rejects duplicate plugin ids with actionable error"
   );
 });
 
+test("discoverLocalUiPlugins normalizes surrounding whitespace in plugin IDs", () => {
+  const discovered = discoverLocalUiPlugins({
+    appsRoot: "apps",
+    definitions: [
+      {
+        id: "  com.armada.plugin-starter  ",
+        folderName: "plugin-starter",
+        devPort: 4171,
+        version: "0.1.0",
+        entryPath: "/mf-manifest.json",
+      },
+    ],
+  });
+
+  assert.deepEqual(Array.from(discovered.keys()), ["com.armada.plugin-starter"]);
+  const normalized = discovered.get("com.armada.plugin-starter");
+  assert.ok(normalized);
+  assert.equal(normalized.id, "com.armada.plugin-starter");
+});
+
+test("discoverLocalUiPlugins rejects duplicate plugin ids that differ only by surrounding whitespace", () => {
+  assert.throws(
+    () =>
+      discoverLocalUiPlugins({
+        appsRoot: "apps",
+        definitions: [
+          {
+            id: "com.armada.plugin-starter",
+            folderName: "plugin-starter",
+            devPort: 4171,
+            version: "0.1.0",
+            entryPath: "/mf-manifest.json",
+          },
+          {
+            id: " com.armada.plugin-starter ",
+            folderName: "plugin-starter-copy",
+            devPort: 4271,
+            version: "0.1.0",
+            entryPath: "/mf-manifest.json",
+          },
+        ],
+      }),
+    /Duplicate local plugin id 'com\.armada\.plugin-starter' detected for folders 'plugin-starter' and 'plugin-starter-copy'/,
+  );
+});
+
 test("discoverLocalUiPlugins rejects invalid plugin IDs clearly", () => {
   assert.throws(
     () =>
