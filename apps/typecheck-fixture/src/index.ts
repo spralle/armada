@@ -22,17 +22,27 @@ const fixturePlugin: PluginContract = {
         component: "FixturePart"
       }
     ],
-    commands: [
+    actions: [
       {
-        id: "fixture.command",
+        id: "fixture.action",
         title: "Run Fixture",
-        handler: "runFixture"
+        handler: "runFixture",
+        intentType: "workbench.fixture.run",
+        when: {
+          entityType: "workbench.item",
+          hasSelection: true
+        }
       }
     ],
     selection: [
       {
         id: "fixture.selection",
-        target: "workbench.item"
+        receiverEntityType: "workbench.item",
+        interests: [
+          {
+            sourceEntityType: "workbench.item"
+          }
+        ]
       }
     ],
     dragDropSessionReferences: [

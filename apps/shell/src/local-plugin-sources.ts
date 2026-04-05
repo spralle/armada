@@ -53,6 +53,35 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
         {
           id: "domain.unplanned-orders.selection",
           target: "vessel",
+          receiverEntityType: "vessel",
+          interests: [
+            {
+              sourceEntityType: "order",
+              adapter: "domain.order-priority-to-vessel",
+            },
+          ],
+        },
+      ],
+      derivedLanes: [
+        {
+          id: "domain.unplanned-orders.priority-vessel",
+          key: "domain.derived.vessel.priority",
+          sourceEntityType: "vessel",
+          scope: "group",
+          valueType: "entity-id",
+          strategy: "priority-id",
+        },
+      ],
+      actions: [
+        {
+          id: "domain.orders.assign-to-vessel",
+          title: "Assign order to selected vessel",
+          handler: "assignOrderToVessel",
+          intentType: "domain.orders.assign-to-vessel",
+          when: {
+            sourceType: "order",
+            targetType: "vessel",
+          },
         },
       ],
     },
@@ -75,6 +104,36 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
         {
           id: "domain.vessel.selection",
           target: "order",
+          receiverEntityType: "order",
+          interests: [
+            {
+              sourceEntityType: "vessel",
+              adapter: "domain.vessel-priority-to-orders",
+            },
+          ],
+        },
+      ],
+      derivedLanes: [
+        {
+          id: "domain.vessel.selected-orders",
+          key: "domain.derived.order.selected",
+          sourceEntityType: "order",
+          scope: "group",
+          valueType: "entity-id-list",
+          strategy: "joined-selected-ids",
+        },
+      ],
+      actions: [
+        {
+          id: "domain.vessel.assign-roro",
+          title: "Assign order to RORO vessel",
+          handler: "assignOrderToRoroVessel",
+          intentType: "domain.orders.assign-to-vessel",
+          when: {
+            sourceType: "order",
+            targetType: "vessel",
+            "target.vesselClass": "RORO",
+          },
         },
       ],
     },

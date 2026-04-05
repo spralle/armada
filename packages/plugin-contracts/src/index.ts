@@ -19,15 +19,34 @@ export interface PluginPartContribution {
   component: string;
 }
 
-export interface PluginCommandContribution {
+export type PluginActionWhenPredicate = Record<string, unknown>;
+
+export interface PluginActionContribution {
   id: string;
   title: string;
   handler: string;
+  intentType: string;
+  when: PluginActionWhenPredicate;
 }
 
 export interface PluginSelectionContribution {
   id: string;
-  target: string;
+  receiverEntityType: string;
+  interests: PluginSelectionInterest[];
+}
+
+export interface PluginSelectionInterest {
+  sourceEntityType: string;
+  adapter?: string;
+}
+
+export interface PluginDerivedLaneContribution {
+  id: string;
+  key: string;
+  sourceEntityType: string;
+  scope: "global" | "group";
+  valueType: "entity-id" | "entity-id-list";
+  strategy: "priority-id" | "joined-selected-ids";
 }
 
 export interface PluginDragDropSessionReference {
@@ -43,8 +62,9 @@ export interface PluginPopoutCapabilityFlags {
 export interface PluginContributions {
   views?: PluginViewContribution[] | undefined;
   parts?: PluginPartContribution[] | undefined;
-  commands?: PluginCommandContribution[] | undefined;
+  actions?: PluginActionContribution[] | undefined;
   selection?: PluginSelectionContribution[] | undefined;
+  derivedLanes?: PluginDerivedLaneContribution[] | undefined;
   dragDropSessionReferences?: PluginDragDropSessionReference[] | undefined;
   popoutCapabilities?: PluginPopoutCapabilityFlags | undefined;
 }
@@ -98,18 +118,41 @@ export const pluginPartContributionSchema = z
   })
   .strict();
 
-export const pluginCommandContributionSchema = z
+export const pluginActionWhenPredicateSchema = z.object({}).catchall(z.unknown());
+
+export const pluginActionContributionSchema = z
   .object({
     id: nonEmptyString,
     title: nonEmptyString,
     handler: nonEmptyString,
+    intentType: nonEmptyString,
+    when: pluginActionWhenPredicateSchema,
   })
   .strict();
 
 export const pluginSelectionContributionSchema = z
   .object({
     id: nonEmptyString,
-    target: nonEmptyString,
+    receiverEntityType: nonEmptyString,
+    interests: z.array(
+      z
+        .object({
+          sourceEntityType: nonEmptyString,
+          adapter: nonEmptyString.optional(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+export const pluginDerivedLaneContributionSchema = z
+  .object({
+    id: nonEmptyString,
+    key: nonEmptyString,
+    sourceEntityType: nonEmptyString,
+    scope: z.enum(["global", "group"]),
+    valueType: z.enum(["entity-id", "entity-id-list"]),
+    strategy: z.enum(["priority-id", "joined-selected-ids"]),
   })
   .strict();
 
@@ -131,8 +174,9 @@ export const pluginContributionsSchema = z
   .object({
     views: z.array(pluginViewContributionSchema).optional(),
     parts: z.array(pluginPartContributionSchema).optional(),
-    commands: z.array(pluginCommandContributionSchema).optional(),
+    actions: z.array(pluginActionContributionSchema).optional(),
     selection: z.array(pluginSelectionContributionSchema).optional(),
+    derivedLanes: z.array(pluginDerivedLaneContributionSchema).optional(),
     dragDropSessionReferences: z
       .array(pluginDragDropSessionReferenceSchema)
       .optional(),
