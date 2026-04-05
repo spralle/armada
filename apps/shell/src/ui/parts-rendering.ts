@@ -1,12 +1,6 @@
 import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
-import { domainDemoAdapter } from "../domain-demo-adapter.js";
 import type { ShellRuntime } from "../app/types.js";
 import { escapeHtml } from "../app/utils.js";
-import {
-  demoUnplannedOrders,
-  demoVessels,
-  getOrdersForVessel,
-} from "../domain-demo-data.js";
 
 export interface ComposedShellPart {
   id: string;
@@ -60,7 +54,7 @@ export function renderPartCard(
         ${popoutButton}
         ${restoreButton}
       </div>
-      ${renderPartBody(part, runtime)}
+      ${renderPartBody(part)}
       <div class="dropzone" data-dropzone-for="${part.id}">Drop cross-window payload here</div>
       <p class="runtime-note" data-drop-result-for="${part.id}"></p>
       <p class="runtime-note">Window: ${runtime.windowId}</p>
@@ -85,54 +79,13 @@ export function resolvePartTitle(partId: string, runtime: ShellRuntime): string 
 
 export function isSelectionActionNode(target: HTMLElement): target is HTMLButtonElement {
   const action = target.dataset.action;
-  return target instanceof HTMLButtonElement && (
-    action === domainDemoAdapter.actionNames.selectPrimary ||
-    action === domainDemoAdapter.actionNames.selectSecondary
-  );
+  return target instanceof HTMLButtonElement && action === "select";
 }
 
-function renderPartBody(part: ComposedShellPart, runtime: ShellRuntime): string {
-  if (part.component === "UnplannedOrdersPart") {
-    const rows = demoUnplannedOrders
-      .map((order) => {
-        const selectedClass =
-          runtime.selectedPrimaryEntityId === order.id ? "domain-row is-selected" : "domain-row";
-        return `<button type="button" class="${selectedClass}" data-action="select-order" data-order-id="${escapeHtml(order.id)}" data-vessel-id="${escapeHtml(order.vesselId)}">
-            <strong>${escapeHtml(order.reference)}</strong>
-            <span>${escapeHtml(order.cargoType.toUpperCase())} · ${escapeHtml(order.destination)}</span>
-          </button>`;
-      })
-      .join("");
-
-    return `<section class="domain-panel" data-domain-panel="orders">
-        <h3>Unplanned orders</h3>
-        <p class="domain-hint">Select an order to focus the related vessel.</p>
-        <div class="domain-list">${rows}</div>
-      </section>`;
-  }
-
-  if (part.component === "VesselViewPart") {
-    const rows = demoVessels
-      .map((vessel) => {
-        const orderCount = getOrdersForVessel(vessel.id).length;
-        const selectedClass =
-          runtime.selectedSecondaryEntityId === vessel.id ? "domain-row is-selected" : "domain-row";
-        return `<button type="button" class="${selectedClass}" data-action="select-vessel" data-vessel-id="${escapeHtml(vessel.id)}">
-            <strong>${escapeHtml(vessel.name)}</strong>
-            <span>${escapeHtml(vessel.vesselClass)} · ${escapeHtml(vessel.route)} · ${orderCount} unplanned</span>
-          </button>`;
-      })
-      .join("");
-
-    return `<section class="domain-panel" data-domain-panel="vessels">
-        <h3>Vessel view</h3>
-        <p class="domain-hint">Select a vessel to focus matching unplanned orders.</p>
-        <div class="domain-list">${rows}</div>
-      </section>`;
-  }
-
+function renderPartBody(part: ComposedShellPart): string {
   return `<section class="domain-panel" data-domain-panel="unavailable">
       <h3>${escapeHtml(part.title)}</h3>
       <p class="domain-hint">Component '${escapeHtml(part.component)}' is unavailable in this shell runtime.</p>
+      <p class="domain-hint">Composition remains extension-driven; this host provides generic fallback rendering only.</p>
     </section>`;
 }

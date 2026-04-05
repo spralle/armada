@@ -49,8 +49,6 @@ export interface ShellRuntime {
   isPopout: boolean;
   selectedPartId: string | null;
   selectedPartTitle: string | null;
-  selectedPrimaryEntityId: string | null;
-  selectedSecondaryEntityId: string | null;
   contextState: ShellContextState;
   notice: string;
   pluginNotice: string;

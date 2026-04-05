@@ -1436,10 +1436,9 @@ test("announcement helpers produce explicit context and degraded messages", () =
   assertEqual(
     formatSelectionAnnouncement({
       selectedPartTitle: "Unplanned Orders",
-      selectedPrimaryEntityId: "o-1",
-      selectedSecondaryEntityId: "v-1",
+      selectedEntitySummary: "order:o-1, vessel:v-1",
     }),
-    "Context updated. Part Unplanned Orders. Primary priority o-1. Secondary priority v-1.",
+    "Context updated. Part Unplanned Orders. Selection priorities order:o-1, vessel:v-1.",
     "selection announcement should include context and priorities",
   );
 

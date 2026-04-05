@@ -7,10 +7,6 @@ import {
   type SelectionPropagationRule,
   type ShellContextState,
 } from "../context-state.js";
-import {
-  resolveDomainPropagationSelection,
-  resolveSelectionWritesFromSyncEvent,
-} from "../domain-demo-adapter.js";
 import type {
   RuntimeDerivedLaneContribution,
   SelectionGraphExtensions,
@@ -41,38 +37,6 @@ type SelectionInterestAdapter = (
 } | null;
 
 const selectionInterestAdapters: Readonly<Record<string, SelectionInterestAdapter>> = {
-  "domain.order-priority-to-vessel": ({ state, sourceEntityType, receiverEntityType, sourceSelection }) => {
-    const domainSelection = resolveDomainPropagationSelection({
-      sourceEntityType,
-      targetEntityType: receiverEntityType,
-      sourcePriorityId: sourceSelection.priorityId,
-      state,
-    });
-    if (!domainSelection) {
-      return null;
-    }
-
-    return {
-      selectedIds: domainSelection.selectedIds,
-      priorityId: domainSelection.priorityId,
-    };
-  },
-  "domain.vessel-priority-to-orders": ({ state, sourceEntityType, receiverEntityType, sourceSelection }) => {
-    const domainSelection = resolveDomainPropagationSelection({
-      sourceEntityType,
-      targetEntityType: receiverEntityType,
-      sourcePriorityId: sourceSelection.priorityId,
-      state,
-    });
-    if (!domainSelection) {
-      return null;
-    }
-
-    return {
-      selectedIds: domainSelection.selectedIds,
-      priorityId: domainSelection.priorityId,
-    };
-  },
 };
 
 const passthroughSelectionInterestAdapter: SelectionInterestAdapter = ({ sourceSelection }) => ({
@@ -113,7 +77,21 @@ export function applySelectionPropagation(
 }
 
 export function resolveSelectionWritesFromEvent(event: SelectionSyncEvent): SelectionWrite[] {
-  return resolveSelectionWritesFromSyncEvent(event);
+  return Object.entries(event.selectionByEntityType).map(([entityType, selection]) => {
+    const selectedIds = Array.isArray(selection.selectedIds)
+      ? selection.selectedIds.filter((id): id is string => typeof id === "string" && id.length > 0)
+      : [];
+    const priorityId =
+      typeof selection.priorityId === "string" && selectedIds.includes(selection.priorityId)
+        ? selection.priorityId
+        : (selectedIds[0] ?? null);
+
+    return {
+      entityType,
+      selectedIds,
+      priorityId,
+    };
+  });
 }
 
 export function resolveSelectionGraphExtensions(runtime: ShellRuntime): SelectionGraphExtensions {

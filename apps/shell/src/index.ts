@@ -1,6 +1,5 @@
 import {
   getTabGroupId,
-  readEntityTypeSelection,
   registerTab,
   setActiveTab,
   writeGlobalLane,
@@ -8,10 +7,13 @@ import {
   writeGroupLaneByTab,
 } from "./context-state.js";
 import {
-  buildGroupSelectionContextValue,
-  domainDemoAdapter,
-  resolveSelectionFromIntentFacts,
-} from "./domain-demo-adapter.js";
+  CORE_GROUP_CONTEXT_KEY,
+  createRevision,
+  ensureTabsRegistered,
+  updateContextState,
+  writeGlobalSelectionLane,
+  writeGroupSelectionContext,
+} from "./context/runtime-state.js";
 import {
   createActionCatalogFromRegistrySnapshot,
   resolveIntentWithTrace,
@@ -44,13 +46,6 @@ import {
   publishWithDegrade as publishWithDegradeState,
   requestSyncProbe as requestSyncProbeState,
 } from "./sync/bridge-degraded.js";
-import {
-  createRevision,
-  ensureTabsRegistered,
-  updateContextState,
-  writeGlobalSelectionLane,
-  writeGroupSelectionContext,
-} from "./context/runtime-state.js";
 import { applySelectionPropagation } from "./domain/selection-graph.js";
 import {
   getVisibleComposedParts,
@@ -132,7 +127,7 @@ function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
         type: "context",
         scope: "group",
         tabId: runtime.selectedPartId ?? undefined,
-        contextKey: domainDemoAdapter.laneKeys.groupSelection,
+        contextKey: CORE_GROUP_CONTEXT_KEY,
         contextValue: value,
         revision: createRevision(runtime.windowId),
         sourceWindowId: runtime.windowId,
@@ -205,7 +200,6 @@ function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
     renderContextControls: () => renderContextControlsPanel(root, runtime),
     renderParts: () => renderParts(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
-    resolveIntentFlow: (intent) => resolveIntentFlow(root, runtime, intent as ShellIntent),
   });
   updateWindowReadOnlyState(root, runtime);
 }
@@ -394,8 +388,6 @@ function applySelection(root: HTMLElement, runtime: ShellRuntime, event: Selecti
 
   const selectionPropagation = applySelectionPropagation(runtime, event, revision);
   updateContextState(runtime, selectionPropagation.state);
-  runtime.selectedPrimaryEntityId = readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.primary).priorityId;
-  runtime.selectedSecondaryEntityId = readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.secondary).priorityId;
 
   if (selectionPropagation.derivedLaneFailures.length > 0) {
     runtime.notice = `Derived lane failures: ${selectionPropagation.derivedLaneFailures.join(", ")}`;
@@ -406,8 +398,7 @@ function applySelection(root: HTMLElement, runtime: ShellRuntime, event: Selecti
   renderSyncStatus(root, runtime);
   announce(root, runtime, formatSelectionAnnouncement({
     selectedPartTitle: runtime.selectedPartTitle,
-    selectedPrimaryEntityId: runtime.selectedPrimaryEntityId,
-    selectedSecondaryEntityId: runtime.selectedSecondaryEntityId,
+    selectedEntitySummary: summarizeSelectionPriorities(runtime),
   }));
 }
 
@@ -483,20 +474,8 @@ function executeResolvedAction(
   match: IntentActionMatch,
   intent: ShellIntent | null,
 ): void {
-  const selection = resolveSelectionFromIntentFacts({ facts: intent?.facts });
-
-  if (
-    (match.handler === "assignOrderToVessel" || match.handler === "assignOrderToRoroVessel") &&
-    selection.primaryEntityId &&
-    selection.secondaryEntityId
-  ) {
-    runtime.selectedPrimaryEntityId = selection.primaryEntityId;
-    runtime.selectedSecondaryEntityId = selection.secondaryEntityId;
-    writeGroupSelectionContext(runtime, buildGroupSelectionContextValue({
-      primaryEntityId: selection.primaryEntityId,
-      secondaryEntityId: selection.secondaryEntityId,
-    }));
-  }
+  const genericContextValue = intent ? `intent:${intent.type}` : "none";
+  writeGroupSelectionContext(runtime, genericContextValue);
 
   runtime.pendingIntentMatches = [];
   runtime.chooserFocusIndex = 0;
@@ -514,12 +493,8 @@ function resolveEventTargetSelector(root: HTMLElement): string | null {
     return null;
   }
 
-  if (active.matches(`button[data-action='${domainDemoAdapter.actionNames.selectPrimary}']`) && active.dataset.orderId) {
-    return `button[data-action='${domainDemoAdapter.actionNames.selectPrimary}'][data-order-id='${active.dataset.orderId}']`;
-  }
-
-  if (active.matches(`button[data-action='${domainDemoAdapter.actionNames.selectSecondary}']`) && active.dataset.vesselId) {
-    return `button[data-action='${domainDemoAdapter.actionNames.selectSecondary}'][data-vessel-id='${active.dataset.vesselId}']`;
+  if (active.matches("button[data-action='select']") && active.dataset.partId) {
+    return `button[data-action='select'][data-part-id='${active.dataset.partId}']`;
   }
 
   return null;
@@ -527,6 +502,12 @@ function resolveEventTargetSelector(root: HTMLElement): string | null {
 
 function renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void {
   renderPanels(root, runtime);
+}
+
+function summarizeSelectionPriorities(runtime: ShellRuntime): string {
+  const entries = Object.entries(runtime.contextState.selectionByEntityType)
+    .map(([entityType, selection]) => `${entityType}:${selection.priorityId ?? "none"}`);
+  return entries.length > 0 ? entries.join(", ") : "none";
 }
 
 function applyLayout(root: HTMLElement, layout: ShellLayoutState): void {

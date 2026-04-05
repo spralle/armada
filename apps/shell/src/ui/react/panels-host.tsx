@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { domainDemoAdapter } from "../../domain-demo-adapter.js";
-import { collectLaneMetadata, readGlobalContext, readGroupSelectionContext } from "../../context/runtime-state.js";
+import {
+  collectLaneMetadata,
+  CORE_GLOBAL_SELECTION_KEY,
+  CORE_GROUP_CONTEXT_KEY,
+  readGlobalContext,
+  readGroupSelectionContext,
+} from "../../context/runtime-state.js";
 import { getBridgeWarningMessage } from "../../sync/bridge-degraded.js";
 import type { IntentActionMatch } from "../../intent-runtime.js";
 import type { ShellRuntime } from "../../app/types.js";
@@ -67,9 +72,8 @@ export function createReactPanelsHost(
             groupContext={readGroupSelectionContext(runtime)}
             intentNotice={runtime.intentNotice}
             notice={runtime.notice}
-            orderPriority={readEntityPriority(runtime, domainDemoAdapter.entityTypes.primary)}
+            selectionPriorities={readSelectionPriorities(runtime)}
             pendingFocusSelector={runtime.pendingFocusSelector}
-            secondaryPriority={readEntityPriority(runtime, domainDemoAdapter.entityTypes.secondary)}
             selectedPartTitle={runtime.selectedPartTitle}
             warningMessage={getBridgeWarningMessage(runtime)}
             windowId={runtime.windowId}
@@ -168,8 +172,7 @@ function PluginControlsPanel(props: {
 function SyncStatusPanel(props: {
   warningMessage: string | null;
   selectedPartTitle: string | null;
-  orderPriority: string;
-  secondaryPriority: string;
+  selectionPriorities: string;
   groupContext: string;
   globalContext: string;
   windowId: string;
@@ -201,10 +204,9 @@ function SyncStatusPanel(props: {
       <h2>Cross-window sync</h2>
       {props.warningMessage ? <div className="bridge-warning">{props.warningMessage}</div> : null}
       <p className="runtime-note"><strong>Selected part:</strong> {props.selectedPartTitle ?? "none"}</p>
-      <p className="runtime-note"><strong>Primary entity priority:</strong> {props.orderPriority}</p>
-      <p className="runtime-note"><strong>Secondary entity priority:</strong> {props.secondaryPriority}</p>
-      <p className="runtime-note"><strong>Group context:</strong> {domainDemoAdapter.laneKeys.groupSelection} = {props.groupContext}</p>
-      <p className="runtime-note"><strong>Global lane:</strong> {domainDemoAdapter.laneKeys.globalSelection} = {props.globalContext}</p>
+      <p className="runtime-note"><strong>Selection priorities:</strong> {props.selectionPriorities}</p>
+      <p className="runtime-note"><strong>Group context:</strong> {CORE_GROUP_CONTEXT_KEY} = {props.groupContext}</p>
+      <p className="runtime-note"><strong>Global lane:</strong> {CORE_GLOBAL_SELECTION_KEY} = {props.globalContext}</p>
       <p className="runtime-note"><strong>Window ID:</strong> {props.windowId}</p>
       {props.intentNotice ? <p className="runtime-note"><strong>Intent runtime:</strong> {props.intentNotice}</p> : null}
       {props.chooserMatches.length > 0 ? (
@@ -258,8 +260,8 @@ function ContextControlsPanel(props: {
 
   return (
     <>
-      <h2>Group context (demo)</h2>
-      <label className="runtime-note" htmlFor="context-value-input">{domainDemoAdapter.laneKeys.groupSelection}</label>
+      <h2>Group context</h2>
+      <label className="runtime-note" htmlFor="context-value-input">{CORE_GROUP_CONTEXT_KEY}</label>
       <input
         id="context-value-input"
         onChange={(event) => {
@@ -340,7 +342,8 @@ function DevContextInspectorPanel(props: {
   );
 }
 
-function readEntityPriority(runtime: ShellRuntime, entityType: string): string {
-  const lane = runtime.contextState.selectionByEntityType[entityType];
-  return lane?.priorityId ?? "none";
+function readSelectionPriorities(runtime: ShellRuntime): string {
+  const entries = Object.entries(runtime.contextState.selectionByEntityType)
+    .map(([entityType, selection]) => `${entityType}:${selection.priorityId ?? "none"}`);
+  return entries.length > 0 ? entries.join(", ") : "none";
 }

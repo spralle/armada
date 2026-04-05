@@ -41,8 +41,6 @@ export function createShellRuntime(): ShellRuntime {
     isPopout: popoutParams.isPopout,
     selectedPartId: null,
     selectedPartTitle: null,
-    selectedPrimaryEntityId: null,
-    selectedSecondaryEntityId: null,
     contextState: createInitialShellContextState({
       initialTabId: "tab-main",
       initialGroupId: DEFAULT_GROUP_ID,

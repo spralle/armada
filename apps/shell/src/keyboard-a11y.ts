@@ -91,13 +91,10 @@ export function resolveDegradedKeyboardInteraction(
 
 export function formatSelectionAnnouncement(input: {
   selectedPartTitle: string | null;
-  selectedPrimaryEntityId: string | null;
-  selectedSecondaryEntityId: string | null;
+  selectedEntitySummary: string;
 }): string {
   const partLabel = input.selectedPartTitle ?? "none";
-  const primaryLabel = input.selectedPrimaryEntityId ?? "none";
-  const secondaryLabel = input.selectedSecondaryEntityId ?? "none";
-  return `Context updated. Part ${partLabel}. Primary priority ${primaryLabel}. Secondary priority ${secondaryLabel}.`;
+  return `Context updated. Part ${partLabel}. Selection priorities ${input.selectedEntitySummary}.`;
 }
 
 export function formatDegradedModeAnnouncement(degraded: boolean, reason: string | null): string {
