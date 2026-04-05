@@ -6,8 +6,8 @@ import {
 } from "./domain-demo-data.js";
 
 export interface LocalMockRenderContext {
-  selectedOrderId: string | null;
-  selectedVesselId: string | null;
+  selectedPrimaryEntityId: string | null;
+  selectedSecondaryEntityId: string | null;
 }
 
 export interface LocalMockPart {
@@ -29,7 +29,7 @@ export const localMockParts: LocalMockPart[] = [
       const rows = demoUnplannedOrders
         .map((order) => {
           const selectedClass =
-            context.selectedOrderId === order.id ? "domain-row is-selected" : "domain-row";
+            context.selectedPrimaryEntityId === order.id ? "domain-row is-selected" : "domain-row";
           return `<button type="button" class="${selectedClass}" data-action="select-order" data-order-id="${order.id}" data-vessel-id="${order.vesselId}">
             <strong>${order.reference}</strong>
             <span>${order.cargoType.toUpperCase()} · ${order.destination}</span>
@@ -54,7 +54,7 @@ export const localMockParts: LocalMockPart[] = [
         .map((vessel) => {
           const orderCount = getOrdersForVessel(vessel.id).length;
           const selectedClass =
-            context.selectedVesselId === vessel.id ? "domain-row is-selected" : "domain-row";
+            context.selectedSecondaryEntityId === vessel.id ? "domain-row is-selected" : "domain-row";
           return `<button type="button" class="${selectedClass}" data-action="select-vessel" data-vessel-id="${vessel.id}">
             <strong>${vessel.name}</strong>
             <span>${vessel.vesselClass} · ${vessel.route} · ${orderCount} unplanned</span>
@@ -77,8 +77,8 @@ export const localMockParts: LocalMockPart[] = [
     render: (context) =>
       `<section>
         <h3>Shared domain context</h3>
-        <p>Selected order: ${context.selectedOrderId ?? "none"}</p>
-        <p>Selected vessel: ${context.selectedVesselId ?? "none"}</p>
+        <p>Selected primary entity: ${context.selectedPrimaryEntityId ?? "none"}</p>
+        <p>Selected secondary entity: ${context.selectedSecondaryEntityId ?? "none"}</p>
       </section>`,
   },
 ];
