@@ -7,10 +7,11 @@
     "packages/*"
   ],
   "scripts": {
-    "lint": "tsc --pretty false -p tsconfig.json --noEmit",
+    "lint": "npm run check:architecture-guardrails --silent && tsc --pretty false -p tsconfig.json --noEmit",
     "typecheck": "tsc --pretty false -p tsconfig.json --noEmit",
     "test": "npm run build --silent && node --test packages/plugin-contracts/test/parse-plugin-contract.test.mjs",
     "build": "tsc -b --pretty false",
+    "check:architecture-guardrails": "node ./scripts/check-architecture-guardrails.mjs",
     "dev:shell": "npm run dev --workspace @armada/shell-app",
     "dev:backend": "node --watch --experimental-strip-types apps/backend/src/index.ts",
     "dev:plugin": "bun --watch apps/plugin-starter/src/index.ts",
