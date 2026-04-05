@@ -8,6 +8,12 @@ import {
   parsePluginContract,
   parseTenantPluginManifest,
 } from "../dist/index.js";
+import {
+  buildActionSurface,
+  dispatchAction,
+  resolveKeybindingAction,
+  resolveMenuActions,
+} from "../../../apps/shell/src/action-surface.ts";
 
 test("returns typed data for a valid plugin contract", () => {
   const result = parsePluginContract({
@@ -441,4 +447,146 @@ test("evaluateContributionPredicate supports matcher boundary injection", () => 
 
   assert.equal(matched, true);
   assert.equal(calls, 1);
+});
+
+test("action-surface dispatch predicate semantics stay in parity with default matcher", async () => {
+  const cases = [
+    {
+      name: "nested path $eq",
+      predicate: { "selection.kind": { $eq: "order" } },
+      facts: { selection: { kind: "order" } },
+    },
+    {
+      name: "$ne mismatch blocks dispatch",
+      predicate: { mode: { $ne: "legacy" } },
+      facts: { mode: "legacy" },
+    },
+    {
+      name: "$in",
+      predicate: { status: { $in: ["open", "pending"] } },
+      facts: { status: "open" },
+    },
+    {
+      name: "$nin",
+      predicate: { status: { $nin: ["closed"] } },
+      facts: { status: "open" },
+    },
+    {
+      name: "$gt/$gte/$lt/$lte",
+      predicate: { rank: { $gt: 1, $gte: 2, $lt: 4, $lte: 3 } },
+      facts: { rank: 2 },
+    },
+    {
+      name: "$exists false when key is present",
+      predicate: { "meta.traceId": { $exists: false } },
+      facts: { meta: { traceId: "present" } },
+    },
+  ];
+
+  for (const testCase of cases) {
+    let calls = 0;
+    const runtime = {
+      async dispatchIntent(intentId) {
+        calls += 1;
+        assert.equal(intentId, "demo.run");
+      },
+    };
+
+    const surface = buildActionSurface([
+      {
+        manifest: {
+          id: "com.armada.matcher-parity",
+          name: "Matcher Parity",
+          version: "1.0.0",
+        },
+        contributes: {
+          actions: [
+            {
+              id: "demo.action",
+              title: "Run",
+              intent: "demo.run",
+              predicate: testCase.predicate,
+            },
+          ],
+        },
+      },
+    ]);
+
+    const expected = evaluateContributionPredicate(testCase.predicate, testCase.facts);
+    const actual = await dispatchAction(surface, runtime, "demo.action", testCase.facts);
+
+    assert.equal(actual, expected, `dispatch parity failed for ${testCase.name}`);
+    assert.equal(calls, expected ? 1 : 0, `dispatch invocation parity failed for ${testCase.name}`);
+  }
+});
+
+test("action-surface menu and keybinding predicate semantics match default matcher", () => {
+  const cases = [
+    {
+      name: "nested path lookup",
+      when: { "target.vesselClass": "RORO" },
+      facts: { target: { vesselClass: "RORO" } },
+    },
+    {
+      name: "$exists with missing nested path",
+      when: { "target.operator": { $exists: false } },
+      facts: { target: { vesselClass: "RORO" } },
+    },
+    {
+      name: "combined operator mismatch",
+      when: { priority: { $gte: 2, $lt: 5 }, status: { $in: ["open"] } },
+      facts: { priority: 1, status: "open" },
+    },
+  ];
+
+  for (const testCase of cases) {
+    const surface = buildActionSurface([
+      {
+        manifest: {
+          id: "com.armada.surface-parity",
+          name: "Surface Parity",
+          version: "1.0.0",
+        },
+        contributes: {
+          actions: [
+            {
+              id: "surface.action",
+              title: "Surface Action",
+              intent: "surface.run",
+            },
+          ],
+          menus: [
+            {
+              menu: "commandPalette",
+              action: "surface.action",
+              when: testCase.when,
+            },
+          ],
+          keybindings: [
+            {
+              action: "surface.action",
+              keybinding: "ctrl+shift+s",
+              when: testCase.when,
+            },
+          ],
+        },
+      },
+    ]);
+
+    const expected = evaluateContributionPredicate(testCase.when, testCase.facts);
+
+    const resolvedMenu = resolveMenuActions(surface, "commandPalette", testCase.facts);
+    assert.equal(
+      resolvedMenu.length > 0,
+      expected,
+      `menu parity failed for ${testCase.name}`,
+    );
+
+    const resolvedKeybinding = resolveKeybindingAction(surface, "CTRL+SHIFT+S", testCase.facts);
+    assert.equal(
+      resolvedKeybinding !== null,
+      expected,
+      `keybinding parity failed for ${testCase.name}`,
+    );
+  }
 });
