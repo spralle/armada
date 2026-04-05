@@ -2,23 +2,50 @@ import {
   getDefaultLocalPluginEntryUrlMap,
   normalizeSelectedPluginIds,
 } from "./tenant-manifest.js";
+import { normalizeAndAssertValidLocalPluginId } from "./local-ui-plugin-discovery.js";
 
 export interface BackendDevCliOptions {
   selectedLocalPluginIds: string[];
+  duplicateSelectedLocalPluginIds: string[];
 }
 
 export function parseBackendDevCliOptions(
   argv: readonly string[],
 ): BackendDevCliOptions {
+  const collectedPluginIds = collectRepeatableOptionValues(argv, "--local-plugin").map(
+    (pluginId) =>
+      normalizeAndAssertValidLocalPluginId(
+        pluginId,
+        "from --local-plugin argument",
+      ),
+  );
+  const duplicateSelectedLocalPluginIds = getDuplicatePluginIds(collectedPluginIds);
   const selectedLocalPluginIds = normalizeSelectedPluginIds(
-    collectRepeatableOptionValues(argv, "--local-plugin"),
+    collectedPluginIds,
   );
 
   validateSelectedLocalPluginIds(selectedLocalPluginIds);
 
   return {
     selectedLocalPluginIds,
+    duplicateSelectedLocalPluginIds,
   };
+}
+
+function getDuplicatePluginIds(selectedPluginIds: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+
+  for (const pluginId of selectedPluginIds) {
+    if (seen.has(pluginId)) {
+      duplicates.add(pluginId);
+      continue;
+    }
+
+    seen.add(pluginId);
+  }
+
+  return Array.from(duplicates).sort((left, right) => left.localeCompare(right));
 }
 
 function collectRepeatableOptionValues(
@@ -71,4 +98,30 @@ function validateSelectedLocalPluginIds(
       ].join(" "),
     );
   }
+}
+
+export function formatLocalPluginOverrideStartupSummary(
+  selectedLocalPluginIds: readonly string[],
+  entryOverridesByPluginId: ReadonlyMap<string, string>,
+): string {
+  const normalizedSelectedPluginIds = normalizeSelectedPluginIds(
+    selectedLocalPluginIds,
+  );
+
+  if (normalizedSelectedPluginIds.length === 0) {
+    return "[backend] local plugin overrides: none selected";
+  }
+
+  const summaryItems = normalizedSelectedPluginIds.map((pluginId) => {
+    const mappedEntry = entryOverridesByPluginId.get(pluginId);
+    if (!mappedEntry) {
+      throw new Error(
+        `Missing local plugin override entry mapping for selected plugin '${pluginId}'. Ensure createDefaultLocalPluginEntryUrlMap includes this plugin.`,
+      );
+    }
+
+    return `${pluginId} -> ${mappedEntry}`;
+  });
+
+  return `[backend] local plugin overrides (${summaryItems.length}): ${summaryItems.join("; ")}`;
 }

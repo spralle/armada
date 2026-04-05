@@ -80,6 +80,27 @@ export function applyLocalPluginEntryOverrides(
     overrideOptions?.pluginEntryUrlOverridesById ??
     DEFAULT_LOCAL_PLUGIN_ENTRY_URL_MAP;
 
+  const missingEntryOverridePluginIds = Array.from(selectedPluginIds).filter(
+    (pluginId) => !entryOverridesByPluginId.get(pluginId),
+  );
+
+  if (missingEntryOverridePluginIds.length > 0) {
+    throw new Error(
+      `Missing local plugin override entry mapping for selected plugin id(s): ${missingEntryOverridePluginIds.join(", ")}.`,
+    );
+  }
+
+  const availablePluginIdSet = new Set(plugins.map((plugin) => plugin.id));
+  const missingManifestPluginIds = Array.from(selectedPluginIds).filter(
+    (pluginId) => !availablePluginIdSet.has(pluginId),
+  );
+
+  if (missingManifestPluginIds.length > 0) {
+    throw new Error(
+      `Selected local plugin id(s) not present in tenant manifest: ${missingManifestPluginIds.join(", ")}.`,
+    );
+  }
+
   return plugins.map((plugin) => {
     if (!selectedPluginIds.has(plugin.id)) {
       return {
@@ -89,9 +110,9 @@ export function applyLocalPluginEntryOverrides(
 
     const overriddenEntry = entryOverridesByPluginId.get(plugin.id);
     if (!overriddenEntry) {
-      return {
-        ...plugin,
-      };
+      throw new Error(
+        `Missing local plugin override entry mapping for selected plugin '${plugin.id}'.`,
+      );
     }
 
     return {

@@ -96,6 +96,34 @@ test("override application is deterministic and idempotent", () => {
   assert.deepEqual(reApplied, first.plugins);
 });
 
+test("applyLocalPluginEntryOverrides fails fast when selected plugin has no mapped entry", () => {
+  const baseline = getTenantManifestResponse("demo");
+
+  assert.throws(
+    () =>
+      applyLocalPluginEntryOverrides(baseline.plugins, {
+        selectedLocalPluginIds: ["com.armada.plugin-starter"],
+        pluginEntryUrlOverridesById: new Map(),
+      }),
+    /Missing local plugin override entry mapping for selected plugin id\(s\): com\.armada\.plugin-starter\./,
+  );
+});
+
+test("applyLocalPluginEntryOverrides fails fast when selected plugin is not in manifest", () => {
+  const baseline = getTenantManifestResponse("demo");
+
+  assert.throws(
+    () =>
+      applyLocalPluginEntryOverrides(baseline.plugins, {
+        selectedLocalPluginIds: ["com.armada.unknown.plugin"],
+        pluginEntryUrlOverridesById: new Map([
+          ["com.armada.unknown.plugin", "http://127.0.0.1:4999/mf-manifest.json"],
+        ]),
+      }),
+    /Selected local plugin id\(s\) not present in tenant manifest: com\.armada\.unknown\.plugin\./,
+  );
+});
+
 test("default override URL map is derived from discovery utility", () => {
   const defaultMap = createDefaultLocalPluginEntryUrlMap({
     appsRoot: "apps",

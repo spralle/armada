@@ -21,6 +21,9 @@ export interface DiscoverLocalUiPluginsOptions {
   definitions?: readonly CanonicalLocalUiPluginDefinition[];
 }
 
+const VALID_LOCAL_PLUGIN_ID_PATTERN =
+  /^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)*$/;
+
 /**
  * Canonical local UI plugin conventions for Armada development.
  *
@@ -69,9 +72,9 @@ export function discoverLocalUiPlugins(
 
   const normalizedDefinitions = definitions.map((definition) => ({
     ...definition,
-    normalizedId: normalizeAndAssertValidPluginId(
+    normalizedId: normalizeAndAssertValidLocalPluginId(
       definition.id,
-      definition.folderName,
+      `for folder '${definition.folderName}'`,
     ),
   }));
 
@@ -88,7 +91,11 @@ export function discoverLocalUiPlugins(
     );
     const entry = `${protocol}://${host}:${definition.devPort}${definition.entryPath}`;
 
-    assertValidEntryUrl(entry, definition.normalizedId, definition.folderName);
+    assertValidLocalPluginEntryUrl(
+      entry,
+      definition.normalizedId,
+      `for plugin '${definition.normalizedId}' (folder '${definition.folderName}')`,
+    );
 
     const existing = discovered.get(definition.normalizedId);
     if (existing) {
@@ -114,49 +121,48 @@ function resolveLocalFolderPath(appsRoot: string, folderName: string): string {
   return `${withoutTrailingSlash}/${folderName}`;
 }
 
-function normalizeAndAssertValidPluginId(id: string, folderName: string): string {
+export function normalizeAndAssertValidLocalPluginId(
+  id: string,
+  context: string,
+): string {
   const normalizedId = id.trim();
-  const validPluginIdPattern =
-    /^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)*$/;
 
   if (!normalizedId) {
-    throw new Error(
-      `Invalid local plugin id for folder '${folderName}': plugin id cannot be empty.`,
-    );
+    throw new Error(`Invalid local plugin id ${context}: plugin id cannot be empty.`);
   }
 
-  if (!validPluginIdPattern.test(normalizedId)) {
+  if (!VALID_LOCAL_PLUGIN_ID_PATTERN.test(normalizedId)) {
     throw new Error(
-      `Invalid local plugin id '${id}' for folder '${folderName}'. Expected dot-separated lowercase segments (letters, numbers, hyphens).`,
+      `Invalid local plugin id '${id}' ${context}. Expected dot-separated lowercase segments (letters, numbers, hyphens).`,
     );
   }
 
   return normalizedId;
 }
 
-function assertValidEntryUrl(
+export function assertValidLocalPluginEntryUrl(
   entry: string,
   pluginId: string,
-  folderName: string,
+  context: string,
 ): void {
   let parsed: URL;
   try {
     parsed = new URL(entry);
   } catch {
     throw new Error(
-      `Invalid local plugin entry URL '${entry}' for plugin '${pluginId}' (folder '${folderName}').`,
+      `Invalid local plugin entry URL '${entry}' ${context}.`,
     );
   }
 
   if (!/^https?:$/.test(parsed.protocol)) {
     throw new Error(
-      `Invalid local plugin entry URL '${entry}' for plugin '${pluginId}' (folder '${folderName}'): protocol must be http or https.`,
+      `Invalid local plugin entry URL '${entry}' ${context}: protocol must be http or https.`,
     );
   }
 
   if (parsed.pathname !== "/mf-manifest.json") {
     throw new Error(
-      `Invalid local plugin entry URL '${entry}' for plugin '${pluginId}' (folder '${folderName}'): path must be '/mf-manifest.json'.`,
+      `Invalid local plugin entry URL '${entry}' ${context}: path must be '/mf-manifest.json'.`,
     );
   }
 }

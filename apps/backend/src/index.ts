@@ -1,14 +1,32 @@
 import {
   getTenantManifestEndpointPath,
+  getDefaultLocalPluginEntryUrlMap,
   resolveTenantManifestRequest,
 } from "./tenant-manifest.js";
-import { parseBackendDevCliOptions } from "./dev-cli-options.js";
+import {
+  formatLocalPluginOverrideStartupSummary,
+  parseBackendDevCliOptions,
+} from "./dev-cli-options.js";
 
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
 const DEFAULT_TENANT = "demo";
 
 const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
+const localPluginEntryOverrides = getDefaultLocalPluginEntryUrlMap();
+
+if (backendDevCliOptions.duplicateSelectedLocalPluginIds.length > 0) {
+  console.warn(
+    `[backend] duplicate --local-plugin values ignored after normalization: ${backendDevCliOptions.duplicateSelectedLocalPluginIds.join(", ")}`,
+  );
+}
+
+console.log(
+  formatLocalPluginOverrideStartupSummary(
+    backendDevCliOptions.selectedLocalPluginIds,
+    localPluginEntryOverrides,
+  ),
+);
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -33,6 +51,7 @@ function startBackendDevServer(): void {
       const url = new URL(request.url);
       const manifest = resolveTenantManifestRequest(url.pathname, {
         selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
+        pluginEntryUrlOverridesById: localPluginEntryOverrides,
       });
       if (manifest) {
         return jsonResponse(manifest);
@@ -64,6 +83,7 @@ function startNodeBackendDevServer(): void {
         const requestPath = req.url ? new URL(req.url, `http://${BACKEND_DEV_HOST}:${BACKEND_DEV_PORT}`).pathname : "/";
         const manifest = resolveTenantManifestRequest(requestPath, {
           selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
+          pluginEntryUrlOverridesById: localPluginEntryOverrides,
         });
 
         res.setHeader("content-type", "application/json; charset=utf-8");
