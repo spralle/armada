@@ -6,6 +6,12 @@ import {
   createDefaultLocalPluginEntryUrlMap,
   getTenantManifestResponse,
 } from "../dist-test/src/tenant-manifest.js";
+import {
+  DEFAULT_LOCAL_PLUGIN_ENTRIES,
+  LOCAL_PLUGIN_IDS,
+  SORTED_LOCAL_PLUGIN_IDS,
+  buildEntryOverrideMap,
+} from "./fixtures/local-plugin-overrides-fixtures.mjs";
 
 test("getTenantManifestResponse without selected local plugins matches baseline", () => {
   const baseline = getTenantManifestResponse("demo");
@@ -22,7 +28,7 @@ test("getTenantManifestResponse without selected local plugins matches baseline"
 });
 
 test("selected local plugin receives entry override from default map", () => {
-  const selectedPluginId = "com.armada.plugin-starter";
+  const selectedPluginId = LOCAL_PLUGIN_IDS.pluginStarter;
   const selectedPluginOverrideEntry = "https://127.0.0.1:5173/mf-manifest.json";
 
   const manifest = getTenantManifestResponse("demo", {
@@ -40,7 +46,7 @@ test("selected local plugin receives entry override from default map", () => {
 });
 
 test("non-selected local plugins remain unchanged when overrides are applied", () => {
-  const selectedPluginId = "com.armada.plugin-starter";
+  const selectedPluginId = LOCAL_PLUGIN_IDS.pluginStarter;
   const baseline = getTenantManifestResponse("demo");
   const baselineById = new Map(
     baseline.plugins.map((plugin) => [plugin.id, plugin.entry]),
@@ -63,17 +69,15 @@ test("non-selected local plugins remain unchanged when overrides are applied", (
 });
 
 test("override application is deterministic and idempotent", () => {
-  const overrides = new Map([
-    ["com.armada.plugin-starter", "https://127.0.0.1:5173/mf-manifest.json"],
-    [
-      "com.armada.sample.contract-consumer",
+  const overrides = buildEntryOverrideMap({
+    [LOCAL_PLUGIN_IDS.pluginStarter]: "https://127.0.0.1:5173/mf-manifest.json",
+    [LOCAL_PLUGIN_IDS.sampleContractConsumer]:
       "https://127.0.0.1:5174/mf-manifest.json",
-    ],
-  ]);
+  });
   const selectedPluginIds = [
-    "com.armada.sample.contract-consumer",
-    "com.armada.plugin-starter",
-    "com.armada.plugin-starter",
+    LOCAL_PLUGIN_IDS.sampleContractConsumer,
+    LOCAL_PLUGIN_IDS.pluginStarter,
+    LOCAL_PLUGIN_IDS.pluginStarter,
   ];
 
   const first = getTenantManifestResponse("demo", {
@@ -109,6 +113,33 @@ test("applyLocalPluginEntryOverrides fails fast when selected plugin has no mapp
   );
 });
 
+test("getTenantManifestResponse applies default map for CLI-selected local plugins", () => {
+  const selectedPluginIds = [LOCAL_PLUGIN_IDS.sampleContractConsumer];
+
+  const manifest = getTenantManifestResponse("demo", {
+    selectedLocalPluginIds: selectedPluginIds,
+  });
+
+  const selectedPlugin = manifest.plugins.find(
+    (plugin) => plugin.id === LOCAL_PLUGIN_IDS.sampleContractConsumer,
+  );
+
+  assert.ok(selectedPlugin);
+  assert.equal(
+    selectedPlugin.entry,
+    DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.sampleContractConsumer],
+  );
+});
+
+test("getTenantManifestResponse keeps no-override baseline when selection has only blanks", () => {
+  const baseline = getTenantManifestResponse("demo");
+  const manifest = getTenantManifestResponse("demo", {
+    selectedLocalPluginIds: ["   ", ""],
+  });
+
+  assert.deepEqual(manifest, baseline);
+});
+
 test("applyLocalPluginEntryOverrides fails fast when selected plugin is not in manifest", () => {
   const baseline = getTenantManifestResponse("demo");
 
@@ -129,15 +160,9 @@ test("default override URL map is derived from discovery utility", () => {
     appsRoot: "apps",
   });
 
-  assert.deepEqual(Array.from(defaultMap.keys()), [
-    "com.armada.domain.unplanned-orders",
-    "com.armada.domain.vessel-view",
-    "com.armada.plugin-starter",
-    "com.armada.sample.contract-consumer",
-  ]);
-
+  assert.deepEqual(Array.from(defaultMap.keys()), SORTED_LOCAL_PLUGIN_IDS);
   assert.equal(
-    defaultMap.get("com.armada.plugin-starter"),
-    "http://127.0.0.1:4171/mf-manifest.json",
+    defaultMap.get(LOCAL_PLUGIN_IDS.pluginStarter),
+    DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.pluginStarter],
   );
 });

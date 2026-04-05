@@ -241,6 +241,29 @@ test("shell bootstrap keeps inner-loop mode for loopback override entries", asyn
   assert.equal(state.registry.getSnapshot().plugins.length, 2);
 });
 
+test("shell bootstrap treats local scheme override entries as inner-loop", async () => {
+  const manifest = {
+    tenantId: "demo",
+    plugins: [
+      {
+        ...DOMAIN_UNPLANNED,
+        entry: "local://com.armada.domain.unplanned-orders/mf-manifest.json",
+      },
+      {
+        ...DOMAIN_VESSEL,
+        entry: "http://localhost:4174/mf-manifest.json",
+      },
+    ],
+  };
+
+  const state = await bootstrapShellWithTenantManifest({
+    tenantId: "demo",
+    fetchManifest: async () => manifest,
+  });
+
+  assert.equal(state.mode, "inner-loop");
+});
+
 test("shell bootstrap keeps integration mode when non-loopback plugin entries exist", async () => {
   const manifest = {
     tenantId: "demo",

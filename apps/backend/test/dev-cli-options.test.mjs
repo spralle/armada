@@ -5,37 +5,51 @@ import {
   formatLocalPluginOverrideStartupSummary,
   parseBackendDevCliOptions,
 } from "../dist-test/src/dev-cli-options.js";
+import {
+  DEFAULT_LOCAL_PLUGIN_ENTRIES,
+  LOCAL_PLUGIN_IDS,
+  buildEntryOverrideMap,
+} from "./fixtures/local-plugin-overrides-fixtures.mjs";
+
+test("parseBackendDevCliOptions keeps no-override baseline when no flags are provided", () => {
+  const parsed = parseBackendDevCliOptions([]);
+
+  assert.deepEqual(parsed, {
+    selectedLocalPluginIds: [],
+    duplicateSelectedLocalPluginIds: [],
+  });
+});
 
 test("parseBackendDevCliOptions supports repeated --local-plugin values", () => {
   const parsed = parseBackendDevCliOptions([
     "--local-plugin",
-    "com.armada.plugin-starter",
+    LOCAL_PLUGIN_IDS.pluginStarter,
     "--local-plugin",
-    "com.armada.sample.contract-consumer",
+    LOCAL_PLUGIN_IDS.sampleContractConsumer,
   ]);
 
   assert.deepEqual(parsed.selectedLocalPluginIds, [
-    "com.armada.plugin-starter",
-    "com.armada.sample.contract-consumer",
+    LOCAL_PLUGIN_IDS.pluginStarter,
+    LOCAL_PLUGIN_IDS.sampleContractConsumer,
   ]);
 });
 
 test("parseBackendDevCliOptions normalizes duplicate and whitespace plugin IDs deterministically", () => {
   const parsed = parseBackendDevCliOptions([
     "--local-plugin",
-    " com.armada.sample.contract-consumer ",
+    ` ${LOCAL_PLUGIN_IDS.sampleContractConsumer} `,
     "--local-plugin",
-    "com.armada.plugin-starter",
+    LOCAL_PLUGIN_IDS.pluginStarter,
     "--local-plugin",
-    "com.armada.plugin-starter",
+    LOCAL_PLUGIN_IDS.pluginStarter,
   ]);
 
   assert.deepEqual(parsed.selectedLocalPluginIds, [
-    "com.armada.plugin-starter",
-    "com.armada.sample.contract-consumer",
+    LOCAL_PLUGIN_IDS.pluginStarter,
+    LOCAL_PLUGIN_IDS.sampleContractConsumer,
   ]);
   assert.deepEqual(parsed.duplicateSelectedLocalPluginIds, [
-    "com.armada.plugin-starter",
+    LOCAL_PLUGIN_IDS.pluginStarter,
   ]);
 });
 
@@ -77,14 +91,8 @@ test("formatLocalPluginOverrideStartupSummary reports none selected", () => {
 
 test("formatLocalPluginOverrideStartupSummary prints deterministic selected overrides", () => {
   const summary = formatLocalPluginOverrideStartupSummary(
-    ["com.armada.sample.contract-consumer", "com.armada.plugin-starter"],
-    new Map([
-      ["com.armada.plugin-starter", "http://127.0.0.1:4171/mf-manifest.json"],
-      [
-        "com.armada.sample.contract-consumer",
-        "http://127.0.0.1:4172/mf-manifest.json",
-      ],
-    ]),
+    [LOCAL_PLUGIN_IDS.sampleContractConsumer, LOCAL_PLUGIN_IDS.pluginStarter],
+    buildEntryOverrideMap(DEFAULT_LOCAL_PLUGIN_ENTRIES),
   );
 
   assert.equal(

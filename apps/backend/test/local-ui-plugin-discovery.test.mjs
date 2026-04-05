@@ -5,26 +5,26 @@ import {
   CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS,
   discoverLocalUiPlugins,
 } from "../dist-test/src/local-ui-plugin-discovery.js";
+import {
+  DEFAULT_LOCAL_PLUGIN_ENTRIES,
+  LOCAL_PLUGIN_IDS,
+  SORTED_LOCAL_PLUGIN_IDS,
+} from "./fixtures/local-plugin-overrides-fixtures.mjs";
 
 test("discoverLocalUiPlugins returns deterministic plugin ordering", () => {
   const discovered = discoverLocalUiPlugins({
     appsRoot: "apps",
   });
 
-  assert.deepEqual(
-    Array.from(discovered.keys()),
-    [
-      "com.armada.domain.unplanned-orders",
-      "com.armada.domain.vessel-view",
-      "com.armada.plugin-starter",
-      "com.armada.sample.contract-consumer",
-    ],
-  );
+  assert.deepEqual(Array.from(discovered.keys()), SORTED_LOCAL_PLUGIN_IDS);
 
-  const pluginStarter = discovered.get("com.armada.plugin-starter");
+  const pluginStarter = discovered.get(LOCAL_PLUGIN_IDS.pluginStarter);
   assert.ok(pluginStarter);
   assert.equal(pluginStarter.folderPath, "apps/plugin-starter");
-  assert.equal(pluginStarter.entry, "http://127.0.0.1:4171/mf-manifest.json");
+  assert.equal(
+    pluginStarter.entry,
+    DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.pluginStarter],
+  );
 });
 
 test("discoverLocalUiPlugins rejects duplicate plugin ids with actionable error", () => {
@@ -35,7 +35,7 @@ test("discoverLocalUiPlugins rejects duplicate plugin ids with actionable error"
         definitions: [
           ...CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS,
           {
-            id: "com.armada.plugin-starter",
+            id: LOCAL_PLUGIN_IDS.pluginStarter,
             folderName: "plugin-starter-copy",
             devPort: 4271,
             version: "0.1.0",
@@ -52,7 +52,7 @@ test("discoverLocalUiPlugins normalizes surrounding whitespace in plugin IDs", (
     appsRoot: "apps",
     definitions: [
       {
-        id: "  com.armada.plugin-starter  ",
+        id: `  ${LOCAL_PLUGIN_IDS.pluginStarter}  `,
         folderName: "plugin-starter",
         devPort: 4171,
         version: "0.1.0",
@@ -61,10 +61,10 @@ test("discoverLocalUiPlugins normalizes surrounding whitespace in plugin IDs", (
     ],
   });
 
-  assert.deepEqual(Array.from(discovered.keys()), ["com.armada.plugin-starter"]);
-  const normalized = discovered.get("com.armada.plugin-starter");
+  assert.deepEqual(Array.from(discovered.keys()), [LOCAL_PLUGIN_IDS.pluginStarter]);
+  const normalized = discovered.get(LOCAL_PLUGIN_IDS.pluginStarter);
   assert.ok(normalized);
-  assert.equal(normalized.id, "com.armada.plugin-starter");
+  assert.equal(normalized.id, LOCAL_PLUGIN_IDS.pluginStarter);
 });
 
 test("discoverLocalUiPlugins rejects duplicate plugin ids that differ only by surrounding whitespace", () => {
@@ -74,14 +74,14 @@ test("discoverLocalUiPlugins rejects duplicate plugin ids that differ only by su
         appsRoot: "apps",
         definitions: [
           {
-            id: "com.armada.plugin-starter",
+            id: LOCAL_PLUGIN_IDS.pluginStarter,
             folderName: "plugin-starter",
             devPort: 4171,
             version: "0.1.0",
             entryPath: "/mf-manifest.json",
           },
           {
-            id: " com.armada.plugin-starter ",
+            id: ` ${LOCAL_PLUGIN_IDS.pluginStarter} `,
             folderName: "plugin-starter-copy",
             devPort: 4271,
             version: "0.1.0",
@@ -91,6 +91,20 @@ test("discoverLocalUiPlugins rejects duplicate plugin ids that differ only by su
       }),
     /Duplicate local plugin id 'com\.armada\.plugin-starter' detected for folders 'plugin-starter' and 'plugin-starter-copy'/,
   );
+});
+
+test("discoverLocalUiPlugins supports deterministic host and protocol mapping", () => {
+  const discovered = discoverLocalUiPlugins({
+    appsRoot: "apps",
+    host: "localhost",
+    protocol: "https",
+  });
+
+  assert.equal(
+    discovered.get(LOCAL_PLUGIN_IDS.sampleContractConsumer)?.entry,
+    "https://localhost:4172/mf-manifest.json",
+  );
+  assert.deepEqual(Array.from(discovered.keys()), SORTED_LOCAL_PLUGIN_IDS);
 });
 
 test("discoverLocalUiPlugins rejects invalid plugin IDs clearly", () => {
