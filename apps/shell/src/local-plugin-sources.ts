@@ -52,6 +52,7 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
       selection: [
         {
           id: "domain.unplanned-orders.selection",
+          target: "vessel",
           receiverEntityType: "vessel",
           interests: [
             {
@@ -102,6 +103,7 @@ const LOCAL_PLUGIN_LOADERS: Readonly<Record<string, LocalPluginContractLoader>> 
       selection: [
         {
           id: "domain.vessel.selection",
+          target: "order",
           receiverEntityType: "order",
           interests: [
             {
