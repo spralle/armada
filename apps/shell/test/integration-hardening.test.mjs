@@ -1,0 +1,217 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  composeVisibleParts,
+} from "../dist/part-composition.js";
+import {
+  composeRuntimeCommands,
+  executeKeybinding,
+} from "../dist/command-runtime.js";
+import { createActivationRuntime } from "../dist/activation-runtime.js";
+
+const DOMAIN_UNPLANNED = {
+  id: "com.armada.domain.unplanned-orders",
+  version: "0.1.0",
+  entry: "http://127.0.0.1:4173/mf-manifest.json",
+  compatibility: {
+    shell: "^1.0.0",
+    pluginContract: "^1.0.0",
+  },
+};
+
+const DOMAIN_VESSEL = {
+  id: "com.armada.domain.vessel-view",
+  version: "0.1.0",
+  entry: "http://127.0.0.1:4174/mf-manifest.json",
+  compatibility: {
+    shell: "^1.0.0",
+    pluginContract: "^1.0.0",
+  },
+};
+
+test("plugin-composed parts follow plugin enablement in runtime snapshot", () => {
+  const parts = [
+    { id: "domain.unplanned-orders.part", title: "Unplanned Orders", slot: "master", ownerPluginId: DOMAIN_UNPLANNED.id, render: () => "" },
+    { id: "domain.vessel-view.part", title: "Vessel View", slot: "secondary", ownerPluginId: DOMAIN_VESSEL.id, render: () => "" },
+    { id: "workbench.side.navigator", title: "Navigator", slot: "side", alwaysVisible: true, render: () => "" },
+  ];
+
+  const emptySnapshot = {
+    tenantId: "demo",
+    diagnostics: [],
+    plugins: [
+      { id: DOMAIN_UNPLANNED.id, enabled: false },
+      { id: DOMAIN_VESSEL.id, enabled: false },
+    ],
+  };
+
+  let visible = composeVisibleParts(parts, emptySnapshot);
+  assert.deepEqual(
+    visible.map((part) => part.id).sort(),
+    ["workbench.side.navigator"],
+  );
+
+  visible = composeVisibleParts(parts, {
+    ...emptySnapshot,
+    plugins: [
+      { id: DOMAIN_UNPLANNED.id, enabled: true },
+      { id: DOMAIN_VESSEL.id, enabled: false },
+    ],
+  });
+  assert.deepEqual(
+    visible.map((part) => part.id).sort(),
+    ["domain.unplanned-orders.part", "workbench.side.navigator"],
+  );
+
+  visible = composeVisibleParts(parts, {
+    ...emptySnapshot,
+    plugins: [
+      { id: DOMAIN_UNPLANNED.id, enabled: true },
+      { id: DOMAIN_VESSEL.id, enabled: true },
+    ],
+  });
+  assert.deepEqual(
+    visible.map((part) => part.id).sort(),
+    ["domain.unplanned-orders.part", "domain.vessel-view.part", "workbench.side.navigator"],
+  );
+});
+
+test("context-gated command visibility and enablement are resolved from runtime context", () => {
+  const contracts = [
+    {
+      manifest: {
+        id: "com.armada.integration.commands",
+        name: "Integration Commands",
+        version: "0.1.0",
+      },
+      contributes: {
+        commands: [
+          {
+            id: "domain.open-order",
+            title: "Open order",
+            handler: "openOrder",
+            when: "selection.hasOrder",
+            enablement: "selection.canOpenOrder",
+            keybinding: "ctrl+shift+o",
+          },
+        ],
+      },
+    },
+  ];
+
+  const hidden = composeRuntimeCommands(contracts, {
+    values: {
+      "selection.hasOrder": false,
+      "selection.canOpenOrder": false,
+    },
+  });
+  assert.equal(hidden[0].visible, false);
+  assert.equal(hidden[0].enabled, false);
+
+  const visibleDisabled = composeRuntimeCommands(contracts, {
+    values: {
+      "selection.hasOrder": true,
+      "selection.canOpenOrder": false,
+    },
+  });
+  assert.equal(visibleDisabled[0].visible, true);
+  assert.equal(visibleDisabled[0].enabled, false);
+
+  const visibleEnabled = composeRuntimeCommands(contracts, {
+    values: {
+      "selection.hasOrder": true,
+      "selection.canOpenOrder": true,
+    },
+  });
+  assert.equal(visibleEnabled[0].visible, true);
+  assert.equal(visibleEnabled[0].enabled, true);
+});
+
+test("keybinding execution only runs visible+enabled commands", () => {
+  const commands = [
+    {
+      pluginId: "com.armada.integration.commands",
+      commandId: "domain.open-order",
+      title: "Open order",
+      handler: "openOrder",
+      keybinding: "ctrl+shift+o",
+      when: "selection.hasOrder",
+      enablement: "selection.canOpenOrder",
+      visible: true,
+      enabled: true,
+    },
+    {
+      pluginId: "com.armada.integration.commands",
+      commandId: "domain.hidden-order",
+      title: "Hidden order",
+      handler: "openHiddenOrder",
+      keybinding: "ctrl+h",
+      when: "selection.hasHidden",
+      enablement: "selection.canOpenHidden",
+      visible: false,
+      enabled: false,
+    },
+  ];
+
+  const executed = [];
+
+  const didRunMatch = executeKeybinding(commands, "CTRL+SHIFT+O", (command) => {
+    executed.push(command.commandId);
+  });
+  assert.equal(didRunMatch, true);
+  assert.deepEqual(executed, ["domain.open-order"]);
+
+  const didRunHidden = executeKeybinding(commands, "ctrl+h", (command) => {
+    executed.push(command.commandId);
+  });
+  assert.equal(didRunHidden, false);
+  assert.deepEqual(executed, ["domain.open-order"]);
+});
+
+test("lazy activation triggers activate plugin once and track latest trigger", async () => {
+  const activationCalls = [];
+  const runtime = createActivationRuntime({
+    activatePlugin: async (pluginId, trigger) => {
+      activationCalls.push({ pluginId, trigger });
+    },
+  });
+
+  runtime.registerContract({
+    manifest: {
+      id: "com.armada.integration.activatable",
+      name: "Activatable",
+      version: "0.1.0",
+    },
+    contributes: {
+      activationEvents: [
+        "onCommand:domain.open-order",
+        "onView:domain.vessel.view",
+        "onIntent:domain.order.focus",
+      ],
+    },
+  });
+
+  const triggeredByCommand = await runtime.trigger({ type: "command", id: "domain.open-order" });
+  assert.equal(triggeredByCommand, true);
+
+  const triggeredByView = await runtime.trigger({ type: "view", id: "domain.vessel.view" });
+  assert.equal(triggeredByView, true);
+
+  const triggeredByIntent = await runtime.trigger({ type: "intent", id: "domain.order.focus" });
+  assert.equal(triggeredByIntent, true);
+
+  const missed = await runtime.trigger({ type: "command", id: "domain.non-existent" });
+  assert.equal(missed, false);
+
+  assert.equal(activationCalls.length, 1);
+  assert.deepEqual(activationCalls[0], {
+    pluginId: "com.armada.integration.activatable",
+    trigger: { type: "command", id: "domain.open-order" },
+  });
+
+  const snapshot = runtime.snapshot();
+  assert.equal(snapshot.length, 1);
+  assert.equal(snapshot[0].state, "active");
+  assert.equal(snapshot[0].activationCount, 1);
+  assert.deepEqual(snapshot[0].lastTrigger, { type: "intent", id: "domain.order.focus" });
+});

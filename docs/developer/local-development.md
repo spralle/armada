@@ -139,6 +139,22 @@ bun run dev:integration
 
 As real runtime wiring lands in later beads, this command will become the single local integration entrypoint.
 
+## Integration hardening guardrails
+
+The contract parser is the shared validation boundary for both local and remote plugin contracts.
+
+- Command contributions may include `when`, `enablement`, and `keybinding` metadata.
+- Activation triggers are declared via `contributes.activationEvents` using:
+  - `onCommand:<command-id>`
+  - `onView:<view-id>`
+  - `onIntent:<intent-or-selection-id>`
+
+Guardrails covered by tests:
+
+- local/remote contract-shape parity uses the same schema validation path.
+- backend domain plugin entries must stay remote MF manifests (`4173`/`4174`) and must not regress to shell local source composition.
+- shell runtime integration tests cover plugin-composed part visibility, context-gated command visibility/enablement, keybinding execution, and lazy activation trigger lifecycle.
+
 ## Plugin quick start scaffold
 
 Create a new plugin app from the template:
