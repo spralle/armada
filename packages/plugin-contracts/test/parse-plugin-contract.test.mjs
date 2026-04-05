@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   composeEnabledPluginContributions,
+  createDefaultContributionPredicateMatcher,
+  evaluateContributionPredicate,
   evaluateShellPluginCompatibility,
   parsePluginContract,
   parseTenantPluginManifest,
@@ -35,7 +37,9 @@ test("returns typed data for a valid plugin contract", () => {
           id: "valid.action",
           title: "Run Valid",
           intent: "valid.run",
-          predicate: "demo.selection == valid",
+          predicate: {
+            "demo.selection": "valid",
+          },
         },
       ],
       menus: [
@@ -366,4 +370,75 @@ test("composeEnabledPluginContributions composes parts from enabled plugin contr
   );
   assert.equal(composed.views.length, 1);
   assert.equal(composed.views[0].pluginId, "com.armada.domain.unplanned-orders");
+});
+
+test("contribution predicate matcher supports deterministic operators", () => {
+  const predicate = {
+    mode: { $eq: "strict", $ne: "legacy" },
+    status: { $in: ["open", "pending"] },
+    rank: { $gt: 1, $gte: 2, $lt: 4, $lte: 3 },
+    "meta.source": { $exists: true },
+    category: { $nin: ["forbidden"] },
+  };
+
+  const facts = {
+    mode: "strict",
+    status: "open",
+    rank: 2,
+    meta: { source: "manual" },
+    category: "safe",
+  };
+
+  const result = evaluateContributionPredicate(predicate, facts);
+  assert.equal(result, true);
+});
+
+test("default contribution matcher traces failed predicates", () => {
+  const matcher = createDefaultContributionPredicateMatcher();
+  const evaluation = matcher.evaluate(
+    {
+      rank: { $gt: 10 },
+      "target.vesselClass": "RORO",
+    },
+    {
+      rank: 2,
+      target: {
+        vesselClass: "TANKER",
+      },
+    },
+  );
+
+  assert.equal(evaluation.matched, false);
+  assert.equal(evaluation.failedPredicates.length, 2);
+  assert.equal(evaluation.failedPredicates[0].path, "rank");
+  assert.equal(evaluation.failedPredicates[1].path, "target.vesselClass");
+});
+
+test("evaluateContributionPredicate supports matcher boundary injection", () => {
+  let calls = 0;
+  const matcher = {
+    id: "spec-adapter",
+    evaluate(predicate, facts) {
+      calls += 1;
+      assert.equal(predicate.kind, "expected");
+      assert.equal(facts.sourceType, "order");
+      return {
+        matched: true,
+        failedPredicates: [],
+      };
+    },
+  };
+
+  const matched = evaluateContributionPredicate(
+    {
+      kind: "expected",
+    },
+    {
+      sourceType: "order",
+    },
+    matcher,
+  );
+
+  assert.equal(matched, true);
+  assert.equal(calls, 1);
 });

@@ -1,9 +1,14 @@
 import type {
+  ContributionPredicateMatcher,
   PluginActionContribution,
   PluginContract,
   PluginContributionPredicate,
   PluginKeybindingContribution,
   PluginMenuContribution,
+  PredicateFactBag,
+} from "@armada/plugin-contracts";
+import {
+  createDefaultContributionPredicateMatcher,
 } from "@armada/plugin-contracts";
 import type { IntentRuntime } from "./intent-runtime.js";
 
@@ -41,6 +46,7 @@ export interface ActionSurface {
   keybindings: ActionKeybinding[];
 }
 
+const defaultPredicateMatcher = createDefaultContributionPredicateMatcher();
 export function buildActionSurface(contracts: readonly PluginContract[]): ActionSurface {
   const actions: InvokableAction[] = [];
   const knownActionIds = new Set<string>();
@@ -92,20 +98,22 @@ export function resolveMenuActions(
   surface: ActionSurface,
   menuId: string,
   context: ActionSurfaceContext,
+  matcher: ContributionPredicateMatcher = defaultPredicateMatcher,
 ): InvokableAction[] {
   return surface.menus
     .filter((item) => item.menu === menuId)
-    .filter((item) => evaluatePredicate(item.when, context))
+    .filter((item) => evaluatePredicate(item.when, context, matcher))
     .sort(compareMenuItems)
     .map((item) => findAction(surface.actions, item.action))
     .filter((action): action is InvokableAction => action !== null)
-    .filter((action) => evaluatePredicate(action.predicate, context));
+    .filter((action) => evaluatePredicate(action.predicate, context, matcher));
 }
 
 export function resolveKeybindingAction(
   surface: ActionSurface,
   normalizedKeybinding: string,
   context: ActionSurfaceContext,
+  matcher: ContributionPredicateMatcher = defaultPredicateMatcher,
 ): InvokableAction | null {
   const key = normalizeKeybinding(normalizedKeybinding);
   for (const contribution of surface.keybindings) {
@@ -113,7 +121,7 @@ export function resolveKeybindingAction(
       continue;
     }
 
-    if (!evaluatePredicate(contribution.when, context)) {
+    if (!evaluatePredicate(contribution.when, context, matcher)) {
       continue;
     }
 
@@ -122,7 +130,7 @@ export function resolveKeybindingAction(
       continue;
     }
 
-    if (!evaluatePredicate(action.predicate, context)) {
+    if (!evaluatePredicate(action.predicate, context, matcher)) {
       continue;
     }
 
@@ -137,13 +145,14 @@ export async function dispatchAction(
   runtime: IntentRuntime,
   actionId: string,
   context: ActionSurfaceContext,
+  matcher: ContributionPredicateMatcher = defaultPredicateMatcher,
 ): Promise<boolean> {
   const action = findAction(surface.actions, actionId);
   if (!action) {
     return false;
   }
 
-  if (!evaluatePredicate(action.predicate, context)) {
+  if (!evaluatePredicate(action.predicate, context, matcher)) {
     return false;
   }
 
@@ -234,38 +243,14 @@ function compareMenuItems(left: ActionMenuItem, right: ActionMenuItem): number {
 
 function evaluatePredicate(
   predicate: PluginContributionPredicate | undefined,
-  context: ActionSurfaceContext,
+  context: PredicateFactBag,
+  matcher: ContributionPredicateMatcher,
 ): boolean {
   if (predicate === undefined) {
     return true;
   }
 
-  if (typeof predicate === "string") {
-    const expression = predicate.trim();
-    if (!expression || expression === "true") {
-      return true;
-    }
-    if (expression === "false") {
-      return false;
-    }
-
-    const equalityMatch = expression.match(/^([a-zA-Z0-9_.-]+)\s*(?:==|=)\s*(.+)$/);
-    if (equalityMatch) {
-      const key = equalityMatch[1];
-      const value = equalityMatch[2].trim();
-      return String(context[key] ?? "") === trimQuotes(value);
-    }
-
-    return Boolean(context[expression]);
-  }
-
-  for (const [key, value] of Object.entries(predicate)) {
-    if ((context[key] ?? null) !== value) {
-      return false;
-    }
-  }
-
-  return true;
+  return matcher.evaluate(predicate, context).matched;
 }
 
 function normalizeKeybinding(keybinding: string): string {
@@ -275,14 +260,6 @@ function normalizeKeybinding(keybinding: string): string {
     .map((part) => part.trim())
     .filter(Boolean)
     .join("+");
-}
-
-function trimQuotes(value: string): string {
-  if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
-    return value.slice(1, -1);
-  }
-
-  return value;
 }
 
 function normalizeContext(context: ActionSurfaceContext): Record<string, string> {
