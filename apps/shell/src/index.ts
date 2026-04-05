@@ -34,6 +34,7 @@ import { shellBootstrapState } from "./app/bootstrap.js";
 import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
 import { createShellRuntime } from "./app/runtime.js";
 import type { ShellRuntime } from "./app/types.js";
+import { type PluginActivationTriggerType } from "./plugin-registry.js";
 import {
   createWindowId,
   escapeHtml,
@@ -209,6 +210,7 @@ function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
+  void primeEnabledPluginActivations(root, runtime);
   const visibleParts = getVisibleComposedParts(runtime);
   updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
   renderPartsView(root, runtime, {
@@ -293,7 +295,7 @@ function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
-  root.addEventListener("keydown", (event) => {
+  root.addEventListener("keydown", async (event) => {
     if (handleChooserKeyboardEvent(root, runtime, event)) {
       return;
     }
@@ -322,6 +324,14 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
       const keyResult = runtime.commandSurface.dispatchKeybinding(normalizedKey, toCommandContext(runtime));
       if (keyResult?.executed) {
         event.preventDefault();
+        const pluginId = resolvePluginIdForCommand(runtime, keyResult.commandId);
+        if (pluginId) {
+          await activatePluginForBoundary(root, runtime, {
+            pluginId,
+            triggerType: "command",
+            triggerId: keyResult.commandId,
+          });
+        }
         runtime.commandNotice = `Keybinding (${normalizedKey}): ${keyResult.message}`;
         renderCommandSurface(root, runtime);
         return;
@@ -543,6 +553,7 @@ function renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void {
 
   const context = toCommandContext(runtime);
   const menuCommands = runtime.commandSurface.evaluateMenu("sidePanel", context);
+  const menuCommandPluginById = new Map(menuCommands.map((item) => [item.command.id, item.command.pluginId]));
   const commandRows = menuCommands
     .map(
       (item) => `<button
@@ -569,16 +580,100 @@ function renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void {
     </details>`;
 
   for (const button of node.querySelectorAll<HTMLButtonElement>("button[data-command-run]")) {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       const commandId = button.dataset.commandRun;
       if (!commandId) {
         return;
+      }
+
+      const pluginId = menuCommandPluginById.get(commandId);
+      if (pluginId) {
+        const activated = await activatePluginForBoundary(root, runtime, {
+          pluginId,
+          triggerType: "command",
+          triggerId: commandId,
+        });
+        if (!activated) {
+          runtime.commandNotice = `Command '${commandId}' blocked: plugin '${pluginId}' is not active.`;
+          renderCommandSurface(root, runtime);
+          return;
+        }
       }
 
       const result = runtime.commandSurface.dispatchCommand(commandId, toCommandContext(runtime));
       runtime.commandNotice = result.message;
       renderCommandSurface(root, runtime);
     });
+  }
+}
+
+function resolvePluginIdForCommand(runtime: ShellRuntime, commandId: string): string | null {
+  return runtime.commandSurface
+    .evaluateCommands(toCommandContext(runtime))
+    .find((item) => item.command.id === commandId)
+    ?.command.pluginId ?? null;
+}
+
+async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
+  const snapshot = runtime.registry.getSnapshot();
+  const activations = snapshot.plugins
+    .filter((plugin) =>
+      plugin.enabled
+      && plugin.lifecycle.state !== "active"
+      && plugin.lifecycle.state !== "activating"
+      && plugin.lifecycle.state !== "failed"
+    )
+    .map((plugin) =>
+      activatePluginForBoundary(root, runtime, {
+        pluginId: plugin.id,
+        triggerType: "view",
+        triggerId: "shell.render",
+      })
+    );
+
+  if (activations.length === 0) {
+    return;
+  }
+
+  await Promise.all(activations);
+  refreshCommandContributions(runtime);
+  renderPanels(root, runtime);
+  renderParts(root, runtime);
+  renderCommandSurface(root, runtime);
+}
+
+async function activatePluginForBoundary(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  options: {
+    pluginId: string;
+    triggerType: PluginActivationTriggerType;
+    triggerId: string;
+  },
+): Promise<boolean> {
+  try {
+    const activated =
+      options.triggerType === "command"
+        ? await runtime.registry.activateByCommand(options.pluginId, options.triggerId)
+        : options.triggerType === "intent"
+          ? await runtime.registry.activateByIntent(options.pluginId, options.triggerId)
+          : await runtime.registry.activateByView(options.pluginId, options.triggerId);
+
+    if (!activated) {
+      runtime.notice = `Plugin '${options.pluginId}' is not active for ${options.triggerType}:${options.triggerId}.`;
+      renderSyncStatus(root, runtime);
+      return false;
+    }
+
+    runtime.notice = "";
+    refreshCommandContributions(runtime);
+    renderPanels(root, runtime);
+    return true;
+  } catch (error) {
+    runtime.notice = `Plugin activation failed for '${options.pluginId}' (${options.triggerType}:${options.triggerId}).`;
+    renderSyncStatus(root, runtime);
+    console.warn("[shell] plugin activation boundary failed", options, error);
+    return false;
   }
 }
 

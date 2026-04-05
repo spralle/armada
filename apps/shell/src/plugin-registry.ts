@@ -26,12 +26,34 @@ interface PluginRuntimeFailure {
   retryable: boolean;
 }
 
+export type PluginActivationTriggerType = "command" | "view" | "intent";
+
+export type PluginLifecycleState =
+  | "disabled"
+  | "registered"
+  | "activating"
+  | "active"
+  | "failed";
+
+export interface PluginActivationTrigger {
+  type: PluginActivationTriggerType;
+  id: string;
+}
+
+export interface PluginLifecycleSnapshot {
+  state: PluginLifecycleState;
+  lastTransitionAt: string;
+  lastTrigger: PluginActivationTrigger | null;
+}
+
 interface PluginRuntimeState {
   descriptor: TenantPluginDescriptor;
   enabled: boolean;
   loadMode: ShellPluginLoadMode;
   contract: PluginContract | null;
   failure: PluginRuntimeFailure | null;
+  lifecycle: PluginLifecycleSnapshot;
+  activationPromise: Promise<void> | null;
 }
 
 export interface PluginRegistryDiagnostic {
@@ -52,12 +74,16 @@ export interface PluginRegistrySnapshot {
     descriptor: TenantPluginDescriptor;
     contract: PluginContract | null;
     failure: PluginRuntimeFailure | null;
+    lifecycle: PluginLifecycleSnapshot;
   }[];
 }
 
 export interface ShellPluginRegistry {
   registerManifestDescriptors(tenantId: string, descriptors: TenantPluginDescriptor[]): void;
   setEnabled(pluginId: string, enabled: boolean): Promise<void>;
+  activateByCommand(pluginId: string, commandId: string): Promise<boolean>;
+  activateByView(pluginId: string, viewId: string): Promise<boolean>;
+  activateByIntent(pluginId: string, intentId: string): Promise<boolean>;
   getSnapshot(): PluginRegistrySnapshot;
 }
 
@@ -90,6 +116,12 @@ export function createShellPluginRegistry(
           loadMode: pluginLoader.loadModeFor(descriptor),
           contract: null,
           failure: null,
+          lifecycle: {
+            state: "disabled",
+            lastTransitionAt: new Date().toISOString(),
+            lastTrigger: null,
+          },
+          activationPromise: null,
         });
       }
     },
@@ -103,46 +135,32 @@ export function createShellPluginRegistry(
       if (!enabled) {
         state.contract = null;
         state.failure = null;
+        state.activationPromise = null;
+        transitionLifecycle(state, "disabled", null);
         return;
       }
 
       state.contract = null;
       state.failure = null;
-
-      const compatibility = evaluateShellPluginCompatibility(
-        SHELL_CONTRACT_DECLARATION,
-        state.descriptor.compatibility.pluginContract,
-      );
-      if (!compatibility.compatible) {
-        state.failure = {
-          code: compatibility.code,
-          message: `${compatibility.message} (shell='${SHELL_CONTRACT_DECLARATION}', plugin='${state.descriptor.compatibility.pluginContract}')`,
-          retryable: false,
-        };
-        pushDiagnostic(diagnostics, {
-          at: new Date().toISOString(),
-          pluginId,
-          level: "warn",
-          code: compatibility.code,
-          message: state.failure.message,
-        });
-        return;
-      }
-
-      try {
-        state.contract = await pluginLoader.loadPluginContract(state.descriptor);
-      } catch (error) {
-        const failure = mapPluginLoadFailure(error);
-        state.contract = null;
-        state.failure = failure;
-        pushDiagnostic(diagnostics, {
-          at: new Date().toISOString(),
-          pluginId,
-          level: "warn",
-          code: failure.code,
-          message: failure.message,
-        });
-      }
+      transitionLifecycle(state, "registered", null);
+    },
+    async activateByCommand(pluginId, commandId) {
+      return ensureActivated(pluginId, {
+        type: "command",
+        id: commandId,
+      });
+    },
+    async activateByView(pluginId, viewId) {
+      return ensureActivated(pluginId, {
+        type: "view",
+        id: viewId,
+      });
+    },
+    async activateByIntent(pluginId, intentId) {
+      return ensureActivated(pluginId, {
+        type: "intent",
+        id: intentId,
+      });
     },
     getSnapshot() {
       return {
@@ -155,9 +173,121 @@ export function createShellPluginRegistry(
           descriptor: state.descriptor,
           contract: state.contract,
           failure: state.failure,
+          lifecycle: {
+            ...state.lifecycle,
+            lastTrigger: state.lifecycle.lastTrigger
+              ? { ...state.lifecycle.lastTrigger }
+              : null,
+          },
         })),
       };
     },
+  };
+
+  async function ensureActivated(
+    pluginId: string,
+    trigger: PluginActivationTrigger,
+  ): Promise<boolean> {
+    const state = states.get(pluginId);
+    if (!state) {
+      pushDiagnostic(diagnostics, {
+        at: new Date().toISOString(),
+        pluginId,
+        level: "warn",
+        code: "UNKNOWN_PLUGIN",
+        message: `Activation requested for unknown plugin '${pluginId}' via ${trigger.type}:${trigger.id}.`,
+      });
+      return false;
+    }
+
+    if (!state.enabled) {
+      pushDiagnostic(diagnostics, {
+        at: new Date().toISOString(),
+        pluginId,
+        level: "info",
+        code: "ACTIVATION_SKIPPED_DISABLED",
+        message: `Skipped activation for disabled plugin '${pluginId}' via ${trigger.type}:${trigger.id}.`,
+      });
+      return false;
+    }
+
+    if (state.contract && state.lifecycle.state === "active") {
+      state.lifecycle.lastTrigger = trigger;
+      return true;
+    }
+
+    if (state.activationPromise) {
+      await state.activationPromise;
+      return state.contract !== null && state.lifecycle.state === "active";
+    }
+
+    state.activationPromise = activateState(state, pluginId, trigger);
+    await state.activationPromise;
+    return state.contract !== null && state.lifecycle.state === "active";
+  }
+
+  async function activateState(
+    state: PluginRuntimeState,
+    pluginId: string,
+    trigger: PluginActivationTrigger,
+  ): Promise<void> {
+    state.contract = null;
+    state.failure = null;
+    transitionLifecycle(state, "activating", trigger);
+
+    const compatibility = evaluateShellPluginCompatibility(
+      SHELL_CONTRACT_DECLARATION,
+      state.descriptor.compatibility.pluginContract,
+    );
+    if (!compatibility.compatible) {
+      state.failure = {
+        code: compatibility.code,
+        message: `${compatibility.message} (shell='${SHELL_CONTRACT_DECLARATION}', plugin='${state.descriptor.compatibility.pluginContract}')`,
+        retryable: false,
+      };
+      transitionLifecycle(state, "failed", trigger);
+      pushDiagnostic(diagnostics, {
+        at: new Date().toISOString(),
+        pluginId,
+        level: "warn",
+        code: compatibility.code,
+        message: state.failure.message,
+      });
+      state.activationPromise = null;
+      return;
+    }
+
+    try {
+      state.contract = await pluginLoader.loadPluginContract(state.descriptor);
+      state.failure = null;
+      transitionLifecycle(state, "active", trigger);
+    } catch (error) {
+      const failure = mapPluginLoadFailure(error);
+      state.contract = null;
+      state.failure = failure;
+      transitionLifecycle(state, "failed", trigger);
+      pushDiagnostic(diagnostics, {
+        at: new Date().toISOString(),
+        pluginId,
+        level: "warn",
+        code: failure.code,
+        message: failure.message,
+      });
+    }
+
+    state.activationPromise = null;
+  }
+}
+
+function transitionLifecycle(
+  state: PluginRuntimeState,
+  nextState: PluginLifecycleState,
+  trigger: PluginActivationTrigger | null,
+): void {
+  state.lifecycle = {
+    state: nextState,
+    lastTransitionAt: new Date().toISOString(),
+    lastTrigger: trigger,
   };
 }
 
