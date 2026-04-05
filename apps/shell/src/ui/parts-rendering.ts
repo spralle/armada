@@ -1,30 +1,41 @@
-import { domainDemoAdapter } from "../domain-demo-adapter.js";
-import { localMockParts, type LocalMockPart } from "../mock-parts.js";
+import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
+import { escapeHtml } from "../app/utils.js";
 
-export function getVisibleMockParts(runtime: ShellRuntime): LocalMockPart[] {
-  const enabledPluginIds = new Set(
-    runtime.registry
-      .getSnapshot()
-      .plugins.filter((plugin) => plugin.enabled)
-      .map((plugin) => plugin.id),
+export interface ComposedShellPart {
+  id: string;
+  title: string;
+  slot: "main" | "secondary" | "side";
+  component: string;
+  pluginId: string;
+}
+
+export function composePartsFromRegistrySnapshot(
+  snapshot: ReturnType<ShellRuntime["registry"]["getSnapshot"]>,
+): ComposedShellPart[] {
+  const composed = composeEnabledPluginContributions(
+    snapshot.plugins.map((plugin) => ({
+      id: plugin.id,
+      enabled: plugin.enabled,
+      contract: plugin.contract,
+    })),
   );
 
-  return localMockParts.filter((part) => {
-    if (part.alwaysVisible) {
-      return true;
-    }
+  return composed.parts.map((part) => ({
+    id: part.id,
+    title: part.title,
+    slot: part.slot,
+    component: part.component,
+    pluginId: part.pluginId,
+  }));
+}
 
-    if (!part.ownerPluginId) {
-      return true;
-    }
-
-    return enabledPluginIds.has(part.ownerPluginId);
-  });
+export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPart[] {
+  return composePartsFromRegistrySnapshot(runtime.registry.getSnapshot());
 }
 
 export function renderPartCard(
-  part: LocalMockPart,
+  part: ComposedShellPart,
   runtime: ShellRuntime,
   options: { showPopoutButton: boolean; showRestoreButton?: boolean },
 ): string {
@@ -43,10 +54,7 @@ export function renderPartCard(
         ${popoutButton}
         ${restoreButton}
       </div>
-      ${part.render({
-    selectedPrimaryEntityId: runtime.selectedPrimaryEntityId,
-    selectedSecondaryEntityId: runtime.selectedSecondaryEntityId,
-  })}
+      ${renderPartBody(part)}
       <div class="dropzone" data-dropzone-for="${part.id}">Drop cross-window payload here</div>
       <p class="runtime-note" data-drop-result-for="${part.id}"></p>
       <p class="runtime-note">Window: ${runtime.windowId}</p>
@@ -65,14 +73,19 @@ export function updateSelectedStyles(root: HTMLElement, selectedPartId: string |
   }
 }
 
-export function resolvePartTitle(partId: string): string {
-  return localMockParts.find((part) => part.id === partId)?.title ?? partId;
+export function resolvePartTitle(partId: string, runtime: ShellRuntime): string {
+  return getVisibleComposedParts(runtime).find((part) => part.id === partId)?.title ?? partId;
 }
 
 export function isSelectionActionNode(target: HTMLElement): target is HTMLButtonElement {
   const action = target.dataset.action;
-  return target instanceof HTMLButtonElement && (
-    action === domainDemoAdapter.actionNames.selectPrimary ||
-    action === domainDemoAdapter.actionNames.selectSecondary
-  );
+  return target instanceof HTMLButtonElement && action === "select";
+}
+
+function renderPartBody(part: ComposedShellPart): string {
+  return `<section class="domain-panel" data-domain-panel="unavailable">
+      <h3>${escapeHtml(part.title)}</h3>
+      <p class="domain-hint">Component '${escapeHtml(part.component)}' is unavailable in this shell runtime.</p>
+      <p class="domain-hint">Composition remains extension-driven; this host provides generic fallback rendering only.</p>
+    </section>`;
 }

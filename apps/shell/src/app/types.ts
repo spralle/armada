@@ -21,9 +21,11 @@ import type {
 } from "../context-state.js";
 import type {
   IntentActionMatch,
+  IntentRuntime,
   IntentResolutionTrace,
   ShellIntent,
 } from "../intent-runtime.js";
+import type { ActionSurface } from "../action-surface.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -49,8 +51,6 @@ export interface ShellRuntime {
   isPopout: boolean;
   selectedPartId: string | null;
   selectedPartTitle: string | null;
-  selectedPrimaryEntityId: string | null;
-  selectedSecondaryEntityId: string | null;
   contextState: ShellContextState;
   notice: string;
   pluginNotice: string;
@@ -68,6 +68,9 @@ export interface ShellRuntime {
   chooserFocusIndex: number;
   pendingFocusSelector: string | null;
   chooserReturnFocusSelector: string | null;
+  actionSurface: ActionSurface;
+  intentRuntime: IntentRuntime;
+  commandNotice: string;
 }
 
 export interface TenantPluginDescriptor {

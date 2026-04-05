@@ -1,4 +1,3 @@
-import { domainDemoAdapter } from "../domain-demo-adapter.js";
 import {
   getTabGroupId,
   readGlobalLane,
@@ -14,7 +13,13 @@ import {
   DEFAULT_GROUP_ID,
 } from "../app/constants.js";
 import type { DevLaneMetadata, ShellRuntime } from "../app/types.js";
-import type { LocalMockPart } from "../mock-parts.js";
+
+export const CORE_GROUP_CONTEXT_KEY = "shell.group-context";
+export const CORE_GLOBAL_SELECTION_KEY = "shell.selection";
+
+interface ShellTabPartRef {
+  id: string;
+}
 
 export function createRevision(writer: string): RevisionMeta {
   return {
@@ -23,7 +28,7 @@ export function createRevision(writer: string): RevisionMeta {
   };
 }
 
-export function ensureTabsRegistered(state: ShellContextState, parts: LocalMockPart[]): ShellContextState {
+export function ensureTabsRegistered(state: ShellContextState, parts: ShellTabPartRef[]): ShellContextState {
   let next = state;
   for (const part of parts) {
     next = registerTab(next, {
@@ -42,14 +47,14 @@ export function readGroupSelectionContext(runtime: ShellRuntime): string {
 
   const value = readGroupLaneForTab(runtime.contextState, {
     tabId: runtime.selectedPartId,
-    key: domainDemoAdapter.laneKeys.groupSelection,
+    key: CORE_GROUP_CONTEXT_KEY,
   });
 
   return value?.value ?? "none";
 }
 
 export function readGlobalContext(runtime: ShellRuntime): string {
-  return readGlobalLane(runtime.contextState, domainDemoAdapter.laneKeys.globalSelection)?.value ?? "none";
+  return readGlobalLane(runtime.contextState, CORE_GLOBAL_SELECTION_KEY)?.value ?? "none";
 }
 
 export function writeGroupSelectionContext(runtime: ShellRuntime, value: string): void {
@@ -60,7 +65,7 @@ export function writeGroupSelectionContext(runtime: ShellRuntime, value: string)
 
   updateContextState(runtime, writeGroupLaneByTab(runtime.contextState, {
     tabId: activeTabId,
-    key: domainDemoAdapter.laneKeys.groupSelection,
+    key: CORE_GROUP_CONTEXT_KEY,
     value,
     revision: createRevision(runtime.windowId),
   }));
@@ -71,7 +76,7 @@ export function writeGlobalSelectionLane(
   input: { selectedPartId: string; selectedPartTitle: string; revision?: RevisionMeta },
 ): void {
   updateContextState(runtime, writeGlobalLane(runtime.contextState, {
-    key: domainDemoAdapter.laneKeys.globalSelection,
+    key: CORE_GLOBAL_SELECTION_KEY,
     value: `${input.selectedPartId}|${input.selectedPartTitle}`,
     revision: input.revision ?? createRevision(runtime.windowId),
   }));

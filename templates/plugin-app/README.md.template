@@ -4,3 +4,4 @@ Generated plugin scaffold for Armada POC.
 
 - Keep imports on `@armada/plugin-contracts` public exports.
 - Start with `src/index.ts` and evolve contributions as needed.
+- For core shell flows, model invocations with `contributes.actions` and object `when` predicates (including menu/keybinding gating).

@@ -1,10 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  composeEnabledPluginContributions,
+  createDefaultContributionPredicateMatcher,
+  evaluateContributionPredicate,
   evaluateShellPluginCompatibility,
   parsePluginContract,
   parseTenantPluginManifest,
 } from "../dist/index.js";
+import {
+  buildActionSurface,
+  dispatchAction,
+  resolveKeybindingAction,
+  resolveMenuActions,
+} from "../../../apps/shell/src/action-surface.ts";
 
 test("returns typed data for a valid plugin contract", () => {
   const result = parsePluginContract({
@@ -25,7 +34,7 @@ test("returns typed data for a valid plugin contract", () => {
         {
           id: "valid.part",
           title: "Valid Part",
-          slot: "right",
+          slot: "side",
           component: "ValidPart",
         },
       ],
@@ -33,12 +42,24 @@ test("returns typed data for a valid plugin contract", () => {
         {
           id: "valid.action",
           title: "Run Valid",
-          handler: "runValid",
-          intentType: "workbench.run-valid",
-          when: {
-            entityType: "workbench.node",
-            hasSelection: true,
+          intent: "valid.run",
+          predicate: {
+            "demo.selection": "valid",
           },
+        },
+      ],
+      menus: [
+        {
+          menu: "commandPalette",
+          action: "valid.action",
+          group: "navigation",
+          order: 10,
+        },
+      ],
+      keybindings: [
+        {
+          action: "valid.action",
+          keybinding: "ctrl+shift+v",
         },
       ],
       selection: [
@@ -68,7 +89,7 @@ test("returns typed data for a valid plugin contract", () => {
   assert.equal(result.success, true);
   if (result.success) {
     assert.equal(result.data.manifest.id, "com.armada.valid");
-    assert.equal(result.data.contributes?.parts?.[0]?.slot, "right");
+    assert.equal(result.data.contributes?.parts?.[0]?.slot, "side");
   }
 });
 
@@ -158,30 +179,39 @@ test("rejects unexpected top-level fields", () => {
   }
 });
 
-test("rejects legacy contributes.commands in favor of contributes.actions", () => {
+test("accepts actions/menu/keybindings for action surface", () => {
   const result = parsePluginContract({
     manifest: {
-      id: "com.armada.legacy-commands",
-      name: "Legacy Commands Plugin",
+      id: "com.armada.command-surface",
+      name: "Command Surface Plugin",
       version: "1.0.0",
     },
     contributes: {
-      commands: [
+      actions: [
         {
-          id: "legacy.command",
-          title: "Legacy Command",
-          handler: "runLegacy",
+          id: "surface.action",
+          title: "Surface Action",
+          intent: "surface.open",
+        },
+      ],
+      menus: [
+        {
+          action: "surface.action",
+          menu: "commandPalette",
+        },
+      ],
+      keybindings: [
+        {
+          action: "surface.action",
+          keybinding: "ctrl+shift+s",
         },
       ],
     },
   });
 
-  assert.equal(result.success, false);
-  if (!result.success) {
-    const hasLegacyCommandsError = result.errors.some(
-      (error) => error.path === "contributes" && error.code === "unrecognized_keys",
-    );
-    assert.equal(hasLegacyCommandsError, true);
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.contributes?.actions?.[0]?.id, "surface.action");
   }
 });
 
@@ -258,6 +288,308 @@ test("tenant manifest parser reports nested field validation errors", () => {
     assert.equal(
       result.errors.some((error) => error.path === "plugins.0.compatibility.shell"),
       true,
+    );
+  }
+});
+
+test("composeEnabledPluginContributions composes parts from enabled plugin contracts only", () => {
+  const composed = composeEnabledPluginContributions([
+    {
+      id: "com.armada.domain.unplanned-orders",
+      enabled: true,
+      contract: {
+        manifest: {
+          id: "com.armada.domain.unplanned-orders",
+          name: "Unplanned Orders",
+          version: "0.1.0",
+        },
+        contributes: {
+          views: [
+            {
+              id: "domain.unplanned-orders.view",
+              title: "Unplanned Orders",
+              component: "UnplannedOrdersView",
+            },
+          ],
+          parts: [
+            {
+              id: "domain.unplanned-orders.part",
+              title: "Unplanned Orders",
+              slot: "main",
+              component: "UnplannedOrdersPart",
+            },
+          ],
+        },
+      },
+    },
+    {
+      id: "com.armada.domain.vessel-view",
+      enabled: true,
+      contract: {
+        manifest: {
+          id: "com.armada.domain.vessel-view",
+          name: "Vessel View",
+          version: "0.1.0",
+        },
+        contributes: {
+          parts: [
+            {
+              id: "domain.vessel-view.part",
+              title: "Vessel View",
+              slot: "secondary",
+              component: "VesselViewPart",
+            },
+          ],
+        },
+      },
+    },
+    {
+      id: "com.armada.disabled-plugin",
+      enabled: false,
+      contract: {
+        manifest: {
+          id: "com.armada.disabled-plugin",
+          name: "Disabled",
+          version: "0.1.0",
+        },
+        contributes: {
+          parts: [
+            {
+              id: "disabled.part",
+              title: "Disabled Part",
+              slot: "side",
+              component: "DisabledPart",
+            },
+          ],
+        },
+      },
+    },
+  ]);
+
+  assert.equal(composed.parts.length, 2);
+  assert.deepEqual(
+    composed.parts.map((part) => `${part.pluginId}:${part.id}:${part.slot}`),
+    [
+      "com.armada.domain.unplanned-orders:domain.unplanned-orders.part:main",
+      "com.armada.domain.vessel-view:domain.vessel-view.part:secondary",
+    ],
+  );
+  assert.equal(composed.views.length, 1);
+  assert.equal(composed.views[0].pluginId, "com.armada.domain.unplanned-orders");
+});
+
+test("contribution predicate matcher supports deterministic operators", () => {
+  const predicate = {
+    mode: { $eq: "strict", $ne: "legacy" },
+    status: { $in: ["open", "pending"] },
+    rank: { $gt: 1, $gte: 2, $lt: 4, $lte: 3 },
+    "meta.source": { $exists: true },
+    category: { $nin: ["forbidden"] },
+  };
+
+  const facts = {
+    mode: "strict",
+    status: "open",
+    rank: 2,
+    meta: { source: "manual" },
+    category: "safe",
+  };
+
+  const result = evaluateContributionPredicate(predicate, facts);
+  assert.equal(result, true);
+});
+
+test("default contribution matcher traces failed predicates", () => {
+  const matcher = createDefaultContributionPredicateMatcher();
+  const evaluation = matcher.evaluate(
+    {
+      rank: { $gt: 10 },
+      "target.vesselClass": "RORO",
+    },
+    {
+      rank: 2,
+      target: {
+        vesselClass: "TANKER",
+      },
+    },
+  );
+
+  assert.equal(evaluation.matched, false);
+  assert.equal(evaluation.failedPredicates.length, 2);
+  assert.equal(evaluation.failedPredicates[0].path, "rank");
+  assert.equal(evaluation.failedPredicates[1].path, "target.vesselClass");
+});
+
+test("evaluateContributionPredicate supports matcher boundary injection", () => {
+  let calls = 0;
+  const matcher = {
+    id: "spec-adapter",
+    evaluate(predicate, facts) {
+      calls += 1;
+      assert.equal(predicate.kind, "expected");
+      assert.equal(facts.sourceType, "order");
+      return {
+        matched: true,
+        failedPredicates: [],
+      };
+    },
+  };
+
+  const matched = evaluateContributionPredicate(
+    {
+      kind: "expected",
+    },
+    {
+      sourceType: "order",
+    },
+    matcher,
+  );
+
+  assert.equal(matched, true);
+  assert.equal(calls, 1);
+});
+
+test("action-surface dispatch predicate semantics stay in parity with default matcher", async () => {
+  const cases = [
+    {
+      name: "nested path $eq",
+      predicate: { "selection.kind": { $eq: "order" } },
+      facts: { selection: { kind: "order" } },
+    },
+    {
+      name: "$ne mismatch blocks dispatch",
+      predicate: { mode: { $ne: "legacy" } },
+      facts: { mode: "legacy" },
+    },
+    {
+      name: "$in",
+      predicate: { status: { $in: ["open", "pending"] } },
+      facts: { status: "open" },
+    },
+    {
+      name: "$nin",
+      predicate: { status: { $nin: ["closed"] } },
+      facts: { status: "open" },
+    },
+    {
+      name: "$gt/$gte/$lt/$lte",
+      predicate: { rank: { $gt: 1, $gte: 2, $lt: 4, $lte: 3 } },
+      facts: { rank: 2 },
+    },
+    {
+      name: "$exists false when key is present",
+      predicate: { "meta.traceId": { $exists: false } },
+      facts: { meta: { traceId: "present" } },
+    },
+  ];
+
+  for (const testCase of cases) {
+    let calls = 0;
+    const runtime = {
+      resolveAndExecute({ intent }) {
+        calls += 1;
+        assert.equal(intent, "demo.run");
+        return {
+          executed: true,
+        };
+      },
+    };
+
+    const surface = buildActionSurface([
+      {
+        manifest: {
+          id: "com.armada.matcher-parity",
+          name: "Matcher Parity",
+          version: "1.0.0",
+        },
+        contributes: {
+          actions: [
+            {
+              id: "demo.action",
+              title: "Run",
+              intent: "demo.run",
+              predicate: testCase.predicate,
+            },
+          ],
+        },
+      },
+    ]);
+
+    const expected = evaluateContributionPredicate(testCase.predicate, testCase.facts);
+    const actual = await dispatchAction(surface, runtime, "demo.action", testCase.facts);
+
+    assert.equal(actual, expected, `dispatch parity failed for ${testCase.name}`);
+    assert.equal(calls, expected ? 1 : 0, `dispatch invocation parity failed for ${testCase.name}`);
+  }
+});
+
+test("action-surface menu and keybinding predicate semantics match default matcher", () => {
+  const cases = [
+    {
+      name: "nested path lookup",
+      when: { "target.vesselClass": "RORO" },
+      facts: { target: { vesselClass: "RORO" } },
+    },
+    {
+      name: "$exists with missing nested path",
+      when: { "target.operator": { $exists: false } },
+      facts: { target: { vesselClass: "RORO" } },
+    },
+    {
+      name: "combined operator mismatch",
+      when: { priority: { $gte: 2, $lt: 5 }, status: { $in: ["open"] } },
+      facts: { priority: 1, status: "open" },
+    },
+  ];
+
+  for (const testCase of cases) {
+    const surface = buildActionSurface([
+      {
+        manifest: {
+          id: "com.armada.surface-parity",
+          name: "Surface Parity",
+          version: "1.0.0",
+        },
+        contributes: {
+          actions: [
+            {
+              id: "surface.action",
+              title: "Surface Action",
+              intent: "surface.run",
+            },
+          ],
+          menus: [
+            {
+              menu: "commandPalette",
+              action: "surface.action",
+              when: testCase.when,
+            },
+          ],
+          keybindings: [
+            {
+              action: "surface.action",
+              keybinding: "ctrl+shift+s",
+              when: testCase.when,
+            },
+          ],
+        },
+      },
+    ]);
+
+    const expected = evaluateContributionPredicate(testCase.when, testCase.facts);
+
+    const resolvedMenu = resolveMenuActions(surface, "commandPalette", testCase.facts);
+    assert.equal(
+      resolvedMenu.length > 0,
+      expected,
+      `menu parity failed for ${testCase.name}`,
+    );
+
+    const resolvedKeybinding = resolveKeybindingAction(surface, "CTRL+SHIFT+S", testCase.facts);
+    assert.equal(
+      resolvedKeybinding !== null,
+      expected,
+      `keybinding parity failed for ${testCase.name}`,
     );
   }
 });

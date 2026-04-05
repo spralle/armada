@@ -15,6 +15,35 @@ async function fetchManifestFromEndpoint(manifestUrl: string): Promise<unknown> 
   return response.json();
 }
 
+function isLoopbackEntry(entry: string): boolean {
+  if (entry.startsWith("local://")) {
+    return true;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(entry);
+  } catch {
+    return false;
+  }
+
+  if (!/^https?:$/.test(parsed.protocol)) {
+    return false;
+  }
+
+  return (
+    parsed.hostname === "127.0.0.1" ||
+    parsed.hostname === "localhost" ||
+    parsed.hostname === "::1"
+  );
+}
+
+function resolveBootstrapMode(entries: readonly string[]): "inner-loop" | "integration" {
+  return entries.some((entry) => !isLoopbackEntry(entry))
+    ? "integration"
+    : "inner-loop";
+}
+
 export async function bootstrapShellWithTenantManifest(
   options: ShellBootstrapOptions,
 ): Promise<ShellBootstrapState> {
@@ -40,9 +69,7 @@ export async function bootstrapShellWithTenantManifest(
   const snapshot = registry.getSnapshot();
 
   return {
-    mode: parsedManifest.plugins.some((plugin) => !plugin.entry.startsWith("local://"))
-      ? "integration"
-      : "inner-loop",
+    mode: resolveBootstrapMode(parsedManifest.plugins.map((plugin) => plugin.entry)),
     loadedPlugins: snapshot.plugins
       .map((plugin) => plugin.contract)
       .filter((plugin): plugin is PluginContract => plugin !== null),

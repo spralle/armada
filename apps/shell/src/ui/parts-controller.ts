@@ -1,16 +1,6 @@
 import {
-  buildGroupSelectionContextValue,
-  buildPrimarySelectionTitle,
-  buildSecondarySelectionTitle,
-  domainDemoAdapter,
-  resolvePrimaryEntity,
-  resolveSecondaryEntity,
-} from "../domain-demo-adapter.js";
-import {
   createRevision,
-  readGroupSelectionContext,
   writeGlobalSelectionLane,
-  writeGroupSelectionContext,
 } from "../context/runtime-state.js";
 import { readEntityTypeSelection } from "../context-state.js";
 import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
@@ -18,7 +8,7 @@ import { safeJson, safeParse, sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
 import {
-  getVisibleMockParts,
+  getVisibleComposedParts,
   renderPartCard,
   resolvePartTitle,
   updateSelectedStyles,
@@ -30,14 +20,10 @@ type PartsControllerDeps = {
   renderContextControls: () => void;
   renderParts: () => void;
   renderSyncStatus: () => void;
-  resolveIntentFlow: (intent: {
-    type: string;
-    facts: Record<string, unknown>;
-  }) => void;
 };
 
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
-  const visibleParts = getVisibleMockParts(runtime);
+  const visibleParts = getVisibleComposedParts(runtime);
 
   if (runtime.isPopout) {
     const slot = root.querySelector<HTMLElement>("#popout-slot");
@@ -59,7 +45,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   }
 
   const partsBySlot = {
-    master: root.querySelector<HTMLElement>("#slot-master-parts"),
+    main: root.querySelector<HTMLElement>("#slot-main-parts"),
     secondary: root.querySelector<HTMLElement>("#slot-secondary-parts"),
     side: root.querySelector<HTMLElement>("#slot-side-parts"),
   };
@@ -89,10 +75,12 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
 }
 
 function buildSelectionByEntityType(runtime: ShellRuntime): SelectionSyncEvent["selectionByEntityType"] {
-  return {
-    [domainDemoAdapter.entityTypes.primary]: readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.primary),
-    [domainDemoAdapter.entityTypes.secondary]: readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.secondary),
-  };
+  return Object.fromEntries(
+    Object.keys(runtime.contextState.selectionByEntityType).map((entityType) => [
+      entityType,
+      readEntityTypeSelection(runtime.contextState, entityType),
+    ]),
+  );
 }
 
 export function startPopoutWatchdog(root: HTMLElement, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {
@@ -153,200 +141,6 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
     });
   }
 
-  for (const button of root.querySelectorAll<HTMLButtonElement>(`button[data-action='${domainDemoAdapter.actionNames.selectPrimary}']`)) {
-    button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const primaryEntityId = button.dataset[domainDemoAdapter.dataAttributes.primaryEntityId];
-      if (!primaryEntityId) {
-        return;
-      }
-
-      const primaryEntity = resolvePrimaryEntity(primaryEntityId);
-      if (!primaryEntity) {
-        return;
-      }
-
-      runtime.selectedPrimaryEntityId = primaryEntity.id;
-      runtime.selectedSecondaryEntityId = primaryEntity.vesselId;
-
-      const selectionRevision = createRevision(runtime.windowId);
-
-      deps.applySelection({
-        type: "selection",
-        selectedPartId: domainDemoAdapter.partIds.primary,
-        selectedPartTitle: buildPrimarySelectionTitle(primaryEntity),
-        selectionByEntityType: {
-          [domainDemoAdapter.entityTypes.primary]: {
-            selectedIds: [primaryEntity.id],
-            priorityId: primaryEntity.id,
-          },
-          [domainDemoAdapter.entityTypes.secondary]: {
-            selectedIds: [primaryEntity.vesselId],
-            priorityId: primaryEntity.vesselId,
-          },
-        },
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-      });
-
-      writeGroupSelectionContext(runtime, buildGroupSelectionContextValue({
-        primaryEntityId: primaryEntity.id,
-        secondaryEntityId: primaryEntity.vesselId,
-      }));
-      deps.resolveIntentFlow({
-        type: domainDemoAdapter.intentTypes.primarySelected,
-        facts: {
-          sourceType: domainDemoAdapter.entityTypes.primary,
-          targetType: domainDemoAdapter.entityTypes.secondary,
-          source: {
-            orderId: primaryEntity.id,
-          },
-          target: {
-            vesselId: primaryEntity.vesselId,
-            vesselClass: resolveSecondaryEntity(primaryEntity.vesselId)?.vesselClass ?? null,
-          },
-        },
-      });
-      deps.renderParts();
-      deps.renderContextControls();
-      deps.renderSyncStatus();
-
-      deps.publishWithDegrade({
-        type: "selection",
-        selectedPartId: domainDemoAdapter.partIds.primary,
-        selectedPartTitle: buildPrimarySelectionTitle(primaryEntity),
-        selectionByEntityType: {
-          [domainDemoAdapter.entityTypes.primary]: {
-            selectedIds: [primaryEntity.id],
-            priorityId: primaryEntity.id,
-          },
-          [domainDemoAdapter.entityTypes.secondary]: {
-            selectedIds: [primaryEntity.vesselId],
-            priorityId: primaryEntity.vesselId,
-          },
-        },
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-      });
-      deps.publishWithDegrade({
-        type: "context",
-        scope: "group",
-        tabId: runtime.selectedPartId ?? undefined,
-        contextKey: domainDemoAdapter.laneKeys.groupSelection,
-        contextValue: readGroupSelectionContext(runtime),
-        revision: createRevision(runtime.windowId),
-        sourceWindowId: runtime.windowId,
-      });
-
-      writeGlobalSelectionLane(runtime, {
-        selectedPartId: domainDemoAdapter.partIds.primary,
-        selectedPartTitle: buildPrimarySelectionTitle(primaryEntity),
-        revision: selectionRevision,
-      });
-    });
-  }
-
-  for (const button of root.querySelectorAll<HTMLButtonElement>(`button[data-action='${domainDemoAdapter.actionNames.selectSecondary}']`)) {
-    button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const secondaryEntityId = button.dataset[domainDemoAdapter.dataAttributes.secondaryEntityId];
-      if (!secondaryEntityId) {
-        return;
-      }
-
-      const secondaryEntity = resolveSecondaryEntity(secondaryEntityId);
-      if (!secondaryEntity) {
-        return;
-      }
-
-      runtime.selectedSecondaryEntityId = secondaryEntity.id;
-      const selectedPrimaryEntity = runtime.selectedPrimaryEntityId
-        ? resolvePrimaryEntity(runtime.selectedPrimaryEntityId)
-        : null;
-      if (!selectedPrimaryEntity || selectedPrimaryEntity.vesselId !== secondaryEntity.id) {
-        runtime.selectedPrimaryEntityId = null;
-      }
-
-      const selectionRevision = createRevision(runtime.windowId);
-
-      deps.applySelection({
-        type: "selection",
-        selectedPartId: domainDemoAdapter.partIds.secondary,
-        selectedPartTitle: buildSecondarySelectionTitle(secondaryEntity),
-        selectionByEntityType: {
-          [domainDemoAdapter.entityTypes.primary]: {
-            selectedIds: runtime.selectedPrimaryEntityId ? [runtime.selectedPrimaryEntityId] : [],
-            priorityId: runtime.selectedPrimaryEntityId,
-          },
-          [domainDemoAdapter.entityTypes.secondary]: {
-            selectedIds: [secondaryEntity.id],
-            priorityId: secondaryEntity.id,
-          },
-        },
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-      });
-
-      writeGroupSelectionContext(runtime, buildGroupSelectionContextValue({
-        primaryEntityId: null,
-        secondaryEntityId: secondaryEntity.id,
-      }));
-      deps.resolveIntentFlow({
-        type: domainDemoAdapter.intentTypes.secondarySelected,
-        facts: {
-          sourceType: domainDemoAdapter.entityTypes.secondary,
-          targetType: domainDemoAdapter.entityTypes.primary,
-          source: {
-            vesselId: secondaryEntity.id,
-            vesselClass: secondaryEntity.vesselClass,
-          },
-        },
-      });
-      deps.renderParts();
-      deps.renderContextControls();
-      deps.renderSyncStatus();
-
-      deps.publishWithDegrade({
-        type: "selection",
-        selectedPartId: domainDemoAdapter.partIds.secondary,
-        selectedPartTitle: buildSecondarySelectionTitle(secondaryEntity),
-        selectionByEntityType: {
-          [domainDemoAdapter.entityTypes.primary]: {
-            selectedIds: runtime.selectedPrimaryEntityId ? [runtime.selectedPrimaryEntityId] : [],
-            priorityId: runtime.selectedPrimaryEntityId,
-          },
-          [domainDemoAdapter.entityTypes.secondary]: {
-            selectedIds: [secondaryEntity.id],
-            priorityId: secondaryEntity.id,
-          },
-        },
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-      });
-      deps.publishWithDegrade({
-        type: "context",
-        scope: "group",
-        tabId: runtime.selectedPartId ?? undefined,
-        contextKey: domainDemoAdapter.laneKeys.groupSelection,
-        contextValue: readGroupSelectionContext(runtime),
-        revision: createRevision(runtime.windowId),
-        sourceWindowId: runtime.windowId,
-      });
-
-      writeGlobalSelectionLane(runtime, {
-        selectedPartId: domainDemoAdapter.partIds.secondary,
-        selectedPartTitle: buildSecondarySelectionTitle(secondaryEntity),
-        revision: selectionRevision,
-      });
-    });
-  }
-
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='popout']")) {
     button.addEventListener("click", () => {
       if (runtime.syncDegraded) {
@@ -398,7 +192,7 @@ function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
 
       const payload = {
         partId,
-        partTitle: resolvePartTitle(partId),
+        partTitle: resolvePartTitle(partId, runtime),
         sourceWindowId: runtime.windowId,
         createdAt: new Date().toISOString(),
       };

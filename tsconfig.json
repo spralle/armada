@@ -18,6 +18,12 @@
     },
     {
       "path": "./apps/sample-contract-consumer-plugin"
+    },
+    {
+      "path": "./apps/domain-unplanned-orders-plugin"
+    },
+    {
+      "path": "./apps/domain-vessel-view-plugin"
     }
   ]
 }

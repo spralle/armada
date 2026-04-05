@@ -1,6 +1,5 @@
 import {
   getTabGroupId,
-  readEntityTypeSelection,
   registerTab,
   setActiveTab,
   writeGlobalLane,
@@ -8,16 +7,27 @@ import {
   writeGroupLaneByTab,
 } from "./context-state.js";
 import {
-  buildGroupSelectionContextValue,
-  domainDemoAdapter,
-  resolveSelectionFromIntentFacts,
-} from "./domain-demo-adapter.js";
+  CORE_GROUP_CONTEXT_KEY,
+  createRevision,
+  ensureTabsRegistered,
+  readGroupSelectionContext,
+  updateContextState,
+  writeGlobalSelectionLane,
+  writeGroupSelectionContext,
+} from "./context/runtime-state.js";
 import {
   createActionCatalogFromRegistrySnapshot,
   resolveIntentWithTrace,
   type IntentActionMatch,
   type ShellIntent,
 } from "./intent-runtime.js";
+import {
+  buildActionSurface,
+  dispatchAction,
+  normalizeKeyboardEvent,
+  resolveKeybindingAction,
+  resolveMenuActions,
+} from "./action-surface.js";
 import {
   formatDegradedModeAnnouncement,
   formatSelectionAnnouncement,
@@ -31,8 +41,10 @@ import { shellBootstrapState } from "./app/bootstrap.js";
 import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
 import { createShellRuntime } from "./app/runtime.js";
 import type { ShellRuntime } from "./app/types.js";
+import { type PluginActivationTriggerType } from "./plugin-registry.js";
 import {
   createWindowId,
+  escapeHtml,
 } from "./app/utils.js";
 import {
   type ContextSyncEvent,
@@ -44,16 +56,9 @@ import {
   publishWithDegrade as publishWithDegradeState,
   requestSyncProbe as requestSyncProbeState,
 } from "./sync/bridge-degraded.js";
-import {
-  createRevision,
-  ensureTabsRegistered,
-  updateContextState,
-  writeGlobalSelectionLane,
-  writeGroupSelectionContext,
-} from "./context/runtime-state.js";
 import { applySelectionPropagation } from "./domain/selection-graph.js";
 import {
-  getVisibleMockParts,
+  getVisibleComposedParts,
   isSelectionActionNode,
   updateSelectedStyles,
 } from "./ui/parts-rendering.js";
@@ -132,7 +137,7 @@ function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
         type: "context",
         scope: "group",
         tabId: runtime.selectedPartId ?? undefined,
-        contextKey: domainDemoAdapter.laneKeys.groupSelection,
+        contextKey: CORE_GROUP_CONTEXT_KEY,
         contextValue: value,
         revision: createRevision(runtime.windowId),
         sourceWindowId: runtime.windowId,
@@ -143,6 +148,7 @@ function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
       try {
         runtime.pluginNotice = "";
         await runtime.registry.setEnabled(pluginId, enabled);
+        refreshCommandContributions(runtime);
       } catch (error) {
         runtime.pluginNotice = `Unable to toggle plugin '${pluginId}'. See console diagnostics.`;
         console.error("[shell] failed to toggle plugin", pluginId, error);
@@ -150,14 +156,15 @@ function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
 
       renderPanels(root, runtime);
       renderParts(root, runtime);
+      renderCommandSurface(root, runtime);
     },
-    onChooseIntentAction: (index) => {
+    onChooseIntentAction: async (index) => {
       runtime.chooserFocusIndex = index;
       const selectedMatch = runtime.pendingIntentMatches[index];
       if (!selectedMatch) {
         return;
       }
-      executeResolvedAction(root, runtime, selectedMatch, runtime.pendingIntent);
+      await executeResolvedAction(root, runtime, selectedMatch, runtime.pendingIntent);
     },
     onDismissChooser: () => {
       dismissIntentChooser(root, runtime);
@@ -168,7 +175,9 @@ function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
   });
 
   panelsByRuntime.set(runtime, host);
+  refreshCommandContributions(runtime);
   renderPanels(root, runtime);
+  renderCommandSurface(root, runtime);
 }
 
 async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
@@ -177,11 +186,24 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): 
       tenantId: "demo",
     });
     runtime.registry = state.registry;
+    refreshCommandContributions(runtime);
     renderPanels(root, runtime);
     renderParts(root, runtime);
+    renderCommandSurface(root, runtime);
   } catch (error) {
     console.warn("[shell] plugin registry hydration skipped", error);
   }
+}
+
+function refreshCommandContributions(runtime: ShellRuntime): void {
+  const contracts = runtime.registry
+    .getSnapshot()
+    .plugins
+    .filter((plugin) => plugin.enabled && plugin.contract !== null)
+    .map((plugin) => plugin.contract)
+    .filter((plugin): plugin is NonNullable<typeof plugin> => plugin !== null);
+
+  runtime.actionSurface = buildActionSurface(contracts);
 }
 
 function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
@@ -195,7 +217,8 @@ function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
-  const visibleParts = getVisibleMockParts(runtime);
+  void primeEnabledPluginActivations(root, runtime);
+  const visibleParts = getVisibleComposedParts(runtime);
   updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
   renderPartsView(root, runtime, {
     applySelection: (event) => applySelection(root, runtime, event),
@@ -205,7 +228,6 @@ function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
     renderContextControls: () => renderContextControlsPanel(root, runtime),
     renderParts: () => renderParts(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
-    resolveIntentFlow: (intent) => resolveIntentFlow(root, runtime, intent as ShellIntent),
   });
   updateWindowReadOnlyState(root, runtime);
 }
@@ -280,7 +302,7 @@ function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
-  root.addEventListener("keydown", (event) => {
+  root.addEventListener("keydown", async (event) => {
     if (handleChooserKeyboardEvent(root, runtime, event)) {
       return;
     }
@@ -302,6 +324,32 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
       return;
+    }
+
+    const normalizedKey = normalizeKeyboardEvent(event);
+    if (normalizedKey) {
+      const context = toActionContext(runtime);
+      const action = resolveKeybindingAction(runtime.actionSurface, normalizedKey, context);
+      if (action) {
+        const activated = await activatePluginForBoundary(root, runtime, {
+          pluginId: action.pluginId,
+          triggerType: "command",
+          triggerId: action.id,
+        });
+        if (!activated) {
+          runtime.commandNotice = `Action '${action.id}' blocked: plugin '${action.pluginId}' is not active.`;
+          renderCommandSurface(root, runtime);
+          return;
+        }
+
+        event.preventDefault();
+        const executed = await dispatchAction(runtime.actionSurface, runtime.intentRuntime, action.id, context);
+        runtime.commandNotice = executed
+          ? `Keybinding (${normalizedKey}): Action '${action.id}' executed.`
+          : `Keybinding (${normalizedKey}): Action '${action.id}' is not executable in current context.`;
+        renderCommandSurface(root, runtime);
+        return;
+      }
     }
 
     if ((event.key === "ArrowDown" || event.key === "ArrowUp") && isSelectionActionNode(target)) {
@@ -355,7 +403,7 @@ function handleChooserKeyboardEvent(root: HTMLElement, runtime: ShellRuntime, ev
     runtime.chooserFocusIndex = result.index;
     const selected = runtime.pendingIntentMatches[result.index];
     if (selected) {
-      executeResolvedAction(root, runtime, selected, runtime.pendingIntent);
+      void executeResolvedAction(root, runtime, selected, runtime.pendingIntent);
     }
     return true;
   }
@@ -394,8 +442,6 @@ function applySelection(root: HTMLElement, runtime: ShellRuntime, event: Selecti
 
   const selectionPropagation = applySelectionPropagation(runtime, event, revision);
   updateContextState(runtime, selectionPropagation.state);
-  runtime.selectedPrimaryEntityId = readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.primary).priorityId;
-  runtime.selectedSecondaryEntityId = readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.secondary).priorityId;
 
   if (selectionPropagation.derivedLaneFailures.length > 0) {
     runtime.notice = `Derived lane failures: ${selectionPropagation.derivedLaneFailures.join(", ")}`;
@@ -406,8 +452,7 @@ function applySelection(root: HTMLElement, runtime: ShellRuntime, event: Selecti
   renderSyncStatus(root, runtime);
   announce(root, runtime, formatSelectionAnnouncement({
     selectedPartTitle: runtime.selectedPartTitle,
-    selectedPrimaryEntityId: runtime.selectedPrimaryEntityId,
-    selectedSecondaryEntityId: runtime.selectedSecondaryEntityId,
+    selectedEntitySummary: summarizeSelectionPriorities(runtime),
   }));
 }
 
@@ -436,6 +481,7 @@ function applyContext(root: HTMLElement, runtime: ShellRuntime, event: ContextSy
   }
   renderContextControlsPanel(root, runtime);
   renderSyncStatus(root, runtime);
+  renderCommandSurface(root, runtime);
 }
 
 function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
@@ -461,7 +507,7 @@ function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: She
     runtime.pendingIntentMatches = [];
     runtime.chooserFocusIndex = 0;
     announce(root, runtime, resolution.feedback);
-    executeResolvedAction(root, runtime, resolution.matches[0], intent);
+    void executeResolvedAction(root, runtime, resolution.matches[0], intent);
     return;
   }
 
@@ -477,26 +523,28 @@ function renderDevContextInspector(root: HTMLElement, runtime: ShellRuntime): vo
   renderPanels(root, runtime);
 }
 
-function executeResolvedAction(
+async function executeResolvedAction(
   root: HTMLElement,
   runtime: ShellRuntime,
   match: IntentActionMatch,
   intent: ShellIntent | null,
-): void {
-  const selection = resolveSelectionFromIntentFacts({ facts: intent?.facts });
+): Promise<void> {
+  const triggerId = intent?.type ?? match.intentType;
+  const activated = await activatePluginForBoundary(root, runtime, {
+    pluginId: match.pluginId,
+    triggerType: "intent",
+    triggerId,
+  });
 
-  if (
-    (match.handler === "assignOrderToVessel" || match.handler === "assignOrderToRoroVessel") &&
-    selection.primaryEntityId &&
-    selection.secondaryEntityId
-  ) {
-    runtime.selectedPrimaryEntityId = selection.primaryEntityId;
-    runtime.selectedSecondaryEntityId = selection.secondaryEntityId;
-    writeGroupSelectionContext(runtime, buildGroupSelectionContextValue({
-      primaryEntityId: selection.primaryEntityId,
-      secondaryEntityId: selection.secondaryEntityId,
-    }));
+  if (!activated) {
+    runtime.intentNotice = `Intent '${triggerId}' blocked: plugin '${match.pluginId}' is not active.`;
+    announce(root, runtime, runtime.intentNotice);
+    renderSyncStatus(root, runtime);
+    return;
   }
+
+  const genericContextValue = intent ? `intent:${intent.type}` : "none";
+  writeGroupSelectionContext(runtime, genericContextValue);
 
   runtime.pendingIntentMatches = [];
   runtime.chooserFocusIndex = 0;
@@ -514,12 +562,8 @@ function resolveEventTargetSelector(root: HTMLElement): string | null {
     return null;
   }
 
-  if (active.matches(`button[data-action='${domainDemoAdapter.actionNames.selectPrimary}']`) && active.dataset.orderId) {
-    return `button[data-action='${domainDemoAdapter.actionNames.selectPrimary}'][data-order-id='${active.dataset.orderId}']`;
-  }
-
-  if (active.matches(`button[data-action='${domainDemoAdapter.actionNames.selectSecondary}']`) && active.dataset.vesselId) {
-    return `button[data-action='${domainDemoAdapter.actionNames.selectSecondary}'][data-vessel-id='${active.dataset.vesselId}']`;
+  if (active.matches("button[data-action='select']") && active.dataset.partId) {
+    return `button[data-action='select'][data-part-id='${active.dataset.partId}']`;
   }
 
   return null;
@@ -527,6 +571,159 @@ function resolveEventTargetSelector(root: HTMLElement): string | null {
 
 function renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void {
   renderPanels(root, runtime);
+}
+
+function renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void {
+  const node = root.querySelector<HTMLElement>("#command-surface");
+  if (!node) {
+    return;
+  }
+
+  const context = toActionContext(runtime);
+  const menuActions = resolveMenuActions(runtime.actionSurface, "sidePanel", context);
+  const menuActionPluginById = new Map(menuActions.map((item) => [item.id, item.pluginId]));
+  const commandRows = menuActions
+    .map(
+      (item) => `<button
+        type="button"
+        data-action-run="${escapeHtml(item.id)}"
+        style="display:block;width:100%;text-align:left;margin:0 0 6px;background:#1d2635;border:1px solid #334564;border-radius:4px;color:#e9edf3;padding:4px 8px;cursor:pointer;"
+      >${escapeHtml(item.title)}</button>`,
+    )
+    .join("");
+
+  const visibleCommands = runtime.actionSurface.actions
+    .map((item) => `<li>${escapeHtml(item.id)}</li>`)
+    .join("");
+
+  node.innerHTML = `<h2>Commands</h2>
+    ${runtime.commandNotice ? `<p class="runtime-note">${escapeHtml(runtime.commandNotice)}</p>` : ""}
+    ${commandRows || '<p class="runtime-note">No visible action contributions for current context.</p>'}
+    <details>
+      <summary class="runtime-note" style="cursor:pointer;">Registered actions (debug)</summary>
+      <ul class="plugin-diag-list">${visibleCommands || "<li>none</li>"}</ul>
+    </details>`;
+
+  for (const button of node.querySelectorAll<HTMLButtonElement>("button[data-action-run]")) {
+    button.addEventListener("click", async () => {
+      const actionId = button.dataset.actionRun;
+      if (!actionId) {
+        return;
+      }
+
+      const pluginId = menuActionPluginById.get(actionId);
+      if (pluginId) {
+        const activated = await activatePluginForBoundary(root, runtime, {
+          pluginId,
+          triggerType: "command",
+          triggerId: actionId,
+        });
+        if (!activated) {
+          runtime.commandNotice = `Action '${actionId}' blocked: plugin '${pluginId}' is not active.`;
+          renderCommandSurface(root, runtime);
+          return;
+        }
+      }
+
+      const executed = await dispatchAction(runtime.actionSurface, runtime.intentRuntime, actionId, toActionContext(runtime));
+      runtime.commandNotice = executed
+        ? `Action '${actionId}' executed.`
+        : `Action '${actionId}' is not executable in current context.`;
+      renderCommandSurface(root, runtime);
+    });
+  }
+}
+
+async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
+  const snapshot = runtime.registry.getSnapshot();
+  const activations = snapshot.plugins
+    .filter((plugin) =>
+      plugin.enabled
+      && plugin.lifecycle.state !== "active"
+      && plugin.lifecycle.state !== "activating"
+      && plugin.lifecycle.state !== "failed"
+    )
+    .map((plugin) =>
+      activatePluginForBoundary(root, runtime, {
+        pluginId: plugin.id,
+        triggerType: "view",
+        triggerId: "shell.render",
+      })
+    );
+
+  if (activations.length === 0) {
+    return;
+  }
+
+  await Promise.all(activations);
+  refreshCommandContributions(runtime);
+  renderPanels(root, runtime);
+  renderParts(root, runtime);
+  renderCommandSurface(root, runtime);
+}
+
+async function activatePluginForBoundary(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  options: {
+    pluginId: string;
+    triggerType: PluginActivationTriggerType;
+    triggerId: string;
+  },
+): Promise<boolean> {
+  try {
+    const activated =
+      options.triggerType === "command"
+        ? await runtime.registry.activateByCommand(options.pluginId, options.triggerId)
+        : options.triggerType === "intent"
+          ? await runtime.registry.activateByIntent(options.pluginId, options.triggerId)
+          : await runtime.registry.activateByView(options.pluginId, options.triggerId);
+
+    if (!activated) {
+      runtime.notice = `Plugin '${options.pluginId}' is not active for ${options.triggerType}:${options.triggerId}.`;
+      renderSyncStatus(root, runtime);
+      return false;
+    }
+
+    runtime.notice = "";
+    refreshCommandContributions(runtime);
+    renderPanels(root, runtime);
+    return true;
+  } catch (error) {
+    runtime.notice = `Plugin activation failed for '${options.pluginId}' (${options.triggerType}:${options.triggerId}).`;
+    renderSyncStatus(root, runtime);
+    console.warn("[shell] plugin activation boundary failed", options, error);
+    return false;
+  }
+}
+
+function toActionContext(runtime: ShellRuntime): Record<string, string> {
+  const context: Record<string, string> = {
+    [CORE_GROUP_CONTEXT_KEY]: readGroupSelectionContext(runtime),
+    "context.domain.selection": readGroupSelectionContext(runtime),
+  };
+
+  if (runtime.selectedPartId) {
+    context["selection.partId"] = runtime.selectedPartId;
+  }
+
+  const orderPriorityId = runtime.contextState.selectionByEntityType.order?.priorityId;
+  if (orderPriorityId) {
+    context["selection.orderId"] = orderPriorityId;
+  }
+
+  const vesselPriorityId = runtime.contextState.selectionByEntityType.vessel?.priorityId;
+  if (vesselPriorityId) {
+    context["selection.vesselId"] = vesselPriorityId;
+  }
+
+  return context;
+}
+
+function summarizeSelectionPriorities(runtime: ShellRuntime): string {
+  const entries = Object.entries(runtime.contextState.selectionByEntityType)
+    .map(([entityType, selection]) => `${entityType}:${selection.priorityId ?? "none"}`);
+  return entries.length > 0 ? entries.join(", ") : "none";
 }
 
 function applyLayout(root: HTMLElement, layout: ShellLayoutState): void {

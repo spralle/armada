@@ -9,16 +9,21 @@
   "scripts": {
     "lint": "npm run check:architecture-guardrails --silent && tsc --pretty false -p tsconfig.json --noEmit",
     "typecheck": "tsc --pretty false -p tsconfig.json --noEmit",
-    "test": "npm run build --silent && node --test packages/plugin-contracts/test/parse-plugin-contract.test.mjs",
+    "test": "npm run build --silent && tsc --pretty false -p apps/shell/tsconfig.test.json && tsc --pretty false -p apps/backend/tsconfig.test.json && node --test packages/plugin-contracts/test/parse-plugin-contract.test.mjs apps/shell/test/plugin-loader-parity.test.mjs apps/shell/test/plugin-registry-parity.test.mjs apps/shell/test/integration-hardening.test.mjs apps/shell/test/intent-activation-boundary.test.mjs apps/shell/src/action-runtime.integration.test.mjs apps/backend/test/local-ui-plugin-discovery.test.mjs apps/backend/test/tenant-manifest-overrides.test.mjs apps/backend/test/dev-cli-options.test.mjs",
     "build": "tsc -b --pretty false",
     "check:architecture-guardrails": "node ./scripts/check-architecture-guardrails.mjs",
     "dev:shell": "npm run dev --workspace @armada/shell-app",
     "dev:backend": "node --watch --experimental-strip-types apps/backend/src/index.ts",
-    "dev:plugin": "bun --watch apps/plugin-starter/src/index.ts",
+    "dev:plugin": "npm run dev --workspace @armada/plugin-starter",
+    "dev:plugin-sample": "npm run dev --workspace @armada/sample-contract-consumer-plugin",
+    "dev:plugin-unplanned-orders": "npm run dev --workspace @armada/domain-unplanned-orders-plugin",
+    "dev:plugin-vessel-view": "npm run dev --workspace @armada/domain-vessel-view-plugin",
+    "dev:plugin:all": "npx concurrently -n starter,sample,unplanned,vessel -c magenta,cyan,yellow,green \"npm run dev:plugin\" \"npm run dev:plugin-sample\" \"npm run dev:plugin-unplanned-orders\" \"npm run dev:plugin-vessel-view\"",
     "dev:integration": "bun --watch apps/shell/src/index.ts",
     "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "typescript": "^5.8.3"
   }
 }

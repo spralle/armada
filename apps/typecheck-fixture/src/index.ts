@@ -18,7 +18,7 @@ const fixturePlugin: PluginContract = {
       {
         id: "fixture.part",
         title: "Fixture Part",
-        slot: "left",
+        slot: "side",
         component: "FixturePart"
       }
     ],
@@ -26,12 +26,23 @@ const fixturePlugin: PluginContract = {
       {
         id: "fixture.action",
         title: "Run Fixture",
-        handler: "runFixture",
-        intentType: "workbench.fixture.run",
-        when: {
+        intent: "fixture.run",
+        predicate: {
           entityType: "workbench.item",
           hasSelection: true
         }
+      }
+    ],
+    menus: [
+      {
+        menu: "commandPalette",
+        action: "fixture.action"
+      }
+    ],
+    keybindings: [
+      {
+        action: "fixture.action",
+        keybinding: "ctrl+alt+f"
       }
     ],
     selection: [

@@ -17,7 +17,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .slot-side { border-right: 1px solid #2b3040; background: #181c24; }
     .main-stack { display: grid; grid-template-rows: 1fr 6px var(--secondary-size); min-width: 0; min-height: 0; }
     .slot { min-width: 0; min-height: 0; overflow: auto; padding: 10px 12px; }
-    .slot-master { background: #11151c; }
+    .slot-main { background: #11151c; }
     .slot-secondary { border-top: 1px solid #2b3040; background: #121922; }
     .splitter { background: #2b3040; cursor: col-resize; user-select: none; touch-action: none; }
     .splitter[data-pane="secondary"] { cursor: row-resize; }
@@ -67,7 +67,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     </section>
     <div class="splitter" id="splitter-side" data-pane="side" aria-label="Resize side pane"></div>
     <section class="main-stack">
-      <section class="slot slot-master" data-slot="master"><section id="slot-master-parts"></section></section>
+      <section class="slot slot-main" data-slot="main"><section id="slot-main-parts"></section></section>
       <div class="splitter" id="splitter-secondary" data-pane="secondary" aria-label="Resize secondary pane"></div>
       <section class="slot slot-secondary" data-slot="secondary"><section id="slot-secondary-parts"></section></section>
     </section>

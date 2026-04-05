@@ -6,6 +6,8 @@ import {
   createLocalStorageLayoutPersistence,
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
+import { buildActionSurface } from "../action-surface.js";
+import { createIntentRuntime } from "../intent-runtime.js";
 import { createWindowBridge } from "../window-bridge.js";
 import {
   BRIDGE_CHANNEL,
@@ -25,6 +27,8 @@ export function createShellRuntime(): ShellRuntime {
   const windowId = createWindowId();
   const bridge = createWindowBridge(BRIDGE_CHANNEL);
 
+  const intentRuntime = createIntentRuntime();
+
   const runtime: ShellRuntime = {
     layout: createDefaultLayoutState(),
     persistence: createLocalStorageLayoutPersistence(getStorage(), {
@@ -41,8 +45,6 @@ export function createShellRuntime(): ShellRuntime {
     isPopout: popoutParams.isPopout,
     selectedPartId: null,
     selectedPartTitle: null,
-    selectedPrimaryEntityId: null,
-    selectedSecondaryEntityId: null,
     contextState: createInitialShellContextState({
       initialTabId: "tab-main",
       initialGroupId: DEFAULT_GROUP_ID,
@@ -64,6 +66,9 @@ export function createShellRuntime(): ShellRuntime {
     chooserFocusIndex: 0,
     pendingFocusSelector: null,
     chooserReturnFocusSelector: null,
+    actionSurface: buildActionSurface([]),
+    intentRuntime,
+    commandNotice: "",
   };
 
   runtime.registry.registerManifestDescriptors("local", []);

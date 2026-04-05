@@ -15,18 +15,31 @@ export interface PluginViewContribution {
 export interface PluginPartContribution {
   id: string;
   title: string;
-  slot: "left" | "right" | "bottom";
+  slot: "main" | "secondary" | "side";
   component: string;
 }
 
-export type PluginActionWhenPredicate = Record<string, unknown>;
+export type PluginContributionPredicate = Record<string, unknown>;
 
 export interface PluginActionContribution {
   id: string;
   title: string;
-  handler: string;
-  intentType: string;
-  when: PluginActionWhenPredicate;
+  intent: string;
+  predicate?: PluginContributionPredicate | undefined;
+}
+
+export interface PluginMenuContribution {
+  menu: string;
+  action: string;
+  group?: string | undefined;
+  order?: number | undefined;
+  when?: PluginContributionPredicate | undefined;
+}
+
+export interface PluginKeybindingContribution {
+  action: string;
+  keybinding: string;
+  when?: PluginContributionPredicate | undefined;
 }
 
 export interface PluginSelectionContribution {
@@ -63,6 +76,8 @@ export interface PluginContributions {
   views?: PluginViewContribution[] | undefined;
   parts?: PluginPartContribution[] | undefined;
   actions?: PluginActionContribution[] | undefined;
+  menus?: PluginMenuContribution[] | undefined;
+  keybindings?: PluginKeybindingContribution[] | undefined;
   selection?: PluginSelectionContribution[] | undefined;
   derivedLanes?: PluginDerivedLaneContribution[] | undefined;
   dragDropSessionReferences?: PluginDragDropSessionReference[] | undefined;
@@ -72,6 +87,73 @@ export interface PluginContributions {
 export interface PluginContract {
   manifest: PluginManifestIdentity;
   contributes?: PluginContributions | undefined;
+}
+
+export interface ComposedPluginViewContribution {
+  pluginId: string;
+  id: string;
+  title: string;
+  component: string;
+}
+
+export interface ComposedPluginPartContribution {
+  pluginId: string;
+  id: string;
+  title: string;
+  slot: "main" | "secondary" | "side";
+  component: string;
+}
+
+export interface ComposedPluginContributions {
+  views: ComposedPluginViewContribution[];
+  parts: ComposedPluginPartContribution[];
+}
+
+export interface PluginContributionSource {
+  id: string;
+  enabled: boolean;
+  contract: PluginContract | null;
+}
+
+export function composeEnabledPluginContributions(
+  plugins: PluginContributionSource[],
+): ComposedPluginContributions {
+  const views: ComposedPluginViewContribution[] = [];
+  const parts: ComposedPluginPartContribution[] = [];
+
+  for (const plugin of plugins) {
+    if (!plugin.enabled || !plugin.contract) {
+      continue;
+    }
+
+    const contributes = plugin.contract.contributes;
+    const pluginViews = contributes?.views ?? [];
+    const pluginParts = contributes?.parts ?? [];
+
+    for (const view of pluginViews) {
+      views.push({
+        pluginId: plugin.id,
+        id: view.id,
+        title: view.title,
+        component: view.component,
+      });
+    }
+
+    for (const part of pluginParts) {
+      parts.push({
+        pluginId: plugin.id,
+        id: part.id,
+        title: part.title,
+        slot: part.slot,
+        component: part.component,
+      });
+    }
+  }
+
+  return {
+    views,
+    parts,
+  };
 }
 
 export interface PluginCompatibilityMetadata {
@@ -113,20 +195,37 @@ export const pluginPartContributionSchema = z
   .object({
     id: nonEmptyString,
     title: nonEmptyString,
-    slot: z.enum(["left", "right", "bottom"]),
+    slot: z.enum(["main", "secondary", "side"]),
     component: nonEmptyString,
   })
   .strict();
 
-export const pluginActionWhenPredicateSchema = z.object({}).catchall(z.unknown());
+const pluginContributionPredicateSchema = z.record(z.string(), z.unknown());
 
 export const pluginActionContributionSchema = z
   .object({
     id: nonEmptyString,
     title: nonEmptyString,
-    handler: nonEmptyString,
-    intentType: nonEmptyString,
-    when: pluginActionWhenPredicateSchema,
+    intent: nonEmptyString,
+    predicate: pluginContributionPredicateSchema.optional(),
+  })
+  .strict();
+
+export const pluginMenuContributionSchema = z
+  .object({
+    menu: nonEmptyString,
+    action: nonEmptyString,
+    group: nonEmptyString.optional(),
+    order: z.number().int().optional(),
+    when: pluginContributionPredicateSchema.optional(),
+  })
+  .strict();
+
+export const pluginKeybindingContributionSchema = z
+  .object({
+    action: nonEmptyString,
+    keybinding: nonEmptyString,
+    when: pluginContributionPredicateSchema.optional(),
   })
   .strict();
 
@@ -175,6 +274,8 @@ export const pluginContributionsSchema = z
     views: z.array(pluginViewContributionSchema).optional(),
     parts: z.array(pluginPartContributionSchema).optional(),
     actions: z.array(pluginActionContributionSchema).optional(),
+    menus: z.array(pluginMenuContributionSchema).optional(),
+    keybindings: z.array(pluginKeybindingContributionSchema).optional(),
     selection: z.array(pluginSelectionContributionSchema).optional(),
     derivedLanes: z.array(pluginDerivedLaneContributionSchema).optional(),
     dragDropSessionReferences: z
@@ -218,6 +319,26 @@ export interface PluginContractValidationIssue {
   path: string;
   code: string;
   message: string;
+}
+
+export interface PredicateFactBag {
+  [key: string]: unknown;
+}
+
+export interface PredicateFailureTrace {
+  path: string;
+  actual: unknown;
+  condition: unknown;
+}
+
+export interface PredicateEvaluationResult {
+  matched: boolean;
+  failedPredicates: PredicateFailureTrace[];
+}
+
+export interface ContributionPredicateMatcher {
+  readonly id: string;
+  evaluate(predicate: PluginContributionPredicate, facts: PredicateFactBag): PredicateEvaluationResult;
 }
 
 export type ParsePluginContractResult =
@@ -280,6 +401,172 @@ function mapValidationIssues(issues: z.ZodIssue[]): PluginContractValidationIssu
     code: issue.code,
     message: issue.message,
   }));
+}
+
+export function createDefaultContributionPredicateMatcher(): ContributionPredicateMatcher {
+  return {
+    id: "default-contribution-predicate-matcher",
+    evaluate: evaluatePredicateWithDefaultMatcher,
+  };
+}
+
+export function evaluateContributionPredicate(
+  predicate: PluginContributionPredicate | undefined,
+  facts: PredicateFactBag,
+  matcher: ContributionPredicateMatcher = createDefaultContributionPredicateMatcher(),
+): boolean {
+  if (predicate === undefined) {
+    return true;
+  }
+
+  return matcher.evaluate(predicate, facts).matched;
+}
+
+function evaluatePredicateWithDefaultMatcher(
+  predicate: PluginContributionPredicate,
+  facts: PredicateFactBag,
+): PredicateEvaluationResult {
+  const failedPredicates: PredicateFailureTrace[] = [];
+
+  for (const [path, condition] of Object.entries(predicate)) {
+    const actual = getFactValue(facts, path);
+    if (!matchesCondition(actual, condition)) {
+      failedPredicates.push({
+        path,
+        actual,
+        condition,
+      });
+    }
+  }
+
+  return {
+    matched: failedPredicates.length === 0,
+    failedPredicates,
+  };
+}
+
+function getFactValue(facts: PredicateFactBag, path: string): unknown {
+  if (!path.includes(".")) {
+    return facts[path];
+  }
+
+  let current: unknown = facts;
+  for (const segment of path.split(".")) {
+    if (!current || typeof current !== "object" || !(segment in current)) {
+      return undefined;
+    }
+
+    current = (current as Record<string, unknown>)[segment];
+  }
+
+  return current;
+}
+
+function matchesCondition(actual: unknown, condition: unknown): boolean {
+  if (isOperatorCondition(condition)) {
+    return Object.entries(condition).every(([operator, expected]) =>
+      applyPredicateOperator(operator, actual, expected),
+    );
+  }
+
+  return isDeepEqual(actual, condition);
+}
+
+function isOperatorCondition(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  return Object.keys(value).some((key) => key.startsWith("$"));
+}
+
+function applyPredicateOperator(operator: string, actual: unknown, expected: unknown): boolean {
+  switch (operator) {
+    case "$eq":
+      return isDeepEqual(actual, expected);
+    case "$ne":
+      return !isDeepEqual(actual, expected);
+    case "$exists": {
+      const shouldExist = Boolean(expected);
+      const exists = actual !== undefined;
+      return shouldExist ? exists : !exists;
+    }
+    case "$in":
+      return Array.isArray(expected) && expected.some((candidate) => isDeepEqual(actual, candidate));
+    case "$nin":
+      return Array.isArray(expected) && expected.every((candidate) => !isDeepEqual(actual, candidate));
+    case "$gt":
+      return compareComparable(actual, expected) > 0;
+    case "$gte":
+      return compareComparable(actual, expected) >= 0;
+    case "$lt":
+      return compareComparable(actual, expected) < 0;
+    case "$lte":
+      return compareComparable(actual, expected) <= 0;
+    default:
+      return false;
+  }
+}
+
+function compareComparable(actual: unknown, expected: unknown): number {
+  if (typeof actual === "number" && typeof expected === "number") {
+    return actual - expected;
+  }
+
+  if (typeof actual === "string" && typeof expected === "string") {
+    return actual.localeCompare(expected);
+  }
+
+  return Number.NaN;
+}
+
+function isDeepEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  if (Array.isArray(left) && Array.isArray(right)) {
+    if (left.length !== right.length) {
+      return false;
+    }
+
+    for (let index = 0; index < left.length; index += 1) {
+      if (!isDeepEqual(left[index], right[index])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  if (
+    left &&
+    right &&
+    typeof left === "object" &&
+    typeof right === "object" &&
+    !Array.isArray(left) &&
+    !Array.isArray(right)
+  ) {
+    const leftEntries = Object.entries(left);
+    const rightEntries = Object.entries(right);
+    if (leftEntries.length !== rightEntries.length) {
+      return false;
+    }
+
+    for (const [key, value] of leftEntries) {
+      if (!(key in right)) {
+        return false;
+      }
+
+      if (!isDeepEqual(value, (right as Record<string, unknown>)[key])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  return false;
 }
 
 interface SemVer {

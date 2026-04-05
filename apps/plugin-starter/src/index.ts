@@ -1,20 +1,5 @@
-import type { PluginContract } from "@armada/plugin-contracts";
+import pluginContract from "./plugin-contract.js";
 
-export const pluginStarterContract: PluginContract = {
-  manifest: {
-    id: "com.armada.plugin-starter",
-    name: "Plugin Starter",
-    version: "0.1.0",
-  },
-  contributes: {
-    views: [
-      {
-        id: "starter.view",
-        title: "Starter View",
-        component: "StarterView",
-      },
-    ],
-  },
-};
+export { pluginContract as pluginStarterContract };
 
-console.log("[plugin-starter] POC plugin stub ready", pluginStarterContract.manifest.id);
+console.log("[plugin-starter] POC plugin stub ready", pluginContract.manifest.id);

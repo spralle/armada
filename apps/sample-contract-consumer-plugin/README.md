@@ -4,5 +4,6 @@ Minimal plugin authoring flow using only the public SDK:
 
 1. Import `PluginContract` from `@armada/plugin-contracts`.
 2. Define `manifest` and minimal `contributes` fields in `src/index.ts`.
+   - For core shell invocation flows, use `contributes.actions` with object predicates (`when`) plus optional `menu` and `keybindings` entries.
 3. Validate the contract with `parsePluginContract(...)` before handing it to the host.
 4. Keep imports on `@armada/plugin-contracts` only (no `/internal` paths).

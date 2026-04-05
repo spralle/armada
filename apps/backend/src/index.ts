@@ -1,88 +1,32 @@
-interface TenantPluginDescriptor {
-  id: string;
-  version: string;
-  entry: string;
-  compatibility: {
-    shell: string;
-    pluginContract: string;
-  };
-}
+import {
+  getTenantManifestEndpointPath,
+  getDefaultLocalPluginEntryUrlMap,
+  resolveTenantManifestRequest,
+} from "./tenant-manifest.js";
+import {
+  formatLocalPluginOverrideStartupSummary,
+  parseBackendDevCliOptions,
+} from "./dev-cli-options.js";
 
-interface TenantPluginManifestResponse {
-  tenantId: string;
-  plugins: TenantPluginDescriptor[];
-}
-
-const DEFAULT_TENANT = "demo";
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
+const DEFAULT_TENANT = "demo";
 
-const inMemoryTenantPluginDescriptors: Readonly<Record<string, TenantPluginDescriptor[]>> = {
-  demo: [
-    {
-      id: "com.armada.plugin-starter",
-      version: "0.1.0",
-      entry: "local://apps/plugin-starter/src/index.ts",
-      compatibility: {
-        shell: "^1.0.0",
-        pluginContract: "^1.0.0",
-      },
-    },
-    {
-      id: "com.armada.sample.contract-consumer",
-      version: "0.1.0",
-      entry: "local://apps/sample-contract-consumer-plugin/src/index.ts",
-      compatibility: {
-        shell: "^1.0.0",
-        pluginContract: "^1.0.0",
-      },
-    },
-    {
-      id: "com.armada.domain.unplanned-orders",
-      version: "0.1.0",
-      entry: "local://apps/shell/src/local-plugin-sources.ts#unplanned-orders",
-      compatibility: {
-        shell: "^1.0.0",
-        pluginContract: "^1.0.0",
-      },
-    },
-    {
-      id: "com.armada.domain.vessel-view",
-      version: "0.1.0",
-      entry: "local://apps/shell/src/local-plugin-sources.ts#vessel-view",
-      compatibility: {
-        shell: "^1.0.0",
-        pluginContract: "^1.0.0",
-      },
-    },
-  ],
-};
+const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
+const localPluginEntryOverrides = getDefaultLocalPluginEntryUrlMap();
 
-export function getTenantManifestEndpointPath(tenantId: string): string {
-  return `/api/tenants/${encodeURIComponent(tenantId)}/plugin-manifest`;
+if (backendDevCliOptions.duplicateSelectedLocalPluginIds.length > 0) {
+  console.warn(
+    `[backend] duplicate --local-plugin values ignored after normalization: ${backendDevCliOptions.duplicateSelectedLocalPluginIds.join(", ")}`,
+  );
 }
 
-export function getTenantManifestResponse(tenantId: string): TenantPluginManifestResponse {
-  const normalizedTenantId = tenantId.trim() || DEFAULT_TENANT;
-  const plugins = inMemoryTenantPluginDescriptors[normalizedTenantId] ?? [];
-
-  return {
-    tenantId: normalizedTenantId,
-    plugins,
-  };
-}
-
-export function resolveTenantManifestRequest(
-  pathname: string,
-): TenantPluginManifestResponse | null {
-  const match = pathname.match(/^\/api\/tenants\/([^/]+)\/plugin-manifest$/);
-  if (!match) {
-    return null;
-  }
-
-  const tenantId = decodeURIComponent(match[1]);
-  return getTenantManifestResponse(tenantId);
-}
+console.log(
+  formatLocalPluginOverrideStartupSummary(
+    backendDevCliOptions.selectedLocalPluginIds,
+    localPluginEntryOverrides,
+  ),
+);
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -105,7 +49,10 @@ function startBackendDevServer(): void {
     port: BACKEND_DEV_PORT,
     fetch(request) {
       const url = new URL(request.url);
-      const manifest = resolveTenantManifestRequest(url.pathname);
+      const manifest = resolveTenantManifestRequest(url.pathname, {
+        selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
+        pluginEntryUrlOverridesById: localPluginEntryOverrides,
+      });
       if (manifest) {
         return jsonResponse(manifest);
       }
@@ -134,7 +81,10 @@ function startNodeBackendDevServer(): void {
     .then(({ createServer }) => {
       const server = createServer((req: any, res: any) => {
         const requestPath = req.url ? new URL(req.url, `http://${BACKEND_DEV_HOST}:${BACKEND_DEV_PORT}`).pathname : "/";
-        const manifest = resolveTenantManifestRequest(requestPath);
+        const manifest = resolveTenantManifestRequest(requestPath, {
+          selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
+          pluginEntryUrlOverridesById: localPluginEntryOverrides,
+        });
 
         res.setHeader("content-type", "application/json; charset=utf-8");
 
@@ -169,6 +119,15 @@ function startNodeBackendDevServer(): void {
         runtimeProcess.exitCode = 1;
       }
     });
+}
+
+function getRuntimeArgv(): string[] {
+  const runtimeProcess = (globalThis as { process?: { argv?: unknown } }).process;
+  if (!runtimeProcess || !Array.isArray(runtimeProcess.argv)) {
+    return [];
+  }
+
+  return runtimeProcess.argv.slice(2);
 }
 
 startBackendDevServer();
