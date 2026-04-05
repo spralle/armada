@@ -3,10 +3,6 @@ import type { ShellRuntime } from "../app/types.js";
 
 type MountDeps = {
   renderParts: () => void;
-  renderPluginControls: () => void;
-  renderSyncStatus: () => void;
-  renderContextControls: () => void;
-  renderDevContextInspector: () => void;
   updateWindowReadOnlyState: () => void;
   setupResize: () => void;
   publishRestoreRequestOnUnload: () => void;
@@ -80,10 +76,6 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
   `;
 
   deps.renderParts();
-  deps.renderPluginControls();
-  deps.renderSyncStatus();
-  deps.renderContextControls();
-  deps.renderDevContextInspector();
   deps.updateWindowReadOnlyState();
   deps.setupResize();
 }
@@ -133,9 +125,6 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
   `;
 
   deps.renderParts();
-  deps.renderSyncStatus();
-  deps.renderContextControls();
-  deps.renderDevContextInspector();
   deps.updateWindowReadOnlyState();
 
   window.addEventListener("beforeunload", () => {

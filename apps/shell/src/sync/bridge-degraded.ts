@@ -9,16 +9,16 @@ export interface BridgeRenderBindings {
   renderContextControls: () => void;
 }
 
-export function renderBridgeWarning(runtime: ShellRuntime): string {
+export function getBridgeWarningMessage(runtime: ShellRuntime): string | null {
   if (!runtime.syncDegraded && runtime.bridge.available && runtime.dragSessionBroker.available) {
-    return "";
+    return null;
   }
 
   if (runtime.syncDegraded) {
-    return `<div class="bridge-warning">Cross-window sync degraded (${runtime.syncDegradedReason ?? "unknown"}). This window is read-only until resync succeeds.</div>`;
+    return `Cross-window sync degraded (${runtime.syncDegradedReason ?? "unknown"}). This window is read-only until resync succeeds.`;
   }
 
-  return `<div class="bridge-warning">BroadcastChannel is unavailable. Sync/popout restore/dnd ref fall back to local-only behavior.</div>`;
+  return "BroadcastChannel is unavailable. Sync/popout restore/dnd ref fall back to local-only behavior.";
 }
 
 export function publishWithDegrade(

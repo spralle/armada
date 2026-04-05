@@ -30,12 +30,11 @@ import {
 import { applyPaneResize, type ShellLayoutState } from "./layout.js";
 import { DEFAULT_GROUP_COLOR, DEFAULT_GROUP_ID } from "./app/constants.js";
 import { shellBootstrapState } from "./app/bootstrap.js";
+import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
 import { createShellRuntime } from "./app/runtime.js";
 import type { ShellRuntime } from "./app/types.js";
 import {
   createWindowId,
-  escapeHtml,
-  toPrettyJson,
 } from "./app/utils.js";
 import {
   type ContextSyncEvent,
@@ -45,15 +44,11 @@ import {
   handleSyncAck as handleSyncAckState,
   handleSyncProbe as handleSyncProbeState,
   publishWithDegrade as publishWithDegradeState,
-  renderBridgeWarning as renderBridgeWarningState,
   requestSyncProbe as requestSyncProbeState,
 } from "./sync/bridge-degraded.js";
 import {
-  collectLaneMetadata,
   createRevision,
   ensureTabsRegistered,
-  readGlobalContext,
-  readGroupSelectionContext,
   updateContextState,
   writeGlobalSelectionLane,
   writeGroupSelectionContext,
@@ -74,22 +69,19 @@ import {
   mountPopout,
 } from "./ui/shell-mount.js";
 import {
-  hydratePluginRegistry,
-  renderPluginControls,
-} from "./ui/plugin-controls.js";
-import {
-  renderContextControls,
   updateWindowReadOnlyState,
 } from "./ui/context-controls.js";
+import { createReactPanelsHost } from "./ui/react/panels-host.js";
+
+const panelsByRuntime = new WeakMap<ShellRuntime, ReturnType<typeof createReactPanelsHost>>();
 
 export function startShell(root: HTMLElement): ShellRuntime {
   const shellRuntime = createShellRuntime();
   mountShell(root, shellRuntime);
+  initializeReactPanels(root, shellRuntime);
 
   if (!shellRuntime.isPopout) {
-    void hydratePluginRegistry(root, shellRuntime, {
-      renderParts: () => renderParts(root, shellRuntime),
-    });
+    void hydratePluginRegistry(root, shellRuntime);
   }
 
   console.log("[shell] POC shell stub ready", shellBootstrapState.mode);
@@ -101,10 +93,6 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
   if (runtime.isPopout) {
     mountPopout(root, runtime, {
       renderParts: () => renderParts(root, runtime),
-      renderPluginControls: () => renderPluginControls(root, runtime, { renderParts: () => renderParts(root, runtime) }),
-      renderSyncStatus: () => renderSyncStatus(root, runtime),
-      renderContextControls: () => renderContextControlsPanel(root, runtime),
-      renderDevContextInspector: () => renderDevContextInspector(root, runtime),
       updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
       setupResize: () => setupResize(root, runtime),
       publishRestoreRequestOnUnload: () => {
@@ -119,10 +107,6 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
   } else {
     mountMainWindow(root, {
       renderParts: () => renderParts(root, runtime),
-      renderPluginControls: () => renderPluginControls(root, runtime, { renderParts: () => renderParts(root, runtime) }),
-      renderSyncStatus: () => renderSyncStatus(root, runtime),
-      renderContextControls: () => renderContextControlsPanel(root, runtime),
-      renderDevContextInspector: () => renderDevContextInspector(root, runtime),
       updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
       setupResize: () => setupResize(root, runtime),
       publishRestoreRequestOnUnload: () => {},
@@ -136,6 +120,80 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
 
   bindBridgeSync(root, runtime);
   bindKeyboardShortcuts(root, runtime);
+}
+
+function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
+  const host = createReactPanelsHost(root, runtime, {
+    onApplyContextValue: (value) => {
+      if (runtime.syncDegraded) {
+        return;
+      }
+
+      writeGroupSelectionContext(runtime, value);
+      publishWithDegrade(root, runtime, {
+        type: "context",
+        scope: "group",
+        tabId: runtime.selectedPartId ?? undefined,
+        contextKey: domainDemoAdapter.laneKeys.groupSelection,
+        contextValue: value,
+        revision: createRevision(runtime.windowId),
+        sourceWindowId: runtime.windowId,
+      });
+      renderSyncStatus(root, runtime);
+    },
+    onTogglePlugin: async (pluginId, enabled) => {
+      try {
+        runtime.pluginNotice = "";
+        await runtime.registry.setEnabled(pluginId, enabled);
+      } catch (error) {
+        runtime.pluginNotice = `Unable to toggle plugin '${pluginId}'. See console diagnostics.`;
+        console.error("[shell] failed to toggle plugin", pluginId, error);
+      }
+
+      renderPanels(root, runtime);
+      renderParts(root, runtime);
+    },
+    onChooseIntentAction: (index) => {
+      runtime.chooserFocusIndex = index;
+      const selectedMatch = runtime.pendingIntentMatches[index];
+      if (!selectedMatch) {
+        return;
+      }
+      executeResolvedAction(root, runtime, selectedMatch, runtime.pendingIntent);
+    },
+    onDismissChooser: () => {
+      dismissIntentChooser(root, runtime);
+    },
+    onPendingFocusApplied: () => {
+      runtime.pendingFocusSelector = null;
+    },
+  });
+
+  panelsByRuntime.set(runtime, host);
+  renderPanels(root, runtime);
+}
+
+async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
+  try {
+    const state = await bootstrapShellWithTenantManifest({
+      tenantId: "demo",
+    });
+    runtime.registry = state.registry;
+    renderPanels(root, runtime);
+    renderParts(root, runtime);
+  } catch (error) {
+    console.warn("[shell] plugin registry hydration skipped", error);
+  }
+}
+
+function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
+  const host = panelsByRuntime.get(runtime);
+  if (!host) {
+    return;
+  }
+
+  host.render();
+  updateWindowReadOnlyState(root, runtime);
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
@@ -386,58 +444,7 @@ function applyContext(root: HTMLElement, runtime: ShellRuntime, event: ContextSy
 }
 
 function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
-  const node = root.querySelector<HTMLElement>("#sync-status");
-  if (!node) {
-    return;
-  }
-
-  const warning = renderBridgeWarningState(runtime);
-  const selected = runtime.selectedPartTitle ?? "none";
-  const groupContext = readGroupSelectionContext(runtime);
-  const globalContext = readGlobalContext(runtime);
-  const orderPriority = readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.primary).priorityId ?? "none";
-  const vesselPriority = readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.secondary).priorityId ?? "none";
-  const notice = runtime.notice ? `<p class="runtime-note">${runtime.notice}</p>` : "";
-  const intentNotice = runtime.intentNotice
-    ? `<p class="runtime-note"><strong>Intent runtime:</strong> ${escapeHtml(runtime.intentNotice)}</p>`
-    : "";
-  const chooser = runtime.pendingIntentMatches.length
-    ? `<section class="intent-chooser" aria-label="Intent action chooser"><h3 style="margin:0 0 6px;">Choose action</h3><div role="listbox" aria-label="Available actions">${runtime.pendingIntentMatches
-        .map(
-          (match, index) =>
-            `<button type="button" role="option" aria-selected="${index === runtime.chooserFocusIndex ? "true" : "false"}" data-action="choose-intent-action" data-intent-index="${index}">${escapeHtml(match.title)} <small>(${escapeHtml(match.pluginName)})</small></button>`,
-        )
-        .join("")}</div></section>`
-    : "";
-
-  node.innerHTML = `
-    <h2>Cross-window sync</h2>
-    ${warning}
-    <p class="runtime-note"><strong>Selected part:</strong> ${selected}</p>
-    <p class="runtime-note"><strong>Primary entity priority:</strong> ${orderPriority}</p>
-    <p class="runtime-note"><strong>Secondary entity priority:</strong> ${vesselPriority}</p>
-    <p class="runtime-note"><strong>Group context:</strong> ${domainDemoAdapter.laneKeys.groupSelection} = ${groupContext}</p>
-    <p class="runtime-note"><strong>Global lane:</strong> ${domainDemoAdapter.laneKeys.globalSelection} = ${globalContext}</p>
-    <p class="runtime-note"><strong>Window ID:</strong> ${runtime.windowId}</p>
-    ${intentNotice}
-    ${chooser}
-    ${notice}
-  `;
-
-  for (const button of node.querySelectorAll<HTMLButtonElement>("button[data-action='choose-intent-action']")) {
-    button.addEventListener("click", () => {
-      const index = Number(button.dataset.intentIndex ?? "-1");
-      const selectedMatch = runtime.pendingIntentMatches[index];
-      if (!selectedMatch) {
-        return;
-      }
-      runtime.chooserFocusIndex = index;
-      executeResolvedAction(root, runtime, selectedMatch, runtime.pendingIntent);
-    });
-  }
-
-  renderDevContextInspector(root, runtime);
-  applyPendingFocus(root, runtime);
+  renderPanels(root, runtime);
 }
 
 function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: ShellIntent): void {
@@ -472,50 +479,7 @@ function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: She
 }
 
 function renderDevContextInspector(root: HTMLElement, runtime: ShellRuntime): void {
-  const node = root.querySelector<HTMLElement>("#dev-context-inspector");
-  if (!node) {
-    return;
-  }
-
-  const laneMetadata = collectLaneMetadata(runtime.contextState)
-    .map(
-      (item) => `<li><strong>${escapeHtml(item.scope)}</strong> ${escapeHtml(item.key)} = ${escapeHtml(item.value)}<br/><small>revision=${item.revision.timestamp}:${escapeHtml(item.revision.writer)}${item.sourceSelection ? ` | source=${escapeHtml(item.sourceSelection.entityType)}@${item.sourceSelection.revision.timestamp}:${escapeHtml(item.sourceSelection.revision.writer)}` : ""}</small></li>`,
-    )
-    .join("");
-
-  const trace = runtime.lastIntentTrace;
-  const traceSummary = trace
-    ? `<p class="runtime-note"><strong>Intent trace:</strong> ${escapeHtml(trace.intentType)} (${trace.matched.length} matches)</p>`
-    : `<p class="runtime-note"><strong>Intent trace:</strong> none yet</p>`;
-  const traceActions = trace
-    ? trace.actions
-        .map((action) => {
-          const failures = action.failedPredicates.length
-            ? `<pre>${escapeHtml(toPrettyJson(action.failedPredicates))}</pre>`
-            : "<p class=\"runtime-note\">No predicate failures.</p>";
-          return `<details><summary>${escapeHtml(action.pluginId)}.${escapeHtml(action.actionId)} — ${action.intentTypeMatch && action.predicateMatched ? "matched" : "not matched"}</summary>${failures}</details>`;
-        })
-        .join("")
-    : "";
-
-  node.innerHTML = `
-    <h2>Dev context inspector</h2>
-    <p class="runtime-note"><strong>Mode:</strong> development only</p>
-    ${traceSummary}
-    <details>
-      <summary>Current context snapshot</summary>
-      <pre>${escapeHtml(toPrettyJson(runtime.contextState))}</pre>
-    </details>
-    <details>
-      <summary>Revision/source metadata</summary>
-      <ul>${laneMetadata || "<li>No lanes written yet.</li>"}</ul>
-    </details>
-    <details>
-      <summary>Intent/action matching traces</summary>
-      ${traceActions || "<p class=\"runtime-note\">No intent evaluations recorded.</p>"}
-      ${trace ? `<p class="runtime-note"><strong>Matched actions:</strong> ${escapeHtml(trace.matched.map((item) => `${item.pluginId}.${item.actionId}`).join(", ") || "none")}</p>` : ""}
-    </details>
-  `;
+  renderPanels(root, runtime);
 }
 
 function executeResolvedAction(
@@ -567,25 +531,7 @@ function resolveEventTargetSelector(root: HTMLElement): string | null {
 }
 
 function renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void {
-  renderContextControls(root, runtime, {
-    readGroupSelectionContext: () => readGroupSelectionContext(runtime),
-    writeGroupSelectionContext: (value) => writeGroupSelectionContext(runtime, value),
-    createRevision: () => createRevision(runtime.windowId),
-    publishContext: ({ tabId, contextKey, contextValue, revision, sourceWindowId }) => {
-      publishWithDegrade(root, runtime, {
-        type: "context",
-        scope: "group",
-        tabId,
-        contextKey,
-        contextValue,
-        revision,
-        sourceWindowId,
-      });
-    },
-    renderSyncStatus: () => renderSyncStatus(root, runtime),
-    renderDevContextInspector: () => renderDevContextInspector(root, runtime),
-    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
-  });
+  renderPanels(root, runtime);
 }
 
 function applyLayout(root: HTMLElement, layout: ShellLayoutState): void {
@@ -656,20 +602,6 @@ function announce(root: HTMLElement, runtime: ShellRuntime, message: string): vo
     return;
   }
   node.textContent = message;
-}
-
-function applyPendingFocus(root: HTMLElement, runtime: ShellRuntime): void {
-  const selector = runtime.pendingFocusSelector;
-  if (!selector) {
-    return;
-  }
-
-  const node = root.querySelector<HTMLElement>(selector);
-  if (node) {
-    node.focus();
-  }
-
-  runtime.pendingFocusSelector = null;
 }
 
 function publishWithDegrade(
