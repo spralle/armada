@@ -1,46 +1,19 @@
 import {
-  type PluginContract,
-  type PluginSelectionContribution,
-} from "@armada/plugin-contracts";
-import {
-  applyPaneResize,
-  type ShellLayoutState,
-} from "./layout.js";
-import { localMockParts, type LocalMockPart } from "./mock-parts.js";
-import {
-  type ContextSyncEvent,
-  type SelectionSyncEvent,
-} from "./window-bridge.js";
-import {
-  buildGroupSelectionContextValue,
-  buildPrimarySelectionTitle,
-  buildSecondarySelectionTitle,
-  domainDemoAdapter,
-  inferSourceEntityType,
-  resolveSelectionFromIntentFacts,
-  resolveSelectionWritesFromSyncEvent,
-  readSelectionFromSyncEvent,
-  resolveDomainPropagationSelection,
-  resolvePrimaryEntity,
-  resolveSecondaryEntity,
-  toSelectionSyncFields,
-} from "./domain-demo-adapter.js";
-import {
-  applySelectionUpdate,
-  type DerivedLaneDefinition,
   getTabGroupId,
   readEntityTypeSelection,
-  readGlobalLane,
-  readGroupLaneForTab,
   registerTab,
-  type SelectionPropagationRule,
   setActiveTab,
   writeGlobalLane,
   writeGroupLaneByGroup,
   writeGroupLaneByTab,
-  type RevisionMeta,
-  type ShellContextState,
 } from "./context-state.js";
+import {
+  buildGroupSelectionContextValue,
+  domainDemoAdapter,
+  readSelectionFromSyncEvent,
+  resolveSelectionFromIntentFacts,
+  toSelectionSyncFields,
+} from "./domain-demo-adapter.js";
 import {
   createActionCatalogFromRegistrySnapshot,
   resolveIntentWithTrace,
@@ -54,33 +27,20 @@ import {
   resolveChooserKeyboardAction,
   resolveDegradedKeyboardInteraction,
 } from "./keyboard-a11y.js";
-import { shellBootstrapState, bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
-import {
-  DEFAULT_GROUP_COLOR,
-  DEFAULT_GROUP_ID,
-  DEV_MODE,
-  DOMAIN_CONTEXT_KEY,
-  DRAG_INLINE_PREFIX,
-  DRAG_REF_PREFIX,
-  GLOBAL_CONTEXT_KEY,
-} from "./app/constants.js";
+import { applyPaneResize, type ShellLayoutState } from "./layout.js";
+import { DEFAULT_GROUP_COLOR, DEFAULT_GROUP_ID } from "./app/constants.js";
+import { shellBootstrapState } from "./app/bootstrap.js";
 import { createShellRuntime } from "./app/runtime.js";
-import type {
-  DevLaneMetadata,
-  RuntimeDerivedLaneContribution,
-  SelectionGraphExtensions,
-  SelectionPropagationResult,
-  SelectionWrite,
-  ShellRuntime,
-} from "./app/types.js";
+import type { ShellRuntime } from "./app/types.js";
 import {
   createWindowId,
   escapeHtml,
-  safeJson,
-  safeParse,
-  sanitizeForWindowName,
   toPrettyJson,
 } from "./app/utils.js";
+import {
+  type ContextSyncEvent,
+  type SelectionSyncEvent,
+} from "./window-bridge.js";
 import {
   handleSyncAck as handleSyncAckState,
   handleSyncProbe as handleSyncProbeState,
@@ -88,6 +48,39 @@ import {
   renderBridgeWarning as renderBridgeWarningState,
   requestSyncProbe as requestSyncProbeState,
 } from "./sync/bridge-degraded.js";
+import {
+  collectLaneMetadata,
+  createRevision,
+  ensureTabsRegistered,
+  readGlobalContext,
+  readGroupSelectionContext,
+  updateContextState,
+  writeGlobalSelectionLane,
+  writeGroupSelectionContext,
+} from "./context/runtime-state.js";
+import { applySelectionPropagation } from "./domain/selection-graph.js";
+import {
+  getVisibleMockParts,
+  isSelectionActionNode,
+  updateSelectedStyles,
+} from "./ui/parts-rendering.js";
+import {
+  renderParts as renderPartsView,
+  restorePart,
+  startPopoutWatchdog,
+} from "./ui/parts-controller.js";
+import {
+  mountMainWindow,
+  mountPopout,
+} from "./ui/shell-mount.js";
+import {
+  hydratePluginRegistry,
+  renderPluginControls,
+} from "./ui/plugin-controls.js";
+import {
+  renderContextControls,
+  updateWindowReadOnlyState,
+} from "./ui/context-controls.js";
 
 const shellRuntime = createShellRuntime();
 
@@ -95,7 +88,9 @@ if (typeof document !== "undefined") {
   mountShell(document.body, shellRuntime);
 
   if (!shellRuntime.isPopout) {
-    void hydratePluginRegistry(document.body, shellRuntime);
+    void hydratePluginRegistry(document.body, shellRuntime, {
+      renderParts: () => renderParts(document.body, shellRuntime),
+    });
   }
 }
 
@@ -103,570 +98,59 @@ console.log("[shell] POC shell stub ready", shellBootstrapState.mode);
 
 function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
   if (runtime.isPopout) {
-    mountPopout(root, runtime);
+    mountPopout(root, runtime, {
+      renderParts: () => renderParts(root, runtime),
+      renderPluginControls: () => renderPluginControls(root, runtime, { renderParts: () => renderParts(root, runtime) }),
+      renderSyncStatus: () => renderSyncStatus(root, runtime),
+      renderContextControls: () => renderContextControlsPanel(root, runtime),
+      renderDevContextInspector: () => renderDevContextInspector(root, runtime),
+      updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+      setupResize: () => setupResize(root, runtime),
+      publishRestoreRequestOnUnload: () => {
+        publishWithDegrade(root, runtime, {
+          type: "popout-restore-request",
+          hostWindowId: runtime.hostWindowId!,
+          partId: runtime.partId!,
+          sourceWindowId: runtime.windowId,
+        });
+      },
+    });
   } else {
-    mountMainWindow(root, runtime);
-    startPopoutWatchdog(root, runtime);
+    mountMainWindow(root, {
+      renderParts: () => renderParts(root, runtime),
+      renderPluginControls: () => renderPluginControls(root, runtime, { renderParts: () => renderParts(root, runtime) }),
+      renderSyncStatus: () => renderSyncStatus(root, runtime),
+      renderContextControls: () => renderContextControlsPanel(root, runtime),
+      renderDevContextInspector: () => renderDevContextInspector(root, runtime),
+      updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+      setupResize: () => setupResize(root, runtime),
+      publishRestoreRequestOnUnload: () => {},
+    });
+    applyLayout(root, runtime.layout);
+    startPopoutWatchdog(root, runtime, {
+      renderParts: () => renderParts(root, runtime),
+      renderSyncStatus: () => renderSyncStatus(root, runtime),
+    });
   }
 
   bindBridgeSync(root, runtime);
   bindKeyboardShortcuts(root, runtime);
 }
 
-function mountMainWindow(root: HTMLElement, runtime: ShellRuntime): void {
-  root.innerHTML = `
-  <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-    body { margin: 0; background: #14161a; color: #e9edf3; }
-    .shell { display: grid; grid-template-columns: var(--side-size) 6px 1fr; height: 100vh; }
-    .slot-side { border-right: 1px solid #2b3040; background: #181c24; }
-    .main-stack { display: grid; grid-template-rows: 1fr 6px var(--secondary-size); min-width: 0; min-height: 0; }
-    .slot { min-width: 0; min-height: 0; overflow: auto; padding: 10px 12px; }
-    .slot-master { background: #11151c; }
-    .slot-secondary { border-top: 1px solid #2b3040; background: #121922; }
-    .splitter { background: #2b3040; cursor: col-resize; user-select: none; touch-action: none; }
-    .splitter[data-pane="secondary"] { cursor: row-resize; }
-    .card { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; }
-    .part-root { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; container-type: inline-size; }
-    .part-root.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff33 inset; }
-    .part-actions { display: flex; gap: 8px; margin-bottom: 8px; }
-    .part-actions button { background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 4px 8px; cursor: pointer; }
-    .part-actions button:hover { border-color: #7cb4ff; }
-    .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
-    .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
-    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); pointer-events: none; }
-    .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
-    .plugin-row { display:block; margin: 6px 0; }
-    .plugin-error { margin: 4px 0 0 22px; color: #f5b8b8; font-size: 12px; }
-    .plugin-notice { margin:0 0 8px; font-size:12px; color:#f5d7b5; }
-    .plugin-diag-list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: #c6d0e0; }
-    .plugin-diag-list li { margin: 2px 0; }
-    .dev-inspector { border-color: #495f87; background: #0f1622; }
-    .dev-inspector details { margin-bottom: 6px; }
-    .dev-inspector pre { margin: 6px 0; max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; border: 1px solid #334564; background: #0a111c; color: #cfe3ff; font-size: 11px; }
-    .dev-inspector ul { margin: 6px 0; padding-left: 18px; }
-    .dev-inspector li { margin: 3px 0; }
-    .domain-panel { display: grid; gap: 6px; }
-    .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
-    .domain-list { display: grid; gap: 6px; }
-    .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 6px; padding: 8px; cursor: pointer; }
-    .domain-row:hover { border-color: #7cb4ff; }
-    .domain-row.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff44 inset; }
-    .intent-chooser { margin-top: 8px; border: 1px solid #334564; border-radius: 6px; padding: 8px; background: #101723; }
-    .intent-chooser button { display: block; width: 100%; text-align: left; margin: 4px 0; background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 6px; cursor: pointer; }
-    .intent-chooser button:hover { border-color: #7cb4ff; }
-    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
-    @container (max-width: 420px) {
-      .part-actions { flex-wrap: wrap; }
-      .domain-row { font-size: 12px; padding: 6px; }
-      .domain-row span { white-space: normal; }
-    }
-  </style>
-  <main class="shell" id="shell-root">
-    <section class="slot slot-side" data-slot="side">
-      <section class="card" id="plugin-controls"></section>
-      <section class="card" id="sync-status"></section>
-      <section class="card" id="context-controls"></section>
-      ${DEV_MODE ? '<section class="card dev-inspector" id="dev-context-inspector"></section>' : ""}
-      <section id="slot-side-parts"></section>
-    </section>
-    <div class="splitter" id="splitter-side" data-pane="side" aria-label="Resize side pane"></div>
-    <section class="main-stack">
-      <section class="slot slot-master" data-slot="master"><section id="slot-master-parts"></section></section>
-      <div class="splitter" id="splitter-secondary" data-pane="secondary" aria-label="Resize secondary pane"></div>
-      <section class="slot slot-secondary" data-slot="secondary"><section id="slot-secondary-parts"></section></section>
-    </section>
-  </main>
-  <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  `;
-
-  applyLayout(root, runtime.layout);
-  renderParts(root, runtime);
-  renderPluginControls(root, runtime);
-  renderSyncStatus(root, runtime);
-  renderContextControls(root, runtime);
-  renderDevContextInspector(root, runtime);
-  updateWindowReadOnlyState(root, runtime);
-  setupResize(root, runtime);
-}
-
-function mountPopout(root: HTMLElement, runtime: ShellRuntime): void {
-  root.innerHTML = `
-  <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-    body { margin: 0; background: #14161a; color: #e9edf3; }
-    .popout { padding: 12px; }
-    .card { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; }
-    .part-root { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; container-type: inline-size; }
-    .part-root.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff33 inset; }
-    .part-actions { display: flex; gap: 8px; margin-bottom: 8px; }
-    .part-actions button { background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 4px 8px; cursor: pointer; }
-    .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
-    .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
-    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); pointer-events: none; }
-    .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
-    .dev-inspector { border-color: #495f87; background: #0f1622; }
-    .dev-inspector details { margin-bottom: 6px; }
-    .dev-inspector pre { margin: 6px 0; max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; border: 1px solid #334564; background: #0a111c; color: #cfe3ff; font-size: 11px; }
-    .dev-inspector ul { margin: 6px 0; padding-left: 18px; }
-    .dev-inspector li { margin: 3px 0; }
-    .domain-panel { display: grid; gap: 6px; }
-    .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
-    .domain-list { display: grid; gap: 6px; }
-    .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 6px; padding: 8px; cursor: pointer; }
-    .domain-row:hover { border-color: #7cb4ff; }
-    .domain-row.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff44 inset; }
-    .intent-chooser { margin-top: 8px; border: 1px solid #334564; border-radius: 6px; padding: 8px; background: #101723; }
-    .intent-chooser button { display: block; width: 100%; text-align: left; margin: 4px 0; background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 6px; cursor: pointer; }
-    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
-    @container (max-width: 420px) {
-      .part-actions { flex-wrap: wrap; }
-      .domain-row { font-size: 12px; padding: 6px; }
-      .domain-row span { white-space: normal; }
-    }
-  </style>
-  <main class="popout">
-    <section class="card" id="sync-status"></section>
-    <section class="card" id="context-controls"></section>
-    ${DEV_MODE ? '<section class="card dev-inspector" id="dev-context-inspector"></section>' : ""}
-    <section id="popout-slot"></section>
-  </main>
-  <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  `;
-
-  renderParts(root, runtime);
-  renderSyncStatus(root, runtime);
-  renderContextControls(root, runtime);
-  renderDevContextInspector(root, runtime);
-  updateWindowReadOnlyState(root, runtime);
-
-  window.addEventListener("beforeunload", () => {
-    if (!runtime.partId || !runtime.hostWindowId) {
-      return;
-    }
-
-    publishWithDegrade(root, runtime, {
-      type: "popout-restore-request",
-      hostWindowId: runtime.hostWindowId,
-      partId: runtime.partId,
-      sourceWindowId: runtime.windowId,
-    });
-  });
-}
-
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
   const visibleParts = getVisibleMockParts(runtime);
   updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
-
-  if (runtime.isPopout) {
-    const slot = root.querySelector<HTMLElement>("#popout-slot");
-    if (!slot) {
-      return;
-    }
-
-    const part = runtime.partId ? visibleParts.find((item) => item.id === runtime.partId) : null;
-    if (!part) {
-      slot.innerHTML = `<article class="part-root"><h2>Popout unavailable</h2><p>Unable to resolve requested part.</p></article>`;
-      return;
-    }
-
-    slot.innerHTML = renderPartCard(part, runtime, { showPopoutButton: false, showRestoreButton: true });
-    wirePartActions(root, runtime);
-    wireDragDrop(root, runtime);
-    updateSelectedStyles(root, runtime.selectedPartId);
-    updateWindowReadOnlyState(root, runtime);
-    return;
-  }
-
-  const partsBySlot = {
-    master: root.querySelector<HTMLElement>("#slot-master-parts"),
-    secondary: root.querySelector<HTMLElement>("#slot-secondary-parts"),
-    side: root.querySelector<HTMLElement>("#slot-side-parts"),
-  };
-
-  for (const slotNode of Object.values(partsBySlot)) {
-    if (slotNode) {
-      slotNode.innerHTML = "";
-    }
-  }
-
-  for (const part of visibleParts) {
-    if (runtime.poppedOutPartIds.has(part.id)) {
-      continue;
-    }
-
-    const slotNode = partsBySlot[part.slot];
-    if (!slotNode) {
-      continue;
-    }
-
-    slotNode.insertAdjacentHTML("beforeend", renderPartCard(part, runtime, { showPopoutButton: true }));
-  }
-
-  wirePartActions(root, runtime);
-  wireDragDrop(root, runtime);
-  updateSelectedStyles(root, runtime.selectedPartId);
+  renderPartsView(root, runtime, {
+    applySelection: (event) => applySelection(root, runtime, event),
+    publishWithDegrade: (event) => {
+      publishWithDegrade(root, runtime, event);
+    },
+    renderContextControls: () => renderContextControlsPanel(root, runtime),
+    renderParts: () => renderParts(root, runtime),
+    renderSyncStatus: () => renderSyncStatus(root, runtime),
+    resolveIntentFlow: (intent) => resolveIntentFlow(root, runtime, intent as ShellIntent),
+  });
   updateWindowReadOnlyState(root, runtime);
-}
-
-function renderPartCard(
-  part: LocalMockPart,
-  runtime: ShellRuntime,
-  options: { showPopoutButton: boolean; showRestoreButton?: boolean },
-): string {
-  const popoutButton = options.showPopoutButton
-    ? `<button type="button" data-action="popout" data-part-id="${part.id}">Pop out</button>`
-    : "";
-  const restoreButton = options.showRestoreButton
-    ? `<button type="button" data-action="restore" data-part-id="${part.id}">Restore to host</button>`
-    : "";
-
-  return `
-    <article class="part-root" data-part-id="${part.id}" draggable="true">
-      <h2>${part.title}</h2>
-      <div class="part-actions">
-        <button type="button" data-action="select" data-part-id="${part.id}" data-part-title="${part.title}">Select</button>
-        ${popoutButton}
-        ${restoreButton}
-      </div>
-      ${part.render({
-    selectedPrimaryEntityId: runtime.selectedPrimaryEntityId,
-    selectedSecondaryEntityId: runtime.selectedSecondaryEntityId,
-  })}
-      <div class="dropzone" data-dropzone-for="${part.id}">Drop cross-window payload here</div>
-      <p class="runtime-note" data-drop-result-for="${part.id}"></p>
-      <p class="runtime-note">Window: ${runtime.windowId}</p>
-    </article>
-  `;
-}
-
-function wirePartActions(root: HTMLElement, runtime: ShellRuntime): void {
-  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='select']")) {
-    button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const partId = button.dataset.partId;
-      const partTitle = button.dataset.partTitle;
-      if (!partId || !partTitle) {
-        return;
-      }
-
-      const selectionRevision = createRevision(runtime.windowId);
-
-      applySelection(root, runtime, {
-        selectedPartId: partId,
-        selectedPartTitle: partTitle,
-        ...toSelectionSyncFields({
-          primaryEntityId: runtime.selectedPrimaryEntityId,
-          secondaryEntityId: runtime.selectedSecondaryEntityId,
-        }),
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-        type: "selection",
-      });
-
-      publishWithDegrade(root, runtime, {
-        type: "selection",
-        selectedPartId: partId,
-        selectedPartTitle: partTitle,
-        ...toSelectionSyncFields({
-          primaryEntityId: runtime.selectedPrimaryEntityId,
-          secondaryEntityId: runtime.selectedSecondaryEntityId,
-        }),
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-      });
-
-      writeGlobalSelectionLane(runtime, {
-        selectedPartId: partId,
-        selectedPartTitle: partTitle,
-        revision: selectionRevision,
-      });
-    });
-  }
-
-  for (const button of root.querySelectorAll<HTMLButtonElement>(`button[data-action='${domainDemoAdapter.actionNames.selectPrimary}']`)) {
-    button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const primaryEntityId = button.dataset[domainDemoAdapter.dataAttributes.primaryEntityId];
-      if (!primaryEntityId) {
-        return;
-      }
-
-      const primaryEntity = resolvePrimaryEntity(primaryEntityId);
-      if (!primaryEntity) {
-        return;
-      }
-
-      runtime.selectedPrimaryEntityId = primaryEntity.id;
-      runtime.selectedSecondaryEntityId = primaryEntity.vesselId;
-
-      const selectionRevision = createRevision(runtime.windowId);
-
-      applySelection(root, runtime, {
-        type: "selection",
-        selectedPartId: domainDemoAdapter.partIds.primary,
-        selectedPartTitle: buildPrimarySelectionTitle(primaryEntity),
-        ...toSelectionSyncFields({
-          primaryEntityId: primaryEntity.id,
-          secondaryEntityId: primaryEntity.vesselId,
-        }),
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-      });
-
-      writeGroupSelectionContext(runtime, buildGroupSelectionContextValue({
-        primaryEntityId: primaryEntity.id,
-        secondaryEntityId: primaryEntity.vesselId,
-      }));
-      resolveIntentFlow(root, runtime, {
-        type: domainDemoAdapter.intentTypes.primarySelected,
-        facts: {
-          sourceType: domainDemoAdapter.entityTypes.primary,
-          targetType: domainDemoAdapter.entityTypes.secondary,
-          source: {
-            orderId: primaryEntity.id,
-          },
-          target: {
-            vesselId: primaryEntity.vesselId,
-            vesselClass: resolveSecondaryEntity(primaryEntity.vesselId)?.vesselClass ?? null,
-          },
-        },
-      });
-      renderParts(root, runtime);
-      renderContextControls(root, runtime);
-      renderSyncStatus(root, runtime);
-
-      publishWithDegrade(root, runtime, {
-        type: "selection",
-        selectedPartId: domainDemoAdapter.partIds.primary,
-        selectedPartTitle: buildPrimarySelectionTitle(primaryEntity),
-        ...toSelectionSyncFields({
-          primaryEntityId: primaryEntity.id,
-          secondaryEntityId: primaryEntity.vesselId,
-        }),
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-      });
-      publishWithDegrade(root, runtime, {
-        type: "context",
-        scope: "group",
-        tabId: runtime.selectedPartId ?? undefined,
-        contextKey: domainDemoAdapter.laneKeys.groupSelection,
-        contextValue: readGroupSelectionContext(runtime),
-        revision: createRevision(runtime.windowId),
-        sourceWindowId: runtime.windowId,
-      });
-
-      writeGlobalSelectionLane(runtime, {
-        selectedPartId: domainDemoAdapter.partIds.primary,
-        selectedPartTitle: buildPrimarySelectionTitle(primaryEntity),
-        revision: selectionRevision,
-      });
-    });
-  }
-
-  for (const button of root.querySelectorAll<HTMLButtonElement>(`button[data-action='${domainDemoAdapter.actionNames.selectSecondary}']`)) {
-    button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const secondaryEntityId = button.dataset[domainDemoAdapter.dataAttributes.secondaryEntityId];
-      if (!secondaryEntityId) {
-        return;
-      }
-
-      const secondaryEntity = resolveSecondaryEntity(secondaryEntityId);
-      if (!secondaryEntity) {
-        return;
-      }
-
-      runtime.selectedSecondaryEntityId = secondaryEntity.id;
-      const selectedPrimaryEntity = runtime.selectedPrimaryEntityId
-        ? resolvePrimaryEntity(runtime.selectedPrimaryEntityId)
-        : null;
-      if (!selectedPrimaryEntity || selectedPrimaryEntity.vesselId !== secondaryEntity.id) {
-        runtime.selectedPrimaryEntityId = null;
-      }
-
-      const selectionRevision = createRevision(runtime.windowId);
-
-      applySelection(root, runtime, {
-        type: "selection",
-        selectedPartId: domainDemoAdapter.partIds.secondary,
-        selectedPartTitle: buildSecondarySelectionTitle(secondaryEntity),
-        ...toSelectionSyncFields({
-          primaryEntityId: runtime.selectedPrimaryEntityId,
-          secondaryEntityId: secondaryEntity.id,
-        }),
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-      });
-
-      writeGroupSelectionContext(runtime, buildGroupSelectionContextValue({
-        primaryEntityId: null,
-        secondaryEntityId: secondaryEntity.id,
-      }));
-      resolveIntentFlow(root, runtime, {
-        type: domainDemoAdapter.intentTypes.secondarySelected,
-        facts: {
-          sourceType: domainDemoAdapter.entityTypes.secondary,
-          targetType: domainDemoAdapter.entityTypes.primary,
-          source: {
-            vesselId: secondaryEntity.id,
-            vesselClass: secondaryEntity.vesselClass,
-          },
-        },
-      });
-      renderParts(root, runtime);
-      renderContextControls(root, runtime);
-      renderSyncStatus(root, runtime);
-
-      publishWithDegrade(root, runtime, {
-        type: "selection",
-        selectedPartId: domainDemoAdapter.partIds.secondary,
-        selectedPartTitle: buildSecondarySelectionTitle(secondaryEntity),
-        ...toSelectionSyncFields({
-          primaryEntityId: runtime.selectedPrimaryEntityId,
-          secondaryEntityId: secondaryEntity.id,
-        }),
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-      });
-      publishWithDegrade(root, runtime, {
-        type: "context",
-        scope: "group",
-        tabId: runtime.selectedPartId ?? undefined,
-        contextKey: domainDemoAdapter.laneKeys.groupSelection,
-        contextValue: readGroupSelectionContext(runtime),
-        revision: createRevision(runtime.windowId),
-        sourceWindowId: runtime.windowId,
-      });
-
-      writeGlobalSelectionLane(runtime, {
-        selectedPartId: domainDemoAdapter.partIds.secondary,
-        selectedPartTitle: buildSecondarySelectionTitle(secondaryEntity),
-        revision: selectionRevision,
-      });
-    });
-  }
-
-  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='popout']")) {
-    button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const partId = button.dataset.partId;
-      if (!partId) {
-        return;
-      }
-
-      openPopout(partId, root, runtime);
-    });
-  }
-
-  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='restore']")) {
-    button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const partId = button.dataset.partId;
-      if (!partId) {
-        return;
-      }
-
-      if (runtime.hostWindowId) {
-        publishWithDegrade(root, runtime, {
-          type: "popout-restore-request",
-          partId,
-          hostWindowId: runtime.hostWindowId,
-          sourceWindowId: runtime.windowId,
-        });
-      }
-
-      window.close();
-    });
-  }
-}
-
-function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
-  for (const partNode of root.querySelectorAll<HTMLElement>("article[data-part-id]")) {
-    partNode.addEventListener("dragstart", (event) => {
-      const dataTransfer = event.dataTransfer;
-      const partId = partNode.dataset.partId;
-      if (!dataTransfer || !partId) {
-        return;
-      }
-
-      const payload = {
-        partId,
-        partTitle: resolvePartTitle(partId),
-        sourceWindowId: runtime.windowId,
-        createdAt: new Date().toISOString(),
-      };
-
-      if (runtime.dragSessionBroker.available) {
-        const ref = runtime.dragSessionBroker.create(payload);
-        dataTransfer.setData("text/plain", `${DRAG_REF_PREFIX}${ref.id}`);
-      } else {
-        dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
-      }
-
-      dataTransfer.effectAllowed = "copyMove";
-    });
-
-    partNode.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = "copy";
-      }
-    });
-
-    partNode.addEventListener("drop", (event) => {
-      event.preventDefault();
-      const dataTransfer = event.dataTransfer;
-      const targetPartId = partNode.dataset.partId;
-      if (!dataTransfer || !targetPartId) {
-        return;
-      }
-
-      const raw = dataTransfer.getData("text/plain");
-      const resultNode = root.querySelector<HTMLElement>(`[data-drop-result-for='${targetPartId}']`);
-      if (!resultNode) {
-        return;
-      }
-
-      if (raw.startsWith(DRAG_REF_PREFIX)) {
-        const id = raw.slice(DRAG_REF_PREFIX.length);
-        const payload = runtime.dragSessionBroker.consume({ id });
-        if (!payload) {
-          resultNode.textContent = "Drop failed: session missing/expired (bridge unavailable or stale ref).";
-          return;
-        }
-
-        resultNode.textContent = `Dropped via session ref: ${safeJson(payload)}`;
-        return;
-      }
-
-      if (raw.startsWith(DRAG_INLINE_PREFIX)) {
-        const payload = safeParse(raw.slice(DRAG_INLINE_PREFIX.length));
-        resultNode.textContent = payload
-          ? `Dropped via inline fallback: ${safeJson(payload)}`
-          : "Drop failed: invalid inline payload.";
-        return;
-      }
-
-      resultNode.textContent = "Drop ignored: unsupported payload format.";
-    });
-  }
 }
 
 function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
@@ -678,14 +162,14 @@ function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
       announce(root, runtime, formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
       updateWindowReadOnlyState(root, runtime);
       renderSyncStatus(root, runtime);
-      renderContextControls(root, runtime);
+      renderContextControlsPanel(root, runtime);
       return;
     }
 
     if (runtime.syncDegraded) {
       requestSyncProbe(root, runtime);
       renderSyncStatus(root, runtime);
-      renderContextControls(root, runtime);
+      renderContextControlsPanel(root, runtime);
       updateWindowReadOnlyState(root, runtime);
       return;
     }
@@ -730,7 +214,10 @@ function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
         return;
       }
 
-      restorePart(event.partId, root, runtime);
+      restorePart(event.partId, runtime, {
+        renderParts: () => renderParts(root, runtime),
+        renderSyncStatus: () => renderSyncStatus(root, runtime),
+      });
     }
   });
 }
@@ -751,9 +238,7 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
 
       if (degradedInteraction === "block") {
         event.preventDefault();
-        return;
       }
-
       return;
     }
 
@@ -834,19 +319,7 @@ function dismissIntentChooser(root: HTMLElement, runtime: ShellRuntime): void {
   renderSyncStatus(root, runtime);
 }
 
-function isSelectionActionNode(target: HTMLElement): target is HTMLButtonElement {
-  const action = target.dataset.action;
-  return target instanceof HTMLButtonElement && (
-    action === domainDemoAdapter.actionNames.selectPrimary ||
-    action === domainDemoAdapter.actionNames.selectSecondary
-  );
-}
-
-function applySelection(
-  root: HTMLElement,
-  runtime: ShellRuntime,
-  event: SelectionSyncEvent,
-): void {
+function applySelection(root: HTMLElement, runtime: ShellRuntime, event: SelectionSyncEvent): void {
   const revision = event.revision ?? createRevision(event.sourceWindowId);
   runtime.selectedPartId = event.selectedPartId;
   runtime.selectedPartTitle = event.selectedPartTitle;
@@ -861,23 +334,19 @@ function applySelection(
     selectedPartTitle: event.selectedPartTitle,
     revision,
   });
+
   const eventSelection = readSelectionFromSyncEvent(event);
   runtime.selectedPrimaryEntityId = eventSelection.primaryEntityId;
   runtime.selectedSecondaryEntityId = eventSelection.secondaryEntityId;
-  const selectionPropagation = applySelectionPropagation(root, runtime, event, revision);
+  const selectionPropagation = applySelectionPropagation(runtime, event, revision);
   updateContextState(runtime, selectionPropagation.state);
-  runtime.selectedPrimaryEntityId = readEntityTypeSelection(
-    runtime.contextState,
-    domainDemoAdapter.entityTypes.primary,
-  ).priorityId;
-  runtime.selectedSecondaryEntityId = readEntityTypeSelection(
-    runtime.contextState,
-    domainDemoAdapter.entityTypes.secondary,
-  ).priorityId;
+  runtime.selectedPrimaryEntityId = readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.primary).priorityId;
+  runtime.selectedSecondaryEntityId = readEntityTypeSelection(runtime.contextState, domainDemoAdapter.entityTypes.secondary).priorityId;
 
   if (selectionPropagation.derivedLaneFailures.length > 0) {
     runtime.notice = `Derived lane failures: ${selectionPropagation.derivedLaneFailures.join(", ")}`;
   }
+
   renderParts(root, runtime);
   updateSelectedStyles(root, runtime.selectedPartId);
   renderSyncStatus(root, runtime);
@@ -911,7 +380,7 @@ function applyContext(root: HTMLElement, runtime: ShellRuntime, event: ContextSy
       revision,
     }));
   }
-  renderContextControls(root, runtime);
+  renderContextControlsPanel(root, runtime);
   renderSyncStatus(root, runtime);
 }
 
@@ -921,7 +390,7 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
     return;
   }
 
-  const warning = renderBridgeWarning(runtime);
+  const warning = renderBridgeWarningState(runtime);
   const selected = runtime.selectedPartTitle ?? "none";
   const groupContext = readGroupSelectionContext(runtime);
   const globalContext = readGlobalContext(runtime);
@@ -957,12 +426,12 @@ function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
   for (const button of node.querySelectorAll<HTMLButtonElement>("button[data-action='choose-intent-action']")) {
     button.addEventListener("click", () => {
       const index = Number(button.dataset.intentIndex ?? "-1");
-      const selected = runtime.pendingIntentMatches[index];
-      if (!selected) {
+      const selectedMatch = runtime.pendingIntentMatches[index];
+      if (!selectedMatch) {
         return;
       }
       runtime.chooserFocusIndex = index;
-      executeResolvedAction(root, runtime, selected, runtime.pendingIntent);
+      executeResolvedAction(root, runtime, selectedMatch, runtime.pendingIntent);
     });
   }
 
@@ -1002,10 +471,6 @@ function resolveIntentFlow(root: HTMLElement, runtime: ShellRuntime, intent: She
 }
 
 function renderDevContextInspector(root: HTMLElement, runtime: ShellRuntime): void {
-  if (!DEV_MODE) {
-    return;
-  }
-
   const node = root.querySelector<HTMLElement>("#dev-context-inspector");
   if (!node) {
     return;
@@ -1100,521 +565,31 @@ function resolveEventTargetSelector(root: HTMLElement): string | null {
   return null;
 }
 
-function applySelectionPropagation(
-  _root: HTMLElement,
-  runtime: ShellRuntime,
-  event: SelectionSyncEvent,
-  revision: RevisionMeta,
-): { state: ShellContextState; derivedLaneFailures: string[] } {
-  const { propagationRules, derivedLanes } = resolveSelectionGraphExtensions(runtime);
-  const writes = resolveSelectionWritesFromEvent(event);
-  const derivedGroupId = resolveDerivedGroupId(runtime, event.selectedPartId);
-  let next = runtime.contextState;
-  const failures: string[] = [];
-
-  for (const write of writes) {
-    const result = applySelectionUpdate(next, {
-      entityType: write.entityType,
-      selectedIds: write.selectedIds,
-      priorityId: write.priorityId,
-      revision,
-    }, {
-      propagationRules,
-      derivedLanes,
-      derivedGroupId,
-    });
-    next = result.state;
-    failures.push(...result.derivedLaneFailures);
-  }
-
-  return {
-    state: next,
-    derivedLaneFailures: failures,
-  };
-}
-
-function resolveSelectionWritesFromEvent(event: SelectionSyncEvent): Array<{
-  entityType: string;
-  selectedIds: string[];
-  priorityId: string | null;
-}> {
-  return resolveSelectionWritesFromSyncEvent(event);
-}
-
-function resolveDerivedGroupId(runtime: ShellRuntime, tabId: string | null): string | undefined {
-  const fromTab = tabId ? getTabGroupId(runtime.contextState, tabId) : null;
-  if (fromTab) {
-    return fromTab;
-  }
-
-  const activeTabId = runtime.contextState.activeTabId;
-  if (!activeTabId) {
-    return undefined;
-  }
-
-  return getTabGroupId(runtime.contextState, activeTabId) ?? undefined;
-}
-
-function resolveSelectionGraphExtensions(runtime: ShellRuntime): {
-  propagationRules: SelectionPropagationRule[];
-  derivedLanes: DerivedLaneDefinition[];
-} {
-  const snapshot = runtime.registry.getSnapshot();
-  const propagationRules: SelectionPropagationRule[] = [];
-  const derivedLanes: DerivedLaneDefinition[] = [];
-
-  for (const plugin of snapshot.plugins) {
-    if (!plugin.enabled || !plugin.contract?.contributes) {
-      continue;
-    }
-
-    const selections = plugin.contract.contributes.selection ?? [];
-    for (const contribution of selections) {
-      const receiverEntityType = readSelectionReceiverEntityType(contribution);
-      if (!receiverEntityType) {
-        continue;
-      }
-
-      for (const interest of readSelectionContributionInterests(contribution, receiverEntityType)) {
-        propagationRules.push(
-          createSelectionPropagationRule(plugin.id, contribution, receiverEntityType, interest),
-        );
-      }
-    }
-
-    const derived = readPluginDerivedLaneContributions(plugin.contract);
-    for (const lane of derived) {
-      derivedLanes.push(createDerivedLaneDefinition(plugin.id, lane));
-    }
-  }
-
-  return {
-    propagationRules,
-    derivedLanes,
-  };
-}
-
-function createSelectionPropagationRule(
-  pluginId: string,
-  contribution: PluginSelectionContribution,
-  receiverEntityType: string,
-  interest: SelectionInterestDescriptor,
-): SelectionPropagationRule {
-  const adapterId = readSelectionInterestAdapterId(interest);
-  const adapter = resolveSelectionInterestAdapter(adapterId);
-
-  return {
-    id: `${pluginId}:${contribution.id}:${interest.sourceEntityType}:${adapterId ?? "identity"}`,
-    sourceEntityType: interest.sourceEntityType,
-    propagate: ({ sourceSelection, state }) => {
-      const mapped = adapter({
-        state,
-        sourceEntityType: interest.sourceEntityType,
-        receiverEntityType,
-        sourceSelection,
+function renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void {
+  renderContextControls(root, runtime, {
+    readGroupSelectionContext: () => readGroupSelectionContext(runtime),
+    writeGroupSelectionContext: (value) => writeGroupSelectionContext(runtime, value),
+    createRevision: () => createRevision(runtime.windowId),
+    publishContext: ({ tabId, contextKey, contextValue, revision, sourceWindowId }) => {
+      publishWithDegrade(root, runtime, {
+        type: "context",
+        scope: "group",
+        tabId,
+        contextKey,
+        contextValue,
+        revision,
+        sourceWindowId,
       });
-
-      if (!mapped) {
-        return null;
-      }
-
-      return {
-        entityType: receiverEntityType,
-        selectedIds: mapped.selectedIds,
-        priorityId: mapped.priorityId ?? null,
-      };
     },
-  };
-}
-
-type SelectionInterestDescriptor = {
-  sourceEntityType: string;
-  adapter?: string;
-};
-
-function readSelectionReceiverEntityType(contribution: PluginSelectionContribution): string | null {
-  const receiver = (contribution as PluginSelectionContribution & { receiverEntityType?: unknown }).receiverEntityType;
-  if (typeof receiver === "string" && receiver.length > 0) {
-    return receiver;
-  }
-
-  const target = (contribution as PluginSelectionContribution & { target?: unknown }).target;
-  return typeof target === "string" && target.length > 0 ? target : null;
-}
-
-function readSelectionContributionInterests(
-  contribution: PluginSelectionContribution,
-  receiverEntityType: string,
-): SelectionInterestDescriptor[] {
-  const rawInterests = (contribution as PluginSelectionContribution & { interests?: unknown }).interests;
-  if (Array.isArray(rawInterests) && rawInterests.length > 0) {
-    const parsed = rawInterests
-      .map((item): SelectionInterestDescriptor | null => {
-        if (!item || typeof item !== "object") {
-          return null;
-        }
-
-        const sourceEntityType = (item as { sourceEntityType?: unknown }).sourceEntityType;
-        if (typeof sourceEntityType !== "string" || sourceEntityType.length === 0) {
-          return null;
-        }
-
-        const adapter = (item as { adapter?: unknown }).adapter;
-        if (typeof adapter === "string" && adapter.length > 0) {
-          return {
-            sourceEntityType,
-            adapter,
-          };
-        }
-
-        return {
-          sourceEntityType,
-        };
-      })
-      .filter((item): item is SelectionInterestDescriptor => item !== null);
-
-    if (parsed.length > 0) {
-      return parsed;
-    }
-  }
-
-  const legacySource = (contribution as PluginSelectionContribution & { source?: unknown }).source;
-  if (typeof legacySource === "string" && legacySource.length > 0) {
-    return [{ sourceEntityType: legacySource }];
-  }
-
-  const inferredSource = inferSourceEntityType(receiverEntityType);
-  return inferredSource ? [{ sourceEntityType: inferredSource }] : [];
-}
-
-type SelectionInterestAdapterInput = {
-  state: ShellContextState;
-  sourceEntityType: string;
-  receiverEntityType: string;
-  sourceSelection: ReturnType<typeof readEntityTypeSelection>;
-};
-
-type SelectionInterestAdapter = (
-  input: SelectionInterestAdapterInput,
-) => {
-  selectedIds: string[];
-  priorityId?: string | null;
-} | null;
-
-const selectionInterestAdapters: Readonly<Record<string, SelectionInterestAdapter>> = {
-  "domain.order-priority-to-vessel": ({ state, sourceEntityType, receiverEntityType, sourceSelection }) => {
-    const domainSelection = resolveDomainPropagationSelection({
-      sourceEntityType,
-      targetEntityType: receiverEntityType,
-      sourcePriorityId: sourceSelection.priorityId,
-      state,
-    });
-    if (!domainSelection) {
-      return null;
-    }
-
-    return {
-      selectedIds: domainSelection.selectedIds,
-      priorityId: domainSelection.priorityId,
-    };
-  },
-  "domain.vessel-priority-to-orders": ({ state, sourceEntityType, receiverEntityType, sourceSelection }) => {
-    const domainSelection = resolveDomainPropagationSelection({
-      sourceEntityType,
-      targetEntityType: receiverEntityType,
-      sourcePriorityId: sourceSelection.priorityId,
-      state,
-    });
-    if (!domainSelection) {
-      return null;
-    }
-
-    return {
-      selectedIds: domainSelection.selectedIds,
-      priorityId: domainSelection.priorityId,
-    };
-  },
-};
-
-const passthroughSelectionInterestAdapter: SelectionInterestAdapter = ({ sourceSelection }) => ({
-  selectedIds: sourceSelection.selectedIds,
-  priorityId: sourceSelection.priorityId,
-});
-
-function resolveSelectionInterestAdapter(adapterId: string | null): SelectionInterestAdapter {
-  if (!adapterId) {
-    return passthroughSelectionInterestAdapter;
-  }
-
-  return selectionInterestAdapters[adapterId] ?? passthroughSelectionInterestAdapter;
-}
-
-function createDerivedLaneDefinition(
-  pluginId: string,
-  lane: RuntimeDerivedLaneContribution,
-): DerivedLaneDefinition {
-  return {
-    key: lane.key,
-    valueType: lane.valueType,
-    sourceEntityType: lane.sourceEntityType,
-    scope: lane.scope,
-    derive: ({ sourceSelection }) => {
-      if (lane.strategy === "priority-id") {
-        return sourceSelection.priorityId ?? "none";
-      }
-
-      return sourceSelection.selectedIds.join(",");
-    },
-  };
-}
-
-function readSelectionInterestAdapterId(
-  interest: SelectionInterestDescriptor,
-): string | null {
-  const value = interest.adapter;
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function readPluginDerivedLaneContributions(contract: PluginContract): RuntimeDerivedLaneContribution[] {
-  const raw = (contract.contributes as { derivedLanes?: unknown } | undefined)?.derivedLanes;
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  const lanes: RuntimeDerivedLaneContribution[] = [];
-  for (const item of raw) {
-    const parsed = parseRuntimeDerivedLaneContribution(item);
-    if (parsed) {
-      lanes.push(parsed);
-    }
-  }
-
-  return lanes;
-}
-
-function parseRuntimeDerivedLaneContribution(value: unknown): RuntimeDerivedLaneContribution | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const lane = value as Partial<RuntimeDerivedLaneContribution>;
-  if (
-    typeof lane.id !== "string" ||
-    typeof lane.key !== "string" ||
-    typeof lane.sourceEntityType !== "string" ||
-    (lane.scope !== "global" && lane.scope !== "group") ||
-    typeof lane.valueType !== "string" ||
-    (lane.strategy !== "priority-id" && lane.strategy !== "joined-selected-ids")
-  ) {
-    return null;
-  }
-
-  return {
-    id: lane.id,
-    key: lane.key,
-    sourceEntityType: lane.sourceEntityType,
-    scope: lane.scope,
-    valueType: lane.valueType,
-    strategy: lane.strategy,
-  };
-}
-
-function renderBridgeWarning(runtime: ShellRuntime): string {
-  return renderBridgeWarningState(runtime);
-}
-
-function renderContextControls(root: HTMLElement, runtime: ShellRuntime): void {
-  const node = root.querySelector<HTMLElement>("#context-controls");
-  if (!node) {
-    return;
-  }
-
-  node.innerHTML = `
-    <h2>Group context (demo)</h2>
-    <label class="runtime-note" for="context-value-input">${domainDemoAdapter.laneKeys.groupSelection}</label>
-    <input id="context-value-input" value="${escapeHtml(readGroupSelectionContext(runtime))}" style="width:100%;box-sizing:border-box;margin:6px 0;padding:4px;background:#0f1319;border:1px solid #334564;color:#e9edf3;" />
-    <button type="button" id="context-apply" style="background:#1d2635;border:1px solid #334564;border-radius:4px;color:#e9edf3;padding:4px 8px;cursor:pointer;" ${runtime.syncDegraded ? "disabled" : ""}>Apply + sync</button>
-  `;
-
-  const applyButton = node.querySelector<HTMLButtonElement>("#context-apply");
-  const inputNode = node.querySelector<HTMLInputElement>("#context-value-input");
-  if (!applyButton || !inputNode) {
-    return;
-  }
-
-  applyButton.addEventListener("click", () => {
-    if (runtime.syncDegraded) {
-      return;
-    }
-    writeGroupSelectionContext(runtime, inputNode.value.trim() || "none");
-    publishWithDegrade(root, runtime, {
-      type: "context",
-      scope: "group",
-      tabId: runtime.selectedPartId ?? undefined,
-      contextKey: domainDemoAdapter.laneKeys.groupSelection,
-      contextValue: readGroupSelectionContext(runtime),
-      revision: createRevision(runtime.windowId),
-      sourceWindowId: runtime.windowId,
-    });
-    renderSyncStatus(root, runtime);
+    renderSyncStatus: () => renderSyncStatus(root, runtime),
+    renderDevContextInspector: () => renderDevContextInspector(root, runtime),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
   });
-
-  updateWindowReadOnlyState(root, runtime);
-  renderDevContextInspector(root, runtime);
-}
-
-function openPopout(partId: string, root: HTMLElement, runtime: ShellRuntime): void {
-  if (runtime.isPopout) {
-    return;
-  }
-
-  const url = new URL(window.location.href);
-  url.searchParams.set("popout", "1");
-  url.searchParams.set("partId", partId);
-  url.searchParams.set("hostWindowId", runtime.windowId);
-
-  const popout = window.open(url.toString(), `armada-popout-${sanitizeForWindowName(partId)}`);
-  if (!popout) {
-    runtime.notice = `Popup blocked. Could not pop out '${partId}'.`;
-    renderSyncStatus(root, runtime);
-    return;
-  }
-
-  runtime.popoutHandles.set(partId, popout);
-  runtime.poppedOutPartIds.add(partId);
-  runtime.notice = `Part '${partId}' opened in a new window.`;
-  renderParts(root, runtime);
-  renderSyncStatus(root, runtime);
-}
-
-function restorePart(partId: string, root: HTMLElement, runtime: ShellRuntime): void {
-  runtime.poppedOutPartIds.delete(partId);
-
-  const handle = runtime.popoutHandles.get(partId);
-  if (handle && !handle.closed) {
-    handle.close();
-  }
-
-  runtime.popoutHandles.delete(partId);
-  runtime.notice = `Part '${partId}' restored to host window.`;
-  renderParts(root, runtime);
-  renderSyncStatus(root, runtime);
-}
-
-function startPopoutWatchdog(root: HTMLElement, runtime: ShellRuntime): void {
-  window.setInterval(() => {
-    for (const [partId, handle] of runtime.popoutHandles.entries()) {
-      if (handle.closed) {
-        runtime.popoutHandles.delete(partId);
-        if (runtime.poppedOutPartIds.has(partId)) {
-          runtime.poppedOutPartIds.delete(partId);
-          runtime.notice = `Part '${partId}' restored (popout closed).`;
-          renderParts(root, runtime);
-          renderSyncStatus(root, runtime);
-        }
-      }
-    }
-  }, 1_000);
 }
 
 function applyLayout(root: HTMLElement, layout: ShellLayoutState): void {
   root.style.setProperty("--side-size", `${Math.round(layout.sideSize * 100)}vw`);
   root.style.setProperty("--secondary-size", `${Math.round(layout.secondarySize * 100)}vh`);
-}
-
-function renderPluginControls(root: HTMLElement, runtime: ShellRuntime): void {
-  const controlsNode = root.querySelector<HTMLElement>("#plugin-controls");
-  if (!controlsNode) {
-    return;
-  }
-
-  const snapshot = runtime.registry.getSnapshot();
-  const rows = snapshot.plugins
-    .map(
-      (plugin) => `<label class="plugin-row">
-      <input type="checkbox" data-plugin-toggle="${plugin.id}" ${plugin.enabled ? "checked" : ""} />
-      <strong>${plugin.id}</strong> <small>(${plugin.loadMode})</small>
-      ${plugin.failure ? `<p class="plugin-error">${escapeHtml(plugin.failure.code)}: ${escapeHtml(plugin.failure.message)}</p>` : ""}
-    </label>`,
-    )
-    .join("");
-
-  const loadedContracts = snapshot.plugins
-    .filter((plugin) => plugin.contract !== null)
-    .map((plugin) => plugin.contract?.manifest.name ?? plugin.id)
-    .join(", ");
-
-  const diagnostics = snapshot.diagnostics
-    .slice(0, 5)
-    .map(
-      (item) => `<li><strong>${escapeHtml(item.code)}</strong> [${escapeHtml(item.level)}] ${escapeHtml(item.message)}</li>`,
-    )
-    .join("");
-
-  const pluginNotice = runtime.pluginNotice
-    ? `<p class="plugin-notice">${escapeHtml(runtime.pluginNotice)}</p>`
-    : "";
-
-  controlsNode.innerHTML = `<h2>Plugins (${snapshot.tenantId})</h2>
-  <p style="margin:0 0 8px;font-size:12px;color:#c6d0e0;">Loaded: ${loadedContracts || "none"}</p>
-  ${pluginNotice}
-  ${rows || '<p style="margin:0;color:#c6d0e0;">No registered plugin descriptors.</p>'}
-  ${diagnostics ? `<details><summary style="cursor:pointer;font-size:12px;color:#c6d0e0;">Diagnostics (dev/demo)</summary><ul class="plugin-diag-list">${diagnostics}</ul></details>` : ""}`;
-
-  for (const input of controlsNode.querySelectorAll<HTMLInputElement>("input[data-plugin-toggle]")) {
-    input.addEventListener("change", async () => {
-      const pluginId = input.dataset.pluginToggle;
-      if (!pluginId) {
-        return;
-      }
-
-      try {
-        runtime.pluginNotice = "";
-        await runtime.registry.setEnabled(pluginId, input.checked);
-      } catch (error) {
-        input.checked = !input.checked;
-        runtime.pluginNotice = `Unable to toggle plugin '${pluginId}'. See console diagnostics.`;
-        console.error("[shell] failed to toggle plugin", pluginId, error);
-      }
-
-      renderPluginControls(root, runtime);
-      renderParts(root, runtime);
-    });
-  }
-}
-
-async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
-  try {
-    const state = await bootstrapShellWithTenantManifest({
-      tenantId: "demo",
-    });
-    runtime.registry = state.registry;
-    renderPluginControls(root, runtime);
-    renderParts(root, runtime);
-  } catch (error) {
-    console.warn("[shell] plugin registry hydration skipped", error);
-  }
-}
-
-function getVisibleMockParts(runtime: ShellRuntime): LocalMockPart[] {
-  const enabledPluginIds = new Set(
-    runtime.registry
-      .getSnapshot()
-      .plugins.filter((plugin) => plugin.enabled)
-      .map((plugin) => plugin.id),
-  );
-
-  return localMockParts.filter((part) => {
-    if (part.alwaysVisible) {
-      return true;
-    }
-
-    if (!part.ownerPluginId) {
-      return true;
-    }
-
-    return enabledPluginIds.has(part.ownerPluginId);
-  });
 }
 
 function setupResize(root: HTMLElement, runtime: ShellRuntime): void {
@@ -1646,13 +621,9 @@ function setupResize(root: HTMLElement, runtime: ShellRuntime): void {
   }
 }
 
-function registerDrag(
-  splitter: HTMLElement,
-  onDelta: (delta: number) => void,
-): void {
+function registerDrag(splitter: HTMLElement, onDelta: (delta: number) => void): void {
   splitter.addEventListener("pointerdown", (event) => {
     splitter.setPointerCapture(event.pointerId);
-    // Use incremental deltas so drag follows the pointer continuously.
     let previous = axisValue(event, splitter.dataset.pane);
 
     const onMove = (moveEvent: PointerEvent) => {
@@ -1675,166 +646,6 @@ function registerDrag(
 
 function axisValue(event: PointerEvent, pane: string | undefined): number {
   return pane === "secondary" ? event.clientY : event.clientX;
-}
-
-function updateSelectedStyles(root: HTMLElement, selectedPartId: string | null): void {
-  for (const node of root.querySelectorAll<HTMLElement>("article[data-part-id]")) {
-    const partId = node.dataset.partId;
-    if (partId && partId === selectedPartId) {
-      node.classList.add("is-selected");
-    } else {
-      node.classList.remove("is-selected");
-    }
-  }
-}
-
-function resolvePartTitle(partId: string): string {
-  return localMockParts.find((part) => part.id === partId)?.title ?? partId;
-}
-
-function collectLaneMetadata(state: ShellContextState): Array<{
-  scope: string;
-  key: string;
-  value: string;
-  revision: RevisionMeta;
-  sourceSelection: { entityType: string; revision: RevisionMeta } | undefined;
-}> {
-  const entries: Array<{
-    scope: string;
-    key: string;
-    value: string;
-    revision: RevisionMeta;
-    sourceSelection: { entityType: string; revision: RevisionMeta } | undefined;
-  }> = [];
-
-  for (const [key, lane] of Object.entries(state.globalLanes)) {
-    entries.push({
-      scope: "global",
-      key,
-      value: lane.value,
-      revision: lane.revision,
-      sourceSelection: lane.sourceSelection,
-    });
-  }
-
-  for (const [groupId, lanes] of Object.entries(state.groupLanes)) {
-    for (const [key, lane] of Object.entries(lanes)) {
-      entries.push({
-        scope: `group:${groupId}`,
-        key,
-        value: lane.value,
-        revision: lane.revision,
-        sourceSelection: lane.sourceSelection,
-      });
-    }
-  }
-
-  for (const [tabId, lanes] of Object.entries(state.subcontextsByTab)) {
-    for (const [key, lane] of Object.entries(lanes)) {
-      entries.push({
-        scope: `subcontext:${tabId}`,
-        key,
-        value: lane.value,
-        revision: lane.revision,
-        sourceSelection: lane.sourceSelection,
-      });
-    }
-  }
-
-  return entries;
-}
-
-function createRevision(writer: string): RevisionMeta {
-  return {
-    timestamp: Date.now(),
-    writer,
-  };
-}
-
-function ensureTabsRegistered(state: ShellContextState, parts: LocalMockPart[]): ShellContextState {
-  let next = state;
-  for (const part of parts) {
-    next = registerTab(next, {
-      tabId: part.id,
-      groupId: getTabGroupId(next, part.id) ?? DEFAULT_GROUP_ID,
-      groupColor: DEFAULT_GROUP_COLOR,
-    });
-  }
-  return next;
-}
-
-function readGroupSelectionContext(runtime: ShellRuntime): string {
-  if (!runtime.selectedPartId) {
-    return "none";
-  }
-
-  const value = readGroupLaneForTab(runtime.contextState, {
-    tabId: runtime.selectedPartId,
-    key: domainDemoAdapter.laneKeys.groupSelection,
-  });
-
-  return value?.value ?? "none";
-}
-
-function readGlobalContext(runtime: ShellRuntime): string {
-  return readGlobalLane(runtime.contextState, domainDemoAdapter.laneKeys.globalSelection)?.value ?? "none";
-}
-
-function writeGroupSelectionContext(runtime: ShellRuntime, value: string): void {
-  const activeTabId = runtime.selectedPartId ?? runtime.contextState.activeTabId;
-  if (!activeTabId) {
-    return;
-  }
-
-  updateContextState(runtime, writeGroupLaneByTab(runtime.contextState, {
-    tabId: activeTabId,
-    key: domainDemoAdapter.laneKeys.groupSelection,
-    value,
-    revision: createRevision(runtime.windowId),
-  }));
-}
-
-function writeGlobalSelectionLane(
-  runtime: ShellRuntime,
-  input: { selectedPartId: string; selectedPartTitle: string; revision?: RevisionMeta },
-): void {
-  updateContextState(runtime, writeGlobalLane(runtime.contextState, {
-    key: domainDemoAdapter.laneKeys.globalSelection,
-    value: `${input.selectedPartId}|${input.selectedPartTitle}`,
-    revision: input.revision ?? createRevision(runtime.windowId),
-  }));
-}
-
-function updateContextState(runtime: ShellRuntime, nextState: ShellContextState): void {
-  runtime.contextState = nextState;
-  const result = runtime.contextPersistence.save(nextState);
-  if (result.warning) {
-    runtime.notice = result.warning;
-  }
-}
-
-function updateWindowReadOnlyState(root: HTMLElement, runtime: ShellRuntime): void {
-  const shellNode = root.querySelector<HTMLElement>("#shell-root") ?? root.querySelector<HTMLElement>(".popout");
-  if (!shellNode) {
-    return;
-  }
-
-  shellNode.classList.toggle("sync-degraded", runtime.syncDegraded);
-
-  for (const node of shellNode.querySelectorAll<HTMLElement>("button, input, select, textarea")) {
-    const bridgeControl = node.id === "context-apply" || node.id === "context-value-input";
-    if (runtime.syncDegraded) {
-      node.setAttribute("disabled", "disabled");
-      if (bridgeControl) {
-        node.setAttribute("aria-disabled", "true");
-      }
-    } else {
-      node.removeAttribute("disabled");
-      if (bridgeControl) {
-        node.removeAttribute("aria-disabled");
-      }
-    }
-  }
 }
 
 function announce(root: HTMLElement, runtime: ShellRuntime, message: string): void {
@@ -1869,7 +680,7 @@ function publishWithDegrade(
     announce: (message) => announce(root, runtime, message),
     updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
-    renderContextControls: () => renderContextControls(root, runtime),
+    renderContextControls: () => renderContextControlsPanel(root, runtime),
   });
 }
 
@@ -1878,7 +689,7 @@ function requestSyncProbe(root: HTMLElement, runtime: ShellRuntime): void {
     announce: (message) => announce(root, runtime, message),
     updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
-    renderContextControls: () => renderContextControls(root, runtime),
+    renderContextControls: () => renderContextControlsPanel(root, runtime),
   }, createWindowId);
 }
 
@@ -1904,7 +715,6 @@ function handleSyncAck(
     announce: (message) => announce(root, runtime, message),
     updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
-    renderContextControls: () => renderContextControls(root, runtime),
+    renderContextControls: () => renderContextControlsPanel(root, runtime),
   });
 }
-
