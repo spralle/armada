@@ -22,6 +22,13 @@ import {
   type ShellIntent,
 } from "./intent-runtime.js";
 import {
+  buildActionSurface,
+  dispatchAction,
+  normalizeKeyboardEvent,
+  resolveKeybindingAction,
+  resolveMenuActions,
+} from "./action-surface.js";
+import {
   formatDegradedModeAnnouncement,
   formatSelectionAnnouncement,
   resolveChooserFocusRestoration,
@@ -196,7 +203,7 @@ function refreshCommandContributions(runtime: ShellRuntime): void {
     .map((plugin) => plugin.contract)
     .filter((plugin): plugin is NonNullable<typeof plugin> => plugin !== null);
 
-  runtime.commandSurface.registerContracts(contracts);
+  runtime.actionSurface = buildActionSurface(contracts);
 }
 
 function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
@@ -319,20 +326,27 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
       return;
     }
 
-    const normalizedKey = normalizeKeyEvent(event);
+    const normalizedKey = normalizeKeyboardEvent(event);
     if (normalizedKey) {
-      const keyResult = runtime.commandSurface.dispatchKeybinding(normalizedKey, toCommandContext(runtime));
-      if (keyResult?.executed) {
-        event.preventDefault();
-        const pluginId = resolvePluginIdForCommand(runtime, keyResult.commandId);
-        if (pluginId) {
-          await activatePluginForBoundary(root, runtime, {
-            pluginId,
-            triggerType: "command",
-            triggerId: keyResult.commandId,
-          });
+      const context = toActionContext(runtime);
+      const action = resolveKeybindingAction(runtime.actionSurface, normalizedKey, context);
+      if (action) {
+        const activated = await activatePluginForBoundary(root, runtime, {
+          pluginId: action.pluginId,
+          triggerType: "command",
+          triggerId: action.id,
+        });
+        if (!activated) {
+          runtime.commandNotice = `Action '${action.id}' blocked: plugin '${action.pluginId}' is not active.`;
+          renderCommandSurface(root, runtime);
+          return;
         }
-        runtime.commandNotice = `Keybinding (${normalizedKey}): ${keyResult.message}`;
+
+        event.preventDefault();
+        const executed = await dispatchAction(runtime.actionSurface, runtime.intentRuntime, action.id, context);
+        runtime.commandNotice = executed
+          ? `Keybinding (${normalizedKey}): Action '${action.id}' executed.`
+          : `Keybinding (${normalizedKey}): Action '${action.id}' is not executable in current context.`;
         renderCommandSurface(root, runtime);
         return;
       }
@@ -565,67 +579,59 @@ function renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void {
     return;
   }
 
-  const context = toCommandContext(runtime);
-  const menuCommands = runtime.commandSurface.evaluateMenu("sidePanel", context);
-  const menuCommandPluginById = new Map(menuCommands.map((item) => [item.command.id, item.command.pluginId]));
-  const commandRows = menuCommands
+  const context = toActionContext(runtime);
+  const menuActions = resolveMenuActions(runtime.actionSurface, "sidePanel", context);
+  const menuActionPluginById = new Map(menuActions.map((item) => [item.id, item.pluginId]));
+  const commandRows = menuActions
     .map(
       (item) => `<button
         type="button"
-        data-command-run="${escapeHtml(item.command.id)}"
-        ${item.enabled ? "" : "disabled"}
+        data-action-run="${escapeHtml(item.id)}"
         style="display:block;width:100%;text-align:left;margin:0 0 6px;background:#1d2635;border:1px solid #334564;border-radius:4px;color:#e9edf3;padding:4px 8px;cursor:pointer;"
-      >${escapeHtml(item.command.title)}</button>`,
+      >${escapeHtml(item.title)}</button>`,
     )
     .join("");
 
-  const visibleCommands = runtime.commandSurface
-    .evaluateCommands(context)
-    .filter((item) => item.visible)
-    .map((item) => `<li>${escapeHtml(item.command.id)}</li>`)
+  const visibleCommands = runtime.actionSurface.actions
+    .map((item) => `<li>${escapeHtml(item.id)}</li>`)
     .join("");
 
   node.innerHTML = `<h2>Commands</h2>
     ${runtime.commandNotice ? `<p class="runtime-note">${escapeHtml(runtime.commandNotice)}</p>` : ""}
-    ${commandRows || '<p class="runtime-note">No visible command contributions for current context.</p>'}
+    ${commandRows || '<p class="runtime-note">No visible action contributions for current context.</p>'}
     <details>
-      <summary class="runtime-note" style="cursor:pointer;">Visible commands (debug)</summary>
+      <summary class="runtime-note" style="cursor:pointer;">Registered actions (debug)</summary>
       <ul class="plugin-diag-list">${visibleCommands || "<li>none</li>"}</ul>
     </details>`;
 
-  for (const button of node.querySelectorAll<HTMLButtonElement>("button[data-command-run]")) {
+  for (const button of node.querySelectorAll<HTMLButtonElement>("button[data-action-run]")) {
     button.addEventListener("click", async () => {
-      const commandId = button.dataset.commandRun;
-      if (!commandId) {
+      const actionId = button.dataset.actionRun;
+      if (!actionId) {
         return;
       }
 
-      const pluginId = menuCommandPluginById.get(commandId);
+      const pluginId = menuActionPluginById.get(actionId);
       if (pluginId) {
         const activated = await activatePluginForBoundary(root, runtime, {
           pluginId,
           triggerType: "command",
-          triggerId: commandId,
+          triggerId: actionId,
         });
         if (!activated) {
-          runtime.commandNotice = `Command '${commandId}' blocked: plugin '${pluginId}' is not active.`;
+          runtime.commandNotice = `Action '${actionId}' blocked: plugin '${pluginId}' is not active.`;
           renderCommandSurface(root, runtime);
           return;
         }
       }
 
-      const result = runtime.commandSurface.dispatchCommand(commandId, toCommandContext(runtime));
-      runtime.commandNotice = result.message;
+      const executed = await dispatchAction(runtime.actionSurface, runtime.intentRuntime, actionId, toActionContext(runtime));
+      runtime.commandNotice = executed
+        ? `Action '${actionId}' executed.`
+        : `Action '${actionId}' is not executable in current context.`;
       renderCommandSurface(root, runtime);
     });
   }
-}
-
-function resolvePluginIdForCommand(runtime: ShellRuntime, commandId: string): string | null {
-  return runtime.commandSurface
-    .evaluateCommands(toCommandContext(runtime))
-    .find((item) => item.command.id === commandId)
-    ?.command.pluginId ?? null;
 }
 
 async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
@@ -691,7 +697,7 @@ async function activatePluginForBoundary(
   }
 }
 
-function toCommandContext(runtime: ShellRuntime): Record<string, string> {
+function toActionContext(runtime: ShellRuntime): Record<string, string> {
   const context: Record<string, string> = {
     [CORE_GROUP_CONTEXT_KEY]: readGroupSelectionContext(runtime),
     "context.domain.selection": readGroupSelectionContext(runtime),
@@ -779,30 +785,6 @@ function registerDrag(splitter: HTMLElement, onDelta: (delta: number) => void): 
 
 function axisValue(event: PointerEvent, pane: string | undefined): number {
   return pane === "secondary" ? event.clientY : event.clientX;
-}
-
-function normalizeKeyEvent(event: KeyboardEvent): string | null {
-  const key = event.key.toLowerCase();
-  if (!key || key === "shift" || key === "control" || key === "alt" || key === "meta") {
-    return null;
-  }
-
-  const parts: string[] = [];
-  if (event.ctrlKey) {
-    parts.push("ctrl");
-  }
-  if (event.shiftKey) {
-    parts.push("shift");
-  }
-  if (event.altKey) {
-    parts.push("alt");
-  }
-  if (event.metaKey) {
-    parts.push("meta");
-  }
-  parts.push(key);
-
-  return parts.join("+");
 }
 
 function announce(root: HTMLElement, runtime: ShellRuntime, message: string): void {

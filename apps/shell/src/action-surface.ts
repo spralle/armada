@@ -5,6 +5,7 @@ import type {
   PluginKeybindingContribution,
   PluginMenuContribution,
 } from "@armada/plugin-contracts";
+import type { IntentRuntime } from "./intent-runtime.js";
 
 export interface ActionSurfaceContext {
   [key: string]: unknown;
@@ -38,10 +39,6 @@ export interface ActionSurface {
   actions: InvokableAction[];
   menus: ActionMenuItem[];
   keybindings: ActionKeybinding[];
-}
-
-export interface IntentRuntime {
-  dispatchIntent(intentId: string, payload: { actionId: string; pluginId: string }): Promise<void> | void;
 }
 
 export function buildActionSurface(contracts: readonly PluginContract[]): ActionSurface {
@@ -150,15 +147,24 @@ export async function dispatchAction(
     return false;
   }
 
-  await runtime.dispatchIntent(action.intent, {
-    actionId: action.id,
-    pluginId: action.pluginId,
+  const result = runtime.resolveAndExecute({
+    intent: action.intent,
+    context: normalizeContext(context),
+    args: {
+      actionId: action.id,
+      pluginId: action.pluginId,
+    },
   });
 
-  return true;
+  return result.executed;
 }
 
-export function normalizeKeyboardEvent(event: KeyboardEvent): string {
+export function normalizeKeyboardEvent(event: KeyboardEvent): string | null {
+  const key = event.key.toLowerCase();
+  if (!key || key === "shift" || key === "control" || key === "alt" || key === "meta") {
+    return null;
+  }
+
   const parts: string[] = [];
   if (event.ctrlKey) {
     parts.push("ctrl");
@@ -173,7 +179,6 @@ export function normalizeKeyboardEvent(event: KeyboardEvent): string {
     parts.push("meta");
   }
 
-  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key.toLowerCase();
   parts.push(key);
   return parts.join("+");
 }
@@ -278,4 +283,12 @@ function trimQuotes(value: string): string {
   }
 
   return value;
+}
+
+function normalizeContext(context: ActionSurfaceContext): Record<string, string> {
+  const normalized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(context)) {
+    normalized[key] = typeof value === "string" ? value : String(value);
+  }
+  return normalized;
 }

@@ -6,7 +6,7 @@ import {
   createLocalStorageLayoutPersistence,
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
-import { createShellCommandSurface } from "../command-surface.js";
+import { buildActionSurface } from "../action-surface.js";
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createWindowBridge } from "../window-bridge.js";
 import {
@@ -26,6 +26,8 @@ export function createShellRuntime(): ShellRuntime {
   const popoutParams = readPopoutParams();
   const windowId = createWindowId();
   const bridge = createWindowBridge(BRIDGE_CHANNEL);
+
+  const intentRuntime = createIntentRuntime();
 
   const runtime: ShellRuntime = {
     layout: createDefaultLayoutState(),
@@ -64,9 +66,8 @@ export function createShellRuntime(): ShellRuntime {
     chooserFocusIndex: 0,
     pendingFocusSelector: null,
     chooserReturnFocusSelector: null,
-    commandSurface: createShellCommandSurface({
-      intentRuntime: createIntentRuntime(),
-    }),
+    actionSurface: buildActionSurface([]),
+    intentRuntime,
     commandNotice: "",
   };
 

@@ -21,10 +21,11 @@ import type {
 } from "../context-state.js";
 import type {
   IntentActionMatch,
+  IntentRuntime,
   IntentResolutionTrace,
   ShellIntent,
 } from "../intent-runtime.js";
-import type { ShellCommandSurface } from "../command-surface.js";
+import type { ActionSurface } from "../action-surface.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -67,7 +68,8 @@ export interface ShellRuntime {
   chooserFocusIndex: number;
   pendingFocusSelector: string | null;
   chooserReturnFocusSelector: string | null;
-  commandSurface: ShellCommandSurface;
+  actionSurface: ActionSurface;
+  intentRuntime: IntentRuntime;
   commandNotice: string;
 }
 
