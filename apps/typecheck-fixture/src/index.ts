@@ -26,34 +26,23 @@ const fixturePlugin: PluginContract = {
       {
         id: "fixture.action",
         title: "Run Fixture",
-        handler: "runFixture",
-        intentType: "workbench.fixture.run",
-        when: {
+        intent: "fixture.run",
+        predicate: {
           entityType: "workbench.item",
           hasSelection: true
         }
       }
     ],
-    commands: [
-      {
-        id: "fixture.command",
-        title: "Run Fixture Command",
-        intent: "fixture.run",
-        when: "selection.partId",
-        enablement: "selection.partId"
-      }
-    ],
     menus: [
       {
-        command: "fixture.command",
-        menu: "commandPalette"
+        menu: "commandPalette",
+        action: "fixture.action"
       }
     ],
     keybindings: [
       {
-        command: "fixture.command",
-        key: "ctrl+shift+f",
-        when: "selection.partId"
+        action: "fixture.action",
+        keybinding: "ctrl+alt+f"
       }
     ],
     selection: [

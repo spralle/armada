@@ -1,5 +1,6 @@
 import type {
-  PluginCommandContribution,
+  PluginActionContribution,
+  PluginContributionPredicate,
   PluginContract,
   PluginKeybindingContribution,
   PluginMenuContribution,
@@ -15,21 +16,21 @@ export interface RegisteredCommand {
   title: string;
   intent: string;
   pluginId: string;
-  when?: string | undefined;
-  enablement?: string | undefined;
+  when?: PluginContributionPredicate | undefined;
+  enablement?: PluginContributionPredicate | undefined;
 }
 
 export interface RegisteredMenuItem {
   command: string;
-  menu: "commandPalette" | "sidePanel";
+  menu: string;
   group?: string | undefined;
-  when?: string | undefined;
+  when?: PluginContributionPredicate | undefined;
 }
 
 export interface RegisteredKeybinding {
   command: string;
   key: string;
-  when?: string | undefined;
+  when?: PluginContributionPredicate | undefined;
 }
 
 export interface EvaluatedCommand {
@@ -48,7 +49,7 @@ export interface ShellCommandSurface {
   registerContracts(contracts: readonly PluginContract[]): void;
   evaluateCommands(context: Readonly<CommandSurfaceContext>): EvaluatedCommand[];
   evaluateMenu(
-    menu: RegisteredMenuItem["menu"],
+    menu: string,
     context: Readonly<CommandSurfaceContext>,
   ): EvaluatedCommand[];
   dispatchCommand(
@@ -91,13 +92,13 @@ export function createShellCommandSurface(options: {
           continue;
         }
 
-        for (const command of contributions.commands ?? []) {
+        for (const command of contributions.actions ?? []) {
           state.commands.push(toRegisteredCommand(command, pluginId));
         }
 
         for (const menuItem of contributions.menus ?? []) {
           state.menus.push({
-            command: menuItem.command,
+            command: menuItem.action,
             menu: menuItem.menu,
             group: menuItem.group,
             when: menuItem.when,
@@ -106,8 +107,8 @@ export function createShellCommandSurface(options: {
 
         for (const keybinding of contributions.keybindings ?? []) {
           state.keybindings.push({
-            command: keybinding.command,
-            key: normalizeKeybinding(keybinding.key),
+            command: keybinding.action,
+            key: normalizeKeybinding(keybinding.keybinding),
             when: keybinding.when,
           });
         }
@@ -204,7 +205,7 @@ export function createShellCommandSurface(options: {
 }
 
 function toRegisteredCommand(
-  contribution: PluginCommandContribution,
+  contribution: PluginActionContribution,
   pluginId: string,
 ): RegisteredCommand {
   return {
@@ -212,8 +213,8 @@ function toRegisteredCommand(
     title: contribution.title,
     intent: contribution.intent,
     pluginId,
-    when: contribution.when,
-    enablement: contribution.enablement,
+    when: contribution.predicate,
+    enablement: contribution.predicate,
   };
 }
 
@@ -232,10 +233,19 @@ function evaluateCommand(
 }
 
 export function evaluatePredicate(
-  predicate: string | undefined,
+  predicate: PluginContributionPredicate | undefined,
   context: Readonly<CommandSurfaceContext>,
 ): boolean {
   if (!predicate) {
+    return true;
+  }
+
+  if (typeof predicate === "object") {
+    for (const [key, value] of Object.entries(predicate)) {
+      if ((context[key] ?? "") !== String(value ?? "")) {
+        return false;
+      }
+    }
     return true;
   }
 

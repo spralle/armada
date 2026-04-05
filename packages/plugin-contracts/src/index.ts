@@ -19,35 +19,27 @@ export interface PluginPartContribution {
   component: string;
 }
 
-export type PluginActionWhenPredicate = Record<string, unknown>;
+export type PluginContributionPredicate = string | Record<string, unknown>;
 
 export interface PluginActionContribution {
   id: string;
   title: string;
-  handler: string;
-  intentType: string;
-  when: PluginActionWhenPredicate;
-}
-
-export interface PluginCommandContribution {
-  id: string;
-  title: string;
   intent: string;
-  when?: string | undefined;
-  enablement?: string | undefined;
+  predicate?: PluginContributionPredicate | undefined;
 }
 
 export interface PluginMenuContribution {
-  command: string;
-  menu: "commandPalette" | "sidePanel";
+  menu: string;
+  action: string;
   group?: string | undefined;
-  when?: string | undefined;
+  order?: number | undefined;
+  when?: PluginContributionPredicate | undefined;
 }
 
 export interface PluginKeybindingContribution {
-  command: string;
-  key: string;
-  when?: string | undefined;
+  action: string;
+  keybinding: string;
+  when?: PluginContributionPredicate | undefined;
 }
 
 export interface PluginSelectionContribution {
@@ -84,7 +76,6 @@ export interface PluginContributions {
   views?: PluginViewContribution[] | undefined;
   parts?: PluginPartContribution[] | undefined;
   actions?: PluginActionContribution[] | undefined;
-  commands?: PluginCommandContribution[] | undefined;
   menus?: PluginMenuContribution[] | undefined;
   keybindings?: PluginKeybindingContribution[] | undefined;
   selection?: PluginSelectionContribution[] | undefined;
@@ -209,42 +200,35 @@ export const pluginPartContributionSchema = z
   })
   .strict();
 
-export const pluginActionWhenPredicateSchema = z.object({}).catchall(z.unknown());
+const pluginContributionPredicateSchema = z.union([
+  nonEmptyString,
+  z.record(z.string(), z.unknown()),
+]);
 
 export const pluginActionContributionSchema = z
   .object({
     id: nonEmptyString,
     title: nonEmptyString,
-    handler: nonEmptyString,
-    intentType: nonEmptyString,
-    when: pluginActionWhenPredicateSchema,
-  })
-  .strict();
-
-export const pluginCommandContributionSchema = z
-  .object({
-    id: nonEmptyString,
-    title: nonEmptyString,
     intent: nonEmptyString,
-    when: nonEmptyString.optional(),
-    enablement: nonEmptyString.optional(),
+    predicate: pluginContributionPredicateSchema.optional(),
   })
   .strict();
 
 export const pluginMenuContributionSchema = z
   .object({
-    command: nonEmptyString,
-    menu: z.enum(["commandPalette", "sidePanel"]),
+    menu: nonEmptyString,
+    action: nonEmptyString,
     group: nonEmptyString.optional(),
-    when: nonEmptyString.optional(),
+    order: z.number().int().optional(),
+    when: pluginContributionPredicateSchema.optional(),
   })
   .strict();
 
 export const pluginKeybindingContributionSchema = z
   .object({
-    command: nonEmptyString,
-    key: nonEmptyString,
-    when: nonEmptyString.optional(),
+    action: nonEmptyString,
+    keybinding: nonEmptyString,
+    when: pluginContributionPredicateSchema.optional(),
   })
   .strict();
 
@@ -293,7 +277,6 @@ export const pluginContributionsSchema = z
     views: z.array(pluginViewContributionSchema).optional(),
     parts: z.array(pluginPartContributionSchema).optional(),
     actions: z.array(pluginActionContributionSchema).optional(),
-    commands: z.array(pluginCommandContributionSchema).optional(),
     menus: z.array(pluginMenuContributionSchema).optional(),
     keybindings: z.array(pluginKeybindingContributionSchema).optional(),
     selection: z.array(pluginSelectionContributionSchema).optional(),

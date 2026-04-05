@@ -34,36 +34,22 @@ test("returns typed data for a valid plugin contract", () => {
         {
           id: "valid.action",
           title: "Run Valid",
-          handler: "runValid",
-          intentType: "workbench.run-valid",
-          when: {
-            entityType: "workbench.node",
-            hasSelection: true,
-          },
-        },
-      ],
-      commands: [
-        {
-          id: "valid.command",
-          title: "Run Valid Command",
           intent: "valid.run",
-          when: "selection.partId",
-          enablement: "selection.partId",
+          predicate: "demo.selection == valid",
         },
       ],
       menus: [
         {
-          command: "valid.command",
-          menu: "sidePanel",
-          group: "valid",
-          when: "selection.partId",
+          menu: "commandPalette",
+          action: "valid.action",
+          group: "navigation",
+          order: 10,
         },
       ],
       keybindings: [
         {
-          command: "valid.command",
-          key: "ctrl+shift+v",
-          when: "selection.partId",
+          action: "valid.action",
+          keybinding: "ctrl+shift+v",
         },
       ],
       selection: [
@@ -183,7 +169,7 @@ test("rejects unexpected top-level fields", () => {
   }
 });
 
-test("accepts contributes.commands/menu/keybindings for command surface", () => {
+test("accepts actions/menu/keybindings for action surface", () => {
   const result = parsePluginContract({
     manifest: {
       id: "com.armada.command-surface",
@@ -191,23 +177,23 @@ test("accepts contributes.commands/menu/keybindings for command surface", () => 
       version: "1.0.0",
     },
     contributes: {
-      commands: [
+      actions: [
         {
-          id: "surface.command",
-          title: "Surface Command",
+          id: "surface.action",
+          title: "Surface Action",
           intent: "surface.open",
         },
       ],
       menus: [
         {
-          command: "surface.command",
+          action: "surface.action",
           menu: "commandPalette",
         },
       ],
       keybindings: [
         {
-          command: "surface.command",
-          key: "ctrl+shift+s",
+          action: "surface.action",
+          keybinding: "ctrl+shift+s",
         },
       ],
     },
@@ -215,7 +201,7 @@ test("accepts contributes.commands/menu/keybindings for command surface", () => 
 
   assert.equal(result.success, true);
   if (result.success) {
-    assert.equal(result.data.contributes?.commands?.[0]?.id, "surface.command");
+    assert.equal(result.data.contributes?.actions?.[0]?.id, "surface.action");
   }
 });
 
