@@ -83,13 +83,13 @@ test("tabs in same group share context lane", () => {
   state = registerTab(state, { tabId: "tab-b", groupId: "group-1", groupColor: "green" });
   state = writeGroupLaneByTab(state, {
     tabId: "tab-a",
-    key: "domain.selection",
+    key: "entity.selection",
     value: "order:o-1",
     revision: { timestamp: 100, writer: "writer-a" },
   });
 
   assertEqual(
-    readGroupLaneForTab(state, { tabId: "tab-b", key: "domain.selection" })?.value,
+    readGroupLaneForTab(state, { tabId: "tab-b", key: "entity.selection" })?.value,
     "order:o-1",
     "tab in same group should read shared context",
   );
@@ -103,13 +103,13 @@ test("moving tab adopts target group context without carrying source link", () =
   state = registerTab(state, { tabId: "tab-b", groupId: "group-target" });
   state = writeGroupLaneByTab(state, {
     tabId: "tab-a",
-    key: "domain.selection",
+    key: "entity.selection",
     value: "order:source",
     revision: { timestamp: 1, writer: "a" },
   });
   state = writeGroupLaneByTab(state, {
     tabId: "tab-b",
-    key: "domain.selection",
+    key: "entity.selection",
     value: "order:target",
     revision: { timestamp: 2, writer: "b" },
   });
@@ -120,7 +120,7 @@ test("moving tab adopts target group context without carrying source link", () =
   });
 
   assertEqual(
-    readGroupLaneForTab(state, { tabId: "tab-a", key: "domain.selection" })?.value,
+    readGroupLaneForTab(state, { tabId: "tab-a", key: "entity.selection" })?.value,
     "order:target",
     "moved tab should adopt target group context",
   );
@@ -130,43 +130,43 @@ test("lww tie-break applies by timestamp then writer", () => {
   let state = createInitialShellContextState({ initialTabId: "tab-a" });
   state = writeGroupLaneByTab(state, {
     tabId: "tab-a",
-    key: "domain.selection",
+    key: "entity.selection",
     value: "older",
     revision: { timestamp: 10, writer: "writer-z" },
   });
 
   state = writeGroupLaneByTab(state, {
     tabId: "tab-a",
-    key: "domain.selection",
+    key: "entity.selection",
     value: "newer",
     revision: { timestamp: 11, writer: "writer-a" },
   });
   assertEqual(
-    readGroupLaneForTab(state, { tabId: "tab-a", key: "domain.selection" })?.value,
+    readGroupLaneForTab(state, { tabId: "tab-a", key: "entity.selection" })?.value,
     "newer",
     "newer timestamp should win",
   );
 
   state = writeGroupLaneByTab(state, {
     tabId: "tab-a",
-    key: "domain.selection",
+    key: "entity.selection",
     value: "same-time-lower-writer",
     revision: { timestamp: 11, writer: "writer-0" },
   });
   assertEqual(
-    readGroupLaneForTab(state, { tabId: "tab-a", key: "domain.selection" })?.value,
+    readGroupLaneForTab(state, { tabId: "tab-a", key: "entity.selection" })?.value,
     "newer",
     "lower writer should lose at same timestamp",
   );
 
   state = writeGroupLaneByTab(state, {
     tabId: "tab-a",
-    key: "domain.selection",
+    key: "entity.selection",
     value: "same-time-higher-writer",
     revision: { timestamp: 11, writer: "writer-z" },
   });
   assertEqual(
-    readGroupLaneForTab(state, { tabId: "tab-a", key: "domain.selection" })?.value,
+    readGroupLaneForTab(state, { tabId: "tab-a", key: "entity.selection" })?.value,
     "same-time-higher-writer",
     "higher writer should win at same timestamp",
   );
@@ -392,7 +392,7 @@ test("derived lanes are revision-linked and typed to selection write", () => {
       derivedGroupId: "group-main",
       derivedLanes: [
         {
-          key: "domain.derived.vessel.priority",
+          key: "selection.derived.secondary.priority",
           valueType: "entity-id",
           sourceEntityType: "vessel",
           scope: "group",
@@ -402,7 +402,7 @@ test("derived lanes are revision-linked and typed to selection write", () => {
     },
   );
 
-  const lane = result.state.groupLanes["group-main"]["domain.derived.vessel.priority"];
+  const lane = result.state.groupLanes["group-main"]["selection.derived.secondary.priority"];
   assertEqual(lane?.value, "v-9", "derived group lane value mismatch");
   assertEqual(lane?.valueType, "entity-id", "derived lane value type metadata mismatch");
   assertEqual(lane?.sourceSelection?.entityType, "vessel", "derived lane source entity metadata mismatch");
@@ -432,7 +432,7 @@ test("derived lane failures are isolated from context core updates", () => {
       derivedGroupId: "group-main",
       derivedLanes: [
         {
-          key: "domain.derived.fail",
+          key: "selection.derived.fail",
           valueType: "entity-id",
           sourceEntityType: "order",
           scope: "group",
@@ -451,7 +451,7 @@ test("derived lane failures are isolated from context core updates", () => {
   );
   assertEqual(
     result.derivedLaneFailures.join(","),
-    "domain.derived.fail",
+    "selection.derived.fail",
     "failed derived lane should be reported",
   );
 });
@@ -828,7 +828,7 @@ test("context persistence restores full required state payload after reload", ()
   });
   state = writeGroupLaneByTab(state, {
     tabId: "tab-a",
-    key: "domain.selection",
+    key: "entity.selection",
     value: "order:o-2",
     revision: { timestamp: 10, writer: "writer-a" },
   });
@@ -867,7 +867,7 @@ test("context persistence restores full required state payload after reload", ()
     "subcontext lanes should restore",
   );
   assertEqual(
-    loaded.state.groupLanes["group-main"]["domain.selection"]?.value,
+    loaded.state.groupLanes["group-main"]["entity.selection"]?.value,
     "order:o-2",
     "group lanes should restore",
   );
