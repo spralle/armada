@@ -44,7 +44,12 @@ test("returns typed data for a valid plugin contract", () => {
       selection: [
         {
           id: "valid.selection",
-          target: "workbench.node",
+          receiverEntityType: "workbench.node",
+          interests: [
+            {
+              sourceEntityType: "workbench.node",
+            },
+          ],
         },
       ],
       dragDropSessionReferences: [

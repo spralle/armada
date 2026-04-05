@@ -37,7 +37,12 @@ const fixturePlugin: PluginContract = {
     selection: [
       {
         id: "fixture.selection",
-        target: "workbench.item"
+        receiverEntityType: "workbench.item",
+        interests: [
+          {
+            sourceEntityType: "workbench.item"
+          }
+        ]
       }
     ],
     dragDropSessionReferences: [
