@@ -25,6 +25,8 @@ export interface ShellFederationRuntime {
   registerRemote(descriptor: { id: string; entry: string }): void;
   loadRemoteModule(remoteId: string, exposeKey: string): Promise<unknown>;
   loadPluginContract(remoteId: string): Promise<unknown>;
+  loadPluginComponents(remoteId: string): Promise<unknown>;
+  loadPluginServices(remoteId: string): Promise<unknown>;
 }
 
 export function createShellFederationRuntime(): ShellFederationRuntime {
@@ -53,6 +55,14 @@ export function createShellFederationRuntime(): ShellFederationRuntime {
     async loadPluginContract(remoteId) {
       const contract = await this.loadRemoteModule(remoteId, "./pluginContract");
       return contract;
+    },
+    async loadPluginComponents(remoteId) {
+      const components = await host.loadRemote<unknown>(`${remoteId}/pluginComponents`);
+      return components;
+    },
+    async loadPluginServices(remoteId) {
+      const services = await host.loadRemote<unknown>(`${remoteId}/pluginServices`);
+      return services;
     },
   };
 }
