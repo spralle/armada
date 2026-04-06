@@ -61,6 +61,7 @@ export interface ShellRuntime {
   lastIntentTrace: IntentResolutionTrace | null;
   popoutHandles: Map<string, Window>;
   poppedOutPartIds: Set<string>;
+  closeableTabIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
   syncDegraded: boolean;
   syncDegradedReason: WindowBridgeHealth["reason"];
