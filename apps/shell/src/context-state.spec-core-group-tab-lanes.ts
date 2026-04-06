@@ -240,6 +240,7 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
           instanceId: "tab-fixed",
           definitionId: "tab-fixed",
           id: "tab-fixed",
+          partDefinitionId: "tab-fixed",
           title: "Fixed",
           args: {},
           slot: "main",
@@ -250,6 +251,7 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
           instanceId: "tab-closeable",
           definitionId: "tab-closeable",
           id: "tab-closeable",
+          partDefinitionId: "tab-closeable",
           title: "Closeable",
           args: {},
           slot: "main",
@@ -318,6 +320,7 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
         main: [
           {
             tabId: "",
+            partDefinitionId: "",
             groupId: "group-main",
             label: "Bad",
             closePolicy: "closeable" as const,
@@ -325,6 +328,7 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
           },
           {
             tabId: "tab-b",
+            partDefinitionId: "tab-b",
             groupId: "group-main",
             label: "Orders",
             closePolicy: "closeable" as const,

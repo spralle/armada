@@ -7,6 +7,7 @@ export interface ComposedShellPart {
   instanceId: string;
   definitionId: string;
   id: string;
+  partDefinitionId: string;
   title: string;
   args: Record<string, string>;
   slot: "main" | "secondary" | "side";
@@ -57,7 +58,8 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
     .map((tabId) => runtime.contextState.tabs[tabId])
     .filter((tab): tab is NonNullable<typeof tab> => Boolean(tab))
     .map((tab) => {
-      const definition = definitionsById.get(tab.definitionId);
+      const tabDefinitionId = tab.partDefinitionId ?? tab.definitionId;
+      const definition = definitionsById.get(tabDefinitionId);
       if (!definition) {
         return null;
       }
@@ -66,6 +68,7 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
         instanceId: tab.id,
         definitionId: definition.definitionId,
         id: tab.id,
+        partDefinitionId: definition.definitionId,
         title: tab.label,
         args: tab.args,
         slot: definition.slot,

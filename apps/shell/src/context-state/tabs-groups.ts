@@ -71,6 +71,7 @@ export function registerTab(
     tabId: string;
     definitionId?: string;
     args?: Record<string, string>;
+    partDefinitionId?: string;
     groupId: string;
     groupColor?: string;
     tabLabel?: string;
@@ -80,9 +81,20 @@ export function registerTab(
   const next = cloneContextState(state);
   ensureGroup(next, input.groupId, input.groupColor);
   const prior = next.tabs[input.tabId];
+  const resolvedDefinitionId = input.definitionId
+    ?? input.partDefinitionId
+    ?? prior?.definitionId
+    ?? prior?.partDefinitionId
+    ?? input.tabId;
+  const resolvedPartDefinitionId = input.partDefinitionId
+    ?? input.definitionId
+    ?? prior?.partDefinitionId
+    ?? prior?.definitionId
+    ?? input.tabId;
   next.tabs[input.tabId] = {
     id: input.tabId,
-    definitionId: input.definitionId ?? prior?.definitionId ?? input.tabId,
+    definitionId: resolvedDefinitionId,
+    partDefinitionId: resolvedPartDefinitionId,
     groupId: input.groupId,
     label: input.tabLabel ?? prior?.label ?? input.tabId,
     closePolicy: input.closePolicy ?? prior?.closePolicy ?? "fixed",
@@ -112,6 +124,7 @@ export function openPartInstance(
   const next = registerTab(state, {
     tabId,
     definitionId: input.definitionId,
+    partDefinitionId: input.definitionId,
     args: cloneTabArgs(input.args),
     groupId: resolveTargetGroupId(state, input.groupId),
     groupColor: input.groupColor,
@@ -150,6 +163,7 @@ export function moveTabToGroup(
   next.tabs[input.tabId] = {
     id: input.tabId,
     definitionId: tab.definitionId,
+    partDefinitionId: tab.partDefinitionId ?? tab.definitionId,
     groupId: input.targetGroupId,
     label: tab.label,
     closePolicy: tab.closePolicy,
@@ -206,6 +220,7 @@ export function closeTabWithHistory(
     tabId: tab.id,
     definitionId: tab.definitionId,
     args: cloneTabArgs(tab.args),
+    partDefinitionId: tab.partDefinitionId ?? tab.definitionId,
     groupId: tab.groupId,
     label: tab.label,
     closePolicy: tab.closePolicy,
@@ -266,6 +281,7 @@ export function reopenMostRecentlyClosedTab(
   next.tabs[reopenedEntry.tabId] = {
     id: reopenedEntry.tabId,
     definitionId: reopenedEntry.definitionId ?? reopenedEntry.tabId,
+    partDefinitionId: reopenedEntry.partDefinitionId ?? reopenedEntry.definitionId ?? reopenedEntry.tabId,
     groupId: reopenedEntry.groupId,
     label: reopenedEntry.label,
     closePolicy: reopenedEntry.closePolicy,

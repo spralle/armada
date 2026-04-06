@@ -422,13 +422,15 @@ test("runtime close flow supports hidden tab close without stealing active tab",
   assert.equal(published[0]?.tabId, "tab-c");
 });
 
-test("runtime close flow is blocked in degraded mode", () => {
+test("runtime close flow remains local in degraded mode", () => {
   const fixture = createCloseRuntimeFixture();
   const { runtime, deps, published } = fixture;
   runtime.syncDegraded = true;
 
   const closed = closeTabThroughRuntime(runtime, "tab-b", deps);
-  assert.equal(closed, false);
-  assert.notEqual(runtime.contextState.tabs["tab-b"], undefined);
-  assert.equal(published.length, 0);
+  assert.equal(closed, true);
+  assert.equal(runtime.contextState.tabs["tab-b"], undefined);
+  assert.equal(runtime.selectedPartId, "tab-a");
+  assert.equal(published[0]?.type, "tab-close");
+  assert.equal(published[0]?.tabId, "tab-b");
 });
