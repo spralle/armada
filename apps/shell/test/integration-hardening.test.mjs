@@ -334,9 +334,9 @@ function createCloseRuntimeFixture() {
                 },
                 contributes: {
                   parts: [
-                    { id: "tab-a", title: "tab-a", slot: "main", component: "a" },
-                    { id: "tab-b", title: "Orders", slot: "main", component: "b" },
-                    { id: "tab-c", title: "Vessels", slot: "main", component: "c" },
+                    { id: "tab-a", title: "tab-a", dock: { container: "main" }, component: "a" },
+                    { id: "tab-b", title: "Orders", dock: { container: "main" }, component: "b" },
+                    { id: "tab-c", title: "Vessels", dock: { container: "main" }, component: "c" },
                   ],
                 },
               },

@@ -34,7 +34,10 @@ test("returns typed data for a valid plugin contract", () => {
         {
           id: "valid.part",
           title: "Valid Part",
-          slot: "side",
+          dock: {
+            container: "utility",
+            order: 1,
+          },
         },
       ],
       actions: [
@@ -88,7 +91,7 @@ test("returns typed data for a valid plugin contract", () => {
   assert.equal(result.success, true);
   if (result.success) {
     assert.equal(result.data.manifest.id, "com.armada.valid");
-    assert.equal(result.data.contributes?.parts?.[0]?.slot, "side");
+    assert.equal(result.data.contributes?.parts?.[0]?.dock?.container, "utility");
   }
 });
 
@@ -131,7 +134,7 @@ test("returns structured errors for missing required manifest fields", () => {
   }
 });
 
-test("returns structured errors for invalid contribution fields", () => {
+test("returns structured errors for invalid dock metadata fields", () => {
   const result = parsePluginContract({
     manifest: {
       id: "com.armada.invalid-contrib",
@@ -143,7 +146,9 @@ test("returns structured errors for invalid contribution fields", () => {
         {
           id: "part-1",
           title: "Part",
-          slot: "center",
+          dock: {
+            order: "first",
+          },
         },
       ],
     },
@@ -152,7 +157,7 @@ test("returns structured errors for invalid contribution fields", () => {
   assert.equal(result.success, false);
   if (!result.success) {
     assert.equal(
-      result.errors.some((error) => error.path === "contributes.parts.0.slot"),
+      result.errors.some((error) => error.path === "contributes.parts.0.dock.order"),
       true,
     );
   }
@@ -419,7 +424,10 @@ test("composeEnabledPluginContributions composes parts from enabled plugin contr
             {
               id: "domain.unplanned-orders.part",
               title: "Unplanned Orders",
-              slot: "main",
+              dock: {
+                container: "workbench-main",
+                order: 10,
+              },
               component: "UnplannedOrdersPart",
             },
           ],
@@ -440,7 +448,10 @@ test("composeEnabledPluginContributions composes parts from enabled plugin contr
             {
               id: "domain.vessel-view.part",
               title: "Vessel View",
-              slot: "secondary",
+              dock: {
+                container: "workbench-secondary",
+                order: 20,
+              },
               component: "VesselViewPart",
             },
           ],
@@ -461,7 +472,10 @@ test("composeEnabledPluginContributions composes parts from enabled plugin contr
             {
               id: "disabled.part",
               title: "Disabled Part",
-              slot: "side",
+              dock: {
+                container: "workbench-side",
+                order: 30,
+              },
               component: "DisabledPart",
             },
           ],
@@ -472,10 +486,10 @@ test("composeEnabledPluginContributions composes parts from enabled plugin contr
 
   assert.equal(composed.parts.length, 2);
   assert.deepEqual(
-    composed.parts.map((part) => `${part.pluginId}:${part.id}:${part.slot}`),
+    composed.parts.map((part) => `${part.pluginId}:${part.id}:${part.dock?.container ?? "none"}`),
     [
-      "com.armada.domain.unplanned-orders:domain.unplanned-orders.part:main",
-      "com.armada.domain.vessel-view:domain.vessel-view.part:secondary",
+      "com.armada.domain.unplanned-orders:domain.unplanned-orders.part:workbench-main",
+      "com.armada.domain.vessel-view:domain.vessel-view.part:workbench-secondary",
     ],
   );
   assert.equal(composed.views.length, 1);

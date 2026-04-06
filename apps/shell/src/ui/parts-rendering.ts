@@ -27,10 +27,22 @@ export function composePartsFromRegistrySnapshot(
   return composed.parts.map((part) => ({
     id: part.id,
     title: part.title,
-    slot: part.slot,
+    slot: resolveSlotFromDockContainer(part.dock?.container),
     component: part.component,
     pluginId: part.pluginId,
   }));
+}
+
+function resolveSlotFromDockContainer(container: string | undefined): PartSlot {
+  if (container === "side") {
+    return "side";
+  }
+
+  if (container === "secondary") {
+    return "secondary";
+  }
+
+  return "main";
 }
 
 export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPart[] {
