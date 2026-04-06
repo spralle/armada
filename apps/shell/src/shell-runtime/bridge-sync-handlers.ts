@@ -1,5 +1,8 @@
-import { createRevision } from "../context/runtime-state.js";
-import { CORE_GROUP_CONTEXT_KEY } from "../context/runtime-state.js";
+import {
+  CORE_GROUP_CONTEXT_KEY,
+  createRevision,
+  reconcileActiveTab,
+} from "../context/runtime-state.js";
 import {
   formatDegradedModeAnnouncement,
   formatSelectionAnnouncement,
@@ -177,10 +180,11 @@ export function buildContextSyncEvent(
   runtime: ShellRuntime,
   contextValue: string,
 ): ContextSyncEvent {
+  const activeTabId = reconcileActiveTab(runtime);
   return {
     type: "context",
     scope: "group",
-    tabId: runtime.selectedPartId ?? undefined,
+    tabId: activeTabId ?? undefined,
     contextKey: CORE_GROUP_CONTEXT_KEY,
     contextValue,
     revision: createRevision(runtime.windowId),
