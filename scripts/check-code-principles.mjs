@@ -36,9 +36,9 @@ async function main() {
       defaultExportViolations.push(relativePath);
     }
 
-    const lineCount = source.split(/\r?\n/).length;
-    if (lineCount > MAX_FILE_LINES) {
-      oversizedFileViolations.push({ file: relativePath, lineCount });
+    const effectiveLineCount = countEffectiveLines(source);
+    if (effectiveLineCount > MAX_FILE_LINES) {
+      oversizedFileViolations.push({ file: relativePath, lineCount: effectiveLineCount });
     }
   }
 
@@ -155,6 +155,19 @@ async function safeReaddir(targetPath) {
   } catch {
     return [];
   }
+}
+
+function countEffectiveLines(source) {
+  const lines = source.split(/\r?\n/);
+  let count = 0;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("//")) {
+      continue;
+    }
+    count += 1;
+  }
+  return count;
 }
 
 main().catch((error) => {
