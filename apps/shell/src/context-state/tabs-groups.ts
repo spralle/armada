@@ -1,6 +1,5 @@
 import { cloneContextState, ensureGroup } from "./helpers.js";
 import { ContextTabCloseability, ShellContextState } from "./types.js";
-
 export function registerTab(
   state: ShellContextState,
   input: {
@@ -67,7 +66,6 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
 
   const orderedTabIds = state.tabOrder.filter((id) => state.tabs[id]);
   const closedTabOrderIndex = orderedTabIds.indexOf(tabId);
-
   const next = cloneContextState(state);
   delete next.tabs[tabId];
   next.tabOrder = orderedTabIds.filter((id) => id !== tabId && next.tabs[id]);

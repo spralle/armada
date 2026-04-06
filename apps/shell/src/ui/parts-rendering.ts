@@ -91,13 +91,26 @@ export function renderTabStrip(
   slot: PartSlot,
   tabs: ComposedShellPart[],
   activeTabId: string,
+  runtime: ShellRuntime,
 ): string {
   const label = `${slot} panel tabs`;
   return `
     <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}">
       ${tabs.map((part) => {
     const isActive = part.id === activeTabId;
-    return `<button
+    const closeability = getTabCloseability(runtime.contextState, part.id);
+    const closeButton = closeability.canClose
+      ? `<button
+            type="button"
+            class="part-tab-close"
+            data-action="close-tab"
+            data-tab-id="${part.id}"
+            aria-label="Close ${escapeHtml(part.title)} tab"
+            title="Close"
+          >×</button>`
+      : "";
+    return `<div class="part-tab-item" data-tab-item="${part.id}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
+        <button
           type="button"
           role="tab"
           class="part-tab${isActive ? " is-active" : ""}"
@@ -109,7 +122,9 @@ export function renderTabStrip(
           aria-selected="${isActive ? "true" : "false"}"
           aria-controls="panel-${part.id}"
           tabindex="${isActive ? "0" : "-1"}"
-        >${escapeHtml(part.title)}</button>`;
+        >${escapeHtml(part.title)}</button>
+        ${closeButton}
+      </div>`;
   }).join("")}
     </div>
   `;

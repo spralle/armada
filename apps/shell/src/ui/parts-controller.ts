@@ -5,7 +5,7 @@ import {
   writeGlobalSelectionLane,
 } from "../context/runtime-state.js";
 import {
-  closeTab,
+  closeTabIfAllowed,
   getTabCloseability,
   readEntityTypeSelection,
 } from "../context-state.js";
@@ -99,7 +99,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
     }
 
     const activePartId = resolveActivePartId(runtime, slotVisibleParts.map((part) => part.id));
-    slotTabs.innerHTML = renderTabStrip(slot, slotVisibleParts, activePartId);
+    slotTabs.innerHTML = renderTabStrip(slot, slotVisibleParts, activePartId, runtime);
     slotParts.innerHTML = slotVisibleParts
       .map((part) => renderPartPanel(part, runtime, part.id === activePartId))
       .join("");
@@ -178,7 +178,7 @@ export function closeTabThroughRuntime(
     return false;
   }
 
-  updateContextState(runtime, closeTab(runtime.contextState, tabId));
+  closeTabFromUi(runtime, tabId);
   cleanupPopoutForClosedTab(tabId, runtime);
 
   const activeTabId = reconcileActiveTab(runtime);
@@ -316,6 +316,10 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
   // Phase 2: close intents run through runtime lifecycle wiring.
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='close-tab']")) {
     button.addEventListener("click", () => {
+      if (runtime.syncDegraded) {
+        return;
+      }
+
       const tabId = button.dataset.tabId;
       if (!tabId) {
         return;
@@ -333,6 +337,15 @@ function cleanupPopoutForClosedTab(tabId: string, runtime: ShellRuntime): void {
     popoutHandle.close();
   }
   runtime.popoutHandles.delete(tabId);
+}
+
+export function closeTabFromUi(runtime: ShellRuntime, tabId: string): string | null {
+  updateContextState(runtime, closeTabIfAllowed(runtime.contextState, tabId));
+  const resolvedActiveTabId = reconcileActiveTab(runtime);
+  runtime.pendingFocusSelector = resolvedActiveTabId
+    ? `button[data-action='activate-tab'][data-part-id='${resolvedActiveTabId}']`
+    : null;
+  return runtime.pendingFocusSelector;
 }
 
 function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
