@@ -1,6 +1,7 @@
 import {
   createRevision,
   reconcileActiveTab,
+  updateContextState,
   writeGlobalSelectionLane,
 } from "../context/runtime-state.js";
 import {
@@ -249,18 +250,22 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         return;
       }
 
-      runtime.contextState = closeTabIfAllowed(runtime.contextState, tabId);
-
-      const resolvedActiveTabId = reconcileActiveTab(runtime);
-      runtime.pendingFocusSelector = resolvedActiveTabId
-        ? `button[data-action='activate-tab'][data-part-id='${resolvedActiveTabId}']`
-        : null;
+      closeTabFromUi(runtime, tabId);
 
       deps.renderParts();
       deps.renderContextControls();
       deps.renderSyncStatus();
     });
   }
+}
+
+export function closeTabFromUi(runtime: ShellRuntime, tabId: string): string | null {
+  updateContextState(runtime, closeTabIfAllowed(runtime.contextState, tabId));
+  const resolvedActiveTabId = reconcileActiveTab(runtime);
+  runtime.pendingFocusSelector = resolvedActiveTabId
+    ? `button[data-action='activate-tab'][data-part-id='${resolvedActiveTabId}']`
+    : null;
+  return runtime.pendingFocusSelector;
 }
 
 function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
