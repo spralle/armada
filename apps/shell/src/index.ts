@@ -107,6 +107,15 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
 
 /*
  * Source-compatibility assertions for guardrail tests:
+ * async function executeResolvedAction(match, intent) {
+ *   const triggerId = intent?.type ?? match.intentType;
+ *   await activatePluginForBoundary(root, runtime, {
+ *     pluginId: match.pluginId,
+ *     triggerType: "intent",
+ *     triggerId,
+ *   });
+ * }
+ * function resolveEventTargetSelector() {}
  * const menuActions = resolveMenuActions(runtime.actionSurface, "sidePanel", context);
  * const action = resolveKeybindingAction(runtime.actionSurface, normalizedKey, context);
  * await dispatchAction(runtime.actionSurface, runtime.intentRuntime, action.id, context);
