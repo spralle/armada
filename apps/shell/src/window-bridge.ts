@@ -34,6 +34,12 @@ export interface PopoutRestoreRequestEvent {
   sourceWindowId: string;
 }
 
+export interface TabCloseSyncEvent {
+  type: "tab-close";
+  tabId: string;
+  sourceWindowId: string;
+}
+
 export interface DndSessionUpsertEvent {
   type: "dnd-session-upsert";
   id: string;
@@ -70,6 +76,7 @@ export type WindowBridgeEvent =
   | SelectionSyncEvent
   | ContextSyncEvent
   | PopoutRestoreRequestEvent
+  | TabCloseSyncEvent
   | DndSessionUpsertEvent
   | DndSessionDeleteEvent
   | SyncProbeEvent
@@ -239,6 +246,13 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
       typeof event.sourceWindowId === "string"
     ) {
       return event as PopoutRestoreRequestEvent;
+    }
+    return null;
+  }
+
+  if (event.type === "tab-close") {
+    if (typeof event.tabId === "string" && typeof event.sourceWindowId === "string") {
+      return event as TabCloseSyncEvent;
     }
     return null;
   }

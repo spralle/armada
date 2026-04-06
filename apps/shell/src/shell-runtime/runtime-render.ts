@@ -109,6 +109,7 @@ export function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, bindings: RuntimeRenderBindings): void {
   void bindings.primeEnabledPluginActivations();
   const visibleParts = getVisibleComposedParts(runtime);
+  runtime.closeableTabIds = new Set(visibleParts.map((part) => part.id));
   updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
   reconcileActiveTab(runtime);
   renderPartsView(root, runtime, {

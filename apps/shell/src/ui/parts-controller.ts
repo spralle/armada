@@ -1,9 +1,11 @@
 import {
   createRevision,
+  reconcileActiveTab,
+  updateContextState,
   writeGlobalSelectionLane,
 } from "../context/runtime-state.js";
 import {
-  closeTabIfAllowed,
+  closeTab,
   getTabCloseability,
   readEntityTypeSelection,
 } from "../context-state.js";
@@ -28,6 +30,12 @@ type PartsControllerDeps = {
   renderParts: () => void;
   renderSyncStatus: () => void;
 };
+
+interface CloseTabRuntimeOptions {
+  publishCloseEvent?: boolean;
+  publishSelectionEvent?: boolean;
+  sourceWindowId?: string;
+}
 
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
   const visibleParts = getVisibleComposedParts(runtime);
@@ -150,6 +158,80 @@ export function startPopoutWatchdog(root: HTMLElement, runtime: ShellRuntime, de
   }, 1_000);
 }
 
+export function closeTabThroughRuntime(
+  runtime: ShellRuntime,
+  tabId: string,
+  deps: PartsControllerDeps,
+  options?: CloseTabRuntimeOptions,
+): boolean {
+  if (runtime.syncDegraded) {
+    return false;
+  }
+
+  if (!runtime.contextState.tabs[tabId]) {
+    return false;
+  }
+
+  const closeability = getTabCloseability(runtime.contextState, tabId);
+  const canClose = closeability.canClose || runtime.closeableTabIds.has(tabId);
+  if (!canClose) {
+    return false;
+  }
+
+  updateContextState(runtime, closeTab(runtime.contextState, tabId));
+  cleanupPopoutForClosedTab(tabId, runtime);
+
+  const activeTabId = reconcileActiveTab(runtime);
+  const sourceWindowId = options?.sourceWindowId ?? runtime.windowId;
+  const publishCloseEvent = options?.publishCloseEvent ?? true;
+  const publishSelectionEvent = options?.publishSelectionEvent ?? true;
+
+  if (publishCloseEvent) {
+    deps.publishWithDegrade({
+      type: "tab-close",
+      tabId,
+      sourceWindowId,
+    });
+  }
+
+  if (activeTabId) {
+    const selectedPartTitle = resolvePartTitle(activeTabId, runtime);
+    const selectionByEntityType = buildSelectionByEntityType(runtime);
+    const revision = createRevision(sourceWindowId);
+
+    deps.applySelection({
+      type: "selection",
+      selectedPartId: activeTabId,
+      selectedPartTitle,
+      selectionByEntityType,
+      revision,
+      sourceWindowId,
+    });
+
+    if (publishSelectionEvent) {
+      deps.publishWithDegrade({
+        type: "selection",
+        selectedPartId: activeTabId,
+        selectedPartTitle,
+        selectionByEntityType,
+        revision,
+        sourceWindowId,
+      });
+    }
+
+    writeGlobalSelectionLane(runtime, {
+      selectedPartId: activeTabId,
+      selectedPartTitle,
+      revision,
+    });
+  }
+
+  deps.renderContextControls();
+  deps.renderParts();
+  deps.renderSyncStatus();
+  return true;
+}
+
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='activate-tab']")) {
     button.addEventListener("click", () => {
@@ -231,7 +313,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
     });
   }
 
-  // Phase 2 hook: listeners for future close actions are present, but remain no-op in Phase 1.
+  // Phase 2: close intents run through runtime lifecycle wiring.
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='close-tab']")) {
     button.addEventListener("click", () => {
       const tabId = button.dataset.tabId;
@@ -239,17 +321,18 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         return;
       }
 
-      const closeability = getTabCloseability(runtime.contextState, tabId);
-      if (!closeability.canClose) {
-        return;
-      }
-
-      // Phase 2 hook: publish close intent and reconcile selection/popout edges.
-      runtime.contextState = closeTabIfAllowed(runtime.contextState, tabId);
-      deps.renderParts();
-      deps.renderSyncStatus();
+      closeTabThroughRuntime(runtime, tabId, deps);
     });
   }
+}
+
+function cleanupPopoutForClosedTab(tabId: string, runtime: ShellRuntime): void {
+  runtime.poppedOutPartIds.delete(tabId);
+  const popoutHandle = runtime.popoutHandles.get(tabId);
+  if (popoutHandle && !popoutHandle.closed) {
+    popoutHandle.close();
+  }
+  runtime.popoutHandles.delete(tabId);
 }
 
 function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
