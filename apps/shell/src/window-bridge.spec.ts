@@ -169,6 +169,62 @@ test("bridge parses sync events and selection revisions", () => {
   }
 });
 
+test("bridge parses popout restore and context tab/group sync payloads", () => {
+  const previous = (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel;
+  (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
+
+  try {
+    const bridge = createWindowBridge("armada.test.bridge.tab-context");
+    const channel = FakeBroadcastChannel.lastInstance;
+    assertTruthy(channel, "expected fake broadcast channel instance");
+
+    const events: string[] = [];
+    bridge.subscribe((event) => {
+      events.push(event.type);
+    });
+
+    channel!.emit("message", {
+      type: "context",
+      scope: "group",
+      tabId: "tab-a",
+      contextKey: "shell.group-context",
+      contextValue: "ctx-a",
+      revision: { timestamp: 20, writer: "window-a" },
+      sourceWindowId: "window-a",
+    });
+
+    channel!.emit("message", {
+      type: "context",
+      scope: "group",
+      groupId: "group-main",
+      contextKey: "shell.group-context",
+      contextValue: "ctx-main",
+      revision: { timestamp: 21, writer: "window-b" },
+      sourceWindowId: "window-b",
+    });
+
+    channel!.emit("message", {
+      type: "popout-restore-request",
+      partId: "domain.unplanned-orders.part",
+      hostWindowId: "host-window",
+      sourceWindowId: "popout-window",
+    });
+
+    channel!.emit("message", {
+      type: "popout-restore-request",
+      partId: "missing-host-window",
+      sourceWindowId: "popout-window",
+    });
+
+    assertEqual(events.length, 3, "expected invalid restore payload to be ignored");
+    assertEqual(events[0], "context", "tab-scoped context should parse");
+    assertEqual(events[1], "context", "group-scoped context should parse");
+    assertEqual(events[2], "popout-restore-request", "popout restore payload should parse");
+  } finally {
+    (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
+  }
+});
+
 let passed = 0;
 for (const caseItem of tests) {
   try {
