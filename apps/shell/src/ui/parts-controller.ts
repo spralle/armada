@@ -14,10 +14,10 @@ import {
   readEntityTypeSelection,
   type ContextTabSlot,
 } from "../context-state.js";
-import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
-import { safeJson, safeParse, sanitizeForWindowName } from "../app/utils.js";
+import { sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
+import { wireDockTabDragDrop } from "./dock-tab-dnd.js";
 import {
   type ComposedShellPart,
   getVisibleComposedParts,
@@ -61,7 +61,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
 
     slot.innerHTML = renderPartCard(part, runtime, { showPopoutButton: false, showRestoreButton: true });
     wirePartActions(root, runtime, deps);
-    wireDragDrop(root, runtime);
+    wireDockTabDragDrop(root, runtime, deps);
     updateSelectedStyles(root, runtime.selectedPartId);
     void runtime.partModuleHost.syncRenderedParts(root, [part]);
     return;
@@ -114,7 +114,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   }
 
   wirePartActions(root, runtime, deps);
-  wireDragDrop(root, runtime);
+  wireDockTabDragDrop(root, runtime, deps);
   updateSelectedStyles(root, runtime.selectedPartId);
   void runtime.partModuleHost.syncRenderedParts(
     root,
@@ -547,78 +547,6 @@ function reopenUntilEligibleTabRestored(
   }
 
   return null;
-}
-
-function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
-  for (const partNode of root.querySelectorAll<HTMLElement>("article[data-part-id]")) {
-    partNode.addEventListener("dragstart", (event) => {
-      const dataTransfer = event.dataTransfer;
-      const partId = partNode.dataset.partId;
-      if (!dataTransfer || !partId) {
-        return;
-      }
-
-      const payload = {
-        partId,
-        partTitle: resolvePartTitle(partId, runtime),
-        sourceWindowId: runtime.windowId,
-        createdAt: new Date().toISOString(),
-      };
-
-      if (runtime.dragSessionBroker.available) {
-        const ref = runtime.dragSessionBroker.create(payload);
-        dataTransfer.setData("text/plain", `${DRAG_REF_PREFIX}${ref.id}`);
-      } else {
-        dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
-      }
-
-      dataTransfer.effectAllowed = "copyMove";
-    });
-
-    partNode.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = "copy";
-      }
-    });
-
-    partNode.addEventListener("drop", (event) => {
-      event.preventDefault();
-      const dataTransfer = event.dataTransfer;
-      const targetPartId = partNode.dataset.partId;
-      if (!dataTransfer || !targetPartId) {
-        return;
-      }
-
-      const raw = dataTransfer.getData("text/plain");
-      const resultNode = root.querySelector<HTMLElement>(`[data-drop-result-for='${targetPartId}']`);
-      if (!resultNode) {
-        return;
-      }
-
-      if (raw.startsWith(DRAG_REF_PREFIX)) {
-        const id = raw.slice(DRAG_REF_PREFIX.length);
-        const payload = runtime.dragSessionBroker.consume({ id });
-        if (!payload) {
-          resultNode.textContent = "Drop failed: session missing/expired (bridge unavailable or stale ref).";
-          return;
-        }
-
-        resultNode.textContent = `Dropped via session ref: ${safeJson(payload)}`;
-        return;
-      }
-
-      if (raw.startsWith(DRAG_INLINE_PREFIX)) {
-        const payload = safeParse(raw.slice(DRAG_INLINE_PREFIX.length));
-        resultNode.textContent = payload
-          ? `Dropped via inline fallback: ${safeJson(payload)}`
-          : "Drop failed: invalid inline payload.";
-        return;
-      }
-
-      resultNode.textContent = "Drop ignored: unsupported payload format.";
-    });
-  }
 }
 
 function openPopout(partId: string, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {

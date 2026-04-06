@@ -27,10 +27,23 @@ export function composePartsFromRegistrySnapshot(
   return composed.parts.map((part) => ({
     id: part.id,
     title: part.title,
-    slot: resolveSlotFromDockContainer(part.dock?.container),
+    slot: resolveSlotFromDockContainer(readDockContainer(part)),
     component: part.component,
     pluginId: part.pluginId,
   }));
+}
+
+function readDockContainer(part: unknown): string | undefined {
+  if (!part || typeof part !== "object" || !("dock" in part)) {
+    return undefined;
+  }
+
+  const dock = part.dock;
+  if (!dock || typeof dock !== "object" || !("container" in dock)) {
+    return undefined;
+  }
+
+  return typeof dock.container === "string" ? dock.container : undefined;
 }
 
 function resolveSlotFromDockContainer(container: string | undefined): PartSlot {
@@ -70,15 +83,13 @@ export function renderPartCard(
     : "";
 
   return `
-    <article class="part-root" data-part-id="${part.id}" draggable="true" ${closeabilityAttrs}>
+    <article class="part-root" data-part-id="${part.id}" ${closeabilityAttrs}>
       <h2>${escapeHtml(part.title)}</h2>
       <div class="part-actions">
         ${popoutButton}
         ${restoreButton}
       </div>
       ${renderPartBody(part)}
-      <div class="dropzone" data-dropzone-for="${part.id}">Drop cross-window payload here</div>
-      <p class="runtime-note" data-drop-result-for="${part.id}"></p>
       <p class="runtime-note">Window: ${runtime.windowId}</p>
     </article>
   `;
@@ -126,6 +137,15 @@ export function renderTabStrip(
     return `<div class="part-tab-item" data-tab-item="${part.id}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
         <button
           type="button"
+          class="part-tab-handle"
+          data-action="drag-tab-handle"
+          data-tab-id="${part.id}"
+          draggable="true"
+          aria-label="Drag ${escapeHtml(part.title)} tab"
+          title="Drag tab"
+        >⋮⋮</button>
+        <button
+          type="button"
           role="tab"
           class="part-tab${isActive ? " is-active" : ""}"
           id="tab-${part.id}"
@@ -138,6 +158,7 @@ export function renderTabStrip(
           tabindex="${isActive ? "0" : "-1"}"
         >${escapeHtml(part.title)}</button>
         ${closeButton}
+        ${renderDockDropOverlay(part.id)}
       </div>`;
   }).join("")}
       <button
@@ -152,6 +173,16 @@ export function renderTabStrip(
       >↶ Reopen</button>
     </div>
   `;
+}
+
+function renderDockDropOverlay(targetTabId: string): string {
+  return `<div class="dock-drop-overlay" data-dock-drop-overlay-for="${targetTabId}" aria-hidden="true">
+      <div class="dock-drop-zone dock-drop-zone-left" data-dock-drop-zone="left" data-target-tab-id="${targetTabId}" title="Split left"></div>
+      <div class="dock-drop-zone dock-drop-zone-right" data-dock-drop-zone="right" data-target-tab-id="${targetTabId}" title="Split right"></div>
+      <div class="dock-drop-zone dock-drop-zone-top" data-dock-drop-zone="top" data-target-tab-id="${targetTabId}" title="Split top"></div>
+      <div class="dock-drop-zone dock-drop-zone-bottom" data-dock-drop-zone="bottom" data-target-tab-id="${targetTabId}" title="Split bottom"></div>
+      <div class="dock-drop-zone dock-drop-zone-center" data-dock-drop-zone="center" data-target-tab-id="${targetTabId}" title="Merge into tab stack"></div>
+    </div>`;
 }
 
 export function isPartActivationNode(target: HTMLElement): target is HTMLButtonElement {
