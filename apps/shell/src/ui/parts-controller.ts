@@ -1,23 +1,16 @@
-import {
-  createRevision,
-  reconcileActiveTab,
-  updateContextState,
-  writeGlobalSelectionLane,
-} from "../context/runtime-state.js";
-import {
-  closeTab,
-  closeTabIfAllowedWithHistory,
-  closeTabWithHistory,
-  canReopenClosedTab,
-  getTabCloseability,
-  reopenMostRecentlyClosedTab,
-  readEntityTypeSelection,
-  type ContextTabSlot,
-} from "../context-state.js";
 import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
-import { safeJson, safeParse, sanitizeForWindowName } from "../app/utils.js";
+import { safeJson, safeParse } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
+import {
+  dispatchLocalLifecycleAction,
+} from "./part-instance-lifecycle-dispatch.js";
+import {
+  type PartLifecycleDeps,
+  closeTabFromUi,
+  closeTabThroughRuntime,
+  reopenMostRecentlyClosedTabThroughRuntime,
+} from "./part-instance-tab-lifecycle.js";
 import {
   type ComposedShellPart,
   getVisibleComposedParts,
@@ -36,25 +29,8 @@ type PartsControllerDeps = {
   renderSyncStatus: () => void;
 };
 
-interface CloseTabRuntimeOptions {
-  publishCloseEvent?: boolean;
-  publishSelectionEvent?: boolean;
-  sourceWindowId?: string;
-}
-
-type LocalLifecycleActionId =
-  | "part-instance.open"
-  | "part-instance.activate"
-  | "part-instance.popout"
-  | "part-instance.restore"
-  | "part-instance.close"
-  | "part-instance.reopen";
-
-interface LocalLifecycleActionRequest {
-  actionId: LocalLifecycleActionId;
-  tabInstanceId?: string;
-  partTitle?: string;
-}
+export { closeTabFromUi, closeTabThroughRuntime, reopenMostRecentlyClosedTabThroughRuntime };
+export { restorePart } from "./part-instance-popout-lifecycle.js";
 
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
   const visibleParts = getVisibleComposedParts(runtime);
@@ -136,6 +112,26 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   );
 }
 
+export function startPopoutWatchdog(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">,
+): void {
+  window.setInterval(() => {
+    for (const [partId, handle] of runtime.popoutHandles.entries()) {
+      if (handle.closed) {
+        runtime.popoutHandles.delete(partId);
+        if (runtime.poppedOutPartIds.has(partId)) {
+          runtime.poppedOutPartIds.delete(partId);
+          runtime.notice = `Part '${partId}' restored (popout closed).`;
+          deps.renderParts();
+          deps.renderSyncStatus();
+        }
+      }
+    }
+  }, 1_000);
+}
+
 function resolveActivePartId(runtime: ShellRuntime, visiblePartIds: string[]): string {
   const selectedPartId = runtime.selectedPartId;
   if (selectedPartId && visiblePartIds.includes(selectedPartId)) {
@@ -159,133 +155,12 @@ function renderPartPanel(part: ComposedShellPart, runtime: ShellRuntime, isActiv
     >${renderPartCard(part, runtime, { showPopoutButton: true })}</section>`;
 }
 
-function buildSelectionByEntityType(runtime: ShellRuntime): SelectionSyncEvent["selectionByEntityType"] {
-  return Object.fromEntries(
-    Object.keys(runtime.contextState.selectionByEntityType).map((entityType) => [
-      entityType,
-      readEntityTypeSelection(runtime.contextState, entityType),
-    ]),
-  );
-}
-
-export function startPopoutWatchdog(root: HTMLElement, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {
-  window.setInterval(() => {
-    for (const [partId, handle] of runtime.popoutHandles.entries()) {
-      if (handle.closed) {
-        runtime.popoutHandles.delete(partId);
-        if (runtime.poppedOutPartIds.has(partId)) {
-          runtime.poppedOutPartIds.delete(partId);
-          runtime.notice = `Part '${partId}' restored (popout closed).`;
-          deps.renderParts();
-          deps.renderSyncStatus();
-        }
-      }
-    }
-  }, 1_000);
-}
-
-export function closeTabThroughRuntime(
-  runtime: ShellRuntime,
-  tabId: string,
-  deps: PartsControllerDeps,
-  options?: CloseTabRuntimeOptions,
-): boolean {
-  if (!runtime.contextState.tabs[tabId]) {
-    return false;
-  }
-
-  const closeability = getTabCloseability(runtime.contextState, tabId);
-  const canClose = closeability.canClose || runtime.closeableTabIds.has(tabId);
-  if (!canClose) {
-    return false;
-  }
-
-  const selectedBeforeClose = runtime.selectedPartId;
-  const closedTabIndex = runtime.contextState.tabOrder.indexOf(tabId);
-  const leftNeighborTabId = closedTabIndex > 0 ? runtime.contextState.tabOrder[closedTabIndex - 1] ?? null : null;
-  const slot = resolveSlotForTab(runtime, tabId);
-
-  closeability.canClose
-    ? closeTabFromUi(runtime, tabId, {
-      slot,
-      orderIndex: closedTabIndex,
-    })
-    : closeTabUsingRuntimeAllowList(runtime, tabId, {
-      slot,
-      orderIndex: closedTabIndex,
-    });
-
-  if (runtime.contextState.tabs[tabId]) {
-    return false;
-  }
-
-  if (selectedBeforeClose === tabId && leftNeighborTabId && runtime.contextState.tabs[leftNeighborTabId]) {
-    runtime.selectedPartId = leftNeighborTabId;
-    runtime.selectedPartTitle = resolvePartTitle(leftNeighborTabId, runtime);
-  }
-  cleanupPopoutForClosedTab(tabId, runtime);
-
-  const activeTabId = reconcileActiveTab(runtime);
-  const sourceWindowId = options?.sourceWindowId ?? runtime.windowId;
-  const publishCloseEvent = options?.publishCloseEvent ?? true;
-  const publishSelectionEvent = options?.publishSelectionEvent ?? true;
-
-  if (publishCloseEvent) {
-    deps.publishWithDegrade({
-      type: "tab-close",
-      tabId,
-      sourceWindowId,
-    });
-  }
-
-  if (activeTabId) {
-    const selectedPartTitle = resolvePartTitle(activeTabId, runtime);
-    const selectionByEntityType = buildSelectionByEntityType(runtime);
-    const revision = createRevision(sourceWindowId);
-
-    deps.applySelection({
-      type: "selection",
-      selectedPartId: activeTabId,
-      selectedPartTitle,
-      selectionByEntityType,
-      revision,
-      sourceWindowId,
-    });
-
-    if (publishSelectionEvent) {
-      deps.publishWithDegrade({
-        type: "selection",
-        selectedPartId: activeTabId,
-        selectedPartTitle,
-        selectionByEntityType,
-        revision,
-        sourceWindowId,
-      });
-    }
-
-    writeGlobalSelectionLane(runtime, {
-      selectedPartId: activeTabId,
-      selectedPartTitle,
-      revision,
-    });
-  }
-
-  runtime.pendingFocusSelector = activeTabId
-    ? `button[data-action='activate-tab'][data-part-id='${activeTabId}']`
-    : null;
-
-  deps.renderContextControls();
-  deps.renderParts();
-  deps.renderSyncStatus();
-  return true;
-}
-
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='reopen-closed-tab']")) {
     button.addEventListener("click", () => {
       dispatchLocalLifecycleAction(runtime, {
         actionId: "part-instance.reopen",
-      }, deps);
+      }, deps as PartLifecycleDeps);
     });
   }
 
@@ -295,7 +170,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         actionId: "part-instance.activate",
         tabInstanceId: button.dataset.partId,
         partTitle: button.dataset.partTitle,
-      }, deps);
+      }, deps as PartLifecycleDeps);
     });
   }
 
@@ -304,7 +179,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       dispatchLocalLifecycleAction(runtime, {
         actionId: "part-instance.popout",
         tabInstanceId: button.dataset.partId,
-      }, deps);
+      }, deps as PartLifecycleDeps);
     });
   }
 
@@ -313,290 +188,18 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       dispatchLocalLifecycleAction(runtime, {
         actionId: "part-instance.restore",
         tabInstanceId: button.dataset.partId,
-      }, deps);
+      }, deps as PartLifecycleDeps);
     });
   }
 
-  // Phase 2: close intents run through runtime lifecycle wiring.
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='close-tab']")) {
     button.addEventListener("click", () => {
       dispatchLocalLifecycleAction(runtime, {
         actionId: "part-instance.close",
         tabInstanceId: button.dataset.tabId,
-      }, deps);
+      }, deps as PartLifecycleDeps);
     });
   }
-}
-
-function dispatchLocalLifecycleAction(
-  runtime: ShellRuntime,
-  request: LocalLifecycleActionRequest,
-  deps: PartsControllerDeps,
-): boolean {
-  switch (request.actionId) {
-    case "part-instance.open":
-    case "part-instance.activate": {
-      const tabInstanceId = request.tabInstanceId;
-      if (!tabInstanceId) {
-        return false;
-      }
-      return activateTabInstance(tabInstanceId, request.partTitle, runtime, deps);
-    }
-    case "part-instance.popout": {
-      const tabInstanceId = request.tabInstanceId;
-      if (!tabInstanceId) {
-        return false;
-      }
-      openPopout(tabInstanceId, runtime, deps);
-      return true;
-    }
-    case "part-instance.restore": {
-      const tabInstanceId = request.tabInstanceId;
-      if (!tabInstanceId) {
-        return false;
-      }
-
-      if (runtime.isPopout) {
-        if (runtime.hostWindowId) {
-          deps.publishWithDegrade({
-            type: "popout-restore-request",
-            partId: tabInstanceId,
-            hostWindowId: runtime.hostWindowId,
-            sourceWindowId: runtime.windowId,
-          });
-        }
-        window.close();
-        return true;
-      }
-
-      restorePart(tabInstanceId, runtime, {
-        renderParts: deps.renderParts,
-        renderSyncStatus: deps.renderSyncStatus,
-      });
-      return true;
-    }
-    case "part-instance.close": {
-      const tabInstanceId = request.tabInstanceId;
-      if (!tabInstanceId) {
-        return false;
-      }
-      return closeTabThroughRuntime(runtime, tabInstanceId, deps);
-    }
-    case "part-instance.reopen":
-      return reopenMostRecentlyClosedTabThroughRuntime(runtime, deps);
-    default:
-      return false;
-  }
-}
-
-function activateTabInstance(
-  tabInstanceId: string,
-  partTitle: string | undefined,
-  runtime: ShellRuntime,
-  deps: PartsControllerDeps,
-): boolean {
-  if (!runtime.contextState.tabs[tabInstanceId]) {
-    return false;
-  }
-
-  const selectedPartTitle = partTitle
-    ?? runtime.contextState.tabs[tabInstanceId]?.label
-    ?? tabInstanceId;
-  const selectionRevision = createRevision(runtime.windowId);
-  const selectionByEntityType = buildSelectionByEntityType(runtime);
-
-  deps.applySelection({
-    selectedPartId: tabInstanceId,
-    selectedPartTitle,
-    selectionByEntityType,
-    revision: selectionRevision,
-    sourceWindowId: runtime.windowId,
-    type: "selection",
-  });
-
-  deps.publishWithDegrade({
-    type: "selection",
-    selectedPartId: tabInstanceId,
-    selectedPartTitle,
-    selectionByEntityType,
-    revision: selectionRevision,
-    sourceWindowId: runtime.windowId,
-  });
-
-  writeGlobalSelectionLane(runtime, {
-    selectedPartId: tabInstanceId,
-    selectedPartTitle,
-    revision: selectionRevision,
-  });
-
-  return true;
-}
-
-export function closeTabFromUi(
-  runtime: ShellRuntime,
-  tabId: string,
-  input?: {
-    slot: ContextTabSlot;
-    orderIndex: number;
-  },
-): string | null {
-  const orderIndex = input?.orderIndex ?? runtime.contextState.tabOrder.indexOf(tabId);
-  updateContextState(runtime, closeTabIfAllowedWithHistory(runtime.contextState, {
-    tabId,
-    slot: input?.slot ?? resolveSlotForTab(runtime, tabId),
-    orderIndex,
-  }));
-  return assignPendingFocusSelector(runtime);
-}
-
-function closeTabUsingRuntimeAllowList(
-  runtime: ShellRuntime,
-  tabId: string,
-  input: {
-    slot: ContextTabSlot;
-    orderIndex: number;
-  },
-): string | null {
-  updateContextState(runtime, closeTabWithHistory(runtime.contextState, {
-    tabId,
-    slot: input.slot,
-    orderIndex: input.orderIndex,
-  }));
-  return assignPendingFocusSelector(runtime);
-}
-
-export function reopenMostRecentlyClosedTabThroughRuntime(
-  runtime: ShellRuntime,
-  deps: PartsControllerDeps,
-): boolean {
-  const slot = resolvePreferredReopenSlot(runtime);
-  const reopenedState = reopenUntilEligibleTabRestored(runtime, slot);
-  if (!reopenedState) {
-    return false;
-  }
-
-  updateContextState(runtime, reopenedState);
-  const reopenedTabId = runtime.contextState.activeTabId;
-  if (!reopenedTabId || !runtime.contextState.tabs[reopenedTabId]) {
-    deps.renderContextControls();
-    deps.renderParts();
-    deps.renderSyncStatus();
-    return false;
-  }
-
-  const reopenedTabTitle = runtime.contextState.tabs[reopenedTabId]?.label ?? reopenedTabId;
-  const selectionByEntityType = buildSelectionByEntityType(runtime);
-  const revision = createRevision(runtime.windowId);
-
-  deps.applySelection({
-    type: "selection",
-    selectedPartId: reopenedTabId,
-    selectedPartTitle: reopenedTabTitle,
-    selectionByEntityType,
-    revision,
-    sourceWindowId: runtime.windowId,
-  });
-
-  deps.publishWithDegrade({
-    type: "selection",
-    selectedPartId: reopenedTabId,
-    selectedPartTitle: reopenedTabTitle,
-    selectionByEntityType,
-    revision,
-    sourceWindowId: runtime.windowId,
-  });
-
-  writeGlobalSelectionLane(runtime, {
-    selectedPartId: reopenedTabId,
-    selectedPartTitle: reopenedTabTitle,
-    revision,
-  });
-
-  runtime.pendingFocusSelector = `button[data-action='activate-tab'][data-part-id='${reopenedTabId}']`;
-  deps.renderContextControls();
-  deps.renderParts();
-  deps.renderSyncStatus();
-  return true;
-}
-
-function assignPendingFocusSelector(runtime: ShellRuntime): string | null {
-  const resolvedActiveTabId = reconcileActiveTab(runtime);
-  runtime.pendingFocusSelector = resolvedActiveTabId
-    ? `button[data-action='activate-tab'][data-part-id='${resolvedActiveTabId}']`
-    : null;
-  return runtime.pendingFocusSelector;
-}
-function cleanupPopoutForClosedTab(tabId: string, runtime: ShellRuntime): void {
-  runtime.poppedOutPartIds.delete(tabId);
-  const popoutHandle = runtime.popoutHandles.get(tabId);
-  if (popoutHandle && !popoutHandle.closed) {
-    popoutHandle.close();
-  }
-  runtime.popoutHandles.delete(tabId);
-}
-
-function resolveSlotForTab(runtime: ShellRuntime, tabId: string): ContextTabSlot {
-  if (runtime.registry) {
-    const visiblePart = getVisibleComposedParts(runtime).find((part) => part.id === tabId);
-    return visiblePart?.slot ?? "main";
-  }
-
-  if (tabId.startsWith("tab-side")) {
-    return "side";
-  }
-
-  if (tabId.startsWith("tab-secondary")) {
-    return "secondary";
-  }
-
-  return "main";
-}
-
-function resolvePreferredReopenSlot(runtime: ShellRuntime): ContextTabSlot {
-  const preferredTabId = runtime.selectedPartId
-    ?? runtime.contextState.activeTabId
-    ?? runtime.contextState.tabOrder.find((tabId) => runtime.contextState.tabs[tabId])
-    ?? null;
-
-  if (!preferredTabId) {
-    return "main";
-  }
-
-  return resolveSlotForTab(runtime, preferredTabId);
-}
-
-function reopenUntilEligibleTabRestored(
-  runtime: ShellRuntime,
-  slot: ContextTabSlot,
-): import("../context-state.js").ShellContextState | null {
-  let next = runtime.contextState;
-
-  while (canReopenClosedTab(next, slot)) {
-    const reopened = reopenMostRecentlyClosedTab(next, slot);
-    if (reopened === next) {
-      return null;
-    }
-
-    const reopenedTabId = reopened.activeTabId;
-    if (!reopenedTabId) {
-      next = reopened;
-      continue;
-    }
-
-    if (runtime.closeableTabIds.has(reopenedTabId)) {
-      return reopened;
-    }
-
-    if (reopened.tabs[reopenedTabId]) {
-      const droppedUnsafe = closeTab(reopened, reopenedTabId);
-      next = droppedUnsafe;
-      continue;
-    }
-
-    next = reopened;
-  }
-
-  return null;
 }
 
 function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
@@ -669,42 +272,4 @@ function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
       resultNode.textContent = "Drop ignored: unsupported payload format.";
     });
   }
-}
-
-function openPopout(partId: string, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {
-  if (runtime.isPopout) {
-    return;
-  }
-
-  const url = new URL(window.location.href);
-  url.searchParams.set("popout", "1");
-  url.searchParams.set("partId", partId);
-  url.searchParams.set("hostWindowId", runtime.windowId);
-
-  const popout = window.open(url.toString(), `armada-popout-${sanitizeForWindowName(partId)}`);
-  if (!popout) {
-    runtime.notice = `Popup blocked. Could not pop out '${partId}'.`;
-    deps.renderSyncStatus();
-    return;
-  }
-
-  runtime.popoutHandles.set(partId, popout);
-  runtime.poppedOutPartIds.add(partId);
-  runtime.notice = `Part '${partId}' opened in a new window.`;
-  deps.renderParts();
-  deps.renderSyncStatus();
-}
-
-export function restorePart(partId: string, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {
-  runtime.poppedOutPartIds.delete(partId);
-
-  const handle = runtime.popoutHandles.get(partId);
-  if (handle && !handle.closed) {
-    handle.close();
-  }
-
-  runtime.popoutHandles.delete(partId);
-  runtime.notice = `Part '${partId}' restored to host window.`;
-  deps.renderParts();
-  deps.renderSyncStatus();
 }
