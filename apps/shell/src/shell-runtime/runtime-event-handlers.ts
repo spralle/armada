@@ -8,6 +8,7 @@ import {
 } from "../context-state.js";
 import {
   createRevision,
+  resolveActiveTabId,
   updateContextState,
   writeGlobalSelectionLane,
   writeGroupSelectionContext,
@@ -115,9 +116,18 @@ export function createRuntimeEventHandlers(
         value: event.contextValue,
         revision,
       }));
-    } else if (event.tabId) {
+    } else {
+      const targetTabId =
+        event.tabId && runtime.contextState.tabs[event.tabId]
+          ? event.tabId
+          : (resolveActiveTabId(runtime) ?? undefined);
+
+      if (!targetTabId) {
+        return;
+      }
+
       updateContextState(runtime, writeGroupLaneByTab(runtime.contextState, {
-        tabId: event.tabId,
+        tabId: targetTabId,
         key: event.contextKey,
         value: event.contextValue,
         revision,

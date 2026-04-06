@@ -17,6 +17,7 @@ import {
 } from "../context-state.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
+import { buildSelectionSyncEvent } from "../sync/bridge-payloads.js";
 import { getVisibleComposedParts, resolvePartTitle } from "./parts-rendering.js";
 
 export type PartLifecycleDeps = {
@@ -92,24 +93,30 @@ export function closeTabThroughRuntime(
     const selectionByEntityType = buildSelectionByEntityType(runtime);
     const revision = createRevision(sourceWindowId);
 
-    deps.applySelection({
-      type: "selection",
+    deps.applySelection(buildSelectionSyncEvent({
       selectedPartId: activeTabId,
       selectedPartTitle,
       selectionByEntityType,
       revision,
       sourceWindowId,
-    });
+      selectedPartDefinitionId:
+        runtime.contextState.tabs[activeTabId]?.partDefinitionId
+        ?? runtime.contextState.tabs[activeTabId]?.definitionId
+        ?? activeTabId,
+    }));
 
     if (publishSelectionEvent) {
-      deps.publishWithDegrade({
-        type: "selection",
+      deps.publishWithDegrade(buildSelectionSyncEvent({
         selectedPartId: activeTabId,
         selectedPartTitle,
         selectionByEntityType,
         revision,
         sourceWindowId,
-      });
+        selectedPartDefinitionId:
+          runtime.contextState.tabs[activeTabId]?.partDefinitionId
+          ?? runtime.contextState.tabs[activeTabId]?.definitionId
+          ?? activeTabId,
+      }));
     }
 
     writeGlobalSelectionLane(runtime, {
@@ -169,23 +176,29 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
   const selectionByEntityType = buildSelectionByEntityType(runtime);
   const revision = createRevision(runtime.windowId);
 
-  deps.applySelection({
-    type: "selection",
+  deps.applySelection(buildSelectionSyncEvent({
     selectedPartId: reopenedTabId,
     selectedPartTitle: reopenedTabTitle,
     selectionByEntityType,
     revision,
     sourceWindowId: runtime.windowId,
-  });
+    selectedPartDefinitionId:
+      runtime.contextState.tabs[reopenedTabId]?.partDefinitionId
+      ?? runtime.contextState.tabs[reopenedTabId]?.definitionId
+      ?? reopenedTabId,
+  }));
 
-  deps.publishWithDegrade({
-    type: "selection",
+  deps.publishWithDegrade(buildSelectionSyncEvent({
     selectedPartId: reopenedTabId,
     selectedPartTitle: reopenedTabTitle,
     selectionByEntityType,
     revision,
     sourceWindowId: runtime.windowId,
-  });
+    selectedPartDefinitionId:
+      runtime.contextState.tabs[reopenedTabId]?.partDefinitionId
+      ?? runtime.contextState.tabs[reopenedTabId]?.definitionId
+      ?? reopenedTabId,
+  }));
 
   writeGlobalSelectionLane(runtime, {
     selectedPartId: reopenedTabId,
@@ -216,23 +229,29 @@ export function activateTabInstance(
   const selectionRevision = createRevision(runtime.windowId);
   const selectionByEntityType = buildSelectionByEntityType(runtime);
 
-  deps.applySelection({
+  deps.applySelection(buildSelectionSyncEvent({
     selectedPartId: tabInstanceId,
     selectedPartTitle,
     selectionByEntityType,
     revision: selectionRevision,
     sourceWindowId: runtime.windowId,
-    type: "selection",
-  });
+    selectedPartDefinitionId:
+      runtime.contextState.tabs[tabInstanceId]?.partDefinitionId
+      ?? runtime.contextState.tabs[tabInstanceId]?.definitionId
+      ?? tabInstanceId,
+  }));
 
-  deps.publishWithDegrade({
-    type: "selection",
+  deps.publishWithDegrade(buildSelectionSyncEvent({
     selectedPartId: tabInstanceId,
     selectedPartTitle,
     selectionByEntityType,
     revision: selectionRevision,
     sourceWindowId: runtime.windowId,
-  });
+    selectedPartDefinitionId:
+      runtime.contextState.tabs[tabInstanceId]?.partDefinitionId
+      ?? runtime.contextState.tabs[tabInstanceId]?.definitionId
+      ?? tabInstanceId,
+  }));
 
   writeGlobalSelectionLane(runtime, {
     selectedPartId: tabInstanceId,
