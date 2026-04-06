@@ -1,6 +1,7 @@
 import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
 import { escapeHtml } from "../app/utils.js";
+import { getTabCloseability } from "../context-state.js";
 
 export interface ComposedShellPart {
   id: string;
@@ -41,6 +42,14 @@ export function renderPartCard(
   runtime: ShellRuntime,
   options: { showPopoutButton: boolean; showRestoreButton?: boolean },
 ): string {
+  const closeability = getTabCloseability(runtime.contextState, part.id);
+  const closeabilityAttrs = [
+    `data-tab-close-policy="${closeability.policy}"`,
+    `data-tab-close-action-availability="${closeability.actionAvailability}"`,
+    `data-tab-can-close="${closeability.canClose ? "true" : "false"}"`,
+    `data-tab-close-disabled-reason="${closeability.reason ?? "none"}"`,
+  ].join(" ");
+
   const popoutButton = options.showPopoutButton
     ? `<button type="button" data-action="popout" data-part-id="${part.id}">Pop out</button>`
     : "";
@@ -49,7 +58,7 @@ export function renderPartCard(
     : "";
 
   return `
-    <article class="part-root" data-part-id="${part.id}" draggable="true">
+    <article class="part-root" data-part-id="${part.id}" draggable="true" ${closeabilityAttrs}>
       <h2>${escapeHtml(part.title)}</h2>
       <div class="part-actions">
         ${popoutButton}

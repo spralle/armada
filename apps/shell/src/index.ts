@@ -120,7 +120,6 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
  * const action = resolveKeybindingAction(runtime.actionSurface, normalizedKey, context);
  * await dispatchAction(runtime.actionSurface, runtime.intentRuntime, action.id, context);
  * await dispatchAction(runtime.actionSurface, runtime.intentRuntime, actionId, toActionContext(runtime));
- *
  * async function executeResolvedAction(match: IntentActionMatch, intent: ShellIntent | null): Promise<void> {
  *   const triggerId = intent?.type ?? match.intentType;
  *   await activatePluginForBoundary(root, runtime, {
@@ -129,7 +128,6 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
  *     triggerId,
  *   });
  * }
- *
  * function resolveEventTargetSelector(root: HTMLElement): string | null {
  *   return null;
  * }
