@@ -23,10 +23,14 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .slot-main { background: #11151c; }
     .slot-secondary { border-top: 1px solid #2b3040; background: #121922; }
     .part-tab-strip { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: thin; }
+    .part-tab-item { display: inline-flex; align-items: center; gap: 2px; }
     .part-tab { appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none; color: #c6d0e0; padding: 8px 10px; border-radius: 6px 6px 0 0; cursor: pointer; white-space: nowrap; }
     .part-tab:hover { background: #1a2230; color: #e9edf3; }
     .part-tab:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
     .part-tab.is-active { background: #1d2635; border-color: #334564; color: #f4f8ff; }
+    .part-tab-close { appearance: none; background: transparent; border: 1px solid transparent; color: #aebbd0; border-radius: 4px; cursor: pointer; width: 20px; height: 20px; line-height: 1; padding: 0; }
+    .part-tab-close:hover { background: #1a2230; color: #f4f8ff; border-color: #334564; }
+    .part-tab-close:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
     .splitter { background: #2b3040; cursor: col-resize; user-select: none; touch-action: none; }
     .splitter[data-pane="secondary"] { cursor: row-resize; }
     .card { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; }

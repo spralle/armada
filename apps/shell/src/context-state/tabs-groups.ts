@@ -1,7 +1,7 @@
 import { cloneContextState, ensureGroup } from "./helpers.js";
 import { ContextTabCloseability, ShellContextState } from "./types.js";
 
-const PHASE_1_CLOSE_ACTIONS_ENABLED = false;
+const CLOSE_ACTIONS_ENABLED = true;
 
 export function registerTab(
   state: ShellContextState,
@@ -67,13 +67,18 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
     return state;
   }
 
+  const closedTabIndex = state.tabOrder.indexOf(tabId);
   const next = cloneContextState(state);
   delete next.tabs[tabId];
   next.tabOrder = next.tabOrder.filter((id) => id !== tabId);
   delete next.subcontextsByTab[tabId];
+
   if (next.activeTabId === tabId) {
+    next.activeTabId = resolveNextActiveTabId(next.tabOrder, closedTabIndex);
+  } else if (next.activeTabId && !next.tabs[next.activeTabId]) {
     next.activeTabId = next.tabOrder[0] ?? null;
   }
+
   return next;
 }
 
@@ -88,8 +93,7 @@ export function getTabCloseability(state: ShellContextState, tabId: string): Con
     };
   }
 
-  // Phase 2 hook: flip runtime close action availability from feature policy/config.
-  if (!PHASE_1_CLOSE_ACTIONS_ENABLED) {
+  if (!CLOSE_ACTIONS_ENABLED) {
     return {
       policy: tab.closePolicy,
       canClose: false,
@@ -117,4 +121,16 @@ export function closeTabIfAllowed(state: ShellContextState, tabId: string): Shel
 
 export function getTabGroupId(state: ShellContextState, tabId: string): string | null {
   return state.tabs[tabId]?.groupId ?? null;
+}
+
+function resolveNextActiveTabId(tabOrder: string[], closedTabIndex: number): string | null {
+  if (tabOrder.length === 0) {
+    return null;
+  }
+
+  if (closedTabIndex >= 0 && closedTabIndex < tabOrder.length) {
+    return tabOrder[closedTabIndex] ?? null;
+  }
+
+  return tabOrder[tabOrder.length - 1] ?? null;
 }
