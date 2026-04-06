@@ -237,6 +237,86 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
   }
 });
 
+test("bridge compatibility parses legacy and instance-aware migration payload variants", () => {
+  const previous = (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel;
+  (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
+
+  try {
+    const bridge = createWindowBridge("armada.test.bridge.compat");
+    const channel = FakeBroadcastChannel.lastInstance;
+    assertTruthy(channel, "expected fake broadcast channel instance");
+
+    const parsed: Array<{ type: string; event: unknown }> = [];
+    bridge.subscribe((event) => {
+      parsed.push({ type: event.type, event });
+    });
+
+    channel!.emit("message", {
+      type: "context",
+      scope: "group",
+      tabId: "orders.instance-a",
+      groupId: "group-main",
+      contextKey: "shell.group-context",
+      contextValue: "ctx-by-tab",
+      revision: { timestamp: 40, writer: "window-a" },
+      sourceWindowId: "window-a",
+      selectedPartId: "orders.legacy",
+      selectedPartInstanceId: "orders.instance-a",
+      selectedPartDefinitionId: "orders.definition",
+    });
+
+    channel!.emit("message", {
+      type: "context",
+      scope: "group",
+      groupId: "group-main",
+      contextKey: "shell.group-context",
+      contextValue: "ctx-by-group",
+      revision: { timestamp: 41, writer: "window-b" },
+      sourceWindowId: "window-b",
+      selectedPartInstanceId: "orders.instance-b",
+      selectedPartDefinitionId: "orders.definition",
+    });
+
+    channel!.emit("message", {
+      type: "popout-restore-request",
+      partId: "orders.legacy",
+      hostWindowId: "host-window",
+      sourceWindowId: "popout-window",
+    });
+
+    channel!.emit("message", {
+      type: "popout-restore-request",
+      partId: "orders.legacy",
+      partInstanceId: "orders.instance-a",
+      hostWindowId: "host-window",
+      sourceWindowId: "popout-window",
+    });
+
+    channel!.emit("message", {
+      type: "tab-close",
+      tabId: "orders.instance-a",
+      sourceWindowId: "window-b",
+    });
+
+    channel!.emit("message", {
+      type: "tab-close",
+      tabId: "orders.instance-a",
+      partInstanceId: "orders.instance-a",
+      sourceWindowId: "window-b",
+    });
+
+    assertEqual(parsed.length, 6, "legacy and additive instance-aware payloads should all parse");
+    assertEqual(parsed[0]?.type, "context", "legacy tab-targeted context payload should parse");
+    assertEqual(parsed[1]?.type, "context", "instance-aware group-targeted context payload should parse");
+    assertEqual(parsed[2]?.type, "popout-restore-request", "legacy restore payload should parse");
+    assertEqual(parsed[3]?.type, "popout-restore-request", "instance-aware restore payload variant should parse");
+    assertEqual(parsed[4]?.type, "tab-close", "legacy tab-close payload should parse");
+    assertEqual(parsed[5]?.type, "tab-close", "instance-aware tab-close payload variant should parse");
+  } finally {
+    (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
+  }
+});
+
 let passed = 0;
 for (const caseItem of tests) {
   try {
