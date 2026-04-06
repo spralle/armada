@@ -1,6 +1,8 @@
 import {
   closeTab,
+  closeTabIfAllowed,
   createInitialShellContextState,
+  getTabCloseability,
   moveTabToGroup,
   readGlobalLane,
   readGroupLaneForTab,
@@ -140,6 +142,33 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
 
     assertEqual(state.tabs["tab-a"]?.label, "Orders", "tab label should accept explicit updates");
     assertEqual(state.tabs["tab-a"]?.closePolicy, "fixed", "tab close policy should remain fixed by default");
+  });
+
+  test("tab closeability contract is explicit and phase-1 disabled", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+
+    assertEqual(getTabCloseability(state, "tab-a").canClose, false, "fixed tabs should never be closeable");
+    assertEqual(
+      getTabCloseability(state, "tab-a").reason,
+      "fixed-policy",
+      "fixed tabs should report fixed-policy reason",
+    );
+    assertEqual(getTabCloseability(state, "tab-b").canClose, false, "phase-1 keeps closeable policy disabled");
+    assertEqual(
+      getTabCloseability(state, "tab-b").reason,
+      "phase1-disabled",
+      "closeable policy should indicate phase1-disabled reason",
+    );
+  });
+
+  test("closeTabIfAllowed remains a no-op in phase 1", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+
+    const next = closeTabIfAllowed(state, "tab-b");
+    assertEqual(next.tabs["tab-b"]?.id, "tab-b", "phase-1 should not allow close-by-contract yet");
+    assertEqual(next.tabOrder.includes("tab-b"), true, "tab order should remain unchanged when close is disabled");
   });
 
   test("global lanes remain separate from group lanes", () => {

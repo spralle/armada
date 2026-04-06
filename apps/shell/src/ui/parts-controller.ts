@@ -2,7 +2,11 @@ import {
   createRevision,
   writeGlobalSelectionLane,
 } from "../context/runtime-state.js";
-import { readEntityTypeSelection } from "../context-state.js";
+import {
+  closeTabIfAllowed,
+  getTabCloseability,
+  readEntityTypeSelection,
+} from "../context-state.js";
 import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
 import { safeJson, safeParse, sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
@@ -177,6 +181,26 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       }
 
       window.close();
+    });
+  }
+
+  // Phase 2 hook: listeners for future close actions are present, but remain no-op in Phase 1.
+  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='close-tab']")) {
+    button.addEventListener("click", () => {
+      const tabId = button.dataset.tabId;
+      if (!tabId) {
+        return;
+      }
+
+      const closeability = getTabCloseability(runtime.contextState, tabId);
+      if (!closeability.canClose) {
+        return;
+      }
+
+      // Phase 2 hook: publish close intent and reconcile selection/popout edges.
+      runtime.contextState = closeTabIfAllowed(runtime.contextState, tabId);
+      deps.renderParts();
+      deps.renderSyncStatus();
     });
   }
 }
