@@ -8,6 +8,7 @@ export interface ComposedShellPart {
   definitionId: string;
   id: string;
   title: string;
+  args: Record<string, string>;
   slot: "main" | "secondary" | "side";
   component?: string;
   pluginId: string;
@@ -66,6 +67,7 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
         definitionId: definition.definitionId,
         id: tab.id,
         title: tab.label,
+        args: tab.args,
         slot: definition.slot,
         component: definition.component,
         pluginId: definition.pluginId,
