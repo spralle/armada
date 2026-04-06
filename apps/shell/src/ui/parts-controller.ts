@@ -14,8 +14,7 @@ import {
   readEntityTypeSelection,
   type ContextTabSlot,
 } from "../context-state.js";
-import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
-import { safeJson, safeParse, sanitizeForWindowName } from "../app/utils.js";
+import { sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
 import {
@@ -27,6 +26,11 @@ import {
   resolvePartTitle,
   updateSelectedStyles,
 } from "./parts-rendering.js";
+import {
+  createDragSessionPayload,
+  encodeDragSessionPayload,
+  resolveDroppedDragSessionResult,
+} from "./drag-session.js";
 
 type PartsControllerDeps = {
   applySelection: (event: SelectionSyncEvent) => void;
@@ -559,19 +563,13 @@ function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
         return;
       }
 
-      const payload = {
+      const payload = createDragSessionPayload({
         partId,
         partTitle: resolvePartTitle(partId, runtime),
         sourceWindowId: runtime.windowId,
-        createdAt: new Date().toISOString(),
-      };
+      });
 
-      if (runtime.dragSessionBroker.available) {
-        const ref = runtime.dragSessionBroker.create(payload);
-        dataTransfer.setData("text/plain", `${DRAG_REF_PREFIX}${ref.id}`);
-      } else {
-        dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
-      }
+      dataTransfer.setData("text/plain", encodeDragSessionPayload(payload, runtime.dragSessionBroker));
 
       dataTransfer.effectAllowed = "copyMove";
     });
@@ -597,27 +595,7 @@ function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
         return;
       }
 
-      if (raw.startsWith(DRAG_REF_PREFIX)) {
-        const id = raw.slice(DRAG_REF_PREFIX.length);
-        const payload = runtime.dragSessionBroker.consume({ id });
-        if (!payload) {
-          resultNode.textContent = "Drop failed: session missing/expired (bridge unavailable or stale ref).";
-          return;
-        }
-
-        resultNode.textContent = `Dropped via session ref: ${safeJson(payload)}`;
-        return;
-      }
-
-      if (raw.startsWith(DRAG_INLINE_PREFIX)) {
-        const payload = safeParse(raw.slice(DRAG_INLINE_PREFIX.length));
-        resultNode.textContent = payload
-          ? `Dropped via inline fallback: ${safeJson(payload)}`
-          : "Drop failed: invalid inline payload.";
-        return;
-      }
-
-      resultNode.textContent = "Drop ignored: unsupported payload format.";
+      resultNode.textContent = resolveDroppedDragSessionResult(raw, runtime.dragSessionBroker);
     });
   }
 }
