@@ -17,6 +17,7 @@ import { updateWindowReadOnlyState } from "../ui/context-controls.js";
 import { restorePart } from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
 import { getTabGroupId } from "../context-state.js";
+import { buildGroupContextSyncEvent } from "../sync/bridge-payloads.js";
 import type {
   ContextSyncEvent,
   SelectionSyncEvent,
@@ -189,16 +190,12 @@ export function buildContextSyncEvent(
     : undefined;
 
   // Keep tab-scoped fields for migration compatibility while preferring group-targeted sync.
-  return {
-    type: "context",
-    scope: "group",
+  return buildGroupContextSyncEvent({
     tabId: activeTabId ?? undefined,
-    tabInstanceId: activeTabId ?? undefined,
-    partInstanceId: activeTabId ?? undefined,
     groupId: activeGroupId,
     contextKey: CORE_GROUP_CONTEXT_KEY,
     contextValue,
     revision: createRevision(runtime.windowId),
     sourceWindowId: runtime.windowId,
-  };
+  });
 }

@@ -18,6 +18,7 @@ import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
 import { safeJson, safeParse, sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
+import { buildSelectionSyncEvent } from "../sync/bridge-payloads.js";
 import {
   type ComposedShellPart,
   getVisibleComposedParts,
@@ -233,28 +234,22 @@ export function closeTabThroughRuntime(
     const selectionByEntityType = buildSelectionByEntityType(runtime);
     const revision = createRevision(sourceWindowId);
 
-    deps.applySelection({
-      type: "selection",
-      selectedPartInstanceId: activeTabId,
-      selectedPartDefinitionId: activeTabId,
+    deps.applySelection(buildSelectionSyncEvent({
       selectedPartId: activeTabId,
       selectedPartTitle,
       selectionByEntityType,
       revision,
       sourceWindowId,
-    });
+    }));
 
     if (publishSelectionEvent) {
-      deps.publishWithDegrade({
-        type: "selection",
-        selectedPartInstanceId: activeTabId,
-        selectedPartDefinitionId: activeTabId,
+      deps.publishWithDegrade(buildSelectionSyncEvent({
         selectedPartId: activeTabId,
         selectedPartTitle,
         selectionByEntityType,
         revision,
         sourceWindowId,
-      });
+      }));
     }
 
     writeGlobalSelectionLane(runtime, {
@@ -300,27 +295,21 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       const selectionRevision = createRevision(runtime.windowId);
       const selectionByEntityType = buildSelectionByEntityType(runtime);
 
-      deps.applySelection({
-        selectedPartInstanceId: partId,
-        selectedPartDefinitionId: partId,
+      deps.applySelection(buildSelectionSyncEvent({
         selectedPartId: partId,
         selectedPartTitle: partTitle,
         selectionByEntityType,
         revision: selectionRevision,
         sourceWindowId: runtime.windowId,
-        type: "selection",
-      });
+      }));
 
-      deps.publishWithDegrade({
-        type: "selection",
-        selectedPartInstanceId: partId,
-        selectedPartDefinitionId: partId,
+      deps.publishWithDegrade(buildSelectionSyncEvent({
         selectedPartId: partId,
         selectedPartTitle: partTitle,
         selectionByEntityType,
         revision: selectionRevision,
         sourceWindowId: runtime.windowId,
-      });
+      }));
 
       writeGlobalSelectionLane(runtime, {
         selectedPartId: partId,
@@ -446,27 +435,21 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
   const selectionByEntityType = buildSelectionByEntityType(runtime);
   const revision = createRevision(runtime.windowId);
 
-  deps.applySelection({
-    type: "selection",
-    selectedPartInstanceId: reopenedTabId,
-    selectedPartDefinitionId: reopenedTabId,
+  deps.applySelection(buildSelectionSyncEvent({
     selectedPartId: reopenedTabId,
     selectedPartTitle: reopenedTabTitle,
     selectionByEntityType,
     revision,
     sourceWindowId: runtime.windowId,
-  });
+  }));
 
-  deps.publishWithDegrade({
-    type: "selection",
-    selectedPartInstanceId: reopenedTabId,
-    selectedPartDefinitionId: reopenedTabId,
+  deps.publishWithDegrade(buildSelectionSyncEvent({
     selectedPartId: reopenedTabId,
     selectedPartTitle: reopenedTabTitle,
     selectionByEntityType,
     revision,
     sourceWindowId: runtime.windowId,
-  });
+  }));
 
   writeGlobalSelectionLane(runtime, {
     selectedPartId: reopenedTabId,

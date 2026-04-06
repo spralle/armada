@@ -8,6 +8,7 @@ import {
 } from "../context/runtime-state.js";
 import { getTabGroupId } from "../context-state.js";
 import type { ShellRuntime } from "../app/types.js";
+import { buildGroupContextSyncEvent } from "../sync/bridge-payloads.js";
 import { createReactPanelsHost } from "../ui/react/panels-host.js";
 import { getVisibleComposedParts } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
@@ -51,18 +52,14 @@ export function initializeReactPanels(
 
       writeGroupSelectionContext(runtime, value);
       const groupId = getTabGroupId(runtime.contextState, activeTabId) ?? undefined;
-      bindings.publishWithDegrade({
-        type: "context",
-        scope: "group",
+      bindings.publishWithDegrade(buildGroupContextSyncEvent({
         tabId: activeTabId,
-        tabInstanceId: activeTabId,
-        partInstanceId: activeTabId,
         groupId,
         contextKey: CORE_GROUP_CONTEXT_KEY,
         contextValue: value,
         revision: createRevision(runtime.windowId),
         sourceWindowId: runtime.windowId,
-      });
+      }));
       bindings.renderSyncStatus();
     },
     onTogglePlugin: async (pluginId, enabled) => {
