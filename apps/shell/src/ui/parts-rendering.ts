@@ -107,7 +107,8 @@ export function renderTabStrip(
             data-action="close-tab"
             data-tab-id="${part.id}"
             aria-label="Close ${escapeHtml(part.title)} tab"
-            title="Close"
+            aria-keyshortcuts="Control+W Meta+W"
+            title="Close tab (Ctrl+W)"
           >×</button>`
       : "";
     return `<div class="part-tab-item" data-tab-item="${part.id}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
@@ -133,7 +134,8 @@ export function renderTabStrip(
         data-action="reopen-closed-tab"
         data-slot="${slot}"
         aria-label="Reopen recently closed tab"
-        title="Reopen closed tab"
+        aria-keyshortcuts="Control+Shift+T Meta+Shift+T"
+        title="Reopen closed tab (Ctrl+Shift+T)"
         ${reopenEnabled ? "" : "disabled aria-disabled=\"true\""}
       >↶ Reopen</button>
     </div>

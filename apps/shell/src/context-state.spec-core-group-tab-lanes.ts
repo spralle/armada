@@ -256,6 +256,16 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
       true,
       "closeable tab metadata should indicate close affordance",
     );
+    assertEqual(
+      html.includes('aria-keyshortcuts="Control+W Meta+W"'),
+      true,
+      "close control should expose keyboard shortcut semantics for assistive tech",
+    );
+    assertEqual(
+      html.includes('aria-keyshortcuts="Control+Shift+T Meta+Shift+T"'),
+      true,
+      "reopen control should expose keyboard shortcut semantics for assistive tech",
+    );
   });
 
   test("close then reopen restores most recent eligible tab in same slot and activates it", () => {

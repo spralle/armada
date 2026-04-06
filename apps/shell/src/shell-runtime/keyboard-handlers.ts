@@ -7,9 +7,13 @@ import {
   resolveChooserFocusRestoration,
   resolveChooserKeyboardAction,
   resolveDegradedKeyboardInteraction,
+  resolveTabLifecycleShortcut,
 } from "../keyboard-a11y.js";
 import { isPartActivationNode } from "../ui/parts-rendering.js";
-import { reopenMostRecentlyClosedTabThroughRuntime } from "../ui/parts-controller.js";
+import {
+  closeTabThroughRuntime,
+  reopenMostRecentlyClosedTabThroughRuntime,
+} from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
@@ -62,7 +66,8 @@ export function bindKeyboardShortcuts(
     }
 
     const normalizedKey = normalizeKeyboardEvent(event);
-    if (normalizedKey === "ctrl+shift+t" || normalizedKey === "meta+shift+t") {
+    const lifecycleShortcut = resolveTabLifecycleShortcut(normalizedKey);
+    if (lifecycleShortcut === "reopen-closed-tab") {
       event.preventDefault();
       reopenMostRecentlyClosedTabThroughRuntime(runtime, {
         applySelection: bindings.applySelection,
@@ -71,6 +76,23 @@ export function bindKeyboardShortcuts(
         renderParts: bindings.renderParts,
         renderSyncStatus: bindings.renderSyncStatus,
       });
+      return;
+    }
+
+    if (lifecycleShortcut === "close-active-tab") {
+      const activeTabId = runtime.selectedPartId && runtime.contextState.tabs[runtime.selectedPartId]
+        ? runtime.selectedPartId
+        : runtime.contextState.activeTabId;
+      if (activeTabId) {
+        event.preventDefault();
+        closeTabThroughRuntime(runtime, activeTabId, {
+          applySelection: bindings.applySelection,
+          publishWithDegrade: bindings.publishWithDegrade,
+          renderContextControls: bindings.renderContextControls,
+          renderParts: bindings.renderParts,
+          renderSyncStatus: bindings.renderSyncStatus,
+        });
+      }
       return;
     }
 
