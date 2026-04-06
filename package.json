@@ -13,7 +13,7 @@
     "build": "tsc -b --pretty false",
     "check:architecture-guardrails": "node ./scripts/check-architecture-guardrails.mjs",
     "dev:shell": "npm run dev --workspace @armada/shell-app",
-    "dev:backend": "node --watch --experimental-strip-types apps/backend/src/index.ts",
+    "dev:backend": "bun --watch apps/backend/src/index.ts",
     "dev:plugin": "npm run dev --workspace @armada/plugin-starter",
     "dev:plugin-sample": "npm run dev --workspace @armada/sample-contract-consumer-plugin",
     "dev:plugin-unplanned-orders": "npm run dev --workspace @armada/domain-unplanned-orders-plugin",
