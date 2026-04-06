@@ -33,7 +33,7 @@ export interface ContextTabCloseability {
   policy: ContextTabClosePolicy;
   canClose: boolean;
   actionAvailability: ContextTabCloseActionAvailability;
-  reason: "fixed-policy" | "phase1-disabled" | null;
+  reason: "fixed-policy" | null;
 }
 
 export interface EntityTypeSelection {
