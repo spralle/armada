@@ -5,6 +5,7 @@ import {
   writeGlobalSelectionLane,
 } from "../context/runtime-state.js";
 import {
+  closeTab,
   closeTabIfAllowed,
   getTabCloseability,
   readEntityTypeSelection,
@@ -178,7 +179,22 @@ export function closeTabThroughRuntime(
     return false;
   }
 
-  closeTabFromUi(runtime, tabId);
+  const selectedBeforeClose = runtime.selectedPartId;
+  const closedTabIndex = runtime.contextState.tabOrder.indexOf(tabId);
+  const leftNeighborTabId = closedTabIndex > 0 ? runtime.contextState.tabOrder[closedTabIndex - 1] ?? null : null;
+
+  closeability.canClose
+    ? closeTabFromUi(runtime, tabId)
+    : closeTabUsingRuntimeAllowList(runtime, tabId);
+
+  if (runtime.contextState.tabs[tabId]) {
+    return false;
+  }
+
+  if (selectedBeforeClose === tabId && leftNeighborTabId && runtime.contextState.tabs[leftNeighborTabId]) {
+    runtime.selectedPartId = leftNeighborTabId;
+    runtime.selectedPartTitle = resolvePartTitle(leftNeighborTabId, runtime);
+  }
   cleanupPopoutForClosedTab(tabId, runtime);
 
   const activeTabId = reconcileActiveTab(runtime);
@@ -225,6 +241,10 @@ export function closeTabThroughRuntime(
       revision,
     });
   }
+
+  runtime.pendingFocusSelector = activeTabId
+    ? `button[data-action='activate-tab'][data-part-id='${activeTabId}']`
+    : null;
 
   deps.renderContextControls();
   deps.renderParts();
@@ -330,6 +350,23 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
   }
 }
 
+export function closeTabFromUi(runtime: ShellRuntime, tabId: string): string | null {
+  updateContextState(runtime, closeTabIfAllowed(runtime.contextState, tabId));
+  return assignPendingFocusSelector(runtime);
+}
+
+function closeTabUsingRuntimeAllowList(runtime: ShellRuntime, tabId: string): string | null {
+  updateContextState(runtime, closeTab(runtime.contextState, tabId));
+  return assignPendingFocusSelector(runtime);
+}
+
+function assignPendingFocusSelector(runtime: ShellRuntime): string | null {
+  const resolvedActiveTabId = reconcileActiveTab(runtime);
+  runtime.pendingFocusSelector = resolvedActiveTabId
+    ? `button[data-action='activate-tab'][data-part-id='${resolvedActiveTabId}']`
+    : null;
+  return runtime.pendingFocusSelector;
+}
 function cleanupPopoutForClosedTab(tabId: string, runtime: ShellRuntime): void {
   runtime.poppedOutPartIds.delete(tabId);
   const popoutHandle = runtime.popoutHandles.get(tabId);
@@ -337,15 +374,6 @@ function cleanupPopoutForClosedTab(tabId: string, runtime: ShellRuntime): void {
     popoutHandle.close();
   }
   runtime.popoutHandles.delete(tabId);
-}
-
-export function closeTabFromUi(runtime: ShellRuntime, tabId: string): string | null {
-  updateContextState(runtime, closeTabIfAllowed(runtime.contextState, tabId));
-  const resolvedActiveTabId = reconcileActiveTab(runtime);
-  runtime.pendingFocusSelector = resolvedActiveTabId
-    ? `button[data-action='activate-tab'][data-part-id='${resolvedActiveTabId}']`
-    : null;
-  return runtime.pendingFocusSelector;
 }
 
 function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
