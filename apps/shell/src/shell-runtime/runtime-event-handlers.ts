@@ -66,6 +66,7 @@ export function createRuntimeEventHandlers(
       tabId: event.selectedPartId,
       groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
       groupColor: DEFAULT_GROUP_COLOR,
+      tabLabel: event.selectedPartTitle,
     }));
     updateContextState(runtime, setActiveTab(runtime.contextState, event.selectedPartId));
     writeGlobalSelectionLane(runtime, {

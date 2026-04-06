@@ -126,6 +126,22 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
     assertEqual(state.subcontextsByTab["tab-a"], undefined, "subcontexts should be deleted on tab close");
   });
 
+  test("registering tab preserves deterministic metadata defaults", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main" });
+
+    assertEqual(state.tabs["tab-b"]?.label, "tab-b", "tab label should default to tab id");
+    assertEqual(state.tabs["tab-b"]?.closePolicy, "fixed", "tab close policy should default to fixed");
+  });
+
+  test("re-registering existing tab updates label but keeps default close policy", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = registerTab(state, { tabId: "tab-a", groupId: "group-main", tabLabel: "Orders" });
+
+    assertEqual(state.tabs["tab-a"]?.label, "Orders", "tab label should accept explicit updates");
+    assertEqual(state.tabs["tab-a"]?.closePolicy, "fixed", "tab close policy should remain fixed by default");
+  });
+
   test("global lanes remain separate from group lanes", () => {
     let state = createInitialShellContextState({ initialTabId: "tab-a" });
     state = writeGlobalLane(state, {
