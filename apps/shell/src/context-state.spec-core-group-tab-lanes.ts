@@ -8,7 +8,10 @@ import {
   writeGlobalLane,
   writeGroupLaneByTab,
   writeTabSubcontext,
+  type ShellContextState,
 } from "./context-state.js";
+import { readGroupSelectionContext, writeGroupSelectionContext } from "./context/runtime-state.js";
+import type { ShellRuntime } from "./app/types.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 
 export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness): void {
@@ -205,5 +208,47 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
       "same-ts-higher-writer",
       "higher writer should win at same timestamp for global lane",
     );
+  });
+
+  test("group context reads/writes use active tab when selected part is unset", () => {
+    let state = createInitialShellContextState({
+      initialTabId: "tab-a",
+      initialGroupId: "group-a",
+    });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-b" });
+    state = writeGroupLaneByTab(state, {
+      tabId: "tab-b",
+      key: "shell.group-context",
+      value: "ctx-b",
+      revision: { timestamp: 1, writer: "writer-a" },
+    });
+    state = {
+      ...state,
+      activeTabId: "tab-b",
+    };
+
+    const runtime = {
+      selectedPartId: null,
+      selectedPartTitle: null,
+      contextState: state,
+      windowId: "window-a",
+      contextPersistence: {
+        save(nextState: ShellContextState) {
+          runtime.contextState = nextState;
+          return { warning: null };
+        },
+      },
+      notice: "",
+    } as unknown as ShellRuntime;
+
+    assertEqual(readGroupSelectionContext(runtime), "ctx-b", "active tab group context should be readable");
+
+    writeGroupSelectionContext(runtime, "ctx-b2");
+    assertEqual(
+      readGroupLaneForTab(runtime.contextState, { tabId: "tab-b", key: "shell.group-context" })?.value,
+      "ctx-b2",
+      "group context write should target active tab when selected part is unset",
+    );
+    assertEqual(runtime.selectedPartId, "tab-b", "active tab should reconcile into selected part");
   });
 }

@@ -2,6 +2,7 @@ import {
   CORE_GROUP_CONTEXT_KEY,
   createRevision,
   ensureTabsRegistered,
+  reconcileActiveTab,
   updateContextState,
   writeGroupSelectionContext,
 } from "../context/runtime-state.js";
@@ -42,11 +43,16 @@ export function initializeReactPanels(
         return;
       }
 
+      const activeTabId = reconcileActiveTab(runtime);
+      if (!activeTabId) {
+        return;
+      }
+
       writeGroupSelectionContext(runtime, value);
       bindings.publishWithDegrade({
         type: "context",
         scope: "group",
-        tabId: runtime.selectedPartId ?? undefined,
+        tabId: activeTabId,
         contextKey: CORE_GROUP_CONTEXT_KEY,
         contextValue: value,
         revision: createRevision(runtime.windowId),
@@ -104,6 +110,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, bindings: 
   void bindings.primeEnabledPluginActivations();
   const visibleParts = getVisibleComposedParts(runtime);
   updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
+  reconcileActiveTab(runtime);
   renderPartsView(root, runtime, {
     applySelection: (event) => bindings.applySelection(event),
     publishWithDegrade: (event) => {

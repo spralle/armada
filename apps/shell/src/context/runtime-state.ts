@@ -3,6 +3,7 @@ import {
   readGlobalLane,
   readGroupLaneForTab,
   registerTab,
+  setActiveTab,
   writeGlobalLane,
   writeGroupLaneByTab,
   type RevisionMeta,
@@ -43,12 +44,13 @@ export function ensureTabsRegistered(state: ShellContextState, parts: ShellTabPa
 }
 
 export function readGroupSelectionContext(runtime: ShellRuntime): string {
-  if (!runtime.selectedPartId) {
+  const activeTabId = resolveActiveTabId(runtime);
+  if (!activeTabId) {
     return "none";
   }
 
   const value = readGroupLaneForTab(runtime.contextState, {
-    tabId: runtime.selectedPartId,
+    tabId: activeTabId,
     key: CORE_GROUP_CONTEXT_KEY,
   });
 
@@ -60,7 +62,7 @@ export function readGlobalContext(runtime: ShellRuntime): string {
 }
 
 export function writeGroupSelectionContext(runtime: ShellRuntime, value: string): void {
-  const activeTabId = runtime.selectedPartId ?? runtime.contextState.activeTabId;
+  const activeTabId = reconcileActiveTab(runtime);
   if (!activeTabId) {
     return;
   }
@@ -130,4 +132,43 @@ export function collectLaneMetadata(state: ShellContextState): DevLaneMetadata[]
   }
 
   return entries;
+}
+
+export function resolveActiveTabId(runtime: ShellRuntime): string | null {
+  const selectedPartId = runtime.selectedPartId;
+  if (selectedPartId && runtime.contextState.tabs[selectedPartId]) {
+    return selectedPartId;
+  }
+
+  const activeTabId = runtime.contextState.activeTabId;
+  if (activeTabId && runtime.contextState.tabs[activeTabId]) {
+    return activeTabId;
+  }
+
+  const ordered = runtime.contextState.tabOrder.find((tabId) => runtime.contextState.tabs[tabId]);
+  if (ordered) {
+    return ordered;
+  }
+
+  return Object.keys(runtime.contextState.tabs)[0] ?? null;
+}
+
+export function reconcileActiveTab(runtime: ShellRuntime): string | null {
+  const resolved = resolveActiveTabId(runtime);
+  if (!resolved) {
+    runtime.selectedPartId = null;
+    runtime.selectedPartTitle = null;
+    return null;
+  }
+
+  if (runtime.contextState.activeTabId !== resolved) {
+    updateContextState(runtime, setActiveTab(runtime.contextState, resolved));
+  }
+
+  if (!runtime.selectedPartId || !runtime.contextState.tabs[runtime.selectedPartId]) {
+    runtime.selectedPartId = resolved;
+    runtime.selectedPartTitle = runtime.contextState.tabs[resolved]?.label ?? resolved;
+  }
+
+  return resolved;
 }
