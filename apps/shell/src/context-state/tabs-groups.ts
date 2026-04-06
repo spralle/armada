@@ -32,11 +32,45 @@ function normalizeInsertIndex(currentOrder: string[], desiredIndex: number): num
   const clamped = Math.max(0, Math.min(Math.trunc(desiredIndex), currentOrder.length));
   return clamped;
 }
+
+function cloneTabArgs(args: Record<string, string> | undefined): Record<string, string> {
+  return args ? { ...args } : {};
+}
+
+function createTabInstanceId(state: ShellContextState, definitionId: string): string {
+  if (!state.tabs[definitionId]) {
+    return definitionId;
+  }
+
+  let index = 2;
+  while (true) {
+    const candidate = `${definitionId}~${index}`;
+    if (!state.tabs[candidate]) {
+      return candidate;
+    }
+    index += 1;
+  }
+}
+
+function resolveTargetGroupId(state: ShellContextState, explicitGroupId: string | undefined): string {
+  if (explicitGroupId) {
+    return explicitGroupId;
+  }
+
+  const activeTabId = state.activeTabId;
+  if (activeTabId && state.tabs[activeTabId]) {
+    return state.tabs[activeTabId].groupId;
+  }
+
+  return Object.keys(state.groups)[0] ?? "group-main";
+}
+
 export function registerTab(
   state: ShellContextState,
   input: {
     tabId: string;
     definitionId?: string;
+    args?: Record<string, string>;
     groupId: string;
     groupColor?: string;
     tabLabel?: string;
@@ -52,6 +86,7 @@ export function registerTab(
     groupId: input.groupId,
     label: input.tabLabel ?? prior?.label ?? input.tabId,
     closePolicy: input.closePolicy ?? prior?.closePolicy ?? "fixed",
+    args: input.args ?? prior?.args ?? {},
   };
   if (!next.tabOrder.includes(input.tabId)) {
     next.tabOrder.push(input.tabId);
@@ -60,6 +95,34 @@ export function registerTab(
     next.activeTabId = input.tabId;
   }
   return next;
+}
+
+export function openPartInstance(
+  state: ShellContextState,
+  input: {
+    definitionId: string;
+    args?: Record<string, string>;
+    groupId?: string;
+    groupColor?: string;
+    tabLabel?: string;
+    closePolicy?: "fixed" | "closeable";
+  },
+): { state: ShellContextState; tabId: string } {
+  const tabId = createTabInstanceId(state, input.definitionId);
+  const next = registerTab(state, {
+    tabId,
+    definitionId: input.definitionId,
+    args: cloneTabArgs(input.args),
+    groupId: resolveTargetGroupId(state, input.groupId),
+    groupColor: input.groupColor,
+    tabLabel: input.tabLabel,
+    closePolicy: input.closePolicy ?? "closeable",
+  });
+
+  return {
+    state: setActiveTab(next, tabId),
+    tabId,
+  };
 }
 
 export function setActiveTab(state: ShellContextState, tabId: string): ShellContextState {
@@ -90,6 +153,7 @@ export function moveTabToGroup(
     groupId: input.targetGroupId,
     label: tab.label,
     closePolicy: tab.closePolicy,
+    args: tab.args,
   };
   return next;
 }
@@ -141,6 +205,7 @@ export function closeTabWithHistory(
   const closedEntry: ClosedTabHistoryEntry = {
     tabId: tab.id,
     definitionId: tab.definitionId,
+    args: cloneTabArgs(tab.args),
     groupId: tab.groupId,
     label: tab.label,
     closePolicy: tab.closePolicy,
@@ -204,6 +269,7 @@ export function reopenMostRecentlyClosedTab(
     groupId: reopenedEntry.groupId,
     label: reopenedEntry.label,
     closePolicy: reopenedEntry.closePolicy,
+    args: reopenedEntry.args ?? {},
   };
 
   const existingOrder = next.tabOrder.filter((id) => next.tabs[id] && id !== reopenedEntry!.tabId);

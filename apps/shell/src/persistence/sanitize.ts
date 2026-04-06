@@ -9,6 +9,21 @@ import type {
   ShellContextState,
 } from "../context-state.js";
 
+function sanitizeTabArgs(input: unknown): Record<string, string> {
+  if (!isRecord(input)) {
+    return {};
+  }
+
+  const next: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (typeof value === "string") {
+      next[key] = value;
+    }
+  }
+
+  return next;
+}
+
 export function sanitizeContextState(input: unknown, fallback: ShellContextState): ShellContextState {
   if (!isRecord(input)) {
     return fallback;
@@ -95,6 +110,7 @@ function sanitizeClosedTabHistoryEntry(input: unknown): ClosedTabHistoryEntry | 
     ...(typeof input.definitionId === "string" && input.definitionId.length > 0
       ? { definitionId: input.definitionId }
       : {}),
+    args: sanitizeTabArgs(input.args),
     groupId: input.groupId,
     label: input.label,
     closePolicy: input.closePolicy,
@@ -141,7 +157,8 @@ function sanitizeTabs(
       ? raw.label
       : (typeof raw.name === "string" && raw.name ? raw.name : id);
     const closePolicy = raw.closePolicy === "closeable" ? "closeable" : "fixed";
-    next[id] = { id, definitionId, groupId, label, closePolicy };
+    const args = sanitizeTabArgs(raw.args);
+    next[id] = { id, definitionId, groupId, label, closePolicy, args };
   }
 
   return Object.keys(next).length > 0 ? next : { ...fallback };

@@ -24,6 +24,7 @@ export interface ContextTab {
   groupId: string;
   label: string;
   closePolicy: ContextTabClosePolicy;
+  args: Record<string, string>;
 }
 
 export type ContextTabSlot = "main" | "secondary" | "side";
@@ -31,6 +32,7 @@ export type ContextTabSlot = "main" | "secondary" | "side";
 export interface ClosedTabHistoryEntry {
   tabId: string;
   definitionId?: string;
+  args?: Record<string, string>;
   groupId: string;
   label: string;
   closePolicy: ContextTabClosePolicy;
