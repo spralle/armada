@@ -15,6 +15,7 @@ import {
   migrateContextStateEnvelope,
   SHELL_PERSISTENCE_SCHEMA_VERSION,
 } from "./envelope.js";
+import { sanitizeDockTreeStateWithReport } from "./sanitize-dock-tree.js";
 import { sanitizeContextState } from "./sanitize.js";
 
 export function createLocalStorageContextStatePersistence(
@@ -39,9 +40,16 @@ export function createLocalStorageContextStatePersistence(
       if (persistedEnvelope.ok) {
         const migration = migrateContextStateEnvelope(persistedEnvelope.value.context);
         if (migration.ok) {
+          const sanitizedState = sanitizeContextState(migration.value.contextState, safeFallback);
+          const dockReport = sanitizeDockTreeStateWithReport(
+            getDockTreeInput(migration.value.contextState),
+            sanitizedState.tabs,
+            sanitizedState.tabOrder,
+            sanitizedState.activeTabId,
+          );
           return {
-            state: sanitizeContextState(migration.value.contextState, safeFallback),
-            warning: migration.warning,
+            state: sanitizedState,
+            warning: joinWarnings(migration.warning, dockReport.warning),
           };
         }
 
@@ -50,9 +58,16 @@ export function createLocalStorageContextStatePersistence(
 
       const legacy = loadLegacyContextState(storage, legacyStorageKey);
       if (legacy.ok) {
+        const sanitizedState = sanitizeContextState(legacy.value.contextState, safeFallback);
+        const dockReport = sanitizeDockTreeStateWithReport(
+          getDockTreeInput(legacy.value.contextState),
+          sanitizedState.tabs,
+          sanitizedState.tabOrder,
+          sanitizedState.activeTabId,
+        );
         return {
-          state: sanitizeContextState(legacy.value.contextState, safeFallback),
-          warning: legacy.warning,
+          state: sanitizedState,
+          warning: joinWarnings(legacy.warning, dockReport.warning),
         };
       }
 
@@ -114,4 +129,24 @@ export function createLocalStorageContextStatePersistence(
       }
     },
   };
+}
+
+function getDockTreeInput(input: unknown): unknown {
+  if (!isRecord(input)) {
+    return undefined;
+  }
+
+  return input.dockTree;
+}
+
+function joinWarnings(first: string | null, second: string | null): string | null {
+  if (first && second) {
+    return `${first} ${second}`;
+  }
+
+  return first ?? second;
+}
+
+function isRecord(input: unknown): input is Record<string, unknown> {
+  return Boolean(input) && typeof input === "object";
 }
