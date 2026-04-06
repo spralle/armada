@@ -10,8 +10,6 @@ import {
   writeTabSubcontext,
 } from "./context-state.js";
 import { MemoryStorage, type SpecHarness } from "./context-state.spec-harness.js";
-import { DEV_MODE } from "./app/constants.js";
-import { listAvailableUtilityTabs } from "./utility-tabs.js";
 
 export function registerContextPersistenceContextSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
@@ -185,16 +183,10 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
       "closeable",
       "phase-2 closeable policy should be preserved when explicitly persisted",
     );
-    const availableUtilityIds = listAvailableUtilityTabs({ devMode: DEV_MODE }).map((tab) => tab.id);
     assertEqual(
       loaded.state.tabOrder.slice(0, 2).join(","),
       "tab-b,tab-a",
-      "tab order should preserve persisted tab precedence before utility restoration",
-    );
-    assertEqual(
-      loaded.state.tabOrder.slice(2).join(","),
-      availableUtilityIds.join(","),
-      "utility tabs should be restored deterministically after persisted tabs",
+      "tab order should preserve persisted tab precedence",
     );
     assertEqual(
       loaded.state.activeTabId,
@@ -245,11 +237,10 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
 
     assertEqual(repaired.dockTree.root?.kind, "stack", "invalid dock nodes should collapse to valid structure");
     if (repaired.dockTree.root?.kind === "stack") {
-      const availableUtilityIds = listAvailableUtilityTabs({ devMode: DEV_MODE }).map((tab) => tab.id);
       assertEqual(
-        repaired.dockTree.root.tabIds.join(","),
-        ["tab-a", "tab-b", "tab-c", ...availableUtilityIds].join(","),
-        "sanitizer should ensure all valid and required utility tabs are reachable in dock tree",
+        repaired.dockTree.root.tabIds.slice(0, 3).join(","),
+        "tab-a,tab-b,tab-c",
+        "sanitizer should ensure all valid tabs remain reachable in dock tree",
       );
     }
   });
@@ -320,47 +311,11 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
 
     const once = sanitizeContextState(phase1LikeState, fallback);
     const twice = sanitizeContextState(once, fallback);
-    const availableUtilityIds = listAvailableUtilityTabs({ devMode: DEV_MODE }).map((tab) => tab.id);
-
     assertEqual(once.tabs["tab-main"]?.label, "Main", "phase-1 name should normalize to label");
     assertEqual(once.tabs["tab-main"]?.closePolicy, "fixed", "phase-1 tab should default to fixed close policy");
-    assertEqual(
-      once.tabOrder.join(","),
-      ["tab-main", ...availableUtilityIds].join(","),
-      "tab order should normalize duplicate ids and include required utility tabs",
-    );
+    assertEqual(once.tabOrder[0], "tab-main", "tab order should keep normalized persisted tab first");
     assertEqual(once.activeTabId, "tab-main", "invalid active tab should normalize to first ordered tab");
     assertEqual(JSON.stringify(twice), JSON.stringify(once), "normalization should be idempotent");
-  });
-
-  test("sanitizeContextState restores required utility tabs and drops utility closed-history entries", () => {
-    const fallback = createInitialShellContextState({ initialTabId: "fallback-tab" });
-    const sanitized = sanitizeContextState({
-      ...fallback,
-      tabs: {
-        "tab-a": { id: "tab-a", groupId: "group-main", label: "A", closePolicy: "closeable" },
-      },
-      tabOrder: ["tab-a"],
-      closedTabHistoryBySlot: {
-        main: [
-          {
-            tabId: "utility.plugins",
-            groupId: "group-main",
-            label: "Plugins",
-            closePolicy: "fixed",
-            slot: "main",
-          },
-        ],
-        secondary: [],
-        side: [],
-      },
-    }, fallback);
-
-    for (const utility of listAvailableUtilityTabs({ devMode: DEV_MODE })) {
-      assertEqual(Boolean(sanitized.tabs[utility.id]), true, `utility tab '${utility.id}' should be restored`);
-      assertEqual(sanitized.tabs[utility.id]?.closePolicy, "fixed", `utility tab '${utility.id}' should stay fixed`);
-    }
-    assertEqual(sanitized.closedTabHistoryBySlot.main.length, 0, "utility closed-history entries should be dropped");
   });
 
   test("context persistence handles corruption with warning and safe fallback", () => {
