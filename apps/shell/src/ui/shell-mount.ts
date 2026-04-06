@@ -16,9 +16,17 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .shell { display: grid; grid-template-columns: var(--side-size) 6px 1fr; height: 100vh; }
     .slot-side { border-right: 1px solid #2b3040; background: #181c24; }
     .main-stack { display: grid; grid-template-rows: 1fr 6px var(--secondary-size); min-width: 0; min-height: 0; }
-    .slot { min-width: 0; min-height: 0; overflow: auto; padding: 10px 12px; }
+    .slot { min-width: 0; min-height: 0; overflow: hidden; }
+    .slot-body { display: grid; grid-template-rows: auto 1fr; height: 100%; min-height: 0; }
+    .slot-tabs { border-bottom: 1px solid #2b3040; padding: 0 8px; }
+    .slot-panels { min-height: 0; overflow: auto; padding: 10px 12px; }
     .slot-main { background: #11151c; }
     .slot-secondary { border-top: 1px solid #2b3040; background: #121922; }
+    .part-tab-strip { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: thin; }
+    .part-tab { appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none; color: #c6d0e0; padding: 8px 10px; border-radius: 6px 6px 0 0; cursor: pointer; white-space: nowrap; }
+    .part-tab:hover { background: #1a2230; color: #e9edf3; }
+    .part-tab:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
+    .part-tab.is-active { background: #1d2635; border-color: #334564; color: #f4f8ff; }
     .splitter { background: #2b3040; cursor: col-resize; user-select: none; touch-action: none; }
     .splitter[data-pane="secondary"] { cursor: row-resize; }
     .card { border: 1px solid #2d415f; border-radius: 6px; margin-bottom: 8px; padding: 8px; }
@@ -63,13 +71,26 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
       <section class="card" id="sync-status"></section>
       <section class="card" id="context-controls"></section>
       ${DEV_MODE ? '<section class="card dev-inspector" id="dev-context-inspector"></section>' : ""}
-      <section id="slot-side-parts"></section>
+      <section class="slot-body">
+        <section class="slot-tabs" id="slot-side-tabs"></section>
+        <section class="slot-panels" id="slot-side-parts"></section>
+      </section>
     </section>
     <div class="splitter" id="splitter-side" data-pane="side" aria-label="Resize side pane"></div>
     <section class="main-stack">
-      <section class="slot slot-main" data-slot="main"><section id="slot-main-parts"></section></section>
+      <section class="slot slot-main" data-slot="main">
+        <section class="slot-body">
+          <section class="slot-tabs" id="slot-main-tabs"></section>
+          <section class="slot-panels" id="slot-main-parts"></section>
+        </section>
+      </section>
       <div class="splitter" id="splitter-secondary" data-pane="secondary" aria-label="Resize secondary pane"></div>
-      <section class="slot slot-secondary" data-slot="secondary"><section id="slot-secondary-parts"></section></section>
+      <section class="slot slot-secondary" data-slot="secondary">
+        <section class="slot-body">
+          <section class="slot-tabs" id="slot-secondary-tabs"></section>
+          <section class="slot-panels" id="slot-secondary-parts"></section>
+        </section>
+      </section>
     </section>
   </main>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>

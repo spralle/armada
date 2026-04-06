@@ -8,7 +8,7 @@ import {
   resolveChooserKeyboardAction,
   resolveDegradedKeyboardInteraction,
 } from "../keyboard-a11y.js";
-import { isSelectionActionNode } from "../ui/parts-rendering.js";
+import { isPartActivationNode } from "../ui/parts-rendering.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
@@ -82,15 +82,25 @@ export function bindKeyboardShortcuts(
       }
     }
 
-    if ((event.key === "ArrowDown" || event.key === "ArrowUp") && isSelectionActionNode(target)) {
-      const selector = `[data-action='${target.dataset.action ?? ""}']`;
+    if (
+      (event.key === "ArrowDown"
+        || event.key === "ArrowUp"
+        || event.key === "ArrowLeft"
+        || event.key === "ArrowRight")
+      && isPartActivationNode(target)
+    ) {
+      const slot = target.dataset.slot;
+      const selector = slot
+        ? `[data-action='${target.dataset.action ?? ""}'][data-slot='${slot}']`
+        : `[data-action='${target.dataset.action ?? ""}']`;
       const nodes = [...root.querySelectorAll<HTMLElement>(selector)];
       const index = nodes.indexOf(target);
       if (index < 0 || nodes.length <= 1) {
         return;
       }
 
-      const nextIndex = event.key === "ArrowDown"
+      const isForward = event.key === "ArrowDown" || event.key === "ArrowRight";
+      const nextIndex = isForward
         ? (index + 1) % nodes.length
         : (index - 1 + nodes.length) % nodes.length;
       nodes[nextIndex]?.focus();
