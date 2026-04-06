@@ -11,6 +11,9 @@ type MountPartFn = (
   target: HTMLElement,
   context: {
     part: ComposedShellPart;
+    instanceId: string;
+    definitionId: string;
+    args: Record<string, string>;
     runtime: ShellRuntime;
   },
 ) => PartMountCleanup | Promise<PartMountCleanup>;
@@ -139,7 +142,13 @@ async function mountPart(options: MountPartOptions): Promise<void> {
       return;
     }
 
-    const cleanupResult = await mountFn(target, { part, runtime });
+    const cleanupResult = await mountFn(target, {
+      part,
+      instanceId: resolvePartInstanceId(part),
+      definitionId: resolvePartDefinitionId(part),
+      args: resolvePartArgs(part),
+      runtime,
+    });
     const cleanup = normalizeCleanup(cleanupResult);
 
     if (!isCurrent()) {
@@ -213,6 +222,10 @@ function resolvePartInstanceId(part: ComposedShellPart): string {
 
 function resolvePartDefinitionId(part: ComposedShellPart): string {
   return part.definitionId ?? part.id;
+}
+
+function resolvePartArgs(part: ComposedShellPart): Record<string, string> {
+  return part.args ? { ...part.args } : {};
 }
 
 function normalizeCleanup(cleanup: PartMountCleanup): (() => void) | null {

@@ -57,11 +57,14 @@ test("part module host mounts and unmounts plugin part lifecycle", async () => {
   const pluginId = "com.armada.test.plugin";
   const part = {
     id: "part.one",
+    instanceId: "instance.part.one",
+    definitionId: "part.one",
     title: "Part One",
     slot: "main",
     pluginId,
+    args: { scope: "alpha" },
   };
-  const root = createRoot([part.id]);
+  const root = createRoot([part.instanceId]);
   const calls = {
     register: 0,
     load: 0,
@@ -79,8 +82,12 @@ test("part module host mounts and unmounts plugin part lifecycle", async () => {
         return {
           parts: {
             [part.id]: {
-              mount() {
+              mount(_target, context) {
                 calls.mount += 1;
+                assert.equal(context.instanceId, part.instanceId);
+                assert.equal(context.definitionId, part.definitionId);
+                assert.deepEqual(context.args, part.args);
+                assert.equal(context.part.id, part.id);
                 return {
                   unmount() {
                     calls.unmount += 1;
@@ -111,11 +118,14 @@ test("part module host shows fallback when module missing or invalid", async () 
   const pluginId = "com.armada.test.plugin";
   const part = {
     id: "part.one",
+    instanceId: "instance.part.one",
+    definitionId: "part.one",
     title: "Part One",
     slot: "main",
     pluginId,
+    args: {},
   };
-  const root = createRoot([part.id]);
+  const root = createRoot([part.instanceId]);
 
   const missingModuleHost = createPartModuleHostRuntime(createRuntimeStub(pluginId), {
     federationRuntime: {
@@ -146,4 +156,119 @@ test("part module host shows fallback when module missing or invalid", async () 
 
   await invalidModuleHost.syncRenderedParts(root, [part]);
   assert.equal(root.fallback[0].hidden, false);
+});
+
+test("part module host keeps duplicate instances independent by instance identity", async () => {
+  const pluginId = "com.armada.test.plugin";
+  const parts = [
+    {
+      id: "part.one",
+      instanceId: "part.one#1",
+      definitionId: "part.one",
+      title: "Part One A",
+      slot: "main",
+      pluginId,
+      args: { tenant: "alpha" },
+    },
+    {
+      id: "part.one",
+      instanceId: "part.one#2",
+      definitionId: "part.one",
+      title: "Part One B",
+      slot: "main",
+      pluginId,
+      args: { tenant: "beta" },
+    },
+  ];
+  const root = createRoot(parts.map((part) => part.instanceId));
+  const mounted = [];
+  const unmounted = [];
+
+  const host = createPartModuleHostRuntime(createRuntimeStub(pluginId), {
+    federationRuntime: {
+      registerRemote() {},
+      async loadRemoteModule() {
+        return {
+          parts: {
+            "part.one": {
+              mount(_target, context) {
+                mounted.push({
+                  instanceId: context.instanceId,
+                  definitionId: context.definitionId,
+                  args: context.args,
+                });
+                return {
+                  unmount() {
+                    unmounted.push(context.instanceId);
+                  },
+                };
+              },
+            },
+          },
+        };
+      },
+      async loadPluginContract() {
+        return {};
+      },
+    },
+  });
+
+  await host.syncRenderedParts(root, parts);
+  assert.deepEqual(mounted, [
+    { instanceId: "part.one#1", definitionId: "part.one", args: { tenant: "alpha" } },
+    { instanceId: "part.one#2", definitionId: "part.one", args: { tenant: "beta" } },
+  ]);
+
+  await host.syncRenderedParts(root, [parts[1]]);
+  assert.deepEqual(unmounted, ["part.one#1"]);
+
+  await host.syncRenderedParts(root, []);
+  assert.deepEqual(unmounted, ["part.one#1", "part.one#2"]);
+});
+
+test("part module host preserves backward compatibility for legacy part shape", async () => {
+  const pluginId = "com.armada.test.plugin";
+  const legacyPart = {
+    id: "part.legacy",
+    title: "Legacy Part",
+    slot: "main",
+    pluginId,
+  };
+  const root = createRoot([legacyPart.id]);
+  const contexts = [];
+
+  const host = createPartModuleHostRuntime(createRuntimeStub(pluginId), {
+    federationRuntime: {
+      registerRemote() {},
+      async loadRemoteModule() {
+        return {
+          parts: {
+            "part.legacy": {
+              mount(_target, context) {
+                contexts.push({
+                  instanceId: context.instanceId,
+                  definitionId: context.definitionId,
+                  args: context.args,
+                  partId: context.part.id,
+                });
+              },
+            },
+          },
+        };
+      },
+      async loadPluginContract() {
+        return {};
+      },
+    },
+  });
+
+  await host.syncRenderedParts(root, [legacyPart]);
+  assert.deepEqual(contexts, [
+    {
+      instanceId: "part.legacy",
+      definitionId: "part.legacy",
+      args: {},
+      partId: "part.legacy",
+    },
+  ]);
 });
