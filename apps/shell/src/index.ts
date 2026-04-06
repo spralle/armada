@@ -82,6 +82,7 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
         publishWithDegrade(root, runtime, {
           type: "popout-restore-request",
           hostWindowId: runtime.hostWindowId!,
+          tabId: runtime.partId!,
           partId: runtime.partId!,
           sourceWindowId: runtime.windowId,
         }, createBridgeBindings(root, runtime));

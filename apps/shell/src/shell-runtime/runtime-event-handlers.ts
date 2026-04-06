@@ -60,15 +60,20 @@ export function createRuntimeEventHandlers(
 ): RuntimeEventHandlers {
   function applySelection(event: SelectionSyncEvent): void {
     const revision = event.revision ?? createRevision(event.sourceWindowId);
-    runtime.selectedPartId = event.selectedPartId;
-    runtime.selectedPartTitle = event.selectedPartTitle;
-    updateContextState(runtime, registerTab(runtime.contextState, {
-      tabId: event.selectedPartId,
-      groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
-      groupColor: DEFAULT_GROUP_COLOR,
-      tabLabel: event.selectedPartTitle,
-    }));
-    updateContextState(runtime, setActiveTab(runtime.contextState, event.selectedPartId));
+    const isRemoteSelection = event.sourceWindowId !== runtime.windowId;
+
+    if (!isRemoteSelection) {
+      runtime.selectedPartId = event.selectedPartId;
+      runtime.selectedPartTitle = event.selectedPartTitle;
+      updateContextState(runtime, registerTab(runtime.contextState, {
+        tabId: event.selectedPartId,
+        groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
+        groupColor: DEFAULT_GROUP_COLOR,
+        tabLabel: event.selectedPartTitle,
+      }));
+      updateContextState(runtime, setActiveTab(runtime.contextState, event.selectedPartId));
+    }
+
     writeGlobalSelectionLane(runtime, {
       selectedPartId: event.selectedPartId,
       selectedPartTitle: event.selectedPartTitle,

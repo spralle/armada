@@ -351,6 +351,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       if (runtime.hostWindowId) {
         deps.publishWithDegrade({
           type: "popout-restore-request",
+          tabId: partId,
           partId,
           hostWindowId: runtime.hostWindowId,
           sourceWindowId: runtime.windowId,
