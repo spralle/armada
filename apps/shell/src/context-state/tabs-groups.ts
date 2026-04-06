@@ -1,8 +1,37 @@
 import { cloneContextState, ensureGroup } from "./helpers.js";
-import { ContextTabCloseability, ShellContextState } from "./types.js";
+import {
+  ContextTabCloseability,
+  ContextTabSlot,
+  ClosedTabHistoryEntry,
+  ShellContextState,
+} from "./types.js";
 
-const PHASE_1_CLOSE_ACTIONS_ENABLED = false;
+const CLOSED_TAB_HISTORY_LIMIT = 10;
 
+function clampClosedTabHistory(entries: ClosedTabHistoryEntry[]): ClosedTabHistoryEntry[] {
+  return entries.slice(0, CLOSED_TAB_HISTORY_LIMIT);
+}
+
+function isClosedTabEntryRestorable(
+  entry: ClosedTabHistoryEntry,
+): entry is ClosedTabHistoryEntry {
+  return Boolean(
+    entry.tabId
+      && entry.groupId
+      && entry.label
+      && (entry.closePolicy === "fixed" || entry.closePolicy === "closeable")
+      && (entry.slot === "main" || entry.slot === "secondary" || entry.slot === "side"),
+  );
+}
+
+function normalizeInsertIndex(currentOrder: string[], desiredIndex: number): number {
+  if (!Number.isFinite(desiredIndex)) {
+    return currentOrder.length;
+  }
+
+  const clamped = Math.max(0, Math.min(Math.trunc(desiredIndex), currentOrder.length));
+  return clamped;
+}
 export function registerTab(
   state: ShellContextState,
   input: {
@@ -67,13 +96,120 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
     return state;
   }
 
+  const orderedTabIds = state.tabOrder.filter((id) => state.tabs[id]);
+  const closedTabOrderIndex = orderedTabIds.indexOf(tabId);
   const next = cloneContextState(state);
   delete next.tabs[tabId];
-  next.tabOrder = next.tabOrder.filter((id) => id !== tabId);
+  next.tabOrder = orderedTabIds.filter((id) => id !== tabId && next.tabs[id]);
   delete next.subcontextsByTab[tabId];
+
   if (next.activeTabId === tabId) {
+    const rightCandidate = orderedTabIds
+      .slice(closedTabOrderIndex + 1)
+      .find((id) => id !== tabId && next.tabs[id]);
+    if (rightCandidate) {
+      next.activeTabId = rightCandidate;
+    } else {
+      const leftCandidate = [...orderedTabIds.slice(0, Math.max(closedTabOrderIndex, 0))]
+        .reverse()
+        .find((id) => id !== tabId && next.tabs[id]);
+      next.activeTabId = leftCandidate ?? null;
+    }
+  } else if (next.activeTabId && !next.tabs[next.activeTabId]) {
     next.activeTabId = next.tabOrder[0] ?? null;
   }
+
+  return next;
+}
+
+export function closeTabWithHistory(
+  state: ShellContextState,
+  input: {
+    tabId: string;
+    slot: ContextTabSlot;
+    orderIndex: number;
+  },
+): ShellContextState {
+  const tab = state.tabs[input.tabId];
+  if (!tab) {
+    return state;
+  }
+
+  const closedEntry: ClosedTabHistoryEntry = {
+    tabId: tab.id,
+    groupId: tab.groupId,
+    label: tab.label,
+    closePolicy: tab.closePolicy,
+    slot: input.slot,
+  };
+
+  if (!isClosedTabEntryRestorable(closedEntry)) {
+    return closeTab(state, input.tabId);
+  }
+
+  const next = closeTab(state, input.tabId);
+  const slotHistory = next.closedTabHistoryBySlot[input.slot].filter((entry) => entry.tabId !== input.tabId);
+  next.closedTabHistoryBySlot[input.slot] = clampClosedTabHistory([
+    {
+      ...closedEntry,
+      ...(Number.isFinite(input.orderIndex) ? { orderIndex: Math.max(0, Math.trunc(input.orderIndex)) } : {}),
+    },
+    ...slotHistory,
+  ]);
+
+  return next;
+}
+
+export function canReopenClosedTab(state: ShellContextState, slot: ContextTabSlot): boolean {
+  return state.closedTabHistoryBySlot[slot].some((entry) => isClosedTabEntryRestorable(entry));
+}
+
+export function reopenMostRecentlyClosedTab(
+  state: ShellContextState,
+  slot: ContextTabSlot,
+): ShellContextState {
+  const slotHistory = state.closedTabHistoryBySlot[slot];
+  if (slotHistory.length === 0) {
+    return state;
+  }
+
+  const next = cloneContextState(state);
+  let reopenedEntry: (ClosedTabHistoryEntry & { orderIndex?: number }) | null = null;
+  const retained: ClosedTabHistoryEntry[] = [];
+
+  for (const candidate of slotHistory) {
+    if (!reopenedEntry && isClosedTabEntryRestorable(candidate) && !next.tabs[candidate.tabId]) {
+      reopenedEntry = candidate as ClosedTabHistoryEntry & { orderIndex?: number };
+      continue;
+    }
+
+    if (isClosedTabEntryRestorable(candidate) && !next.tabs[candidate.tabId]) {
+      retained.push(candidate);
+    }
+  }
+
+  next.closedTabHistoryBySlot[slot] = clampClosedTabHistory(retained);
+  if (!reopenedEntry) {
+    return next;
+  }
+
+  ensureGroup(next, reopenedEntry.groupId);
+  next.tabs[reopenedEntry.tabId] = {
+    id: reopenedEntry.tabId,
+    groupId: reopenedEntry.groupId,
+    label: reopenedEntry.label,
+    closePolicy: reopenedEntry.closePolicy,
+  };
+
+  const existingOrder = next.tabOrder.filter((id) => next.tabs[id] && id !== reopenedEntry!.tabId);
+  const insertIndex = normalizeInsertIndex(existingOrder, reopenedEntry.orderIndex ?? Number.POSITIVE_INFINITY);
+  next.tabOrder = [
+    ...existingOrder.slice(0, insertIndex),
+    reopenedEntry.tabId,
+    ...existingOrder.slice(insertIndex),
+  ];
+  next.activeTabId = reopenedEntry.tabId;
+
   return next;
 }
 
@@ -85,16 +221,6 @@ export function getTabCloseability(state: ShellContextState, tabId: string): Con
       canClose: false,
       actionAvailability: "disabled",
       reason: "fixed-policy",
-    };
-  }
-
-  // Phase 2 hook: flip runtime close action availability from feature policy/config.
-  if (!PHASE_1_CLOSE_ACTIONS_ENABLED) {
-    return {
-      policy: tab.closePolicy,
-      canClose: false,
-      actionAvailability: "disabled",
-      reason: "phase1-disabled",
     };
   }
 
@@ -113,6 +239,22 @@ export function closeTabIfAllowed(state: ShellContextState, tabId: string): Shel
   }
 
   return closeTab(state, tabId);
+}
+
+export function closeTabIfAllowedWithHistory(
+  state: ShellContextState,
+  input: {
+    tabId: string;
+    slot: ContextTabSlot;
+    orderIndex: number;
+  },
+): ShellContextState {
+  const closeability = getTabCloseability(state, input.tabId);
+  if (!closeability.canClose) {
+    return state;
+  }
+
+  return closeTabWithHistory(state, input);
 }
 
 export function getTabGroupId(state: ShellContextState, tabId: string): string | null {

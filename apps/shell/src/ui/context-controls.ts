@@ -14,15 +14,22 @@ export function updateWindowReadOnlyState(root: HTMLElement, runtime: ShellRunti
       || node.id === "context-value-input"
       || node.dataset.action === "select"
       || node.dataset.action === "popout"
-      || node.dataset.action === "restore";
+      || node.dataset.action === "restore"
+      || node.dataset.action === "close-tab"
+      || node.dataset.action === "reopen-closed-tab";
     if (runtime.syncDegraded) {
-      node.setAttribute("disabled", "disabled");
       if (mutatingControl) {
+        node.setAttribute("disabled", "disabled");
         node.setAttribute("aria-disabled", "true");
+      } else {
+        node.removeAttribute("disabled");
+        node.removeAttribute("aria-disabled");
       }
     } else {
       node.removeAttribute("disabled");
       if (mutatingControl) {
+        node.removeAttribute("aria-disabled");
+      } else {
         node.removeAttribute("aria-disabled");
       }
     }

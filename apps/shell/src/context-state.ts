@@ -5,6 +5,8 @@ export {
   ContextTabCloseActionAvailability,
   ContextTabCloseability,
   ContextTabClosePolicy,
+  ContextTabSlot,
+  ClosedTabHistoryEntry,
   DerivedLaneDefinition,
   EntityTypeSelection,
   RevisionMeta,
@@ -31,9 +33,13 @@ export { applySelectionUpdate } from "./context-state/selection-update.js";
 export {
   closeTab,
   closeTabIfAllowed,
+  closeTabIfAllowedWithHistory,
+  closeTabWithHistory,
+  canReopenClosedTab,
   getTabCloseability,
   getTabGroupId,
   moveTabToGroup,
+  reopenMostRecentlyClosedTab,
   registerTab,
   setActiveTab,
 } from "./context-state/tabs-groups.js";

@@ -1,11 +1,14 @@
 import {
+  canReopenClosedTab,
   closeTab,
   closeTabIfAllowed,
+  closeTabIfAllowedWithHistory,
   createInitialShellContextState,
   getTabCloseability,
   moveTabToGroup,
   readGlobalLane,
   readGroupLaneForTab,
+  reopenMostRecentlyClosedTab,
   registerTab,
   writeGlobalLane,
   writeGroupLaneByTab,
@@ -21,6 +24,7 @@ import {
 } from "./context/runtime-state.js";
 import type { ShellRuntime } from "./app/types.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
+import { renderTabStrip } from "./ui/parts-rendering.js";
 
 export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
@@ -153,7 +157,7 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
     assertEqual(state.tabs["tab-a"]?.closePolicy, "fixed", "tab close policy should remain fixed by default");
   });
 
-  test("tab closeability contract is explicit and phase-1 disabled", () => {
+  test("tab closeability contract is explicit for fixed and closeable tabs", () => {
     let state = createInitialShellContextState({ initialTabId: "tab-a" });
     state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
 
@@ -163,24 +167,30 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
       "fixed-policy",
       "fixed tabs should report fixed-policy reason",
     );
-    assertEqual(getTabCloseability(state, "tab-b").canClose, false, "phase-1 keeps closeable policy disabled");
+    assertEqual(getTabCloseability(state, "tab-b").canClose, true, "closeable policy should allow close action");
     assertEqual(
       getTabCloseability(state, "tab-b").reason,
-      "phase1-disabled",
-      "closeable policy should indicate phase1-disabled reason",
+      null,
+      "closeable policy should report no disabled reason when enabled",
     );
   });
 
-  test("closeTabIfAllowed remains a no-op in phase 1", () => {
+  test("closeTabIfAllowed closes closeable tabs and preserves active tab when closing non-active", () => {
     let state = createInitialShellContextState({ initialTabId: "tab-a" });
     state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+    state = registerTab(state, { tabId: "tab-c", groupId: "group-main", closePolicy: "closeable" });
+    state = {
+      ...state,
+      activeTabId: "tab-c",
+    };
 
     const next = closeTabIfAllowed(state, "tab-b");
-    assertEqual(next.tabs["tab-b"]?.id, "tab-b", "phase-1 should not allow close-by-contract yet");
-    assertEqual(next.tabOrder.includes("tab-b"), true, "tab order should remain unchanged when close is disabled");
+    assertEqual(next.tabs["tab-b"], undefined, "closeable non-active tab should be removed");
+    assertEqual(next.tabOrder.join(","), "tab-a,tab-c", "tab order should remove only closed tab");
+    assertEqual(next.activeTabId, "tab-c", "closing non-active tab should keep active tab unchanged");
   });
 
-  test("render tab metadata remains ordered and close-disabled in phase 1", () => {
+  test("render tab metadata remains ordered with fixed/non-fixed closeability reasons", () => {
     let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
     state = registerTab(state, { tabId: "tab-b", groupId: "group-main", tabLabel: "Orders" });
     state = registerTab(state, { tabId: "tab-c", groupId: "group-main", closePolicy: "closeable" });
@@ -194,7 +204,123 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
     assertEqual(metadata[1]?.label, "Orders", "metadata should expose registered tab labels");
     assertEqual(metadata[1]?.isActive, true, "active tab metadata should mark selected tab");
     assertEqual(metadata[0]?.closeability.reason, "fixed-policy", "fixed tabs should stay non-closeable");
-    assertEqual(metadata[2]?.closeability.reason, "phase1-disabled", "closeable policy remains disabled in phase 1");
+    assertEqual(metadata[2]?.closeability.reason, null, "closeable tabs should have enabled close action");
+  });
+
+  test("closing active tab picks nearest-right fallback then left", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+    state = registerTab(state, { tabId: "tab-c", groupId: "group-main", closePolicy: "closeable" });
+    state = registerTab(state, { tabId: "tab-d", groupId: "group-main", closePolicy: "closeable" });
+    state = {
+      ...state,
+      activeTabId: "tab-b",
+    };
+
+    state = closeTabIfAllowed(state, "tab-b");
+    assertEqual(state.activeTabId, "tab-c", "active close should focus nearest-right tab when available");
+
+    state = {
+      ...state,
+      activeTabId: "tab-d",
+    };
+    state = closeTabIfAllowed(state, "tab-d");
+    assertEqual(state.activeTabId, "tab-c", "active close should fall back left when no right tab exists");
+  });
+
+  test("tab strip renders close affordance only for closeable tabs", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-fixed", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-closeable", groupId: "group-main", closePolicy: "closeable" });
+
+    const html = renderTabStrip(
+      "main",
+      [
+        { id: "tab-fixed", title: "Fixed", slot: "main", component: "c-fixed", pluginId: "plugin-a" },
+        { id: "tab-closeable", title: "Closeable", slot: "main", component: "c-closeable", pluginId: "plugin-a" },
+      ],
+      "tab-fixed",
+      {
+        contextState: state,
+      } as ShellRuntime,
+    );
+
+    const closeButtonCount = (html.match(/data-action="close-tab"/g) ?? []).length;
+    assertEqual(closeButtonCount, 1, "only closeable tab should render a close button");
+    assertEqual(
+      html.includes('data-tab-item="tab-fixed" data-tab-can-close="false"'),
+      true,
+      "fixed tab metadata should remain non-closeable",
+    );
+    assertEqual(
+      html.includes('data-tab-item="tab-closeable" data-tab-can-close="true"'),
+      true,
+      "closeable tab metadata should indicate close affordance",
+    );
+    assertEqual(
+      html.includes('aria-keyshortcuts="Control+W Meta+W"'),
+      true,
+      "close control should expose keyboard shortcut semantics for assistive tech",
+    );
+    assertEqual(
+      html.includes('aria-keyshortcuts="Control+Shift+T Meta+Shift+T"'),
+      true,
+      "reopen control should expose keyboard shortcut semantics for assistive tech",
+    );
+  });
+
+  test("close then reopen restores most recent eligible tab in same slot and activates it", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", tabLabel: "Orders", closePolicy: "closeable" });
+    state = registerTab(state, { tabId: "tab-c", groupId: "group-main", tabLabel: "Vessels", closePolicy: "closeable" });
+    state = {
+      ...state,
+      activeTabId: "tab-c",
+    };
+
+    const closed = closeTabIfAllowedWithHistory(state, {
+      tabId: "tab-c",
+      slot: "main",
+      orderIndex: 2,
+    });
+    assertEqual(closed.tabs["tab-c"], undefined, "close should remove closeable tab");
+    assertEqual(canReopenClosedTab(closed, "main"), true, "main slot should expose reopen after close");
+
+    const reopened = reopenMostRecentlyClosedTab(closed, "main");
+    assertEqual(reopened.tabs["tab-c"]?.label, "Vessels", "reopen should restore tab metadata label");
+    assertEqual(reopened.tabs["tab-c"]?.groupId, "group-main", "reopen should restore tab group");
+    assertEqual(reopened.activeTabId, "tab-c", "reopen should deterministically activate restored tab");
+    assertEqual(reopened.tabOrder.join(","), "tab-a,tab-b,tab-c", "reopen should restore deterministic order index");
+  });
+
+  test("reopen drops invalid payloads from bounded history gracefully", () => {
+    const state: ShellContextState = {
+      ...createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" }),
+      closedTabHistoryBySlot: {
+        main: [
+          {
+            tabId: "",
+            groupId: "group-main",
+            label: "Bad",
+            closePolicy: "closeable" as const,
+            slot: "main" as const,
+          },
+          {
+            tabId: "tab-b",
+            groupId: "group-main",
+            label: "Orders",
+            closePolicy: "closeable" as const,
+            slot: "main" as const,
+            orderIndex: 1,
+          },
+        ],
+        secondary: [],
+        side: [],
+      },
+    };
+
+    const reopened = reopenMostRecentlyClosedTab(state, "main");
+    assertEqual(reopened.tabs["tab-b"]?.label, "Orders", "reopen should skip invalid payloads and restore next safe entry");
+    assertEqual(reopened.closedTabHistoryBySlot.main.length, 0, "history should prune invalid and consumed entries");
   });
 
   test("resolveActiveTabId prioritizes selected part then active tab then tab order", () => {

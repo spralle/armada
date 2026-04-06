@@ -182,9 +182,15 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
   const handlers = createRuntimeEventHandlers(root, runtime, createRuntimeEventHandlerBindings(root, runtime));
   bindKeyboardHandlers(root, runtime, {
     activatePluginForBoundary: (options) => activatePluginForBoundary(root, runtime, options),
+    applySelection: handlers.applySelection,
     announce: (message) => announce(root, runtime, message),
     dismissIntentChooser: () => dismissIntentChooser(root, runtime),
     executeResolvedAction: handlers.executeResolvedAction,
+    publishWithDegrade: (event) => {
+      publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
+    },
+    renderContextControls: () => renderContextControlsPanel(root, runtime),
+    renderParts: () => renderParts(root, runtime),
     renderCommandSurface: () => renderCommandSurface(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
     toActionContext: () => toActionContext(runtime),

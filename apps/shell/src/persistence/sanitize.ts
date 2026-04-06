@@ -1,6 +1,8 @@
 import type {
+  ClosedTabHistoryEntry,
   ContextGroup,
   ContextLaneValue,
+  ContextTabSlot,
   ContextTab,
   EntityTypeSelection,
   RevisionMeta,
@@ -22,10 +24,79 @@ export function sanitizeContextState(input: unknown, fallback: ShellContextState
     tabs,
     tabOrder,
     activeTabId,
+    closedTabHistoryBySlot: sanitizeClosedTabHistoryBySlot(input.closedTabHistoryBySlot),
     globalLanes: sanitizeLaneMap(input.globalLanes, fallback.globalLanes),
     groupLanes: sanitizeNestedLaneMap(input.groupLanes, fallback.groupLanes),
     subcontextsByTab: sanitizeNestedLaneMap(input.subcontextsByTab, fallback.subcontextsByTab),
     selectionByEntityType: sanitizeSelectionMap(input.selectionByEntityType, fallback.selectionByEntityType),
+  };
+}
+
+function sanitizeClosedTabHistoryBySlot(input: unknown): Record<ContextTabSlot, ClosedTabHistoryEntry[]> {
+  const fallback: Record<ContextTabSlot, ClosedTabHistoryEntry[]> = {
+    main: [],
+    secondary: [],
+    side: [],
+  };
+
+  if (!isRecord(input)) {
+    return fallback;
+  }
+
+  return {
+    main: sanitizeClosedTabHistoryEntries(input.main),
+    secondary: sanitizeClosedTabHistoryEntries(input.secondary),
+    side: sanitizeClosedTabHistoryEntries(input.side),
+  };
+}
+
+function sanitizeClosedTabHistoryEntries(input: unknown): ClosedTabHistoryEntry[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  const sanitized = input
+    .map((entry) => sanitizeClosedTabHistoryEntry(entry))
+    .filter((entry): entry is ClosedTabHistoryEntry => entry !== null);
+
+  const dedupedByTab = new Set<string>();
+  const boundedDeduped = sanitized.filter((entry) => {
+    if (dedupedByTab.has(entry.tabId)) {
+      return false;
+    }
+    dedupedByTab.add(entry.tabId);
+    return true;
+  });
+
+  return boundedDeduped.slice(0, 10);
+}
+
+function sanitizeClosedTabHistoryEntry(input: unknown): ClosedTabHistoryEntry | null {
+  if (!isRecord(input)) {
+    return null;
+  }
+
+  if (
+    typeof input.tabId !== "string" || input.tabId.length === 0
+    || typeof input.groupId !== "string" || input.groupId.length === 0
+    || typeof input.label !== "string" || input.label.length === 0
+    || (input.closePolicy !== "fixed" && input.closePolicy !== "closeable")
+    || (input.slot !== "main" && input.slot !== "secondary" && input.slot !== "side")
+  ) {
+    return null;
+  }
+
+  const orderIndex = typeof input.orderIndex === "number" && Number.isFinite(input.orderIndex)
+    ? Math.max(0, Math.trunc(input.orderIndex))
+    : undefined;
+
+  return {
+    tabId: input.tabId,
+    groupId: input.groupId,
+    label: input.label,
+    closePolicy: input.closePolicy,
+    slot: input.slot,
+    ...(orderIndex !== undefined ? { orderIndex } : {}),
   };
 }
 
@@ -79,9 +150,15 @@ function sanitizeTabOrder(
 ): string[] {
   const validTabIds = new Set(Object.keys(tabs));
   if (!Array.isArray(input)) {
-    return fallback.filter((id) => validTabIds.has(id));
+    return normalizeTabOrderAgainstTabs(fallback, validTabIds);
   }
 
+  const ordered = normalizeTabOrderAgainstTabs(input, validTabIds);
+
+  return ordered.length > 0 ? ordered : normalizeTabOrderAgainstTabs(fallback, validTabIds);
+}
+
+function normalizeTabOrderAgainstTabs(input: unknown[], validTabIds: Set<string>): string[] {
   const seen = new Set<string>();
   const ordered = input
     .filter((value): value is string => typeof value === "string")
@@ -100,7 +177,7 @@ function sanitizeTabOrder(
     }
   }
 
-  return ordered.length > 0 ? ordered : fallback;
+  return ordered;
 }
 
 function sanitizeActiveTabId(

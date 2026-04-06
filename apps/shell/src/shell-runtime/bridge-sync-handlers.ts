@@ -14,7 +14,7 @@ import {
   requestSyncProbe as requestSyncProbeState,
 } from "../sync/bridge-degraded.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
-import { restorePart } from "../ui/parts-controller.js";
+import { closeTabThroughRuntime, restorePart } from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
 import type {
   ContextSyncEvent,
@@ -101,6 +101,23 @@ export function bindBridgeSync(
       restorePart(event.partId, runtime, {
         renderParts: () => bindings.renderParts(),
         renderSyncStatus: () => bindings.renderSyncStatus(),
+      });
+      return;
+    }
+
+    if (event.type === "tab-close") {
+      closeTabThroughRuntime(runtime, event.tabId, {
+        applySelection: bindings.applySelection,
+        publishWithDegrade: (bridgeEvent) => {
+          publishWithDegrade(root, runtime, bridgeEvent, bindings);
+        },
+        renderContextControls: () => bindings.renderContextControlsPanel(),
+        renderParts: () => bindings.renderParts(),
+        renderSyncStatus: () => bindings.renderSyncStatus(),
+      }, {
+        publishCloseEvent: false,
+        publishSelectionEvent: false,
+        sourceWindowId: event.sourceWindowId,
       });
     }
   });

@@ -58,6 +58,7 @@ export function createShellRuntime(): ShellRuntime {
     lastIntentTrace: null,
     popoutHandles: new Map<string, Window>(),
     poppedOutPartIds: new Set<string>(),
+    closeableTabIds: new Set<string>(),
     dragSessionBroker: createDragSessionBroker(bridge, windowId),
     syncDegraded: !bridge.available,
     syncDegradedReason: bridge.available ? null : "unavailable",

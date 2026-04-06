@@ -5,6 +5,7 @@ export type ChooserKeyboardResult =
   | { kind: "none" };
 
 export type DegradedKeyboardInteraction = "allow" | "block" | "dismiss-chooser";
+export type TabLifecycleShortcutAction = "close-active-tab" | "reopen-closed-tab";
 
 export function clampChooserFocusIndex(index: number, itemCount: number): number {
   if (itemCount <= 0) {
@@ -87,6 +88,22 @@ export function resolveDegradedKeyboardInteraction(
   }
 
   return "allow";
+}
+
+export function resolveTabLifecycleShortcut(normalizedKey: string | null): TabLifecycleShortcutAction | null {
+  if (!normalizedKey) {
+    return null;
+  }
+
+  if (normalizedKey === "ctrl+shift+t" || normalizedKey === "meta+shift+t") {
+    return "reopen-closed-tab";
+  }
+
+  if (normalizedKey === "ctrl+w" || normalizedKey === "meta+w") {
+    return "close-active-tab";
+  }
+
+  return null;
 }
 
 export function formatSelectionAnnouncement(input: {

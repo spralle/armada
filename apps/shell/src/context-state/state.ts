@@ -1,5 +1,11 @@
 import { ShellContextState } from "./types.js";
 
+const EMPTY_CLOSED_HISTORY = {
+  main: [],
+  secondary: [],
+  side: [],
+} as const;
+
 export function createInitialShellContextState(options?: {
   initialTabId?: string;
   initialGroupId?: string;
@@ -26,6 +32,11 @@ export function createInitialShellContextState(options?: {
     },
     tabOrder: [initialTabId],
     activeTabId: initialTabId,
+    closedTabHistoryBySlot: {
+      main: [...EMPTY_CLOSED_HISTORY.main],
+      secondary: [...EMPTY_CLOSED_HISTORY.secondary],
+      side: [...EMPTY_CLOSED_HISTORY.side],
+    },
     globalLanes: {},
     groupLanes: {
       [initialGroupId]: {},

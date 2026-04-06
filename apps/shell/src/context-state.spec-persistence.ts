@@ -6,6 +6,7 @@ import {
   createLocalStorageContextStatePersistence,
   createLocalStorageLayoutPersistence,
 } from "./persistence.js";
+import { sanitizeContextState } from "./persistence/sanitize.js";
 import {
   createInitialShellContextState,
   registerTab,
@@ -139,6 +140,139 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
     );
     assertEqual(loaded.state.tabs["tab-main"]?.label, "Main", "legacy name should migrate into tab label");
     assertEqual(loaded.state.tabs["tab-main"]?.closePolicy, "fixed", "legacy tabs should default to fixed close policy");
+  });
+
+  test("context persistence keeps explicit closeable tabs and normalizes active-tab invariants", () => {
+    const storage = new MemoryStorage();
+    const userId = "spec-user";
+    const storageKey = `armada.shell.context-state.v2.${userId}`;
+    storage.setItem(storageKey, JSON.stringify({
+      version: 2,
+      contextState: {
+        groups: {
+          "group-main": { id: "group-main", color: "blue" },
+        },
+        tabs: {
+          "tab-a": { id: "tab-a", groupId: "group-main", label: "A", closePolicy: "fixed" },
+          "tab-b": { id: "tab-b", groupId: "group-main", label: "B", closePolicy: "closeable" },
+        },
+        tabOrder: ["tab-b", "tab-a", "tab-b"],
+        activeTabId: "missing-tab",
+        closedTabHistoryBySlot: {
+          main: [
+            {
+              tabId: "tab-c",
+              groupId: "group-main",
+              label: "C",
+              closePolicy: "closeable",
+              slot: "main",
+              orderIndex: 2,
+            },
+          ],
+          secondary: [],
+          side: [],
+        },
+        globalLanes: {},
+        groupLanes: {},
+        subcontextsByTab: {},
+        selectionByEntityType: {},
+      },
+    }));
+
+    const persistence = createLocalStorageContextStatePersistence(storage, { userId });
+    const loaded = persistence.load(createInitialShellContextState({ initialTabId: "fallback-tab" }));
+
+    assertEqual(
+      loaded.state.tabs["tab-b"]?.closePolicy,
+      "closeable",
+      "phase-2 closeable policy should be preserved when explicitly persisted",
+    );
+    assertEqual(loaded.state.tabOrder.join(","), "tab-b,tab-a", "tab order should dedupe while preserving persisted order");
+    assertEqual(
+      loaded.state.activeTabId,
+      "tab-b",
+      "invalid active tab id should deterministically fall back to normalized tab order",
+    );
+    assertEqual(loaded.state.closedTabHistoryBySlot.main.length, 1, "closed tab history should persist when valid");
+    assertEqual(
+      loaded.state.closedTabHistoryBySlot.main[0]?.tabId,
+      "tab-c",
+      "closed tab history entry should retain restorable tab metadata",
+    );
+  });
+
+  test("sanitizeContextState drops invalid closed-tab restore payloads safely", () => {
+    const fallback = createInitialShellContextState({ initialTabId: "fallback-tab" });
+    const sanitized = sanitizeContextState({
+      ...fallback,
+      closedTabHistoryBySlot: {
+        main: [
+          {
+            tabId: "",
+            groupId: "group-main",
+            label: "invalid",
+            closePolicy: "closeable",
+            slot: "main",
+          },
+          {
+            tabId: "tab-safe",
+            groupId: "group-main",
+            label: "Safe",
+            closePolicy: "closeable",
+            slot: "main",
+            orderIndex: 4,
+          },
+        ],
+        secondary: [
+          {
+            tabId: "tab-bad-policy",
+            groupId: "group-main",
+            label: "Bad",
+            closePolicy: "dangerous",
+            slot: "secondary",
+          },
+        ],
+        side: {
+          nope: true,
+        },
+      },
+    }, fallback);
+
+    assertEqual(sanitized.closedTabHistoryBySlot.main.length, 1, "invalid main entries should be dropped");
+    assertEqual(
+      sanitized.closedTabHistoryBySlot.main[0]?.tabId,
+      "tab-safe",
+      "valid restorable entry should remain after sanitization",
+    );
+    assertEqual(sanitized.closedTabHistoryBySlot.secondary.length, 0, "invalid policy payload should be dropped");
+    assertEqual(sanitized.closedTabHistoryBySlot.side.length, 0, "non-array slot payload should sanitize to empty history");
+  });
+
+  test("sanitizeContextState is idempotent for phase-1 style tab payloads", () => {
+    const fallback = createInitialShellContextState({ initialTabId: "fallback-tab" });
+    const phase1LikeState = {
+      groups: {
+        "group-main": { id: "group-main", color: "blue" },
+      },
+      tabs: {
+        "tab-main": { id: "tab-main", groupId: "group-main", name: "Main" },
+      },
+      tabOrder: ["tab-main", "tab-main"],
+      activeTabId: "missing-tab",
+      globalLanes: {},
+      groupLanes: {},
+      subcontextsByTab: {},
+      selectionByEntityType: {},
+    };
+
+    const once = sanitizeContextState(phase1LikeState, fallback);
+    const twice = sanitizeContextState(once, fallback);
+
+    assertEqual(once.tabs["tab-main"]?.label, "Main", "phase-1 name should normalize to label");
+    assertEqual(once.tabs["tab-main"]?.closePolicy, "fixed", "phase-1 tab should default to fixed close policy");
+    assertEqual(once.tabOrder.join(","), "tab-main", "tab order should normalize duplicate ids");
+    assertEqual(once.activeTabId, "tab-main", "invalid active tab should normalize to first ordered tab");
+    assertEqual(JSON.stringify(twice), JSON.stringify(once), "normalization should be idempotent");
   });
 
   test("context persistence handles corruption with warning and safe fallback", () => {

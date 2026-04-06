@@ -1,7 +1,7 @@
 import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
 import { escapeHtml } from "../app/utils.js";
-import { getTabCloseability } from "../context-state.js";
+import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
 
 export interface ComposedShellPart {
   id: string;
@@ -91,13 +91,28 @@ export function renderTabStrip(
   slot: PartSlot,
   tabs: ComposedShellPart[],
   activeTabId: string,
+  runtime: ShellRuntime,
 ): string {
   const label = `${slot} panel tabs`;
+  const reopenEnabled = !runtime.syncDegraded && canReopenClosedTab(runtime.contextState, slot);
   return `
     <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}">
       ${tabs.map((part) => {
     const isActive = part.id === activeTabId;
-    return `<button
+    const closeability = getTabCloseability(runtime.contextState, part.id);
+    const closeButton = closeability.canClose
+      ? `<button
+            type="button"
+            class="part-tab-close"
+            data-action="close-tab"
+            data-tab-id="${part.id}"
+            aria-label="Close ${escapeHtml(part.title)} tab"
+            aria-keyshortcuts="Control+W Meta+W"
+            title="Close tab (Ctrl+W)"
+          >×</button>`
+      : "";
+    return `<div class="part-tab-item" data-tab-item="${part.id}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
+        <button
           type="button"
           role="tab"
           class="part-tab${isActive ? " is-active" : ""}"
@@ -109,8 +124,20 @@ export function renderTabStrip(
           aria-selected="${isActive ? "true" : "false"}"
           aria-controls="panel-${part.id}"
           tabindex="${isActive ? "0" : "-1"}"
-        >${escapeHtml(part.title)}</button>`;
+        >${escapeHtml(part.title)}</button>
+        ${closeButton}
+      </div>`;
   }).join("")}
+      <button
+        type="button"
+        class="part-tab"
+        data-action="reopen-closed-tab"
+        data-slot="${slot}"
+        aria-label="Reopen recently closed tab"
+        aria-keyshortcuts="Control+Shift+T Meta+Shift+T"
+        title="Reopen closed tab (Ctrl+Shift+T)"
+        ${reopenEnabled ? "" : "disabled aria-disabled=\"true\""}
+      >↶ Reopen</button>
     </div>
   `;
 }

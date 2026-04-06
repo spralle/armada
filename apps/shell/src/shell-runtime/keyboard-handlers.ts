@@ -7,8 +7,13 @@ import {
   resolveChooserFocusRestoration,
   resolveChooserKeyboardAction,
   resolveDegradedKeyboardInteraction,
+  resolveTabLifecycleShortcut,
 } from "../keyboard-a11y.js";
 import { isPartActivationNode } from "../ui/parts-rendering.js";
+import {
+  closeTabThroughRuntime,
+  reopenMostRecentlyClosedTabThroughRuntime,
+} from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
@@ -22,6 +27,10 @@ export interface KeyboardBindings {
   announce: (message: string) => void;
   dismissIntentChooser: () => void;
   executeResolvedAction: (match: IntentActionMatch, intent: ShellIntent | null) => Promise<void>;
+  applySelection: (event: import("../window-bridge.js").SelectionSyncEvent) => void;
+  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => void;
+  renderContextControls: () => void;
+  renderParts: () => void;
   renderCommandSurface: () => void;
   renderSyncStatus: () => void;
   toActionContext: () => Record<string, string>;
@@ -57,6 +66,36 @@ export function bindKeyboardShortcuts(
     }
 
     const normalizedKey = normalizeKeyboardEvent(event);
+    const lifecycleShortcut = resolveTabLifecycleShortcut(normalizedKey);
+    if (lifecycleShortcut === "reopen-closed-tab") {
+      event.preventDefault();
+      reopenMostRecentlyClosedTabThroughRuntime(runtime, {
+        applySelection: bindings.applySelection,
+        publishWithDegrade: bindings.publishWithDegrade,
+        renderContextControls: bindings.renderContextControls,
+        renderParts: bindings.renderParts,
+        renderSyncStatus: bindings.renderSyncStatus,
+      });
+      return;
+    }
+
+    if (lifecycleShortcut === "close-active-tab") {
+      const activeTabId = runtime.selectedPartId && runtime.contextState.tabs[runtime.selectedPartId]
+        ? runtime.selectedPartId
+        : runtime.contextState.activeTabId;
+      if (activeTabId) {
+        event.preventDefault();
+        closeTabThroughRuntime(runtime, activeTabId, {
+          applySelection: bindings.applySelection,
+          publishWithDegrade: bindings.publishWithDegrade,
+          renderContextControls: bindings.renderContextControls,
+          renderParts: bindings.renderParts,
+          renderSyncStatus: bindings.renderSyncStatus,
+        });
+      }
+      return;
+    }
+
     if (normalizedKey) {
       const context = bindings.toActionContext();
       const action = resolveKeybindingAction(runtime.actionSurface, normalizedKey, context);
