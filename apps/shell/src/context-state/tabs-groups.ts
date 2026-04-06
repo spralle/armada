@@ -14,6 +14,7 @@ import {
   ShellContextState,
 } from "./types.js";
 import type { DockNode } from "./dock-tree-types.js";
+import { isUtilityTabId } from "../utility-tabs.js";
 
 const CLOSED_TAB_HISTORY_LIMIT = 10;
 
@@ -182,6 +183,10 @@ export function closeTabWithHistory(
     return state;
   }
 
+  if (isUtilityTabId(input.tabId)) {
+    return state;
+  }
+
   const closedEntry: ClosedTabHistoryEntry = {
     tabId: tab.id,
     groupId: tab.groupId,
@@ -208,7 +213,9 @@ export function closeTabWithHistory(
 }
 
 export function canReopenClosedTab(state: ShellContextState, slot: ContextTabSlot): boolean {
-  return state.closedTabHistoryBySlot[slot].some((entry) => isClosedTabEntryRestorable(entry));
+  return state.closedTabHistoryBySlot[slot].some(
+    (entry) => isClosedTabEntryRestorable(entry) && !isUtilityTabId(entry.tabId),
+  );
 }
 
 export function reopenMostRecentlyClosedTab(
@@ -225,12 +232,17 @@ export function reopenMostRecentlyClosedTab(
   const retained: ClosedTabHistoryEntry[] = [];
 
   for (const candidate of slotHistory) {
-    if (!reopenedEntry && isClosedTabEntryRestorable(candidate) && !next.tabs[candidate.tabId]) {
+    if (
+      !reopenedEntry
+      && isClosedTabEntryRestorable(candidate)
+      && !isUtilityTabId(candidate.tabId)
+      && !next.tabs[candidate.tabId]
+    ) {
       reopenedEntry = candidate as ClosedTabHistoryEntry & { orderIndex?: number };
       continue;
     }
 
-    if (isClosedTabEntryRestorable(candidate) && !next.tabs[candidate.tabId]) {
+    if (isClosedTabEntryRestorable(candidate) && !isUtilityTabId(candidate.tabId) && !next.tabs[candidate.tabId]) {
       retained.push(candidate);
     }
   }

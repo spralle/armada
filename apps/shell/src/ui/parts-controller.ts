@@ -13,6 +13,7 @@ import {
 } from "./parts-controller-actions.js";
 import { activateTabThroughRuntime } from "./parts-controller-selection.js";
 import type { PartsControllerDeps } from "./parts-controller-types.js";
+import { isUtilityTabId } from "../utility-tabs.js";
 
 export { closeTabFromUi, closeTabThroughRuntime, reopenMostRecentlyClosedTabThroughRuntime } from "./parts-controller-actions.js";
 export type { PartsControllerDeps } from "./parts-controller-types.js";
@@ -36,7 +37,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   updateSelectedStyles(root, runtime.selectedPartId);
   void runtime.partModuleHost.syncRenderedParts(
     root,
-    visibleParts.filter((part) => !runtime.poppedOutPartIds.has(part.id)),
+    visibleParts.filter((part) => !runtime.poppedOutPartIds.has(part.id) && !isUtilityTabId(part.id)),
   );
 }
 
@@ -101,7 +102,7 @@ function renderPopoutPart(
   wirePartActions(root, runtime, deps);
   wireDockTabDragDrop(root, runtime, deps);
   updateSelectedStyles(root, runtime.selectedPartId);
-  void runtime.partModuleHost.syncRenderedParts(root, [part]);
+  void runtime.partModuleHost.syncRenderedParts(root, isUtilityTabId(part.id) ? [] : [part]);
 }
 
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
