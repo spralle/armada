@@ -7,7 +7,7 @@ export interface ComposedShellPart {
   id: string;
   title: string;
   slot: "main" | "secondary" | "side";
-  component: string;
+  component?: string;
   pluginId: string;
 }
 
@@ -121,9 +121,13 @@ export function isPartActivationNode(target: HTMLElement): target is HTMLButtonE
 }
 
 function renderPartBody(part: ComposedShellPart): string {
-  return `<section class="domain-panel" data-domain-panel="unavailable">
-      <h3>${escapeHtml(part.title)}</h3>
-      <p class="domain-hint">Component '${escapeHtml(part.component)}' is unavailable in this shell runtime.</p>
-      <p class="domain-hint">Composition remains extension-driven; this host provides generic fallback rendering only.</p>
+  const componentLabel = part.component ?? part.id;
+  return `<section class="domain-panel" data-domain-panel="runtime-host" data-part-panel-for="${part.id}">
+      <section class="domain-panel-host" data-part-content-for="${part.id}"></section>
+      <section class="domain-panel-fallback" data-part-fallback-for="${part.id}">
+        <h3>${escapeHtml(part.title)}</h3>
+        <p class="domain-hint">Component '${escapeHtml(componentLabel)}' is unavailable in this shell runtime.</p>
+        <p class="domain-hint">Composition remains extension-driven; this host provides generic fallback rendering only.</p>
+      </section>
     </section>`;
 }
