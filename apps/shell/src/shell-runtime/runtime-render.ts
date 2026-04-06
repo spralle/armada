@@ -6,6 +6,7 @@ import {
   updateContextState,
   writeGroupSelectionContext,
 } from "../context/runtime-state.js";
+import { getTabGroupId } from "../context-state.js";
 import type { ShellRuntime } from "../app/types.js";
 import { createReactPanelsHost } from "../ui/react/panels-host.js";
 import { getVisibleComposedParts } from "../ui/parts-rendering.js";
@@ -49,10 +50,14 @@ export function initializeReactPanels(
       }
 
       writeGroupSelectionContext(runtime, value);
+      const groupId = getTabGroupId(runtime.contextState, activeTabId) ?? undefined;
       bindings.publishWithDegrade({
         type: "context",
         scope: "group",
         tabId: activeTabId,
+        tabInstanceId: activeTabId,
+        partInstanceId: activeTabId,
+        groupId,
         contextKey: CORE_GROUP_CONTEXT_KEY,
         contextValue: value,
         revision: createRevision(runtime.windowId),

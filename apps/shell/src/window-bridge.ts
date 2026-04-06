@@ -1,5 +1,7 @@
 export interface SelectionSyncEvent {
   type: "selection";
+  selectedPartInstanceId?: string;
+  selectedPartDefinitionId?: string;
   selectedPartId: string;
   selectedPartTitle: string;
   selectionByEntityType: Record<string, {
@@ -17,6 +19,9 @@ export interface ContextSyncEvent {
   type: "context";
   scope?: "group" | "global";
   tabId?: string;
+  tabInstanceId?: string;
+  partInstanceId?: string;
+  partDefinitionId?: string;
   groupId?: string;
   contextKey: string;
   contextValue: string;
@@ -212,29 +217,67 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
 
   const event = value as Partial<WindowBridgeEvent>;
   if (event.type === "selection") {
+    const selectedPartId =
+      typeof event.selectedPartId === "string"
+        ? event.selectedPartId
+        : (typeof (event as { selectedPartInstanceId?: unknown }).selectedPartInstanceId === "string"
+            ? (event as { selectedPartInstanceId: string }).selectedPartInstanceId
+            : null);
+    const selectedPartInstanceId =
+      typeof (event as { selectedPartInstanceId?: unknown }).selectedPartInstanceId === "string"
+        ? (event as { selectedPartInstanceId: string }).selectedPartInstanceId
+        : selectedPartId;
+    const selectedPartDefinitionId =
+      typeof (event as { selectedPartDefinitionId?: unknown }).selectedPartDefinitionId === "string"
+        ? (event as { selectedPartDefinitionId: string }).selectedPartDefinitionId
+        : (typeof event.selectedPartId === "string" ? event.selectedPartId : undefined);
+
     if (
-      typeof event.selectedPartId === "string" &&
+      typeof selectedPartId === "string" &&
       typeof event.selectedPartTitle === "string" &&
       isSelectionByEntityType(event.selectionByEntityType) &&
       isOptionalRevision(event.revision) &&
       typeof event.sourceWindowId === "string"
     ) {
-      return event as SelectionSyncEvent;
+      return {
+        ...event,
+        selectedPartId,
+        selectedPartInstanceId,
+        selectedPartDefinitionId,
+      } as SelectionSyncEvent;
     }
     return null;
   }
 
   if (event.type === "context") {
+    const tabId =
+      typeof event.tabId === "string"
+        ? event.tabId
+        : (typeof (event as { tabInstanceId?: unknown }).tabInstanceId === "string"
+            ? (event as { tabInstanceId: string }).tabInstanceId
+            : undefined);
+    const tabInstanceId =
+      typeof (event as { tabInstanceId?: unknown }).tabInstanceId === "string"
+        ? (event as { tabInstanceId: string }).tabInstanceId
+        : tabId;
+
     if (
       isOptionalContextScope(event.scope) &&
-      isOptionalString(event.tabId) &&
+      isOptionalString(tabId) &&
+      isOptionalString(tabInstanceId) &&
+      isOptionalString((event as { partInstanceId?: unknown }).partInstanceId) &&
+      isOptionalString((event as { partDefinitionId?: unknown }).partDefinitionId) &&
       isOptionalString(event.groupId) &&
       typeof event.contextKey === "string" &&
       typeof event.contextValue === "string" &&
       isOptionalRevision(event.revision) &&
       typeof event.sourceWindowId === "string"
     ) {
-      return event as ContextSyncEvent;
+      return {
+        ...event,
+        tabId,
+        tabInstanceId,
+      } as ContextSyncEvent;
     }
     return null;
   }

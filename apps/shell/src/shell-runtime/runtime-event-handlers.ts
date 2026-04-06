@@ -8,6 +8,7 @@ import {
 } from "../context-state.js";
 import {
   createRevision,
+  resolveActiveTabId,
   updateContextState,
   writeGlobalSelectionLane,
   writeGroupSelectionContext,
@@ -60,15 +61,21 @@ export function createRuntimeEventHandlers(
 ): RuntimeEventHandlers {
   function applySelection(event: SelectionSyncEvent): void {
     const revision = event.revision ?? createRevision(event.sourceWindowId);
+    const isLocalSelection = event.sourceWindowId === runtime.windowId;
     runtime.selectedPartId = event.selectedPartId;
     runtime.selectedPartTitle = event.selectedPartTitle;
-    updateContextState(runtime, registerTab(runtime.contextState, {
-      tabId: event.selectedPartId,
-      groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
-      groupColor: DEFAULT_GROUP_COLOR,
-      tabLabel: event.selectedPartTitle,
-    }));
-    updateContextState(runtime, setActiveTab(runtime.contextState, event.selectedPartId));
+
+    if (isLocalSelection) {
+      updateContextState(runtime, registerTab(runtime.contextState, {
+        tabId: event.selectedPartId,
+        groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
+        groupColor: DEFAULT_GROUP_COLOR,
+        tabLabel: event.selectedPartTitle,
+      }));
+
+      updateContextState(runtime, setActiveTab(runtime.contextState, event.selectedPartId));
+    }
+
     writeGlobalSelectionLane(runtime, {
       selectedPartId: event.selectedPartId,
       selectedPartTitle: event.selectedPartTitle,
@@ -106,9 +113,18 @@ export function createRuntimeEventHandlers(
         value: event.contextValue,
         revision,
       }));
-    } else if (event.tabId) {
+    } else {
+      const targetTabId =
+        event.tabId && runtime.contextState.tabs[event.tabId]
+          ? event.tabId
+          : (resolveActiveTabId(runtime) ?? undefined);
+
+      if (!targetTabId) {
+        return;
+      }
+
       updateContextState(runtime, writeGroupLaneByTab(runtime.contextState, {
-        tabId: event.tabId,
+        tabId: targetTabId,
         key: event.contextKey,
         value: event.contextValue,
         revision,

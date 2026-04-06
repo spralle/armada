@@ -1,7 +1,7 @@
 import {
   CORE_GROUP_CONTEXT_KEY,
   createRevision,
-  reconcileActiveTab,
+  resolveActiveTabId,
 } from "../context/runtime-state.js";
 import {
   formatDegradedModeAnnouncement,
@@ -14,8 +14,9 @@ import {
   requestSyncProbe as requestSyncProbeState,
 } from "../sync/bridge-degraded.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
-import { closeTabThroughRuntime, restorePart } from "../ui/parts-controller.js";
+import { restorePart } from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
+import { getTabGroupId } from "../context-state.js";
 import type {
   ContextSyncEvent,
   SelectionSyncEvent,
@@ -105,21 +106,6 @@ export function bindBridgeSync(
       return;
     }
 
-    if (event.type === "tab-close") {
-      closeTabThroughRuntime(runtime, event.tabId, {
-        applySelection: bindings.applySelection,
-        publishWithDegrade: (bridgeEvent) => {
-          publishWithDegrade(root, runtime, bridgeEvent, bindings);
-        },
-        renderContextControls: () => bindings.renderContextControlsPanel(),
-        renderParts: () => bindings.renderParts(),
-        renderSyncStatus: () => bindings.renderSyncStatus(),
-      }, {
-        publishCloseEvent: false,
-        publishSelectionEvent: false,
-        sourceWindowId: event.sourceWindowId,
-      });
-    }
   });
 }
 
@@ -197,11 +183,19 @@ export function buildContextSyncEvent(
   runtime: ShellRuntime,
   contextValue: string,
 ): ContextSyncEvent {
-  const activeTabId = reconcileActiveTab(runtime);
+  const activeTabId = resolveActiveTabId(runtime);
+  const activeGroupId = activeTabId
+    ? (getTabGroupId(runtime.contextState, activeTabId) ?? undefined)
+    : undefined;
+
+  // Keep tab-scoped fields for migration compatibility while preferring group-targeted sync.
   return {
     type: "context",
     scope: "group",
     tabId: activeTabId ?? undefined,
+    tabInstanceId: activeTabId ?? undefined,
+    partInstanceId: activeTabId ?? undefined,
+    groupId: activeGroupId,
     contextKey: CORE_GROUP_CONTEXT_KEY,
     contextValue,
     revision: createRevision(runtime.windowId),

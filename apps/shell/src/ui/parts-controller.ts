@@ -235,6 +235,8 @@ export function closeTabThroughRuntime(
 
     deps.applySelection({
       type: "selection",
+      selectedPartInstanceId: activeTabId,
+      selectedPartDefinitionId: activeTabId,
       selectedPartId: activeTabId,
       selectedPartTitle,
       selectionByEntityType,
@@ -245,6 +247,8 @@ export function closeTabThroughRuntime(
     if (publishSelectionEvent) {
       deps.publishWithDegrade({
         type: "selection",
+        selectedPartInstanceId: activeTabId,
+        selectedPartDefinitionId: activeTabId,
         selectedPartId: activeTabId,
         selectedPartTitle,
         selectionByEntityType,
@@ -297,6 +301,8 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       const selectionByEntityType = buildSelectionByEntityType(runtime);
 
       deps.applySelection({
+        selectedPartInstanceId: partId,
+        selectedPartDefinitionId: partId,
         selectedPartId: partId,
         selectedPartTitle: partTitle,
         selectionByEntityType,
@@ -307,6 +313,8 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
 
       deps.publishWithDegrade({
         type: "selection",
+        selectedPartInstanceId: partId,
+        selectedPartDefinitionId: partId,
         selectedPartId: partId,
         selectedPartTitle: partTitle,
         selectionByEntityType,
@@ -440,6 +448,8 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
 
   deps.applySelection({
     type: "selection",
+    selectedPartInstanceId: reopenedTabId,
+    selectedPartDefinitionId: reopenedTabId,
     selectedPartId: reopenedTabId,
     selectedPartTitle: reopenedTabTitle,
     selectionByEntityType,
@@ -449,6 +459,8 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
 
   deps.publishWithDegrade({
     type: "selection",
+    selectedPartInstanceId: reopenedTabId,
+    selectedPartDefinitionId: reopenedTabId,
     selectedPartId: reopenedTabId,
     selectedPartTitle: reopenedTabTitle,
     selectionByEntityType,

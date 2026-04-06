@@ -276,4 +276,42 @@ export function registerSyncPopoutDegradedSpecs(harness: SpecHarness): void {
       assertEqual(ackEvent.targetWindowId, "peer-window", "sync-ack should target probing window id");
     }
   });
+
+  test("bridge sync ignores remote tab-close events to preserve window-local topology", () => {
+    const bridge = new TestBridge();
+    const runtime = createRuntime(bridge);
+    const root = createReadOnlySafeRoot();
+    let renderPartsCalls = 0;
+    let renderSyncCalls = 0;
+
+    bindBridgeSync(root, runtime, {
+      announce() {},
+      applyContext() {},
+      applySelection() {},
+      createWindowId() {
+        return "probe-bindings";
+      },
+      renderContextControlsPanel() {},
+      renderParts() {
+        renderPartsCalls += 1;
+      },
+      renderSyncStatus() {
+        renderSyncCalls += 1;
+      },
+      summarizeSelectionPriorities() {
+        return "none";
+      },
+    });
+
+    bridge.emit({
+      type: "tab-close",
+      tabId: "part-a",
+      sourceWindowId: "peer-window",
+    });
+
+    assertEqual(runtime.poppedOutPartIds.has("part-a"), true, "remote tab-close should not mutate local topology state");
+    assertEqual(runtime.popoutHandles.has("part-a"), true, "remote tab-close should not close local handles");
+    assertEqual(renderPartsCalls, 0, "remote tab-close should not trigger topology rerender");
+    assertEqual(renderSyncCalls, 0, "remote tab-close should not trigger sync rerender");
+  });
 }
