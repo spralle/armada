@@ -114,20 +114,20 @@ test("applyLocalPluginEntryOverrides fails fast when selected plugin has no mapp
 });
 
 test("getTenantManifestResponse applies default map for CLI-selected local plugins", () => {
-  const selectedPluginIds = [LOCAL_PLUGIN_IDS.sampleContractConsumer];
+  const selectedPluginIds = [LOCAL_PLUGIN_IDS.sharedUiCapabilities];
 
   const manifest = getTenantManifestResponse("demo", {
     selectedLocalPluginIds: selectedPluginIds,
   });
 
   const selectedPlugin = manifest.plugins.find(
-    (plugin) => plugin.id === LOCAL_PLUGIN_IDS.sampleContractConsumer,
+    (plugin) => plugin.id === LOCAL_PLUGIN_IDS.sharedUiCapabilities,
   );
 
   assert.ok(selectedPlugin);
   assert.equal(
     selectedPlugin.entry,
-    DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.sampleContractConsumer],
+    DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.sharedUiCapabilities],
   );
 });
 

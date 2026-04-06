@@ -7,11 +7,12 @@ const pluginContract: PluginContract = {
     version: "0.1.0",
   },
   contributes: {
-    views: [
+    parts: [
       {
-        id: "domain.unplanned-orders.view",
+        id: "domain.unplanned-orders.part",
         title: "Unplanned Orders",
-        component: "UnplannedOrdersView",
+        slot: "main",
+        component: "UnplannedOrdersPart",
       },
     ],
     selection: [

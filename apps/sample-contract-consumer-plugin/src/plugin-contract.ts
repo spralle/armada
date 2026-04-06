@@ -7,10 +7,11 @@ const pluginContract: PluginContract = {
     version: "0.1.0",
   },
   contributes: {
-    views: [
+    parts: [
       {
-        id: "sample.view",
+        id: "sample.part",
         title: "Sample View",
+        slot: "main",
         component: "SampleView",
       },
     ],

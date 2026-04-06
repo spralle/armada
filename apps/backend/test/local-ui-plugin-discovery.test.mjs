@@ -25,6 +25,14 @@ test("discoverLocalUiPlugins returns deterministic plugin ordering", () => {
     pluginStarter.entry,
     DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.pluginStarter],
   );
+
+  const sharedUiCapabilities = discovered.get(LOCAL_PLUGIN_IDS.sharedUiCapabilities);
+  assert.ok(sharedUiCapabilities);
+  assert.equal(sharedUiCapabilities.folderPath, "apps/shared-ui-capability-plugin");
+  assert.equal(
+    sharedUiCapabilities.entry,
+    DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.sharedUiCapabilities],
+  );
 });
 
 test("discoverLocalUiPlugins rejects duplicate plugin ids with actionable error", () => {

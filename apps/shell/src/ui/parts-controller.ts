@@ -48,12 +48,14 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   if (runtime.isPopout) {
     const slot = root.querySelector<HTMLElement>("#popout-slot");
     if (!slot) {
+      void runtime.partModuleHost.syncRenderedParts(root, []);
       return;
     }
 
     const part = runtime.partId ? visibleParts.find((item) => item.id === runtime.partId) : null;
     if (!part) {
       slot.innerHTML = `<article class="part-root"><h2>Popout unavailable</h2><p>Unable to resolve requested part.</p></article>`;
+      void runtime.partModuleHost.syncRenderedParts(root, []);
       return;
     }
 
@@ -61,6 +63,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
     wirePartActions(root, runtime, deps);
     wireDragDrop(root, runtime);
     updateSelectedStyles(root, runtime.selectedPartId);
+    void runtime.partModuleHost.syncRenderedParts(root, [part]);
     return;
   }
 
@@ -113,6 +116,10 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   wirePartActions(root, runtime, deps);
   wireDragDrop(root, runtime);
   updateSelectedStyles(root, runtime.selectedPartId);
+  void runtime.partModuleHost.syncRenderedParts(
+    root,
+    visibleParts.filter((part) => !runtime.poppedOutPartIds.has(part.id)),
+  );
 }
 
 function resolveActivePartId(runtime: ShellRuntime, visiblePartIds: string[]): string {

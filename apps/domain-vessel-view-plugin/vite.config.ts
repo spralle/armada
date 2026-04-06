@@ -10,6 +10,9 @@ export default defineConfig({
       filename: "mf-manifest.json",
       exposes: {
         "./pluginContract": "./src/plugin-contract-expose.ts",
+        "./pluginParts": "./src/plugin-parts.ts",
+        "./pluginComponents": "./src/plugin-components-expose.ts",
+        "./pluginServices": "./src/plugin-services-expose.ts",
       },
       shared: {
         "@armada/plugin-contracts": {

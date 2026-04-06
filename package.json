@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "npm run check:architecture-guardrails --silent && npm run check:code-principles --silent && tsc --pretty false -p tsconfig.json --noEmit",
     "typecheck": "tsc --pretty false -p tsconfig.json --noEmit",
-    "test": "npm run build --silent && tsc --pretty false -p apps/shell/tsconfig.test.json && tsc --pretty false -p apps/backend/tsconfig.test.json && node --test packages/plugin-contracts/test/parse-plugin-contract.test.mjs apps/shell/test/plugin-loader-parity.test.mjs apps/shell/test/plugin-registry-parity.test.mjs apps/shell/test/integration-hardening.test.mjs apps/shell/test/intent-activation-boundary.test.mjs apps/shell/src/action-runtime.integration.test.mjs apps/shell/dist-test/src/context-state.spec.js apps/shell/dist-test/src/window-bridge.spec.js apps/backend/test/local-ui-plugin-discovery.test.mjs apps/backend/test/tenant-manifest-overrides.test.mjs apps/backend/test/dev-cli-options.test.mjs",
+    "test": "npm run build --silent && tsc --pretty false -p apps/shell/tsconfig.test.json && tsc --pretty false -p apps/backend/tsconfig.test.json && node --test packages/plugin-contracts/test/parse-plugin-contract.test.mjs apps/shell/test/plugin-loader-parity.test.mjs apps/shell/test/plugin-registry-parity.test.mjs apps/shell/test/plugin-capability-registry.test.mjs apps/shell/test/integration-hardening.test.mjs apps/shell/test/part-module-host.test.mjs apps/shell/test/intent-activation-boundary.test.mjs apps/shell/src/action-runtime.integration.test.mjs apps/shell/dist-test/src/context-state.spec.js apps/shell/dist-test/src/window-bridge.spec.js apps/backend/test/local-ui-plugin-discovery.test.mjs apps/backend/test/tenant-manifest-overrides.test.mjs apps/backend/test/dev-cli-options.test.mjs",
     "build": "tsc -b --pretty false",
     "check:architecture-guardrails": "node ./scripts/check-architecture-guardrails.mjs",
     "check:code-principles": "node ./scripts/check-code-principles.mjs",
@@ -19,7 +19,8 @@
     "dev:plugin-sample": "npm run dev --workspace @armada/sample-contract-consumer-plugin",
     "dev:plugin-unplanned-orders": "npm run dev --workspace @armada/domain-unplanned-orders-plugin",
     "dev:plugin-vessel-view": "npm run dev --workspace @armada/domain-vessel-view-plugin",
-    "dev:plugin:all": "npx concurrently -n starter,sample,unplanned,vessel -c magenta,cyan,yellow,green \"npm run dev:plugin\" \"npm run dev:plugin-sample\" \"npm run dev:plugin-unplanned-orders\" \"npm run dev:plugin-vessel-view\"",
+    "dev:plugin-shared-ui": "npm run dev --workspace @armada/shared-ui-capability-plugin",
+    "dev:plugin:all": "npx concurrently -n starter,sample,unplanned,vessel,shared -c magenta,cyan,yellow,green,blue \"npm run dev:plugin\" \"npm run dev:plugin-sample\" \"npm run dev:plugin-unplanned-orders\" \"npm run dev:plugin-vessel-view\" \"npm run dev:plugin-shared-ui\"",
     "dev:integration": "bun --watch apps/shell/src/index.ts",
     "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs"
   },

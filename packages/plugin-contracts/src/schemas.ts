@@ -23,7 +23,59 @@ export const pluginPartContributionSchema = z
     id: nonEmptyString,
     title: nonEmptyString,
     slot: z.enum(["main", "secondary", "side"]),
-    component: nonEmptyString,
+    component: nonEmptyString.optional(),
+  })
+  .strict();
+
+export const pluginCapabilityComponentContributionSchema = z
+  .object({
+    id: nonEmptyString,
+    version: nonEmptyString,
+  })
+  .strict();
+
+export const pluginCapabilityServiceContributionSchema = z
+  .object({
+    id: nonEmptyString,
+    version: nonEmptyString,
+  })
+  .strict();
+
+export const pluginProvidedCapabilitiesSchema = z
+  .object({
+    components: z.array(pluginCapabilityComponentContributionSchema).optional(),
+    services: z.array(pluginCapabilityServiceContributionSchema).optional(),
+  })
+  .strict();
+
+export const pluginDependencyPluginRequirementSchema = z
+  .object({
+    pluginId: nonEmptyString,
+    versionRange: nonEmptyString,
+  })
+  .strict();
+
+export const pluginDependencyComponentRequirementSchema = z
+  .object({
+    id: nonEmptyString,
+    versionRange: nonEmptyString,
+    optional: z.boolean().optional(),
+  })
+  .strict();
+
+export const pluginDependencyServiceRequirementSchema = z
+  .object({
+    id: nonEmptyString,
+    versionRange: nonEmptyString,
+    optional: z.boolean().optional(),
+  })
+  .strict();
+
+export const pluginDependenciesSchema = z
+  .object({
+    plugins: z.array(pluginDependencyPluginRequirementSchema).optional(),
+    components: z.array(pluginDependencyComponentRequirementSchema).optional(),
+    services: z.array(pluginDependencyServiceRequirementSchema).optional(),
   })
   .strict();
 
@@ -100,6 +152,7 @@ export const pluginContributionsSchema = z
   .object({
     views: z.array(pluginViewContributionSchema).optional(),
     parts: z.array(pluginPartContributionSchema).optional(),
+    capabilities: pluginProvidedCapabilitiesSchema.optional(),
     actions: z.array(pluginActionContributionSchema).optional(),
     menus: z.array(pluginMenuContributionSchema).optional(),
     keybindings: z.array(pluginKeybindingContributionSchema).optional(),
@@ -114,6 +167,7 @@ export const pluginContractSchema = z
   .object({
     manifest: pluginManifestIdentitySchema,
     contributes: pluginContributionsSchema.optional(),
+    dependsOn: pluginDependenciesSchema.optional(),
   })
   .strict();
 

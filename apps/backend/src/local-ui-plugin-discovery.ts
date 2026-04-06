@@ -60,6 +60,13 @@ export const CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS: readonly CanonicalLocalUiPlu
     version: "0.1.0",
     entryPath: "/mf-manifest.json",
   },
+  {
+    id: "com.armada.shared.ui-capabilities",
+    folderName: "shared-ui-capability-plugin",
+    devPort: 4175,
+    version: "0.1.0",
+    entryPath: "/mf-manifest.json",
+  },
 ] as const;
 
 export function discoverLocalUiPlugins(
