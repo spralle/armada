@@ -41,6 +41,9 @@ bun run dev:shell
 bun run dev:backend
 bun run dev:plugin
 bun run dev:plugin-sample
+bun run dev:plugin-unplanned-orders
+bun run dev:plugin-vessel-view
+bun run dev:plugin-shared-ui
 ```
 
 For MF2 plugin runtime testing, run all local plugin remotes in parallel:
@@ -79,6 +82,7 @@ Expected dev ports:
 - Sample contract consumer MF manifest: `4172` (`http://127.0.0.1:4172/mf-manifest.json`)
 - Domain Unplanned Orders MF manifest: `4173` (`http://127.0.0.1:4173/mf-manifest.json`)
 - Domain Vessel View MF manifest: `4174` (`http://127.0.0.1:4174/mf-manifest.json`)
+- Shared UI Capabilities MF manifest: `4175` (`http://127.0.0.1:4175/mf-manifest.json`)
 
 In dev, requests to `/api/*` from the shell are proxied by Vite to `http://127.0.0.1:8787`.
 
@@ -110,6 +114,7 @@ Default local plugin URL map used by backend:
 - `com.armada.sample.contract-consumer` -> `http://127.0.0.1:4172/mf-manifest.json`
 - `com.armada.domain.unplanned-orders` -> `http://127.0.0.1:4173/mf-manifest.json`
 - `com.armada.domain.vessel-view` -> `http://127.0.0.1:4174/mf-manifest.json`
+- `com.armada.shared.ui-capabilities` -> `http://127.0.0.1:4175/mf-manifest.json`
 
 Select override targets by repeating `--local-plugin <pluginId>` on backend startup.
 
@@ -152,7 +157,7 @@ When selected remotes are running, toggling those plugins in shell loads contrac
 - **Plugin remote unavailable in shell**
   - Confirm backend + shell + remote processes are running.
   - Open remote URLs directly (for example `http://127.0.0.1:4171/mf-manifest.json`).
-  - Ensure ports `4171`-`4174` are free (plugin dev servers use `strictPort`).
+  - Ensure ports `4171`-`4175` are free (plugin dev servers use `strictPort`).
 
 ### Non-goals / deferred scope
 
