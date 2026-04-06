@@ -24,7 +24,9 @@ export function registerIntentRuntimePluginCompositionSpecs(harness: SpecHarness
               {
                 id: "domain.unplanned-orders.part",
                 title: "Unplanned Orders",
-                slot: "main",
+                dock: {
+                  container: "main",
+                },
                 component: "UnplannedOrdersPart",
               },
             ],
@@ -45,7 +47,9 @@ export function registerIntentRuntimePluginCompositionSpecs(harness: SpecHarness
               {
                 id: "domain.vessel-view.part",
                 title: "Vessel View",
-                slot: "secondary",
+                dock: {
+                  container: "secondary",
+                },
                 component: "VesselViewPart",
               },
             ],
@@ -66,7 +70,9 @@ export function registerIntentRuntimePluginCompositionSpecs(harness: SpecHarness
               {
                 id: "domain.disabled.part",
                 title: "Disabled",
-                slot: "side",
+                dock: {
+                  container: "side",
+                },
                 component: "DisabledPart",
               },
             ],

@@ -18,7 +18,9 @@ const fixturePlugin: PluginContract = {
       {
         id: "fixture.part",
         title: "Fixture Part",
-        slot: "side",
+        dock: {
+          container: "side"
+        },
         component: "FixturePart"
       }
     ],

@@ -11,7 +11,9 @@ const pluginContract: PluginContract = {
       {
         id: "domain.unplanned-orders.part",
         title: "Unplanned Orders",
-        slot: "main",
+        dock: {
+          container: "main",
+        },
         component: "UnplannedOrdersPart",
       },
     ],

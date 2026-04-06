@@ -13,8 +13,13 @@ export interface PluginViewContribution {
 export interface PluginPartContribution {
   id: string;
   title: string;
-  slot: "main" | "secondary" | "side";
   component?: string | undefined;
+  dock?: PluginDockableTabMetadata | undefined;
+}
+
+export interface PluginDockableTabMetadata {
+  container?: string | undefined;
+  order?: number | undefined;
 }
 
 export interface PluginCapabilityComponentContribution {

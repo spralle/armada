@@ -25,7 +25,10 @@ type RuntimeActionContract = {
     parts?: {
       id: string;
       title: string;
-      slot: "main" | "secondary" | "side";
+      dock?: {
+        container?: string;
+        order?: number;
+      };
       component: string;
     }[];
   };

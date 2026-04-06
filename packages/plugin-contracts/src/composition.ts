@@ -1,4 +1,5 @@
 import type {
+  PluginDockableTabMetadata,
   PluginContract,
   PluginPartContribution,
   PluginViewContribution,
@@ -15,8 +16,8 @@ export interface ComposedPluginPartContribution {
   pluginId: string;
   id: string;
   title: string;
-  slot: "main" | "secondary" | "side";
   component?: string | undefined;
+  dock?: PluginDockableTabMetadata | undefined;
 }
 
 export interface ComposedPluginContributions {
@@ -80,7 +81,7 @@ function toComposedPart(
     pluginId,
     id: part.id,
     title: part.title,
-    slot: part.slot,
     component: part.component,
+    dock: part.dock,
   };
 }
