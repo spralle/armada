@@ -33,6 +33,12 @@ Protocol:
   - Diplomat sets `in_review` for PR workflow, then closes the Bead on merge/deploy.
 - Handoff artifacts must include the Bead ID in notes, PR descriptions, and release communication.
 
+## Mandatory Code Principles Enforcement
+
+- All agents MUST follow `docs/code-principles.md` for implementation and audit decisions.
+- Engineer MUST self-check the `docs/code-principles.md` PR checklist before setting a Bead to `implemented`.
+- Auditor MUST verify the same checklist and explicitly report any approved exceptions or violations in audit notes.
+
 ## Issue Tracking with bd (beads)
 
 Use Beads for all issue tracking. For worktrees, always use `bd worktree create` so the worktree is wired to the shared repo `.beads` database.
