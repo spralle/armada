@@ -29,8 +29,8 @@ export interface ContextSyncEvent {
 
 export interface PopoutRestoreRequestEvent {
   type: "popout-restore-request";
-  tabId?: string;
-  partId: string;
+  tabId: string;
+  partId?: string;
   hostWindowId: string;
   sourceWindowId: string;
 }
@@ -241,17 +241,27 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
   }
 
   if (event.type === "popout-restore-request") {
+    const tabId =
+      typeof event.tabId === "string"
+        ? event.tabId
+        : typeof event.partId === "string"
+          ? event.partId
+          : null;
+
     if (
-      isOptionalString(event.tabId) &&
-      typeof event.partId === "string" &&
+      tabId &&
       typeof event.hostWindowId === "string" &&
       typeof event.sourceWindowId === "string"
     ) {
       return {
-        ...event,
-        tabId: event.tabId ?? event.partId,
-      } as PopoutRestoreRequestEvent;
+        type: "popout-restore-request",
+        tabId,
+        partId: typeof event.partId === "string" ? event.partId : undefined,
+        hostWindowId: event.hostWindowId,
+        sourceWindowId: event.sourceWindowId,
+      };
     }
+
     return null;
   }
 
