@@ -109,13 +109,33 @@ export function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, bindings: RuntimeRenderBindings): void {
   void bindings.primeEnabledPluginActivations();
   const visibleDefinitions = getVisiblePartDefinitions(runtime);
-  runtime.closeableTabIds = new Set(visibleDefinitions.map((part) => part.definitionId));
-  updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleDefinitions.map((part) => ({
-    instanceId: part.definitionId,
-    definitionId: part.definitionId,
-    title: part.title,
-  }))));
-  const visibleParts = getVisibleComposedParts(runtime);
+  const visibleDefinitionById = new Map(visibleDefinitions.map((part) => [part.definitionId, part]));
+  const registrationRefs = runtime.contextState.tabOrder
+    .map((tabId) => runtime.contextState.tabs[tabId])
+    .filter((tab): tab is NonNullable<typeof tab> => Boolean(tab))
+    .filter((tab) => visibleDefinitionById.has(tab.definitionId))
+    .map((tab) => ({
+      instanceId: tab.id,
+      definitionId: tab.definitionId,
+      title: tab.label,
+    }));
+
+  const registeredDefinitions = new Set(registrationRefs.map((tab) => tab.definitionId));
+  for (const definition of visibleDefinitions) {
+    if (registeredDefinitions.has(definition.definitionId)) {
+      continue;
+    }
+
+    registrationRefs.push({
+      instanceId: definition.definitionId,
+      definitionId: definition.definitionId,
+      title: definition.title,
+    });
+  }
+
+  runtime.closeableTabIds = new Set(registrationRefs.map((tab) => tab.instanceId));
+  updateContextState(runtime, ensureTabsRegistered(runtime.contextState, registrationRefs));
+
   reconcileActiveTab(runtime);
   renderPartsView(root, runtime, {
     applySelection: (event) => bindings.applySelection(event),
