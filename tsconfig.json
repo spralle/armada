@@ -24,6 +24,9 @@
     },
     {
       "path": "./apps/domain-vessel-view-plugin"
+    },
+    {
+      "path": "./apps/shared-ui-capability-plugin"
     }
   ]
 }
