@@ -186,6 +186,22 @@ Guardrails covered by tests:
 - backend domain plugin entries must stay remote MF manifests (`4173`/`4174`) and must not regress to shell local source composition.
 - shell runtime integration tests cover plugin-composed part visibility, context-gated command visibility/enablement, keybinding execution, and lazy activation trigger lifecycle.
 
+## Phase 2 closeable tabs regression validation matrix
+
+Use this focused command set to validate cross-cutting closeable-tab regressions before handoff:
+
+```bash
+npm run build --silent
+npm exec -- tsc --pretty false -p apps/shell/tsconfig.test.json
+npm run test --silent
+```
+
+Pass criteria:
+
+- Context-state persistence specs pass, including migration/normalization and closed-tab history sanitization.
+- Sync/popout/degraded regressions pass via bridge and runtime specs (sync probe/ack recovery, popout restore reconciliation, degraded mutation blocking).
+- Keyboard/a11y close + reopen pathways pass (`Ctrl/Cmd+W`, `Ctrl/Cmd+Shift+T`, chooser focus/announcement expectations).
+
 ## Plugin quick start scaffold
 
 Create a new plugin app from the template:
