@@ -4,8 +4,11 @@ import { escapeHtml } from "../app/utils.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
 
 export interface ComposedShellPart {
+  instanceId?: string;
+  definitionId?: string;
   id: string;
   title: string;
+  args?: Record<string, string>;
   slot: "main" | "secondary" | "side";
   component?: string;
   pluginId: string;
