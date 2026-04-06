@@ -2,6 +2,7 @@ export {
   ContextGroup,
   ContextLaneValue,
   ContextTab,
+  ContextTabClosePolicy,
   DerivedLaneDefinition,
   EntityTypeSelection,
   RevisionMeta,

@@ -21,7 +21,11 @@ export interface ContextGroup {
 export interface ContextTab {
   id: string;
   groupId: string;
+  label: string;
+  closePolicy: ContextTabClosePolicy;
 }
+
+export type ContextTabClosePolicy = "fixed" | "closeable";
 
 export interface EntityTypeSelection {
   selectedIds: string[];

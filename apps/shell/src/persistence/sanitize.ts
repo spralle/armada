@@ -1,6 +1,7 @@
 import type {
   ContextGroup,
   ContextLaneValue,
+  ContextTab,
   EntityTypeSelection,
   RevisionMeta,
   ShellContextState,
@@ -48,20 +49,24 @@ function sanitizeGroups(input: unknown, fallback: Record<string, ContextGroup>):
 
 function sanitizeTabs(
   input: unknown,
-  fallback: Record<string, { id: string; groupId: string }>,
-): Record<string, { id: string; groupId: string }> {
+  fallback: Record<string, ContextTab>,
+): Record<string, ContextTab> {
   if (!isRecord(input)) {
     return { ...fallback };
   }
 
-  const next: Record<string, { id: string; groupId: string }> = {};
+  const next: Record<string, ContextTab> = {};
   for (const [key, raw] of Object.entries(input)) {
     if (!isRecord(raw)) {
       continue;
     }
     const id = typeof raw.id === "string" && raw.id ? raw.id : key;
     const groupId = typeof raw.groupId === "string" && raw.groupId ? raw.groupId : "group-main";
-    next[id] = { id, groupId };
+    const label = typeof raw.label === "string" && raw.label
+      ? raw.label
+      : (typeof raw.name === "string" && raw.name ? raw.name : id);
+    const closePolicy = raw.closePolicy === "closeable" ? "closeable" : "fixed";
+    next[id] = { id, groupId, label, closePolicy };
   }
 
   return Object.keys(next).length > 0 ? next : { ...fallback };
@@ -69,7 +74,7 @@ function sanitizeTabs(
 
 function sanitizeTabOrder(
   input: unknown,
-  tabs: Record<string, { id: string; groupId: string }>,
+  tabs: Record<string, ContextTab>,
   fallback: string[],
 ): string[] {
   const validTabIds = new Set(Object.keys(tabs));
@@ -100,7 +105,7 @@ function sanitizeTabOrder(
 
 function sanitizeActiveTabId(
   input: unknown,
-  tabs: Record<string, { id: string; groupId: string }>,
+  tabs: Record<string, ContextTab>,
   tabOrder: string[],
   fallback: string | null,
 ): string | null {

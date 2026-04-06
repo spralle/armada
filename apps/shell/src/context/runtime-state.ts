@@ -19,6 +19,7 @@ export const CORE_GLOBAL_SELECTION_KEY = "shell.selection";
 
 interface ShellTabPartRef {
   id: string;
+  title: string;
 }
 
 export function createRevision(writer: string): RevisionMeta {
@@ -35,6 +36,7 @@ export function ensureTabsRegistered(state: ShellContextState, parts: ShellTabPa
       tabId: part.id,
       groupId: getTabGroupId(next, part.id) ?? DEFAULT_GROUP_ID,
       groupColor: DEFAULT_GROUP_COLOR,
+      tabLabel: part.title,
     });
   }
   return next;

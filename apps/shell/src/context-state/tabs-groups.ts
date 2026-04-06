@@ -3,13 +3,22 @@ import { ShellContextState } from "./types.js";
 
 export function registerTab(
   state: ShellContextState,
-  input: { tabId: string; groupId: string; groupColor?: string },
+  input: {
+    tabId: string;
+    groupId: string;
+    groupColor?: string;
+    tabLabel?: string;
+    closePolicy?: "fixed" | "closeable";
+  },
 ): ShellContextState {
   const next = cloneContextState(state);
   ensureGroup(next, input.groupId, input.groupColor);
+  const prior = next.tabs[input.tabId];
   next.tabs[input.tabId] = {
     id: input.tabId,
     groupId: input.groupId,
+    label: input.tabLabel ?? prior?.label ?? input.tabId,
+    closePolicy: input.closePolicy ?? prior?.closePolicy ?? "fixed",
   };
   if (!next.tabOrder.includes(input.tabId)) {
     next.tabOrder.push(input.tabId);
@@ -45,6 +54,8 @@ export function moveTabToGroup(
   next.tabs[input.tabId] = {
     id: input.tabId,
     groupId: input.targetGroupId,
+    label: tab.label,
+    closePolicy: tab.closePolicy,
   };
   return next;
 }
