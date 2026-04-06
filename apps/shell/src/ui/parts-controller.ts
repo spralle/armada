@@ -19,10 +19,8 @@ import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
 import { wireDockTabDragDrop } from "./dock-tab-dnd.js";
 import {
-  type ComposedShellPart,
   getVisibleComposedParts,
-  type PartSlot,
-  renderTabStrip,
+  renderDockTree,
   renderPartCard,
   resolvePartTitle,
   updateSelectedStyles,
@@ -67,50 +65,10 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
     return;
   }
 
-  const tabsBySlot = {
-    main: root.querySelector<HTMLElement>("#slot-main-tabs"),
-    secondary: root.querySelector<HTMLElement>("#slot-secondary-tabs"),
-    side: root.querySelector<HTMLElement>("#slot-side-tabs"),
-  };
-
-  const partsBySlot = {
-    main: root.querySelector<HTMLElement>("#slot-main-parts"),
-    secondary: root.querySelector<HTMLElement>("#slot-secondary-parts"),
-    side: root.querySelector<HTMLElement>("#slot-side-parts"),
-  };
-
-  const visibleBySlot: Record<PartSlot, typeof visibleParts> = {
-    main: [],
-    secondary: [],
-    side: [],
-  };
-
-  for (const part of visibleParts) {
-    if (!runtime.poppedOutPartIds.has(part.id)) {
-      visibleBySlot[part.slot].push(part);
-    }
-  }
-
-  const slots: PartSlot[] = ["side", "main", "secondary"];
-  for (const slot of slots) {
-    const slotTabs = tabsBySlot[slot];
-    const slotParts = partsBySlot[slot];
-    if (!slotTabs || !slotParts) {
-      continue;
-    }
-
-    const slotVisibleParts = visibleBySlot[slot];
-    if (slotVisibleParts.length === 0) {
-      slotTabs.innerHTML = "";
-      slotParts.innerHTML = "";
-      continue;
-    }
-
-    const activePartId = resolveActivePartId(runtime, slotVisibleParts.map((part) => part.id));
-    slotTabs.innerHTML = renderTabStrip(slot, slotVisibleParts, activePartId, runtime);
-    slotParts.innerHTML = slotVisibleParts
-      .map((part) => renderPartPanel(part, runtime, part.id === activePartId))
-      .join("");
+  const dockHost = root.querySelector<HTMLElement>("#dock-tree-root");
+  if (dockHost) {
+    const visibleDockParts = visibleParts.filter((part) => !runtime.poppedOutPartIds.has(part.id));
+    dockHost.innerHTML = renderDockTree(runtime.contextState.dockTree.root, visibleDockParts, runtime);
   }
 
   wirePartActions(root, runtime, deps);
@@ -120,29 +78,6 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
     root,
     visibleParts.filter((part) => !runtime.poppedOutPartIds.has(part.id)),
   );
-}
-
-function resolveActivePartId(runtime: ShellRuntime, visiblePartIds: string[]): string {
-  const selectedPartId = runtime.selectedPartId;
-  if (selectedPartId && visiblePartIds.includes(selectedPartId)) {
-    return selectedPartId;
-  }
-
-  const activeTabId = runtime.contextState.activeTabId;
-  if (activeTabId && visiblePartIds.includes(activeTabId)) {
-    return activeTabId;
-  }
-
-  return visiblePartIds[0]!;
-}
-
-function renderPartPanel(part: ComposedShellPart, runtime: ShellRuntime, isActive: boolean): string {
-  return `<section
-      id="panel-${part.id}"
-      role="tabpanel"
-      aria-labelledby="tab-${part.id}"
-      ${isActive ? "" : "hidden"}
-    >${renderPartCard(part, runtime, { showPopoutButton: true })}</section>`;
 }
 
 function buildSelectionByEntityType(runtime: ShellRuntime): SelectionSyncEvent["selectionByEntityType"] {

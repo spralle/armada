@@ -128,9 +128,9 @@ export function bindKeyboardShortcuts(
         || event.key === "ArrowRight")
       && isPartActivationNode(target)
     ) {
-      const slot = target.dataset.slot;
-      const selector = slot
-        ? `[data-action='${target.dataset.action ?? ""}'][data-slot='${slot}']`
+      const tabScope = target.dataset.tabScope;
+      const selector = tabScope
+        ? `[data-action='${target.dataset.action ?? ""}'][data-tab-scope='${tabScope}']`
         : `[data-action='${target.dataset.action ?? ""}']`;
       const nodes = [...root.querySelectorAll<HTMLElement>(selector)];
       const index = nodes.indexOf(target);
