@@ -20,6 +20,7 @@
     "src/federation-runtime.ts",
     "src/local-plugin-sources.ts",
     "src/context-state.spec.ts",
-    "src/window-bridge.spec.ts"
+    "src/window-bridge.spec.ts",
+    "src/ui/pending-focus.spec.ts"
   ]
 }

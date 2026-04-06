@@ -11,6 +11,7 @@ import { getBridgeWarningMessage } from "../../sync/bridge-degraded.js";
 import type { IntentActionMatch } from "../../intent-runtime.js";
 import type { ShellRuntime } from "../../app/types.js";
 import { toPrettyJson } from "../../app/utils.js";
+import { applyPendingFocus } from "../pending-focus.js";
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
@@ -187,16 +188,7 @@ function SyncStatusPanel(props: {
   onPendingFocusApplied: () => void;
 }) {
   useEffect(() => {
-    if (!props.pendingFocusSelector) {
-      return;
-    }
-
-    const node = props.rootNode.querySelector<HTMLElement>(props.pendingFocusSelector);
-    if (node) {
-      node.focus();
-    }
-
-    props.onPendingFocusApplied();
+    applyPendingFocus(props.rootNode, props.pendingFocusSelector, props.onPendingFocusApplied);
   }, [props.pendingFocusSelector, props.rootNode, props.onPendingFocusApplied]);
 
   return (
