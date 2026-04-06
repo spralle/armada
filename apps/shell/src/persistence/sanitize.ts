@@ -79,9 +79,15 @@ function sanitizeTabOrder(
 ): string[] {
   const validTabIds = new Set(Object.keys(tabs));
   if (!Array.isArray(input)) {
-    return fallback.filter((id) => validTabIds.has(id));
+    return normalizeTabOrderAgainstTabs(fallback, validTabIds);
   }
 
+  const ordered = normalizeTabOrderAgainstTabs(input, validTabIds);
+
+  return ordered.length > 0 ? ordered : normalizeTabOrderAgainstTabs(fallback, validTabIds);
+}
+
+function normalizeTabOrderAgainstTabs(input: unknown[], validTabIds: Set<string>): string[] {
   const seen = new Set<string>();
   const ordered = input
     .filter((value): value is string => typeof value === "string")
@@ -100,7 +106,7 @@ function sanitizeTabOrder(
     }
   }
 
-  return ordered.length > 0 ? ordered : fallback;
+  return ordered;
 }
 
 function sanitizeActiveTabId(

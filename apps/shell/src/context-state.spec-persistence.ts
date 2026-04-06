@@ -6,6 +6,7 @@ import {
   createLocalStorageContextStatePersistence,
   createLocalStorageLayoutPersistence,
 } from "./persistence.js";
+import { sanitizeContextState } from "./persistence/sanitize.js";
 import {
   createInitialShellContextState,
   registerTab,
@@ -139,6 +140,72 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
     );
     assertEqual(loaded.state.tabs["tab-main"]?.label, "Main", "legacy name should migrate into tab label");
     assertEqual(loaded.state.tabs["tab-main"]?.closePolicy, "fixed", "legacy tabs should default to fixed close policy");
+  });
+
+  test("context persistence keeps explicit closeable tabs and normalizes active-tab invariants", () => {
+    const storage = new MemoryStorage();
+    const userId = "spec-user";
+    const storageKey = `armada.shell.context-state.v2.${userId}`;
+    storage.setItem(storageKey, JSON.stringify({
+      version: 2,
+      contextState: {
+        groups: {
+          "group-main": { id: "group-main", color: "blue" },
+        },
+        tabs: {
+          "tab-a": { id: "tab-a", groupId: "group-main", label: "A", closePolicy: "fixed" },
+          "tab-b": { id: "tab-b", groupId: "group-main", label: "B", closePolicy: "closeable" },
+        },
+        tabOrder: ["tab-b", "tab-a", "tab-b"],
+        activeTabId: "missing-tab",
+        globalLanes: {},
+        groupLanes: {},
+        subcontextsByTab: {},
+        selectionByEntityType: {},
+      },
+    }));
+
+    const persistence = createLocalStorageContextStatePersistence(storage, { userId });
+    const loaded = persistence.load(createInitialShellContextState({ initialTabId: "fallback-tab" }));
+
+    assertEqual(
+      loaded.state.tabs["tab-b"]?.closePolicy,
+      "closeable",
+      "phase-2 closeable policy should be preserved when explicitly persisted",
+    );
+    assertEqual(loaded.state.tabOrder.join(","), "tab-b,tab-a", "tab order should dedupe while preserving persisted order");
+    assertEqual(
+      loaded.state.activeTabId,
+      "tab-b",
+      "invalid active tab id should deterministically fall back to normalized tab order",
+    );
+  });
+
+  test("sanitizeContextState is idempotent for phase-1 style tab payloads", () => {
+    const fallback = createInitialShellContextState({ initialTabId: "fallback-tab" });
+    const phase1LikeState = {
+      groups: {
+        "group-main": { id: "group-main", color: "blue" },
+      },
+      tabs: {
+        "tab-main": { id: "tab-main", groupId: "group-main", name: "Main" },
+      },
+      tabOrder: ["tab-main", "tab-main"],
+      activeTabId: "missing-tab",
+      globalLanes: {},
+      groupLanes: {},
+      subcontextsByTab: {},
+      selectionByEntityType: {},
+    };
+
+    const once = sanitizeContextState(phase1LikeState, fallback);
+    const twice = sanitizeContextState(once, fallback);
+
+    assertEqual(once.tabs["tab-main"]?.label, "Main", "phase-1 name should normalize to label");
+    assertEqual(once.tabs["tab-main"]?.closePolicy, "fixed", "phase-1 tab should default to fixed close policy");
+    assertEqual(once.tabOrder.join(","), "tab-main", "tab order should normalize duplicate ids");
+    assertEqual(once.activeTabId, "tab-main", "invalid active tab should normalize to first ordered tab");
+    assertEqual(JSON.stringify(twice), JSON.stringify(once), "normalization should be idempotent");
   });
 
   test("context persistence handles corruption with warning and safe fallback", () => {

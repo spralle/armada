@@ -1,8 +1,6 @@
 import { cloneContextState, ensureGroup } from "./helpers.js";
 import { ContextTabCloseability, ShellContextState } from "./types.js";
 
-const PHASE_1_CLOSE_ACTIONS_ENABLED = false;
-
 export function registerTab(
   state: ShellContextState,
   input: {
@@ -67,13 +65,30 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
     return state;
   }
 
+  const orderedTabIds = state.tabOrder.filter((id) => state.tabs[id]);
+  const closedTabOrderIndex = orderedTabIds.indexOf(tabId);
+
   const next = cloneContextState(state);
   delete next.tabs[tabId];
-  next.tabOrder = next.tabOrder.filter((id) => id !== tabId);
+  next.tabOrder = orderedTabIds.filter((id) => id !== tabId && next.tabs[id]);
   delete next.subcontextsByTab[tabId];
+
   if (next.activeTabId === tabId) {
+    const rightCandidate = orderedTabIds
+      .slice(closedTabOrderIndex + 1)
+      .find((id) => id !== tabId && next.tabs[id]);
+    if (rightCandidate) {
+      next.activeTabId = rightCandidate;
+    } else {
+      const leftCandidate = [...orderedTabIds.slice(0, Math.max(closedTabOrderIndex, 0))]
+        .reverse()
+        .find((id) => id !== tabId && next.tabs[id]);
+      next.activeTabId = leftCandidate ?? null;
+    }
+  } else if (next.activeTabId && !next.tabs[next.activeTabId]) {
     next.activeTabId = next.tabOrder[0] ?? null;
   }
+
   return next;
 }
 
@@ -85,16 +100,6 @@ export function getTabCloseability(state: ShellContextState, tabId: string): Con
       canClose: false,
       actionAvailability: "disabled",
       reason: "fixed-policy",
-    };
-  }
-
-  // Phase 2 hook: flip runtime close action availability from feature policy/config.
-  if (!PHASE_1_CLOSE_ACTIONS_ENABLED) {
-    return {
-      policy: tab.closePolicy,
-      canClose: false,
-      actionAvailability: "disabled",
-      reason: "phase1-disabled",
     };
   }
 
