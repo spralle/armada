@@ -1,4 +1,5 @@
 import {
+  getTabCloseability,
   getTabGroupId,
   readGlobalLane,
   readGroupLaneForTab,
@@ -13,7 +14,7 @@ import {
   DEFAULT_GROUP_COLOR,
   DEFAULT_GROUP_ID,
 } from "../app/constants.js";
-import type { DevLaneMetadata, ShellRuntime } from "../app/types.js";
+import type { DevLaneMetadata, RenderTabMetadata, ShellRuntime } from "../app/types.js";
 
 export const CORE_GROUP_CONTEXT_KEY = "shell.group-context";
 export const CORE_GLOBAL_SELECTION_KEY = "shell.selection";
@@ -171,4 +172,17 @@ export function reconcileActiveTab(runtime: ShellRuntime): string | null {
   }
 
   return resolved;
+}
+
+export function collectRenderTabMetadata(state: ShellContextState): RenderTabMetadata[] {
+  return state.tabOrder
+    .map((tabId) => state.tabs[tabId])
+    .filter((tab): tab is NonNullable<typeof tab> => Boolean(tab))
+    .map((tab) => ({
+      tabId: tab.id,
+      groupId: tab.groupId,
+      label: tab.label,
+      isActive: state.activeTabId === tab.id,
+      closeability: getTabCloseability(state, tab.id),
+    }));
 }
