@@ -241,9 +241,17 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
 
     channel!.emit("message", {
       type: "popout-restore-request",
+      tabId: "domain.unplanned-orders.part#instance-1",
       partId: "domain.unplanned-orders.part",
       hostWindowId: "host-window",
       sourceWindowId: "popout-window",
+    });
+
+    channel!.emit("message", {
+      type: "popout-restore-request",
+      partId: "legacy.part-id",
+      hostWindowId: "host-window",
+      sourceWindowId: "legacy-popout-window",
     });
 
     channel!.emit("message", {
@@ -274,17 +282,18 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
       sourceWindowId: "window-c",
     });
 
-    assertEqual(events.length, 5, "expected invalid restore/close payloads to be ignored");
+    assertEqual(events.length, 6, "expected invalid restore/close payloads to be ignored");
     assertEqual(events[0]?.type, "context", "tab-scoped context should parse");
     assertEqual(events[1]?.type, "context", "group-scoped context should parse");
     assertEqual(events[2]?.type, "popout-restore-request", "popout restore payload should parse");
-    assertEqual(events[3]?.type, "tab-close", "tab-close payload should parse");
-    assertEqual(events[4]?.type, "context", "instance-aware context should parse");
+    assertEqual(events[3]?.type, "popout-restore-request", "legacy restore payload should parse");
+    assertEqual(events[4]?.type, "tab-close", "tab-close payload should parse");
+    assertEqual(events[5]?.type, "context", "instance-aware context should parse");
 
     const contextFromTab = events[0] as ContextSyncEvent;
     assertEqual(contextFromTab.tabInstanceId, "tab-a", "legacy context payload should hydrate tabInstanceId");
 
-    const contextFromInstance = events[4] as ContextSyncEvent;
+    const contextFromInstance = events[5] as ContextSyncEvent;
     assertEqual(contextFromInstance.tabId, "tab-instance-a", "tabId should fall back from tabInstanceId during migration");
     assertEqual(contextFromInstance.tabInstanceId, "tab-instance-a", "tabInstanceId should parse from instance-aware payload");
   } finally {

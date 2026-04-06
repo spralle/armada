@@ -100,13 +100,17 @@ export function bindBridgeSync(
         return;
       }
 
-      restorePart(event.partId, runtime, {
+      const restoreTabId = event.tabId ?? event.partId;
+      if (!restoreTabId) {
+        return;
+      }
+
+      restorePart(restoreTabId, runtime, {
         renderParts: () => bindings.renderParts(),
         renderSyncStatus: () => bindings.renderSyncStatus(),
       });
       return;
     }
-
   });
 }
 

@@ -14,7 +14,10 @@ export function toActionContext(runtime: ShellRuntime): Record<string, string> {
   };
 
   if (runtime.selectedPartId) {
-    context["selection.partId"] = runtime.selectedPartId;
+    const selectedTab = runtime.contextState.tabs[runtime.selectedPartId];
+    context["selection.partInstanceId"] = runtime.selectedPartId;
+    context["selection.partDefinitionId"] = selectedTab?.partDefinitionId ?? runtime.selectedPartId;
+    context["selection.partId"] = context["selection.partDefinitionId"];
   }
 
   const orderPriorityId = runtime.contextState.selectionByEntityType.order?.priorityId;

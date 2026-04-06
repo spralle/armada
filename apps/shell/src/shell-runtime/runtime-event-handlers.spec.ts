@@ -92,7 +92,7 @@ export function registerRuntimeEventHandlersSpecs(harness: SpecHarness): void {
 
     assertEqual(runtime.contextState.tabs["remote-tab-instance"], undefined, "remote selection should not create missing local tab");
     assertEqual(runtime.contextState.activeTabId, "tab-b", "remote selection should not activate local tab topology");
-    assertEqual(runtime.selectedPartId, "remote-tab-instance", "selection lane should still track remote instance id");
+    assertEqual(runtime.selectedPartId, null, "remote selection should not mutate local selected part topology state");
     assertEqual(readGlobalLane(runtime.contextState, "shell.selection")?.value, "remote-tab-instance|Remote Orders", "global selection lane should sync remote selection context");
   });
 

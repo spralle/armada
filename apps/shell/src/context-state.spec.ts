@@ -5,6 +5,8 @@ import { registerContextStatePersistenceSpecs } from "./context-state.spec-persi
 import { registerKeyboardA11ySpecs } from "./context-state.spec-keyboard-a11y.js";
 import { registerSyncPopoutDegradedSpecs } from "./context-state.spec-sync-popout-degraded.js";
 import { registerRuntimeEventHandlersSpecs } from "./shell-runtime/runtime-event-handlers.spec.js";
+import { registerDragSessionSpecs } from "./context-state.spec-drag-session.js";
+import { registerActionContextSpecs } from "./context-state.spec-action-context.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -14,6 +16,8 @@ registerContextStatePersistenceSpecs(harness);
 registerKeyboardA11ySpecs(harness);
 registerSyncPopoutDegradedSpecs(harness);
 registerRuntimeEventHandlersSpecs(harness);
+registerDragSessionSpecs(harness);
+registerActionContextSpecs(harness);
 
 const { passed, total } = runAll();
 
