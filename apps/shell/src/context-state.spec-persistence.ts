@@ -158,6 +158,20 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
         },
         tabOrder: ["tab-b", "tab-a", "tab-b"],
         activeTabId: "missing-tab",
+        closedTabHistoryBySlot: {
+          main: [
+            {
+              tabId: "tab-c",
+              groupId: "group-main",
+              label: "C",
+              closePolicy: "closeable",
+              slot: "main",
+              orderIndex: 2,
+            },
+          ],
+          secondary: [],
+          side: [],
+        },
         globalLanes: {},
         groupLanes: {},
         subcontextsByTab: {},
@@ -179,6 +193,59 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
       "tab-b",
       "invalid active tab id should deterministically fall back to normalized tab order",
     );
+    assertEqual(loaded.state.closedTabHistoryBySlot.main.length, 1, "closed tab history should persist when valid");
+    assertEqual(
+      loaded.state.closedTabHistoryBySlot.main[0]?.tabId,
+      "tab-c",
+      "closed tab history entry should retain restorable tab metadata",
+    );
+  });
+
+  test("sanitizeContextState drops invalid closed-tab restore payloads safely", () => {
+    const fallback = createInitialShellContextState({ initialTabId: "fallback-tab" });
+    const sanitized = sanitizeContextState({
+      ...fallback,
+      closedTabHistoryBySlot: {
+        main: [
+          {
+            tabId: "",
+            groupId: "group-main",
+            label: "invalid",
+            closePolicy: "closeable",
+            slot: "main",
+          },
+          {
+            tabId: "tab-safe",
+            groupId: "group-main",
+            label: "Safe",
+            closePolicy: "closeable",
+            slot: "main",
+            orderIndex: 4,
+          },
+        ],
+        secondary: [
+          {
+            tabId: "tab-bad-policy",
+            groupId: "group-main",
+            label: "Bad",
+            closePolicy: "dangerous",
+            slot: "secondary",
+          },
+        ],
+        side: {
+          nope: true,
+        },
+      },
+    }, fallback);
+
+    assertEqual(sanitized.closedTabHistoryBySlot.main.length, 1, "invalid main entries should be dropped");
+    assertEqual(
+      sanitized.closedTabHistoryBySlot.main[0]?.tabId,
+      "tab-safe",
+      "valid restorable entry should remain after sanitization",
+    );
+    assertEqual(sanitized.closedTabHistoryBySlot.secondary.length, 0, "invalid policy payload should be dropped");
+    assertEqual(sanitized.closedTabHistoryBySlot.side.length, 0, "non-array slot payload should sanitize to empty history");
   });
 
   test("sanitizeContextState is idempotent for phase-1 style tab payloads", () => {

@@ -9,6 +9,7 @@ import {
   resolveDegradedKeyboardInteraction,
 } from "../keyboard-a11y.js";
 import { isPartActivationNode } from "../ui/parts-rendering.js";
+import { reopenMostRecentlyClosedTabThroughRuntime } from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
@@ -22,6 +23,10 @@ export interface KeyboardBindings {
   announce: (message: string) => void;
   dismissIntentChooser: () => void;
   executeResolvedAction: (match: IntentActionMatch, intent: ShellIntent | null) => Promise<void>;
+  applySelection: (event: import("../window-bridge.js").SelectionSyncEvent) => void;
+  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => void;
+  renderContextControls: () => void;
+  renderParts: () => void;
   renderCommandSurface: () => void;
   renderSyncStatus: () => void;
   toActionContext: () => Record<string, string>;
@@ -57,6 +62,18 @@ export function bindKeyboardShortcuts(
     }
 
     const normalizedKey = normalizeKeyboardEvent(event);
+    if (normalizedKey === "ctrl+shift+t" || normalizedKey === "meta+shift+t") {
+      event.preventDefault();
+      reopenMostRecentlyClosedTabThroughRuntime(runtime, {
+        applySelection: bindings.applySelection,
+        publishWithDegrade: bindings.publishWithDegrade,
+        renderContextControls: bindings.renderContextControls,
+        renderParts: bindings.renderParts,
+        renderSyncStatus: bindings.renderSyncStatus,
+      });
+      return;
+    }
+
     if (normalizedKey) {
       const context = bindings.toActionContext();
       const action = resolveKeybindingAction(runtime.actionSurface, normalizedKey, context);

@@ -1,5 +1,5 @@
 import { applyPendingFocus } from "./pending-focus.js";
-import { closeTabFromUi } from "./parts-controller.js";
+import { closeTabFromUi, reopenMostRecentlyClosedTabThroughRuntime } from "./parts-controller.js";
 import {
   createInitialShellContextState,
   registerTab,
@@ -54,6 +54,13 @@ test("close click flow persists context and applies/clears pending focus", () =>
         return { warning: null };
       },
     },
+    registry: {
+      getSnapshot() {
+        return {
+          plugins: [],
+        };
+      },
+    },
   } as unknown as ShellRuntime;
 
   const pendingSelector = closeTabFromUi(runtime, "tab-b");
@@ -90,6 +97,69 @@ test("close click flow persists context and applies/clears pending focus", () =>
   assertTruthy(focused, "pending focus should be applied to deterministic tab target");
   assertTruthy(cleared, "pending focus callback should clear selector state");
   assertEqual(runtime.pendingFocusSelector, null, "runtime pending focus should clear after application");
+});
+
+test("reopen most recently closed tab restores tab and pending focus", () => {
+  let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+  state = registerTab(state, { tabId: "tab-b", groupId: "group-main", tabLabel: "Bravo", closePolicy: "closeable" });
+  state = {
+    ...state,
+    activeTabId: "tab-b",
+  };
+
+  const runtime = {
+    contextState: state,
+    selectedPartId: "tab-b",
+    selectedPartTitle: "Bravo",
+    windowId: "window-a",
+    pendingFocusSelector: null,
+    notice: "",
+    syncDegraded: false,
+    closeableTabIds: new Set(["tab-a", "tab-b"]),
+    contextPersistence: {
+      save() {
+        return { warning: null };
+      },
+    },
+    registry: {
+      getSnapshot() {
+        return {
+          plugins: [],
+        };
+      },
+    },
+  } as unknown as ShellRuntime;
+
+  closeTabFromUi(runtime, "tab-b", {
+    slot: "main",
+    orderIndex: 1,
+  });
+  assertEqual(runtime.contextState.tabs["tab-b"], undefined, "close step should remove tab before reopen");
+
+  let applySelectionCalls = 0;
+  let publishCalls = 0;
+  const reopened = reopenMostRecentlyClosedTabThroughRuntime(runtime, {
+    applySelection() {
+      applySelectionCalls += 1;
+    },
+    publishWithDegrade() {
+      publishCalls += 1;
+    },
+    renderContextControls() {},
+    renderParts() {},
+    renderSyncStatus() {},
+  });
+
+  assertEqual(reopened, true, "reopen flow should report success when history has eligible entry");
+  assertEqual(runtime.contextState.tabs["tab-b"]?.label, "Bravo", "reopen should restore closed tab metadata");
+  assertEqual(runtime.contextState.activeTabId, "tab-b", "reopen should activate restored tab predictably");
+  assertEqual(
+    runtime.pendingFocusSelector,
+    "button[data-action='activate-tab'][data-part-id='tab-b']",
+    "reopen should target restored tab for pending focus",
+  );
+  assertEqual(applySelectionCalls, 1, "reopen should rebroadcast selection exactly once");
+  assertEqual(publishCalls, 1, "reopen should publish selection event exactly once");
 });
 
 let passed = 0;
