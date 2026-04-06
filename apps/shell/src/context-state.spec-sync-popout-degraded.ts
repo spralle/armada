@@ -88,7 +88,8 @@ function createRuntime(bridge: TestBridge): ShellRuntime {
     windowId: "host-window",
     hostWindowId: null,
     isPopout: false,
-    poppedOutPartIds: new Set(["part-a"]),
+    popoutTabId: null,
+    poppedOutTabIds: new Set(["part-a"]),
     popoutHandles: new Map([["part-a", popoutHandle]]),
     notice: "",
   } as unknown as ShellRuntime;
@@ -200,17 +201,18 @@ export function registerSyncPopoutDegradedSpecs(harness: SpecHarness): void {
 
     bridge.emit({
       type: "popout-restore-request",
+      tabId: "part-a",
       partId: "part-a",
       hostWindowId: "host-window",
       sourceWindowId: "peer-window",
     });
 
-    assertEqual(runtime.poppedOutPartIds.has("part-a"), false, "matching host restore should reconcile popped-out part");
+    assertEqual(runtime.poppedOutTabIds.has("part-a"), false, "matching host restore should reconcile popped-out part");
     assertEqual(runtime.popoutHandles.has("part-a"), false, "matching host restore should clear popout handle");
     assertEqual(renderPartsCalls, 1, "matching host restore should rerender parts once");
     assertEqual(renderSyncCalls, 1, "matching host restore should rerender sync status once");
 
-    runtime.poppedOutPartIds.add("part-a");
+    runtime.poppedOutTabIds.add("part-a");
     runtime.popoutHandles.set("part-a", {
       closed: false,
       close() {},
@@ -218,20 +220,22 @@ export function registerSyncPopoutDegradedSpecs(harness: SpecHarness): void {
     runtime.syncDegraded = true;
     bridge.emit({
       type: "popout-restore-request",
+      tabId: "part-a",
       partId: "part-a",
       hostWindowId: "host-window",
       sourceWindowId: "peer-window",
     });
-    assertEqual(runtime.poppedOutPartIds.has("part-a"), true, "degraded mode should block popout restore mutations");
+    assertEqual(runtime.poppedOutTabIds.has("part-a"), true, "degraded mode should block popout restore mutations");
 
     runtime.syncDegraded = false;
     bridge.emit({
       type: "popout-restore-request",
+      tabId: "part-a",
       partId: "part-a",
       hostWindowId: "other-host-window",
       sourceWindowId: "peer-window",
     });
-    assertEqual(runtime.poppedOutPartIds.has("part-a"), true, "non-host windows should ignore restore requests");
+    assertEqual(runtime.poppedOutTabIds.has("part-a"), true, "non-host windows should ignore restore requests");
   });
 
   test("requestSyncProbe publishes probe and remote sync-probe emits targeted ack", () => {

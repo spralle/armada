@@ -8,7 +8,7 @@ import {
 } from "../context/runtime-state.js";
 import type { ShellRuntime } from "../app/types.js";
 import { createReactPanelsHost } from "../ui/react/panels-host.js";
-import { getVisibleComposedParts } from "../ui/parts-rendering.js";
+import { getVisibleComposedParts, getVisiblePartDefinitions } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
 
@@ -108,9 +108,34 @@ export function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
 
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, bindings: RuntimeRenderBindings): void {
   void bindings.primeEnabledPluginActivations();
-  const visibleParts = getVisibleComposedParts(runtime);
-  runtime.closeableTabIds = new Set(visibleParts.map((part) => part.id));
-  updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
+  const visibleDefinitions = getVisiblePartDefinitions(runtime);
+  const visibleDefinitionById = new Map(visibleDefinitions.map((part) => [part.definitionId, part]));
+  const registrationRefs = runtime.contextState.tabOrder
+    .map((tabId) => runtime.contextState.tabs[tabId])
+    .filter((tab): tab is NonNullable<typeof tab> => Boolean(tab))
+    .filter((tab) => visibleDefinitionById.has(tab.definitionId))
+    .map((tab) => ({
+      instanceId: tab.id,
+      definitionId: tab.definitionId,
+      title: tab.label,
+    }));
+
+  const registeredDefinitions = new Set(registrationRefs.map((tab) => tab.definitionId));
+  for (const definition of visibleDefinitions) {
+    if (registeredDefinitions.has(definition.definitionId)) {
+      continue;
+    }
+
+    registrationRefs.push({
+      instanceId: definition.definitionId,
+      definitionId: definition.definitionId,
+      title: definition.title,
+    });
+  }
+
+  runtime.closeableTabIds = new Set(registrationRefs.map((tab) => tab.instanceId));
+  updateContextState(runtime, ensureTabsRegistered(runtime.contextState, registrationRefs));
+
   reconcileActiveTab(runtime);
   renderPartsView(root, runtime, {
     applySelection: (event) => bindings.applySelection(event),

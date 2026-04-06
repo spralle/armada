@@ -43,7 +43,7 @@ export function createPartModuleHostRuntime(
     async syncRenderedParts(root, parts) {
       generation += 1;
       const currentGeneration = generation;
-      const visiblePartsById = new Map(parts.map((part) => [part.id, part]));
+      const visiblePartsById = new Map(parts.map((part) => [resolvePartInstanceId(part), part]));
       const contentTargets = collectTargetsByPart(root, "partContentFor");
       const fallbackTargets = collectTargetsByPart(root, "partFallbackFor");
 
@@ -57,26 +57,27 @@ export function createPartModuleHostRuntime(
 
       const mountPromises: Promise<void>[] = [];
       for (const part of parts) {
-        const target = contentTargets.get(part.id);
+        const instanceId = resolvePartInstanceId(part);
+        const target = contentTargets.get(instanceId);
         if (!target) {
           continue;
         }
 
-        const existing = mounted.get(part.id);
+        const existing = mounted.get(instanceId);
         if (existing && existing.target === target) {
           continue;
         }
 
         if (existing) {
           safeUnmount(existing.cleanup);
-          mounted.delete(part.id);
+          mounted.delete(instanceId);
         }
 
         mountPromises.push(
           mountPart({
-            fallbackTarget: fallbackTargets.get(part.id) ?? null,
+            fallbackTarget: fallbackTargets.get(instanceId) ?? null,
             federationRuntime,
-            isCurrent: () => generation === currentGeneration && visiblePartsById.has(part.id),
+            isCurrent: () => generation === currentGeneration && visiblePartsById.has(instanceId),
             mounted,
             part,
             registeredRemoteIds,
@@ -146,7 +147,7 @@ async function mountPart(options: MountPartOptions): Promise<void> {
       return;
     }
 
-    mounted.set(part.id, {
+    mounted.set(resolvePartInstanceId(part), {
       target,
       cleanup,
     });
@@ -169,7 +170,9 @@ function resolvePartMount(moduleValue: unknown, part: ComposedShellPart): MountP
 
   const parts = toRecord(moduleRecord.parts);
   if (parts) {
-    const candidate = parts[part.id] ?? (part.component ? parts[part.component] : undefined);
+    const candidate = parts[resolvePartDefinitionId(part)]
+      ?? parts[part.id]
+      ?? (part.component ? parts[part.component] : undefined);
     const resolved = resolvePartCandidate(candidate);
     if (resolved) {
       return resolved;
@@ -202,6 +205,14 @@ function toRecord(value: unknown): PartRendererRecord | null {
   }
 
   return value as PartRendererRecord;
+}
+
+function resolvePartInstanceId(part: ComposedShellPart): string {
+  return part.instanceId ?? part.id;
+}
+
+function resolvePartDefinitionId(part: ComposedShellPart): string {
+  return part.definitionId ?? part.id;
 }
 
 function normalizeCleanup(cleanup: PartMountCleanup): (() => void) | null {

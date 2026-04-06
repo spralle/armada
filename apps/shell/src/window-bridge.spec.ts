@@ -205,6 +205,7 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
 
     channel!.emit("message", {
       type: "popout-restore-request",
+      tabId: "tab-domain.unplanned-orders.part",
       partId: "domain.unplanned-orders.part",
       hostWindowId: "host-window",
       sourceWindowId: "popout-window",

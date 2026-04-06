@@ -317,7 +317,7 @@ function createCloseRuntimeFixture() {
     contextState,
     selectedPartId: "tab-a",
     selectedPartTitle: "tab-a",
-    poppedOutPartIds: new Set(),
+    poppedOutTabIds: new Set(),
     popoutHandles: new Map(),
     registry: {
       getSnapshot() {
@@ -384,7 +384,7 @@ test("runtime close flow reconciles active selection and popout handles", () => 
   runtime.selectedPartId = "tab-b";
   runtime.selectedPartTitle = "Orders";
   runtime.contextState.activeTabId = "tab-b";
-  runtime.poppedOutPartIds.add("tab-b");
+  runtime.poppedOutTabIds.add("tab-b");
   runtime.popoutHandles.set("tab-b", {
     closed: false,
     close() {
@@ -395,7 +395,7 @@ test("runtime close flow reconciles active selection and popout handles", () => 
   const closed = closeTabThroughRuntime(runtime, "tab-b", deps);
   assert.equal(closed, true);
   assert.equal(runtime.contextState.tabs["tab-b"], undefined);
-  assert.equal(runtime.poppedOutPartIds.has("tab-b"), false);
+  assert.equal(runtime.poppedOutTabIds.has("tab-b"), false);
   assert.equal(runtime.popoutHandles.has("tab-b"), false);
   assert.equal(runtime.selectedPartId, "tab-a");
 

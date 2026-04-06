@@ -52,7 +52,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
       return;
     }
 
-    const part = runtime.partId ? visibleParts.find((item) => item.id === runtime.partId) : null;
+    const part = runtime.popoutTabId ? visibleParts.find((item) => item.instanceId === runtime.popoutTabId) : null;
     if (!part) {
       slot.innerHTML = `<article class="part-root"><h2>Popout unavailable</h2><p>Unable to resolve requested part.</p></article>`;
       void runtime.partModuleHost.syncRenderedParts(root, []);
@@ -86,7 +86,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   };
 
   for (const part of visibleParts) {
-    if (!runtime.poppedOutPartIds.has(part.id)) {
+    if (!runtime.poppedOutTabIds.has(part.instanceId)) {
       visibleBySlot[part.slot].push(part);
     }
   }
@@ -106,10 +106,10 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
       continue;
     }
 
-    const activePartId = resolveActivePartId(runtime, slotVisibleParts.map((part) => part.id));
+    const activePartId = resolveActivePartId(runtime, slotVisibleParts.map((part) => part.instanceId));
     slotTabs.innerHTML = renderTabStrip(slot, slotVisibleParts, activePartId, runtime);
     slotParts.innerHTML = slotVisibleParts
-      .map((part) => renderPartPanel(part, runtime, part.id === activePartId))
+      .map((part) => renderPartPanel(part, runtime, part.instanceId === activePartId))
       .join("");
   }
 
@@ -118,7 +118,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   updateSelectedStyles(root, runtime.selectedPartId);
   void runtime.partModuleHost.syncRenderedParts(
     root,
-    visibleParts.filter((part) => !runtime.poppedOutPartIds.has(part.id)),
+    visibleParts.filter((part) => !runtime.poppedOutTabIds.has(part.instanceId)),
   );
 }
 
@@ -138,9 +138,9 @@ function resolveActivePartId(runtime: ShellRuntime, visiblePartIds: string[]): s
 
 function renderPartPanel(part: ComposedShellPart, runtime: ShellRuntime, isActive: boolean): string {
   return `<section
-      id="panel-${part.id}"
+      id="panel-${part.instanceId}"
       role="tabpanel"
-      aria-labelledby="tab-${part.id}"
+      aria-labelledby="tab-${part.instanceId}"
       ${isActive ? "" : "hidden"}
     >${renderPartCard(part, runtime, { showPopoutButton: true })}</section>`;
 }
@@ -156,12 +156,12 @@ function buildSelectionByEntityType(runtime: ShellRuntime): SelectionSyncEvent["
 
 export function startPopoutWatchdog(root: HTMLElement, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {
   window.setInterval(() => {
-    for (const [partId, handle] of runtime.popoutHandles.entries()) {
+    for (const [tabId, handle] of runtime.popoutHandles.entries()) {
       if (handle.closed) {
-        runtime.popoutHandles.delete(partId);
-        if (runtime.poppedOutPartIds.has(partId)) {
-          runtime.poppedOutPartIds.delete(partId);
-          runtime.notice = `Part '${partId}' restored (popout closed).`;
+        runtime.popoutHandles.delete(tabId);
+        if (runtime.poppedOutTabIds.has(tabId)) {
+          runtime.poppedOutTabIds.delete(tabId);
+          runtime.notice = `Tab '${tabId}' restored (popout closed).`;
           deps.renderParts();
           deps.renderSyncStatus();
         }
@@ -287,9 +287,9 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         return;
       }
 
-      const partId = button.dataset.partId;
+      const tabId = button.dataset.tabId ?? button.dataset.partId;
       const partTitle = button.dataset.partTitle;
-      if (!partId || !partTitle) {
+      if (!tabId || !partTitle) {
         return;
       }
 
@@ -297,7 +297,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       const selectionByEntityType = buildSelectionByEntityType(runtime);
 
       deps.applySelection({
-        selectedPartId: partId,
+        selectedPartId: tabId,
         selectedPartTitle: partTitle,
         selectionByEntityType,
         revision: selectionRevision,
@@ -307,7 +307,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
 
       deps.publishWithDegrade({
         type: "selection",
-        selectedPartId: partId,
+        selectedPartId: tabId,
         selectedPartTitle: partTitle,
         selectionByEntityType,
         revision: selectionRevision,
@@ -315,7 +315,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       });
 
       writeGlobalSelectionLane(runtime, {
-        selectedPartId: partId,
+        selectedPartId: tabId,
         selectedPartTitle: partTitle,
         revision: selectionRevision,
       });
@@ -328,12 +328,12 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         return;
       }
 
-      const partId = button.dataset.partId;
-      if (!partId) {
+      const tabId = button.dataset.tabId ?? button.dataset.partId;
+      if (!tabId) {
         return;
       }
 
-      openPopout(partId, runtime, deps);
+      openPopout(tabId, runtime, deps);
     });
   }
 
@@ -343,15 +343,16 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         return;
       }
 
-      const partId = button.dataset.partId;
-      if (!partId) {
+      const tabId = button.dataset.tabId ?? button.dataset.partId;
+      if (!tabId) {
         return;
       }
 
       if (runtime.hostWindowId) {
         deps.publishWithDegrade({
           type: "popout-restore-request",
-          partId,
+          tabId,
+          partId: tabId,
           hostWindowId: runtime.hostWindowId,
           sourceWindowId: runtime.windowId,
         });
@@ -477,7 +478,7 @@ function assignPendingFocusSelector(runtime: ShellRuntime): string | null {
   return runtime.pendingFocusSelector;
 }
 function cleanupPopoutForClosedTab(tabId: string, runtime: ShellRuntime): void {
-  runtime.poppedOutPartIds.delete(tabId);
+  runtime.poppedOutTabIds.delete(tabId);
   const popoutHandle = runtime.popoutHandles.get(tabId);
   if (popoutHandle && !popoutHandle.closed) {
     popoutHandle.close();
@@ -487,7 +488,7 @@ function cleanupPopoutForClosedTab(tabId: string, runtime: ShellRuntime): void {
 
 function resolveSlotForTab(runtime: ShellRuntime, tabId: string): ContextTabSlot {
   if (runtime.registry) {
-    const visiblePart = getVisibleComposedParts(runtime).find((part) => part.id === tabId);
+    const visiblePart = getVisibleComposedParts(runtime).find((part) => part.instanceId === tabId);
     return visiblePart?.slot ?? "main";
   }
 
@@ -621,40 +622,40 @@ function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
   }
 }
 
-function openPopout(partId: string, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {
+function openPopout(tabId: string, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {
   if (runtime.isPopout) {
     return;
   }
 
   const url = new URL(window.location.href);
   url.searchParams.set("popout", "1");
-  url.searchParams.set("partId", partId);
+  url.searchParams.set("tabId", tabId);
   url.searchParams.set("hostWindowId", runtime.windowId);
 
-  const popout = window.open(url.toString(), `armada-popout-${sanitizeForWindowName(partId)}`);
+  const popout = window.open(url.toString(), `armada-popout-${sanitizeForWindowName(tabId)}`);
   if (!popout) {
-    runtime.notice = `Popup blocked. Could not pop out '${partId}'.`;
+    runtime.notice = `Popup blocked. Could not pop out '${tabId}'.`;
     deps.renderSyncStatus();
     return;
   }
 
-  runtime.popoutHandles.set(partId, popout);
-  runtime.poppedOutPartIds.add(partId);
-  runtime.notice = `Part '${partId}' opened in a new window.`;
+  runtime.popoutHandles.set(tabId, popout);
+  runtime.poppedOutTabIds.add(tabId);
+  runtime.notice = `Tab '${tabId}' opened in a new window.`;
   deps.renderParts();
   deps.renderSyncStatus();
 }
 
-export function restorePart(partId: string, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {
-  runtime.poppedOutPartIds.delete(partId);
+export function restorePart(tabId: string, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {
+  runtime.poppedOutTabIds.delete(tabId);
 
-  const handle = runtime.popoutHandles.get(partId);
+  const handle = runtime.popoutHandles.get(tabId);
   if (handle && !handle.closed) {
     handle.close();
   }
 
-  runtime.popoutHandles.delete(partId);
-  runtime.notice = `Part '${partId}' restored to host window.`;
+  runtime.popoutHandles.delete(tabId);
+  runtime.notice = `Tab '${tabId}' restored to host window.`;
   deps.renderParts();
   deps.renderSyncStatus();
 }

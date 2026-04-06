@@ -20,7 +20,8 @@ export const CORE_GROUP_CONTEXT_KEY = "shell.group-context";
 export const CORE_GLOBAL_SELECTION_KEY = "shell.selection";
 
 interface ShellTabPartRef {
-  id: string;
+  instanceId: string;
+  definitionId: string;
   title: string;
 }
 
@@ -35,8 +36,9 @@ export function ensureTabsRegistered(state: ShellContextState, parts: ShellTabPa
   let next = state;
   for (const part of parts) {
     next = registerTab(next, {
-      tabId: part.id,
-      groupId: getTabGroupId(next, part.id) ?? DEFAULT_GROUP_ID,
+      tabId: part.instanceId,
+      definitionId: part.definitionId,
+      groupId: getTabGroupId(next, part.instanceId) ?? DEFAULT_GROUP_ID,
       groupColor: DEFAULT_GROUP_COLOR,
       tabLabel: part.title,
     });

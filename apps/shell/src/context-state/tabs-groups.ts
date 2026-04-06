@@ -36,6 +36,7 @@ export function registerTab(
   state: ShellContextState,
   input: {
     tabId: string;
+    definitionId?: string;
     groupId: string;
     groupColor?: string;
     tabLabel?: string;
@@ -47,6 +48,7 @@ export function registerTab(
   const prior = next.tabs[input.tabId];
   next.tabs[input.tabId] = {
     id: input.tabId,
+    definitionId: input.definitionId ?? prior?.definitionId ?? input.tabId,
     groupId: input.groupId,
     label: input.tabLabel ?? prior?.label ?? input.tabId,
     closePolicy: input.closePolicy ?? prior?.closePolicy ?? "fixed",
@@ -84,6 +86,7 @@ export function moveTabToGroup(
   ensureGroup(next, input.targetGroupId, input.targetGroupColor);
   next.tabs[input.tabId] = {
     id: input.tabId,
+    definitionId: tab.definitionId,
     groupId: input.targetGroupId,
     label: tab.label,
     closePolicy: tab.closePolicy,
@@ -137,6 +140,7 @@ export function closeTabWithHistory(
 
   const closedEntry: ClosedTabHistoryEntry = {
     tabId: tab.id,
+    definitionId: tab.definitionId,
     groupId: tab.groupId,
     label: tab.label,
     closePolicy: tab.closePolicy,
@@ -196,6 +200,7 @@ export function reopenMostRecentlyClosedTab(
   ensureGroup(next, reopenedEntry.groupId);
   next.tabs[reopenedEntry.tabId] = {
     id: reopenedEntry.tabId,
+    definitionId: reopenedEntry.definitionId ?? reopenedEntry.tabId,
     groupId: reopenedEntry.groupId,
     label: reopenedEntry.label,
     closePolicy: reopenedEntry.closePolicy,
