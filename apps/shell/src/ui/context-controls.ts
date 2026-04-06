@@ -15,7 +15,8 @@ export function updateWindowReadOnlyState(root: HTMLElement, runtime: ShellRunti
       || node.dataset.action === "select"
       || node.dataset.action === "popout"
       || node.dataset.action === "restore"
-      || node.dataset.action === "close-tab";
+      || node.dataset.action === "close-tab"
+      || node.dataset.action === "reopen-closed-tab";
     if (runtime.syncDegraded) {
       if (mutatingControl) {
         node.setAttribute("disabled", "disabled");

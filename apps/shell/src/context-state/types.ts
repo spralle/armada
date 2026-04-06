@@ -25,6 +25,17 @@ export interface ContextTab {
   closePolicy: ContextTabClosePolicy;
 }
 
+export type ContextTabSlot = "main" | "secondary" | "side";
+
+export interface ClosedTabHistoryEntry {
+  tabId: string;
+  groupId: string;
+  label: string;
+  closePolicy: ContextTabClosePolicy;
+  slot: ContextTabSlot;
+  orderIndex?: number;
+}
+
 export type ContextTabClosePolicy = "fixed" | "closeable";
 
 export type ContextTabCloseActionAvailability = "disabled" | "enabled";
@@ -89,6 +100,7 @@ export interface ShellContextState {
   tabs: Record<string, ContextTab>;
   tabOrder: string[];
   activeTabId: string | null;
+  closedTabHistoryBySlot: Record<ContextTabSlot, ClosedTabHistoryEntry[]>;
   globalLanes: Record<string, ContextLaneValue>;
   groupLanes: Record<string, Record<string, ContextLaneValue>>;
   subcontextsByTab: Record<string, Record<string, ContextLaneValue>>;

@@ -1,7 +1,7 @@
 import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
 import { escapeHtml } from "../app/utils.js";
-import { getTabCloseability } from "../context-state.js";
+import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
 
 export interface ComposedShellPart {
   id: string;
@@ -94,6 +94,7 @@ export function renderTabStrip(
   runtime: ShellRuntime,
 ): string {
   const label = `${slot} panel tabs`;
+  const reopenEnabled = !runtime.syncDegraded && canReopenClosedTab(runtime.contextState, slot);
   return `
     <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}">
       ${tabs.map((part) => {
@@ -126,6 +127,15 @@ export function renderTabStrip(
         ${closeButton}
       </div>`;
   }).join("")}
+      <button
+        type="button"
+        class="part-tab"
+        data-action="reopen-closed-tab"
+        data-slot="${slot}"
+        aria-label="Reopen recently closed tab"
+        title="Reopen closed tab"
+        ${reopenEnabled ? "" : "disabled aria-disabled=\"true\""}
+      >↶ Reopen</button>
     </div>
   `;
 }

@@ -1,11 +1,14 @@
 import {
+  canReopenClosedTab,
   closeTab,
   closeTabIfAllowed,
+  closeTabIfAllowedWithHistory,
   createInitialShellContextState,
   getTabCloseability,
   moveTabToGroup,
   readGlobalLane,
   readGroupLaneForTab,
+  reopenMostRecentlyClosedTab,
   registerTab,
   writeGlobalLane,
   writeGroupLaneByTab,
@@ -253,6 +256,61 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
       true,
       "closeable tab metadata should indicate close affordance",
     );
+  });
+
+  test("close then reopen restores most recent eligible tab in same slot and activates it", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", tabLabel: "Orders", closePolicy: "closeable" });
+    state = registerTab(state, { tabId: "tab-c", groupId: "group-main", tabLabel: "Vessels", closePolicy: "closeable" });
+    state = {
+      ...state,
+      activeTabId: "tab-c",
+    };
+
+    const closed = closeTabIfAllowedWithHistory(state, {
+      tabId: "tab-c",
+      slot: "main",
+      orderIndex: 2,
+    });
+    assertEqual(closed.tabs["tab-c"], undefined, "close should remove closeable tab");
+    assertEqual(canReopenClosedTab(closed, "main"), true, "main slot should expose reopen after close");
+
+    const reopened = reopenMostRecentlyClosedTab(closed, "main");
+    assertEqual(reopened.tabs["tab-c"]?.label, "Vessels", "reopen should restore tab metadata label");
+    assertEqual(reopened.tabs["tab-c"]?.groupId, "group-main", "reopen should restore tab group");
+    assertEqual(reopened.activeTabId, "tab-c", "reopen should deterministically activate restored tab");
+    assertEqual(reopened.tabOrder.join(","), "tab-a,tab-b,tab-c", "reopen should restore deterministic order index");
+  });
+
+  test("reopen drops invalid payloads from bounded history gracefully", () => {
+    const state: ShellContextState = {
+      ...createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" }),
+      closedTabHistoryBySlot: {
+        main: [
+          {
+            tabId: "",
+            groupId: "group-main",
+            label: "Bad",
+            closePolicy: "closeable" as const,
+            slot: "main" as const,
+          },
+          {
+            tabId: "tab-b",
+            groupId: "group-main",
+            label: "Orders",
+            closePolicy: "closeable" as const,
+            slot: "main" as const,
+            orderIndex: 1,
+          },
+        ],
+        secondary: [],
+        side: [],
+      },
+    };
+
+    const reopened = reopenMostRecentlyClosedTab(state, "main");
+    assertEqual(reopened.tabs["tab-b"]?.label, "Orders", "reopen should skip invalid payloads and restore next safe entry");
+    assertEqual(reopened.closedTabHistoryBySlot.main.length, 0, "history should prune invalid and consumed entries");
   });
 
   test("resolveActiveTabId prioritizes selected part then active tab then tab order", () => {
