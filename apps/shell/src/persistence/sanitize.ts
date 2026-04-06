@@ -92,6 +92,9 @@ function sanitizeClosedTabHistoryEntry(input: unknown): ClosedTabHistoryEntry | 
 
   return {
     tabId: input.tabId,
+    ...(typeof input.definitionId === "string" && input.definitionId.length > 0
+      ? { definitionId: input.definitionId }
+      : {}),
     groupId: input.groupId,
     label: input.label,
     closePolicy: input.closePolicy,
@@ -132,12 +135,13 @@ function sanitizeTabs(
       continue;
     }
     const id = typeof raw.id === "string" && raw.id ? raw.id : key;
+    const definitionId = typeof raw.definitionId === "string" && raw.definitionId ? raw.definitionId : id;
     const groupId = typeof raw.groupId === "string" && raw.groupId ? raw.groupId : "group-main";
     const label = typeof raw.label === "string" && raw.label
       ? raw.label
       : (typeof raw.name === "string" && raw.name ? raw.name : id);
     const closePolicy = raw.closePolicy === "closeable" ? "closeable" : "fixed";
-    next[id] = { id, groupId, label, closePolicy };
+    next[id] = { id, definitionId, groupId, label, closePolicy };
   }
 
   return Object.keys(next).length > 0 ? next : { ...fallback };

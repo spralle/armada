@@ -235,8 +235,24 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
     const html = renderTabStrip(
       "main",
       [
-        { id: "tab-fixed", title: "Fixed", slot: "main", component: "c-fixed", pluginId: "plugin-a" },
-        { id: "tab-closeable", title: "Closeable", slot: "main", component: "c-closeable", pluginId: "plugin-a" },
+        {
+          instanceId: "tab-fixed",
+          definitionId: "tab-fixed",
+          id: "tab-fixed",
+          title: "Fixed",
+          slot: "main",
+          component: "c-fixed",
+          pluginId: "plugin-a",
+        },
+        {
+          instanceId: "tab-closeable",
+          definitionId: "tab-closeable",
+          id: "tab-closeable",
+          title: "Closeable",
+          slot: "main",
+          component: "c-closeable",
+          pluginId: "plugin-a",
+        },
       ],
       "tab-fixed",
       {

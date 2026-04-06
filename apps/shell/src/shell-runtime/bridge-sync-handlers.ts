@@ -98,7 +98,7 @@ export function bindBridgeSync(
         return;
       }
 
-      restorePart(event.partId, runtime, {
+      restorePart(event.tabId ?? event.partId, runtime, {
         renderParts: () => bindings.renderParts(),
         renderSyncStatus: () => bindings.renderSyncStatus(),
       });

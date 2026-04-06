@@ -4,6 +4,8 @@ import { escapeHtml } from "../app/utils.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
 
 export interface ComposedShellPart {
+  instanceId: string;
+  definitionId: string;
   id: string;
   title: string;
   slot: "main" | "secondary" | "side";
@@ -25,6 +27,8 @@ export function composePartsFromRegistrySnapshot(
   );
 
   return composed.parts.map((part) => ({
+    instanceId: part.id,
+    definitionId: part.id,
     id: part.id,
     title: part.title,
     slot: part.slot,
@@ -42,7 +46,7 @@ export function renderPartCard(
   runtime: ShellRuntime,
   options: { showPopoutButton: boolean; showRestoreButton?: boolean },
 ): string {
-  const closeability = getTabCloseability(runtime.contextState, part.id);
+  const closeability = getTabCloseability(runtime.contextState, part.instanceId);
   const closeabilityAttrs = [
     `data-tab-close-policy="${closeability.policy}"`,
     `data-tab-close-action-availability="${closeability.actionAvailability}"`,
@@ -51,22 +55,22 @@ export function renderPartCard(
   ].join(" ");
 
   const popoutButton = options.showPopoutButton
-    ? `<button type="button" data-action="popout" data-part-id="${part.id}">Pop out</button>`
+    ? `<button type="button" data-action="popout" data-tab-id="${part.instanceId}" data-part-id="${part.instanceId}">Pop out</button>`
     : "";
   const restoreButton = options.showRestoreButton
-    ? `<button type="button" data-action="restore" data-part-id="${part.id}">Restore to host</button>`
+    ? `<button type="button" data-action="restore" data-tab-id="${part.instanceId}" data-part-id="${part.instanceId}">Restore to host</button>`
     : "";
 
   return `
-    <article class="part-root" data-part-id="${part.id}" draggable="true" ${closeabilityAttrs}>
+    <article class="part-root" data-tab-id="${part.instanceId}" data-definition-id="${part.definitionId}" data-part-id="${part.instanceId}" draggable="true" ${closeabilityAttrs}>
       <h2>${escapeHtml(part.title)}</h2>
       <div class="part-actions">
         ${popoutButton}
         ${restoreButton}
       </div>
       ${renderPartBody(part)}
-      <div class="dropzone" data-dropzone-for="${part.id}">Drop cross-window payload here</div>
-      <p class="runtime-note" data-drop-result-for="${part.id}"></p>
+      <div class="dropzone" data-dropzone-for="${part.instanceId}">Drop cross-window payload here</div>
+      <p class="runtime-note" data-drop-result-for="${part.instanceId}"></p>
       <p class="runtime-note">Window: ${runtime.windowId}</p>
     </article>
   `;
@@ -84,7 +88,7 @@ export function updateSelectedStyles(root: HTMLElement, selectedPartId: string |
 }
 
 export function resolvePartTitle(partId: string, runtime: ShellRuntime): string {
-  return getVisibleComposedParts(runtime).find((part) => part.id === partId)?.title ?? partId;
+  return getVisibleComposedParts(runtime).find((part) => part.instanceId === partId)?.title ?? partId;
 }
 
 export function renderTabStrip(
@@ -98,31 +102,33 @@ export function renderTabStrip(
   return `
     <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}">
       ${tabs.map((part) => {
-    const isActive = part.id === activeTabId;
-    const closeability = getTabCloseability(runtime.contextState, part.id);
+    const isActive = part.instanceId === activeTabId;
+    const closeability = getTabCloseability(runtime.contextState, part.instanceId);
     const closeButton = closeability.canClose
       ? `<button
             type="button"
             class="part-tab-close"
             data-action="close-tab"
-            data-tab-id="${part.id}"
+            data-tab-id="${part.instanceId}"
             aria-label="Close ${escapeHtml(part.title)} tab"
             aria-keyshortcuts="Control+W Meta+W"
             title="Close tab (Ctrl+W)"
           >×</button>`
       : "";
-    return `<div class="part-tab-item" data-tab-item="${part.id}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
+    return `<div class="part-tab-item" data-tab-item="${part.instanceId}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
         <button
           type="button"
           role="tab"
           class="part-tab${isActive ? " is-active" : ""}"
-          id="tab-${part.id}"
+          id="tab-${part.instanceId}"
           data-action="activate-tab"
           data-slot="${part.slot}"
-          data-part-id="${part.id}"
+          data-tab-id="${part.instanceId}"
+          data-part-id="${part.instanceId}"
+          data-part-definition-id="${part.definitionId}"
           data-part-title="${escapeHtml(part.title)}"
           aria-selected="${isActive ? "true" : "false"}"
-          aria-controls="panel-${part.id}"
+          aria-controls="panel-${part.instanceId}"
           tabindex="${isActive ? "0" : "-1"}"
         >${escapeHtml(part.title)}</button>
         ${closeButton}
@@ -148,10 +154,10 @@ export function isPartActivationNode(target: HTMLElement): target is HTMLButtonE
 }
 
 function renderPartBody(part: ComposedShellPart): string {
-  const componentLabel = part.component ?? part.id;
-  return `<section class="domain-panel" data-domain-panel="runtime-host" data-part-panel-for="${part.id}">
-      <section class="domain-panel-host" data-part-content-for="${part.id}"></section>
-      <section class="domain-panel-fallback" data-part-fallback-for="${part.id}">
+  const componentLabel = part.component ?? part.definitionId;
+  return `<section class="domain-panel" data-domain-panel="runtime-host" data-part-panel-for="${part.instanceId}">
+      <section class="domain-panel-host" data-part-content-for="${part.instanceId}"></section>
+      <section class="domain-panel-fallback" data-part-fallback-for="${part.instanceId}">
         <h3>${escapeHtml(part.title)}</h3>
         <p class="domain-hint">Component '${escapeHtml(componentLabel)}' is unavailable in this shell runtime.</p>
         <p class="domain-hint">Composition remains extension-driven; this host provides generic fallback rendering only.</p>

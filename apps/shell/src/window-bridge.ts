@@ -29,6 +29,7 @@ export interface ContextSyncEvent {
 
 export interface PopoutRestoreRequestEvent {
   type: "popout-restore-request";
+  tabId?: string;
   partId: string;
   hostWindowId: string;
   sourceWindowId: string;
@@ -241,11 +242,15 @@ function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
 
   if (event.type === "popout-restore-request") {
     if (
+      isOptionalString(event.tabId) &&
       typeof event.partId === "string" &&
       typeof event.hostWindowId === "string" &&
       typeof event.sourceWindowId === "string"
     ) {
-      return event as PopoutRestoreRequestEvent;
+      return {
+        ...event,
+        tabId: event.tabId ?? event.partId,
+      } as PopoutRestoreRequestEvent;
     }
     return null;
   }
