@@ -26,12 +26,14 @@ type PanelsHost = {
   unmount: () => void;
 };
 
+interface PanelsHostRootEntry { container: HTMLElement; root: Root; }
+
 export function createReactPanelsHost(
   rootNode: HTMLElement,
   runtime: ShellRuntime,
   bindings: PanelsHostBindings,
 ): PanelsHost {
-  const roots = new Map<string, Root>();
+  const roots = new Map<string, PanelsHostRootEntry>();
 
   const ensureRoot = (containerId: string): Root | null => {
     const container = rootNode.querySelector<HTMLElement>(`#${containerId}`);
@@ -40,13 +42,18 @@ export function createReactPanelsHost(
     }
 
     const existing = roots.get(containerId);
-    if (existing) {
-      return existing;
+    if (existing && existing.container === container) {
+      return existing.root;
     }
 
-    const created = createRoot(container);
-    roots.set(containerId, created);
-    return created;
+    if (existing && existing.container !== container) {
+      existing.root.unmount();
+      roots.delete(containerId);
+    }
+
+    const createdRoot = createRoot(container);
+    roots.set(containerId, { container, root: createdRoot });
+    return createdRoot;
   };
 
   return {
@@ -109,8 +116,8 @@ export function createReactPanelsHost(
       }
     },
     unmount() {
-      for (const root of roots.values()) {
-        root.unmount();
+      for (const entry of roots.values()) {
+        entry.root.unmount();
       }
       roots.clear();
     },

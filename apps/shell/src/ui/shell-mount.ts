@@ -1,4 +1,3 @@
-import { DEV_MODE } from "../app/constants.js";
 import type { ShellRuntime } from "../app/types.js";
 
 type MountDeps = {
@@ -13,8 +12,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     body { margin: 0; background: #14161a; color: #e9edf3; }
-    .shell { display: grid; grid-template-columns: minmax(240px, var(--side-size)) 6px 1fr; height: 100vh; }
-    .slot-side { border-right: 1px solid #2b3040; background: #181c24; min-width: 0; min-height: 0; overflow: auto; padding: 10px; }
+    .shell { display: grid; grid-template-columns: 1fr; height: 100vh; }
     .dock-root { background: #11151c; min-width: 0; min-height: 0; overflow: auto; padding: 10px 12px; }
     .dock-node { min-width: 0; min-height: 0; }
     .dock-node-stack { display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; border: 1px solid #2b3040; border-radius: 6px; background: #121922; overflow: hidden; }
@@ -83,13 +81,6 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     }
   </style>
   <main class="shell" id="shell-root">
-    <section class="slot-side" data-slot="side">
-      <section class="card" id="plugin-controls"></section>
-      <section class="card" id="sync-status"></section>
-      <section class="card" id="context-controls"></section>
-      ${DEV_MODE ? '<section class="card dev-inspector" id="dev-context-inspector"></section>' : ""}
-    </section>
-    <div class="splitter" id="splitter-side" data-pane="side" aria-label="Resize side pane"></div>
     <section class="dock-root" id="dock-tree-root" data-slot="main"></section>
   </main>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -135,9 +126,6 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
     }
   </style>
   <main class="popout">
-    <section class="card" id="sync-status"></section>
-    <section class="card" id="context-controls"></section>
-    ${DEV_MODE ? '<section class="card dev-inspector" id="dev-context-inspector"></section>' : ""}
     <section id="popout-slot"></section>
   </main>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>

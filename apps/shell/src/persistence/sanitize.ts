@@ -9,6 +9,7 @@ import type {
   ShellContextState,
 } from "../context-state.js";
 import { sanitizeDockTreeState } from "./sanitize-dock-tree.js";
+import { ensureRequiredUtilityTabs, isNonUtilityClosedHistoryEntry } from "../context-state/utility-tabs-sanitize.js";
 
 export function sanitizeContextState(input: unknown, fallback: ShellContextState): ShellContextState {
   if (!isRecord(input)) {
@@ -16,6 +17,7 @@ export function sanitizeContextState(input: unknown, fallback: ShellContextState
   }
   const groups = sanitizeGroups(input.groups, fallback.groups);
   const tabs = sanitizeTabs(input.tabs, fallback.tabs);
+  ensureRequiredUtilityTabs(tabs);
   const tabOrder = sanitizeTabOrder(input.tabOrder, tabs, fallback.tabOrder);
   const activeTabId = sanitizeActiveTabId(input.activeTabId, tabs, tabOrder, fallback.activeTabId);
   const dockTree = sanitizeDockTreeState(input.dockTree, tabs, tabOrder, activeTabId);
@@ -40,11 +42,9 @@ function sanitizeClosedTabHistoryBySlot(input: unknown): Record<ContextTabSlot, 
     secondary: [],
     side: [],
   };
-
   if (!isRecord(input)) {
     return fallback;
   }
-
   return {
     main: sanitizeClosedTabHistoryEntries(input.main),
     secondary: sanitizeClosedTabHistoryEntries(input.secondary),
@@ -57,6 +57,7 @@ function sanitizeClosedTabHistoryEntries(input: unknown): ClosedTabHistoryEntry[
     return [];
   }
   const sanitized = input
+    .filter((entry) => isNonUtilityClosedHistoryEntry(entry))
     .map((entry) => sanitizeClosedTabHistoryEntry(entry))
     .filter((entry): entry is ClosedTabHistoryEntry => entry !== null);
 
@@ -76,7 +77,6 @@ function sanitizeClosedTabHistoryEntry(input: unknown): ClosedTabHistoryEntry | 
   if (!isRecord(input)) {
     return null;
   }
-
   if (
     typeof input.tabId !== "string" || input.tabId.length === 0
     || typeof input.groupId !== "string" || input.groupId.length === 0
@@ -105,7 +105,6 @@ function sanitizeGroups(input: unknown, fallback: Record<string, ContextGroup>):
   if (!isRecord(input)) {
     return { ...fallback };
   }
-
   const next: Record<string, ContextGroup> = {};
   for (const [key, raw] of Object.entries(input)) {
     if (!isRecord(raw)) {
@@ -126,7 +125,6 @@ function sanitizeTabs(
   if (!isRecord(input)) {
     return { ...fallback };
   }
-
   const next: Record<string, ContextTab> = {};
   for (const [key, raw] of Object.entries(input)) {
     if (!isRecord(raw)) {
@@ -220,7 +218,6 @@ function sanitizeLaneMap(
   if (!isRecord(input)) {
     return { ...fallback };
   }
-
   const next: Record<string, ContextLaneValue> = {};
   for (const [key, raw] of Object.entries(input)) {
     const lane = sanitizeLaneValue(raw);
@@ -303,7 +300,6 @@ function sanitizeSelection(input: unknown): EntityTypeSelection | null {
   if (!isRecord(input) || !Array.isArray(input.selectedIds)) {
     return null;
   }
-
   const selectedIds = normalizeIds(input.selectedIds);
   const rawPriority = typeof input.priorityId === "string" ? input.priorityId : null;
   const priorityId = rawPriority && selectedIds.includes(rawPriority)
@@ -331,19 +327,12 @@ function cloneNestedLaneMap(
 ): Record<string, Record<string, ContextLaneValue>> {
   return Object.fromEntries(Object.entries(input).map(([key, value]) => [key, { ...value }]));
 }
-
 function cloneSelectionMap(input: Record<string, EntityTypeSelection>): Record<string, EntityTypeSelection> {
-  return Object.fromEntries(
-    Object.entries(input).map(([entityType, selection]) => [
-      entityType,
-      {
-        selectedIds: [...selection.selectedIds],
-        priorityId: selection.priorityId,
-      },
-    ]),
-  );
+  return Object.fromEntries(Object.entries(input).map(([entityType, selection]) => [entityType, {
+    selectedIds: [...selection.selectedIds],
+    priorityId: selection.priorityId,
+  }]));
 }
-
 function isRecord(input: unknown): input is Record<string, unknown> {
   return Boolean(input) && typeof input === "object";
 }

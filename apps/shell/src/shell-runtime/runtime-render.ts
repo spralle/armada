@@ -11,6 +11,7 @@ import { createReactPanelsHost } from "../ui/react/panels-host.js";
 import { getVisibleComposedParts } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
+import { isUtilityTabId } from "../utility-tabs.js";
 
 type ReactPanelsHost = ReturnType<typeof createReactPanelsHost>;
 
@@ -109,7 +110,9 @@ export function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, bindings: RuntimeRenderBindings): void {
   void bindings.primeEnabledPluginActivations();
   const visibleParts = getVisibleComposedParts(runtime);
-  runtime.closeableTabIds = new Set(visibleParts.map((part) => part.id));
+  runtime.closeableTabIds = new Set(visibleParts
+    .filter((part) => !isUtilityTabId(part.id))
+    .map((part) => part.id));
   updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
   reconcileActiveTab(runtime);
   renderPartsView(root, runtime, {

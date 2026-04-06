@@ -26,6 +26,7 @@ import {
 import type { ShellRuntime } from "./app/types.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 import { renderTabStrip } from "./ui/parts-rendering.js";
+import { isUtilityTabId } from "./utility-tabs.js";
 
 export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
@@ -291,6 +292,32 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
     assertEqual(reopened.tabs["tab-c"]?.groupId, "group-main", "reopen should restore tab group");
     assertEqual(reopened.activeTabId, "tab-c", "reopen should deterministically activate restored tab");
     assertEqual(reopened.tabOrder.join(","), "tab-a,tab-b,tab-c", "reopen should restore deterministic order index");
+  });
+
+  test("utility tabs remain fixed and excluded from reopen eligibility", () => {
+    const state = {
+      ...createInitialShellContextState({ initialTabId: "utility.plugins", initialGroupId: "group-main" }),
+      closedTabHistoryBySlot: {
+        main: [
+          {
+            tabId: "utility.plugins",
+            groupId: "group-main",
+            label: "Plugins",
+            closePolicy: "fixed" as const,
+            slot: "main" as const,
+            orderIndex: 0,
+          },
+        ],
+        secondary: [],
+        side: [],
+      },
+    };
+
+    assertEqual(isUtilityTabId("utility.plugins"), true, "utility tab id should be recognized");
+    assertEqual(canReopenClosedTab(state, "main"), false, "utility tabs should not contribute reopen eligibility");
+    const reopened = reopenMostRecentlyClosedTab(state, "main");
+    assertEqual(reopened.tabs["utility.plugins"]?.closePolicy, "fixed", "utility tabs should remain fixed after reopen attempt");
+    assertEqual(reopened.closedTabHistoryBySlot.main.length, 0, "utility-only history should be drained without restoring tabs");
   });
 
   test("reopen drops invalid payloads from bounded history gracefully", () => {

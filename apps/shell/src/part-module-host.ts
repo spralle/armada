@@ -4,6 +4,7 @@ import {
   type ShellFederationRuntime,
 } from "./federation-runtime.js";
 import type { ComposedShellPart } from "./ui/parts-rendering.js";
+import { isUtilityTabId } from "./utility-tabs.js";
 
 type PartMountCleanup = (() => void) | { unmount?: () => void } | void;
 
@@ -57,6 +58,10 @@ export function createPartModuleHostRuntime(
 
       const mountPromises: Promise<void>[] = [];
       for (const part of parts) {
+        if (isUtilityTabId(part.id)) {
+          continue;
+        }
+
         const target = contentTargets.get(part.id);
         if (!target) {
           continue;

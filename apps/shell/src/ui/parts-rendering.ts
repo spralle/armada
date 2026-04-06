@@ -1,8 +1,10 @@
 import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
+import { DEV_MODE } from "../app/constants.js";
 import { escapeHtml } from "../app/utils.js";
 import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
+import { listAvailableUtilityTabs, resolveUtilityTabById } from "../utility-tabs.js";
 
 export interface ComposedShellPart {
   id: string;
@@ -60,7 +62,19 @@ function resolveSlotFromDockContainer(container: string | undefined): PartSlot {
 }
 
 export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPart[] {
-  return composePartsFromRegistrySnapshot(runtime.registry.getSnapshot());
+  const pluginParts = composePartsFromRegistrySnapshot(runtime.registry.getSnapshot());
+  const utilityParts = composeUtilityParts();
+  return [...utilityParts, ...pluginParts];
+}
+
+function composeUtilityParts(): ComposedShellPart[] {
+  return listAvailableUtilityTabs({ devMode: DEV_MODE })
+    .map((tab) => ({
+      id: tab.id,
+      title: tab.title,
+      slot: tab.slot,
+      pluginId: "shell.utility",
+    }));
 }
 
 export function renderPartCard(
@@ -286,6 +300,14 @@ function resolveStackActiveTabId(
 }
 
 function renderPartBody(part: ComposedShellPart): string {
+  const utilityTab = resolveUtilityTabById(part.id);
+  if (utilityTab) {
+    return `<section class="domain-panel" data-domain-panel="utility-host" data-part-panel-for="${part.id}">
+      <section class="domain-panel-host" id="${utilityTab.panelHostId}" data-part-content-for="${part.id}"></section>
+      <section class="domain-panel-fallback" data-part-fallback-for="${part.id}" hidden></section>
+    </section>`;
+  }
+
   const componentLabel = part.component ?? part.id;
   return `<section class="domain-panel" data-domain-panel="runtime-host" data-part-panel-for="${part.id}">
       <section class="domain-panel-host" data-part-content-for="${part.id}"></section>
