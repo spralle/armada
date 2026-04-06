@@ -16,7 +16,7 @@ export interface ComposedPluginPartContribution {
   id: string;
   title: string;
   slot: "main" | "secondary" | "side";
-  component: string;
+  component?: string | undefined;
 }
 
 export interface ComposedPluginContributions {
