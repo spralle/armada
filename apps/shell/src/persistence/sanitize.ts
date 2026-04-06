@@ -8,22 +8,24 @@ import type {
   RevisionMeta,
   ShellContextState,
 } from "../context-state.js";
+import { sanitizeDockTreeState } from "./sanitize-dock-tree.js";
 
 export function sanitizeContextState(input: unknown, fallback: ShellContextState): ShellContextState {
   if (!isRecord(input)) {
     return fallback;
   }
-
   const groups = sanitizeGroups(input.groups, fallback.groups);
   const tabs = sanitizeTabs(input.tabs, fallback.tabs);
   const tabOrder = sanitizeTabOrder(input.tabOrder, tabs, fallback.tabOrder);
   const activeTabId = sanitizeActiveTabId(input.activeTabId, tabs, tabOrder, fallback.activeTabId);
+  const dockTree = sanitizeDockTreeState(input.dockTree, tabs, tabOrder, activeTabId);
 
   return {
     groups,
     tabs,
     tabOrder,
     activeTabId,
+    dockTree,
     closedTabHistoryBySlot: sanitizeClosedTabHistoryBySlot(input.closedTabHistoryBySlot),
     globalLanes: sanitizeLaneMap(input.globalLanes, fallback.globalLanes),
     groupLanes: sanitizeNestedLaneMap(input.groupLanes, fallback.groupLanes),
@@ -54,7 +56,6 @@ function sanitizeClosedTabHistoryEntries(input: unknown): ClosedTabHistoryEntry[
   if (!Array.isArray(input)) {
     return [];
   }
-
   const sanitized = input
     .map((entry) => sanitizeClosedTabHistoryEntry(entry))
     .filter((entry): entry is ClosedTabHistoryEntry => entry !== null);

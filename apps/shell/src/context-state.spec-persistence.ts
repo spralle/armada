@@ -8,6 +8,7 @@ import {
 } from "./persistence.js";
 import { sanitizeContextState } from "./persistence/sanitize.js";
 import {
+  moveTabInDockTree,
   createInitialShellContextState,
   registerTab,
   setEntityTypeSelection,
@@ -93,6 +94,7 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
     );
     assertEqual(loaded.state.tabs["tab-b"]?.label, "tab-b", "tab label should sanitize with deterministic default");
     assertEqual(loaded.state.tabs["tab-b"]?.closePolicy, "fixed", "tab close policy should default to fixed");
+    assertEqual(loaded.state.dockTree.root?.kind, "stack", "default dock tree should persist for restored context");
   });
 
   test("context persistence migrates v1 envelope to current schema", () => {
@@ -140,6 +142,7 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
     );
     assertEqual(loaded.state.tabs["tab-main"]?.label, "Main", "legacy name should migrate into tab label");
     assertEqual(loaded.state.tabs["tab-main"]?.closePolicy, "fixed", "legacy tabs should default to fixed close policy");
+    assertEqual(loaded.state.dockTree.root?.kind, "stack", "legacy payload should synthesize fallback dock tree");
   });
 
   test("context persistence keeps explicit closeable tabs and normalizes active-tab invariants", () => {
@@ -199,6 +202,46 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
       "tab-c",
       "closed tab history entry should retain restorable tab metadata",
     );
+    assertEqual(loaded.state.dockTree.root?.kind, "stack", "missing dock tree should sanitize to deterministic stack");
+  });
+
+  test("sanitizeContextState repairs dock tree and preserves persisted nested splits", () => {
+    let base = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    base = registerTab(base, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+    base = registerTab(base, { tabId: "tab-c", groupId: "group-main", closePolicy: "closeable" });
+    base = moveTabInDockTree(base, { tabId: "tab-b", targetTabId: "tab-a", zone: "right" });
+    base = moveTabInDockTree(base, { tabId: "tab-c", targetTabId: "tab-b", zone: "bottom" });
+
+    const preserved = sanitizeContextState(base, createInitialShellContextState({ initialTabId: "fallback-tab" }));
+    assertEqual(preserved.dockTree.root?.kind, "split", "valid nested dock tree should be preserved by sanitizer");
+
+    const repaired = sanitizeContextState({
+      ...base,
+      dockTree: {
+        root: {
+          kind: "split",
+          id: "broken",
+          orientation: "vertical",
+          first: {
+            kind: "stack",
+            id: "stack-broken",
+            tabIds: ["missing-tab"],
+            activeTabId: "missing-tab",
+          },
+          second: {
+            kind: "stack",
+            id: "stack-a",
+            tabIds: ["tab-a"],
+            activeTabId: "tab-a",
+          },
+        },
+      },
+    }, createInitialShellContextState({ initialTabId: "fallback-tab" }));
+
+    assertEqual(repaired.dockTree.root?.kind, "stack", "invalid dock nodes should collapse to valid structure");
+    if (repaired.dockTree.root?.kind === "stack") {
+      assertEqual(repaired.dockTree.root.tabIds.join(","), "tab-a,tab-b,tab-c", "sanitizer should ensure all valid tabs are reachable in dock tree");
+    }
   });
 
   test("sanitizeContextState drops invalid closed-tab restore payloads safely", () => {

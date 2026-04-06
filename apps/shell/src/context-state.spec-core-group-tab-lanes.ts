@@ -1,4 +1,5 @@
 import {
+  createInitialDockTree,
   canReopenClosedTab,
   closeTab,
   closeTabIfAllowed,
@@ -316,6 +317,7 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
         secondary: [],
         side: [],
       },
+      dockTree: createInitialDockTree("tab-a"),
     };
 
     const reopened = reopenMostRecentlyClosedTab(state, "main");
