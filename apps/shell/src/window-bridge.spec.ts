@@ -216,10 +216,22 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
       sourceWindowId: "popout-window",
     });
 
-    assertEqual(events.length, 3, "expected invalid restore payload to be ignored");
+    channel!.emit("message", {
+      type: "tab-close",
+      tabId: "tab-a",
+      sourceWindowId: "window-b",
+    });
+
+    channel!.emit("message", {
+      type: "tab-close",
+      sourceWindowId: "window-b",
+    });
+
+    assertEqual(events.length, 4, "expected invalid restore/close payloads to be ignored");
     assertEqual(events[0], "context", "tab-scoped context should parse");
     assertEqual(events[1], "context", "group-scoped context should parse");
     assertEqual(events[2], "popout-restore-request", "popout restore payload should parse");
+    assertEqual(events[3], "tab-close", "tab-close payload should parse");
   } finally {
     (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
   }

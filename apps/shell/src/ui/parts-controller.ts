@@ -31,6 +31,12 @@ type PartsControllerDeps = {
   renderSyncStatus: () => void;
 };
 
+interface CloseTabRuntimeOptions {
+  publishCloseEvent?: boolean;
+  publishSelectionEvent?: boolean;
+  sourceWindowId?: string;
+}
+
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
   const visibleParts = getVisibleComposedParts(runtime);
 
@@ -152,6 +158,85 @@ export function startPopoutWatchdog(root: HTMLElement, runtime: ShellRuntime, de
   }, 1_000);
 }
 
+export function closeTabThroughRuntime(
+  runtime: ShellRuntime,
+  tabId: string,
+  deps: PartsControllerDeps,
+  options?: CloseTabRuntimeOptions,
+): boolean {
+  if (runtime.syncDegraded) {
+    return false;
+  }
+
+  if (!runtime.contextState.tabs[tabId]) {
+    return false;
+  }
+
+  const closeability = getTabCloseability(runtime.contextState, tabId);
+  const canClose = closeability.canClose || runtime.closeableTabIds.has(tabId);
+  if (!canClose) {
+    return false;
+  }
+
+  const pendingFocusSelector = closeTabFromUi(runtime, tabId);
+  if (runtime.contextState.tabs[tabId]) {
+    return false;
+  }
+  cleanupPopoutForClosedTab(tabId, runtime);
+
+  const activeTabId = reconcileActiveTab(runtime);
+  const sourceWindowId = options?.sourceWindowId ?? runtime.windowId;
+  const publishCloseEvent = options?.publishCloseEvent ?? true;
+  const publishSelectionEvent = options?.publishSelectionEvent ?? true;
+
+  if (publishCloseEvent) {
+    deps.publishWithDegrade({
+      type: "tab-close",
+      tabId,
+      sourceWindowId,
+    });
+  }
+
+  if (activeTabId) {
+    const selectedPartTitle = resolvePartTitle(activeTabId, runtime);
+    const selectionByEntityType = buildSelectionByEntityType(runtime);
+    const revision = createRevision(sourceWindowId);
+
+    deps.applySelection({
+      type: "selection",
+      selectedPartId: activeTabId,
+      selectedPartTitle,
+      selectionByEntityType,
+      revision,
+      sourceWindowId,
+    });
+
+    if (publishSelectionEvent) {
+      deps.publishWithDegrade({
+        type: "selection",
+        selectedPartId: activeTabId,
+        selectedPartTitle,
+        selectionByEntityType,
+        revision,
+        sourceWindowId,
+      });
+    }
+
+    writeGlobalSelectionLane(runtime, {
+      selectedPartId: activeTabId,
+      selectedPartTitle,
+      revision,
+    });
+  }
+
+  runtime.pendingFocusSelector = pendingFocusSelector;
+
+  deps.renderContextControls();
+  deps.renderParts();
+  deps.renderSyncStatus();
+  return true;
+}
+
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='activate-tab']")) {
     button.addEventListener("click", () => {
@@ -233,7 +318,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
     });
   }
 
-  // Close action handlers are wired for closeable shell tabs.
+  // Phase 2: close intents run through runtime lifecycle wiring.
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='close-tab']")) {
     button.addEventListener("click", () => {
       if (runtime.syncDegraded) {
@@ -245,16 +330,7 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         return;
       }
 
-      const closeability = getTabCloseability(runtime.contextState, tabId);
-      if (!closeability.canClose) {
-        return;
-      }
-
-      closeTabFromUi(runtime, tabId);
-
-      deps.renderParts();
-      deps.renderContextControls();
-      deps.renderSyncStatus();
+      closeTabThroughRuntime(runtime, tabId, deps);
     });
   }
 }
@@ -266,6 +342,15 @@ export function closeTabFromUi(runtime: ShellRuntime, tabId: string): string | n
     ? `button[data-action='activate-tab'][data-part-id='${resolvedActiveTabId}']`
     : null;
   return runtime.pendingFocusSelector;
+}
+
+function cleanupPopoutForClosedTab(tabId: string, runtime: ShellRuntime): void {
+  runtime.poppedOutPartIds.delete(tabId);
+  const popoutHandle = runtime.popoutHandles.get(tabId);
+  if (popoutHandle && !popoutHandle.closed) {
+    popoutHandle.close();
+  }
+  runtime.popoutHandles.delete(tabId);
 }
 
 function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {

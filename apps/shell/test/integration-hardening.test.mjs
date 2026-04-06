@@ -9,6 +9,8 @@ import {
 } from "../dist/command-runtime.js";
 import { createActivationRuntime } from "../dist/activation-runtime.js";
 import { bootstrapShellWithTenantManifest } from "../dist/app/bootstrap.js";
+import { closeTabThroughRuntime } from "../dist/ui/parts-controller.js";
+import { createInitialShellContextState, registerTab } from "../dist/context-state.js";
 
 const DOMAIN_UNPLANNED = {
   id: "com.armada.domain.unplanned-orders",
@@ -289,4 +291,144 @@ test("shell bootstrap keeps integration mode when non-loopback plugin entries ex
     state.registry.getSnapshot().plugins.map((plugin) => plugin.id).sort(),
     [DOMAIN_UNPLANNED.id, DOMAIN_VESSEL.id],
   );
+});
+
+function createCloseRuntimeFixture() {
+  let contextState = createInitialShellContextState({
+    initialTabId: "tab-a",
+    initialGroupId: "group-main",
+    initialGroupColor: "blue",
+  });
+  contextState = registerTab(contextState, {
+    tabId: "tab-b",
+    groupId: "group-main",
+    tabLabel: "Orders",
+  });
+  contextState = registerTab(contextState, {
+    tabId: "tab-c",
+    groupId: "group-main",
+    tabLabel: "Vessels",
+  });
+
+  const runtime = {
+    syncDegraded: false,
+    windowId: "window-a",
+    closeableTabIds: new Set(["tab-a", "tab-b", "tab-c"]),
+    contextState,
+    selectedPartId: "tab-a",
+    selectedPartTitle: "tab-a",
+    poppedOutPartIds: new Set(),
+    popoutHandles: new Map(),
+    registry: {
+      getSnapshot() {
+        return {
+          plugins: [
+            {
+              id: "com.armada.integration.parts",
+              enabled: true,
+              contract: {
+                manifest: {
+                  id: "com.armada.integration.parts",
+                  name: "Integration Parts",
+                  version: "0.1.0",
+                },
+                contributes: {
+                  parts: [
+                    { id: "tab-a", title: "tab-a", slot: "main", component: "a" },
+                    { id: "tab-b", title: "Orders", slot: "main", component: "b" },
+                    { id: "tab-c", title: "Vessels", slot: "main", component: "c" },
+                  ],
+                },
+              },
+            },
+          ],
+        };
+      },
+    },
+    contextPersistence: {
+      save(nextState) {
+        runtime.contextState = nextState;
+        return { warning: null };
+      },
+    },
+    notice: "",
+    syncDegradedReason: null,
+    pendingProbeId: null,
+  };
+
+  const published = [];
+  const deps = {
+    applySelection(event) {
+      runtime.selectedPartId = event.selectedPartId;
+      runtime.selectedPartTitle = event.selectedPartTitle;
+    },
+    publishWithDegrade(event) {
+      published.push(event);
+    },
+    renderContextControls() {},
+    renderParts() {},
+    renderSyncStatus() {},
+  };
+
+  return {
+    runtime,
+    deps,
+    published,
+  };
+}
+
+test("runtime close flow reconciles active selection and popout handles", () => {
+  const fixture = createCloseRuntimeFixture();
+  const { runtime, deps, published } = fixture;
+
+  runtime.selectedPartId = "tab-b";
+  runtime.selectedPartTitle = "Orders";
+  runtime.contextState.activeTabId = "tab-b";
+  runtime.poppedOutPartIds.add("tab-b");
+  runtime.popoutHandles.set("tab-b", {
+    closed: false,
+    close() {
+      this.closed = true;
+    },
+  });
+
+  const closed = closeTabThroughRuntime(runtime, "tab-b", deps);
+  assert.equal(closed, true);
+  assert.equal(runtime.contextState.tabs["tab-b"], undefined);
+  assert.equal(runtime.poppedOutPartIds.has("tab-b"), false);
+  assert.equal(runtime.popoutHandles.has("tab-b"), false);
+  assert.equal(runtime.selectedPartId, "tab-a");
+
+  assert.equal(published[0]?.type, "tab-close");
+  assert.equal(published[0]?.tabId, "tab-b");
+  assert.equal(published[1]?.type, "selection");
+  assert.equal(published[1]?.selectedPartId, "tab-a");
+});
+
+test("runtime close flow supports hidden tab close without stealing active tab", () => {
+  const fixture = createCloseRuntimeFixture();
+  const { runtime, deps, published } = fixture;
+
+  runtime.selectedPartId = "tab-a";
+  runtime.selectedPartTitle = "tab-a";
+  runtime.contextState.activeTabId = "tab-a";
+
+  const closed = closeTabThroughRuntime(runtime, "tab-c", deps);
+  assert.equal(closed, true);
+  assert.equal(runtime.contextState.tabs["tab-c"], undefined);
+  assert.equal(runtime.selectedPartId, "tab-a");
+  assert.equal(runtime.contextState.activeTabId, "tab-a");
+  assert.equal(published[0]?.type, "tab-close");
+  assert.equal(published[0]?.tabId, "tab-c");
+});
+
+test("runtime close flow is blocked in degraded mode", () => {
+  const fixture = createCloseRuntimeFixture();
+  const { runtime, deps, published } = fixture;
+  runtime.syncDegraded = true;
+
+  const closed = closeTabThroughRuntime(runtime, "tab-b", deps);
+  assert.equal(closed, false);
+  assert.notEqual(runtime.contextState.tabs["tab-b"], undefined);
+  assert.equal(published.length, 0);
 });
