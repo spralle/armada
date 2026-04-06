@@ -1,10 +1,19 @@
 import { cloneContextState, ensureGroup } from "./helpers.js";
 import {
+  applyDockTabDrop,
+  activateTabInDockTree,
+  deriveDeterministicActiveTabId,
+  ensureTabRegisteredInDockTree,
+  removeTabFromDockTree,
+} from "./dock-tree.js";
+import type { DockDropZone } from "./dock-tree-types.js";
+import {
   ContextTabCloseability,
   ContextTabSlot,
   ClosedTabHistoryEntry,
   ShellContextState,
 } from "./types.js";
+import type { DockNode } from "./dock-tree-types.js";
 
 const CLOSED_TAB_HISTORY_LIMIT = 10;
 
@@ -54,8 +63,10 @@ export function registerTab(
   if (!next.tabOrder.includes(input.tabId)) {
     next.tabOrder.push(input.tabId);
   }
+  next.dockTree = ensureTabRegisteredInDockTree(next.dockTree, input.tabId);
+
   if (!next.activeTabId) {
-    next.activeTabId = input.tabId;
+    next.activeTabId = deriveDeterministicActiveTabId(next.dockTree) ?? input.tabId;
   }
   return next;
 }
@@ -67,8 +78,37 @@ export function setActiveTab(state: ShellContextState, tabId: string): ShellCont
 
   return {
     ...state,
+    dockTree: activateTabInDockTree(state.dockTree, tabId),
     activeTabId: tabId,
   };
+}
+
+export function moveTabInDockTree(
+  state: ShellContextState,
+  input: {
+    tabId: string;
+    targetTabId: string;
+    zone: DockDropZone;
+  },
+): ShellContextState {
+  if (!state.tabs[input.tabId] || !state.tabs[input.targetTabId]) {
+    return state;
+  }
+
+  const next = cloneContextState(state);
+  next.dockTree = applyDockTabDrop(next.dockTree, input);
+  next.tabOrder = next.tabOrder.filter((tabId) => next.tabs[tabId]);
+  for (const stackTabId of collectDockTreeTabIds(next.dockTree.root)) {
+    if (!next.tabOrder.includes(stackTabId) && next.tabs[stackTabId]) {
+      next.tabOrder.push(stackTabId);
+    }
+  }
+  next.activeTabId = next.tabs[input.tabId]
+    ? input.tabId
+    : deriveDeterministicActiveTabId(next.dockTree)
+      ?? next.tabOrder[0]
+      ?? null;
+  return next;
 }
 
 export function moveTabToGroup(
@@ -102,6 +142,7 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
   delete next.tabs[tabId];
   next.tabOrder = orderedTabIds.filter((id) => id !== tabId && next.tabs[id]);
   delete next.subcontextsByTab[tabId];
+  next.dockTree = removeTabFromDockTree(next.dockTree, tabId);
 
   if (next.activeTabId === tabId) {
     const rightCandidate = orderedTabIds
@@ -117,6 +158,12 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
     }
   } else if (next.activeTabId && !next.tabs[next.activeTabId]) {
     next.activeTabId = next.tabOrder[0] ?? null;
+  }
+
+  if (!next.activeTabId || !next.tabs[next.activeTabId]) {
+    next.activeTabId = deriveDeterministicActiveTabId(next.dockTree)
+      ?? next.tabOrder[0]
+      ?? null;
   }
 
   return next;
@@ -259,4 +306,16 @@ export function closeTabIfAllowedWithHistory(
 
 export function getTabGroupId(state: ShellContextState, tabId: string): string | null {
   return state.tabs[tabId]?.groupId ?? null;
+}
+
+function collectDockTreeTabIds(root: DockNode | null): string[] {
+  if (!root) {
+    return [];
+  }
+
+  if (root.kind === "stack") {
+    return [...root.tabIds];
+  }
+
+  return [...collectDockTreeTabIds(root.first), ...collectDockTreeTabIds(root.second)];
 }

@@ -1,4 +1,5 @@
 import { ShellContextState } from "./types.js";
+import { createInitialDockTree } from "./dock-tree.js";
 
 const EMPTY_CLOSED_HISTORY = {
   main: [],
@@ -32,6 +33,7 @@ export function createInitialShellContextState(options?: {
     },
     tabOrder: [initialTabId],
     activeTabId: initialTabId,
+    dockTree: createInitialDockTree(initialTabId),
     closedTabHistoryBySlot: {
       main: [...EMPTY_CLOSED_HISTORY.main],
       secondary: [...EMPTY_CLOSED_HISTORY.secondary],

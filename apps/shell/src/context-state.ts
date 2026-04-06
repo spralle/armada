@@ -9,13 +9,35 @@ export {
   ClosedTabHistoryEntry,
   DerivedLaneDefinition,
   EntityTypeSelection,
+  PanelId,
   RevisionMeta,
   SelectionPropagationRule,
   SelectionUpdateOptions,
   SelectionUpdateResult,
   SelectionWriteInput,
   ShellContextState,
+  TabInstanceId,
 } from "./context-state/types.js";
+
+export type {
+  DockDropZone,
+  DockNode,
+  DockOrientation,
+  DockSplitNode,
+  DockStackNode,
+  DockTabDropInput,
+  DockTreeState,
+} from "./context-state/dock-tree-types.js";
+
+export {
+  applyDockTabDrop,
+  activateTabInDockTree,
+  createInitialDockTree,
+  deriveDeterministicActiveTabId,
+  ensureTabRegisteredInDockTree,
+  moveTabWithinDockTree,
+  removeTabFromDockTree,
+} from "./context-state/dock-tree.js";
 
 export { createInitialShellContextState } from "./context-state/state.js";
 
@@ -38,6 +60,7 @@ export {
   canReopenClosedTab,
   getTabCloseability,
   getTabGroupId,
+  moveTabInDockTree,
   moveTabToGroup,
   reopenMostRecentlyClosedTab,
   registerTab,

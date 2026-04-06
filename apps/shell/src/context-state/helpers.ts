@@ -1,4 +1,5 @@
 import { EntityTypeSelection, RevisionMeta, ShellContextState } from "./types.js";
+import { cloneDockTree } from "./dock-tree.js";
 
 export function cloneContextState(state: ShellContextState): ShellContextState {
   const nextGroupLanes: ShellContextState["groupLanes"] = {};
@@ -25,6 +26,7 @@ export function cloneContextState(state: ShellContextState): ShellContextState {
     tabs: { ...state.tabs },
     tabOrder: [...state.tabOrder],
     activeTabId: state.activeTabId,
+    dockTree: cloneDockTree(state.dockTree),
     closedTabHistoryBySlot: {
       main: [...state.closedTabHistoryBySlot.main],
       secondary: [...state.closedTabHistoryBySlot.secondary],
