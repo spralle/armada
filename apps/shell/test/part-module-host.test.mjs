@@ -17,7 +17,18 @@ function createRoot(parts) {
     });
   }
 
+  const dockTreeRoot = {
+    dataset: {},
+    innerHTML: "",
+  };
+
   return {
+    querySelector(selector) {
+      if (selector === "#dock-tree-root") {
+        return dockTreeRoot;
+      }
+      return null;
+    },
     querySelectorAll(selector) {
       if (selector === "[data-part-content-for]") {
         return content;
@@ -28,6 +39,7 @@ function createRoot(parts) {
       return [];
     },
     content,
+    dockTreeRoot,
     fallback,
   };
 }

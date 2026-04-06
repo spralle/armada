@@ -9,7 +9,6 @@ import {
   resolveDegradedKeyboardInteraction,
   resolveTabLifecycleShortcut,
 } from "../keyboard-a11y.js";
-import { isPartActivationNode } from "../ui/parts-rendering.js";
 import {
   closeTabThroughRuntime,
   reopenMostRecentlyClosedTabThroughRuntime,
@@ -126,13 +125,14 @@ export function bindKeyboardShortcuts(
         || event.key === "ArrowUp"
         || event.key === "ArrowLeft"
         || event.key === "ArrowRight")
-      && isPartActivationNode(target)
+      && isTabScopeNavigationNode(target)
     ) {
-      const slot = target.dataset.slot;
-      const selector = slot
-        ? `[data-action='${target.dataset.action ?? ""}'][data-slot='${slot}']`
-        : `[data-action='${target.dataset.action ?? ""}']`;
-      const nodes = [...root.querySelectorAll<HTMLElement>(selector)];
+      const tabScope = target.dataset.tabScope;
+      const nodes = tabScope
+        ? [...root.querySelectorAll<HTMLButtonElement>(`button[data-tab-scope='${tabScope}'][data-action]`)]
+          .filter(isTabScopeNavigationNode)
+          .filter((node) => !node.disabled)
+        : [];
       const index = nodes.indexOf(target);
       if (index < 0 || nodes.length <= 1) {
         return;
@@ -208,4 +208,20 @@ function handleChooserKeyboardEvent(
 
   bindings.dismissIntentChooser();
   return true;
+}
+
+const TAB_SCOPE_NAVIGATION_ACTIONS = new Set([
+  "activate-tab",
+  "drag-tab-handle",
+  "close-tab",
+  "reopen-closed-tab",
+]);
+
+function isTabScopeNavigationNode(target: HTMLElement): target is HTMLButtonElement {
+  const tabScope = target.dataset.tabScope;
+  const action = target.dataset.action;
+  const isKnownAction = typeof action === "string" && TAB_SCOPE_NAVIGATION_ACTIONS.has(action);
+  return target instanceof HTMLButtonElement
+    && Boolean(tabScope)
+    && isKnownAction;
 }

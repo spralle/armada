@@ -10,6 +10,7 @@ import {
 import { createActivationRuntime } from "../dist/activation-runtime.js";
 import { bootstrapShellWithTenantManifest } from "../dist/app/bootstrap.js";
 import { closeTabThroughRuntime } from "../dist/ui/parts-controller.js";
+import { renderDockTree } from "../dist/ui/parts-rendering.js";
 import { createInitialShellContextState, registerTab } from "../dist/context-state.js";
 
 const DOMAIN_UNPLANNED = {
@@ -431,4 +432,68 @@ test("runtime close flow is blocked in degraded mode", () => {
   assert.equal(closed, false);
   assert.notEqual(runtime.contextState.tabs["tab-b"], undefined);
   assert.equal(published.length, 0);
+});
+
+test("recursive dock-tree renderer emits nested stacks with local tab scopes", () => {
+  let contextState = createInitialShellContextState({
+    initialTabId: "tab-a",
+    initialGroupId: "group-main",
+  });
+  contextState = registerTab(contextState, { tabId: "tab-b", groupId: "group-main", tabLabel: "Orders" });
+  contextState = registerTab(contextState, { tabId: "tab-c", groupId: "group-main", tabLabel: "Vessels" });
+  contextState = registerTab(contextState, { tabId: "tab-d", groupId: "group-main", tabLabel: "Ports" });
+  contextState = {
+    ...contextState,
+    dockTree: {
+      root: {
+        kind: "split",
+        id: "split-1",
+        orientation: "horizontal",
+        first: {
+          kind: "stack",
+          id: "stack-left",
+          tabIds: ["tab-a", "tab-b"],
+          activeTabId: "tab-b",
+        },
+        second: {
+          kind: "split",
+          id: "split-2",
+          orientation: "vertical",
+          first: {
+            kind: "stack",
+            id: "stack-top-right",
+            tabIds: ["tab-c"],
+            activeTabId: "tab-c",
+          },
+          second: {
+            kind: "stack",
+            id: "stack-bottom-right",
+            tabIds: ["tab-d"],
+            activeTabId: "tab-d",
+          },
+        },
+      },
+    },
+  };
+
+  const visibleParts = [
+    { id: "tab-a", title: "tab-a", slot: "main", pluginId: "plugin-a" },
+    { id: "tab-b", title: "Orders", slot: "main", pluginId: "plugin-a" },
+    { id: "tab-c", title: "Vessels", slot: "main", pluginId: "plugin-a" },
+    { id: "tab-d", title: "Ports", slot: "main", pluginId: "plugin-a" },
+  ];
+
+  const runtime = {
+    selectedPartId: "tab-b",
+    contextState,
+    syncDegraded: false,
+    windowId: "window-a",
+  };
+
+  const html = renderDockTree(contextState.dockTree.root, visibleParts, runtime);
+  assert.match(html, /dock-node-split-horizontal/, "root split should render horizontal class");
+  assert.match(html, /dock-node-split-vertical/, "nested split should render vertical class");
+  assert.match(html, /data-tab-scope=\"stack:stack-left\"/, "left stack should render local tab scope");
+  assert.match(html, /data-tab-scope=\"stack:stack-top-right\"/, "top-right stack should render local tab scope");
+  assert.match(html, /data-tab-scope=\"stack:stack-bottom-right\"/, "bottom-right stack should render local tab scope");
 });

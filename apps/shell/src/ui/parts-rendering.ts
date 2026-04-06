@@ -1,6 +1,7 @@
 import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
 import { escapeHtml } from "../app/utils.js";
+import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
 
 export interface ComposedShellPart {
@@ -115,11 +116,16 @@ export function renderTabStrip(
   tabs: ComposedShellPart[],
   activeTabId: string,
   runtime: ShellRuntime,
+  options?: {
+    tabScope?: string;
+    label?: string;
+  },
 ): string {
-  const label = `${slot} panel tabs`;
+  const label = options?.label ?? `${slot} panel tabs`;
+  const tabScope = options?.tabScope ?? `slot:${slot}`;
   const reopenEnabled = !runtime.syncDegraded && canReopenClosedTab(runtime.contextState, slot);
   return `
-    <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}">
+    <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}" data-tab-scope="${escapeHtml(tabScope)}">
       ${tabs.map((part) => {
     const isActive = part.id === activeTabId;
     const closeability = getTabCloseability(runtime.contextState, part.id);
@@ -151,6 +157,7 @@ export function renderTabStrip(
           id="tab-${part.id}"
           data-action="activate-tab"
           data-slot="${part.slot}"
+          data-tab-scope="${escapeHtml(tabScope)}"
           data-part-id="${part.id}"
           data-part-title="${escapeHtml(part.title)}"
           aria-selected="${isActive ? "true" : "false"}"
@@ -166,6 +173,7 @@ export function renderTabStrip(
         class="part-tab"
         data-action="reopen-closed-tab"
         data-slot="${slot}"
+        data-tab-scope="${escapeHtml(tabScope)}"
         aria-label="Reopen recently closed tab"
         aria-keyshortcuts="Control+Shift+T Meta+Shift+T"
         title="Reopen closed tab (Ctrl+Shift+T)"
@@ -188,6 +196,93 @@ function renderDockDropOverlay(targetTabId: string): string {
 export function isPartActivationNode(target: HTMLElement): target is HTMLButtonElement {
   const action = target.dataset.action;
   return target instanceof HTMLButtonElement && action === "activate-tab";
+}
+
+export function renderDockTree(
+  root: DockNode | null,
+  visibleParts: ComposedShellPart[],
+  runtime: ShellRuntime,
+): string {
+  const partsById = new Map(visibleParts.map((part) => [part.id, part]));
+  const activeTabId = runtime.selectedPartId && partsById.has(runtime.selectedPartId)
+    ? runtime.selectedPartId
+    : runtime.contextState.activeTabId && partsById.has(runtime.contextState.activeTabId)
+      ? runtime.contextState.activeTabId
+      : visibleParts[0]?.id;
+  return renderDockNode(root, partsById, activeTabId ?? null, runtime);
+}
+
+function renderDockNode(
+  node: DockNode | null,
+  partsById: Map<string, ComposedShellPart>,
+  fallbackActiveTabId: string | null,
+  runtime: ShellRuntime,
+): string {
+  if (!node) {
+    return "";
+  }
+
+  if (node.kind === "split") {
+    const first = renderDockNode(node.first, partsById, fallbackActiveTabId, runtime);
+    const second = renderDockNode(node.second, partsById, fallbackActiveTabId, runtime);
+    if (!first && !second) {
+      return "";
+    }
+    if (!first) {
+      return second;
+    }
+    if (!second) {
+      return first;
+    }
+
+    return `<section class="dock-node dock-node-split dock-node-split-${node.orientation}" data-dock-node-id="${node.id}" data-dock-orientation="${node.orientation}">
+      <section class="dock-split-branch" data-dock-branch="first">${first}</section>
+      <section class="dock-split-branch" data-dock-branch="second">${second}</section>
+    </section>`;
+  }
+
+  const tabs = node.tabIds
+    .map((tabId) => partsById.get(tabId))
+    .filter((part): part is ComposedShellPart => Boolean(part));
+  if (tabs.length === 0) {
+    return "";
+  }
+
+  const activeTabId = resolveStackActiveTabId(node.activeTabId, fallbackActiveTabId, tabs);
+  const panelSlot = tabs[0]?.slot ?? "main";
+  const tabScope = `stack:${node.id}`;
+  const panelLabel = `${tabs[0]?.title ?? panelSlot} panel tabs`;
+  return `<section class="dock-node dock-node-stack" data-dock-node-id="${node.id}" data-dock-stack-id="${node.id}" data-slot="${panelSlot}">
+      ${renderTabStrip(panelSlot, tabs, activeTabId, runtime, { tabScope, label: panelLabel })}
+      <section class="dock-stack-panels">
+        ${tabs.map((part) => renderPartPanel(part, runtime, part.id === activeTabId)).join("")}
+      </section>
+    </section>`;
+}
+
+function renderPartPanel(part: ComposedShellPart, runtime: ShellRuntime, isActive: boolean): string {
+  return `<section
+      id="panel-${part.id}"
+      role="tabpanel"
+      aria-labelledby="tab-${part.id}"
+      ${isActive ? "" : "hidden"}
+    >${renderPartCard(part, runtime, { showPopoutButton: true })}</section>`;
+}
+
+function resolveStackActiveTabId(
+  nodeActiveTabId: string | null,
+  fallbackActiveTabId: string | null,
+  tabs: ComposedShellPart[],
+): string {
+  if (nodeActiveTabId && tabs.some((part) => part.id === nodeActiveTabId)) {
+    return nodeActiveTabId;
+  }
+
+  if (fallbackActiveTabId && tabs.some((part) => part.id === fallbackActiveTabId)) {
+    return fallbackActiveTabId;
+  }
+
+  return tabs[0]!.id;
 }
 
 function renderPartBody(part: ComposedShellPart): string {
