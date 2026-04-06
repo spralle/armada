@@ -17,6 +17,7 @@
   "include": [
     "src/plugin-loader.ts",
     "src/plugin-registry.ts",
+    "src/capability-registry.ts",
     "src/federation-runtime.ts",
     "src/local-plugin-sources.ts",
     "src/context-state.spec.ts",

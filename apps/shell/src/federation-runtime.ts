@@ -24,6 +24,8 @@ const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
 export interface ShellFederationRuntime {
   registerRemote(descriptor: { id: string; entry: string }): void;
   loadPluginContract(remoteId: string): Promise<unknown>;
+  loadPluginComponents(remoteId: string): Promise<unknown>;
+  loadPluginServices(remoteId: string): Promise<unknown>;
 }
 
 export function createShellFederationRuntime(): ShellFederationRuntime {
@@ -46,6 +48,14 @@ export function createShellFederationRuntime(): ShellFederationRuntime {
     async loadPluginContract(remoteId) {
       const contract = await host.loadRemote<unknown>(`${remoteId}/pluginContract`);
       return contract;
+    },
+    async loadPluginComponents(remoteId) {
+      const components = await host.loadRemote<unknown>(`${remoteId}/pluginComponents`);
+      return components;
+    },
+    async loadPluginServices(remoteId) {
+      const services = await host.loadRemote<unknown>(`${remoteId}/pluginServices`);
+      return services;
     },
   };
 }
