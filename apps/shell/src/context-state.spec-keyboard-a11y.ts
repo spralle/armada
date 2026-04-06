@@ -5,6 +5,7 @@ import {
   resolveChooserFocusRestoration,
   resolveChooserKeyboardAction,
   resolveDegradedKeyboardInteraction,
+  resolveTabLifecycleShortcut,
 } from "./keyboard-a11y.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 
@@ -97,6 +98,34 @@ export function registerKeyboardA11ySpecs(harness: SpecHarness): void {
       formatDegradedModeAnnouncement(false, null),
       "Cross-window sync restored. Window is writable again.",
       "recovery announcement should be explicit",
+    );
+  });
+
+  test("tab lifecycle shortcuts resolve close/reopen without affecting other keys", () => {
+    assertEqual(
+      resolveTabLifecycleShortcut("ctrl+shift+t"),
+      "reopen-closed-tab",
+      "Ctrl+Shift+T should reopen recently closed tab",
+    );
+    assertEqual(
+      resolveTabLifecycleShortcut("meta+shift+t"),
+      "reopen-closed-tab",
+      "Meta+Shift+T should reopen recently closed tab",
+    );
+    assertEqual(
+      resolveTabLifecycleShortcut("ctrl+w"),
+      "close-active-tab",
+      "Ctrl+W should close active tab",
+    );
+    assertEqual(
+      resolveTabLifecycleShortcut("meta+w"),
+      "close-active-tab",
+      "Meta+W should close active tab",
+    );
+    assertEqual(
+      resolveTabLifecycleShortcut("ctrl+shift+w"),
+      null,
+      "unmapped shortcut should not be interpreted as tab lifecycle action",
     );
   });
 }
