@@ -90,6 +90,8 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
       "order",
       "derived/global lane metadata should restore",
     );
+    assertEqual(loaded.state.tabs["tab-b"]?.label, "tab-b", "tab label should sanitize with deterministic default");
+    assertEqual(loaded.state.tabs["tab-b"]?.closePolicy, "fixed", "tab close policy should default to fixed");
   });
 
   test("context persistence migrates v1 envelope to current schema", () => {
@@ -103,7 +105,7 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
           "group-main": { id: "group-main", color: "blue" },
         },
         tabs: {
-          "tab-main": { id: "tab-main", groupId: "group-main" },
+          "tab-main": { id: "tab-main", groupId: "group-main", name: "Main" },
         },
         tabOrder: ["tab-main"],
         activeTabId: "tab-main",
@@ -135,6 +137,8 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
       "o-1",
       "v1 selection payload should be migrated",
     );
+    assertEqual(loaded.state.tabs["tab-main"]?.label, "Main", "legacy name should migrate into tab label");
+    assertEqual(loaded.state.tabs["tab-main"]?.closePolicy, "fixed", "legacy tabs should default to fixed close policy");
   });
 
   test("context persistence handles corruption with warning and safe fallback", () => {

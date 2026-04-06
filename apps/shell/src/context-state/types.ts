@@ -21,6 +21,19 @@ export interface ContextGroup {
 export interface ContextTab {
   id: string;
   groupId: string;
+  label: string;
+  closePolicy: ContextTabClosePolicy;
+}
+
+export type ContextTabClosePolicy = "fixed" | "closeable";
+
+export type ContextTabCloseActionAvailability = "disabled" | "enabled";
+
+export interface ContextTabCloseability {
+  policy: ContextTabClosePolicy;
+  canClose: boolean;
+  actionAvailability: ContextTabCloseActionAvailability;
+  reason: "fixed-policy" | "phase1-disabled" | null;
 }
 
 export interface EntityTypeSelection {

@@ -1,6 +1,8 @@
 import {
   closeTab,
+  closeTabIfAllowed,
   createInitialShellContextState,
+  getTabCloseability,
   moveTabToGroup,
   readGlobalLane,
   readGroupLaneForTab,
@@ -8,7 +10,16 @@ import {
   writeGlobalLane,
   writeGroupLaneByTab,
   writeTabSubcontext,
+  type ShellContextState,
 } from "./context-state.js";
+import {
+  collectRenderTabMetadata,
+  readGroupSelectionContext,
+  reconcileActiveTab,
+  resolveActiveTabId,
+  writeGroupSelectionContext,
+} from "./context/runtime-state.js";
+import type { ShellRuntime } from "./app/types.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 
 export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness): void {
@@ -126,6 +137,139 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
     assertEqual(state.subcontextsByTab["tab-a"], undefined, "subcontexts should be deleted on tab close");
   });
 
+  test("registering tab preserves deterministic metadata defaults", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main" });
+
+    assertEqual(state.tabs["tab-b"]?.label, "tab-b", "tab label should default to tab id");
+    assertEqual(state.tabs["tab-b"]?.closePolicy, "fixed", "tab close policy should default to fixed");
+  });
+
+  test("re-registering existing tab updates label but keeps default close policy", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = registerTab(state, { tabId: "tab-a", groupId: "group-main", tabLabel: "Orders" });
+
+    assertEqual(state.tabs["tab-a"]?.label, "Orders", "tab label should accept explicit updates");
+    assertEqual(state.tabs["tab-a"]?.closePolicy, "fixed", "tab close policy should remain fixed by default");
+  });
+
+  test("tab closeability contract is explicit and phase-1 disabled", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+
+    assertEqual(getTabCloseability(state, "tab-a").canClose, false, "fixed tabs should never be closeable");
+    assertEqual(
+      getTabCloseability(state, "tab-a").reason,
+      "fixed-policy",
+      "fixed tabs should report fixed-policy reason",
+    );
+    assertEqual(getTabCloseability(state, "tab-b").canClose, false, "phase-1 keeps closeable policy disabled");
+    assertEqual(
+      getTabCloseability(state, "tab-b").reason,
+      "phase1-disabled",
+      "closeable policy should indicate phase1-disabled reason",
+    );
+  });
+
+  test("closeTabIfAllowed remains a no-op in phase 1", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+
+    const next = closeTabIfAllowed(state, "tab-b");
+    assertEqual(next.tabs["tab-b"]?.id, "tab-b", "phase-1 should not allow close-by-contract yet");
+    assertEqual(next.tabOrder.includes("tab-b"), true, "tab order should remain unchanged when close is disabled");
+  });
+
+  test("render tab metadata remains ordered and close-disabled in phase 1", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", tabLabel: "Orders" });
+    state = registerTab(state, { tabId: "tab-c", groupId: "group-main", closePolicy: "closeable" });
+    state = {
+      ...state,
+      activeTabId: "tab-b",
+    };
+
+    const metadata = collectRenderTabMetadata(state);
+    assertEqual(metadata.map((entry) => entry.tabId).join(","), "tab-a,tab-b,tab-c", "tab metadata should follow tabOrder");
+    assertEqual(metadata[1]?.label, "Orders", "metadata should expose registered tab labels");
+    assertEqual(metadata[1]?.isActive, true, "active tab metadata should mark selected tab");
+    assertEqual(metadata[0]?.closeability.reason, "fixed-policy", "fixed tabs should stay non-closeable");
+    assertEqual(metadata[2]?.closeability.reason, "phase1-disabled", "closeable policy remains disabled in phase 1");
+  });
+
+  test("resolveActiveTabId prioritizes selected part then active tab then tab order", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", tabLabel: "Orders" });
+    state = registerTab(state, { tabId: "tab-c", groupId: "group-main", tabLabel: "Vessels" });
+
+    const runtime = {
+      selectedPartId: "tab-c",
+      selectedPartTitle: "Vessels",
+      contextState: state,
+      windowId: "window-a",
+      contextPersistence: {
+        save(nextState: ShellContextState) {
+          runtime.contextState = nextState;
+          return { warning: null };
+        },
+      },
+      notice: "",
+    } as unknown as ShellRuntime;
+
+    assertEqual(resolveActiveTabId(runtime), "tab-c", "selected part should win when tab exists");
+
+    runtime.selectedPartId = "missing-tab";
+    runtime.contextState = {
+      ...runtime.contextState,
+      activeTabId: "tab-b",
+    };
+    assertEqual(resolveActiveTabId(runtime), "tab-b", "active tab should be fallback when selected part is invalid");
+
+    runtime.contextState = {
+      ...runtime.contextState,
+      activeTabId: "missing-tab",
+      tabOrder: ["tab-c", "tab-a", "tab-b"],
+    };
+    assertEqual(resolveActiveTabId(runtime), "tab-c", "tab order should resolve final fallback");
+  });
+
+  test("reconcileActiveTab aligns active and selected tab metadata", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", tabLabel: "Orders" });
+    state = {
+      ...state,
+      activeTabId: "tab-a",
+    };
+
+    const runtime = {
+      selectedPartId: "missing-tab",
+      selectedPartTitle: null,
+      contextState: state,
+      windowId: "window-a",
+      contextPersistence: {
+        save(nextState: ShellContextState) {
+          runtime.contextState = nextState;
+          return { warning: null };
+        },
+      },
+      notice: "",
+    } as unknown as ShellRuntime;
+
+    assertEqual(reconcileActiveTab(runtime), "tab-a", "reconcile should return resolved active tab");
+    assertEqual(runtime.selectedPartId, "tab-a", "reconcile should repair selected part id");
+    assertEqual(runtime.selectedPartTitle, "tab-a", "reconcile should backfill selected part title");
+
+    runtime.contextState = {
+      ...runtime.contextState,
+      activeTabId: "tab-a",
+      tabs: {},
+      tabOrder: [],
+    };
+    assertEqual(reconcileActiveTab(runtime), null, "reconcile should return null when no tabs exist");
+    assertEqual(runtime.selectedPartId, null, "selected part id should clear when no tabs exist");
+    assertEqual(runtime.selectedPartTitle, null, "selected part title should clear when no tabs exist");
+  });
+
   test("global lanes remain separate from group lanes", () => {
     let state = createInitialShellContextState({ initialTabId: "tab-a" });
     state = writeGlobalLane(state, {
@@ -189,5 +333,47 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
       "same-ts-higher-writer",
       "higher writer should win at same timestamp for global lane",
     );
+  });
+
+  test("group context reads/writes use active tab when selected part is unset", () => {
+    let state = createInitialShellContextState({
+      initialTabId: "tab-a",
+      initialGroupId: "group-a",
+    });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-b" });
+    state = writeGroupLaneByTab(state, {
+      tabId: "tab-b",
+      key: "shell.group-context",
+      value: "ctx-b",
+      revision: { timestamp: 1, writer: "writer-a" },
+    });
+    state = {
+      ...state,
+      activeTabId: "tab-b",
+    };
+
+    const runtime = {
+      selectedPartId: null,
+      selectedPartTitle: null,
+      contextState: state,
+      windowId: "window-a",
+      contextPersistence: {
+        save(nextState: ShellContextState) {
+          runtime.contextState = nextState;
+          return { warning: null };
+        },
+      },
+      notice: "",
+    } as unknown as ShellRuntime;
+
+    assertEqual(readGroupSelectionContext(runtime), "ctx-b", "active tab group context should be readable");
+
+    writeGroupSelectionContext(runtime, "ctx-b2");
+    assertEqual(
+      readGroupLaneForTab(runtime.contextState, { tabId: "tab-b", key: "shell.group-context" })?.value,
+      "ctx-b2",
+      "group context write should target active tab when selected part is unset",
+    );
+    assertEqual(runtime.selectedPartId, "tab-b", "active tab should reconcile into selected part");
   });
 }

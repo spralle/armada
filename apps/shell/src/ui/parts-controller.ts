@@ -2,13 +2,20 @@ import {
   createRevision,
   writeGlobalSelectionLane,
 } from "../context/runtime-state.js";
-import { readEntityTypeSelection } from "../context-state.js";
+import {
+  closeTabIfAllowed,
+  getTabCloseability,
+  readEntityTypeSelection,
+} from "../context-state.js";
 import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
 import { safeJson, safeParse, sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
 import {
+  type ComposedShellPart,
   getVisibleComposedParts,
+  type PartSlot,
+  renderTabStrip,
   renderPartCard,
   resolvePartTitle,
   updateSelectedStyles,
@@ -44,34 +51,78 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
     return;
   }
 
+  const tabsBySlot = {
+    main: root.querySelector<HTMLElement>("#slot-main-tabs"),
+    secondary: root.querySelector<HTMLElement>("#slot-secondary-tabs"),
+    side: root.querySelector<HTMLElement>("#slot-side-tabs"),
+  };
+
   const partsBySlot = {
     main: root.querySelector<HTMLElement>("#slot-main-parts"),
     secondary: root.querySelector<HTMLElement>("#slot-secondary-parts"),
     side: root.querySelector<HTMLElement>("#slot-side-parts"),
   };
 
-  for (const slotNode of Object.values(partsBySlot)) {
-    if (slotNode) {
-      slotNode.innerHTML = "";
+  const visibleBySlot: Record<PartSlot, typeof visibleParts> = {
+    main: [],
+    secondary: [],
+    side: [],
+  };
+
+  for (const part of visibleParts) {
+    if (!runtime.poppedOutPartIds.has(part.id)) {
+      visibleBySlot[part.slot].push(part);
     }
   }
 
-  for (const part of visibleParts) {
-    if (runtime.poppedOutPartIds.has(part.id)) {
+  const slots: PartSlot[] = ["side", "main", "secondary"];
+  for (const slot of slots) {
+    const slotTabs = tabsBySlot[slot];
+    const slotParts = partsBySlot[slot];
+    if (!slotTabs || !slotParts) {
       continue;
     }
 
-    const slotNode = partsBySlot[part.slot];
-    if (!slotNode) {
+    const slotVisibleParts = visibleBySlot[slot];
+    if (slotVisibleParts.length === 0) {
+      slotTabs.innerHTML = "";
+      slotParts.innerHTML = "";
       continue;
     }
 
-    slotNode.insertAdjacentHTML("beforeend", renderPartCard(part, runtime, { showPopoutButton: true }));
+    const activePartId = resolveActivePartId(runtime, slotVisibleParts.map((part) => part.id));
+    slotTabs.innerHTML = renderTabStrip(slot, slotVisibleParts, activePartId);
+    slotParts.innerHTML = slotVisibleParts
+      .map((part) => renderPartPanel(part, runtime, part.id === activePartId))
+      .join("");
   }
 
   wirePartActions(root, runtime, deps);
   wireDragDrop(root, runtime);
   updateSelectedStyles(root, runtime.selectedPartId);
+}
+
+function resolveActivePartId(runtime: ShellRuntime, visiblePartIds: string[]): string {
+  const selectedPartId = runtime.selectedPartId;
+  if (selectedPartId && visiblePartIds.includes(selectedPartId)) {
+    return selectedPartId;
+  }
+
+  const activeTabId = runtime.contextState.activeTabId;
+  if (activeTabId && visiblePartIds.includes(activeTabId)) {
+    return activeTabId;
+  }
+
+  return visiblePartIds[0]!;
+}
+
+function renderPartPanel(part: ComposedShellPart, runtime: ShellRuntime, isActive: boolean): string {
+  return `<section
+      id="panel-${part.id}"
+      role="tabpanel"
+      aria-labelledby="tab-${part.id}"
+      ${isActive ? "" : "hidden"}
+    >${renderPartCard(part, runtime, { showPopoutButton: true })}</section>`;
 }
 
 function buildSelectionByEntityType(runtime: ShellRuntime): SelectionSyncEvent["selectionByEntityType"] {
@@ -100,7 +151,7 @@ export function startPopoutWatchdog(root: HTMLElement, runtime: ShellRuntime, de
 }
 
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
-  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='select']")) {
+  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='activate-tab']")) {
     button.addEventListener("click", () => {
       if (runtime.syncDegraded) {
         return;
@@ -177,6 +228,26 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       }
 
       window.close();
+    });
+  }
+
+  // Phase 2 hook: listeners for future close actions are present, but remain no-op in Phase 1.
+  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='close-tab']")) {
+    button.addEventListener("click", () => {
+      const tabId = button.dataset.tabId;
+      if (!tabId) {
+        return;
+      }
+
+      const closeability = getTabCloseability(runtime.contextState, tabId);
+      if (!closeability.canClose) {
+        return;
+      }
+
+      // Phase 2 hook: publish close intent and reconcile selection/popout edges.
+      runtime.contextState = closeTabIfAllowed(runtime.contextState, tabId);
+      deps.renderParts();
+      deps.renderSyncStatus();
     });
   }
 }

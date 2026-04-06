@@ -14,6 +14,7 @@ import type {
   WindowBridgeHealth,
 } from "../window-bridge.js";
 import type {
+  ContextTabCloseability,
   DerivedLaneDefinition,
   RevisionMeta,
   SelectionPropagationRule,
@@ -119,6 +120,14 @@ export type DevLaneMetadata = {
   value: string;
   revision: RevisionMeta;
   sourceSelection: { entityType: string; revision: RevisionMeta } | undefined;
+};
+
+export type RenderTabMetadata = {
+  tabId: string;
+  groupId: string;
+  label: string;
+  isActive: boolean;
+  closeability: ContextTabCloseability;
 };
 
 export type PluginSelectionContrib = PluginSelectionContribution;

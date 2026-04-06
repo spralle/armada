@@ -66,6 +66,7 @@ export function createRuntimeEventHandlers(
       tabId: event.selectedPartId,
       groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
       groupColor: DEFAULT_GROUP_COLOR,
+      tabLabel: event.selectedPartTitle,
     }));
     updateContextState(runtime, setActiveTab(runtime.contextState, event.selectedPartId));
     writeGlobalSelectionLane(runtime, {
@@ -194,8 +195,8 @@ function resolveEventTargetSelector(root: HTMLElement): string | null {
     return null;
   }
 
-  if (active.matches("button[data-action='select']") && active.dataset.partId) {
-    return `button[data-action='select'][data-part-id='${active.dataset.partId}']`;
+  if (active.matches("button[data-action='activate-tab']") && active.dataset.partId) {
+    return `button[data-action='activate-tab'][data-part-id='${active.dataset.partId}']`;
   }
 
   return null;

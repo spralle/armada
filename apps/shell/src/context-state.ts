@@ -2,6 +2,9 @@ export {
   ContextGroup,
   ContextLaneValue,
   ContextTab,
+  ContextTabCloseActionAvailability,
+  ContextTabCloseability,
+  ContextTabClosePolicy,
   DerivedLaneDefinition,
   EntityTypeSelection,
   RevisionMeta,
@@ -25,7 +28,15 @@ export {
 
 export { applySelectionUpdate } from "./context-state/selection-update.js";
 
-export { closeTab, getTabGroupId, moveTabToGroup, registerTab, setActiveTab } from "./context-state/tabs-groups.js";
+export {
+  closeTab,
+  closeTabIfAllowed,
+  getTabCloseability,
+  getTabGroupId,
+  moveTabToGroup,
+  registerTab,
+  setActiveTab,
+} from "./context-state/tabs-groups.js";
 
 export {
   readGlobalLane,

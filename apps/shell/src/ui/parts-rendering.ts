@@ -1,6 +1,7 @@
 import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
 import { escapeHtml } from "../app/utils.js";
+import { getTabCloseability } from "../context-state.js";
 
 export interface ComposedShellPart {
   id: string;
@@ -9,6 +10,8 @@ export interface ComposedShellPart {
   component: string;
   pluginId: string;
 }
+
+export type PartSlot = ComposedShellPart["slot"];
 
 export function composePartsFromRegistrySnapshot(
   snapshot: ReturnType<ShellRuntime["registry"]["getSnapshot"]>,
@@ -39,6 +42,14 @@ export function renderPartCard(
   runtime: ShellRuntime,
   options: { showPopoutButton: boolean; showRestoreButton?: boolean },
 ): string {
+  const closeability = getTabCloseability(runtime.contextState, part.id);
+  const closeabilityAttrs = [
+    `data-tab-close-policy="${closeability.policy}"`,
+    `data-tab-close-action-availability="${closeability.actionAvailability}"`,
+    `data-tab-can-close="${closeability.canClose ? "true" : "false"}"`,
+    `data-tab-close-disabled-reason="${closeability.reason ?? "none"}"`,
+  ].join(" ");
+
   const popoutButton = options.showPopoutButton
     ? `<button type="button" data-action="popout" data-part-id="${part.id}">Pop out</button>`
     : "";
@@ -47,10 +58,9 @@ export function renderPartCard(
     : "";
 
   return `
-    <article class="part-root" data-part-id="${part.id}" draggable="true">
-      <h2>${part.title}</h2>
+    <article class="part-root" data-part-id="${part.id}" draggable="true" ${closeabilityAttrs}>
+      <h2>${escapeHtml(part.title)}</h2>
       <div class="part-actions">
-        <button type="button" data-action="select" data-part-id="${part.id}" data-part-title="${part.title}">Select</button>
         ${popoutButton}
         ${restoreButton}
       </div>
@@ -77,9 +87,37 @@ export function resolvePartTitle(partId: string, runtime: ShellRuntime): string 
   return getVisibleComposedParts(runtime).find((part) => part.id === partId)?.title ?? partId;
 }
 
-export function isSelectionActionNode(target: HTMLElement): target is HTMLButtonElement {
+export function renderTabStrip(
+  slot: PartSlot,
+  tabs: ComposedShellPart[],
+  activeTabId: string,
+): string {
+  const label = `${slot} panel tabs`;
+  return `
+    <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}">
+      ${tabs.map((part) => {
+    const isActive = part.id === activeTabId;
+    return `<button
+          type="button"
+          role="tab"
+          class="part-tab${isActive ? " is-active" : ""}"
+          id="tab-${part.id}"
+          data-action="activate-tab"
+          data-slot="${part.slot}"
+          data-part-id="${part.id}"
+          data-part-title="${escapeHtml(part.title)}"
+          aria-selected="${isActive ? "true" : "false"}"
+          aria-controls="panel-${part.id}"
+          tabindex="${isActive ? "0" : "-1"}"
+        >${escapeHtml(part.title)}</button>`;
+  }).join("")}
+    </div>
+  `;
+}
+
+export function isPartActivationNode(target: HTMLElement): target is HTMLButtonElement {
   const action = target.dataset.action;
-  return target instanceof HTMLButtonElement && action === "select";
+  return target instanceof HTMLButtonElement && action === "activate-tab";
 }
 
 function renderPartBody(part: ComposedShellPart): string {
