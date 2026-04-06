@@ -27,6 +27,7 @@ import type {
   ShellIntent,
 } from "../intent-runtime.js";
 import type { ActionSurface } from "../action-surface.js";
+import type { PartModuleHostRuntime } from "../part-module-host.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -72,6 +73,7 @@ export interface ShellRuntime {
   actionSurface: ActionSurface;
   intentRuntime: IntentRuntime;
   commandNotice: string;
+  partModuleHost: PartModuleHostRuntime;
 }
 
 export interface TenantPluginDescriptor {
