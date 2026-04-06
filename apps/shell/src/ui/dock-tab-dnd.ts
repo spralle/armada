@@ -45,7 +45,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
   for (const zoneNode of root.querySelectorAll<HTMLElement>("[data-dock-drop-zone][data-target-tab-id]")) {
     zoneNode.addEventListener("dragover", (event) => {
       const dataTransfer = event.dataTransfer;
-      if (!dataTransfer) {
+      if (!dataTransfer || runtime.syncDegraded) {
         return;
       }
 
@@ -76,34 +76,57 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         return;
       }
 
-      if (payload.sourceWindowId !== runtime.windowId) {
-        runtime.notice = "Cross-window tab drag is out of scope in docking v1.";
-        root.classList.remove("is-dock-dragging");
-        deps.renderSyncStatus();
-        return;
-      }
-
-      if (!runtime.contextState.tabs[payload.tabId] || !runtime.contextState.tabs[targetTabId]) {
-        root.classList.remove("is-dock-dragging");
-        return;
-      }
-
-      updateContextState(runtime, moveTabInDockTree(runtime.contextState, {
+      moveDockTabThroughRuntime(runtime, deps, {
         tabId: payload.tabId,
+        sourceWindowId: payload.sourceWindowId,
         targetTabId,
         zone,
-      }));
-
-      runtime.selectedPartId = payload.tabId;
-      runtime.selectedPartTitle = runtime.contextState.tabs[payload.tabId]?.label ?? payload.tabId;
-      runtime.pendingFocusSelector = `button[data-action='activate-tab'][data-part-id='${payload.tabId}']`;
+      });
       root.classList.remove("is-dock-dragging");
-
-      deps.renderContextControls();
-      deps.renderParts();
-      deps.renderSyncStatus();
     });
   }
+}
+
+export function moveDockTabThroughRuntime(
+  runtime: ShellRuntime,
+  deps: DockDragDeps,
+  input: {
+    tabId: string;
+    sourceWindowId: string;
+    targetTabId: string;
+    zone: DockDropZone;
+  },
+): boolean {
+  if (runtime.syncDegraded) {
+    runtime.notice = "Cross-window sync degraded. Dock mutations are blocked while this window is read-only.";
+    deps.renderSyncStatus();
+    return false;
+  }
+
+  if (input.sourceWindowId !== runtime.windowId) {
+    runtime.notice = "Cross-window tab drag is out of scope in docking v1.";
+    deps.renderSyncStatus();
+    return false;
+  }
+
+  if (!runtime.contextState.tabs[input.tabId] || !runtime.contextState.tabs[input.targetTabId]) {
+    return false;
+  }
+
+  updateContextState(runtime, moveTabInDockTree(runtime.contextState, {
+    tabId: input.tabId,
+    targetTabId: input.targetTabId,
+    zone: input.zone,
+  }));
+
+  runtime.selectedPartId = input.tabId;
+  runtime.selectedPartTitle = runtime.contextState.tabs[input.tabId]?.label ?? input.tabId;
+  runtime.pendingFocusSelector = `button[data-action='activate-tab'][data-part-id='${input.tabId}']`;
+
+  deps.renderContextControls();
+  deps.renderParts();
+  deps.renderSyncStatus();
+  return true;
 }
 
 function readTabDragPayload(dataTransfer: DataTransfer): DragPayload | null {

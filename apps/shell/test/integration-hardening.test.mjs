@@ -10,6 +10,7 @@ import {
 import { createActivationRuntime } from "../dist/activation-runtime.js";
 import { bootstrapShellWithTenantManifest } from "../dist/app/bootstrap.js";
 import { closeTabThroughRuntime } from "../dist/ui/parts-controller.js";
+import { moveDockTabThroughRuntime } from "../dist/ui/dock-tab-dnd.js";
 import { renderDockTree } from "../dist/ui/parts-rendering.js";
 import { createInitialShellContextState, registerTab } from "../dist/context-state.js";
 
@@ -432,6 +433,100 @@ test("runtime close flow is blocked in degraded mode", () => {
   assert.equal(closed, false);
   assert.notEqual(runtime.contextState.tabs["tab-b"], undefined);
   assert.equal(published.length, 0);
+});
+
+function createDockMoveRuntimeFixture() {
+  let contextState = createInitialShellContextState({
+    initialTabId: "tab-a",
+    initialGroupId: "group-main",
+    initialGroupColor: "blue",
+  });
+  contextState = registerTab(contextState, {
+    tabId: "tab-b",
+    groupId: "group-main",
+    tabLabel: "Orders",
+    closePolicy: "closeable",
+  });
+
+  const runtime = {
+    syncDegraded: false,
+    windowId: "window-a",
+    contextState,
+    selectedPartId: "tab-a",
+    selectedPartTitle: "tab-a",
+    contextPersistence: {
+      save(nextState) {
+        runtime.contextState = nextState;
+        return { warning: null };
+      },
+    },
+    notice: "",
+  };
+
+  const renders = {
+    context: 0,
+    parts: 0,
+    sync: 0,
+  };
+
+  const deps = {
+    renderContextControls() {
+      renders.context += 1;
+    },
+    renderParts() {
+      renders.parts += 1;
+    },
+    renderSyncStatus() {
+      renders.sync += 1;
+    },
+  };
+
+  return {
+    runtime,
+    deps,
+    renders,
+  };
+}
+
+test("dock move/split mutations apply in same-window mode and activate moved tab", () => {
+  const fixture = createDockMoveRuntimeFixture();
+  const { runtime, deps, renders } = fixture;
+
+  const moved = moveDockTabThroughRuntime(runtime, deps, {
+    tabId: "tab-b",
+    sourceWindowId: "window-a",
+    targetTabId: "tab-a",
+    zone: "bottom",
+  });
+
+  assert.equal(moved, true);
+  assert.equal(runtime.selectedPartId, "tab-b");
+  assert.equal(runtime.contextState.activeTabId, "tab-b");
+  assert.equal(runtime.contextState.dockTree.root?.kind, "split");
+  assert.equal(renders.context, 1);
+  assert.equal(renders.parts, 1);
+  assert.equal(renders.sync, 1);
+});
+
+test("dock move/split mutations are blocked in degraded mode", () => {
+  const fixture = createDockMoveRuntimeFixture();
+  const { runtime, deps, renders } = fixture;
+  runtime.syncDegraded = true;
+
+  const beforeDockTree = JSON.stringify(runtime.contextState.dockTree);
+  const moved = moveDockTabThroughRuntime(runtime, deps, {
+    tabId: "tab-b",
+    sourceWindowId: "window-a",
+    targetTabId: "tab-a",
+    zone: "right",
+  });
+
+  assert.equal(moved, false);
+  assert.equal(JSON.stringify(runtime.contextState.dockTree), beforeDockTree);
+  assert.equal(runtime.notice.includes("read-only"), true);
+  assert.equal(renders.context, 0);
+  assert.equal(renders.parts, 0);
+  assert.equal(renders.sync, 1);
 });
 
 test("recursive dock-tree renderer emits nested stacks with local tab scopes", () => {
