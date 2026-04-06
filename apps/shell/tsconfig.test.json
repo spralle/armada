@@ -18,6 +18,8 @@
     "src/plugin-loader.ts",
     "src/plugin-registry.ts",
     "src/federation-runtime.ts",
-    "src/local-plugin-sources.ts"
+    "src/local-plugin-sources.ts",
+    "src/context-state.spec.ts",
+    "src/window-bridge.spec.ts"
   ]
 }

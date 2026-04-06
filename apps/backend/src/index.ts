@@ -12,6 +12,16 @@ const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
 const DEFAULT_TENANT = "demo";
 
+interface NodeHttpRequestLike {
+  url?: string | undefined;
+}
+
+interface NodeHttpResponseLike {
+  setHeader(name: string, value: string): void;
+  statusCode: number;
+  end(body?: string): void;
+}
+
 const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
 const localPluginEntryOverrides = getDefaultLocalPluginEntryUrlMap();
 
@@ -79,7 +89,7 @@ function startNodeBackendDevServer(): void {
 
   import(nodeHttpModuleName)
     .then(({ createServer }) => {
-      const server = createServer((req: any, res: any) => {
+      const server = createServer((req: NodeHttpRequestLike, res: NodeHttpResponseLike) => {
         const requestPath = req.url ? new URL(req.url, `http://${BACKEND_DEV_HOST}:${BACKEND_DEV_PORT}`).pathname : "/";
         const manifest = resolveTenantManifestRequest(requestPath, {
           selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
