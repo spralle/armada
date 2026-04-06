@@ -42,6 +42,20 @@ interface CloseTabRuntimeOptions {
   sourceWindowId?: string;
 }
 
+type LocalLifecycleActionId =
+  | "part-instance.open"
+  | "part-instance.activate"
+  | "part-instance.popout"
+  | "part-instance.restore"
+  | "part-instance.close"
+  | "part-instance.reopen";
+
+interface LocalLifecycleActionRequest {
+  actionId: LocalLifecycleActionId;
+  tabInstanceId?: string;
+  partTitle?: string;
+}
+
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
   const visibleParts = getVisibleComposedParts(runtime);
 
@@ -176,10 +190,6 @@ export function closeTabThroughRuntime(
   deps: PartsControllerDeps,
   options?: CloseTabRuntimeOptions,
 ): boolean {
-  if (runtime.syncDegraded) {
-    return false;
-  }
-
   if (!runtime.contextState.tabs[tabId]) {
     return false;
   }
@@ -273,109 +283,153 @@ export function closeTabThroughRuntime(
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='reopen-closed-tab']")) {
     button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      reopenMostRecentlyClosedTabThroughRuntime(runtime, deps);
+      dispatchLocalLifecycleAction(runtime, {
+        actionId: "part-instance.reopen",
+      }, deps);
     });
   }
 
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='activate-tab']")) {
     button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const partId = button.dataset.partId;
-      const partTitle = button.dataset.partTitle;
-      if (!partId || !partTitle) {
-        return;
-      }
-
-      const selectionRevision = createRevision(runtime.windowId);
-      const selectionByEntityType = buildSelectionByEntityType(runtime);
-
-      deps.applySelection({
-        selectedPartId: partId,
-        selectedPartTitle: partTitle,
-        selectionByEntityType,
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-        type: "selection",
-      });
-
-      deps.publishWithDegrade({
-        type: "selection",
-        selectedPartId: partId,
-        selectedPartTitle: partTitle,
-        selectionByEntityType,
-        revision: selectionRevision,
-        sourceWindowId: runtime.windowId,
-      });
-
-      writeGlobalSelectionLane(runtime, {
-        selectedPartId: partId,
-        selectedPartTitle: partTitle,
-        revision: selectionRevision,
-      });
+      dispatchLocalLifecycleAction(runtime, {
+        actionId: "part-instance.activate",
+        tabInstanceId: button.dataset.partId,
+        partTitle: button.dataset.partTitle,
+      }, deps);
     });
   }
 
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='popout']")) {
     button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const partId = button.dataset.partId;
-      if (!partId) {
-        return;
-      }
-
-      openPopout(partId, runtime, deps);
+      dispatchLocalLifecycleAction(runtime, {
+        actionId: "part-instance.popout",
+        tabInstanceId: button.dataset.partId,
+      }, deps);
     });
   }
 
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='restore']")) {
     button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const partId = button.dataset.partId;
-      if (!partId) {
-        return;
-      }
-
-      if (runtime.hostWindowId) {
-        deps.publishWithDegrade({
-          type: "popout-restore-request",
-          partId,
-          hostWindowId: runtime.hostWindowId,
-          sourceWindowId: runtime.windowId,
-        });
-      }
-
-      window.close();
+      dispatchLocalLifecycleAction(runtime, {
+        actionId: "part-instance.restore",
+        tabInstanceId: button.dataset.partId,
+      }, deps);
     });
   }
 
   // Phase 2: close intents run through runtime lifecycle wiring.
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='close-tab']")) {
     button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-
-      const tabId = button.dataset.tabId;
-      if (!tabId) {
-        return;
-      }
-
-      closeTabThroughRuntime(runtime, tabId, deps);
+      dispatchLocalLifecycleAction(runtime, {
+        actionId: "part-instance.close",
+        tabInstanceId: button.dataset.tabId,
+      }, deps);
     });
   }
+}
+
+function dispatchLocalLifecycleAction(
+  runtime: ShellRuntime,
+  request: LocalLifecycleActionRequest,
+  deps: PartsControllerDeps,
+): boolean {
+  switch (request.actionId) {
+    case "part-instance.open":
+    case "part-instance.activate": {
+      const tabInstanceId = request.tabInstanceId;
+      if (!tabInstanceId) {
+        return false;
+      }
+      return activateTabInstance(tabInstanceId, request.partTitle, runtime, deps);
+    }
+    case "part-instance.popout": {
+      const tabInstanceId = request.tabInstanceId;
+      if (!tabInstanceId) {
+        return false;
+      }
+      openPopout(tabInstanceId, runtime, deps);
+      return true;
+    }
+    case "part-instance.restore": {
+      const tabInstanceId = request.tabInstanceId;
+      if (!tabInstanceId) {
+        return false;
+      }
+
+      if (runtime.isPopout) {
+        if (runtime.hostWindowId) {
+          deps.publishWithDegrade({
+            type: "popout-restore-request",
+            partId: tabInstanceId,
+            hostWindowId: runtime.hostWindowId,
+            sourceWindowId: runtime.windowId,
+          });
+        }
+        window.close();
+        return true;
+      }
+
+      restorePart(tabInstanceId, runtime, {
+        renderParts: deps.renderParts,
+        renderSyncStatus: deps.renderSyncStatus,
+      });
+      return true;
+    }
+    case "part-instance.close": {
+      const tabInstanceId = request.tabInstanceId;
+      if (!tabInstanceId) {
+        return false;
+      }
+      return closeTabThroughRuntime(runtime, tabInstanceId, deps);
+    }
+    case "part-instance.reopen":
+      return reopenMostRecentlyClosedTabThroughRuntime(runtime, deps);
+    default:
+      return false;
+  }
+}
+
+function activateTabInstance(
+  tabInstanceId: string,
+  partTitle: string | undefined,
+  runtime: ShellRuntime,
+  deps: PartsControllerDeps,
+): boolean {
+  if (!runtime.contextState.tabs[tabInstanceId]) {
+    return false;
+  }
+
+  const selectedPartTitle = partTitle
+    ?? runtime.contextState.tabs[tabInstanceId]?.label
+    ?? tabInstanceId;
+  const selectionRevision = createRevision(runtime.windowId);
+  const selectionByEntityType = buildSelectionByEntityType(runtime);
+
+  deps.applySelection({
+    selectedPartId: tabInstanceId,
+    selectedPartTitle,
+    selectionByEntityType,
+    revision: selectionRevision,
+    sourceWindowId: runtime.windowId,
+    type: "selection",
+  });
+
+  deps.publishWithDegrade({
+    type: "selection",
+    selectedPartId: tabInstanceId,
+    selectedPartTitle,
+    selectionByEntityType,
+    revision: selectionRevision,
+    sourceWindowId: runtime.windowId,
+  });
+
+  writeGlobalSelectionLane(runtime, {
+    selectedPartId: tabInstanceId,
+    selectedPartTitle,
+    revision: selectionRevision,
+  });
+
+  return true;
 }
 
 export function closeTabFromUi(
@@ -415,10 +469,6 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
   runtime: ShellRuntime,
   deps: PartsControllerDeps,
 ): boolean {
-  if (runtime.syncDegraded) {
-    return false;
-  }
-
   const slot = resolvePreferredReopenSlot(runtime);
   const reopenedState = reopenUntilEligibleTabRestored(runtime, slot);
   if (!reopenedState) {

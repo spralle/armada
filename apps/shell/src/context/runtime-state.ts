@@ -21,6 +21,7 @@ export const CORE_GLOBAL_SELECTION_KEY = "shell.selection";
 
 interface ShellTabPartRef {
   id: string;
+  partDefinitionId: string;
   title: string;
 }
 
@@ -36,6 +37,7 @@ export function ensureTabsRegistered(state: ShellContextState, parts: ShellTabPa
   for (const part of parts) {
     next = registerTab(next, {
       tabId: part.id,
+      partDefinitionId: part.partDefinitionId,
       groupId: getTabGroupId(next, part.id) ?? DEFAULT_GROUP_ID,
       groupColor: DEFAULT_GROUP_COLOR,
       tabLabel: part.title,

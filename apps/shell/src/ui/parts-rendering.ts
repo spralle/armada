@@ -5,6 +5,7 @@ import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
 
 export interface ComposedShellPart {
   id: string;
+  partDefinitionId: string;
   title: string;
   slot: "main" | "secondary" | "side";
   component?: string;
@@ -26,6 +27,7 @@ export function composePartsFromRegistrySnapshot(
 
   return composed.parts.map((part) => ({
     id: part.id,
+    partDefinitionId: part.id,
     title: part.title,
     slot: part.slot,
     component: part.component,

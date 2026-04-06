@@ -64,6 +64,7 @@ export function createRuntimeEventHandlers(
     runtime.selectedPartTitle = event.selectedPartTitle;
     updateContextState(runtime, registerTab(runtime.contextState, {
       tabId: event.selectedPartId,
+      partDefinitionId: runtime.contextState.tabs[event.selectedPartId]?.partDefinitionId ?? event.selectedPartId,
       groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
       groupColor: DEFAULT_GROUP_COLOR,
       tabLabel: event.selectedPartTitle,

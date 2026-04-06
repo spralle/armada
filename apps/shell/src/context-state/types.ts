@@ -20,6 +20,7 @@ export interface ContextGroup {
 
 export interface ContextTab {
   id: string;
+  partDefinitionId: string;
   groupId: string;
   label: string;
   closePolicy: ContextTabClosePolicy;
@@ -29,6 +30,7 @@ export type ContextTabSlot = "main" | "secondary" | "side";
 
 export interface ClosedTabHistoryEntry {
   tabId: string;
+  partDefinitionId: string;
   groupId: string;
   label: string;
   closePolicy: ContextTabClosePolicy;
