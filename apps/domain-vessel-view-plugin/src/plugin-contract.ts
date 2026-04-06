@@ -7,11 +7,12 @@ const pluginContract: PluginContract = {
     version: "0.1.0",
   },
   contributes: {
-    views: [
+    parts: [
       {
-        id: "domain.vessel.view",
+        id: "domain.vessel-view.part",
         title: "Vessel View",
-        component: "VesselView",
+        slot: "secondary",
+        component: "VesselViewPart",
       },
     ],
     selection: [
