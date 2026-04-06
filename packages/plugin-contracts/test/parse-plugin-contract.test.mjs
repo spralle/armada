@@ -35,7 +35,6 @@ test("returns typed data for a valid plugin contract", () => {
           id: "valid.part",
           title: "Valid Part",
           slot: "side",
-          component: "ValidPart",
         },
       ],
       actions: [
@@ -145,7 +144,6 @@ test("returns structured errors for invalid contribution fields", () => {
           id: "part-1",
           title: "Part",
           slot: "center",
-          component: "PartComponent",
         },
       ],
     },
@@ -155,6 +153,112 @@ test("returns structured errors for invalid contribution fields", () => {
   if (!result.success) {
     assert.equal(
       result.errors.some((error) => error.path === "contributes.parts.0.slot"),
+      true,
+    );
+  }
+});
+
+test("accepts capability declarations and explicit dependsOn requirements", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "com.armada.capability-provider",
+      name: "Capability Provider",
+      version: "1.0.0",
+    },
+    contributes: {
+      capabilities: {
+        components: [
+          {
+            id: "com.armada.component.map-panel",
+            version: "1.2.0",
+          },
+        ],
+        services: [
+          {
+            id: "com.armada.service.route-planner",
+            version: "2.0.0",
+          },
+        ],
+      },
+    },
+    dependsOn: {
+      plugins: [
+        {
+          pluginId: "com.armada.base-runtime",
+          versionRange: "^3.0.0",
+        },
+      ],
+      components: [
+        {
+          id: "com.armada.component.map-panel",
+          versionRange: "^1.0.0",
+        },
+      ],
+      services: [
+        {
+          id: "com.armada.service.weather",
+          versionRange: "~1.4.0",
+          optional: true,
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.contributes?.capabilities?.components?.[0]?.version, "1.2.0");
+    assert.equal(result.data.dependsOn?.plugins?.[0]?.versionRange, "^3.0.0");
+    assert.equal(result.data.dependsOn?.services?.[0]?.optional, true);
+  }
+});
+
+test("rejects invalid capability and dependency declaration shapes", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "com.armada.invalid-capability-deps",
+      name: "Invalid Capability Deps",
+      version: "1.0.0",
+    },
+    contributes: {
+      capabilities: {
+        components: [
+          {
+            id: "com.armada.component.map-panel",
+            version: 42,
+          },
+        ],
+      },
+    },
+    dependsOn: {
+      plugins: [
+        {
+          pluginId: "com.armada.base-runtime",
+        },
+      ],
+      services: [
+        {
+          id: "com.armada.service.weather",
+          versionRange: "^1.0.0",
+          optional: "sometimes",
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    assert.equal(
+      result.errors.some(
+        (error) => error.path === "contributes.capabilities.components.0.version",
+      ),
+      true,
+    );
+    assert.equal(
+      result.errors.some((error) => error.path === "dependsOn.plugins.0.versionRange"),
+      true,
+    );
+    assert.equal(
+      result.errors.some((error) => error.path === "dependsOn.services.0.optional"),
       true,
     );
   }

@@ -14,7 +14,45 @@ export interface PluginPartContribution {
   id: string;
   title: string;
   slot: "main" | "secondary" | "side";
-  component: string;
+  component?: string | undefined;
+}
+
+export interface PluginCapabilityComponentContribution {
+  id: string;
+  version: string;
+}
+
+export interface PluginCapabilityServiceContribution {
+  id: string;
+  version: string;
+}
+
+export interface PluginDependencyPluginRequirement {
+  pluginId: string;
+  versionRange: string;
+}
+
+export interface PluginDependencyComponentRequirement {
+  id: string;
+  versionRange: string;
+  optional?: boolean | undefined;
+}
+
+export interface PluginDependencyServiceRequirement {
+  id: string;
+  versionRange: string;
+  optional?: boolean | undefined;
+}
+
+export interface PluginProvidedCapabilities {
+  components?: PluginCapabilityComponentContribution[] | undefined;
+  services?: PluginCapabilityServiceContribution[] | undefined;
+}
+
+export interface PluginDependencies {
+  plugins?: PluginDependencyPluginRequirement[] | undefined;
+  components?: PluginDependencyComponentRequirement[] | undefined;
+  services?: PluginDependencyServiceRequirement[] | undefined;
 }
 
 export type PluginContributionPredicate = Record<string, unknown>;
@@ -73,6 +111,7 @@ export interface PluginPopoutCapabilityFlags {
 export interface PluginContributions {
   views?: PluginViewContribution[] | undefined;
   parts?: PluginPartContribution[] | undefined;
+  capabilities?: PluginProvidedCapabilities | undefined;
   actions?: PluginActionContribution[] | undefined;
   menus?: PluginMenuContribution[] | undefined;
   keybindings?: PluginKeybindingContribution[] | undefined;
@@ -85,6 +124,7 @@ export interface PluginContributions {
 export interface PluginContract {
   manifest: PluginManifestIdentity;
   contributes?: PluginContributions | undefined;
+  dependsOn?: PluginDependencies | undefined;
 }
 
 export interface PluginCompatibilityMetadata {
