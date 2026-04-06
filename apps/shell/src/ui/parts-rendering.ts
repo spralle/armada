@@ -13,11 +13,19 @@ export interface ComposedShellPart {
   pluginId: string;
 }
 
+export interface ComposedPartDefinition {
+  definitionId: string;
+  title: string;
+  slot: "main" | "secondary" | "side";
+  component?: string;
+  pluginId: string;
+}
+
 export type PartSlot = ComposedShellPart["slot"];
 
-export function composePartsFromRegistrySnapshot(
+export function composePartDefinitionsFromRegistrySnapshot(
   snapshot: ReturnType<ShellRuntime["registry"]["getSnapshot"]>,
-): ComposedShellPart[] {
+): ComposedPartDefinition[] {
   const composed = composeEnabledPluginContributions(
     snapshot.plugins.map((plugin) => ({
       id: plugin.id,
@@ -27,9 +35,7 @@ export function composePartsFromRegistrySnapshot(
   );
 
   return composed.parts.map((part) => ({
-    instanceId: part.id,
     definitionId: part.id,
-    id: part.id,
     title: part.title,
     slot: part.slot,
     component: part.component,
@@ -37,8 +43,37 @@ export function composePartsFromRegistrySnapshot(
   }));
 }
 
+export function getVisiblePartDefinitions(runtime: ShellRuntime): ComposedPartDefinition[] {
+  return composePartDefinitionsFromRegistrySnapshot(runtime.registry.getSnapshot());
+}
+
 export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPart[] {
-  return composePartsFromRegistrySnapshot(runtime.registry.getSnapshot());
+  const definitionsById = new Map(
+    getVisiblePartDefinitions(runtime).map((definition) => [definition.definitionId, definition]),
+  );
+
+  const composedParts = runtime.contextState.tabOrder
+    .map((tabId) => runtime.contextState.tabs[tabId])
+    .filter((tab): tab is NonNullable<typeof tab> => Boolean(tab))
+    .map((tab) => {
+      const definition = definitionsById.get(tab.definitionId);
+      if (!definition) {
+        return null;
+      }
+
+      return {
+        instanceId: tab.id,
+        definitionId: definition.definitionId,
+        id: tab.id,
+        title: tab.label,
+        slot: definition.slot,
+        component: definition.component,
+        pluginId: definition.pluginId,
+      } satisfies ComposedShellPart;
+    })
+    .filter((part) => part !== null);
+
+  return composedParts;
 }
 
 export function renderPartCard(

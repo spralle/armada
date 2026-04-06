@@ -8,7 +8,7 @@ import {
 } from "../context/runtime-state.js";
 import type { ShellRuntime } from "../app/types.js";
 import { createReactPanelsHost } from "../ui/react/panels-host.js";
-import { getVisibleComposedParts } from "../ui/parts-rendering.js";
+import { getVisibleComposedParts, getVisiblePartDefinitions } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
 
@@ -108,9 +108,14 @@ export function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
 
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, bindings: RuntimeRenderBindings): void {
   void bindings.primeEnabledPluginActivations();
+  const visibleDefinitions = getVisiblePartDefinitions(runtime);
+  runtime.closeableTabIds = new Set(visibleDefinitions.map((part) => part.definitionId));
+  updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleDefinitions.map((part) => ({
+    instanceId: part.definitionId,
+    definitionId: part.definitionId,
+    title: part.title,
+  }))));
   const visibleParts = getVisibleComposedParts(runtime);
-  runtime.closeableTabIds = new Set(visibleParts.map((part) => part.instanceId));
-  updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
   reconcileActiveTab(runtime);
   renderPartsView(root, runtime, {
     applySelection: (event) => bindings.applySelection(event),
