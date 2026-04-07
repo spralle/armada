@@ -8,7 +8,7 @@ import {
 import { createShellPluginRegistry } from "../plugin-registry.js";
 import { buildActionSurface } from "../action-surface.js";
 import { createIntentRuntime } from "../intent-runtime.js";
-import { createPartModuleHostRuntime } from "../part-module-host.js";
+import { createShellPartHostAdapter } from "../part-module-host.js";
 import { createWindowBridge } from "../window-bridge.js";
 import {
   BRIDGE_CHANNEL,
@@ -71,10 +71,10 @@ export function createShellRuntime(): ShellRuntime {
     actionSurface: buildActionSurface([]),
     intentRuntime,
     commandNotice: "",
-    partModuleHost: null as unknown as ReturnType<typeof createPartModuleHostRuntime>,
+    partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,
   };
 
-  runtime.partModuleHost = createPartModuleHostRuntime(runtime);
+  runtime.partHost = createShellPartHostAdapter(runtime);
 
   runtime.registry.registerManifestDescriptors("local", []);
   runtime.layout = runtime.persistence.load();
