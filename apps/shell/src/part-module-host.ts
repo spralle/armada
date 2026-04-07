@@ -3,6 +3,7 @@ import {
   createShellFederationRuntime,
   type ShellFederationRuntime,
 } from "./federation-runtime.js";
+import type { ShellPartHostAdapter } from "./app/contracts.js";
 import type { ComposedShellPart } from "./ui/parts-rendering.js";
 import { isUtilityTabId } from "./utility-tabs.js";
 
@@ -97,6 +98,16 @@ export function createPartModuleHostRuntime(
 
       await Promise.all(mountPromises);
     },
+  };
+}
+
+export function createShellPartHostAdapter(
+  runtime: ShellRuntime,
+  options: PartModuleHostOptions = {},
+): ShellPartHostAdapter {
+  const hostRuntime = createPartModuleHostRuntime(runtime, options);
+  return {
+    syncRenderedParts: (root, parts) => hostRuntime.syncRenderedParts(root, parts),
   };
 }
 

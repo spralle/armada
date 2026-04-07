@@ -17,7 +17,6 @@ import {
 import {
   renderCommandSurface as renderCommandSurfaceView,
 } from "../shell-runtime/command-surface-render.js";
-import type { ComposedShellPart } from "../ui/parts-rendering.js";
 
 interface ShellCompatibilityAdapterDeps {
   activatePluginForBoundary: (options: {
@@ -113,8 +112,7 @@ export function createShellRuntimeCompatibilityAdapters(
   };
 
   const partHost: ShellPartHostAdapter = {
-    syncRenderedParts: (viewRoot: HTMLElement, parts: ComposedShellPart[]) =>
-      runtime.partModuleHost.syncRenderedParts(viewRoot, parts),
+    syncRenderedParts: (viewRoot, parts) => runtime.partHost.syncRenderedParts(viewRoot, parts),
   };
 
   return {
