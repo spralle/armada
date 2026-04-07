@@ -1,0 +1,52 @@
+import type { PluginActivationTriggerType } from "../plugin-registry.js";
+import type { ShellRuntime } from "./types.js";
+import type { ComposedShellPart } from "../ui/parts-rendering.js";
+import type {
+  ContextSyncEvent,
+  SelectionSyncEvent,
+} from "../window-bridge.js";
+import type {
+  IntentActionMatch,
+  ShellIntent,
+} from "../intent-runtime.js";
+
+/**
+ * Shell core boundary invariants:
+ * - Core orchestration modules must not directly import DOM, React, or federation runtime internals.
+ * - Side effects must be routed through ShellEffectsPort.
+ * - Renderer and part-host adapters should remain thin compatibility layers.
+ */
+
+export interface ShellCoreApi {
+  applyContext(event: ContextSyncEvent): void;
+  applySelection(event: SelectionSyncEvent): void;
+  resolveIntentFlow(intent: ShellIntent): void;
+  executeResolvedAction(match: IntentActionMatch, intent: ShellIntent | null): Promise<void>;
+}
+
+export interface ShellEffectsPort {
+  activatePluginForBoundary(options: {
+    pluginId: string;
+    triggerType: PluginActivationTriggerType;
+    triggerId: string;
+  }): Promise<boolean>;
+  announce(message: string): void;
+  publishWithDegrade(event: Parameters<ShellRuntime["bridge"]["publish"]>[0]): boolean;
+  renderCommandSurface(): void;
+  renderContextControlsPanel(): void;
+  renderParts(): void;
+  renderSyncStatus(): void;
+  summarizeSelectionPriorities(): string;
+}
+
+export interface ShellRendererAdapter {
+  initialize(root: HTMLElement, runtime: ShellRuntime, effects: ShellEffectsPort): void;
+  renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void;
+  renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void;
+  renderParts(root: HTMLElement, runtime: ShellRuntime): void;
+  renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void;
+}
+
+export interface ShellPartHostAdapter {
+  syncRenderedParts(root: HTMLElement, parts: ComposedShellPart[]): Promise<void>;
+}

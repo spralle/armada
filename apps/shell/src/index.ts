@@ -58,6 +58,13 @@ import {
   renderSyncStatus as renderSyncStatusView,
 } from "./shell-runtime/runtime-render.js";
 
+export type {
+  ShellCoreApi,
+  ShellEffectsPort,
+  ShellPartHostAdapter,
+  ShellRendererAdapter,
+} from "./app/contracts.js";
+
 export function startShell(root: HTMLElement): ShellRuntime {
   const shellRuntime = createShellRuntime();
   mountShell(root, shellRuntime);
