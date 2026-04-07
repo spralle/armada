@@ -117,6 +117,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, bindings: 
   reconcileActiveTab(runtime);
   renderPartsView(root, runtime, {
     applySelection: (event) => bindings.applySelection(event),
+    partHost: runtime.partHost,
     publishWithDegrade: (event) => {
       bindings.publishWithDegrade(event);
     },

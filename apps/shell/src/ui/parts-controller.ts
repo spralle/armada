@@ -53,7 +53,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
     }, deps as PartLifecycleDeps);
   });
   updateSelectedStyles(root, runtime.selectedPartId);
-  void runtime.partModuleHost.syncRenderedParts(
+  void deps.partHost.syncRenderedParts(
     root,
     visibleParts.filter((part) => !runtime.poppedOutTabIds.has(part.instanceId) && !isUtilityTabId(part.id)),
   );
@@ -91,14 +91,14 @@ function renderPopoutPart(
 ): void {
   const slot = root.querySelector<HTMLElement>("#popout-slot");
   if (!slot) {
-    void runtime.partModuleHost.syncRenderedParts(root, []);
+    void deps.partHost.syncRenderedParts(root, []);
     return;
   }
 
   const part = runtime.popoutTabId ? visibleParts.find((item) => item.instanceId === runtime.popoutTabId) : null;
   if (!part) {
     slot.innerHTML = `<article class="part-root"><h2>Popout unavailable</h2><p>Unable to resolve requested part.</p></article>`;
-    void runtime.partModuleHost.syncRenderedParts(root, []);
+    void deps.partHost.syncRenderedParts(root, []);
     return;
   }
 
@@ -114,7 +114,7 @@ function renderPopoutPart(
     }, deps as PartLifecycleDeps);
   });
   updateSelectedStyles(root, runtime.selectedPartId);
-  void runtime.partModuleHost.syncRenderedParts(root, isUtilityTabId(part.id) ? [] : [part]);
+  void deps.partHost.syncRenderedParts(root, isUtilityTabId(part.id) ? [] : [part]);
 }
 
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
