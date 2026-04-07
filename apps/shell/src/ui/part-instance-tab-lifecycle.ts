@@ -11,7 +11,6 @@ import {
   canReopenClosedTab,
   getTabCloseability,
   reopenMostRecentlyClosedTab,
-  readEntityTypeSelection,
   type ContextTabSlot,
   type ShellContextState,
 } from "../context-state.js";
@@ -19,6 +18,7 @@ import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
 import { buildSelectionSyncEvent } from "../sync/bridge-payloads.js";
 import { getVisibleComposedParts, resolvePartTitle } from "./parts-rendering.js";
+import { buildSelectionByEntityType } from "./parts-controller-selection-transition.js";
 
 export type PartLifecycleDeps = {
   applySelection: (event: SelectionSyncEvent) => void;
@@ -90,7 +90,7 @@ export function closeTabThroughRuntime(
 
   if (activeTabId) {
     const selectedPartTitle = resolvePartTitle(activeTabId, runtime);
-    const selectionByEntityType = buildSelectionByEntityType(runtime);
+    const selectionByEntityType = buildSelectionByEntityType(runtime.contextState);
     const revision = createRevision(sourceWindowId);
 
     deps.applySelection(buildSelectionSyncEvent({
@@ -173,7 +173,7 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
   }
 
   const reopenedTabTitle = runtime.contextState.tabs[reopenedTabId]?.label ?? reopenedTabId;
-  const selectionByEntityType = buildSelectionByEntityType(runtime);
+  const selectionByEntityType = buildSelectionByEntityType(runtime.contextState);
   const revision = createRevision(runtime.windowId);
 
   deps.applySelection(buildSelectionSyncEvent({
@@ -227,7 +227,7 @@ export function activateTabInstance(
     ?? runtime.contextState.tabs[tabInstanceId]?.label
     ?? tabInstanceId;
   const selectionRevision = createRevision(runtime.windowId);
-  const selectionByEntityType = buildSelectionByEntityType(runtime);
+  const selectionByEntityType = buildSelectionByEntityType(runtime.contextState);
 
   deps.applySelection(buildSelectionSyncEvent({
     selectedPartId: tabInstanceId,
@@ -260,15 +260,6 @@ export function activateTabInstance(
   });
 
   return true;
-}
-
-function buildSelectionByEntityType(runtime: ShellRuntime): SelectionSyncEvent["selectionByEntityType"] {
-  return Object.fromEntries(
-    Object.keys(runtime.contextState.selectionByEntityType).map((entityType) => [
-      entityType,
-      readEntityTypeSelection(runtime.contextState, entityType),
-    ]),
-  );
 }
 
 function closeTabUsingRuntimeAllowList(

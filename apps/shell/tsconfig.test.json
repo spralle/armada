@@ -22,6 +22,9 @@
     "src/local-plugin-sources.ts",
     "src/context-state.spec.ts",
     "src/window-bridge.spec.ts",
-    "src/ui/pending-focus.spec.ts"
+    "src/ui/pending-focus.spec.ts",
+    "src/ui/parts-controller-popout-transition.spec.ts",
+    "src/ui/parts-controller-selection-transition.spec.ts",
+    "src/shell-runtime/runtime-render-transition.spec.ts"
   ]
 }

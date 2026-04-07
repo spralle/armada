@@ -22,6 +22,7 @@ import {
   resolvePartTitle,
   updateSelectedStyles,
 } from "./parts-rendering.js";
+import { resolveClosedPopoutTransition } from "./parts-controller-popout-transition.js";
 import type { PartsControllerDeps } from "./parts-controller-types.js";
 
 export { closeTabFromUi, closeTabThroughRuntime, reopenMostRecentlyClosedTabThroughRuntime, restorePart };
@@ -64,16 +65,20 @@ export function startPopoutWatchdog(
   deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">,
 ): void {
   window.setInterval(() => {
-    for (const [partId, handle] of runtime.popoutHandles.entries()) {
-      if (handle.closed) {
-        runtime.popoutHandles.delete(partId);
-        if (runtime.poppedOutTabIds.has(partId)) {
-          runtime.poppedOutTabIds.delete(partId);
-          runtime.notice = `Part '${partId}' restored (popout closed).`;
-          deps.renderParts();
-          deps.renderSyncStatus();
-        }
-      }
+    const transition = resolveClosedPopoutTransition({
+      popoutHandles: runtime.popoutHandles,
+      poppedOutTabIds: runtime.poppedOutTabIds,
+    });
+
+    for (const partId of transition.closedHandleIds) {
+      runtime.popoutHandles.delete(partId);
+    }
+
+    for (const partId of transition.restoredTabIds) {
+      runtime.poppedOutTabIds.delete(partId);
+      runtime.notice = `Part '${partId}' restored (popout closed).`;
+      deps.renderParts();
+      deps.renderSyncStatus();
     }
   }, 1_000);
 }

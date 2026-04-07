@@ -11,7 +11,6 @@ import {
   canReopenClosedTab,
   getTabCloseability,
   reopenMostRecentlyClosedTab,
-  readEntityTypeSelection,
   type ContextTabSlot,
   type ShellContextState,
 } from "../context-state.js";
@@ -19,7 +18,7 @@ import type { ShellRuntime } from "../app/types.js";
 import { resolvePartTitle } from "./parts-rendering.js";
 import { getVisibleComposedParts } from "./parts-rendering.js";
 import type { PartsControllerDeps } from "./parts-controller-types.js";
-import type { SelectionSyncEvent } from "../window-bridge.js";
+import { buildSelectionByEntityType } from "./parts-controller-selection-transition.js";
 
 interface CloseTabRuntimeOptions {
   publishCloseEvent?: boolean;
@@ -77,7 +76,7 @@ export function closeTabThroughRuntime(
 
   if (activeTabId) {
     const selectedPartTitle = resolvePartTitle(activeTabId, runtime);
-    const selectionByEntityType = buildSelectionByEntityType(runtime);
+    const selectionByEntityType = buildSelectionByEntityType(runtime.contextState);
     const revision = createRevision(sourceWindowId);
 
     deps.applySelection({
@@ -157,7 +156,7 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
   }
 
   const reopenedTabTitle = runtime.contextState.tabs[reopenedTabId]?.label ?? reopenedTabId;
-  const selectionByEntityType = buildSelectionByEntityType(runtime);
+  const selectionByEntityType = buildSelectionByEntityType(runtime.contextState);
   const revision = createRevision(runtime.windowId);
 
   deps.applySelection({
@@ -189,15 +188,6 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
   deps.renderParts();
   deps.renderSyncStatus();
   return true;
-}
-
-function buildSelectionByEntityType(runtime: ShellRuntime): SelectionSyncEvent["selectionByEntityType"] {
-  return Object.fromEntries(
-    Object.keys(runtime.contextState.selectionByEntityType).map((entityType) => [
-      entityType,
-      readEntityTypeSelection(runtime.contextState, entityType),
-    ]),
-  );
 }
 
 function closeTabUsingRuntimeAllowList(

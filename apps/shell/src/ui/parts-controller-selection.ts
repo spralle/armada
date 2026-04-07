@@ -1,7 +1,7 @@
 import { createRevision, writeGlobalSelectionLane } from "../context/runtime-state.js";
-import { readEntityTypeSelection } from "../context-state.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { PartsControllerDeps } from "./parts-controller-types.js";
+import { buildSelectionEnvelope } from "./parts-controller-selection-transition.js";
 
 export function activateTabThroughRuntime(
   runtime: ShellRuntime,
@@ -10,30 +10,21 @@ export function activateTabThroughRuntime(
   deps: PartsControllerDeps,
 ): void {
   const selectionRevision = createRevision(runtime.windowId);
-  const selectionByEntityType = Object.fromEntries(
-    Object.keys(runtime.contextState.selectionByEntityType).map((entityType) => [
-      entityType,
-      readEntityTypeSelection(runtime.contextState, entityType),
-    ]),
-  );
+  const selectedPartDefinitionId = runtime.contextState.tabs[partId]?.partDefinitionId
+    ?? runtime.contextState.tabs[partId]?.definitionId
+    ?? partId;
 
-  deps.applySelection({
+  const selectionEvent = buildSelectionEnvelope(runtime.contextState, {
     selectedPartId: partId,
     selectedPartTitle: partTitle,
-    selectionByEntityType,
     revision: selectionRevision,
     sourceWindowId: runtime.windowId,
-    type: "selection",
+    selectedPartDefinitionId,
   });
 
-  deps.publishWithDegrade({
-    type: "selection",
-    selectedPartId: partId,
-    selectedPartTitle: partTitle,
-    selectionByEntityType,
-    revision: selectionRevision,
-    sourceWindowId: runtime.windowId,
-  });
+  deps.applySelection(selectionEvent);
+
+  deps.publishWithDegrade(selectionEvent);
 
   writeGlobalSelectionLane(runtime, {
     selectedPartId: partId,
