@@ -16,12 +16,12 @@ import {
 } from "./keyboard-a11y.js";
 import { shellBootstrapState } from "./app/bootstrap.js";
 import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
-import type { ShellRendererAdapter } from "./app/contracts.js";
-import { createShellRuntimeCompatibilityAdapters } from "./app/compat-adapters.js";
 import {
-  getRendererAdapter,
-  registerRendererAdapter,
-} from "./app/renderer-adapter-registry.js";
+  createShellBootstrapComposition,
+  getShellBootstrapComposition,
+  registerShellBootstrapComposition,
+} from "./app/bootstrap-composition.js";
+import { readShellMigrationFlags } from "./app/migration-flags.js";
 import { createShellRuntime } from "./app/runtime.js";
 import type { ShellRuntime } from "./app/types.js";
 import type { PluginActivationTriggerType } from "./plugin-registry.js";
@@ -52,9 +52,6 @@ import {
   bindKeyboardShortcuts as bindKeyboardHandlers,
   dismissIntentChooser as dismissIntentChooserState,
 } from "./shell-runtime/keyboard-handlers.js";
-import {
-  renderContextControlsPanel as renderContextControlsPanelView,
-} from "./shell-runtime/runtime-render.js";
 
 export type {
   ShellCoreApi,
@@ -65,18 +62,23 @@ export type {
 
 export function startShell(root: HTMLElement): ShellRuntime {
   const shellRuntime = createShellRuntime();
-  const adapters = createShellRuntimeCompatibilityAdapters(root, shellRuntime, {
+  const flags = readShellMigrationFlags();
+  const composition = createShellBootstrapComposition(root, shellRuntime, flags, {
     activatePluginForBoundary: (options) => activatePluginForBoundary(root, shellRuntime, options),
     announce: (message) => announce(root, shellRuntime, message),
     dismissIntentChooser: () => dismissIntentChooser(root, shellRuntime),
     primeEnabledPluginActivations: () => primeEnabledPluginActivations(root, shellRuntime),
     publishWithDegrade: (event) => publishWithDegrade(root, shellRuntime, event, createBridgeBindings(root, shellRuntime)),
     refreshCommandContributions: () => refreshCommandContributions(shellRuntime),
+    renderCommandSurface: () => renderCommandSurface(root, shellRuntime),
+    renderContextControlsPanel: () => renderContextControlsPanel(root, shellRuntime),
+    renderParts: () => renderParts(root, shellRuntime),
+    renderSyncStatus: () => renderSyncStatus(root, shellRuntime),
     summarizeSelectionPriorities: () => summarizeSelectionPriorities(shellRuntime),
   });
-  registerRendererAdapter(shellRuntime, adapters.renderer);
-  mountShell(root, shellRuntime, adapters.core, adapters.renderer);
-  adapters.renderer.initialize(root, shellRuntime, adapters.effects);
+  registerShellBootstrapComposition(shellRuntime, composition);
+  mountShell(root, shellRuntime, composition);
+  composition.initialize(root, shellRuntime);
 
   if (!shellRuntime.isPopout) {
     void hydratePluginRegistry(root, shellRuntime);
@@ -87,14 +89,9 @@ export function startShell(root: HTMLElement): ShellRuntime {
   return shellRuntime;
 }
 
-function mountShell(
-  root: HTMLElement,
-  runtime: ShellRuntime,
-  core: Pick<ReturnType<typeof createRuntimeEventHandlers>, "applyContext" | "applySelection">,
-  renderer: ShellRendererAdapter,
-): void {
+function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: ReturnType<typeof getShellBootstrapComposition>): void {
   if (runtime.isPopout) {
-    renderer.mountPopout(root, runtime, {
+    composition.mountPopout(root, runtime, {
       renderParts: () => renderParts(root, runtime),
       updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
       setupResize: () => setupResize(root, runtime),
@@ -109,7 +106,7 @@ function mountShell(
       },
     });
   } else {
-    renderer.mountMainWindow(root, {
+    composition.mountMainWindow(root, {
       renderParts: () => renderParts(root, runtime),
       updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
       setupResize: () => setupResize(root, runtime),
@@ -122,7 +119,10 @@ function mountShell(
     });
   }
 
-  bindBridgeSync(root, runtime, core);
+  bindBridgeSync(root, runtime, {
+    applyContext: composition.applyContext,
+    applySelection: composition.applySelection,
+  });
   bindKeyboardShortcuts(root, runtime);
 }
 
@@ -163,7 +163,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): 
     });
     runtime.registry = state.registry;
     refreshCommandContributions(runtime);
-    getRendererAdapter(runtime).renderPanels(root, runtime);
+    getShellBootstrapComposition(runtime).renderPanels(root, runtime);
     renderParts(root, runtime);
     renderCommandSurface(root, runtime);
   } catch (error) {
@@ -183,7 +183,7 @@ function refreshCommandContributions(runtime: ShellRuntime): void {
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
-  getRendererAdapter(runtime).renderParts(root, runtime);
+  getShellBootstrapComposition(runtime).renderParts(root, runtime);
 }
 
 function bindBridgeSync(
@@ -225,11 +225,11 @@ function dismissIntentChooser(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
-  getRendererAdapter(runtime).renderSyncStatus(root, runtime);
+  getShellBootstrapComposition(runtime).renderSyncStatus(root, runtime);
 }
 
 function renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void {
-  renderContextControlsPanelView(root, runtime);
+  getShellBootstrapComposition(runtime).renderContextControlsPanel(root, runtime);
 }
 
 function renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void {
@@ -261,7 +261,7 @@ async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRu
 
   await Promise.all(activations);
   refreshCommandContributions(runtime);
-  getRendererAdapter(runtime).renderPanels(root, runtime);
+  getShellBootstrapComposition(runtime).renderPanels(root, runtime);
   renderParts(root, runtime);
   renderCommandSurface(root, runtime);
 }
@@ -291,7 +291,7 @@ async function activatePluginForBoundary(
 
     runtime.notice = "";
     refreshCommandContributions(runtime);
-    getRendererAdapter(runtime).renderPanels(root, runtime);
+    getShellBootstrapComposition(runtime).renderPanels(root, runtime);
     return true;
   } catch (error) {
     runtime.notice = `Plugin activation failed for '${options.pluginId}' (${options.triggerType}:${options.triggerId}).`;
