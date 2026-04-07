@@ -1,69 +1,27 @@
 import { cloneContextState, ensureGroup } from "./helpers.js";
 import {
-  ContextTabCloseability,
+  applyDockTabDrop,
+  activateTabInDockTree,
+  deriveDeterministicActiveTabId,
+  ensureTabRegisteredInDockTree,
+  removeTabFromDockTree,
+} from "./dock-tree.js";
+import type { DockDropZone } from "./dock-tree-types.js";
+import {
   ContextTabSlot,
   ClosedTabHistoryEntry,
   ShellContextState,
 } from "./types.js";
-
-const CLOSED_TAB_HISTORY_LIMIT = 10;
-
-function clampClosedTabHistory(entries: ClosedTabHistoryEntry[]): ClosedTabHistoryEntry[] {
-  return entries.slice(0, CLOSED_TAB_HISTORY_LIMIT);
-}
-
-function isClosedTabEntryRestorable(
-  entry: ClosedTabHistoryEntry,
-): entry is ClosedTabHistoryEntry {
-  return Boolean(
-    entry.tabId
-      && entry.groupId
-      && entry.label
-      && (entry.closePolicy === "fixed" || entry.closePolicy === "closeable")
-      && (entry.slot === "main" || entry.slot === "secondary" || entry.slot === "side"),
-  );
-}
-
-function normalizeInsertIndex(currentOrder: string[], desiredIndex: number): number {
-  if (!Number.isFinite(desiredIndex)) {
-    return currentOrder.length;
-  }
-
-  const clamped = Math.max(0, Math.min(Math.trunc(desiredIndex), currentOrder.length));
-  return clamped;
-}
-
-function cloneTabArgs(args: Record<string, string> | undefined): Record<string, string> {
-  return args ? { ...args } : {};
-}
-
-function createTabInstanceId(state: ShellContextState, definitionId: string): string {
-  if (!state.tabs[definitionId]) {
-    return definitionId;
-  }
-
-  let index = 2;
-  while (true) {
-    const candidate = `${definitionId}~${index}`;
-    if (!state.tabs[candidate]) {
-      return candidate;
-    }
-    index += 1;
-  }
-}
-
-function resolveTargetGroupId(state: ShellContextState, explicitGroupId: string | undefined): string {
-  if (explicitGroupId) {
-    return explicitGroupId;
-  }
-
-  const activeTabId = state.activeTabId;
-  if (activeTabId && state.tabs[activeTabId]) {
-    return state.tabs[activeTabId].groupId;
-  }
-
-  return Object.keys(state.groups)[0] ?? "group-main";
-}
+import { isUtilityTabId } from "../utility-tabs.js";
+import {
+  clampClosedTabHistory,
+  cloneTabArgs,
+  collectDockTreeTabIds,
+  createTabInstanceId,
+  isClosedTabEntryRestorable,
+  normalizeInsertIndex,
+  resolveTargetGroupId,
+} from "./tabs-groups-helpers.js";
 
 export function registerTab(
   state: ShellContextState,
@@ -103,8 +61,10 @@ export function registerTab(
   if (!next.tabOrder.includes(input.tabId)) {
     next.tabOrder.push(input.tabId);
   }
+  next.dockTree = ensureTabRegisteredInDockTree(next.dockTree, input.tabId);
+
   if (!next.activeTabId) {
-    next.activeTabId = input.tabId;
+    next.activeTabId = deriveDeterministicActiveTabId(next.dockTree) ?? input.tabId;
   }
   return next;
 }
@@ -145,8 +105,37 @@ export function setActiveTab(state: ShellContextState, tabId: string): ShellCont
 
   return {
     ...state,
+    dockTree: activateTabInDockTree(state.dockTree, tabId),
     activeTabId: tabId,
   };
+}
+
+export function moveTabInDockTree(
+  state: ShellContextState,
+  input: {
+    tabId: string;
+    targetTabId: string;
+    zone: DockDropZone;
+  },
+): ShellContextState {
+  if (!state.tabs[input.tabId] || !state.tabs[input.targetTabId]) {
+    return state;
+  }
+
+  const next = cloneContextState(state);
+  next.dockTree = applyDockTabDrop(next.dockTree, input);
+  next.tabOrder = next.tabOrder.filter((tabId) => next.tabs[tabId]);
+  for (const stackTabId of collectDockTreeTabIds(next.dockTree.root)) {
+    if (!next.tabOrder.includes(stackTabId) && next.tabs[stackTabId]) {
+      next.tabOrder.push(stackTabId);
+    }
+  }
+  next.activeTabId = next.tabs[input.tabId]
+    ? input.tabId
+    : deriveDeterministicActiveTabId(next.dockTree)
+      ?? next.tabOrder[0]
+      ?? null;
+  return next;
 }
 
 export function moveTabToGroup(
@@ -183,6 +172,7 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
   delete next.tabs[tabId];
   next.tabOrder = orderedTabIds.filter((id) => id !== tabId && next.tabs[id]);
   delete next.subcontextsByTab[tabId];
+  next.dockTree = removeTabFromDockTree(next.dockTree, tabId);
 
   if (next.activeTabId === tabId) {
     const rightCandidate = orderedTabIds
@@ -200,6 +190,12 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
     next.activeTabId = next.tabOrder[0] ?? null;
   }
 
+  if (!next.activeTabId || !next.tabs[next.activeTabId]) {
+    next.activeTabId = deriveDeterministicActiveTabId(next.dockTree)
+      ?? next.tabOrder[0]
+      ?? null;
+  }
+
   return next;
 }
 
@@ -213,6 +209,10 @@ export function closeTabWithHistory(
 ): ShellContextState {
   const tab = state.tabs[input.tabId];
   if (!tab) {
+    return state;
+  }
+
+  if (isUtilityTabId(input.tabId)) {
     return state;
   }
 
@@ -245,7 +245,9 @@ export function closeTabWithHistory(
 }
 
 export function canReopenClosedTab(state: ShellContextState, slot: ContextTabSlot): boolean {
-  return state.closedTabHistoryBySlot[slot].some((entry) => isClosedTabEntryRestorable(entry));
+  return state.closedTabHistoryBySlot[slot].some(
+    (entry) => isClosedTabEntryRestorable(entry) && !isUtilityTabId(entry.tabId),
+  );
 }
 
 export function reopenMostRecentlyClosedTab(
@@ -262,12 +264,17 @@ export function reopenMostRecentlyClosedTab(
   const retained: ClosedTabHistoryEntry[] = [];
 
   for (const candidate of slotHistory) {
-    if (!reopenedEntry && isClosedTabEntryRestorable(candidate) && !next.tabs[candidate.tabId]) {
+    if (
+      !reopenedEntry
+      && isClosedTabEntryRestorable(candidate)
+      && !isUtilityTabId(candidate.tabId)
+      && !next.tabs[candidate.tabId]
+    ) {
       reopenedEntry = candidate as ClosedTabHistoryEntry & { orderIndex?: number };
       continue;
     }
 
-    if (isClosedTabEntryRestorable(candidate) && !next.tabs[candidate.tabId]) {
+    if (isClosedTabEntryRestorable(candidate) && !isUtilityTabId(candidate.tabId) && !next.tabs[candidate.tabId]) {
       retained.push(candidate);
     }
   }
@@ -300,50 +307,3 @@ export function reopenMostRecentlyClosedTab(
   return next;
 }
 
-export function getTabCloseability(state: ShellContextState, tabId: string): ContextTabCloseability {
-  const tab = state.tabs[tabId];
-  if (!tab || tab.closePolicy === "fixed") {
-    return {
-      policy: tab?.closePolicy ?? "fixed",
-      canClose: false,
-      actionAvailability: "disabled",
-      reason: "fixed-policy",
-    };
-  }
-
-  return {
-    policy: tab.closePolicy,
-    canClose: true,
-    actionAvailability: "enabled",
-    reason: null,
-  };
-}
-
-export function closeTabIfAllowed(state: ShellContextState, tabId: string): ShellContextState {
-  const closeability = getTabCloseability(state, tabId);
-  if (!closeability.canClose) {
-    return state;
-  }
-
-  return closeTab(state, tabId);
-}
-
-export function closeTabIfAllowedWithHistory(
-  state: ShellContextState,
-  input: {
-    tabId: string;
-    slot: ContextTabSlot;
-    orderIndex: number;
-  },
-): ShellContextState {
-  const closeability = getTabCloseability(state, input.tabId);
-  if (!closeability.canClose) {
-    return state;
-  }
-
-  return closeTabWithHistory(state, input);
-}
-
-export function getTabGroupId(state: ShellContextState, tabId: string): string | null {
-  return state.tabs[tabId]?.groupId ?? null;
-}

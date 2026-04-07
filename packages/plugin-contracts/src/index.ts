@@ -2,6 +2,7 @@ export type {
   PluginManifestIdentity,
   PluginViewContribution,
   PluginPartContribution,
+  PluginDockableTabMetadata,
   PluginCapabilityComponentContribution,
   PluginCapabilityServiceContribution,
   PluginDependencyPluginRequirement,

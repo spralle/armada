@@ -10,6 +10,8 @@ import {
 import { createActivationRuntime } from "../dist/activation-runtime.js";
 import { bootstrapShellWithTenantManifest } from "../dist/app/bootstrap.js";
 import { closeTabThroughRuntime } from "../dist/ui/parts-controller.js";
+import { moveDockTabThroughRuntime } from "../dist/ui/dock-tab-dnd.js";
+import { renderDockTree } from "../dist/ui/parts-rendering.js";
 import { createInitialShellContextState, registerTab } from "../dist/context-state.js";
 
 const DOMAIN_UNPLANNED = {
@@ -334,9 +336,9 @@ function createCloseRuntimeFixture() {
                 },
                 contributes: {
                   parts: [
-                    { id: "tab-a", title: "tab-a", slot: "main", component: "a" },
-                    { id: "tab-b", title: "Orders", slot: "main", component: "b" },
-                    { id: "tab-c", title: "Vessels", slot: "main", component: "c" },
+                    { id: "tab-a", title: "tab-a", dock: { container: "main" }, component: "a" },
+                    { id: "tab-b", title: "Orders", dock: { container: "main" }, component: "b" },
+                    { id: "tab-c", title: "Vessels", dock: { container: "main" }, component: "c" },
                   ],
                 },
               },
@@ -433,4 +435,162 @@ test("runtime close flow remains local in degraded mode", () => {
   assert.equal(runtime.selectedPartId, "tab-a");
   assert.equal(published[0]?.type, "tab-close");
   assert.equal(published[0]?.tabId, "tab-b");
+});
+
+function createDockMoveRuntimeFixture() {
+  let contextState = createInitialShellContextState({
+    initialTabId: "tab-a",
+    initialGroupId: "group-main",
+    initialGroupColor: "blue",
+  });
+  contextState = registerTab(contextState, {
+    tabId: "tab-b",
+    groupId: "group-main",
+    tabLabel: "Orders",
+    closePolicy: "closeable",
+  });
+
+  const runtime = {
+    syncDegraded: false,
+    windowId: "window-a",
+    contextState,
+    selectedPartId: "tab-a",
+    selectedPartTitle: "tab-a",
+    contextPersistence: {
+      save(nextState) {
+        runtime.contextState = nextState;
+        return { warning: null };
+      },
+    },
+    notice: "",
+  };
+
+  const renders = {
+    context: 0,
+    parts: 0,
+    sync: 0,
+  };
+
+  const deps = {
+    renderContextControls() {
+      renders.context += 1;
+    },
+    renderParts() {
+      renders.parts += 1;
+    },
+    renderSyncStatus() {
+      renders.sync += 1;
+    },
+  };
+
+  return {
+    runtime,
+    deps,
+    renders,
+  };
+}
+
+test("dock move/split mutations apply in same-window mode and activate moved tab", () => {
+  const fixture = createDockMoveRuntimeFixture();
+  const { runtime, deps, renders } = fixture;
+
+  const moved = moveDockTabThroughRuntime(runtime, deps, {
+    tabId: "tab-b",
+    sourceWindowId: "window-a",
+    targetTabId: "tab-a",
+    zone: "bottom",
+  });
+
+  assert.equal(moved, true);
+  assert.equal(runtime.selectedPartId, "tab-b");
+  assert.equal(runtime.contextState.activeTabId, "tab-b");
+  assert.equal(runtime.contextState.dockTree.root?.kind, "split");
+  assert.equal(renders.context, 1);
+  assert.equal(renders.parts, 1);
+  assert.equal(renders.sync, 1);
+});
+
+test("dock move/split mutations are blocked in degraded mode", () => {
+  const fixture = createDockMoveRuntimeFixture();
+  const { runtime, deps, renders } = fixture;
+  runtime.syncDegraded = true;
+
+  const beforeDockTree = JSON.stringify(runtime.contextState.dockTree);
+  const moved = moveDockTabThroughRuntime(runtime, deps, {
+    tabId: "tab-b",
+    sourceWindowId: "window-a",
+    targetTabId: "tab-a",
+    zone: "right",
+  });
+
+  assert.equal(moved, false);
+  assert.equal(JSON.stringify(runtime.contextState.dockTree), beforeDockTree);
+  assert.equal(runtime.notice.includes("read-only"), true);
+  assert.equal(renders.context, 0);
+  assert.equal(renders.parts, 0);
+  assert.equal(renders.sync, 1);
+});
+
+test("recursive dock-tree renderer emits nested stacks with local tab scopes", () => {
+  let contextState = createInitialShellContextState({
+    initialTabId: "tab-a",
+    initialGroupId: "group-main",
+  });
+  contextState = registerTab(contextState, { tabId: "tab-b", groupId: "group-main", tabLabel: "Orders" });
+  contextState = registerTab(contextState, { tabId: "tab-c", groupId: "group-main", tabLabel: "Vessels" });
+  contextState = registerTab(contextState, { tabId: "tab-d", groupId: "group-main", tabLabel: "Ports" });
+  contextState = {
+    ...contextState,
+    dockTree: {
+      root: {
+        kind: "split",
+        id: "split-1",
+        orientation: "horizontal",
+        first: {
+          kind: "stack",
+          id: "stack-left",
+          tabIds: ["tab-a", "tab-b"],
+          activeTabId: "tab-b",
+        },
+        second: {
+          kind: "split",
+          id: "split-2",
+          orientation: "vertical",
+          first: {
+            kind: "stack",
+            id: "stack-top-right",
+            tabIds: ["tab-c"],
+            activeTabId: "tab-c",
+          },
+          second: {
+            kind: "stack",
+            id: "stack-bottom-right",
+            tabIds: ["tab-d"],
+            activeTabId: "tab-d",
+          },
+        },
+      },
+    },
+  };
+
+  const visibleParts = [
+    { id: "tab-a", title: "tab-a", slot: "main", pluginId: "plugin-a" },
+    { id: "tab-b", title: "Orders", slot: "main", pluginId: "plugin-a" },
+    { id: "tab-c", title: "Vessels", slot: "main", pluginId: "plugin-a" },
+    { id: "tab-d", title: "Ports", slot: "main", pluginId: "plugin-a" },
+  ];
+
+  const runtime = {
+    selectedPartId: "tab-b",
+    contextState,
+    syncDegraded: false,
+    windowId: "window-a",
+  };
+
+  const html = renderDockTree(contextState.dockTree.root, visibleParts, runtime);
+  assert.match(html, /dock-node-split-horizontal/, "root split should render horizontal class");
+  assert.match(html, /dock-node-split-vertical/, "nested split should render vertical class");
+  assert.match(html, /data-tab-scope=\"stack:stack-left\"/, "left stack should render local tab scope");
+  assert.match(html, /data-tab-scope=\"stack:stack-top-right\"/, "top-right stack should render local tab scope");
+  assert.match(html, /data-tab-scope=\"stack:stack-bottom-right\"/, "bottom-right stack should render local tab scope");
 });

@@ -1,3 +1,9 @@
+import type { DockTreeState } from "./dock-tree-types.js";
+
+export type PanelId = string;
+
+export type TabInstanceId = string;
+
 export interface RevisionMeta {
   timestamp: number;
   writer: string;
@@ -104,8 +110,9 @@ export interface SelectionUpdateResult {
 export interface ShellContextState {
   groups: Record<string, ContextGroup>;
   tabs: Record<string, ContextTab>;
-  tabOrder: string[];
-  activeTabId: string | null;
+  tabOrder: TabInstanceId[];
+  activeTabId: TabInstanceId | null;
+  dockTree: DockTreeState;
   closedTabHistoryBySlot: Record<ContextTabSlot, ClosedTabHistoryEntry[]>;
   globalLanes: Record<string, ContextLaneValue>;
   groupLanes: Record<string, Record<string, ContextLaneValue>>;

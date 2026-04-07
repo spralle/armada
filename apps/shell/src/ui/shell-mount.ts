@@ -1,4 +1,3 @@
-import { DEV_MODE } from "../app/constants.js";
 import type { ShellRuntime } from "../app/types.js";
 
 type MountDeps = {
@@ -13,17 +12,21 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     body { margin: 0; background: #14161a; color: #e9edf3; }
-    .shell { display: grid; grid-template-columns: var(--side-size) 6px 1fr; height: 100vh; }
-    .slot-side { border-right: 1px solid #2b3040; background: #181c24; }
-    .main-stack { display: grid; grid-template-rows: 1fr 6px var(--secondary-size); min-width: 0; min-height: 0; }
-    .slot { min-width: 0; min-height: 0; overflow: hidden; }
-    .slot-body { display: grid; grid-template-rows: auto 1fr; height: 100%; min-height: 0; }
-    .slot-tabs { border-bottom: 1px solid #2b3040; padding: 0 8px; }
-    .slot-panels { min-height: 0; overflow: auto; padding: 10px 12px; }
-    .slot-main { background: #11151c; }
-    .slot-secondary { border-top: 1px solid #2b3040; background: #121922; }
+    .shell { display: grid; grid-template-columns: 1fr; height: 100vh; }
+    .dock-root { background: #11151c; min-width: 0; min-height: 0; overflow: auto; padding: 10px 12px; }
+    .dock-node { min-width: 0; min-height: 0; }
+    .dock-node-stack { display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; border: 1px solid #2b3040; border-radius: 6px; background: #121922; overflow: hidden; }
+    .dock-stack-panels { min-height: 0; overflow: auto; padding: 10px 12px; }
+    .dock-node-split { display: grid; gap: 8px; min-width: 0; min-height: 0; }
+    .dock-node-split-horizontal { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .dock-node-split-vertical { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+    .dock-split-branch { min-width: 0; min-height: 0; }
     .part-tab-strip { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: thin; }
-    .part-tab-item { display: inline-flex; align-items: center; gap: 2px; }
+    .part-tab-item { display: inline-flex; align-items: center; gap: 2px; position: relative; }
+    .part-tab-handle { appearance: none; border: 1px solid transparent; background: transparent; color: #93a4c2; border-radius: 4px; padding: 2px 4px; cursor: grab; }
+    .part-tab-handle:hover { border-color: #334564; color: #d8e2f5; }
+    .part-tab-handle:active { cursor: grabbing; }
+    .part-tab-handle:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
     .part-tab { appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none; color: #c6d0e0; padding: 8px 10px; border-radius: 6px 6px 0 0; cursor: pointer; white-space: nowrap; }
     .part-tab:hover { background: #1a2230; color: #e9edf3; }
     .part-tab:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
@@ -39,7 +42,15 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .part-actions { display: flex; gap: 8px; margin-bottom: 8px; }
     .part-actions button { background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 4px 8px; cursor: pointer; }
     .part-actions button:hover { border-color: #7cb4ff; }
-    .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
+    .dock-drop-overlay { display: none; position: absolute; inset: -10px -8px -10px -8px; z-index: 5; }
+    .is-dock-dragging .dock-drop-overlay { display: block; }
+    .dock-drop-zone { position: absolute; border: 1px dashed transparent; border-radius: 4px; background: transparent; }
+    .dock-drop-zone:hover { border-color: #7cb4ff; background: #7cb4ff22; }
+    .dock-drop-zone-left { left: 0; top: 20%; width: 24%; height: 60%; }
+    .dock-drop-zone-right { right: 0; top: 20%; width: 24%; height: 60%; }
+    .dock-drop-zone-top { left: 20%; top: 0; width: 60%; height: 24%; }
+    .dock-drop-zone-bottom { left: 20%; bottom: 0; width: 60%; height: 24%; }
+    .dock-drop-zone-center { left: 28%; top: 28%; width: 44%; height: 44%; border-color: #516a95; }
     .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
     .sync-degraded { opacity: 0.62; filter: grayscale(0.5); pointer-events: none; }
     .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
@@ -70,32 +81,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     }
   </style>
   <main class="shell" id="shell-root">
-    <section class="slot slot-side" data-slot="side">
-      <section class="card" id="plugin-controls"></section>
-      <section class="card" id="sync-status"></section>
-      <section class="card" id="context-controls"></section>
-      ${DEV_MODE ? '<section class="card dev-inspector" id="dev-context-inspector"></section>' : ""}
-      <section class="slot-body">
-        <section class="slot-tabs" id="slot-side-tabs"></section>
-        <section class="slot-panels" id="slot-side-parts"></section>
-      </section>
-    </section>
-    <div class="splitter" id="splitter-side" data-pane="side" aria-label="Resize side pane"></div>
-    <section class="main-stack">
-      <section class="slot slot-main" data-slot="main">
-        <section class="slot-body">
-          <section class="slot-tabs" id="slot-main-tabs"></section>
-          <section class="slot-panels" id="slot-main-parts"></section>
-        </section>
-      </section>
-      <div class="splitter" id="splitter-secondary" data-pane="secondary" aria-label="Resize secondary pane"></div>
-      <section class="slot slot-secondary" data-slot="secondary">
-        <section class="slot-body">
-          <section class="slot-tabs" id="slot-secondary-tabs"></section>
-          <section class="slot-panels" id="slot-secondary-parts"></section>
-        </section>
-      </section>
-    </section>
+    <section class="dock-root" id="dock-tree-root" data-slot="main"></section>
   </main>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   `;
@@ -116,7 +102,6 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
     .part-root.is-selected { border-color: #7cb4ff; box-shadow: 0 0 0 1px #7cb4ff33 inset; }
     .part-actions { display: flex; gap: 8px; margin-bottom: 8px; }
     .part-actions button { background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 4px 8px; cursor: pointer; }
-    .dropzone { margin-top: 8px; border: 1px dashed #4d6389; border-radius: 4px; padding: 6px; color: #b6c2d8; font-size: 12px; }
     .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
     .sync-degraded { opacity: 0.62; filter: grayscale(0.5); pointer-events: none; }
     .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
@@ -141,9 +126,6 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
     }
   </style>
   <main class="popout">
-    <section class="card" id="sync-status"></section>
-    <section class="card" id="context-controls"></section>
-    ${DEV_MODE ? '<section class="card dev-inspector" id="dev-context-inspector"></section>' : ""}
     <section id="popout-slot"></section>
   </main>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>

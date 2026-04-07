@@ -1,7 +1,10 @@
 import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
+import { DEV_MODE } from "../app/constants.js";
 import { escapeHtml } from "../app/utils.js";
+import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
+import { listAvailableUtilityTabs, resolveUtilityTabById } from "../utility-tabs.js";
 
 export interface ComposedShellPart {
   instanceId: string;
@@ -39,10 +42,35 @@ export function composePartDefinitionsFromRegistrySnapshot(
   return composed.parts.map((part) => ({
     definitionId: part.id,
     title: part.title,
-    slot: part.slot,
+    slot: resolveSlotFromDockContainer(readDockContainer(part)),
     component: part.component,
     pluginId: part.pluginId,
   }));
+}
+
+function readDockContainer(part: unknown): string | undefined {
+  if (!part || typeof part !== "object" || !("dock" in part)) {
+    return undefined;
+  }
+
+  const dock = part.dock;
+  if (!dock || typeof dock !== "object" || !("container" in dock)) {
+    return undefined;
+  }
+
+  return typeof dock.container === "string" ? dock.container : undefined;
+}
+
+function resolveSlotFromDockContainer(container: string | undefined): PartSlot {
+  if (container === "side") {
+    return "side";
+  }
+
+  if (container === "secondary") {
+    return "secondary";
+  }
+
+  return "main";
 }
 
 export function getVisiblePartDefinitions(runtime: ShellRuntime): ComposedPartDefinition[] {
@@ -54,7 +82,7 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
     getVisiblePartDefinitions(runtime).map((definition) => [definition.definitionId, definition]),
   );
 
-  const composedParts = runtime.contextState.tabOrder
+  const pluginParts = runtime.contextState.tabOrder
     .map((tabId) => runtime.contextState.tabs[tabId])
     .filter((tab): tab is NonNullable<typeof tab> => Boolean(tab))
     .map((tab) => {
@@ -78,7 +106,19 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
     })
     .filter((part) => part !== null);
 
-  return composedParts;
+  const utilityParts = listAvailableUtilityTabs({ devMode: DEV_MODE })
+    .map((tab) => ({
+      instanceId: tab.id,
+      definitionId: tab.id,
+      id: tab.id,
+      partDefinitionId: tab.id,
+      title: tab.title,
+      args: {},
+      slot: tab.slot,
+      pluginId: "shell.utility",
+    } satisfies ComposedShellPart));
+
+  return [...utilityParts, ...pluginParts];
 }
 
 export function renderPartCard(
@@ -136,11 +176,16 @@ export function renderTabStrip(
   tabs: ComposedShellPart[],
   activeTabId: string,
   runtime: ShellRuntime,
+  options?: {
+    tabScope?: string;
+    label?: string;
+  },
 ): string {
-  const label = `${slot} panel tabs`;
+  const label = options?.label ?? `${slot} panel tabs`;
+  const tabScope = options?.tabScope ?? `slot:${slot}`;
   const reopenEnabled = !runtime.syncDegraded && canReopenClosedTab(runtime.contextState, slot);
   return `
-    <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}">
+    <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}" data-tab-scope="${escapeHtml(tabScope)}">
       ${tabs.map((part) => {
     const isActive = part.instanceId === activeTabId;
     const closeability = getTabCloseability(runtime.contextState, part.instanceId);
@@ -158,11 +203,21 @@ export function renderTabStrip(
     return `<div class="part-tab-item" data-tab-item="${part.instanceId}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
         <button
           type="button"
+          class="part-tab-handle"
+          data-action="drag-tab-handle"
+          data-tab-id="${part.id}"
+          draggable="true"
+          aria-label="Drag ${escapeHtml(part.title)} tab"
+          title="Drag tab"
+        >⋮⋮</button>
+        <button
+          type="button"
           role="tab"
           class="part-tab${isActive ? " is-active" : ""}"
           id="tab-${part.instanceId}"
           data-action="activate-tab"
           data-slot="${part.slot}"
+          data-tab-scope="${escapeHtml(tabScope)}"
           data-tab-id="${part.instanceId}"
           data-part-id="${part.instanceId}"
           data-part-definition-id="${part.definitionId}"
@@ -172,6 +227,7 @@ export function renderTabStrip(
           tabindex="${isActive ? "0" : "-1"}"
         >${escapeHtml(part.title)}</button>
         ${closeButton}
+        ${renderDockDropOverlay(part.id)}
       </div>`;
   }).join("")}
       <button
@@ -179,6 +235,7 @@ export function renderTabStrip(
         class="part-tab"
         data-action="reopen-closed-tab"
         data-slot="${slot}"
+        data-tab-scope="${escapeHtml(tabScope)}"
         aria-label="Reopen recently closed tab"
         aria-keyshortcuts="Control+Shift+T Meta+Shift+T"
         title="Reopen closed tab (Ctrl+Shift+T)"
@@ -188,13 +245,118 @@ export function renderTabStrip(
   `;
 }
 
+function renderDockDropOverlay(targetTabId: string): string {
+  return `<div class="dock-drop-overlay" data-dock-drop-overlay-for="${targetTabId}" aria-hidden="true">
+      <div class="dock-drop-zone dock-drop-zone-left" data-dock-drop-zone="left" data-target-tab-id="${targetTabId}" title="Split left"></div>
+      <div class="dock-drop-zone dock-drop-zone-right" data-dock-drop-zone="right" data-target-tab-id="${targetTabId}" title="Split right"></div>
+      <div class="dock-drop-zone dock-drop-zone-top" data-dock-drop-zone="top" data-target-tab-id="${targetTabId}" title="Split top"></div>
+      <div class="dock-drop-zone dock-drop-zone-bottom" data-dock-drop-zone="bottom" data-target-tab-id="${targetTabId}" title="Split bottom"></div>
+      <div class="dock-drop-zone dock-drop-zone-center" data-dock-drop-zone="center" data-target-tab-id="${targetTabId}" title="Merge into tab stack"></div>
+    </div>`;
+}
+
 export function isPartActivationNode(target: HTMLElement): target is HTMLButtonElement {
   const action = target.dataset.action;
   return target instanceof HTMLButtonElement && action === "activate-tab";
 }
 
+export function renderDockTree(
+  root: DockNode | null,
+  visibleParts: ComposedShellPart[],
+  runtime: ShellRuntime,
+): string {
+  const partsById = new Map(visibleParts.map((part) => [part.id, part]));
+  const activeTabId = runtime.selectedPartId && partsById.has(runtime.selectedPartId)
+    ? runtime.selectedPartId
+    : runtime.contextState.activeTabId && partsById.has(runtime.contextState.activeTabId)
+      ? runtime.contextState.activeTabId
+      : visibleParts[0]?.id;
+  return renderDockNode(root, partsById, activeTabId ?? null, runtime);
+}
+
+function renderDockNode(
+  node: DockNode | null,
+  partsById: Map<string, ComposedShellPart>,
+  fallbackActiveTabId: string | null,
+  runtime: ShellRuntime,
+): string {
+  if (!node) {
+    return "";
+  }
+
+  if (node.kind === "split") {
+    const first = renderDockNode(node.first, partsById, fallbackActiveTabId, runtime);
+    const second = renderDockNode(node.second, partsById, fallbackActiveTabId, runtime);
+    if (!first && !second) {
+      return "";
+    }
+    if (!first) {
+      return second;
+    }
+    if (!second) {
+      return first;
+    }
+
+    return `<section class="dock-node dock-node-split dock-node-split-${node.orientation}" data-dock-node-id="${node.id}" data-dock-orientation="${node.orientation}">
+      <section class="dock-split-branch" data-dock-branch="first">${first}</section>
+      <section class="dock-split-branch" data-dock-branch="second">${second}</section>
+    </section>`;
+  }
+
+  const tabs = node.tabIds
+    .map((tabId) => partsById.get(tabId))
+    .filter((part): part is ComposedShellPart => Boolean(part));
+  if (tabs.length === 0) {
+    return "";
+  }
+
+  const activeTabId = resolveStackActiveTabId(node.activeTabId, fallbackActiveTabId, tabs);
+  const panelSlot = tabs[0]?.slot ?? "main";
+  const tabScope = `stack:${node.id}`;
+  const panelLabel = `${tabs[0]?.title ?? panelSlot} panel tabs`;
+  return `<section class="dock-node dock-node-stack" data-dock-node-id="${node.id}" data-dock-stack-id="${node.id}" data-slot="${panelSlot}">
+      ${renderTabStrip(panelSlot, tabs, activeTabId, runtime, { tabScope, label: panelLabel })}
+      <section class="dock-stack-panels">
+        ${tabs.map((part) => renderPartPanel(part, runtime, part.id === activeTabId)).join("")}
+      </section>
+    </section>`;
+}
+
+function renderPartPanel(part: ComposedShellPart, runtime: ShellRuntime, isActive: boolean): string {
+  return `<section
+      id="panel-${part.id}"
+      role="tabpanel"
+      aria-labelledby="tab-${part.id}"
+      ${isActive ? "" : "hidden"}
+    >${renderPartCard(part, runtime, { showPopoutButton: true })}</section>`;
+}
+
+function resolveStackActiveTabId(
+  nodeActiveTabId: string | null,
+  fallbackActiveTabId: string | null,
+  tabs: ComposedShellPart[],
+): string {
+  if (nodeActiveTabId && tabs.some((part) => part.id === nodeActiveTabId)) {
+    return nodeActiveTabId;
+  }
+
+  if (fallbackActiveTabId && tabs.some((part) => part.id === fallbackActiveTabId)) {
+    return fallbackActiveTabId;
+  }
+
+  return tabs[0]!.id;
+}
+
 function renderPartBody(part: ComposedShellPart): string {
-  const componentLabel = part.component ?? part.definitionId;
+  const utilityTab = resolveUtilityTabById(part.id);
+  if (utilityTab) {
+    return `<section class="domain-panel" data-domain-panel="utility-host" data-part-panel-for="${part.id}">
+      <section class="domain-panel-host" id="${utilityTab.panelHostId}" data-part-content-for="${part.id}"></section>
+      <section class="domain-panel-fallback" data-part-fallback-for="${part.id}" hidden></section>
+    </section>`;
+  }
+
+  const componentLabel = part.component ?? part.definitionId ?? part.id;
   return `<section class="domain-panel" data-domain-panel="runtime-host" data-part-panel-for="${part.instanceId}">
       <section class="domain-panel-host" data-part-content-for="${part.instanceId}"></section>
       <section class="domain-panel-fallback" data-part-fallback-for="${part.instanceId}">

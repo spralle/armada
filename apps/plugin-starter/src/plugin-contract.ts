@@ -11,7 +11,9 @@ const pluginContract: PluginContract = {
       {
         id: "starter.part",
         title: "Starter View",
-        slot: "main",
+        dock: {
+          container: "main",
+        },
         component: "StarterView",
       },
     ],
