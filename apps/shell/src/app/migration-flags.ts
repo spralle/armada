@@ -9,8 +9,8 @@ export interface ShellMigrationFlagOverride {
 }
 
 const DEFAULT_SHELL_MIGRATION_FLAGS: ShellMigrationFlags = {
-  useContractCoreApi: false,
-  useAdapterComposition: false,
+  useContractCoreApi: true,
+  useAdapterComposition: true,
 };
 
 const ENABLED_FLAG_VALUES = new Set([

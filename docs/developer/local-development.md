@@ -191,6 +191,16 @@ Guardrails covered by tests:
 - backend domain plugin entries must stay remote MF manifests (`4173`/`4174`) and must not regress to shell local source composition.
 - shell runtime integration tests cover plugin-composed part visibility, context-gated command visibility/enablement, keybinding execution, and lazy activation trigger lifecycle.
 
+## Shell adapter migration flags (contract composition)
+
+Shell contract-driven composition is now default-on. You can force fallback/baseline mode for canary rollback drills by adding query flags:
+
+- `?shellCoreContract=0&shellAdapterComposition=0`
+
+For full rollout, canary progression, and rollback playbook details, see:
+
+- `docs/architecture/shell-adapter-rollout.md`
+
 ## Phase 2 closeable tabs regression validation matrix
 
 Use this focused command set to validate cross-cutting closeable-tab regressions before handoff:

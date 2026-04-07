@@ -20,24 +20,24 @@ function assertEqual(actual: unknown, expected: unknown, message: string): void 
   }
 }
 
-test("migration flags default to baseline path", () => {
+test("migration flags default to contract path", () => {
   const flags = readShellMigrationFlags(new URLSearchParams(), null);
-  assertEqual(flags.useContractCoreApi, false, "default contract-core flag should be disabled");
-  assertEqual(flags.useAdapterComposition, false, "default adapter-composition flag should be disabled");
-  assertEqual(shouldUseContractComposition(flags), false, "default composition mode should remain baseline");
+  assertEqual(flags.useContractCoreApi, true, "default contract-core flag should be enabled");
+  assertEqual(flags.useAdapterComposition, true, "default adapter-composition flag should be enabled");
+  assertEqual(shouldUseContractComposition(flags), true, "default composition mode should be contract");
 });
 
-test("migration flags require both core and adapter flags", () => {
-  const coreOnly = readShellMigrationFlags(new URLSearchParams("shellCoreContract=true"), null);
-  const adapterOnly = readShellMigrationFlags(new URLSearchParams("shellAdapterComposition=true"), null);
-  const both = readShellMigrationFlags(
+test("migration flags disable contract path when either flag is turned off", () => {
+  const coreDisabled = readShellMigrationFlags(new URLSearchParams("shellCoreContract=0"), null);
+  const adapterDisabled = readShellMigrationFlags(new URLSearchParams("shellAdapterComposition=off"), null);
+  const bothEnabled = readShellMigrationFlags(
     new URLSearchParams("shellCoreContract=true&shellAdapterComposition=1"),
     null,
   );
 
-  assertEqual(shouldUseContractComposition(coreOnly), false, "core-only should not enable contract path");
-  assertEqual(shouldUseContractComposition(adapterOnly), false, "adapter-only should not enable contract path");
-  assertEqual(shouldUseContractComposition(both), true, "both flags should enable contract path");
+  assertEqual(shouldUseContractComposition(coreDisabled), false, "core-disabled should disable contract path");
+  assertEqual(shouldUseContractComposition(adapterDisabled), false, "adapter-disabled should disable contract path");
+  assertEqual(shouldUseContractComposition(bothEnabled), true, "both enabled flags should keep contract path");
 });
 
 test("migration flags honor explicit window override", () => {
@@ -52,6 +52,13 @@ test("migration flags honor explicit window override", () => {
   assertEqual(flags.useContractCoreApi, true, "override should set contract-core flag");
   assertEqual(flags.useAdapterComposition, true, "override should set adapter-composition flag");
   assertEqual(shouldUseContractComposition(flags), true, "override should enable contract composition");
+});
+
+test("migration flags support explicit rollback to baseline", () => {
+  const flags = readShellMigrationFlags(new URLSearchParams("shellCoreContract=0&shellAdapterComposition=off"), null);
+  assertEqual(flags.useContractCoreApi, false, "query should disable contract-core flag");
+  assertEqual(flags.useAdapterComposition, false, "query should disable adapter-composition flag");
+  assertEqual(shouldUseContractComposition(flags), false, "explicit rollback should return baseline composition");
 });
 
 let passed = 0;

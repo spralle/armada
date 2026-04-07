@@ -5,10 +5,6 @@ import {
   readGroupSelectionContext,
 } from "./context/runtime-state.js";
 import {
-  type IntentActionMatch,
-  type ShellIntent,
-} from "./intent-runtime.js";
-import {
   buildActionSurface,
 } from "./action-surface.js";
 import {
@@ -125,36 +121,6 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: Retur
   });
   bindKeyboardShortcuts(root, runtime);
 }
-
-/*
- * Source-compatibility assertions for guardrail tests:
- * async function executeResolvedAction(match, intent) {
- *   const triggerId = intent?.type ?? match.intentType;
- *   await activatePluginForBoundary(root, runtime, {
- *     pluginId: match.pluginId,
- *     triggerType: "intent",
- *     triggerId,
- *   });
- * }
- * function resolveEventTargetSelector() {}
- * const menuActions = resolveMenuActions(runtime.actionSurface, "sidePanel", context);
- * const action = resolveKeybindingAction(runtime.actionSurface, normalizedKey, context);
- * await dispatchAction(runtime.actionSurface, runtime.intentRuntime, action.id, context);
- * await dispatchAction(runtime.actionSurface, runtime.intentRuntime, actionId, toActionContext(runtime));
- *
- * async function executeResolvedAction(match: IntentActionMatch, intent: ShellIntent | null): Promise<void> {
- *   const triggerId = intent?.type ?? match.intentType;
- *   await activatePluginForBoundary(root, runtime, {
- *     pluginId: match.pluginId,
- *     triggerType: "intent",
- *     triggerId,
- *   });
- * }
- *
- * function resolveEventTargetSelector(root: HTMLElement): string | null {
- *   return null;
- * }
- */
 
 async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
   try {
