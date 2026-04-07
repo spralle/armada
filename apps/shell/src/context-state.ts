@@ -54,12 +54,8 @@ export { applySelectionUpdate } from "./context-state/selection-update.js";
 
 export {
   closeTab,
-  closeTabIfAllowed,
-  closeTabIfAllowedWithHistory,
   closeTabWithHistory,
   canReopenClosedTab,
-  getTabCloseability,
-  getTabGroupId,
   moveTabInDockTree,
   moveTabToGroup,
   openPartInstance,
@@ -67,6 +63,13 @@ export {
   registerTab,
   setActiveTab,
 } from "./context-state/tabs-groups.js";
+
+export {
+  closeTabIfAllowed,
+  closeTabIfAllowedWithHistory,
+  getTabCloseability,
+  getTabGroupId,
+} from "./context-state/tabs-groups-closeability.js";
 
 export {
   readGlobalLane,
