@@ -18,6 +18,7 @@ import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
 import { safeJson, safeParse, sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
+import { wireTabStripDragDrop } from "./tab-drag-drop.js";
 import {
   type ComposedShellPart,
   getVisibleComposedParts,
@@ -62,6 +63,9 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
     slot.innerHTML = renderPartCard(part, runtime, { showPopoutButton: false, showRestoreButton: true });
     wirePartActions(root, runtime, deps);
     wireDragDrop(root, runtime);
+    wireTabStripDragDrop(root, runtime, (tabId) => {
+      publishTabSelectionUpdate(runtime, deps, tabId);
+    });
     updateSelectedStyles(root, runtime.selectedPartId);
     void runtime.partModuleHost.syncRenderedParts(root, [part]);
     return;
@@ -115,6 +119,9 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
 
   wirePartActions(root, runtime, deps);
   wireDragDrop(root, runtime);
+  wireTabStripDragDrop(root, runtime, (tabId) => {
+    publishTabSelectionUpdate(runtime, deps, tabId);
+  });
   updateSelectedStyles(root, runtime.selectedPartId);
   void runtime.partModuleHost.syncRenderedParts(
     root,
@@ -619,6 +626,36 @@ function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
       resultNode.textContent = "Drop ignored: unsupported payload format.";
     });
   }
+}
+
+function publishTabSelectionUpdate(runtime: ShellRuntime, deps: PartsControllerDeps, tabId: string): void {
+  const selectedPartTitle = resolvePartTitle(tabId, runtime);
+  const selectionRevision = createRevision(runtime.windowId);
+  const selectionByEntityType = buildSelectionByEntityType(runtime);
+
+  deps.applySelection({
+    type: "selection",
+    selectedPartId: tabId,
+    selectedPartTitle,
+    selectionByEntityType,
+    revision: selectionRevision,
+    sourceWindowId: runtime.windowId,
+  });
+
+  deps.publishWithDegrade({
+    type: "selection",
+    selectedPartId: tabId,
+    selectedPartTitle,
+    selectionByEntityType,
+    revision: selectionRevision,
+    sourceWindowId: runtime.windowId,
+  });
+
+  writeGlobalSelectionLane(runtime, {
+    selectedPartId: tabId,
+    selectedPartTitle,
+    revision: selectionRevision,
+  });
 }
 
 function openPopout(partId: string, runtime: ShellRuntime, deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">): void {

@@ -5,6 +5,7 @@ import {
   closeTabIfAllowedWithHistory,
   createInitialShellContextState,
   getTabCloseability,
+  moveTabBeforeTab,
   moveTabToGroup,
   readGlobalLane,
   readGroupLaneForTab,
@@ -80,6 +81,24 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
       "order:target",
       "moved tab should adopt target group context",
     );
+  });
+
+  test("moveTabBeforeTab reorders tab order deterministically", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-c", groupId: "group-main" });
+
+    const moved = moveTabBeforeTab(state, {
+      tabId: "tab-c",
+      beforeTabId: "tab-b",
+    });
+    assertEqual(moved.tabOrder.join(","), "tab-a,tab-c,tab-b", "move should insert dragged tab before target tab");
+
+    const unchanged = moveTabBeforeTab(moved, {
+      tabId: "tab-c",
+      beforeTabId: "tab-c",
+    });
+    assertEqual(unchanged, moved, "self-target move should be ignored");
   });
 
   test("lww tie-break applies by timestamp then writer", () => {

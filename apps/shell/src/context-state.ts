@@ -38,6 +38,7 @@ export {
   canReopenClosedTab,
   getTabCloseability,
   getTabGroupId,
+  moveTabBeforeTab,
   moveTabToGroup,
   reopenMostRecentlyClosedTab,
   registerTab,
