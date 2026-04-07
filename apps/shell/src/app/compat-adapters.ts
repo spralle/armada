@@ -1,0 +1,123 @@
+import type {
+  ShellCoreApi,
+  ShellEffectsPort,
+  ShellPartHostAdapter,
+  ShellRendererAdapter,
+} from "./contracts.js";
+import type { ShellRuntime } from "./types.js";
+import type { PluginActivationTriggerType } from "../plugin-registry.js";
+import { createRuntimeEventHandlers } from "../shell-runtime/runtime-event-handlers.js";
+import {
+  initializeReactPanels,
+  renderContextControlsPanel as renderContextControlsPanelView,
+  renderParts as renderPartsView,
+  renderSyncStatus as renderSyncStatusView,
+} from "../shell-runtime/runtime-render.js";
+import {
+  renderCommandSurface as renderCommandSurfaceView,
+} from "../shell-runtime/command-surface-render.js";
+import type { ComposedShellPart } from "../ui/parts-rendering.js";
+
+interface ShellCompatibilityAdapterDeps {
+  activatePluginForBoundary: (options: {
+    pluginId: string;
+    triggerType: PluginActivationTriggerType;
+    triggerId: string;
+  }) => Promise<boolean>;
+  announce: (message: string) => void;
+  dismissIntentChooser: () => void;
+  primeEnabledPluginActivations: () => Promise<void>;
+  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => boolean;
+  refreshCommandContributions: () => void;
+  summarizeSelectionPriorities: () => string;
+}
+
+export interface ShellRuntimeCompatibilityAdapters {
+  core: ShellCoreApi;
+  effects: ShellEffectsPort;
+  renderer: ShellRendererAdapter;
+  partHost: ShellPartHostAdapter;
+}
+
+export function createShellRuntimeCompatibilityAdapters(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  deps: ShellCompatibilityAdapterDeps,
+): ShellRuntimeCompatibilityAdapters {
+  let renderer: ShellRendererAdapter;
+
+  const effects: ShellEffectsPort = {
+    activatePluginForBoundary: (options) => deps.activatePluginForBoundary(options),
+    announce: (message) => deps.announce(message),
+    publishWithDegrade: (event) => deps.publishWithDegrade(event),
+    renderCommandSurface: () => renderer.renderCommandSurface(root, runtime),
+    renderContextControlsPanel: () => renderer.renderContextControlsPanel(root, runtime),
+    renderParts: () => renderer.renderParts(root, runtime),
+    renderSyncStatus: () => renderer.renderSyncStatus(root, runtime),
+    summarizeSelectionPriorities: () => deps.summarizeSelectionPriorities(),
+  };
+
+  const core = createRuntimeEventHandlers(root, runtime, {
+    activatePluginForBoundary: (options) => effects.activatePluginForBoundary(options),
+    announce: (message) => effects.announce(message),
+    renderCommandSurface: () => effects.renderCommandSurface(),
+    renderContextControlsPanel: () => effects.renderContextControlsPanel(),
+    renderParts: () => effects.renderParts(),
+    renderSyncStatus: () => effects.renderSyncStatus(),
+    summarizeSelectionPriorities: () => effects.summarizeSelectionPriorities(),
+  });
+
+  renderer = {
+    initialize: (viewRoot, viewRuntime) => {
+      initializeReactPanels(viewRoot, viewRuntime, {
+        applySelection: (event) => core.applySelection(event),
+        dismissIntentChooser: () => deps.dismissIntentChooser(),
+        executeResolvedAction: (match, intent) => core.executeResolvedAction(match, intent),
+        primeEnabledPluginActivations: () => deps.primeEnabledPluginActivations(),
+        publishWithDegrade: (event) => effects.publishWithDegrade(event),
+        refreshCommandContributions: () => deps.refreshCommandContributions(),
+        renderCommandSurface: () => effects.renderCommandSurface(),
+        renderContextControlsPanel: () => effects.renderContextControlsPanel(),
+        renderParts: () => effects.renderParts(),
+        renderSyncStatus: () => effects.renderSyncStatus(),
+      });
+    },
+    renderCommandSurface: (viewRoot, viewRuntime) => {
+      renderCommandSurfaceView(viewRoot, viewRuntime, {
+        activatePluginForBoundary: (options) => effects.activatePluginForBoundary(options),
+      });
+    },
+    renderContextControlsPanel: (viewRoot, viewRuntime) => {
+      renderContextControlsPanelView(viewRoot, viewRuntime);
+    },
+    renderParts: (viewRoot, viewRuntime) => {
+      renderPartsView(viewRoot, viewRuntime, {
+        applySelection: (event) => core.applySelection(event),
+        dismissIntentChooser: () => deps.dismissIntentChooser(),
+        executeResolvedAction: (match, intent) => core.executeResolvedAction(match, intent),
+        primeEnabledPluginActivations: () => deps.primeEnabledPluginActivations(),
+        publishWithDegrade: (event) => effects.publishWithDegrade(event),
+        refreshCommandContributions: () => deps.refreshCommandContributions(),
+        renderCommandSurface: () => effects.renderCommandSurface(),
+        renderContextControlsPanel: () => effects.renderContextControlsPanel(),
+        renderParts: () => effects.renderParts(),
+        renderSyncStatus: () => effects.renderSyncStatus(),
+      });
+    },
+    renderSyncStatus: (viewRoot, viewRuntime) => {
+      renderSyncStatusView(viewRoot, viewRuntime);
+    },
+  };
+
+  const partHost: ShellPartHostAdapter = {
+    syncRenderedParts: (viewRoot: HTMLElement, parts: ComposedShellPart[]) =>
+      runtime.partModuleHost.syncRenderedParts(viewRoot, parts),
+  };
+
+  return {
+    core,
+    effects,
+    renderer,
+    partHost,
+  };
+}
