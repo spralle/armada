@@ -39,6 +39,7 @@ export {
   getTabCloseability,
   getTabGroupId,
   moveTabToGroup,
+  openPartInstance,
   reopenMostRecentlyClosedTab,
   registerTab,
   setActiveTab,

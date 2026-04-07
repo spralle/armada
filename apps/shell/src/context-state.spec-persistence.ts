@@ -9,6 +9,7 @@ import {
 import { sanitizeContextState } from "./persistence/sanitize.js";
 import {
   createInitialShellContextState,
+  openPartInstance,
   registerTab,
   setEntityTypeSelection,
   writeGlobalLane,
@@ -93,6 +94,48 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
     );
     assertEqual(loaded.state.tabs["tab-b"]?.label, "tab-b", "tab label should sanitize with deterministic default");
     assertEqual(loaded.state.tabs["tab-b"]?.closePolicy, "fixed", "tab close policy should default to fixed");
+    assertEqual(Object.keys(loaded.state.tabs["tab-b"]?.args ?? {}).length, 0, "legacy/default tab args should sanitize to empty object");
+  });
+
+  test("context persistence reload restores multiple part instances and per-instance args", () => {
+    const storage = new MemoryStorage();
+    const persistence = createLocalStorageContextStatePersistence(storage, {
+      userId: "spec-user",
+    });
+
+    let state = createInitialShellContextState({
+      initialTabId: "tab-main",
+      initialGroupId: "group-main",
+      initialGroupColor: "blue",
+    });
+
+    const first = openPartInstance(state, {
+      definitionId: "domain.unplanned-orders.part",
+      args: { orderId: "o-1", mode: "detail" },
+      tabLabel: "Orders: o-1",
+      closePolicy: "closeable",
+    });
+    state = first.state;
+
+    const second = openPartInstance(state, {
+      definitionId: "domain.unplanned-orders.part",
+      args: { orderId: "o-2", mode: "summary" },
+      tabLabel: "Orders: o-2",
+      closePolicy: "closeable",
+    });
+    state = second.state;
+
+    const saveResult = persistence.save(state);
+    assertEqual(saveResult.warning, null, "save should not warn for multi-instance args payload");
+
+    const loaded = persistence.load(createInitialShellContextState({ initialTabId: "fallback-tab" }));
+    assertEqual(loaded.warning, null, "load should not warn for valid multi-instance payload");
+    assertEqual(loaded.state.tabs[first.tabId]?.definitionId, "domain.unplanned-orders.part", "first instance definition should restore");
+    assertEqual(loaded.state.tabs[second.tabId]?.definitionId, "domain.unplanned-orders.part", "second instance definition should restore");
+    assertEqual(loaded.state.tabs[first.tabId]?.args.orderId, "o-1", "first instance args should restore");
+    assertEqual(loaded.state.tabs[second.tabId]?.args.orderId, "o-2", "second instance args should restore");
+    assertEqual(loaded.state.tabs[first.tabId]?.args.mode, "detail", "first instance args should remain independent");
+    assertEqual(loaded.state.tabs[second.tabId]?.args.mode, "summary", "second instance args should remain independent");
   });
 
   test("context persistence migrates v1 envelope to current schema", () => {
@@ -153,7 +196,7 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
           "group-main": { id: "group-main", color: "blue" },
         },
         tabs: {
-          "tab-a": { id: "tab-a", groupId: "group-main", label: "A", closePolicy: "fixed" },
+          "tab-a": { id: "tab-a", groupId: "group-main", label: "A", closePolicy: "fixed", args: { orderId: "o-1" } },
           "tab-b": { id: "tab-b", groupId: "group-main", label: "B", closePolicy: "closeable" },
         },
         tabOrder: ["tab-b", "tab-a", "tab-b"],
@@ -199,6 +242,8 @@ export function registerContextStatePersistenceSpecs(harness: SpecHarness): void
       "tab-c",
       "closed tab history entry should retain restorable tab metadata",
     );
+    assertEqual(loaded.state.tabs["tab-a"]?.args.orderId, "o-1", "persisted tab args should remain intact");
+    assertEqual(Object.keys(loaded.state.tabs["tab-b"]?.args ?? {}).length, 0, "missing tab args should default to empty object");
   });
 
   test("sanitizeContextState drops invalid closed-tab restore payloads safely", () => {
