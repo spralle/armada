@@ -18,6 +18,10 @@ import { shellBootstrapState } from "./app/bootstrap.js";
 import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
 import type { ShellRendererAdapter } from "./app/contracts.js";
 import { createShellRuntimeCompatibilityAdapters } from "./app/compat-adapters.js";
+import {
+  getRendererAdapter,
+  registerRendererAdapter,
+} from "./app/renderer-adapter-registry.js";
 import { createShellRuntime } from "./app/runtime.js";
 import type { ShellRuntime } from "./app/types.js";
 import type { PluginActivationTriggerType } from "./plugin-registry.js";
@@ -59,8 +63,6 @@ export type {
   ShellRendererAdapter,
 } from "./app/contracts.js";
 
-const rendererByRuntime = new WeakMap<ShellRuntime, ShellRendererAdapter>();
-
 export function startShell(root: HTMLElement): ShellRuntime {
   const shellRuntime = createShellRuntime();
   const adapters = createShellRuntimeCompatibilityAdapters(root, shellRuntime, {
@@ -72,7 +74,7 @@ export function startShell(root: HTMLElement): ShellRuntime {
     refreshCommandContributions: () => refreshCommandContributions(shellRuntime),
     summarizeSelectionPriorities: () => summarizeSelectionPriorities(shellRuntime),
   });
-  rendererByRuntime.set(shellRuntime, adapters.renderer);
+  registerRendererAdapter(shellRuntime, adapters.renderer);
   mountShell(root, shellRuntime, adapters.core, adapters.renderer);
   adapters.renderer.initialize(root, shellRuntime, adapters.effects);
 
@@ -161,7 +163,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): 
     });
     runtime.registry = state.registry;
     refreshCommandContributions(runtime);
-    getRenderer(runtime).renderPanels(root, runtime);
+    getRendererAdapter(runtime).renderPanels(root, runtime);
     renderParts(root, runtime);
     renderCommandSurface(root, runtime);
   } catch (error) {
@@ -181,7 +183,7 @@ function refreshCommandContributions(runtime: ShellRuntime): void {
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
-  getRenderer(runtime).renderParts(root, runtime);
+  getRendererAdapter(runtime).renderParts(root, runtime);
 }
 
 function bindBridgeSync(
@@ -223,7 +225,7 @@ function dismissIntentChooser(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
-  getRenderer(runtime).renderSyncStatus(root, runtime);
+  getRendererAdapter(runtime).renderSyncStatus(root, runtime);
 }
 
 function renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void {
@@ -259,7 +261,7 @@ async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRu
 
   await Promise.all(activations);
   refreshCommandContributions(runtime);
-  getRenderer(runtime).renderPanels(root, runtime);
+  getRendererAdapter(runtime).renderPanels(root, runtime);
   renderParts(root, runtime);
   renderCommandSurface(root, runtime);
 }
@@ -289,7 +291,7 @@ async function activatePluginForBoundary(
 
     runtime.notice = "";
     refreshCommandContributions(runtime);
-    getRenderer(runtime).renderPanels(root, runtime);
+    getRendererAdapter(runtime).renderPanels(root, runtime);
     return true;
   } catch (error) {
     runtime.notice = `Plugin activation failed for '${options.pluginId}' (${options.triggerType}:${options.triggerId}).`;
@@ -297,31 +299,6 @@ async function activatePluginForBoundary(
     console.warn("[shell] plugin activation boundary failed", options, error);
     return false;
   }
-}
-
-function createRuntimeRenderBindings(root: HTMLElement, runtime: ShellRuntime) {
-  const handlers = createRuntimeEventHandlers(root, runtime, createRuntimeEventHandlerBindings(root, runtime));
-  return {
-    applySelection: handlers.applySelection,
-    dismissIntentChooser: () => dismissIntentChooser(root, runtime),
-    executeResolvedAction: handlers.executeResolvedAction,
-    primeEnabledPluginActivations: () => primeEnabledPluginActivations(root, runtime),
-    publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) =>
-      publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime)),
-    refreshCommandContributions: () => refreshCommandContributions(runtime),
-    renderCommandSurface: () => renderCommandSurface(root, runtime),
-    renderContextControlsPanel: () => renderContextControlsPanel(root, runtime),
-    renderParts: () => renderParts(root, runtime),
-    renderSyncStatus: () => renderSyncStatus(root, runtime),
-  };
-}
-
-function getRenderer(runtime: ShellRuntime): ShellRendererAdapter {
-  const renderer = rendererByRuntime.get(runtime);
-  if (!renderer) {
-    throw new Error("Renderer adapter not initialized for runtime.");
-  }
-  return renderer;
 }
 
 function createBridgeBindings(root: HTMLElement, runtime: ShellRuntime) {
