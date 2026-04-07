@@ -57,6 +57,23 @@ export interface RuntimeFirstPluginLoader {
   loadPluginServices(descriptor: TenantPluginDescriptor): Promise<unknown>;
 }
 
+function resolveContractExport(moduleValue: unknown): unknown {
+  if (!moduleValue || typeof moduleValue !== "object") {
+    return moduleValue;
+  }
+
+  const record = moduleValue as Record<string, unknown>;
+  if ("pluginContract" in record) {
+    return record.pluginContract;
+  }
+
+  if ("default" in record) {
+    return record.default;
+  }
+
+  return moduleValue;
+}
+
 export interface RuntimeFirstPluginLoaderOptions {
   federationRuntime?: ShellFederationRuntime;
   remoteLoadMaxAttempts?: number;
@@ -87,7 +104,7 @@ export function createRuntimeFirstPluginLoader(
         remoteLoadRetryDelayMs,
         onDiagnostic,
       });
-      const parsed = parsePluginContract(rawContract);
+      const parsed = parsePluginContract(resolveContractExport(rawContract));
 
       if (!parsed.success) {
         const details = parsed.errors

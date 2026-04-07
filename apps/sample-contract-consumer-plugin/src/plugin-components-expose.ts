@@ -1,3 +1,1 @@
-const pluginComponents = {};
-
-export default pluginComponents;
+export const pluginComponents = {};
