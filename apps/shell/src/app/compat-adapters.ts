@@ -10,6 +10,7 @@ import { createRuntimeEventHandlers } from "../shell-runtime/runtime-event-handl
 import { createShellCoreApi } from "./shell-core.js";
 import {
   initializeReactPanels,
+  renderPanels as renderPanelsView,
   renderContextControlsPanel as renderContextControlsPanelView,
   renderParts as renderPartsView,
   renderSyncStatus as renderSyncStatusView,
@@ -17,6 +18,10 @@ import {
 import {
   renderCommandSurface as renderCommandSurfaceView,
 } from "../shell-runtime/command-surface-render.js";
+import {
+  mountMainWindow,
+  mountPopout,
+} from "../ui/shell-mount.js";
 
 interface ShellCompatibilityAdapterDeps {
   activatePluginForBoundary: (options: {
@@ -83,6 +88,15 @@ export function createShellRuntimeCompatibilityAdapters(
         renderParts: () => effects.renderParts(),
         renderSyncStatus: () => effects.renderSyncStatus(),
       });
+    },
+    mountMainWindow: (viewRoot, deps) => {
+      mountMainWindow(viewRoot, deps);
+    },
+    mountPopout: (viewRoot, viewRuntime, deps) => {
+      mountPopout(viewRoot, viewRuntime, deps);
+    },
+    renderPanels: (viewRoot, viewRuntime) => {
+      renderPanelsView(viewRoot, viewRuntime);
     },
     renderCommandSurface: (viewRoot, viewRuntime) => {
       renderCommandSurfaceView(viewRoot, viewRuntime, {
