@@ -23,7 +23,3 @@ export function mountPart(target: HTMLElement, context: PartMountContext): void 
   }
 }
 
-export default {
-  parts,
-  mountPart,
-};

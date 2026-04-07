@@ -378,11 +378,11 @@ function pickCapabilityModuleExport(module: unknown, capabilityId: string): unkn
     return record[capabilityId];
   }
 
-  if ("default" in record) {
-    const fallback = record.default;
-    if (fallback && typeof fallback === "object" && capabilityId in (fallback as Record<string, unknown>)) {
-      return (fallback as Record<string, unknown>)[capabilityId];
-    }
+  const fallback = "default" in record ? record.default : record.pluginComponents ?? record.components
+    ?? record.pluginServices
+    ?? record.services;
+  if (fallback && typeof fallback === "object" && capabilityId in (fallback as Record<string, unknown>)) {
+    return (fallback as Record<string, unknown>)[capabilityId];
   }
 
   return null;

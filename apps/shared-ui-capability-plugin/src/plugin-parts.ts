@@ -1,3 +1,1 @@
-const parts = {};
-
-export default parts;
+export const pluginParts = {};
