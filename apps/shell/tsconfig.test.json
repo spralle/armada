@@ -23,6 +23,7 @@
     "src/context-state.spec.ts",
     "src/app/shell-core.spec.ts",
     "src/app/migration-flags.spec.ts",
+    "src/app/renderer-adapter-registry.spec.ts",
     "src/window-bridge.spec.ts",
     "src/ui/pending-focus.spec.ts",
     "src/ui/parts-controller-popout-transition.spec.ts",
