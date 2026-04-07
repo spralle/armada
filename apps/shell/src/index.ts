@@ -16,6 +16,7 @@ import {
 } from "./keyboard-a11y.js";
 import { shellBootstrapState } from "./app/bootstrap.js";
 import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
+import { createShellRuntimeCompatibilityAdapters } from "./app/compat-adapters.js";
 import { createShellRuntime } from "./app/runtime.js";
 import type { ShellRuntime } from "./app/types.js";
 import type { PluginActivationTriggerType } from "./plugin-registry.js";
@@ -51,7 +52,6 @@ import {
   dismissIntentChooser as dismissIntentChooserState,
 } from "./shell-runtime/keyboard-handlers.js";
 import {
-  initializeReactPanels as initializeRuntimePanels,
   renderContextControlsPanel as renderContextControlsPanelView,
   renderPanels,
   renderParts as renderPartsView,
@@ -67,8 +67,17 @@ export type {
 
 export function startShell(root: HTMLElement): ShellRuntime {
   const shellRuntime = createShellRuntime();
-  mountShell(root, shellRuntime);
-  initializeReactPanels(root, shellRuntime);
+  const adapters = createShellRuntimeCompatibilityAdapters(root, shellRuntime, {
+    activatePluginForBoundary: (options) => activatePluginForBoundary(root, shellRuntime, options),
+    announce: (message) => announce(root, shellRuntime, message),
+    dismissIntentChooser: () => dismissIntentChooser(root, shellRuntime),
+    primeEnabledPluginActivations: () => primeEnabledPluginActivations(root, shellRuntime),
+    publishWithDegrade: (event) => publishWithDegrade(root, shellRuntime, event, createBridgeBindings(root, shellRuntime)),
+    refreshCommandContributions: () => refreshCommandContributions(shellRuntime),
+    summarizeSelectionPriorities: () => summarizeSelectionPriorities(shellRuntime),
+  });
+  mountShell(root, shellRuntime, adapters.core);
+  adapters.renderer.initialize(root, shellRuntime, adapters.effects);
 
   if (!shellRuntime.isPopout) {
     void hydratePluginRegistry(root, shellRuntime);
@@ -79,7 +88,11 @@ export function startShell(root: HTMLElement): ShellRuntime {
   return shellRuntime;
 }
 
-function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
+function mountShell(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  core: Pick<ReturnType<typeof createRuntimeEventHandlers>, "applyContext" | "applySelection">,
+): void {
   if (runtime.isPopout) {
     mountPopout(root, runtime, {
       renderParts: () => renderParts(root, runtime),
@@ -109,7 +122,7 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
     });
   }
 
-  bindBridgeSync(root, runtime);
+  bindBridgeSync(root, runtime, core);
   bindKeyboardShortcuts(root, runtime);
 }
 
@@ -143,10 +156,6 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime): void {
  * }
  */
 
-function initializeReactPanels(root: HTMLElement, runtime: ShellRuntime): void {
-  initializeRuntimePanels(root, runtime, createRuntimeRenderBindings(root, runtime));
-}
-
 async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
   try {
     const state = await bootstrapShellWithTenantManifest({
@@ -177,12 +186,15 @@ function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
   renderPartsView(root, runtime, createRuntimeRenderBindings(root, runtime));
 }
 
-function bindBridgeSync(root: HTMLElement, runtime: ShellRuntime): void {
-  const handlers = createRuntimeEventHandlers(root, runtime, createRuntimeEventHandlerBindings(root, runtime));
+function bindBridgeSync(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  core: Pick<ReturnType<typeof createRuntimeEventHandlers>, "applyContext" | "applySelection">,
+): void {
   bindBridgeSyncHandlers(root, runtime, {
     ...createBridgeBindings(root, runtime),
-    applyContext: handlers.applyContext,
-    applySelection: handlers.applySelection,
+    applyContext: core.applyContext,
+    applySelection: core.applySelection,
   });
 }
 
