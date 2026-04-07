@@ -9,9 +9,12 @@ export function ensureRequiredUtilityTabs(tabs: Record<string, ContextTab>): voi
     const existing = tabs[tab.id];
     tabs[tab.id] = {
       id: tab.id,
+      definitionId: tab.id,
+      partDefinitionId: tab.id,
       groupId: existing?.groupId ?? DEFAULT_UTILITY_GROUP_ID,
       label: tab.title,
       closePolicy: "fixed",
+      args: existing?.args ?? {},
     };
   }
 }

@@ -62,6 +62,7 @@ export {
   getTabGroupId,
   moveTabInDockTree,
   moveTabToGroup,
+  openPartInstance,
   reopenMostRecentlyClosedTab,
   registerTab,
   setActiveTab,

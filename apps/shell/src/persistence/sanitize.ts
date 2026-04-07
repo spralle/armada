@@ -11,6 +11,21 @@ import type {
 import { sanitizeDockTreeState } from "./sanitize-dock-tree.js";
 import { ensureRequiredUtilityTabs, isNonUtilityClosedHistoryEntry } from "../context-state/utility-tabs-sanitize.js";
 
+function sanitizeTabArgs(input: unknown): Record<string, string> {
+  if (!isRecord(input)) {
+    return {};
+  }
+
+  const next: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (typeof value === "string") {
+      next[key] = value;
+    }
+  }
+
+  return next;
+}
+
 export function sanitizeContextState(input: unknown, fallback: ShellContextState): ShellContextState {
   if (!isRecord(input)) {
     return fallback;
@@ -93,6 +108,13 @@ function sanitizeClosedTabHistoryEntry(input: unknown): ClosedTabHistoryEntry | 
 
   return {
     tabId: input.tabId,
+    ...(typeof input.definitionId === "string" && input.definitionId.length > 0
+      ? { definitionId: input.definitionId }
+      : {}),
+    args: sanitizeTabArgs(input.args),
+    ...(typeof input.partDefinitionId === "string" && input.partDefinitionId.length > 0
+      ? { partDefinitionId: input.partDefinitionId }
+      : {}),
     groupId: input.groupId,
     label: input.label,
     closePolicy: input.closePolicy,
@@ -131,12 +153,17 @@ function sanitizeTabs(
       continue;
     }
     const id = typeof raw.id === "string" && raw.id ? raw.id : key;
+    const definitionId = typeof raw.definitionId === "string" && raw.definitionId ? raw.definitionId : id;
     const groupId = typeof raw.groupId === "string" && raw.groupId ? raw.groupId : "group-main";
+    const partDefinitionId = typeof raw.partDefinitionId === "string" && raw.partDefinitionId
+      ? raw.partDefinitionId
+      : definitionId;
     const label = typeof raw.label === "string" && raw.label
       ? raw.label
       : (typeof raw.name === "string" && raw.name ? raw.name : id);
     const closePolicy = raw.closePolicy === "closeable" ? "closeable" : "fixed";
-    next[id] = { id, groupId, label, closePolicy };
+    const args = sanitizeTabArgs(raw.args);
+    next[id] = { id, definitionId, partDefinitionId, groupId, label, closePolicy, args };
   }
 
   return Object.keys(next).length > 0 ? next : { ...fallback };
