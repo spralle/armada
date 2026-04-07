@@ -161,6 +161,35 @@ export function moveTabToGroup(
   return next;
 }
 
+export function moveTabBeforeTab(
+  state: ShellContextState,
+  input: { tabId: string; beforeTabId: string },
+): ShellContextState {
+  const { tabId, beforeTabId } = input;
+  if (tabId === beforeTabId) {
+    return state;
+  }
+
+  if (!state.tabs[tabId] || !state.tabs[beforeTabId]) {
+    return state;
+  }
+
+  const next = cloneContextState(state);
+  const ordered = next.tabOrder.filter((id) => next.tabs[id] && id !== tabId);
+  const targetIndex = ordered.indexOf(beforeTabId);
+  if (targetIndex < 0) {
+    return state;
+  }
+
+  next.tabOrder = [
+    ...ordered.slice(0, targetIndex),
+    tabId,
+    ...ordered.slice(targetIndex),
+  ];
+
+  return next;
+}
+
 export function closeTab(state: ShellContextState, tabId: string): ShellContextState {
   if (!state.tabs[tabId]) {
     return state;

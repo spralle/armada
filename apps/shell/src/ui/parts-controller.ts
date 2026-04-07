@@ -14,6 +14,7 @@ import {
   reopenMostRecentlyClosedTabThroughRuntime,
 } from "./part-instance-tab-lifecycle.js";
 import { restorePart } from "./part-instance-popout-lifecycle.js";
+import { wireTabStripDragDrop } from "./tab-drag-drop.js";
 import {
   getVisibleComposedParts,
   renderDockTree,
@@ -43,6 +44,13 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   wirePartActions(root, runtime, deps);
   wireDockTabDragDrop(root, runtime, deps);
   wireDragDrop(root, runtime);
+  wireTabStripDragDrop(root, runtime, (tabId) => {
+    dispatchLocalLifecycleAction(runtime, {
+      actionId: "part-instance.activate",
+      tabInstanceId: tabId,
+      partTitle: resolvePartTitle(tabId, runtime),
+    }, deps as PartLifecycleDeps);
+  });
   updateSelectedStyles(root, runtime.selectedPartId);
   void runtime.partModuleHost.syncRenderedParts(
     root,
@@ -93,6 +101,13 @@ function renderPopoutPart(
   wirePartActions(root, runtime, deps);
   wireDockTabDragDrop(root, runtime, deps);
   wireDragDrop(root, runtime);
+  wireTabStripDragDrop(root, runtime, (tabId) => {
+    dispatchLocalLifecycleAction(runtime, {
+      actionId: "part-instance.activate",
+      tabInstanceId: tabId,
+      partTitle: resolvePartTitle(tabId, runtime),
+    }, deps as PartLifecycleDeps);
+  });
   updateSelectedStyles(root, runtime.selectedPartId);
   void runtime.partModuleHost.syncRenderedParts(root, isUtilityTabId(part.id) ? [] : [part]);
 }

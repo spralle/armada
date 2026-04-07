@@ -54,11 +54,12 @@ export { applySelectionUpdate } from "./context-state/selection-update.js";
 
 export {
   closeTab,
-  closeTabWithHistory,
-  canReopenClosedTab,
   moveTabInDockTree,
+  moveTabBeforeTab,
   moveTabToGroup,
   openPartInstance,
+  closeTabWithHistory,
+  canReopenClosedTab,
   reopenMostRecentlyClosedTab,
   registerTab,
   setActiveTab,
