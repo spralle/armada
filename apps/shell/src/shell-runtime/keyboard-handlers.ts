@@ -9,7 +9,6 @@ import {
   resolveDegradedKeyboardInteraction,
   resolveTabLifecycleShortcut,
 } from "../keyboard-a11y.js";
-import { isPartActivationNode } from "../ui/parts-rendering.js";
 import {
   closeTabThroughRuntime,
   reopenMostRecentlyClosedTabThroughRuntime,
@@ -47,6 +46,11 @@ export function bindKeyboardShortcuts(
     }
 
     if (runtime.syncDegraded) {
+      const normalizedKey = normalizeKeyboardEvent(event);
+      if (normalizedKey && handleTabLifecycleShortcut(normalizedKey, event, runtime, bindings)) {
+        return;
+      }
+
       const degradedInteraction = resolveDegradedKeyboardInteraction(event.key, runtime.pendingIntentMatches.length > 0);
       if (degradedInteraction === "dismiss-chooser") {
         event.preventDefault();
@@ -66,33 +70,7 @@ export function bindKeyboardShortcuts(
     }
 
     const normalizedKey = normalizeKeyboardEvent(event);
-    const lifecycleShortcut = resolveTabLifecycleShortcut(normalizedKey);
-    if (lifecycleShortcut === "reopen-closed-tab") {
-      event.preventDefault();
-      reopenMostRecentlyClosedTabThroughRuntime(runtime, {
-        applySelection: bindings.applySelection,
-        publishWithDegrade: bindings.publishWithDegrade,
-        renderContextControls: bindings.renderContextControls,
-        renderParts: bindings.renderParts,
-        renderSyncStatus: bindings.renderSyncStatus,
-      });
-      return;
-    }
-
-    if (lifecycleShortcut === "close-active-tab") {
-      const activeTabId = runtime.selectedPartId && runtime.contextState.tabs[runtime.selectedPartId]
-        ? runtime.selectedPartId
-        : runtime.contextState.activeTabId;
-      if (activeTabId) {
-        event.preventDefault();
-        closeTabThroughRuntime(runtime, activeTabId, {
-          applySelection: bindings.applySelection,
-          publishWithDegrade: bindings.publishWithDegrade,
-          renderContextControls: bindings.renderContextControls,
-          renderParts: bindings.renderParts,
-          renderSyncStatus: bindings.renderSyncStatus,
-        });
-      }
+    if (normalizedKey && handleTabLifecycleShortcut(normalizedKey, event, runtime, bindings)) {
       return;
     }
 
@@ -126,13 +104,14 @@ export function bindKeyboardShortcuts(
         || event.key === "ArrowUp"
         || event.key === "ArrowLeft"
         || event.key === "ArrowRight")
-      && isPartActivationNode(target)
+      && isTabScopeNavigationNode(target)
     ) {
-      const slot = target.dataset.slot;
-      const selector = slot
-        ? `[data-action='${target.dataset.action ?? ""}'][data-slot='${slot}']`
-        : `[data-action='${target.dataset.action ?? ""}']`;
-      const nodes = [...root.querySelectorAll<HTMLElement>(selector)];
+      const tabScope = target.dataset.tabScope;
+      const nodes = tabScope
+        ? [...root.querySelectorAll<HTMLButtonElement>(`button[data-tab-scope='${tabScope}'][data-action]`)]
+          .filter(isTabScopeNavigationNode)
+          .filter((node) => !node.disabled)
+        : [];
       const index = nodes.indexOf(target);
       if (index < 0 || nodes.length <= 1) {
         return;
@@ -153,6 +132,45 @@ export function bindKeyboardShortcuts(
       event.preventDefault();
     }
   });
+}
+
+function handleTabLifecycleShortcut(
+  normalizedKey: string,
+  event: KeyboardEvent,
+  runtime: ShellRuntime,
+  bindings: KeyboardBindings,
+): boolean {
+  const lifecycleShortcut = resolveTabLifecycleShortcut(normalizedKey);
+  if (lifecycleShortcut === "reopen-closed-tab") {
+    event.preventDefault();
+    reopenMostRecentlyClosedTabThroughRuntime(runtime, {
+      applySelection: bindings.applySelection,
+      publishWithDegrade: bindings.publishWithDegrade,
+      renderContextControls: bindings.renderContextControls,
+      renderParts: bindings.renderParts,
+      renderSyncStatus: bindings.renderSyncStatus,
+    });
+    return true;
+  }
+
+  if (lifecycleShortcut === "close-active-tab") {
+    const activeTabId = runtime.selectedPartId && runtime.contextState.tabs[runtime.selectedPartId]
+      ? runtime.selectedPartId
+      : runtime.contextState.activeTabId;
+    if (activeTabId) {
+      event.preventDefault();
+      closeTabThroughRuntime(runtime, activeTabId, {
+        applySelection: bindings.applySelection,
+        publishWithDegrade: bindings.publishWithDegrade,
+        renderContextControls: bindings.renderContextControls,
+        renderParts: bindings.renderParts,
+        renderSyncStatus: bindings.renderSyncStatus,
+      });
+    }
+    return true;
+  }
+
+  return false;
 }
 
 export function dismissIntentChooser(
@@ -208,4 +226,20 @@ function handleChooserKeyboardEvent(
 
   bindings.dismissIntentChooser();
   return true;
+}
+
+const TAB_SCOPE_NAVIGATION_ACTIONS = new Set([
+  "activate-tab",
+  "drag-tab-handle",
+  "close-tab",
+  "reopen-closed-tab",
+]);
+
+function isTabScopeNavigationNode(target: HTMLElement): target is HTMLButtonElement {
+  const tabScope = target.dataset.tabScope;
+  const action = target.dataset.action;
+  const isKnownAction = typeof action === "string" && TAB_SCOPE_NAVIGATION_ACTIONS.has(action);
+  return target instanceof HTMLButtonElement
+    && Boolean(tabScope)
+    && isKnownAction;
 }

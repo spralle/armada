@@ -6,11 +6,14 @@ import {
   updateContextState,
   writeGroupSelectionContext,
 } from "../context/runtime-state.js";
+import { getTabGroupId } from "../context-state.js";
 import type { ShellRuntime } from "../app/types.js";
+import { buildGroupContextSyncEvent } from "../sync/bridge-payloads.js";
 import { createReactPanelsHost } from "../ui/react/panels-host.js";
 import { getVisibleComposedParts } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
+import { isUtilityTabId } from "../utility-tabs.js";
 
 type ReactPanelsHost = ReturnType<typeof createReactPanelsHost>;
 
@@ -49,15 +52,15 @@ export function initializeReactPanels(
       }
 
       writeGroupSelectionContext(runtime, value);
-      bindings.publishWithDegrade({
-        type: "context",
-        scope: "group",
+      const groupId = getTabGroupId(runtime.contextState, activeTabId) ?? undefined;
+      bindings.publishWithDegrade(buildGroupContextSyncEvent({
         tabId: activeTabId,
+        groupId,
         contextKey: CORE_GROUP_CONTEXT_KEY,
         contextValue: value,
         revision: createRevision(runtime.windowId),
         sourceWindowId: runtime.windowId,
-      });
+      }));
       bindings.renderSyncStatus();
     },
     onTogglePlugin: async (pluginId, enabled) => {
@@ -109,7 +112,9 @@ export function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, bindings: RuntimeRenderBindings): void {
   void bindings.primeEnabledPluginActivations();
   const visibleParts = getVisibleComposedParts(runtime);
-  runtime.closeableTabIds = new Set(visibleParts.map((part) => part.id));
+  runtime.closeableTabIds = new Set(visibleParts
+    .filter((part) => !isUtilityTabId(part.id))
+    .map((part) => part.id));
   updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
   reconcileActiveTab(runtime);
   renderPartsView(root, runtime, {

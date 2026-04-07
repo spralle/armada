@@ -37,13 +37,13 @@ export function createWindowId(): string {
 
 export function readPopoutParams(): {
   isPopout: boolean;
-  partId: string | null;
+  tabId: string | null;
   hostWindowId: string | null;
 } {
   if (typeof window === "undefined") {
     return {
       isPopout: false,
-      partId: null,
+      tabId: null,
       hostWindowId: null,
     };
   }
@@ -52,7 +52,7 @@ export function readPopoutParams(): {
   const isPopout = params.get("popout") === "1";
   return {
     isPopout,
-    partId: isPopout ? params.get("partId") : null,
+    tabId: isPopout ? (params.get("tabId") ?? params.get("partId")) : null,
     hostWindowId: isPopout ? params.get("hostWindowId") : null,
   };
 }

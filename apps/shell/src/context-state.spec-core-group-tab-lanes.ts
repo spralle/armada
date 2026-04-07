@@ -1,4 +1,5 @@
 import {
+  createInitialDockTree,
   canReopenClosedTab,
   closeTab,
   closeTabIfAllowed,
@@ -16,6 +17,7 @@ import {
   writeTabSubcontext,
   type ShellContextState,
 } from "./context-state.js";
+import { openPartInstanceWithArgs } from "./part-instance-flow.js";
 import {
   collectRenderTabMetadata,
   readGroupSelectionContext,
@@ -26,6 +28,7 @@ import {
 import type { ShellRuntime } from "./app/types.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 import { renderTabStrip } from "./ui/parts-rendering.js";
+import { isUtilityTabId } from "./utility-tabs.js";
 
 export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
@@ -254,8 +257,28 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
     const html = renderTabStrip(
       "main",
       [
-        { id: "tab-fixed", title: "Fixed", slot: "main", component: "c-fixed", pluginId: "plugin-a" },
-        { id: "tab-closeable", title: "Closeable", slot: "main", component: "c-closeable", pluginId: "plugin-a" },
+        {
+          instanceId: "tab-fixed",
+          definitionId: "tab-fixed",
+          id: "tab-fixed",
+          partDefinitionId: "tab-fixed",
+          title: "Fixed",
+          args: {},
+          slot: "main",
+          component: "c-fixed",
+          pluginId: "plugin-a",
+        },
+        {
+          instanceId: "tab-closeable",
+          definitionId: "tab-closeable",
+          id: "tab-closeable",
+          partDefinitionId: "tab-closeable",
+          title: "Closeable",
+          args: {},
+          slot: "main",
+          component: "c-closeable",
+          pluginId: "plugin-a",
+        },
       ],
       "tab-fixed",
       {
@@ -311,6 +334,32 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
     assertEqual(reopened.tabOrder.join(","), "tab-a,tab-b,tab-c", "reopen should restore deterministic order index");
   });
 
+  test("utility tabs remain fixed and excluded from reopen eligibility", () => {
+    const state = {
+      ...createInitialShellContextState({ initialTabId: "utility.plugins", initialGroupId: "group-main" }),
+      closedTabHistoryBySlot: {
+        main: [
+          {
+            tabId: "utility.plugins",
+            groupId: "group-main",
+            label: "Plugins",
+            closePolicy: "fixed" as const,
+            slot: "main" as const,
+            orderIndex: 0,
+          },
+        ],
+        secondary: [],
+        side: [],
+      },
+    };
+
+    assertEqual(isUtilityTabId("utility.plugins"), true, "utility tab id should be recognized");
+    assertEqual(canReopenClosedTab(state, "main"), false, "utility tabs should not contribute reopen eligibility");
+    const reopened = reopenMostRecentlyClosedTab(state, "main");
+    assertEqual(reopened.tabs["utility.plugins"]?.closePolicy, "fixed", "utility tabs should remain fixed after reopen attempt");
+    assertEqual(reopened.closedTabHistoryBySlot.main.length, 0, "utility-only history should be drained without restoring tabs");
+  });
+
   test("reopen drops invalid payloads from bounded history gracefully", () => {
     const state: ShellContextState = {
       ...createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" }),
@@ -318,6 +367,7 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
         main: [
           {
             tabId: "",
+            partDefinitionId: "",
             groupId: "group-main",
             label: "Bad",
             closePolicy: "closeable" as const,
@@ -325,6 +375,7 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
           },
           {
             tabId: "tab-b",
+            partDefinitionId: "tab-b",
             groupId: "group-main",
             label: "Orders",
             closePolicy: "closeable" as const,
@@ -335,6 +386,7 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
         secondary: [],
         side: [],
       },
+      dockTree: createInitialDockTree("tab-a"),
     };
 
     const reopened = reopenMostRecentlyClosedTab(state, "main");
@@ -520,5 +572,47 @@ export function registerContextStateCoreGroupTabLanesSpecs(harness: SpecHarness)
       "group context write should target active tab when selected part is unset",
     );
     assertEqual(runtime.selectedPartId, "tab-b", "active tab should reconcile into selected part");
+  });
+
+  test("opening same part definition twice yields distinct tab instance ids", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-main", initialGroupId: "group-main" });
+
+    const first = openPartInstanceWithArgs(state, {
+      definitionId: "domain.unplanned-orders.part",
+      args: { orderId: "o-1" },
+      tabLabel: "Orders: o-1",
+    });
+    state = first.state;
+
+    const second = openPartInstanceWithArgs(state, {
+      definitionId: "domain.unplanned-orders.part",
+      args: { orderId: "o-2" },
+      tabLabel: "Orders: o-2",
+    });
+
+    assertEqual(first.tabId, "domain.unplanned-orders.part", "first instance should use base definition id when free");
+    assertEqual(second.tabId, "domain.unplanned-orders.part~2", "second instance should use deterministic suffixed id");
+    assertEqual(second.state.tabOrder.includes(first.tabId), true, "first instance should remain registered");
+    assertEqual(second.state.tabOrder.includes(second.tabId), true, "second instance should be registered");
+  });
+
+  test("part instances maintain independent args per tab", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-main", initialGroupId: "group-main" });
+
+    const first = openPartInstanceWithArgs(state, {
+      definitionId: "domain.unplanned-orders.part",
+      args: { orderId: "o-1", mode: "detail" },
+    });
+    state = first.state;
+
+    const second = openPartInstanceWithArgs(state, {
+      definitionId: "domain.unplanned-orders.part",
+      args: { orderId: "o-2", mode: "summary" },
+    });
+
+    assertEqual(second.state.tabs[first.tabId]?.args.orderId, "o-1", "first instance args should persist");
+    assertEqual(second.state.tabs[second.tabId]?.args.orderId, "o-2", "second instance args should persist");
+    assertEqual(second.state.tabs[first.tabId]?.args.mode, "detail", "first instance args should remain independent");
+    assertEqual(second.state.tabs[second.tabId]?.args.mode, "summary", "second instance args should remain independent");
   });
 }

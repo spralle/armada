@@ -11,7 +11,9 @@ const pluginContract = {
       {
         id: "domain.vessel.view",
         title: "Vessel View",
-        slot: "main",
+        dock: {
+          container: "main",
+        },
         component: "VesselViewPart",
       },
     ],

@@ -12,11 +12,7 @@ export function updateWindowReadOnlyState(root: HTMLElement, runtime: ShellRunti
     const mutatingControl =
       node.id === "context-apply"
       || node.id === "context-value-input"
-      || node.dataset.action === "select"
-      || node.dataset.action === "popout"
-      || node.dataset.action === "restore"
-      || node.dataset.action === "close-tab"
-      || node.dataset.action === "reopen-closed-tab";
+      || node.dataset.action === "select";
     if (runtime.syncDegraded) {
       if (mutatingControl) {
         node.setAttribute("disabled", "disabled");

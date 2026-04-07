@@ -22,8 +22,14 @@ export const pluginPartContributionSchema = z
   .object({
     id: nonEmptyString,
     title: nonEmptyString,
-    slot: z.enum(["main", "secondary", "side"]),
     component: nonEmptyString.optional(),
+    dock: z
+      .object({
+        container: nonEmptyString.optional(),
+        order: z.number().finite().optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 

@@ -1,10 +1,25 @@
 import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
+import { DEV_MODE } from "../app/constants.js";
 import { escapeHtml } from "../app/utils.js";
+import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
+import { listAvailableUtilityTabs, resolveUtilityTabById } from "../utility-tabs.js";
 
 export interface ComposedShellPart {
+  instanceId: string;
+  definitionId: string;
   id: string;
+  partDefinitionId: string;
+  title: string;
+  args: Record<string, string>;
+  slot: "main" | "secondary" | "side";
+  component?: string;
+  pluginId: string;
+}
+
+export interface ComposedPartDefinition {
+  definitionId: string;
   title: string;
   slot: "main" | "secondary" | "side";
   component?: string;
@@ -13,9 +28,9 @@ export interface ComposedShellPart {
 
 export type PartSlot = ComposedShellPart["slot"];
 
-export function composePartsFromRegistrySnapshot(
+export function composePartDefinitionsFromRegistrySnapshot(
   snapshot: ReturnType<ShellRuntime["registry"]["getSnapshot"]>,
-): ComposedShellPart[] {
+): ComposedPartDefinition[] {
   const composed = composeEnabledPluginContributions(
     snapshot.plugins.map((plugin) => ({
       id: plugin.id,
@@ -25,16 +40,85 @@ export function composePartsFromRegistrySnapshot(
   );
 
   return composed.parts.map((part) => ({
-    id: part.id,
+    definitionId: part.id,
     title: part.title,
-    slot: part.slot,
+    slot: resolveSlotFromDockContainer(readDockContainer(part)),
     component: part.component,
     pluginId: part.pluginId,
   }));
 }
 
+function readDockContainer(part: unknown): string | undefined {
+  if (!part || typeof part !== "object" || !("dock" in part)) {
+    return undefined;
+  }
+
+  const dock = part.dock;
+  if (!dock || typeof dock !== "object" || !("container" in dock)) {
+    return undefined;
+  }
+
+  return typeof dock.container === "string" ? dock.container : undefined;
+}
+
+function resolveSlotFromDockContainer(container: string | undefined): PartSlot {
+  if (container === "side") {
+    return "side";
+  }
+
+  if (container === "secondary") {
+    return "secondary";
+  }
+
+  return "main";
+}
+
+export function getVisiblePartDefinitions(runtime: ShellRuntime): ComposedPartDefinition[] {
+  return composePartDefinitionsFromRegistrySnapshot(runtime.registry.getSnapshot());
+}
+
 export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPart[] {
-  return composePartsFromRegistrySnapshot(runtime.registry.getSnapshot());
+  const definitionsById = new Map(
+    getVisiblePartDefinitions(runtime).map((definition) => [definition.definitionId, definition]),
+  );
+
+  const pluginParts = runtime.contextState.tabOrder
+    .map((tabId) => runtime.contextState.tabs[tabId])
+    .filter((tab): tab is NonNullable<typeof tab> => Boolean(tab))
+    .map((tab) => {
+      const tabDefinitionId = tab.partDefinitionId ?? tab.definitionId;
+      const definition = definitionsById.get(tabDefinitionId);
+      if (!definition) {
+        return null;
+      }
+
+      return {
+        instanceId: tab.id,
+        definitionId: definition.definitionId,
+        id: tab.id,
+        partDefinitionId: definition.definitionId,
+        title: tab.label,
+        args: tab.args,
+        slot: definition.slot,
+        component: definition.component,
+        pluginId: definition.pluginId,
+      } satisfies ComposedShellPart;
+    })
+    .filter((part) => part !== null);
+
+  const utilityParts = listAvailableUtilityTabs({ devMode: DEV_MODE })
+    .map((tab) => ({
+      instanceId: tab.id,
+      definitionId: tab.id,
+      id: tab.id,
+      partDefinitionId: tab.id,
+      title: tab.title,
+      args: {},
+      slot: tab.slot,
+      pluginId: "shell.utility",
+    } satisfies ComposedShellPart));
+
+  return [...utilityParts, ...pluginParts];
 }
 
 export function renderPartCard(
@@ -42,7 +126,7 @@ export function renderPartCard(
   runtime: ShellRuntime,
   options: { showPopoutButton: boolean; showRestoreButton?: boolean },
 ): string {
-  const closeability = getTabCloseability(runtime.contextState, part.id);
+  const closeability = getTabCloseability(runtime.contextState, part.instanceId);
   const closeabilityAttrs = [
     `data-tab-close-policy="${closeability.policy}"`,
     `data-tab-close-action-availability="${closeability.actionAvailability}"`,
@@ -51,22 +135,22 @@ export function renderPartCard(
   ].join(" ");
 
   const popoutButton = options.showPopoutButton
-    ? `<button type="button" data-action="popout" data-part-id="${part.id}">Pop out</button>`
+    ? `<button type="button" data-action="popout" data-tab-id="${part.instanceId}" data-part-id="${part.instanceId}">Pop out</button>`
     : "";
   const restoreButton = options.showRestoreButton
-    ? `<button type="button" data-action="restore" data-part-id="${part.id}">Restore to host</button>`
+    ? `<button type="button" data-action="restore" data-tab-id="${part.instanceId}" data-part-id="${part.instanceId}">Restore to host</button>`
     : "";
 
   return `
-    <article class="part-root" data-part-id="${part.id}" draggable="true" ${closeabilityAttrs}>
+    <article class="part-root" data-tab-id="${part.instanceId}" data-definition-id="${part.definitionId}" data-part-id="${part.instanceId}" draggable="true" ${closeabilityAttrs}>
       <h2>${escapeHtml(part.title)}</h2>
       <div class="part-actions">
         ${popoutButton}
         ${restoreButton}
       </div>
       ${renderPartBody(part)}
-      <div class="dropzone" data-dropzone-for="${part.id}">Drop cross-window payload here</div>
-      <p class="runtime-note" data-drop-result-for="${part.id}"></p>
+      <div class="dropzone" data-dropzone-for="${part.instanceId}">Drop cross-window payload here</div>
+      <p class="runtime-note" data-drop-result-for="${part.instanceId}"></p>
       <p class="runtime-note">Window: ${runtime.windowId}</p>
     </article>
   `;
@@ -84,7 +168,7 @@ export function updateSelectedStyles(root: HTMLElement, selectedPartId: string |
 }
 
 export function resolvePartTitle(partId: string, runtime: ShellRuntime): string {
-  return getVisibleComposedParts(runtime).find((part) => part.id === partId)?.title ?? partId;
+  return getVisibleComposedParts(runtime).find((part) => part.instanceId === partId)?.title ?? partId;
 }
 
 export function renderTabStrip(
@@ -92,40 +176,58 @@ export function renderTabStrip(
   tabs: ComposedShellPart[],
   activeTabId: string,
   runtime: ShellRuntime,
+  options?: {
+    tabScope?: string;
+    label?: string;
+  },
 ): string {
-  const label = `${slot} panel tabs`;
+  const label = options?.label ?? `${slot} panel tabs`;
+  const tabScope = options?.tabScope ?? `slot:${slot}`;
   const reopenEnabled = !runtime.syncDegraded && canReopenClosedTab(runtime.contextState, slot);
   return `
-    <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}">
+    <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}" data-tab-scope="${escapeHtml(tabScope)}">
       ${tabs.map((part) => {
-    const isActive = part.id === activeTabId;
-    const closeability = getTabCloseability(runtime.contextState, part.id);
+    const isActive = part.instanceId === activeTabId;
+    const closeability = getTabCloseability(runtime.contextState, part.instanceId);
     const closeButton = closeability.canClose
       ? `<button
             type="button"
             class="part-tab-close"
             data-action="close-tab"
-            data-tab-id="${part.id}"
+            data-tab-id="${part.instanceId}"
             aria-label="Close ${escapeHtml(part.title)} tab"
             aria-keyshortcuts="Control+W Meta+W"
             title="Close tab (Ctrl+W)"
           >×</button>`
       : "";
-    return `<div class="part-tab-item" data-tab-item="${part.id}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
+    return `<div class="part-tab-item" data-tab-item="${part.instanceId}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
+        <button
+          type="button"
+          class="part-tab-handle"
+          data-action="drag-tab-handle"
+          data-tab-id="${part.id}"
+          draggable="true"
+          aria-label="Drag ${escapeHtml(part.title)} tab"
+          title="Drag tab"
+        >⋮⋮</button>
         <button
           type="button"
           role="tab"
           class="part-tab${isActive ? " is-active" : ""}"
-          id="tab-${part.id}"
+          id="tab-${part.instanceId}"
           data-action="activate-tab"
           data-slot="${part.slot}"
-          data-part-id="${part.id}"
+          data-tab-scope="${escapeHtml(tabScope)}"
+          data-tab-id="${part.instanceId}"
+          data-part-id="${part.instanceId}"
+          data-part-definition-id="${part.definitionId}"
           data-part-title="${escapeHtml(part.title)}"
           aria-selected="${isActive ? "true" : "false"}"
-          aria-controls="panel-${part.id}"
+          aria-controls="panel-${part.instanceId}"
           tabindex="${isActive ? "0" : "-1"}"
         >${escapeHtml(part.title)}</button>
         ${closeButton}
+        ${renderDockDropOverlay(part.id)}
       </div>`;
   }).join("")}
       <button
@@ -133,6 +235,7 @@ export function renderTabStrip(
         class="part-tab"
         data-action="reopen-closed-tab"
         data-slot="${slot}"
+        data-tab-scope="${escapeHtml(tabScope)}"
         aria-label="Reopen recently closed tab"
         aria-keyshortcuts="Control+Shift+T Meta+Shift+T"
         title="Reopen closed tab (Ctrl+Shift+T)"
@@ -142,16 +245,121 @@ export function renderTabStrip(
   `;
 }
 
+function renderDockDropOverlay(targetTabId: string): string {
+  return `<div class="dock-drop-overlay" data-dock-drop-overlay-for="${targetTabId}" aria-hidden="true">
+      <div class="dock-drop-zone dock-drop-zone-left" data-dock-drop-zone="left" data-target-tab-id="${targetTabId}" title="Split left"></div>
+      <div class="dock-drop-zone dock-drop-zone-right" data-dock-drop-zone="right" data-target-tab-id="${targetTabId}" title="Split right"></div>
+      <div class="dock-drop-zone dock-drop-zone-top" data-dock-drop-zone="top" data-target-tab-id="${targetTabId}" title="Split top"></div>
+      <div class="dock-drop-zone dock-drop-zone-bottom" data-dock-drop-zone="bottom" data-target-tab-id="${targetTabId}" title="Split bottom"></div>
+      <div class="dock-drop-zone dock-drop-zone-center" data-dock-drop-zone="center" data-target-tab-id="${targetTabId}" title="Merge into tab stack"></div>
+    </div>`;
+}
+
 export function isPartActivationNode(target: HTMLElement): target is HTMLButtonElement {
   const action = target.dataset.action;
   return target instanceof HTMLButtonElement && action === "activate-tab";
 }
 
+export function renderDockTree(
+  root: DockNode | null,
+  visibleParts: ComposedShellPart[],
+  runtime: ShellRuntime,
+): string {
+  const partsById = new Map(visibleParts.map((part) => [part.id, part]));
+  const activeTabId = runtime.selectedPartId && partsById.has(runtime.selectedPartId)
+    ? runtime.selectedPartId
+    : runtime.contextState.activeTabId && partsById.has(runtime.contextState.activeTabId)
+      ? runtime.contextState.activeTabId
+      : visibleParts[0]?.id;
+  return renderDockNode(root, partsById, activeTabId ?? null, runtime);
+}
+
+function renderDockNode(
+  node: DockNode | null,
+  partsById: Map<string, ComposedShellPart>,
+  fallbackActiveTabId: string | null,
+  runtime: ShellRuntime,
+): string {
+  if (!node) {
+    return "";
+  }
+
+  if (node.kind === "split") {
+    const first = renderDockNode(node.first, partsById, fallbackActiveTabId, runtime);
+    const second = renderDockNode(node.second, partsById, fallbackActiveTabId, runtime);
+    if (!first && !second) {
+      return "";
+    }
+    if (!first) {
+      return second;
+    }
+    if (!second) {
+      return first;
+    }
+
+    return `<section class="dock-node dock-node-split dock-node-split-${node.orientation}" data-dock-node-id="${node.id}" data-dock-orientation="${node.orientation}">
+      <section class="dock-split-branch" data-dock-branch="first">${first}</section>
+      <section class="dock-split-branch" data-dock-branch="second">${second}</section>
+    </section>`;
+  }
+
+  const tabs = node.tabIds
+    .map((tabId) => partsById.get(tabId))
+    .filter((part): part is ComposedShellPart => Boolean(part));
+  if (tabs.length === 0) {
+    return "";
+  }
+
+  const activeTabId = resolveStackActiveTabId(node.activeTabId, fallbackActiveTabId, tabs);
+  const panelSlot = tabs[0]?.slot ?? "main";
+  const tabScope = `stack:${node.id}`;
+  const panelLabel = `${tabs[0]?.title ?? panelSlot} panel tabs`;
+  return `<section class="dock-node dock-node-stack" data-dock-node-id="${node.id}" data-dock-stack-id="${node.id}" data-slot="${panelSlot}">
+      ${renderTabStrip(panelSlot, tabs, activeTabId, runtime, { tabScope, label: panelLabel })}
+      <section class="dock-stack-panels">
+        ${tabs.map((part) => renderPartPanel(part, runtime, part.id === activeTabId)).join("")}
+      </section>
+    </section>`;
+}
+
+function renderPartPanel(part: ComposedShellPart, runtime: ShellRuntime, isActive: boolean): string {
+  return `<section
+      id="panel-${part.id}"
+      role="tabpanel"
+      aria-labelledby="tab-${part.id}"
+      ${isActive ? "" : "hidden"}
+    >${renderPartCard(part, runtime, { showPopoutButton: true })}</section>`;
+}
+
+function resolveStackActiveTabId(
+  nodeActiveTabId: string | null,
+  fallbackActiveTabId: string | null,
+  tabs: ComposedShellPart[],
+): string {
+  if (nodeActiveTabId && tabs.some((part) => part.id === nodeActiveTabId)) {
+    return nodeActiveTabId;
+  }
+
+  if (fallbackActiveTabId && tabs.some((part) => part.id === fallbackActiveTabId)) {
+    return fallbackActiveTabId;
+  }
+
+  return tabs[0]!.id;
+}
+
 function renderPartBody(part: ComposedShellPart): string {
-  const componentLabel = part.component ?? part.id;
-  return `<section class="domain-panel" data-domain-panel="runtime-host" data-part-panel-for="${part.id}">
-      <section class="domain-panel-host" data-part-content-for="${part.id}"></section>
-      <section class="domain-panel-fallback" data-part-fallback-for="${part.id}">
+  const utilityTab = resolveUtilityTabById(part.id);
+  if (utilityTab) {
+    return `<section class="domain-panel" data-domain-panel="utility-host" data-part-panel-for="${part.id}">
+      <section class="domain-panel-host" id="${utilityTab.panelHostId}" data-part-content-for="${part.id}"></section>
+      <section class="domain-panel-fallback" data-part-fallback-for="${part.id}" hidden></section>
+    </section>`;
+  }
+
+  const componentLabel = part.component ?? part.definitionId ?? part.id;
+  return `<section class="domain-panel" data-domain-panel="runtime-host" data-part-panel-for="${part.instanceId}">
+      <section class="domain-panel-host" data-part-content-for="${part.instanceId}"></section>
+      <section class="domain-panel-fallback" data-part-fallback-for="${part.instanceId}">
         <h3>${escapeHtml(part.title)}</h3>
         <p class="domain-hint">Component '${escapeHtml(componentLabel)}' is unavailable in this shell runtime.</p>
         <p class="domain-hint">Composition remains extension-driven; this host provides generic fallback rendering only.</p>
