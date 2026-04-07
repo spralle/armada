@@ -59,6 +59,19 @@ export interface ShellEffectsPort {
 
 export interface ShellRendererAdapter {
   initialize(root: HTMLElement, runtime: ShellRuntime, effects: ShellEffectsPort): void;
+  mountMainWindow(root: HTMLElement, deps: {
+    renderParts: () => void;
+    updateWindowReadOnlyState: () => void;
+    setupResize: () => void;
+    publishRestoreRequestOnUnload: () => void;
+  }): void;
+  mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: {
+    renderParts: () => void;
+    updateWindowReadOnlyState: () => void;
+    setupResize: () => void;
+    publishRestoreRequestOnUnload: () => void;
+  }): void;
+  renderPanels(root: HTMLElement, runtime: ShellRuntime): void;
   renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void;
   renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void;
   renderParts(root: HTMLElement, runtime: ShellRuntime): void;
