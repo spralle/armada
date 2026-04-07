@@ -4,6 +4,7 @@ import { registerIntentRuntimeCompositionSpecs } from "./context-state.spec-inte
 import { registerContextStatePersistenceSpecs } from "./context-state.spec-persistence.js";
 import { registerKeyboardA11ySpecs } from "./context-state.spec-keyboard-a11y.js";
 import { registerSyncPopoutDegradedSpecs } from "./context-state.spec-sync-popout-degraded.js";
+import { registerTabDragDropSpecs } from "./context-state.spec-tab-drag-drop.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -12,6 +13,7 @@ registerIntentRuntimeCompositionSpecs(harness);
 registerContextStatePersistenceSpecs(harness);
 registerKeyboardA11ySpecs(harness);
 registerSyncPopoutDegradedSpecs(harness);
+registerTabDragDropSpecs(harness);
 
 const { passed, total } = runAll();
 
