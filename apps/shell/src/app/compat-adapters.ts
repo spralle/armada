@@ -7,6 +7,7 @@ import type {
 import type { ShellRuntime } from "./types.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
 import { createRuntimeEventHandlers } from "../shell-runtime/runtime-event-handlers.js";
+import { createShellCoreApi } from "./shell-core.js";
 import {
   initializeReactPanels,
   renderContextControlsPanel as renderContextControlsPanelView,
@@ -57,7 +58,7 @@ export function createShellRuntimeCompatibilityAdapters(
     summarizeSelectionPriorities: () => deps.summarizeSelectionPriorities(),
   };
 
-  const core = createRuntimeEventHandlers(root, runtime, {
+  const runtimeHandlers = createRuntimeEventHandlers(root, runtime, {
     activatePluginForBoundary: (options) => effects.activatePluginForBoundary(options),
     announce: (message) => effects.announce(message),
     renderCommandSurface: () => effects.renderCommandSurface(),
@@ -66,6 +67,8 @@ export function createShellRuntimeCompatibilityAdapters(
     renderSyncStatus: () => effects.renderSyncStatus(),
     summarizeSelectionPriorities: () => effects.summarizeSelectionPriorities(),
   });
+
+  const core = createShellCoreApi(runtime, runtimeHandlers);
 
   renderer = {
     initialize: (viewRoot, viewRuntime) => {

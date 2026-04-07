@@ -7,8 +7,24 @@ import type {
 } from "../window-bridge.js";
 import type {
   IntentActionMatch,
+  IntentResolutionTrace,
   ShellIntent,
 } from "../intent-runtime.js";
+import type { DevLaneMetadata, RenderTabMetadata } from "./types.js";
+
+export interface ShellCoreSnapshot {
+  activeTabId: string | null;
+  selectedPartId: string | null;
+  selectedPartTitle: string | null;
+  notice: string;
+  pluginNotice: string;
+  intentNotice: string;
+  commandNotice: string;
+  pendingIntentMatches: IntentActionMatch[];
+  lastIntentTrace: IntentResolutionTrace | null;
+  tabMetadata: RenderTabMetadata[];
+  laneMetadata: DevLaneMetadata[];
+}
 
 /**
  * Shell core boundary invariants:
@@ -22,6 +38,8 @@ export interface ShellCoreApi {
   applySelection(event: SelectionSyncEvent): void;
   resolveIntentFlow(intent: ShellIntent): void;
   executeResolvedAction(match: IntentActionMatch, intent: ShellIntent | null): Promise<void>;
+  getSnapshot(): ShellCoreSnapshot;
+  subscribe(listener: (snapshot: ShellCoreSnapshot) => void): () => void;
 }
 
 export interface ShellEffectsPort {
