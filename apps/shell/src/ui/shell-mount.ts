@@ -135,7 +135,7 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
   deps.updateWindowReadOnlyState();
 
   window.addEventListener("beforeunload", () => {
-    if (!runtime.partId || !runtime.hostWindowId) {
+    if (!runtime.popoutTabId || !runtime.hostWindowId) {
       return;
     }
     deps.publishRestoreRequestOnUnload();

@@ -49,7 +49,7 @@ export interface ShellRuntime {
   bridge: WindowBridge;
   windowId: string;
   hostWindowId: string | null;
-  partId: string | null;
+  popoutTabId: string | null;
   isPopout: boolean;
   selectedPartId: string | null;
   selectedPartTitle: string | null;
@@ -61,7 +61,7 @@ export interface ShellRuntime {
   pendingIntent: ShellIntent | null;
   lastIntentTrace: IntentResolutionTrace | null;
   popoutHandles: Map<string, Window>;
-  poppedOutPartIds: Set<string>;
+  poppedOutTabIds: Set<string>;
   closeableTabIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
   syncDegraded: boolean;

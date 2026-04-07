@@ -16,10 +16,17 @@ import {
   type ShellContextState,
 } from "../context-state.js";
 import type { ShellRuntime } from "../app/types.js";
-import { resolvePartTitle } from "./parts-rendering.js";
-import { getVisibleComposedParts } from "./parts-rendering.js";
-import type { PartsControllerDeps } from "./parts-controller-types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
+import { buildSelectionSyncEvent } from "../sync/bridge-payloads.js";
+import { getVisibleComposedParts, resolvePartTitle } from "./parts-rendering.js";
+
+export type PartLifecycleDeps = {
+  applySelection: (event: SelectionSyncEvent) => void;
+  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => void;
+  renderContextControls: () => void;
+  renderParts: () => void;
+  renderSyncStatus: () => void;
+};
 
 interface CloseTabRuntimeOptions {
   publishCloseEvent?: boolean;
@@ -30,10 +37,10 @@ interface CloseTabRuntimeOptions {
 export function closeTabThroughRuntime(
   runtime: ShellRuntime,
   tabId: string,
-  deps: PartsControllerDeps,
+  deps: PartLifecycleDeps,
   options?: CloseTabRuntimeOptions,
 ): boolean {
-  if (runtime.syncDegraded || !runtime.contextState.tabs[tabId]) {
+  if (!runtime.contextState.tabs[tabId]) {
     return false;
   }
 
@@ -49,8 +56,14 @@ export function closeTabThroughRuntime(
   const slot = resolveSlotForTab(runtime, tabId);
 
   closeability.canClose
-    ? closeTabFromUi(runtime, tabId, { slot, orderIndex: closedTabIndex })
-    : closeTabUsingRuntimeAllowList(runtime, tabId, { slot, orderIndex: closedTabIndex });
+    ? closeTabFromUi(runtime, tabId, {
+      slot,
+      orderIndex: closedTabIndex,
+    })
+    : closeTabUsingRuntimeAllowList(runtime, tabId, {
+      slot,
+      orderIndex: closedTabIndex,
+    });
 
   if (runtime.contextState.tabs[tabId]) {
     return false;
@@ -80,24 +93,30 @@ export function closeTabThroughRuntime(
     const selectionByEntityType = buildSelectionByEntityType(runtime);
     const revision = createRevision(sourceWindowId);
 
-    deps.applySelection({
-      type: "selection",
+    deps.applySelection(buildSelectionSyncEvent({
       selectedPartId: activeTabId,
       selectedPartTitle,
       selectionByEntityType,
       revision,
       sourceWindowId,
-    });
+      selectedPartDefinitionId:
+        runtime.contextState.tabs[activeTabId]?.partDefinitionId
+        ?? runtime.contextState.tabs[activeTabId]?.definitionId
+        ?? activeTabId,
+    }));
 
     if (publishSelectionEvent) {
-      deps.publishWithDegrade({
-        type: "selection",
+      deps.publishWithDegrade(buildSelectionSyncEvent({
         selectedPartId: activeTabId,
         selectedPartTitle,
         selectionByEntityType,
         revision,
         sourceWindowId,
-      });
+        selectedPartDefinitionId:
+          runtime.contextState.tabs[activeTabId]?.partDefinitionId
+          ?? runtime.contextState.tabs[activeTabId]?.definitionId
+          ?? activeTabId,
+      }));
     }
 
     writeGlobalSelectionLane(runtime, {
@@ -110,6 +129,7 @@ export function closeTabThroughRuntime(
   runtime.pendingFocusSelector = activeTabId
     ? `button[data-action='activate-tab'][data-part-id='${activeTabId}']`
     : null;
+
   deps.renderContextControls();
   deps.renderParts();
   deps.renderSyncStatus();
@@ -135,12 +155,8 @@ export function closeTabFromUi(
 
 export function reopenMostRecentlyClosedTabThroughRuntime(
   runtime: ShellRuntime,
-  deps: PartsControllerDeps,
+  deps: PartLifecycleDeps,
 ): boolean {
-  if (runtime.syncDegraded) {
-    return false;
-  }
-
   const slot = resolvePreferredReopenSlot(runtime);
   const reopenedState = reopenUntilEligibleTabRestored(runtime, slot);
   if (!reopenedState) {
@@ -160,23 +176,29 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
   const selectionByEntityType = buildSelectionByEntityType(runtime);
   const revision = createRevision(runtime.windowId);
 
-  deps.applySelection({
-    type: "selection",
+  deps.applySelection(buildSelectionSyncEvent({
     selectedPartId: reopenedTabId,
     selectedPartTitle: reopenedTabTitle,
     selectionByEntityType,
     revision,
     sourceWindowId: runtime.windowId,
-  });
+    selectedPartDefinitionId:
+      runtime.contextState.tabs[reopenedTabId]?.partDefinitionId
+      ?? runtime.contextState.tabs[reopenedTabId]?.definitionId
+      ?? reopenedTabId,
+  }));
 
-  deps.publishWithDegrade({
-    type: "selection",
+  deps.publishWithDegrade(buildSelectionSyncEvent({
     selectedPartId: reopenedTabId,
     selectedPartTitle: reopenedTabTitle,
     selectionByEntityType,
     revision,
     sourceWindowId: runtime.windowId,
-  });
+    selectedPartDefinitionId:
+      runtime.contextState.tabs[reopenedTabId]?.partDefinitionId
+      ?? runtime.contextState.tabs[reopenedTabId]?.definitionId
+      ?? reopenedTabId,
+  }));
 
   writeGlobalSelectionLane(runtime, {
     selectedPartId: reopenedTabId,
@@ -188,6 +210,55 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
   deps.renderContextControls();
   deps.renderParts();
   deps.renderSyncStatus();
+  return true;
+}
+
+export function activateTabInstance(
+  tabInstanceId: string,
+  partTitle: string | undefined,
+  runtime: ShellRuntime,
+  deps: PartLifecycleDeps,
+): boolean {
+  if (!runtime.contextState.tabs[tabInstanceId]) {
+    return false;
+  }
+
+  const selectedPartTitle = partTitle
+    ?? runtime.contextState.tabs[tabInstanceId]?.label
+    ?? tabInstanceId;
+  const selectionRevision = createRevision(runtime.windowId);
+  const selectionByEntityType = buildSelectionByEntityType(runtime);
+
+  deps.applySelection(buildSelectionSyncEvent({
+    selectedPartId: tabInstanceId,
+    selectedPartTitle,
+    selectionByEntityType,
+    revision: selectionRevision,
+    sourceWindowId: runtime.windowId,
+    selectedPartDefinitionId:
+      runtime.contextState.tabs[tabInstanceId]?.partDefinitionId
+      ?? runtime.contextState.tabs[tabInstanceId]?.definitionId
+      ?? tabInstanceId,
+  }));
+
+  deps.publishWithDegrade(buildSelectionSyncEvent({
+    selectedPartId: tabInstanceId,
+    selectedPartTitle,
+    selectionByEntityType,
+    revision: selectionRevision,
+    sourceWindowId: runtime.windowId,
+    selectedPartDefinitionId:
+      runtime.contextState.tabs[tabInstanceId]?.partDefinitionId
+      ?? runtime.contextState.tabs[tabInstanceId]?.definitionId
+      ?? tabInstanceId,
+  }));
+
+  writeGlobalSelectionLane(runtime, {
+    selectedPartId: tabInstanceId,
+    selectedPartTitle,
+    revision: selectionRevision,
+  });
+
   return true;
 }
 
@@ -234,11 +305,9 @@ function cleanupPopoutForClosedTab(tabId: string, runtime: ShellRuntime): void {
 }
 
 function resolveSlotForTab(runtime: ShellRuntime, tabId: string): ContextTabSlot {
-  const visiblePart = runtime.registry
-    ? getVisibleComposedParts(runtime).find((part) => part.id === tabId)
-    : null;
-  if (visiblePart) {
-    return visiblePart.slot;
+  if (runtime.registry) {
+    const visiblePart = getVisibleComposedParts(runtime).find((part) => part.id === tabId);
+    return visiblePart?.slot ?? "main";
   }
 
   if (tabId.startsWith("tab-side")) {
@@ -288,7 +357,8 @@ function reopenUntilEligibleTabRestored(
     }
 
     if (reopened.tabs[reopenedTabId]) {
-      next = closeTab(reopened, reopenedTabId);
+      const droppedUnsafe = closeTab(reopened, reopenedTabId);
+      next = droppedUnsafe;
       continue;
     }
 
