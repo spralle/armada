@@ -14,19 +14,26 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     html, body { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: #14161a; color: #e9edf3; }
     .shell { display: grid; grid-template-columns: 1fr; min-height: 100vh; min-height: 100dvh; height: 100vh; height: 100dvh; overflow: hidden; }
+    .shell,
+    .shell > .dock-root,
+    .dock-root > .dock-node,
+    .dock-split-branch > .dock-node,
+    .dock-node-split,
+    .dock-node-stack,
+    .dock-stack-panels { height: 100%; }
     .dock-root { background: #11151c; min-width: 0; min-height: 0; overflow: hidden; padding: 6px; display: flex; flex-direction: column; }
     .dock-root > .dock-node { flex: 1 1 auto; }
     .dock-node { min-width: 0; min-height: 0; }
     .dock-node-stack { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; border: 1px solid #2b3040; border-radius: 4px; background: #121922; overflow: hidden; }
-    .dock-stack-panels { min-height: 0; overflow: auto; padding: 0; position: relative; display: flex; flex-direction: column; }
-    .dock-stack-panels > [role="tabpanel"] { min-height: 0; height: 100%; display: flex; flex-direction: column; }
+    .dock-stack-panels { min-height: 0; overflow: hidden; padding: 0; position: relative; display: flex; flex-direction: column; }
+    .dock-stack-panels > [role="tabpanel"] { min-height: 0; height: 100%; flex: 1 1 auto; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"][hidden] { display: none; }
-    .dock-tabpanel { min-width: 0; min-height: 0; }
-    .dock-tabpanel-content { min-width: 0; min-height: 0; height: 100%; padding: 6px; box-sizing: border-box; display: flex; flex-direction: column; }
+    .dock-tabpanel { min-width: 0; min-height: 0; overflow: auto; flex: 1 1 auto; display: flex; }
+    .dock-tabpanel-content { min-width: 0; min-height: 100%; height: auto; flex: 1 1 auto; padding: 6px; box-sizing: border-box; display: flex; flex-direction: column; }
     .dock-node-split { --dock-splitter-size: 12px; display: grid; gap: 0; min-width: 0; min-height: 0; }
     .dock-node-split-horizontal { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .dock-node-split-vertical { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
-    .dock-split-branch { min-width: 0; min-height: 0; overflow: hidden; }
+    .dock-split-branch { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
     .dock-splitter { position: relative; background: transparent; user-select: none; touch-action: none; z-index: 2; }
     .dock-splitter::before { content: ""; position: absolute; background: #2b3040; pointer-events: none; }
     .dock-splitter-horizontal { cursor: col-resize; }
@@ -89,7 +96,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .dev-inspector li { margin: 3px 0; }
     .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; flex: 1 1 auto; }
     .domain-panel-host,
-    .domain-panel-fallback { min-height: 0; }
+    .domain-panel-fallback { min-height: 0; overflow: auto; }
     .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
     .domain-list { display: grid; gap: 4px; }
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 4px; padding: 6px; cursor: pointer; }
@@ -140,7 +147,7 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
     .dev-inspector li { margin: 3px 0; }
     .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; flex: 1 1 auto; }
     .domain-panel-host,
-    .domain-panel-fallback { min-height: 0; }
+    .domain-panel-fallback { min-height: 0; overflow: auto; }
     .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
     .domain-list { display: grid; gap: 4px; }
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 4px; padding: 6px; cursor: pointer; }
