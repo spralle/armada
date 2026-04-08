@@ -13,6 +13,7 @@ interface DragDataTransfer {
   dropEffect: string;
   setData: (format: string, value: string) => void;
   getData: (format: string) => string;
+  setDragImage: (image: Element, x: number, y: number) => void;
 }
 
 type DragListener = (event: DragEvent) => void;
@@ -102,6 +103,8 @@ class MemoryDataTransfer implements DragDataTransfer {
   getData(format: string): string {
     return this.data.get(format) ?? "";
   }
+
+  setDragImage(_image: Element, _x: number, _y: number): void {}
 }
 
 class EmptyReadDataTransfer extends MemoryDataTransfer {

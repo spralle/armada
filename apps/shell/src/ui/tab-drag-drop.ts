@@ -66,12 +66,7 @@ export function wireTabStripDragDrop(
       dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
 
       dataTransfer.effectAllowed = "move";
-      queueMicrotask(() => {
-        const activePayload = readActiveDockDragPayload(root);
-        if (activePayload?.tabId === tabId) {
-          root.classList.add("is-dock-dragging");
-        }
-      });
+      dataTransfer.setDragImage(tabButton ?? tabItem, 16, 12);
       console.log("[shell:dnd:tab] dragstart", {
         tabId,
         sourceWindowId: runtime.windowId,
@@ -79,6 +74,14 @@ export function wireTabStripDragDrop(
         types: Array.from(dataTransfer.types ?? []),
         stack: new Error().stack,
       });
+    });
+
+    tabItem.addEventListener("drag", () => {
+      const activePayload = readActiveDockDragPayload(root);
+      if (activePayload?.tabId !== tabId) {
+        return;
+      }
+      root.classList.add("is-dock-dragging");
     });
 
     tabItem.addEventListener("dragend", () => {
