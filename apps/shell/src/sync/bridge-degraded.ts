@@ -3,7 +3,9 @@ import type { SyncAckEvent, SyncProbeEvent, WindowBridge } from "../window-bridg
 import type { ShellRuntime } from "../app/types.js";
 import {
   normalizeBridgePublishRejectionReason,
+  type AsyncWindowBridgeHealth,
   type AsyncWindowBridgePublishResult,
+  type AsyncWindowBridgeRejectReason,
 } from "../app/async-bridge.js";
 
 export interface BridgeRenderBindings {
@@ -38,15 +40,11 @@ export function publishWithDegrade(
     return false;
   }
 
-  const result = publishBridgeEvent(runtime, event);
+  const result = publishBridgeEvent(runtime, event, {
+    onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
+  });
   if (result.status === "rejected") {
-    runtime.syncDegraded = true;
-    runtime.syncDegradedReason = result.reason;
-    runtime.pendingProbeId = null;
-    bindings.announce(formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
-    bindings.updateWindowReadOnlyState();
-    bindings.renderSyncStatus();
-    bindings.renderContextControls();
+    enterDegradedMode(runtime, result.reason, bindings);
     return false;
   }
 
@@ -54,7 +52,11 @@ export function publishWithDegrade(
 }
 
 export function requestSyncProbe(runtime: ShellRuntime, bindings: BridgeRenderBindings, createWindowId: () => string): void {
-  if (!runtime.bridge.available) {
+  if (!runtime.bridge.available && runtime.activeTransportPath !== "async-scomp-adapter") {
+    return;
+  }
+
+  if (runtime.pendingProbeId) {
     return;
   }
 
@@ -64,38 +66,51 @@ export function requestSyncProbe(runtime: ShellRuntime, bindings: BridgeRenderBi
     type: "sync-probe",
     probeId,
     sourceWindowId: runtime.windowId,
+  }, {
+    onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
   });
 
   if (result.status === "rejected") {
-    runtime.syncDegraded = true;
-    runtime.syncDegradedReason = result.reason;
-    runtime.pendingProbeId = null;
-    bindings.announce(formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
-    bindings.updateWindowReadOnlyState();
-    bindings.renderSyncStatus();
-    bindings.renderContextControls();
+    enterDegradedMode(runtime, result.reason, bindings);
   }
 }
 
-export function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent): void {
+export function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent, bindings: BridgeRenderBindings): void {
   if (runtime.syncDegraded) {
     return;
   }
 
-  publishBridgeEvent(runtime, {
+  const result = publishBridgeEvent(runtime, {
     type: "sync-ack",
     probeId: event.probeId,
     targetWindowId: event.sourceWindowId,
     sourceWindowId: runtime.windowId,
+  }, {
+    onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
   });
+
+  if (result.status === "rejected") {
+    enterDegradedMode(runtime, result.reason, bindings);
+  }
 }
 
 function publishBridgeEvent(
   runtime: ShellRuntime,
   event: Parameters<WindowBridge["publish"]>[0],
+  options?: {
+    onRejected?: (reason: AsyncWindowBridgeRejectReason) => void;
+  },
 ): AsyncWindowBridgePublishResult {
   if (runtime.activeTransportPath === "async-scomp-adapter") {
-    void runtime.asyncBridge.publish(event);
+    void runtime.asyncBridge.publish(event).then((result) => {
+      if (result.status === "rejected") {
+        options?.onRejected?.(result.reason);
+      }
+    }).catch(() => {
+      options?.onRejected?.(
+        normalizeBridgePublishRejectionReason(runtime.syncDegradedReason, runtime.bridge.available),
+      );
+    });
 
     return {
       status: "accepted",
@@ -131,13 +146,94 @@ export function handleSyncAck(
     return true;
   }
 
+  const requiresHealthyState = runtime.activeTransportPath === "async-scomp-adapter";
+  const healthState = runtime.syncHealthState ?? "healthy";
+  if (requiresHealthyState && healthState !== "healthy") {
+    runtime.pendingProbeId = null;
+    return true;
+  }
+
+  leaveDegradedMode(runtime, bindings);
+
+  if (runtime.activeTransportPath === "async-scomp-adapter") {
+    void runtime.asyncBridge.recover();
+  } else {
+    runtime.bridge.recover();
+  }
+  return true;
+}
+
+export function handleBridgeHealth(
+  runtime: ShellRuntime,
+  health: AsyncWindowBridgeHealth,
+  bindings: BridgeRenderBindings,
+  requestProbe: () => void,
+): void {
+  runtime.syncHealthState = health.state;
+
+  if (health.state !== "healthy") {
+    enterDegradedMode(
+      runtime,
+      health.reason ?? normalizeBridgePublishRejectionReason(runtime.syncDegradedReason, runtime.bridge.available),
+      bindings,
+      health.state,
+    );
+    return;
+  }
+
+  if (runtime.syncDegraded) {
+    requestProbe();
+  }
+}
+
+function enterDegradedMode(
+  runtime: ShellRuntime,
+  reason: AsyncWindowBridgeRejectReason,
+  bindings: BridgeRenderBindings,
+  state: "degraded" | "unavailable" = reason === "unavailable" ? "unavailable" : "degraded",
+): void {
+  const changed =
+    !runtime.syncDegraded
+    || runtime.syncDegradedReason !== reason
+    || runtime.pendingProbeId !== null
+    || runtime.syncHealthState !== state;
+
+  runtime.syncDegraded = true;
+  runtime.syncHealthState = state;
+  runtime.syncDegradedReason = reason;
+  runtime.pendingProbeId = null;
+
+  if (!changed) {
+    return;
+  }
+
+  bindings.announce(formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
+  bindings.updateWindowReadOnlyState();
+  bindings.renderSyncStatus();
+  bindings.renderContextControls();
+}
+
+function leaveDegradedMode(
+  runtime: ShellRuntime,
+  bindings: BridgeRenderBindings,
+): void {
+  const changed =
+    runtime.syncDegraded
+    || runtime.syncDegradedReason !== null
+    || runtime.syncHealthState !== "healthy"
+    || runtime.pendingProbeId !== null;
+
   runtime.pendingProbeId = null;
   runtime.syncDegraded = false;
+  runtime.syncHealthState = "healthy";
   runtime.syncDegradedReason = null;
-  runtime.bridge.recover();
+
+  if (!changed) {
+    return;
+  }
+
   bindings.announce(formatDegradedModeAnnouncement(false, null));
   bindings.updateWindowReadOnlyState();
   bindings.renderSyncStatus();
   bindings.renderContextControls();
-  return true;
 }

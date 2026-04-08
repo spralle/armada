@@ -4,6 +4,7 @@ import { registerIntentRuntimeCompositionSpecs } from "./context-state.spec-inte
 import { registerContextStatePersistenceSpecs } from "./context-state.spec-persistence.js";
 import { registerKeyboardA11ySpecs } from "./context-state.spec-keyboard-a11y.js";
 import { registerSyncPopoutDegradedSpecs } from "./context-state.spec-sync-popout-degraded.js";
+import { registerBridgeUnavailableSpecs } from "./context-state.spec-bridge-unavailable.js";
 import { registerTabDragDropSpecs } from "./context-state.spec-tab-drag-drop.js";
 import { registerDockTabDragDropSpecs } from "./context-state.spec-dock-tab-drag-drop.js";
 import { registerRuntimeEventHandlersSpecs } from "./shell-runtime/runtime-event-handlers.spec.js";
@@ -20,6 +21,7 @@ registerIntentRuntimeCompositionSpecs(harness);
 registerContextStatePersistenceSpecs(harness);
 registerKeyboardA11ySpecs(harness);
 registerSyncPopoutDegradedSpecs(harness);
+registerBridgeUnavailableSpecs(harness);
 registerTabDragDropSpecs(harness);
 registerDockTabDragDropSpecs(harness);
 registerRuntimeEventHandlersSpecs(harness);
@@ -29,6 +31,6 @@ registerBridgeUnavailableSpecs(harness);
 registerDockSplitRenderingSpecs(harness);
 registerDockSplitterDragSpecs(harness);
 
-const { passed, total } = runAll();
+const { passed, total } = await runAll();
 
 console.log(`context-state specs passed (${passed}/${total})`);

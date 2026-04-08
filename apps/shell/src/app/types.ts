@@ -70,6 +70,7 @@ export interface ShellRuntime {
   closeableTabIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
   syncDegraded: boolean;
+  syncHealthState: "healthy" | "degraded" | "unavailable";
   syncDegradedReason: AsyncWindowBridgeRejectReason | null;
   pendingProbeId: string | null;
   announcement: string;

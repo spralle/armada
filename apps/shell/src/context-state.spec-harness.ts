@@ -1,10 +1,10 @@
 export type TestCase = {
   name: string;
-  run: () => void;
+  run: () => void | Promise<void>;
 };
 
 export interface SpecHarness {
-  test: (name: string, run: () => void) => void;
+  test: (name: string, run: () => void | Promise<void>) => void;
   assertEqual: (actual: unknown, expected: unknown, message: string) => void;
   assertTruthy: (value: unknown, message: string) => void;
 }
@@ -23,7 +23,7 @@ export class MemoryStorage {
 
 export function createSpecHarness(): {
   harness: SpecHarness;
-  runAll: () => { passed: number; total: number };
+    runAll: () => Promise<{ passed: number; total: number }>;
 } {
   const tests: TestCase[] = [];
 
@@ -43,11 +43,11 @@ export function createSpecHarness(): {
     },
   };
 
-  function runAll(): { passed: number; total: number } {
+  async function runAll(): Promise<{ passed: number; total: number }> {
     let passed = 0;
     for (const caseItem of tests) {
       try {
-        caseItem.run();
+        await caseItem.run();
         passed += 1;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

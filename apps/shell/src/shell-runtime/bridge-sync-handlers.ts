@@ -4,10 +4,10 @@ import {
   resolveActiveTabId,
 } from "../context/runtime-state.js";
 import {
-  formatDegradedModeAnnouncement,
   formatSelectionAnnouncement,
 } from "../keyboard-a11y.js";
 import {
+  handleBridgeHealth as handleBridgeHealthState,
   handleSyncAck as handleSyncAckState,
   handleSyncProbe as handleSyncProbeState,
   publishWithDegrade as publishWithDegradeState,
@@ -76,38 +76,7 @@ export function bindBridgeSync(
     }
     lastProcessedHealthSequence = health.sequence;
 
-    if (health.state === "unavailable") {
-      runtime.syncDegraded = false;
-      runtime.syncDegradedReason = null;
-      runtime.pendingProbeId = null;
-      updateWindowReadOnlyState(root, runtime);
-      bindings.renderSyncStatus();
-      bindings.renderContextControlsPanel();
-      return;
-    }
-
-    if (health.state === "degraded") {
-      runtime.syncDegraded = true;
-      runtime.syncDegradedReason = health.reason;
-      runtime.pendingProbeId = null;
-      bindings.announce(formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
-      updateWindowReadOnlyState(root, runtime);
-      bindings.renderSyncStatus();
-      bindings.renderContextControlsPanel();
-      return;
-    }
-
-    if (runtime.syncDegraded) {
-      requestSyncProbe(root, runtime, bindings);
-      bindings.renderSyncStatus();
-      bindings.renderContextControlsPanel();
-      updateWindowReadOnlyState(root, runtime);
-      return;
-    }
-
-    runtime.syncDegradedReason = null;
-    bindings.announce(formatDegradedModeAnnouncement(false, null));
-    updateWindowReadOnlyState(root, runtime);
+    handleBridgeHealth(root, runtime, health, bindings);
   });
 
   const unsubscribeEvents = subscribeEvents((event) => {
@@ -116,7 +85,7 @@ export function bindBridgeSync(
     }
 
     if (event.type === "sync-probe") {
-      handleSyncProbe(runtime, event);
+      handleSyncProbe(root, runtime, event, bindings);
       return;
     }
 
@@ -208,13 +177,20 @@ export function requestSyncProbe(
 }
 
 function handleSyncProbe(
+  root: HTMLElement,
   runtime: ShellRuntime,
   event: WindowBridgeEvent,
+  bindings: BridgeSyncBindings,
 ): void {
   if (event.type !== "sync-probe") {
     return;
   }
-  handleSyncProbeState(runtime, event);
+  handleSyncProbeState(runtime, event, {
+    announce: (message) => bindings.announce(message),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+    renderSyncStatus: () => bindings.renderSyncStatus(),
+    renderContextControls: () => bindings.renderContextControlsPanel(),
+  });
 }
 
 function handleSyncAck(
@@ -251,5 +227,21 @@ export function buildContextSyncEvent(
     contextValue,
     revision: createRevision(runtime.windowId),
     sourceWindowId: runtime.windowId,
+  });
+}
+
+function handleBridgeHealth(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  health: AsyncWindowBridgeHealth,
+  bindings: BridgeSyncBindings,
+): void {
+  handleBridgeHealthState(runtime, health, {
+    announce: (message) => bindings.announce(message),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+    renderSyncStatus: () => bindings.renderSyncStatus(),
+    renderContextControls: () => bindings.renderContextControlsPanel(),
+  }, () => {
+    requestSyncProbe(root, runtime, bindings);
   });
 }
