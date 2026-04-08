@@ -11,12 +11,14 @@ import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { createWindowBridge } from "../window-bridge.js";
 import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
+import { createAsyncScompWindowBridge } from "../window-bridge-scomp.js";
 import {
   BRIDGE_CHANNEL,
   DEFAULT_GROUP_COLOR,
   DEFAULT_GROUP_ID,
 } from "./constants.js";
 import type { ShellRuntime } from "./types.js";
+import type { ShellTransportPath } from "./migration-flags.js";
 import {
   createWindowId,
   getCurrentUserId,
@@ -24,11 +26,17 @@ import {
   readPopoutParams,
 } from "./utils.js";
 
-export function createShellRuntime(): ShellRuntime {
+export function createShellRuntime(options?: {
+  transportPath?: ShellTransportPath;
+}): ShellRuntime {
   const popoutParams = readPopoutParams();
   const windowId = createWindowId();
   const bridge = createWindowBridge(BRIDGE_CHANNEL);
-  const asyncBridge = createAsyncWindowBridgeCompatibilityShim(bridge);
+  const asyncBridge = options?.transportPath === "async-scomp-adapter"
+    ? createAsyncScompWindowBridge({
+      channelName: BRIDGE_CHANNEL,
+    })
+    : createAsyncWindowBridgeCompatibilityShim(bridge);
 
   const intentRuntime = createIntentRuntime();
 

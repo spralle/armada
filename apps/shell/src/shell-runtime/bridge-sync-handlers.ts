@@ -66,6 +66,10 @@ export function bindBridgeSync(
         });
       });
 
+  const subscribeEvents = compatRuntime.asyncBridge
+    ? (listener: (event: WindowBridgeEvent) => void) => compatRuntime.asyncBridge!.subscribe(listener)
+    : (listener: (event: WindowBridgeEvent) => void) => runtime.bridge.subscribe(listener);
+
   const unsubscribeHealth = subscribeHealth((health) => {
     if (health.sequence <= lastProcessedHealthSequence) {
       return;
@@ -106,7 +110,7 @@ export function bindBridgeSync(
     updateWindowReadOnlyState(root, runtime);
   });
 
-  const unsubscribeEvents = runtime.bridge.subscribe((event) => {
+  const unsubscribeEvents = subscribeEvents((event) => {
     if (event.sourceWindowId === runtime.windowId) {
       return;
     }

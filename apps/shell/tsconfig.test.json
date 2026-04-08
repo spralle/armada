@@ -30,6 +30,7 @@
     "src/shell-runtime/hmr-window-registry.spec.ts",
     "src/ui/context-controls.spec.ts",
     "src/context-state.spec-dock-split-rendering.ts",
+    "src/window-bridge-scomp.spec.ts",
     "src/ui/pending-focus.spec.ts",
     "src/ui/parts-controller-popout-transition.spec.ts",
     "src/ui/parts-controller-selection-transition.spec.ts",

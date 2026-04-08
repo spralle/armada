@@ -50,6 +50,10 @@ class StubWindowBridge implements WindowBridge {
     // no-op in test bridge
   }
 
+  close(): void {
+    // no-op in test bridge
+  }
+
   emitHealth(health: WindowBridgeHealth): void {
     for (const listener of this.healthListeners) {
       listener(health);

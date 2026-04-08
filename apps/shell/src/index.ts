@@ -17,7 +17,10 @@ import {
   getShellBootstrapComposition,
   registerShellBootstrapComposition,
 } from "./app/bootstrap-composition.js";
-import { readShellMigrationFlags } from "./app/migration-flags.js";
+import {
+  readShellMigrationFlags,
+  selectShellTransportPath,
+} from "./app/migration-flags.js";
 import { createShellRuntime } from "./app/runtime.js";
 import type { ShellRuntime } from "./app/types.js";
 import type { PluginActivationTriggerType } from "./plugin-registry.js";
@@ -66,9 +69,12 @@ export function startShell(root: HTMLElement): ShellRuntime {
   const hmrRegistry = getShellHmrRegistry();
   hmrRegistry.byRoot.get(root)?.dispose();
 
-  const shellRuntime = createShellRuntime();
   let disposed = false;
   const flags = readShellMigrationFlags();
+  const transportDecision = selectShellTransportPath(flags);
+  const shellRuntime = createShellRuntime({
+    transportPath: transportDecision.path,
+  });
   const composition = createShellBootstrapComposition(root, shellRuntime, flags, {
     activatePluginForBoundary: (options) => activatePluginForBoundary(root, shellRuntime, options),
     announce: (message) => announce(root, shellRuntime, message),
@@ -86,6 +92,7 @@ export function startShell(root: HTMLElement): ShellRuntime {
   const disposeMount = mountShell(root, shellRuntime, composition);
   shellRuntime.activeTransportPath = composition.transportPath;
   shellRuntime.activeTransportReason = composition.transportReason;
+  registerRuntimeTeardown(shellRuntime);
   composition.initialize(root, shellRuntime);
 
   hmrRegistry.windowIds.add(shellRuntime.windowId);
@@ -100,7 +107,8 @@ export function startShell(root: HTMLElement): ShellRuntime {
       disposed = true;
       disposeMount();
       shellRuntime.dragSessionBroker.dispose();
-      shellRuntime.bridge.dispose();
+      shellRuntime.asyncBridge.close();
+      shellRuntime.bridge.close();
       hmrRegistry.windowIds.delete(shellRuntime.windowId);
       if (hmrRegistry.byRoot.get(root)?.windowId === shellRuntime.windowId) {
         hmrRegistry.byRoot.delete(root);
@@ -129,6 +137,21 @@ export function startShell(root: HTMLElement): ShellRuntime {
 function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: ReturnType<typeof getShellBootstrapComposition>): () => void {
   const disposers: Array<() => void> = [];
 
+function registerRuntimeTeardown(runtime: ShellRuntime): void {
+  let closed = false;
+  const teardown = () => {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    runtime.asyncBridge.close();
+    runtime.bridge.close();
+  };
+
+  window.addEventListener("beforeunload", teardown, { once: true });
+}
+
+function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: ReturnType<typeof getShellBootstrapComposition>): () => void {
   if (runtime.isPopout) {
     disposers.push(composition.mountPopout(root, runtime, {
       renderParts: () => renderParts(root, runtime),

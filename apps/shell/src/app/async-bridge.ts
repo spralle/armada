@@ -152,6 +152,7 @@ export function createAsyncWindowBridgeCompatibilityShim(
       closed = true;
       unsubscribeEvents();
       unsubscribeHealth();
+      bridge.close();
       eventListeners.clear();
       healthListeners.clear();
     },

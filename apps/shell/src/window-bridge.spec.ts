@@ -123,12 +123,12 @@ test("bridge detects publish failure and can recover", () => {
   }
 });
 
-test("bridge dispose closes channel and detaches listeners", () => {
+test("bridge close deterministically tears down channel", () => {
   const previous = (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel;
   (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
 
   try {
-    const bridge = createWindowBridge("armada.test.bridge.dispose");
+    const bridge = createWindowBridge("armada.test.bridge.close");
     const channel = FakeBroadcastChannel.lastInstance;
     assertTruthy(channel, "expected fake broadcast channel instance");
 
@@ -141,16 +141,16 @@ test("bridge dispose closes channel and detaches listeners", () => {
       healthCalls += 1;
     });
 
-    bridge.dispose();
+    bridge.close();
     channel!.emit("message", {
       type: "sync-probe",
-      probeId: "p-after-dispose",
+      probeId: "p-after-close",
       sourceWindowId: "w-1",
     });
 
-    assertEqual(channel!.closed, true, "dispose should close underlying channel");
-    assertEqual(eventCalls, 0, "dispose should clear event listeners before follow-up messages");
-    assertEqual(healthCalls > 0, true, "health subscription should receive initial state before dispose");
+    assertEqual(channel!.closed, true, "close should close underlying channel");
+    assertEqual(eventCalls, 0, "close should clear event listeners before follow-up messages");
+    assertEqual(healthCalls > 0, true, "health subscription should receive initial state before close");
   } finally {
     (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
   }
