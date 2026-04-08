@@ -22,10 +22,6 @@ interface DockDragPayload {
   sourceWindowId: string;
 }
 
-function logTabDnd(event: string, details: Record<string, unknown>): void {
-  console.log(`[shell:dnd:tab] ${event}`, details);
-}
-
 export function wireTabStripDragDrop(
   root: HTMLElement,
   runtime: ShellRuntime,
@@ -38,10 +34,11 @@ export function wireTabStripDragDrop(
       const dataTransfer = event.dataTransfer;
       const tabId = tabButton.dataset.partId;
       if (!dataTransfer || !tabId || runtime.syncDegraded) {
-        logTabDnd("dragstart-blocked", {
+        console.log("[shell:dnd:tab] dragstart-blocked", {
           hasDataTransfer: Boolean(dataTransfer),
           tabId,
           syncDegraded: runtime.syncDegraded,
+          stack: new Error().stack,
         });
         return;
       }
@@ -65,19 +62,21 @@ export function wireTabStripDragDrop(
 
       dataTransfer.effectAllowed = "move";
       root.classList.add("is-dock-dragging");
-      logTabDnd("dragstart", {
+      console.log("[shell:dnd:tab] dragstart", {
         tabId,
         sourceWindowId: runtime.windowId,
         brokerAvailable: runtime.dragSessionBroker.available,
         types: Array.from(dataTransfer.types ?? []),
+        stack: new Error().stack,
       });
     });
 
     tabButton.addEventListener("dragend", () => {
       clearActiveDockDragPayload(root);
       root.classList.remove("is-dock-dragging");
-      logTabDnd("dragend", {
+      console.log("[shell:dnd:tab] dragend", {
         tabId: tabButton.dataset.partId,
+        stack: new Error().stack,
       });
     });
 
@@ -95,10 +94,11 @@ export function wireTabStripDragDrop(
       root.classList.remove("is-dock-dragging");
       if (runtime.syncDegraded || !event.dataTransfer) {
         clearActiveDockDragPayload(root);
-        logTabDnd("drop-blocked", {
+        console.log("[shell:dnd:tab] drop-blocked", {
           hasDataTransfer: Boolean(event.dataTransfer),
           syncDegraded: runtime.syncDegraded,
           targetTabId: tabButton.dataset.partId,
+          stack: new Error().stack,
         });
         return;
       }
@@ -106,9 +106,10 @@ export function wireTabStripDragDrop(
       const targetTabId = tabButton.dataset.partId;
       const payload = readDraggedTabPayload(runtime, event.dataTransfer, root);
       clearActiveDockDragPayload(root);
-      logTabDnd("drop", {
+      console.log("[shell:dnd:tab] drop", {
         targetTabId,
         payload,
+        stack: new Error().stack,
       });
       if (!targetTabId || !payload || payload.sourceWindowId !== runtime.windowId || payload.tabId === targetTabId) {
         return;
@@ -125,9 +126,10 @@ export function wireTabStripDragDrop(
       updateContextState(runtime, reordered);
       updateContextState(runtime, setActiveTab(runtime.contextState, payload.tabId));
       onTabMoved(payload.tabId);
-      logTabDnd("drop-applied", {
+      console.log("[shell:dnd:tab] drop-applied", {
         tabId: payload.tabId,
         targetTabId,
+        stack: new Error().stack,
       });
     });
   }
@@ -153,10 +155,11 @@ function readDraggedTabPayload(
 ): TabDragPayload | null {
   const rawText = dataTransfer.getData("text/plain");
   const rawDock = dataTransfer.getData(TAB_DOCK_DRAG_MIME);
-  logTabDnd("read-payload", {
+  console.log("[shell:dnd:tab] read-payload", {
     rawText,
     rawDock,
     types: Array.from(dataTransfer.types ?? []),
+    stack: new Error().stack,
   });
   const parsedTabDrag = parseTabDragPayload(runtime, rawText);
   if (parsedTabDrag) {

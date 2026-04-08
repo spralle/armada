@@ -22,10 +22,6 @@ type DockDragDeps = {
   renderSyncStatus: () => void;
 };
 
-function logDockDnd(event: string, details: Record<string, unknown>): void {
-  console.log(`[shell:dnd:dock] ${event}`, details);
-}
-
 export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, deps: DockDragDeps): void {
   for (const zoneNode of root.querySelectorAll<HTMLElement>("[data-dock-drop-zone][data-target-tab-id]")) {
     zoneNode.addEventListener("dragover", (event) => {
@@ -39,11 +35,12 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         ?? null;
       if (!payload || payload.sourceWindowId !== runtime.windowId) {
         dataTransfer.dropEffect = "none";
-        logDockDnd("dragover-ignored", {
+        console.log("[shell:dnd:dock] dragover-ignored", {
           targetTabId: zoneNode.dataset.targetTabId,
           zone: zoneNode.dataset.dockDropZone,
           payload,
           windowId: runtime.windowId,
+          stack: new Error().stack,
         });
         return;
       }
@@ -51,10 +48,11 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
       event.preventDefault();
       dataTransfer.dropEffect = "move";
       root.classList.add("is-dock-dragging");
-      logDockDnd("dragover-armed", {
+      console.log("[shell:dnd:dock] dragover-armed", {
         targetTabId: zoneNode.dataset.targetTabId,
         zone: zoneNode.dataset.dockDropZone,
         payload,
+        stack: new Error().stack,
       });
     });
 
@@ -64,10 +62,11 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
       const targetTabId = zoneNode.dataset.targetTabId;
       const zone = zoneNode.dataset.dockDropZone;
       if (!dataTransfer || !targetTabId || !isDockDropZone(zone)) {
-        logDockDnd("drop-blocked", {
+        console.log("[shell:dnd:dock] drop-blocked", {
           hasDataTransfer: Boolean(dataTransfer),
           targetTabId,
           zone,
+          stack: new Error().stack,
         });
         root.classList.remove("is-dock-dragging");
         return;
@@ -77,10 +76,11 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         ?? readActiveDockDragPayload(root)
         ?? null;
       if (!payload) {
-        logDockDnd("drop-no-payload", {
+        console.log("[shell:dnd:dock] drop-no-payload", {
           targetTabId,
           zone,
           types: Array.from(dataTransfer.types ?? []),
+          stack: new Error().stack,
         });
         clearActiveDockDragPayload(root);
         root.classList.remove("is-dock-dragging");
@@ -93,11 +93,12 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         targetTabId,
         zone,
       });
-      logDockDnd("drop", {
+      console.log("[shell:dnd:dock] drop", {
         targetTabId,
         zone,
         payload,
         moved,
+        stack: new Error().stack,
       });
       clearActiveDockDragPayload(root);
       root.classList.remove("is-dock-dragging");
@@ -115,7 +116,7 @@ export function moveDockTabThroughRuntime(
     zone: DockDropZone;
   },
 ): boolean {
-  logDockDnd("move-attempt", {
+  console.log("[shell:dnd:dock] move-attempt", {
     tabId: input.tabId,
     sourceWindowId: input.sourceWindowId,
     targetTabId: input.targetTabId,
@@ -123,21 +124,24 @@ export function moveDockTabThroughRuntime(
     runtimeWindowId: runtime.windowId,
     sourceTabExists: Boolean(runtime.contextState.tabs[input.tabId]),
     targetTabExists: Boolean(runtime.contextState.tabs[input.targetTabId]),
+    stack: new Error().stack,
   });
 
   if (input.sourceWindowId !== runtime.windowId) {
     runtime.notice = "Cross-window tab drag is out of scope in docking v1.";
     deps.renderSyncStatus();
-    logDockDnd("move-rejected-cross-window", {
+    console.log("[shell:dnd:dock] move-rejected-cross-window", {
       input,
       runtimeWindowId: runtime.windowId,
+      stack: new Error().stack,
     });
     return false;
   }
 
   if (!runtime.contextState.tabs[input.tabId] || !runtime.contextState.tabs[input.targetTabId]) {
-    logDockDnd("move-rejected-missing-tab", {
+    console.log("[shell:dnd:dock] move-rejected-missing-tab", {
       input,
+      stack: new Error().stack,
     });
     return false;
   }
@@ -155,10 +159,11 @@ export function moveDockTabThroughRuntime(
   deps.renderContextControls();
   deps.renderParts();
   deps.renderSyncStatus();
-  logDockDnd("move-applied", {
+  console.log("[shell:dnd:dock] move-applied", {
     tabId: input.tabId,
     targetTabId: input.targetTabId,
     zone: input.zone,
+    stack: new Error().stack,
   });
   return true;
 }
