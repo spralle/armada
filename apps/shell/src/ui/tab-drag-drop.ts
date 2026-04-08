@@ -64,6 +64,7 @@ export function wireTabStripDragDrop(
       dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
 
       dataTransfer.effectAllowed = "move";
+      root.classList.add("is-dock-dragging");
       logTabDnd("dragstart", {
         tabId,
         sourceWindowId: runtime.windowId,
@@ -74,6 +75,7 @@ export function wireTabStripDragDrop(
 
     tabButton.addEventListener("dragend", () => {
       clearActiveDockDragPayload(root);
+      root.classList.remove("is-dock-dragging");
       logTabDnd("dragend", {
         tabId: tabButton.dataset.partId,
       });
@@ -90,6 +92,7 @@ export function wireTabStripDragDrop(
 
     tabButton.addEventListener("drop", (event) => {
       event.preventDefault();
+      root.classList.remove("is-dock-dragging");
       if (runtime.syncDegraded || !event.dataTransfer) {
         clearActiveDockDragPayload(root);
         logTabDnd("drop-blocked", {

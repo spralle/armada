@@ -142,15 +142,13 @@ export function renderPartCard(
     : "";
 
   return `
-    <article class="part-root" data-tab-id="${part.instanceId}" data-definition-id="${part.definitionId}" data-part-id="${part.instanceId}" draggable="true" ${closeabilityAttrs}>
+    <article class="part-root" data-tab-id="${part.instanceId}" data-definition-id="${part.definitionId}" data-part-id="${part.instanceId}" ${closeabilityAttrs}>
       <h2>${escapeHtml(part.title)}</h2>
       <div class="part-actions">
         ${popoutButton}
         ${restoreButton}
       </div>
       ${renderPartBody(part)}
-      <div class="dropzone" data-dropzone-for="${part.instanceId}">Drop cross-window payload here</div>
-      <p class="runtime-note" data-drop-result-for="${part.instanceId}"></p>
       <p class="runtime-note">Window: ${runtime.windowId}</p>
     </article>
   `;
@@ -201,15 +199,6 @@ export function renderTabStrip(
           >×</button>`
       : "";
     return `<div class="part-tab-item" data-tab-item="${part.instanceId}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
-        <button
-          type="button"
-          class="part-tab-handle"
-          data-action="drag-tab-handle"
-          data-tab-id="${part.id}"
-          draggable="true"
-          aria-label="Drag ${escapeHtml(part.title)} tab"
-          title="Drag tab"
-        >⋮⋮</button>
         <button
           type="button"
           role="tab"

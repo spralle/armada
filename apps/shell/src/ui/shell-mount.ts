@@ -23,10 +23,6 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .dock-split-branch { min-width: 0; min-height: 0; }
     .part-tab-strip { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: thin; }
     .part-tab-item { display: inline-flex; align-items: center; gap: 2px; position: relative; }
-    .part-tab-handle { appearance: none; border: 1px solid transparent; background: transparent; color: #93a4c2; border-radius: 4px; padding: 2px 4px; cursor: grab; }
-    .part-tab-handle:hover { border-color: #334564; color: #d8e2f5; }
-    .part-tab-handle:active { cursor: grabbing; }
-    .part-tab-handle:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
     .part-tab { appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none; color: #c6d0e0; padding: 8px 10px; border-radius: 6px 6px 0 0; cursor: pointer; white-space: nowrap; }
     .part-tab:hover { background: #1a2230; color: #e9edf3; }
     .part-tab:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }

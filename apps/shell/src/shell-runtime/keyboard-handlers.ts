@@ -230,7 +230,6 @@ function handleChooserKeyboardEvent(
 
 const TAB_SCOPE_NAVIGATION_ACTIONS = new Set([
   "activate-tab",
-  "drag-tab-handle",
   "close-tab",
   "reopen-closed-tab",
 ]);

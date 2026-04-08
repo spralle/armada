@@ -84,6 +84,12 @@ function createDragEvent(dataTransfer: DragDataTransfer): DragEvent {
   } as DragEvent;
 }
 
+class EmptyReadDataTransfer extends MemoryDataTransfer {
+  override getData(_format: string): string {
+    return "";
+  }
+}
+
 function createRuntime(): ShellRuntime {
   let state: ShellContextState = createInitialShellContextState({
     initialTabId: "tab-a",
@@ -170,5 +176,43 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
 
     assertEqual(runtime.contextState, before, "cross-window payload should not mutate context state");
     assertEqual(moved.length, 0, "cross-window payload should not trigger move callback");
+  });
+
+  test("tab drop reorders using dock MIME payload fallback", () => {
+    const runtime = createRuntime();
+    const buttons = [new FakeTabButton("tab-a"), new FakeTabButton("tab-b"), new FakeTabButton("tab-c")];
+    const root = new FakeRoot(buttons);
+    const moved: string[] = [];
+    wireTabStripDragDrop(root as unknown as HTMLElement, runtime, (tabId) => {
+      moved.push(tabId);
+    });
+
+    const transfer = new MemoryDataTransfer();
+    transfer.setData("application/x-armada-tab-drag", JSON.stringify({ tabId: "tab-c", sourceWindowId: "window-a" }));
+    buttons[1]!.dispatch("drop", createDragEvent(transfer));
+
+    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "dock MIME fallback should reorder tabs");
+    assertEqual(runtime.contextState.activeTabId, "tab-c", "dock MIME fallback should activate dragged tab");
+    assertEqual(moved.join(","), "tab-c", "dock MIME fallback should trigger move callback");
+  });
+
+  test("tab drop reorders using active drag payload fallback when reads are empty", () => {
+    const runtime = createRuntime();
+    const buttons = [new FakeTabButton("tab-a"), new FakeTabButton("tab-b"), new FakeTabButton("tab-c")];
+    const root = new FakeRoot(buttons);
+    const moved: string[] = [];
+    wireTabStripDragDrop(root as unknown as HTMLElement, runtime, (tabId) => {
+      moved.push(tabId);
+    });
+
+    const dragStartTransfer = new MemoryDataTransfer();
+    buttons[2]!.dispatch("dragstart", createDragEvent(dragStartTransfer));
+
+    const emptyReadTransfer = new EmptyReadDataTransfer();
+    buttons[1]!.dispatch("drop", createDragEvent(emptyReadTransfer));
+
+    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "active payload fallback should reorder tabs");
+    assertEqual(runtime.contextState.activeTabId, "tab-c", "active payload fallback should activate dragged tab");
+    assertEqual(moved.join(","), "tab-c", "active payload fallback should trigger move callback");
   });
 }

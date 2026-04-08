@@ -7,7 +7,6 @@ import { safeParse } from "../app/utils.js";
 import {
   clearActiveDockDragPayload,
   readActiveDockDragPayload,
-  setActiveDockDragPayload,
 } from "./dock-drag-session.js";
 
 const TAB_DRAG_MIME = "application/x-armada-tab-drag";
@@ -28,48 +27,6 @@ function logDockDnd(event: string, details: Record<string, unknown>): void {
 }
 
 export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, deps: DockDragDeps): void {
-  for (const handle of root.querySelectorAll<HTMLElement>("[data-action='drag-tab-handle']")) {
-    handle.addEventListener("dragstart", (event) => {
-      const dataTransfer = event.dataTransfer;
-      const tabId = handle.dataset.tabId;
-      if (!dataTransfer || !tabId || !runtime.contextState.tabs[tabId]) {
-        logDockDnd("dragstart-blocked", {
-          hasDataTransfer: Boolean(dataTransfer),
-          tabId,
-          tabExists: tabId ? Boolean(runtime.contextState.tabs[tabId]) : false,
-          syncDegraded: runtime.syncDegraded,
-          syncDegradedReason: runtime.syncDegradedReason,
-        });
-        event.preventDefault();
-        return;
-      }
-
-      const payload: DragPayload = {
-        tabId,
-        sourceWindowId: runtime.windowId,
-      };
-
-      dataTransfer.effectAllowed = "move";
-      dataTransfer.setData(TAB_DRAG_MIME, JSON.stringify(payload));
-      dataTransfer.setData("text/plain", tabId);
-      setActiveDockDragPayload(root, payload);
-      root.classList.add("is-dock-dragging");
-      logDockDnd("dragstart", {
-        tabId,
-        sourceWindowId: runtime.windowId,
-        types: Array.from(dataTransfer.types ?? []),
-      });
-    });
-
-    handle.addEventListener("dragend", () => {
-      clearActiveDockDragPayload(root);
-      root.classList.remove("is-dock-dragging");
-      logDockDnd("dragend", {
-        tabId: handle.dataset.tabId,
-      });
-    });
-  }
-
   for (const zoneNode of root.querySelectorAll<HTMLElement>("[data-dock-drop-zone][data-target-tab-id]")) {
     zoneNode.addEventListener("dragover", (event) => {
       const dataTransfer = event.dataTransfer;
