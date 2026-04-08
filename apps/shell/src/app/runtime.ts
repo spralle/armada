@@ -10,6 +10,7 @@ import { buildActionSurface } from "../action-surface.js";
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { createWindowBridge } from "../window-bridge.js";
+import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
 import {
   BRIDGE_CHANNEL,
   DEFAULT_GROUP_COLOR,
@@ -27,6 +28,7 @@ export function createShellRuntime(): ShellRuntime {
   const popoutParams = readPopoutParams();
   const windowId = createWindowId();
   const bridge = createWindowBridge(BRIDGE_CHANNEL);
+  const asyncBridge = createAsyncWindowBridgeCompatibilityShim(bridge);
 
   const intentRuntime = createIntentRuntime();
 
@@ -40,6 +42,7 @@ export function createShellRuntime(): ShellRuntime {
     }),
     registry: createShellPluginRegistry(),
     bridge,
+    asyncBridge,
     windowId,
     hostWindowId: popoutParams.hostWindowId,
     popoutTabId: popoutParams.tabId,

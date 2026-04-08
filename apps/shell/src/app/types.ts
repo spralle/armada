@@ -11,8 +11,11 @@ import type {
 import type { ShellPluginRegistry } from "../plugin-registry.js";
 import type {
   WindowBridge,
-  WindowBridgeHealth,
 } from "../window-bridge.js";
+import type {
+  AsyncWindowBridge,
+  AsyncWindowBridgeRejectReason,
+} from "./async-bridge.js";
 import type {
   ContextTabCloseability,
   DerivedLaneDefinition,
@@ -48,6 +51,7 @@ export interface ShellRuntime {
   contextPersistence: ShellContextStatePersistence;
   registry: ShellPluginRegistry;
   bridge: WindowBridge;
+  asyncBridge: AsyncWindowBridge;
   windowId: string;
   hostWindowId: string | null;
   popoutTabId: string | null;
@@ -66,7 +70,7 @@ export interface ShellRuntime {
   closeableTabIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
   syncDegraded: boolean;
-  syncDegradedReason: WindowBridgeHealth["reason"];
+  syncDegradedReason: AsyncWindowBridgeRejectReason | null;
   pendingProbeId: string | null;
   announcement: string;
   chooserFocusIndex: number;

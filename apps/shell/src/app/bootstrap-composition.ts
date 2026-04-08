@@ -12,8 +12,9 @@ import type { ShellMigrationFlags } from "./migration-flags.js";
 import { selectShellTransportPath, shouldUseContractComposition } from "./migration-flags.js";
 import type { ShellRuntime } from "./types.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
+import type { WindowBridgeEvent } from "../window-bridge.js";
 
-type PublishEvent = Parameters<ShellRuntime["bridge"]["publish"]>[0];
+type PublishEvent = WindowBridgeEvent;
 
 export interface ShellBootstrapComposition {
   mode: "baseline" | "contract";

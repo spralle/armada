@@ -16,6 +16,7 @@ import {
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
 import { restorePart } from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
+import type { AsyncWindowBridgeHealth } from "../app/async-bridge.js";
 import { getTabGroupId } from "../context-state.js";
 import { buildGroupContextSyncEvent } from "../sync/bridge-payloads.js";
 import type {
@@ -40,8 +41,37 @@ export function bindBridgeSync(
   runtime: ShellRuntime,
   bindings: BridgeSyncBindings,
 ): () => void {
-  const unsubscribeHealth = runtime.bridge.subscribeHealth((health) => {
-    if (health.reason === "unavailable") {
+  let lastHealthSequence = 0;
+
+  const compatRuntime = runtime as ShellRuntime & {
+    asyncBridge?: {
+      subscribeHealth(listener: (health: AsyncWindowBridgeHealth) => void): () => void;
+    };
+  };
+
+  const subscribeHealth = compatRuntime.asyncBridge
+    ? (listener: (health: AsyncWindowBridgeHealth) => void) => compatRuntime.asyncBridge!.subscribeHealth(listener)
+    : (listener: (health: AsyncWindowBridgeHealth) => void) =>
+      runtime.bridge.subscribeHealth((health) => {
+        lastHealthSequence += 1;
+        listener({
+          sequence: lastHealthSequence,
+          state: health.reason === "unavailable"
+            ? "unavailable"
+            : health.degraded
+              ? "degraded"
+              : "healthy",
+          reason: health.reason,
+        });
+      });
+
+  const unsubscribeHealth = subscribeHealth((health) => {
+    if (health.sequence <= lastHealthSequence) {
+      return;
+    }
+    lastHealthSequence = health.sequence;
+
+    if (health.state === "unavailable") {
       runtime.syncDegraded = false;
       runtime.syncDegradedReason = null;
       runtime.pendingProbeId = null;
@@ -51,7 +81,7 @@ export function bindBridgeSync(
       return;
     }
 
-    if (health.degraded) {
+    if (health.state === "degraded") {
       runtime.syncDegraded = true;
       runtime.syncDegradedReason = health.reason;
       runtime.pendingProbeId = null;

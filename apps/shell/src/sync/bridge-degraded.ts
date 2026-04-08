@@ -1,6 +1,10 @@
 import { formatDegradedModeAnnouncement } from "../keyboard-a11y.js";
 import type { SyncAckEvent, SyncProbeEvent, WindowBridge } from "../window-bridge.js";
 import type { ShellRuntime } from "../app/types.js";
+import {
+  normalizeBridgePublishRejectionReason,
+  type AsyncWindowBridgePublishResult,
+} from "../app/async-bridge.js";
 
 export interface BridgeRenderBindings {
   announce: (message: string) => void;
@@ -34,10 +38,10 @@ export function publishWithDegrade(
     return false;
   }
 
-  const success = runtime.bridge.publish(event);
-  if (!success) {
+  const result = publishBridgeEvent(runtime, event);
+  if (result.status === "rejected") {
     runtime.syncDegraded = true;
-    runtime.syncDegradedReason = "publish-failed";
+    runtime.syncDegradedReason = result.reason;
     runtime.pendingProbeId = null;
     bindings.announce(formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
     bindings.updateWindowReadOnlyState();
@@ -56,15 +60,15 @@ export function requestSyncProbe(runtime: ShellRuntime, bindings: BridgeRenderBi
 
   const probeId = createWindowId();
   runtime.pendingProbeId = probeId;
-  const ok = runtime.bridge.publish({
+  const result = publishBridgeEvent(runtime, {
     type: "sync-probe",
     probeId,
     sourceWindowId: runtime.windowId,
   });
 
-  if (!ok) {
+  if (result.status === "rejected") {
     runtime.syncDegraded = true;
-    runtime.syncDegradedReason = "publish-failed";
+    runtime.syncDegradedReason = result.reason;
     runtime.pendingProbeId = null;
     bindings.announce(formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
     bindings.updateWindowReadOnlyState();
@@ -78,12 +82,31 @@ export function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent): v
     return;
   }
 
-  runtime.bridge.publish({
+  publishBridgeEvent(runtime, {
     type: "sync-ack",
     probeId: event.probeId,
     targetWindowId: event.sourceWindowId,
     sourceWindowId: runtime.windowId,
   });
+}
+
+function publishBridgeEvent(
+  runtime: ShellRuntime,
+  event: Parameters<WindowBridge["publish"]>[0],
+): AsyncWindowBridgePublishResult {
+  const published = runtime.bridge.publish(event);
+  return published
+    ? {
+      status: "accepted",
+      disposition: "enqueued",
+    }
+    : {
+      status: "rejected",
+      reason: normalizeBridgePublishRejectionReason(
+        runtime.syncDegradedReason,
+        runtime.bridge.available,
+      ),
+    };
 }
 
 export function handleSyncAck(
