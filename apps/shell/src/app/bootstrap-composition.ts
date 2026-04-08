@@ -9,7 +9,7 @@ import {
 } from "../shell-runtime/runtime-render.js";
 import { createShellRuntimeCompatibilityAdapters } from "./compat-adapters.js";
 import type { ShellMigrationFlags } from "./migration-flags.js";
-import { shouldUseContractComposition } from "./migration-flags.js";
+import { selectShellTransportPath, shouldUseContractComposition } from "./migration-flags.js";
 import type { ShellRuntime } from "./types.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
 
@@ -17,6 +17,8 @@ type PublishEvent = Parameters<ShellRuntime["bridge"]["publish"]>[0];
 
 export interface ShellBootstrapComposition {
   mode: "baseline" | "contract";
+  transportPath: "legacy-bridge" | "async-scomp-adapter";
+  transportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
   applyContext: ReturnType<typeof createRuntimeEventHandlers>["applyContext"];
   applySelection: ReturnType<typeof createRuntimeEventHandlers>["applySelection"];
   initialize: (root: HTMLElement, runtime: ShellRuntime) => void;
@@ -71,6 +73,8 @@ export function createShellBootstrapComposition(
   flags: ShellMigrationFlags,
   deps: ShellBootstrapRuntimeDeps,
 ): ShellBootstrapComposition {
+  const transportDecision = selectShellTransportPath(flags);
+
   if (shouldUseContractComposition(flags)) {
     const adapters = createShellRuntimeCompatibilityAdapters(root, runtime, {
       activatePluginForBoundary: (options) => deps.activatePluginForBoundary(options),
@@ -84,6 +88,8 @@ export function createShellBootstrapComposition(
 
     return {
       mode: "contract",
+      transportPath: transportDecision.path,
+      transportReason: transportDecision.reason,
       applyContext: adapters.core.applyContext,
       applySelection: adapters.core.applySelection,
       initialize: (viewRoot, viewRuntime) => {
@@ -122,6 +128,8 @@ export function createShellBootstrapComposition(
 
   return {
     mode: "baseline",
+    transportPath: transportDecision.path,
+    transportReason: transportDecision.reason,
     applyContext: handlers.applyContext,
     applySelection: handlers.applySelection,
     initialize: (viewRoot, viewRuntime) => {

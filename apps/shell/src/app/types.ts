@@ -28,6 +28,7 @@ import type {
 } from "../intent-runtime.js";
 import type { ActionSurface } from "../action-surface.js";
 import type { ShellPartHostAdapter } from "./contracts.js";
+import type { ShellTransportPath } from "./migration-flags.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -75,6 +76,8 @@ export interface ShellRuntime {
   intentRuntime: IntentRuntime;
   commandNotice: string;
   partHost: ShellPartHostAdapter;
+  activeTransportPath: ShellTransportPath;
+  activeTransportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
 }
 
 export interface TenantPluginDescriptor {

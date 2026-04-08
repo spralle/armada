@@ -72,6 +72,8 @@ export function createShellRuntime(): ShellRuntime {
     intentRuntime,
     commandNotice: "",
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,
+    activeTransportPath: "legacy-bridge",
+    activeTransportReason: "default-legacy",
   };
 
   runtime.partHost = createShellPartHostAdapter(runtime);

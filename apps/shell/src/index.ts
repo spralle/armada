@@ -84,6 +84,8 @@ export function startShell(root: HTMLElement): ShellRuntime {
   });
   registerShellBootstrapComposition(shellRuntime, composition);
   const disposeMount = mountShell(root, shellRuntime, composition);
+  shellRuntime.activeTransportPath = composition.transportPath;
+  shellRuntime.activeTransportReason = composition.transportReason;
   composition.initialize(root, shellRuntime);
 
   hmrRegistry.windowIds.add(shellRuntime.windowId);
@@ -113,7 +115,13 @@ export function startShell(root: HTMLElement): ShellRuntime {
     void hydratePluginRegistry(root, shellRuntime, () => !disposed);
   }
 
-  console.log("[shell] POC shell stub ready", shellBootstrapState.mode, "windowCount", hmrRegistry.windowIds.size);
+  console.log("[shell] POC shell stub ready", {
+    bootstrapMode: shellBootstrapState.mode,
+    compositionMode: composition.mode,
+    transportPath: shellRuntime.activeTransportPath,
+    transportReason: shellRuntime.activeTransportReason,
+    windowCount: hmrRegistry.windowIds.size,
+  });
 
   return shellRuntime;
 }

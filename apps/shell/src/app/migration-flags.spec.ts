@@ -1,5 +1,6 @@
 import {
   readShellMigrationFlags,
+  selectShellTransportPath,
   shouldUseContractComposition,
 } from "./migration-flags.js";
 
@@ -59,6 +60,46 @@ test("migration flags support explicit rollback to baseline", () => {
   assertEqual(flags.useContractCoreApi, false, "query should disable contract-core flag");
   assertEqual(flags.useAdapterComposition, false, "query should disable adapter-composition flag");
   assertEqual(shouldUseContractComposition(flags), false, "explicit rollback should return baseline composition");
+});
+
+test("transport path defaults to legacy when async flag is unset", () => {
+  const flags = readShellMigrationFlags(new URLSearchParams(), null);
+  const decision = selectShellTransportPath(flags);
+
+  assertEqual(decision.path, "legacy-bridge", "default transport should remain legacy bridge");
+  assertEqual(decision.reason, "default-legacy", "default transport reason should explain safe legacy default");
+});
+
+test("transport path switches to async adapter when async flag is enabled", () => {
+  const flags = readShellMigrationFlags(new URLSearchParams("shellAsyncScompAdapter=true"), null);
+  const decision = selectShellTransportPath(flags);
+
+  assertEqual(decision.path, "async-scomp-adapter", "async transport flag should select async adapter path");
+  assertEqual(decision.reason, "async-flag-enabled", "async transport reason should explain feature flag selection");
+});
+
+test("transport kill switch forces legacy ahead of async enable flag", () => {
+  const flags = readShellMigrationFlags(
+    new URLSearchParams("shellAsyncScompAdapter=true&shellLegacyBridgeKillSwitch=1"),
+    null,
+  );
+  const decision = selectShellTransportPath(flags);
+
+  assertEqual(decision.path, "legacy-bridge", "kill switch should force legacy bridge transport");
+  assertEqual(decision.reason, "kill-switch-force-legacy", "kill switch reason should be explicit in diagnostics");
+});
+
+test("window overrides can force legacy kill switch over query async enable", () => {
+  const flags = readShellMigrationFlags(
+    new URLSearchParams("shellAsyncScompAdapter=true"),
+    {
+      forceLegacyBridge: true,
+    },
+  );
+  const decision = selectShellTransportPath(flags);
+
+  assertEqual(decision.path, "legacy-bridge", "override kill switch should force legacy bridge transport");
+  assertEqual(decision.reason, "kill-switch-force-legacy", "override kill switch reason should be preserved");
 });
 
 let passed = 0;
