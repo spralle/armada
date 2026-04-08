@@ -7,6 +7,7 @@ import type {
 import type { SpecHarness } from "./context-state.spec-harness.js";
 import {
   bindBridgeSync,
+  publishWithDegrade,
   requestSyncProbe,
 } from "./shell-runtime/bridge-sync-handlers.js";
 import type {
@@ -207,8 +208,42 @@ function createBindingCounters(): SyncBindingStubs {
   };
 }
 
+async function flushMicrotasks(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
 export function registerBridgeRaceAndParitySpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
+
+  test("async publish rejection callback path degrades runtime after promise settlement", async () => {
+    const runtime = createRuntimeForPath("async-scomp-adapter");
+    const asyncBridge = runtime.asyncBridge as TestAsyncBridge;
+    const root = createRootStub();
+    const counters = createBindingCounters();
+    const bindings = createBridgeSyncBindings(counters);
+
+    asyncBridge.publishResult = {
+      status: "rejected",
+      reason: "channel-error",
+    };
+
+    publishWithDegrade(root, runtime, {
+      type: "selection",
+      selectedPartId: "tab-a",
+      selectedPartTitle: "Tab A",
+      selectionByEntityType: {},
+      sourceWindowId: runtime.windowId,
+    }, bindings);
+
+    assertEqual(runtime.syncDegraded, false, "publish callback should not run until async rejection settles");
+    await flushMicrotasks();
+    assertEqual(runtime.syncDegraded, true, "async publish rejection callback should enter degraded mode");
+    assertEqual(runtime.syncDegradedReason, "channel-error", "async rejection should preserve normalized reason");
+    assertEqual(counters.renderSyncStatusCalls, 1, "async rejection callback should render sync status once");
+    assertEqual(counters.renderContextControlsPanelCalls, 1, "async rejection callback should render controls once");
+    assertEqual(counters.announceMessages.length, 1, "async rejection callback should announce degraded mode once");
+  });
 
   test("out-of-order async health callbacks are ignored by sequence", () => {
     const runtime = createRuntimeForPath("async-scomp-adapter");
@@ -250,6 +285,44 @@ export function registerBridgeRaceAndParitySpecs(harness: SpecHarness): void {
     assertEqual(asyncPublished[0]?.type, "sync-probe", "async path should publish sync-probe");
     assertEqual(legacyRuntime.pendingProbeId, "probe-parity", "legacy path should set pending probe id");
     assertEqual(asyncRuntime.pendingProbeId, "probe-parity", "async path should set pending probe id");
+  });
+
+  test("probe ack arriving before healthy callback does not recover until post-probe ack", () => {
+    const runtime = createRuntimeForPath("async-scomp-adapter");
+    const asyncBridge = runtime.asyncBridge as TestAsyncBridge;
+    const root = createRootStub();
+    const counters = createBindingCounters();
+    const bindings = createBridgeSyncBindings(counters);
+
+    bindBridgeSync(root, runtime, bindings);
+
+    asyncBridge.emitHealth({ sequence: 2, state: "degraded", reason: "channel-error" });
+    asyncBridge.emitEvent({
+      type: "sync-ack",
+      probeId: "probe-parity",
+      targetWindowId: runtime.windowId,
+      sourceWindowId: "peer-window",
+    });
+
+    assertEqual(runtime.syncDegraded, true, "early ack without pending probe should not recover degraded mode");
+    assertEqual(runtime.pendingProbeId, null, "early ack should not synthesize pending probe state");
+    assertEqual(asyncBridge.recoverCalls, 0, "early ack should not trigger recover");
+
+    asyncBridge.emitHealth({ sequence: 3, state: "healthy", reason: null });
+
+    assertEqual(runtime.syncDegraded, true, "healthy callback should keep degraded mode pending probe ack");
+    assertEqual(runtime.pendingProbeId, "probe-parity", "healthy callback should request deterministic probe id");
+
+    asyncBridge.emitEvent({
+      type: "sync-ack",
+      probeId: "probe-parity",
+      targetWindowId: runtime.windowId,
+      sourceWindowId: "peer-window",
+    });
+
+    assertEqual(runtime.syncDegraded, false, "matching post-probe ack should recover mode deterministically");
+    assertEqual(runtime.pendingProbeId, null, "recovery should clear pending probe state");
+    assertEqual(asyncBridge.recoverCalls, 1, "matching post-probe ack should trigger one recover call");
   });
 
   test("same-window docking boundary remains no-op under async sync events", () => {

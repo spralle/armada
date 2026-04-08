@@ -30,16 +30,16 @@ export function publishWithDegrade(
   runtime: ShellRuntime,
   event: Parameters<WindowBridge["publish"]>[0],
   bindings: BridgeRenderBindings,
-): void {
+): boolean {
   if (!runtime.bridge.available && runtime.activeTransportPath !== "async-scomp-adapter") {
-    return;
+    return false;
   }
 
   if (runtime.syncDegraded) {
-    return;
+    return false;
   }
 
-  publishBridgeEvent(runtime, event, {
+  return publishBridgeEvent(runtime, event, {
     onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
   });
 }
@@ -85,7 +85,7 @@ function publishBridgeEvent(
   options?: {
     onRejected?: (reason: AsyncWindowBridgeRejectReason) => void;
   },
-): void {
+): boolean {
   if (runtime.activeTransportPath === "async-scomp-adapter") {
     void runtime.asyncBridge.publish(event).then((result) => {
       if (result.status === "rejected") {
@@ -97,12 +97,12 @@ function publishBridgeEvent(
       );
     });
 
-    return;
+    return true;
   }
 
   const published = runtime.bridge.publish(event);
   if (published) {
-    return;
+    return true;
   }
 
   options?.onRejected?.(
@@ -111,6 +111,7 @@ function publishBridgeEvent(
       runtime.bridge.available,
     ),
   );
+  return false;
 }
 
 export function handleSyncAck(
