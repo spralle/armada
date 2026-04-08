@@ -6,14 +6,17 @@ export function updateWindowReadOnlyState(root: HTMLElement, runtime: ShellRunti
     return;
   }
 
-  shellNode.classList.toggle("sync-degraded", runtime.syncDegraded);
+  const bridgeUnavailable = runtime.syncDegradedReason === "unavailable";
+  const syncReadOnly = runtime.syncDegraded && !bridgeUnavailable;
+
+  shellNode.classList.toggle("sync-degraded", syncReadOnly);
 
   for (const node of shellNode.querySelectorAll<HTMLElement>("button, input, select, textarea")) {
     const mutatingControl =
       node.id === "context-apply"
       || node.id === "context-value-input"
       || node.dataset.action === "select";
-    if (runtime.syncDegraded) {
+    if (syncReadOnly) {
       if (mutatingControl) {
         node.setAttribute("disabled", "disabled");
         node.setAttribute("aria-disabled", "true");

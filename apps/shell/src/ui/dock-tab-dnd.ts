@@ -2,6 +2,8 @@ import { moveTabInDockTree } from "../context-state.js";
 import { updateContextState } from "../context/runtime-state.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { DockDropZone } from "../context-state.js";
+import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
+import { safeParse } from "../app/utils.js";
 
 const TAB_DRAG_MIME = "application/x-armada-tab-drag";
 
@@ -21,7 +23,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
     handle.addEventListener("dragstart", (event) => {
       const dataTransfer = event.dataTransfer;
       const tabId = handle.dataset.tabId;
-      if (!dataTransfer || !tabId || !runtime.contextState.tabs[tabId] || runtime.syncDegraded) {
+      if (!dataTransfer || !tabId || !runtime.contextState.tabs[tabId]) {
         event.preventDefault();
         return;
       }
@@ -45,11 +47,11 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
   for (const zoneNode of root.querySelectorAll<HTMLElement>("[data-dock-drop-zone][data-target-tab-id]")) {
     zoneNode.addEventListener("dragover", (event) => {
       const dataTransfer = event.dataTransfer;
-      if (!dataTransfer || runtime.syncDegraded) {
+      if (!dataTransfer) {
         return;
       }
 
-      const payload = readTabDragPayload(dataTransfer);
+      const payload = readTabDragPayload(dataTransfer, runtime.windowId);
       if (!payload || payload.sourceWindowId !== runtime.windowId) {
         dataTransfer.dropEffect = "none";
         return;
@@ -70,7 +72,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         return;
       }
 
-      const payload = readTabDragPayload(dataTransfer);
+      const payload = readTabDragPayload(dataTransfer, runtime.windowId);
       if (!payload) {
         root.classList.remove("is-dock-dragging");
         return;
@@ -97,12 +99,6 @@ export function moveDockTabThroughRuntime(
     zone: DockDropZone;
   },
 ): boolean {
-  if (runtime.syncDegraded) {
-    runtime.notice = "Cross-window sync degraded. Dock mutations are blocked while this window is read-only.";
-    deps.renderSyncStatus();
-    return false;
-  }
-
   if (input.sourceWindowId !== runtime.windowId) {
     runtime.notice = "Cross-window tab drag is out of scope in docking v1.";
     deps.renderSyncStatus();
@@ -129,30 +125,62 @@ export function moveDockTabThroughRuntime(
   return true;
 }
 
-function readTabDragPayload(dataTransfer: DataTransfer): DragPayload | null {
+function readTabDragPayload(dataTransfer: DataTransfer, windowId: string): DragPayload | null {
   const raw = dataTransfer.getData(TAB_DRAG_MIME);
-  if (!raw) {
+  if (raw) {
+    const parsed = parseDragPayloadRaw(raw);
+    if (parsed) {
+      return parsed;
+    }
+  }
+
+  const fallbackTabId = dataTransfer.getData("text/plain").trim();
+  if (!fallbackTabId) {
     return null;
   }
 
+  if (fallbackTabId.startsWith(DRAG_REF_PREFIX) || fallbackTabId.startsWith(DRAG_INLINE_PREFIX)) {
+    return null;
+  }
+
+  const fallbackJson = safeParse(fallbackTabId);
+  const parsedFallback = asDragPayload(fallbackJson);
+  if (parsedFallback) {
+    return parsedFallback;
+  }
+
+  return {
+    tabId: fallbackTabId,
+    sourceWindowId: windowId,
+  };
+}
+
+function parseDragPayloadRaw(raw: string): DragPayload | null {
   try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") {
-      return null;
-    }
-
-    const candidate = parsed as Partial<DragPayload>;
-    if (typeof candidate.tabId !== "string" || typeof candidate.sourceWindowId !== "string") {
-      return null;
-    }
-
-    return {
-      tabId: candidate.tabId,
-      sourceWindowId: candidate.sourceWindowId,
-    };
+    return asDragPayload(JSON.parse(raw));
   } catch {
     return null;
   }
+}
+
+function asDragPayload(value: unknown): DragPayload | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as Partial<DragPayload>;
+  if (typeof candidate.tabId !== "string") {
+    return null;
+  }
+
+  if (typeof candidate.sourceWindowId !== "string") {
+    return null;
+  }
+
+  return {
+    tabId: candidate.tabId,
+    sourceWindowId: candidate.sourceWindowId,
+  };
 }
 
 function isDockDropZone(value: string | undefined): value is DockDropZone {
