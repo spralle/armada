@@ -8,7 +8,7 @@ import type { SpecHarness } from "./context-state.spec-harness.js";
 import { moveDockTabThroughRuntime, wireDockTabDragDrop } from "./ui/dock-tab-dnd.js";
 import { setActiveDockDragPayload } from "./ui/dock-drag-session.js";
 
-import { DRAG_INLINE_PREFIX } from "./app/constants.js";
+import { DRAG_INLINE_PREFIX, TAB_DOCK_DRAG_MIME } from "./app/constants.js";
 
 interface DragDataTransfer {
   effectAllowed: string;
@@ -19,15 +19,28 @@ interface DragDataTransfer {
 
 type DragListener = (event: DragEvent) => void;
 
+class FakeOverlay {
+  readonly classList = {
+    add: (_className: string) => {},
+    remove: (_className: string) => {},
+  };
+
+  contains(target: unknown): boolean {
+    return target instanceof FakeDockZone;
+  }
+}
+
 class FakeDockZone {
   readonly dataset: DOMStringMap;
   private readonly listeners = new Map<string, DragListener[]>();
+  private readonly overlay: FakeOverlay;
 
-  constructor(targetTabId: string, zone: "left" | "right" | "top" | "bottom" | "center") {
+  constructor(targetTabId: string, zone: "left" | "right" | "top" | "bottom" | "center", overlay: FakeOverlay) {
     this.dataset = {
       dockDropZone: zone,
       targetTabId,
     };
+    this.overlay = overlay;
   }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
@@ -39,10 +52,18 @@ class FakeDockZone {
     this.listeners.set(type, existing);
   }
 
-  dispatch(type: "dragover" | "drop", event: DragEvent): void {
+  dispatch(type: "dragover" | "dragleave" | "drop", event: DragEvent): void {
     for (const listener of this.listeners.get(type) ?? []) {
       listener(event);
     }
+  }
+
+  closest(selector: string): FakeOverlay | null {
+    if (selector === ".dock-drop-overlay") {
+      return this.overlay;
+    }
+
+    return null;
   }
 }
 
@@ -59,9 +80,20 @@ class FakeDockRoot {
     contains: (className: string) => this.classes.has(className),
   };
 
+  private readonly listeners = new Map<string, DragListener[]>();
+
   constructor(
     private readonly zones: FakeDockZone[],
   ) {}
+
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    const normalized = typeof listener === "function"
+      ? (listener as DragListener)
+      : ((event: DragEvent) => listener.handleEvent(event as unknown as Event));
+    const existing = this.listeners.get(type) ?? [];
+    existing.push(normalized);
+    this.listeners.set(type, existing);
+  }
 
   querySelectorAll<T>(selector: string): T[] {
     if (selector === "[data-dock-drop-zone][data-target-tab-id]") {
@@ -69,6 +101,12 @@ class FakeDockRoot {
     }
 
     return [];
+  }
+
+  dispatch(type: "dragend" | "drop", event: DragEvent): void {
+    for (const listener of this.listeners.get(type) ?? []) {
+      listener(event);
+    }
   }
 }
 
@@ -98,13 +136,37 @@ function createDragEvent(dataTransfer: DragDataTransfer): DragEvent {
   let prevented = false;
   return {
     dataTransfer: dataTransfer as unknown as DataTransfer,
+    relatedTarget: null,
     preventDefault() {
       prevented = true;
     },
+    stopPropagation() {},
     get defaultPrevented() {
       return prevented;
     },
   } as DragEvent;
+}
+
+function createDragEventWithOptions(options: {
+  dataTransfer?: DragDataTransfer | null;
+  relatedTarget?: EventTarget | null;
+}): DragEvent {
+  let prevented = false;
+  return {
+    dataTransfer: (options.dataTransfer ?? null) as unknown as DataTransfer,
+    relatedTarget: options.relatedTarget ?? null,
+    preventDefault() {
+      prevented = true;
+    },
+    stopPropagation() {},
+    get defaultPrevented() {
+      return prevented;
+    },
+  } as DragEvent;
+}
+
+function createDockZone(targetTabId: string, zone: "left" | "right" | "top" | "bottom" | "center"): FakeDockZone {
+  return new FakeDockZone(targetTabId, zone, new FakeOverlay());
 }
 
 function createRuntime(): ShellRuntime {
@@ -153,11 +215,10 @@ function createRuntime(): ShellRuntime {
 
 export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
-  const dockMime = "application/x-armada-tab-drag";
 
   test("dock drag drop moves tab via text/plain fallback payload", () => {
     const runtime = createRuntime();
-    const zone = new FakeDockZone("tab-a", "right");
+    const zone = createDockZone("tab-a", "right");
     const root = new FakeDockRoot([zone]);
     let renderPartsCalls = 0;
     let renderSyncCalls = 0;
@@ -176,7 +237,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     });
 
     const transfer = new MemoryDataTransfer();
-    transfer.setData(dockMime, "");
+    transfer.setData(TAB_DOCK_DRAG_MIME, "");
     transfer.setData("text/plain", "tab-b");
     const dropEvent = createDragEvent(transfer);
     zone.dispatch("drop", dropEvent);
@@ -189,7 +250,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
 
   test("dock dragover ignores tab-strip payload prefixes as safe no-op", () => {
     const runtime = createRuntime();
-    const zone = new FakeDockZone("tab-a", "left");
+    const zone = createDockZone("tab-a", "left");
     const root = new FakeDockRoot([zone]);
 
     wireDockTabDragDrop(root as unknown as HTMLElement, runtime, {
@@ -209,7 +270,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
 
   test("dock move remains local when bridge unavailable", () => {
     const runtime = createRuntime();
-    const zone = new FakeDockZone("tab-a", "center");
+    const zone = createDockZone("tab-a", "center");
     const root = new FakeDockRoot([zone]);
     let renderPartsCalls = 0;
 
@@ -222,7 +283,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     });
 
     const transfer = new MemoryDataTransfer();
-    transfer.setData(dockMime, "");
+    transfer.setData(TAB_DOCK_DRAG_MIME, "");
     transfer.setData("text/plain", "tab-b");
     zone.dispatch("drop", createDragEvent(transfer));
 
@@ -232,7 +293,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
 
   test("dock drop blocks explicit cross-window payloads", () => {
     const runtime = createRuntime();
-    const zone = new FakeDockZone("tab-a", "top");
+    const zone = createDockZone("tab-a", "top");
     const root = new FakeDockRoot([zone]);
     let renderPartsCalls = 0;
     const beforeActive = runtime.contextState.activeTabId;
@@ -246,7 +307,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     });
 
     const transfer = new MemoryDataTransfer();
-    transfer.setData(dockMime, JSON.stringify({ tabId: "tab-b", sourceWindowId: "window-b" }));
+    transfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({ tabId: "tab-b", sourceWindowId: "window-b" }));
     zone.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState.activeTabId, beforeActive, "cross-window dock payload should be ignored");
@@ -257,7 +318,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     const runtime = createRuntime();
     runtime.syncDegraded = true;
     runtime.syncDegradedReason = "publish-failed";
-    const zone = new FakeDockZone("tab-a", "bottom");
+    const zone = createDockZone("tab-a", "bottom");
     const root = new FakeDockRoot([zone]);
     let renderPartsCalls = 0;
 
@@ -270,7 +331,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     });
 
     const transfer = new MemoryDataTransfer();
-    transfer.setData(dockMime, "");
+    transfer.setData(TAB_DOCK_DRAG_MIME, "");
     transfer.setData("text/plain", "tab-b");
     zone.dispatch("drop", createDragEvent(transfer));
 
@@ -308,7 +369,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
 
   test("dragover/drop accepts active drag fallback when DataTransfer reads are empty", () => {
     const runtime = createRuntime();
-    const zone = new FakeDockZone("tab-a", "right");
+    const zone = createDockZone("tab-a", "right");
     const root = new FakeDockRoot([zone]);
     let renderPartsCalls = 0;
 
@@ -333,5 +394,77 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     assertEqual(dragoverEvent.defaultPrevented, true, "active drag fallback should arm drop zone");
     assertEqual(runtime.contextState.activeTabId, "tab-b", "active drag fallback should still move tab");
     assertEqual(renderPartsCalls, 1, "active drag fallback should rerender parts");
+  });
+
+  test("dock dragend fallback applies most recent armed zone move", () => {
+    const runtime = createRuntime();
+    const zone = createDockZone("tab-a", "right");
+    const root = new FakeDockRoot([zone]);
+    let renderPartsCalls = 0;
+
+    wireDockTabDragDrop(root as unknown as HTMLElement, runtime, {
+      renderContextControls() {},
+      renderParts() {
+        renderPartsCalls += 1;
+      },
+      renderSyncStatus() {},
+    });
+
+    const armTransfer = new MemoryDataTransfer();
+    armTransfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({ tabId: "tab-b", sourceWindowId: "window-a" }));
+    zone.dispatch("dragover", createDragEvent(armTransfer));
+
+    root.dispatch("dragend", createDragEvent(armTransfer));
+
+    assertEqual(runtime.contextState.activeTabId, "tab-b", "dragend fallback should still move docked tab");
+    assertEqual(renderPartsCalls, 1, "dragend fallback should rerender parts once");
+  });
+
+  test("dragleave moving inside same overlay keeps armed dock target", () => {
+    const runtime = createRuntime();
+    const overlay = new FakeOverlay();
+    const leftZone = new FakeDockZone("tab-a", "left", overlay);
+    const rightZone = new FakeDockZone("tab-a", "right", overlay);
+    const root = new FakeDockRoot([leftZone, rightZone]);
+
+    wireDockTabDragDrop(root as unknown as HTMLElement, runtime, {
+      renderContextControls() {},
+      renderParts() {},
+      renderSyncStatus() {},
+    });
+
+    const transfer = new MemoryDataTransfer();
+    transfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({ tabId: "tab-b", sourceWindowId: "window-a" }));
+    leftZone.dispatch("dragover", createDragEvent(transfer));
+    leftZone.dispatch("dragleave", createDragEventWithOptions({ dataTransfer: transfer, relatedTarget: rightZone as unknown as EventTarget }));
+
+    root.dispatch("dragend", createDragEvent(transfer));
+
+    assertEqual(runtime.contextState.activeTabId, "tab-b", "in-overlay dragleave should preserve armed drop target for fallback move");
+  });
+
+  test("drop without dataTransfer still applies active payload fallback", () => {
+    const runtime = createRuntime();
+    const zone = createDockZone("tab-a", "bottom");
+    const root = new FakeDockRoot([zone]);
+    let renderPartsCalls = 0;
+
+    wireDockTabDragDrop(root as unknown as HTMLElement, runtime, {
+      renderContextControls() {},
+      renderParts() {
+        renderPartsCalls += 1;
+      },
+      renderSyncStatus() {},
+    });
+
+    setActiveDockDragPayload(root as unknown as HTMLElement, {
+      tabId: "tab-b",
+      sourceWindowId: "window-a",
+    });
+
+    zone.dispatch("drop", createDragEventWithOptions({ dataTransfer: null }));
+
+    assertEqual(runtime.contextState.activeTabId, "tab-b", "null dataTransfer drop should still move tab via active payload");
+    assertEqual(renderPartsCalls, 1, "null dataTransfer fallback move should rerender parts");
   });
 }

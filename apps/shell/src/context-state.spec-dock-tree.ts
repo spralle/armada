@@ -160,4 +160,19 @@ export function registerDockTreeStateSpecs(harness: SpecHarness): void {
     assertEqual(state.activeTabId, "tab-a", "closing active split branch should fallback deterministically to remaining tab");
     assertTruthy(state.dockTree.root?.kind === "stack", "single remaining tab should collapse to stack root");
   });
+
+  test("dock-tree self-drop on non-center zone is a no-op", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+    const before = JSON.stringify(state.dockTree.root);
+
+    state = moveTabInDockTree(state, {
+      tabId: "tab-a",
+      targetTabId: "tab-a",
+      zone: "right",
+    });
+
+    const after = JSON.stringify(state.dockTree.root);
+    assertEqual(after, before, "self-drop split zones should not mutate dock tree");
+  });
 }

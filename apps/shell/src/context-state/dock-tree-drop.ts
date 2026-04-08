@@ -21,7 +21,7 @@ interface DockLocateResult {
 }
 
 export function applyDockTabDrop(tree: DockTreeState, input: DockTabDropInput): DockTreeState {
-  if (input.tabId === input.targetTabId && input.zone === "center") {
+  if (input.tabId === input.targetTabId) {
     return tree;
   }
 

@@ -1,4 +1,5 @@
 import { DRAG_INLINE_PREFIX } from "./app/constants.js";
+import { TAB_DOCK_DRAG_MIME } from "./app/constants.js";
 import type { ShellRuntime } from "./app/types.js";
 import {
   createInitialShellContextState,
@@ -20,6 +21,7 @@ type DragListener = (event: DragEvent) => void;
 
 class FakeTabButton {
   readonly dataset: DOMStringMap;
+  draggable = false;
   private readonly listeners = new Map<string, DragListener[]>();
 
   constructor(tabId: string) {
@@ -61,10 +63,21 @@ class FakeTabItem {
     return null;
   }
 
-  dispatch(type: "dragstart" | "drop", event: DragEvent): void {
+  dispatch(type: "dragstart" | "dragend" | "drop", event: DragEvent): void {
     for (const listener of this.listeners.get(type) ?? []) {
       listener(event);
     }
+  }
+}
+
+class FakeButtonNode {
+  constructor(private readonly owner: FakeTabButton) {}
+
+  closest(selector: string): FakeTabButton | null {
+    if (selector === "button[data-action='activate-tab'][data-part-id]") {
+      return this.owner;
+    }
+    return null;
   }
 }
 
@@ -122,6 +135,14 @@ function createDragEvent(dataTransfer: DragDataTransfer, target?: EventTarget): 
   } as DragEvent;
 }
 
+async function flushTimers(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+function createButtonTarget(button: FakeTabButton): EventTarget {
+  return new FakeButtonNode(button) as unknown as EventTarget;
+}
+
 function createRuntime(): ShellRuntime {
   let state: ShellContextState = createInitialShellContextState({
     initialTabId: "tab-a",
@@ -177,7 +198,7 @@ function createTabHarness(tabIds: string[]): {
 export function registerTabDragDropSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
 
-  test("same-window tab drop reorders and activates dragged tab", () => {
+  test("same-window tab drop reorders and activates dragged tab", async () => {
     const runtime = createRuntime();
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
@@ -188,7 +209,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     const dragTransfer = new MemoryDataTransfer();
     tabHarness.tabItems.get("tab-c")!.dispatch(
       "dragstart",
-      createDragEvent(dragTransfer, tabHarness.tabButtons.get("tab-c") as unknown as EventTarget),
+      createDragEvent(dragTransfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
     );
     tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(dragTransfer));
 
@@ -197,7 +218,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     assertEqual(moved.join(","), "tab-c", "drop callback should run for moved tab");
   });
 
-  test("malformed drag payload is ignored as safe no-op", () => {
+  test("malformed drag payload is ignored as safe no-op", async () => {
     const runtime = createRuntime();
     const before = runtime.contextState;
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
@@ -214,7 +235,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     assertEqual(moved.length, 0, "invalid payload should not trigger move callback");
   });
 
-  test("cross-window payload is blocked as no-op", () => {
+  test("cross-window payload is blocked as no-op", async () => {
     const runtime = createRuntime();
     const before = runtime.contextState;
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
@@ -234,7 +255,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     assertEqual(moved.length, 0, "cross-window payload should not trigger move callback");
   });
 
-  test("tab drop reorders using dock MIME payload fallback", () => {
+  test("tab drop reorders using dock MIME payload fallback", async () => {
     const runtime = createRuntime();
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
@@ -243,7 +264,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     });
 
     const transfer = new MemoryDataTransfer();
-    transfer.setData("application/x-armada-tab-drag", JSON.stringify({ tabId: "tab-c", sourceWindowId: "window-a" }));
+    transfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({ tabId: "tab-c", sourceWindowId: "window-a" }));
     tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "dock MIME fallback should reorder tabs");
@@ -251,7 +272,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     assertEqual(moved.join(","), "tab-c", "dock MIME fallback should trigger move callback");
   });
 
-  test("tab drop reorders using active drag payload fallback when reads are empty", () => {
+  test("tab drop reorders using active drag payload fallback when reads are empty", async () => {
     const runtime = createRuntime();
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
@@ -262,7 +283,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     const dragStartTransfer = new MemoryDataTransfer();
     tabHarness.tabItems.get("tab-c")!.dispatch(
       "dragstart",
-      createDragEvent(dragStartTransfer, tabHarness.tabButtons.get("tab-c") as unknown as EventTarget),
+      createDragEvent(dragStartTransfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
     );
 
     const emptyReadTransfer = new EmptyReadDataTransfer();
@@ -271,5 +292,27 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "active payload fallback should reorder tabs");
     assertEqual(runtime.contextState.activeTabId, "tab-c", "active payload fallback should activate dragged tab");
     assertEqual(moved.join(","), "tab-c", "active payload fallback should trigger move callback");
+  });
+
+  test("drop applies when browser emits dragend before drop", async () => {
+    const runtime = createRuntime();
+    const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
+    const moved: string[] = [];
+    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
+      moved.push(tabId);
+    });
+
+    const transfer = new MemoryDataTransfer();
+    tabHarness.tabItems.get("tab-c")!.dispatch(
+      "dragstart",
+      createDragEvent(transfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
+    );
+    tabHarness.tabItems.get("tab-c")!.dispatch("dragend", createDragEvent(transfer));
+    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+    await flushTimers();
+
+    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "drop after premature dragend should reorder tabs");
+    assertEqual(runtime.contextState.activeTabId, "tab-c", "drop after premature dragend should activate dragged tab");
+    assertEqual(moved.join(","), "tab-c", "drop after premature dragend should trigger move callback");
   });
 }

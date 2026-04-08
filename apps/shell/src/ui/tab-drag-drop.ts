@@ -1,4 +1,4 @@
-import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
+import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX, TAB_DOCK_DRAG_MIME } from "../app/constants.js";
 import type { ShellRuntime } from "../app/types.js";
 import { moveTabBeforeTab, setActiveTab } from "../context-state.js";
 import { updateContextState } from "../context/runtime-state.js";
@@ -8,8 +8,6 @@ import {
   readActiveDockDragPayload,
   setActiveDockDragPayload,
 } from "./dock-drag-session.js";
-
-const TAB_DOCK_DRAG_MIME = "application/x-armada-tab-drag";
 
 interface TabDragPayload {
   kind: "shell-tab-dnd";
@@ -22,6 +20,8 @@ interface DockDragPayload {
   sourceWindowId: string;
 }
 
+const pendingDragCleanupByRoot = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+
 export function wireTabStripDragDrop(
   root: HTMLElement,
   runtime: ShellRuntime,
@@ -32,11 +32,15 @@ export function wireTabStripDragDrop(
   for (const tabItem of tabItems) {
     const tabButton = tabItem.querySelector<HTMLButtonElement>("button[data-action='activate-tab']");
     const tabId = tabItem.dataset.tabItem ?? tabButton?.dataset.partId;
-    if (tabButton) {
-      tabButton.draggable = true;
+    if (!tabButton || !tabId) {
+      continue;
     }
 
+    tabButton.draggable = true;
+
     tabItem.addEventListener("dragstart", (event) => {
+      cancelPendingDragCleanup(root);
+
       const dataTransfer = event.dataTransfer;
       if (!dataTransfer || !tabId || runtime.syncDegraded) {
         console.log("[shell:dnd:tab] dragstart-blocked", {
@@ -85,8 +89,7 @@ export function wireTabStripDragDrop(
     });
 
     tabItem.addEventListener("dragend", () => {
-      clearActiveDockDragPayload(root);
-      root.classList.remove("is-dock-dragging");
+      scheduleDragCleanup(root);
       console.log("[shell:dnd:tab] dragend", {
         tabId,
         stack: new Error().stack,
@@ -104,11 +107,12 @@ export function wireTabStripDragDrop(
 
     tabItem.addEventListener("drop", (event) => {
       event.preventDefault();
-      root.classList.remove("is-dock-dragging");
-      if (runtime.syncDegraded || !event.dataTransfer) {
-        clearActiveDockDragPayload(root);
+      cancelPendingDragCleanup(root);
+      const dataTransfer = event.dataTransfer;
+      if (runtime.syncDegraded || !dataTransfer) {
+        clearDragState(root);
         console.log("[shell:dnd:tab] drop-blocked", {
-          hasDataTransfer: Boolean(event.dataTransfer),
+          hasDataTransfer: Boolean(dataTransfer),
           syncDegraded: runtime.syncDegraded,
           targetTabId: tabId,
           stack: new Error().stack,
@@ -117,8 +121,8 @@ export function wireTabStripDragDrop(
       }
 
       const targetTabId = tabId;
-      const payload = readDraggedTabPayload(runtime, event.dataTransfer, root);
-      clearActiveDockDragPayload(root);
+      const payload = readDraggedTabPayload(runtime, dataTransfer, root);
+      clearDragState(root);
       console.log("[shell:dnd:tab] drop", {
         targetTabId,
         payload,
@@ -150,6 +154,30 @@ export function wireTabStripDragDrop(
 
 function getTabDragItems(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>("[data-tab-item]"));
+}
+
+function scheduleDragCleanup(root: HTMLElement): void {
+  cancelPendingDragCleanup(root);
+  const timeout = setTimeout(() => {
+    clearDragState(root);
+    pendingDragCleanupByRoot.delete(root);
+  }, 0);
+  pendingDragCleanupByRoot.set(root, timeout);
+}
+
+function cancelPendingDragCleanup(root: HTMLElement): void {
+  const pending = pendingDragCleanupByRoot.get(root);
+  if (!pending) {
+    return;
+  }
+
+  clearTimeout(pending);
+  pendingDragCleanupByRoot.delete(root);
+}
+
+function clearDragState(root: HTMLElement): void {
+  clearActiveDockDragPayload(root);
+  root.classList.remove("is-dock-dragging");
 }
 
 function parseTabDragPayload(runtime: ShellRuntime, raw: string): TabDragPayload | null {
