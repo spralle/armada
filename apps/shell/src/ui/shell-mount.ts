@@ -14,13 +14,15 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     html, body { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: #14161a; color: #e9edf3; }
     .shell { display: grid; grid-template-columns: 1fr; min-height: 100vh; min-height: 100dvh; height: 100vh; height: 100dvh; overflow: hidden; }
-    .dock-root { background: #11151c; min-width: 0; min-height: 0; overflow: hidden; padding: 8px; display: flex; flex-direction: column; }
+    .dock-root { background: #11151c; min-width: 0; min-height: 0; overflow: hidden; padding: 6px; display: flex; flex-direction: column; }
     .dock-root > .dock-node { flex: 1 1 auto; }
     .dock-node { min-width: 0; min-height: 0; }
     .dock-node-stack { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; border: 1px solid #2b3040; border-radius: 4px; background: #121922; overflow: hidden; }
-    .dock-stack-panels { min-height: 0; overflow: auto; padding: 8px; position: relative; display: flex; flex-direction: column; }
+    .dock-stack-panels { min-height: 0; overflow: auto; padding: 0; position: relative; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"] { min-height: 0; height: 100%; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"][hidden] { display: none; }
+    .dock-tabpanel { min-width: 0; min-height: 0; }
+    .dock-tabpanel-content { min-width: 0; min-height: 0; height: 100%; padding: 6px; box-sizing: border-box; display: flex; flex-direction: column; }
     .dock-node-split { --dock-splitter-size: 12px; display: grid; gap: 0; min-width: 0; min-height: 0; }
     .dock-node-split-horizontal { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .dock-node-split-vertical { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
@@ -35,13 +37,13 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .is-dock-splitter-dragging { cursor: grabbing; }
     .is-dock-splitter-dragging .dock-splitter-horizontal { cursor: col-resize; }
     .is-dock-splitter-dragging .dock-splitter-vertical { cursor: row-resize; }
-    .part-tab-strip { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: thin; }
+    .part-tab-strip { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: thin; padding: 2px; }
     .part-tab-item { display: inline-flex; align-items: center; gap: 2px; position: relative; }
     .part-tab-handle { appearance: none; border: 1px solid transparent; background: transparent; color: #93a4c2; border-radius: 4px; padding: 2px 4px; cursor: grab; }
     .part-tab-handle:hover { border-color: #334564; color: #d8e2f5; }
     .part-tab-handle:active { cursor: grabbing; }
     .part-tab-handle:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
-    .part-tab { appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none; color: #c6d0e0; padding: 6px 8px; border-radius: 4px 4px 0 0; cursor: pointer; white-space: nowrap; }
+    .part-tab { appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none; color: #c6d0e0; padding: 5px 7px; border-radius: 4px 4px 0 0; cursor: pointer; white-space: nowrap; }
     .part-tab:hover { background: #1a2230; color: #e9edf3; }
     .part-tab:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
     .part-tab.is-active { background: #1d2635; border-color: #334564; color: #f4f8ff; }

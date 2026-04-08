@@ -6,6 +6,7 @@ import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
 import { listAvailableUtilityTabs } from "../utility-tabs.js";
 import { renderPartBody } from "./parts-rendering-body.js";
+import { renderDockDropOverlay, renderDockPartPanel } from "./parts-rendering-dock-panel.js";
 import { renderDockSplitTrackStyle } from "./parts-rendering-dock-split-style.js";
 
 export interface ComposedShellPart {
@@ -246,17 +247,6 @@ export function renderTabStrip(
   `;
 }
 
-function renderDockDropOverlay(targetTabId: string): string {
-  return `<div class="dock-drop-overlay" data-dock-drop-overlay-for="${targetTabId}" aria-hidden="true">
-      <div class="dock-drop-preview"></div>
-      <div class="dock-drop-zone dock-drop-zone-left" data-dock-drop-zone="left" data-target-tab-id="${targetTabId}" title="Split left"></div>
-      <div class="dock-drop-zone dock-drop-zone-right" data-dock-drop-zone="right" data-target-tab-id="${targetTabId}" title="Split right"></div>
-      <div class="dock-drop-zone dock-drop-zone-top" data-dock-drop-zone="top" data-target-tab-id="${targetTabId}" title="Split top"></div>
-      <div class="dock-drop-zone dock-drop-zone-bottom" data-dock-drop-zone="bottom" data-target-tab-id="${targetTabId}" title="Split bottom"></div>
-      <div class="dock-drop-zone dock-drop-zone-center" data-dock-drop-zone="center" data-target-tab-id="${targetTabId}" title="Merge into tab stack"></div>
-    </div>`;
-}
-
 export function isPartActivationNode(target: HTMLElement): target is HTMLButtonElement {
   const action = target.dataset.action;
   return target instanceof HTMLButtonElement && action === "activate-tab";
@@ -328,20 +318,10 @@ function renderDockNode(
   return `<section class="dock-node dock-node-stack" data-dock-node-id="${node.id}" data-dock-stack-id="${node.id}" data-slot="${panelSlot}">
       ${renderTabStrip(panelSlot, tabs, activeTabId, runtime, { tabScope, label: panelLabel })}
       <section class="dock-stack-panels" data-dock-stack-panels="${node.id}">
-        ${tabs.map((part) => renderPartPanel(part, runtime, part.id === activeTabId)).join("")}
+        ${tabs.map((part) => renderDockPartPanel(part, part.id === activeTabId)).join("")}
         ${renderDockDropOverlay(activeTabId)}
       </section>
     </section>`;
-}
-
-function renderPartPanel(part: ComposedShellPart, runtime: ShellRuntime, isActive: boolean): string {
-  return `<section
-      class="dock-tabpanel"
-      id="panel-${part.id}"
-      role="tabpanel"
-      aria-labelledby="tab-${part.id}"
-      ${isActive ? "" : "hidden"}
-    >${renderPartCard(part, runtime, { showPopoutButton: true })}</section>`;
 }
 
 function resolveStackActiveTabId(

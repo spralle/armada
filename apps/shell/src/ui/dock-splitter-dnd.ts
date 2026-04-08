@@ -33,6 +33,11 @@ export function wireDockSplitterDrag(root: HTMLElement, runtime: ShellRuntime, d
         return;
       }
 
+      const eventWindow = root.ownerDocument?.defaultView;
+      if (!eventWindow) {
+        return;
+      }
+
       splitter.setPointerCapture(event.pointerId);
       root.classList.remove("is-dock-dragging");
       root.classList.add(DRAGGING_CLASS);
@@ -41,6 +46,10 @@ export function wireDockSplitterDrag(root: HTMLElement, runtime: ShellRuntime, d
       const startAxis = axisValue(event, orientation);
       const startRatio = readSplitRatioById(runtime.contextState.dockTree.root, splitId);
       const onMove = (moveEvent: PointerEvent) => {
+        if (moveEvent.pointerId !== event.pointerId) {
+          return;
+        }
+
         const delta = axisValue(moveEvent, orientation) - startAxis;
         const ratioDelta = delta / containerSize;
         const nextState = setDockSplitRatio(runtime.contextState, {
@@ -65,15 +74,17 @@ export function wireDockSplitterDrag(root: HTMLElement, runtime: ShellRuntime, d
         if (splitter.hasPointerCapture(event.pointerId)) {
           splitter.releasePointerCapture(event.pointerId);
         }
-        splitter.removeEventListener("pointermove", onMove);
-        splitter.removeEventListener("pointerup", cleanup);
-        splitter.removeEventListener("pointercancel", cleanup);
+        eventWindow.removeEventListener("pointermove", onMove);
+        eventWindow.removeEventListener("pointerup", cleanup);
+        eventWindow.removeEventListener("pointercancel", cleanup);
+        eventWindow.removeEventListener("blur", cleanup);
         splitter.removeEventListener("lostpointercapture", cleanup);
       };
 
-      splitter.addEventListener("pointermove", onMove);
-      splitter.addEventListener("pointerup", cleanup);
-      splitter.addEventListener("pointercancel", cleanup);
+      eventWindow.addEventListener("pointermove", onMove);
+      eventWindow.addEventListener("pointerup", cleanup);
+      eventWindow.addEventListener("pointercancel", cleanup);
+      eventWindow.addEventListener("blur", cleanup);
       splitter.addEventListener("lostpointercapture", cleanup);
     });
   }
