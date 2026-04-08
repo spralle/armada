@@ -177,7 +177,7 @@ export function registerBridgeUnavailableSpecs(harness: SpecHarness): void {
     const runtime = createRuntime(asyncBridge);
     const announcements: string[] = [];
 
-    const accepted = publishWithDegrade(runtime, {
+    publishWithDegrade(runtime, {
       type: "selection",
       selectedPartId: "tab-a",
       selectedPartTitle: "Tab A",
@@ -193,7 +193,7 @@ export function registerBridgeUnavailableSpecs(harness: SpecHarness): void {
       renderContextControls() {},
     });
 
-    assertEqual(accepted, true, "async publish starts accepted before promise settles");
+    assertEqual(asyncBridge.publishedEvents[0]?.type, "selection", "async publish should enqueue selection event before promise settles");
     await flushMicrotasks();
     assertEqual(runtime.syncDegraded, true, "async rejection should set degraded mode");
     assertEqual(runtime.syncHealthState, "degraded", "async rejection should set degraded health state");

@@ -154,8 +154,8 @@ export function publishWithDegrade(
   runtime: ShellRuntime,
   event: WindowBridgeEvent,
   bindings: BridgeSyncBindings,
-): boolean {
-  return publishWithDegradeState(runtime, event, {
+): void {
+  publishWithDegradeState(runtime, event, {
     announce: (message) => bindings.announce(message),
     updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
     renderSyncStatus: () => bindings.renderSyncStatus(),

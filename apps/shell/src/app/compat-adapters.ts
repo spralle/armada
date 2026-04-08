@@ -33,7 +33,7 @@ interface ShellCompatibilityAdapterDeps {
   announce: (message: string) => void;
   dismissIntentChooser: () => void;
   primeEnabledPluginActivations: () => Promise<void>;
-  publishWithDegrade: (event: WindowBridgeEvent) => boolean;
+  publishWithDegrade: (event: WindowBridgeEvent) => void;
   refreshCommandContributions: () => void;
   summarizeSelectionPriorities: () => string;
 }

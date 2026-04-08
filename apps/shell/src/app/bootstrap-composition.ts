@@ -44,7 +44,7 @@ export interface ShellBootstrapRuntimeDeps {
   announce: (message: string) => void;
   dismissIntentChooser: () => void;
   primeEnabledPluginActivations: () => Promise<void>;
-  publishWithDegrade: (event: PublishEvent) => boolean;
+  publishWithDegrade: (event: PublishEvent) => void;
   refreshCommandContributions: () => void;
   summarizeSelectionPriorities: () => string;
   renderCommandSurface: () => void;

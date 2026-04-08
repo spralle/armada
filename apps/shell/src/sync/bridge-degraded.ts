@@ -4,7 +4,6 @@ import type { ShellRuntime } from "../app/types.js";
 import {
   normalizeBridgePublishRejectionReason,
   type AsyncWindowBridgeHealth,
-  type AsyncWindowBridgePublishResult,
   type AsyncWindowBridgeRejectReason,
 } from "../app/async-bridge.js";
 
@@ -31,24 +30,18 @@ export function publishWithDegrade(
   runtime: ShellRuntime,
   event: Parameters<WindowBridge["publish"]>[0],
   bindings: BridgeRenderBindings,
-): boolean {
-  if (!runtime.bridge.available) {
-    return false;
+): void {
+  if (!runtime.bridge.available && runtime.activeTransportPath !== "async-scomp-adapter") {
+    return;
   }
 
   if (runtime.syncDegraded) {
-    return false;
+    return;
   }
 
-  const result = publishBridgeEvent(runtime, event, {
+  publishBridgeEvent(runtime, event, {
     onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
   });
-  if (result.status === "rejected") {
-    enterDegradedMode(runtime, result.reason, bindings);
-    return false;
-  }
-
-  return true;
 }
 
 export function requestSyncProbe(runtime: ShellRuntime, bindings: BridgeRenderBindings, createWindowId: () => string): void {
@@ -62,17 +55,13 @@ export function requestSyncProbe(runtime: ShellRuntime, bindings: BridgeRenderBi
 
   const probeId = createWindowId();
   runtime.pendingProbeId = probeId;
-  const result = publishBridgeEvent(runtime, {
+  publishBridgeEvent(runtime, {
     type: "sync-probe",
     probeId,
     sourceWindowId: runtime.windowId,
   }, {
     onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
   });
-
-  if (result.status === "rejected") {
-    enterDegradedMode(runtime, result.reason, bindings);
-  }
 }
 
 export function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent, bindings: BridgeRenderBindings): void {
@@ -80,7 +69,7 @@ export function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent, bi
     return;
   }
 
-  const result = publishBridgeEvent(runtime, {
+  publishBridgeEvent(runtime, {
     type: "sync-ack",
     probeId: event.probeId,
     targetWindowId: event.sourceWindowId,
@@ -88,10 +77,6 @@ export function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent, bi
   }, {
     onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
   });
-
-  if (result.status === "rejected") {
-    enterDegradedMode(runtime, result.reason, bindings);
-  }
 }
 
 function publishBridgeEvent(
@@ -100,7 +85,7 @@ function publishBridgeEvent(
   options?: {
     onRejected?: (reason: AsyncWindowBridgeRejectReason) => void;
   },
-): AsyncWindowBridgePublishResult {
+): void {
   if (runtime.activeTransportPath === "async-scomp-adapter") {
     void runtime.asyncBridge.publish(event).then((result) => {
       if (result.status === "rejected") {
@@ -112,25 +97,20 @@ function publishBridgeEvent(
       );
     });
 
-    return {
-      status: "accepted",
-      disposition: "enqueued",
-    };
+    return;
   }
 
   const published = runtime.bridge.publish(event);
-  return published
-    ? {
-      status: "accepted",
-      disposition: "enqueued",
-    }
-    : {
-      status: "rejected",
-      reason: normalizeBridgePublishRejectionReason(
-        runtime.syncDegradedReason,
-        runtime.bridge.available,
-      ),
-    };
+  if (published) {
+    return;
+  }
+
+  options?.onRejected?.(
+    normalizeBridgePublishRejectionReason(
+      runtime.syncDegradedReason,
+      runtime.bridge.available,
+    ),
+  );
 }
 
 export function handleSyncAck(

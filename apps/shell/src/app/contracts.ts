@@ -50,7 +50,7 @@ export interface ShellEffectsPort {
     triggerId: string;
   }): Promise<boolean>;
   announce(message: string): void;
-  publishWithDegrade(event: WindowBridgeEvent): boolean;
+  publishWithDegrade(event: WindowBridgeEvent): void;
   renderCommandSurface(): void;
   renderContextControlsPanel(): void;
   renderParts(): void;
