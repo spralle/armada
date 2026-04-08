@@ -102,6 +102,61 @@ test("window overrides can force legacy kill switch over query async enable", ()
   assertEqual(decision.reason, "kill-switch-force-legacy", "override kill switch reason should be preserved");
 });
 
+test("transport feature-flag matrix preserves deterministic legacy/async parity", () => {
+  const matrix = [
+    {
+      name: "default",
+      query: "",
+      override: null,
+      expectedPath: "legacy-bridge",
+      expectedReason: "default-legacy",
+    },
+    {
+      name: "async-query-enable",
+      query: "shellAsyncScompAdapter=1",
+      override: null,
+      expectedPath: "async-scomp-adapter",
+      expectedReason: "async-flag-enabled",
+    },
+    {
+      name: "kill-switch-query-wins",
+      query: "shellAsyncScompAdapter=1&shellLegacyBridgeKillSwitch=true",
+      override: null,
+      expectedPath: "legacy-bridge",
+      expectedReason: "kill-switch-force-legacy",
+    },
+    {
+      name: "override-enable-async",
+      query: "",
+      override: {
+        enableAsyncScompAdapter: true,
+      },
+      expectedPath: "async-scomp-adapter",
+      expectedReason: "async-flag-enabled",
+    },
+    {
+      name: "override-force-legacy-over-enable",
+      query: "shellAsyncScompAdapter=true",
+      override: {
+        enableAsyncScompAdapter: true,
+        forceLegacyBridge: true,
+      },
+      expectedPath: "legacy-bridge",
+      expectedReason: "kill-switch-force-legacy",
+    },
+  ] as const;
+
+  for (const scenario of matrix) {
+    const flags = readShellMigrationFlags(
+      new URLSearchParams(scenario.query),
+      scenario.override,
+    );
+    const decision = selectShellTransportPath(flags);
+    assertEqual(decision.path, scenario.expectedPath, `matrix path mismatch for ${scenario.name}`);
+    assertEqual(decision.reason, scenario.expectedReason, `matrix reason mismatch for ${scenario.name}`);
+  }
+});
+
 let passed = 0;
 for (const caseItem of tests) {
   try {
