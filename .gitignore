@@ -9,6 +9,8 @@ node_modules/
 **/dist/
 **/dist-test/
 **/*.tsbuildinfo
+**/.mf/
+**/.__mf__temp/
 
 # Local worktrees
 worktrees/

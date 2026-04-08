@@ -104,7 +104,7 @@ export function createRuntimeFirstPluginLoader(
         remoteLoadRetryDelayMs,
         onDiagnostic,
       });
-      const parsed = parsePluginContract(resolveContractExport(rawContract));
+      const parsed = parsePluginContract(normalizeRemoteContractModule(rawContract));
 
       if (!parsed.success) {
         const details = parsed.errors
@@ -314,4 +314,28 @@ function delay(durationMs: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, durationMs);
   });
+}
+
+function normalizeRemoteContractModule(input: unknown): unknown {
+  let candidate = input;
+
+  for (let depth = 0; depth < 5; depth += 1) {
+    if (!candidate || typeof candidate !== "object") {
+      return candidate;
+    }
+
+    const record = candidate as Record<string, unknown>;
+    if ("manifest" in record) {
+      return candidate;
+    }
+
+    const next = resolveContractExport(candidate);
+    if (next === candidate) {
+      return candidate;
+    }
+
+    candidate = next;
+  }
+
+  return candidate;
 }

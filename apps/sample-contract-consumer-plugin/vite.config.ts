@@ -2,12 +2,17 @@ import { federation } from "@module-federation/vite";
 import { defineConfig } from "vite";
 
 const SAMPLE_PLUGIN_DEV_PORT = 4172;
+const SAMPLE_PLUGIN_DEV_ORIGIN = `http://127.0.0.1:${SAMPLE_PLUGIN_DEV_PORT}`;
 
 export default defineConfig({
   plugins: [
     federation({
       name: "com.armada.sample.contract-consumer",
-      filename: "mf-manifest.json",
+      filename: "remoteEntry.js",
+      publicPath: `${SAMPLE_PLUGIN_DEV_ORIGIN}/`,
+      manifest: {
+        fileName: "mf-manifest.json",
+      },
       exposes: {
         "./pluginContract": "./src/plugin-contract-expose.ts",
         "./pluginParts": "./src/plugin-parts-expose.ts",
@@ -17,7 +22,7 @@ export default defineConfig({
       shared: {
         "@armada/plugin-contracts": {
           singleton: true,
-          requiredVersion: false,
+          requiredVersion: "^0.0.0",
         },
       },
     }),
@@ -25,6 +30,7 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: SAMPLE_PLUGIN_DEV_PORT,
+    origin: SAMPLE_PLUGIN_DEV_ORIGIN,
     strictPort: true,
     cors: true,
   },
