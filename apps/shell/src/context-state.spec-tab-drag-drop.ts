@@ -43,6 +43,18 @@ class FakeTabButton {
 }
 
 class FakeRoot {
+  private readonly classes = new Set<string>();
+
+  readonly classList = {
+    add: (className: string) => {
+      this.classes.add(className);
+    },
+    remove: (className: string) => {
+      this.classes.delete(className);
+    },
+    contains: (className: string) => this.classes.has(className),
+  };
+
   constructor(private readonly tabButtons: FakeTabButton[]) {}
 
   querySelectorAll<T>(_selector: string): T[] {

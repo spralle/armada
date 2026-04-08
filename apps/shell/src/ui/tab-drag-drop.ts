@@ -3,11 +3,21 @@ import type { ShellRuntime } from "../app/types.js";
 import { moveTabBeforeTab, setActiveTab } from "../context-state.js";
 import { updateContextState } from "../context/runtime-state.js";
 import { safeParse } from "../app/utils.js";
+import {
+  clearActiveDockDragPayload,
+  setActiveDockDragPayload,
+} from "./dock-drag-session.js";
+
+const TAB_DOCK_DRAG_MIME = "application/x-armada-tab-drag";
 
 interface TabDragPayload {
   kind: "shell-tab-dnd";
   tabId: string;
   sourceWindowId: string;
+}
+
+function logTabDnd(event: string, details: Record<string, unknown>): void {
+  console.log(`[shell:dnd:tab] ${event}`, details);
 }
 
 export function wireTabStripDragDrop(
@@ -21,6 +31,11 @@ export function wireTabStripDragDrop(
       const dataTransfer = event.dataTransfer;
       const tabId = tabButton.dataset.partId;
       if (!dataTransfer || !tabId || runtime.syncDegraded) {
+        logTabDnd("dragstart-blocked", {
+          hasDataTransfer: Boolean(dataTransfer),
+          tabId,
+          syncDegraded: runtime.syncDegraded,
+        });
         return;
       }
 
@@ -30,6 +45,15 @@ export function wireTabStripDragDrop(
         sourceWindowId: runtime.windowId,
       };
 
+      dataTransfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({
+        tabId,
+        sourceWindowId: runtime.windowId,
+      }));
+      setActiveDockDragPayload(root, {
+        tabId,
+        sourceWindowId: runtime.windowId,
+      });
+
       if (runtime.dragSessionBroker.available) {
         const ref = runtime.dragSessionBroker.create(payload);
         dataTransfer.setData("text/plain", `${DRAG_REF_PREFIX}${ref.id}`);
@@ -38,6 +62,21 @@ export function wireTabStripDragDrop(
       }
 
       dataTransfer.effectAllowed = "move";
+      root.classList.add("is-dock-dragging");
+      logTabDnd("dragstart", {
+        tabId,
+        sourceWindowId: runtime.windowId,
+        brokerAvailable: runtime.dragSessionBroker.available,
+        types: Array.from(dataTransfer.types ?? []),
+      });
+    });
+
+    tabButton.addEventListener("dragend", () => {
+      clearActiveDockDragPayload(root);
+      root.classList.remove("is-dock-dragging");
+      logTabDnd("dragend", {
+        tabId: tabButton.dataset.partId,
+      });
     });
 
     tabButton.addEventListener("dragover", (event) => {
@@ -51,13 +90,25 @@ export function wireTabStripDragDrop(
 
     tabButton.addEventListener("drop", (event) => {
       event.preventDefault();
+      clearActiveDockDragPayload(root);
+      root.classList.remove("is-dock-dragging");
       if (runtime.syncDegraded || !event.dataTransfer) {
+        logTabDnd("drop-blocked", {
+          hasDataTransfer: Boolean(event.dataTransfer),
+          syncDegraded: runtime.syncDegraded,
+          targetTabId: tabButton.dataset.partId,
+        });
         return;
       }
 
       const targetTabId = tabButton.dataset.partId;
       const raw = event.dataTransfer.getData("text/plain");
       const payload = parseTabDragPayload(runtime, raw);
+      logTabDnd("drop", {
+        targetTabId,
+        raw,
+        payload,
+      });
       if (!targetTabId || !payload || payload.sourceWindowId !== runtime.windowId || payload.tabId === targetTabId) {
         return;
       }
@@ -73,6 +124,10 @@ export function wireTabStripDragDrop(
       updateContextState(runtime, reordered);
       updateContextState(runtime, setActiveTab(runtime.contextState, payload.tabId));
       onTabMoved(payload.tabId);
+      logTabDnd("drop-applied", {
+        tabId: payload.tabId,
+        targetTabId,
+      });
     });
   }
 }

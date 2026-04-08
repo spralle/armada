@@ -116,6 +116,12 @@ class MemoryDataTransfer implements DragDataTransfer {
   }
 }
 
+class EmptyReadDataTransfer extends MemoryDataTransfer {
+  override getData(_format: string): string {
+    return "";
+  }
+}
+
 function createDragEvent(dataTransfer: DragDataTransfer): DragEvent {
   let prevented = false;
   return {
@@ -336,5 +342,33 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     assertEqual(runtime.contextState.activeTabId, "tab-b", "same-window move should still activate moved tab");
     assertEqual(renderPartsCalls, 1, "same-window move should rerender parts");
     assertEqual(renderSyncCalls, 1, "same-window move should rerender sync status");
+  });
+
+  test("dragover/drop accepts active drag fallback when DataTransfer reads are empty", () => {
+    const runtime = createRuntime();
+    const handle = new FakeDockHandle("tab-b");
+    const zone = new FakeDockZone("tab-a", "right");
+    const root = new FakeDockRoot([handle], [zone]);
+    let renderPartsCalls = 0;
+
+    wireDockTabDragDrop(root as unknown as HTMLElement, runtime, {
+      renderContextControls() {},
+      renderParts() {
+        renderPartsCalls += 1;
+      },
+      renderSyncStatus() {},
+    });
+
+    const startTransfer = new MemoryDataTransfer();
+    handle.dispatch("dragstart", createDragEvent(startTransfer));
+
+    const emptyReadTransfer = new EmptyReadDataTransfer();
+    const dragoverEvent = createDragEvent(emptyReadTransfer);
+    zone.dispatch("dragover", dragoverEvent);
+    zone.dispatch("drop", createDragEvent(emptyReadTransfer));
+
+    assertEqual(dragoverEvent.defaultPrevented, true, "active drag fallback should arm drop zone");
+    assertEqual(runtime.contextState.activeTabId, "tab-b", "active drag fallback should still move tab");
+    assertEqual(renderPartsCalls, 1, "active drag fallback should rerender parts");
   });
 }
