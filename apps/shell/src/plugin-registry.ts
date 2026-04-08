@@ -1,110 +1,37 @@
 import {
-  evaluateShellPluginCompatibility,
-  type CompatibilityReasonCode,
-  type PluginContract,
-  type TenantPluginDescriptor,
-} from "@armada/plugin-contracts";
-import {
   createCapabilityRegistry,
   pickComponentModuleExport,
   pickServiceModuleExport,
-  type CapabilityDependencyFailureCode,
 } from "./capability-registry.js";
 import {
   createRuntimeFirstPluginLoader,
-  type PluginLoadDiagnostic,
-  type PluginLoadError,
-  type RuntimeFirstPluginLoader,
-  type ShellPluginLoadMode,
 } from "./plugin-loader.js";
+import { createActivationController } from "./plugin-registry-activation.js";
+import { readCapabilityComponents, readCapabilityServices } from "./plugin-registry-contract.js";
+import {
+  cloneLifecycle,
+  cloneRuntimeFailure,
+  mapLoaderDiagnostic,
+  pushDiagnostic,
+  transitionLifecycle,
+} from "./plugin-registry-diagnostics.js";
+import type {
+  PluginActivationTrigger,
+  PluginRegistryDiagnostic,
+  PluginRuntimeState,
+  ShellPluginRegistry,
+  ShellPluginRegistryOptions,
+} from "./plugin-registry-types.js";
 
-const SHELL_CONTRACT_DECLARATION = "^1.0.0";
-const MAX_DIAGNOSTICS = 30;
-
-interface PluginRuntimeFailure {
-  code:
-    | CompatibilityReasonCode
-    | "REMOTE_UNAVAILABLE"
-    | "INVALID_CONTRACT"
-    | "COMPONENTS_UNAVAILABLE"
-    | "SERVICES_UNAVAILABLE"
-    | CapabilityDependencyFailureCode
-    | "COMPONENT_EXPORT_MISSING"
-    | "SERVICE_EXPORT_MISSING"
-    | "LOCAL_SOURCE_UNAVAILABLE"
-    | "UNKNOWN_PLUGIN_LOAD_ERROR";
-  message: string;
-  retryable: boolean;
-}
-
-export type PluginActivationTriggerType = "command" | "view" | "intent";
-
-export type PluginLifecycleState =
-  | "disabled"
-  | "registered"
-  | "activating"
-  | "active"
-  | "failed";
-
-export interface PluginActivationTrigger {
-  type: PluginActivationTriggerType;
-  id: string;
-}
-
-export interface PluginLifecycleSnapshot {
-  state: PluginLifecycleState;
-  lastTransitionAt: string;
-  lastTrigger: PluginActivationTrigger | null;
-}
-
-interface PluginRuntimeState {
-  descriptor: TenantPluginDescriptor;
-  enabled: boolean;
-  loadMode: ShellPluginLoadMode;
-  contract: PluginContract | null;
-  componentsModule: unknown | null;
-  servicesModule: unknown | null;
-  failure: PluginRuntimeFailure | null;
-  lifecycle: PluginLifecycleSnapshot;
-  activationPromise: Promise<void> | null;
-}
-
-export interface PluginRegistryDiagnostic {
-  at: string;
-  pluginId: string;
-  level: "info" | "warn";
-  code: string;
-  message: string;
-}
-
-export interface PluginRegistrySnapshot {
-  tenantId: string;
-  diagnostics: PluginRegistryDiagnostic[];
-  plugins: {
-    id: string;
-    enabled: boolean;
-    loadMode: ShellPluginLoadMode;
-    descriptor: TenantPluginDescriptor;
-    contract: PluginContract | null;
-    failure: PluginRuntimeFailure | null;
-    lifecycle: PluginLifecycleSnapshot;
-  }[];
-}
-
-export interface ShellPluginRegistry {
-  registerManifestDescriptors(tenantId: string, descriptors: TenantPluginDescriptor[]): void;
-  setEnabled(pluginId: string, enabled: boolean): Promise<void>;
-  activateByCommand(pluginId: string, commandId: string): Promise<boolean>;
-  activateByView(pluginId: string, viewId: string): Promise<boolean>;
-  activateByIntent(pluginId: string, intentId: string): Promise<boolean>;
-  resolveComponentCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
-  resolveServiceCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
-  getSnapshot(): PluginRegistrySnapshot;
-}
-
-export interface ShellPluginRegistryOptions {
-  pluginLoader?: RuntimeFirstPluginLoader;
-}
+export type {
+  PluginActivationTrigger,
+  PluginActivationTriggerType,
+  PluginLifecycleSnapshot,
+  PluginLifecycleState,
+  PluginRegistryDiagnostic,
+  PluginRegistrySnapshot,
+} from "./plugin-registry-types.js";
+export type { ShellPluginRegistry, ShellPluginRegistryOptions } from "./plugin-registry-types.js";
 
 export function createShellPluginRegistry(
   options: ShellPluginRegistryOptions = {},
@@ -124,6 +51,12 @@ export function createShellPluginRegistry(
       enabled: state.enabled,
       contract: state.contract,
     })),
+  );
+  const ensureActivated = createActivationController(
+    states,
+    diagnostics,
+    pluginLoader,
+    capabilityRegistry,
   );
   let tenantId = "local";
 
@@ -159,19 +92,12 @@ export function createShellPluginRegistry(
       state.enabled = enabled;
       if (!enabled) {
         capabilityRegistry.unregisterPlugin(pluginId);
-        state.contract = null;
-        state.componentsModule = null;
-        state.servicesModule = null;
-        state.failure = null;
-        state.activationPromise = null;
+        resetRuntimeState(state);
         transitionLifecycle(state, "disabled", null);
         return;
       }
 
-      state.contract = null;
-      state.componentsModule = null;
-      state.servicesModule = null;
-      state.failure = null;
+      resetRuntimeState(state);
       transitionLifecycle(state, "registered", null);
     },
     async activateByCommand(pluginId, commandId) {
@@ -318,220 +244,18 @@ export function createShellPluginRegistry(
           loadMode: state.loadMode,
           descriptor: state.descriptor,
           contract: state.contract,
-          failure: state.failure,
-          lifecycle: {
-            ...state.lifecycle,
-            lastTrigger: state.lifecycle.lastTrigger
-              ? { ...state.lifecycle.lastTrigger }
-              : null,
-          },
+          failure: cloneRuntimeFailure(state.failure),
+          lifecycle: cloneLifecycle(state),
         })),
       };
     },
   };
-
-  async function ensureActivated(
-    pluginId: string,
-    trigger: PluginActivationTrigger,
-  ): Promise<boolean> {
-    const state = states.get(pluginId);
-    if (!state) {
-      pushDiagnostic(diagnostics, {
-        at: new Date().toISOString(),
-        pluginId,
-        level: "warn",
-        code: "UNKNOWN_PLUGIN",
-        message: `Activation requested for unknown plugin '${pluginId}' via ${trigger.type}:${trigger.id}.`,
-      });
-      return false;
-    }
-
-    if (!state.enabled) {
-      pushDiagnostic(diagnostics, {
-        at: new Date().toISOString(),
-        pluginId,
-        level: "info",
-        code: "ACTIVATION_SKIPPED_DISABLED",
-        message: `Skipped activation for disabled plugin '${pluginId}' via ${trigger.type}:${trigger.id}.`,
-      });
-      return false;
-    }
-
-    if (state.contract && state.lifecycle.state === "active") {
-      state.lifecycle.lastTrigger = trigger;
-      return true;
-    }
-
-    if (state.activationPromise) {
-      await state.activationPromise;
-      return state.contract !== null && state.lifecycle.state === "active";
-    }
-
-    state.activationPromise = activateState(state, pluginId, trigger);
-    await state.activationPromise;
-    return state.contract !== null && state.lifecycle.state === "active";
-  }
-
-  async function activateState(
-    state: PluginRuntimeState,
-    pluginId: string,
-    trigger: PluginActivationTrigger,
-  ): Promise<void> {
-    state.contract = null;
-    state.failure = null;
-    transitionLifecycle(state, "activating", trigger);
-
-    const compatibility = evaluateShellPluginCompatibility(
-      SHELL_CONTRACT_DECLARATION,
-      state.descriptor.compatibility.pluginContract,
-    );
-    if (!compatibility.compatible) {
-      state.failure = {
-        code: compatibility.code,
-        message: `${compatibility.message} (shell='${SHELL_CONTRACT_DECLARATION}', plugin='${state.descriptor.compatibility.pluginContract}')`,
-        retryable: false,
-      };
-      transitionLifecycle(state, "failed", trigger);
-      pushDiagnostic(diagnostics, {
-        at: new Date().toISOString(),
-        pluginId,
-        level: "warn",
-        code: compatibility.code,
-        message: state.failure.message,
-      });
-      state.activationPromise = null;
-      return;
-    }
-
-    try {
-      state.contract = await pluginLoader.loadPluginContract(state.descriptor);
-      const dependencyFailures = capabilityRegistry.validateDependencies({
-        pluginId,
-        pluginVersion: state.descriptor.version,
-        contract: state.contract,
-      });
-      if (dependencyFailures.length > 0) {
-        const firstFailure = dependencyFailures[0];
-        if (firstFailure) {
-          state.failure = {
-            code: firstFailure.code,
-            message: firstFailure.message,
-            retryable: false,
-          };
-          state.contract = null;
-          capabilityRegistry.unregisterPlugin(pluginId);
-          transitionLifecycle(state, "failed", trigger);
-          for (const failure of dependencyFailures) {
-            pushDiagnostic(diagnostics, {
-              at: new Date().toISOString(),
-              pluginId,
-              level: "warn",
-              code: failure.code,
-              message: failure.message,
-            });
-          }
-          state.activationPromise = null;
-          return;
-        }
-      }
-
-      capabilityRegistry.registerPlugin(pluginId, state.contract);
-      state.failure = null;
-      transitionLifecycle(state, "active", trigger);
-    } catch (error) {
-      const failure = mapPluginLoadFailure(error);
-      capabilityRegistry.unregisterPlugin(pluginId);
-      state.contract = null;
-      state.componentsModule = null;
-      state.servicesModule = null;
-      state.failure = failure;
-      transitionLifecycle(state, "failed", trigger);
-      pushDiagnostic(diagnostics, {
-        at: new Date().toISOString(),
-        pluginId,
-        level: "warn",
-        code: failure.code,
-        message: failure.message,
-      });
-    }
-
-    state.activationPromise = null;
-  }
 }
 
-function transitionLifecycle(
-  state: PluginRuntimeState,
-  nextState: PluginLifecycleState,
-  trigger: PluginActivationTrigger | null,
-): void {
-  state.lifecycle = {
-    state: nextState,
-    lastTransitionAt: new Date().toISOString(),
-    lastTrigger: trigger,
-  };
-}
-
-function mapPluginLoadFailure(error: unknown): PluginRuntimeFailure {
-  if (isPluginLoadError(error)) {
-    return {
-      code: error.context.reason,
-      message: error.context.message,
-      retryable: error.context.reason === "REMOTE_UNAVAILABLE",
-    };
-  }
-
-  return {
-    code: "UNKNOWN_PLUGIN_LOAD_ERROR",
-    message: "Plugin failed to load due to an unexpected error.",
-    retryable: true,
-  };
-}
-
-function isPluginLoadError(error: unknown): error is PluginLoadError {
-  if (!error || typeof error !== "object") {
-    return false;
-  }
-
-  return "context" in error;
-}
-
-function mapLoaderDiagnostic(diagnostic: PluginLoadDiagnostic): PluginRegistryDiagnostic {
-  const moduleLabel = diagnostic.module ? ` (${diagnostic.module})` : "";
-  return {
-    at: new Date().toISOString(),
-    pluginId: diagnostic.pluginId,
-    level: diagnostic.level,
-    code: diagnostic.code,
-    message: `${diagnostic.message}${moduleLabel}`,
-  };
-}
-
-function readCapabilityComponents(contract: PluginContract | null): Array<{ id: string; version: string }> {
-  if (!contract || !("contributes" in contract)) {
-    return [];
-  }
-
-  const contributes = (contract as { contributes?: { capabilities?: { components?: Array<{ id: string; version: string }> } } })
-    .contributes;
-  return contributes?.capabilities?.components ?? [];
-}
-
-function readCapabilityServices(contract: PluginContract | null): Array<{ id: string; version: string }> {
-  if (!contract || !("contributes" in contract)) {
-    return [];
-  }
-
-  const contributes = (contract as { contributes?: { capabilities?: { services?: Array<{ id: string; version: string }> } } })
-    .contributes;
-  return contributes?.capabilities?.services ?? [];
-}
-
-function pushDiagnostic(
-  diagnostics: PluginRegistryDiagnostic[],
-  diagnostic: PluginRegistryDiagnostic,
-): void {
-  diagnostics.unshift(diagnostic);
-  if (diagnostics.length > MAX_DIAGNOSTICS) {
-    diagnostics.length = MAX_DIAGNOSTICS;
-  }
+function resetRuntimeState(state: PluginRuntimeState): void {
+  state.contract = null;
+  state.componentsModule = null;
+  state.servicesModule = null;
+  state.failure = null;
+  state.activationPromise = null;
 }
