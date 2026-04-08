@@ -69,6 +69,49 @@ export function registerDockTreeStateSpecs(harness: SpecHarness): void {
     }
   });
 
+  test("dock-tree active-tab self-target drop splits non-center zones in single stack", () => {
+    const zones: Array<{
+      zone: "left" | "right" | "top" | "bottom";
+      orientation: "horizontal" | "vertical";
+      movedBranch: "first" | "second";
+    }> = [
+      { zone: "left", orientation: "horizontal", movedBranch: "first" },
+      { zone: "right", orientation: "horizontal", movedBranch: "second" },
+      { zone: "top", orientation: "vertical", movedBranch: "first" },
+      { zone: "bottom", orientation: "vertical", movedBranch: "second" },
+    ];
+
+    for (const entry of zones) {
+      let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+      state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+      state = moveTabInDockTree(state, {
+        tabId: "tab-a",
+        targetTabId: "tab-a",
+        zone: entry.zone,
+      });
+
+      const root = state.dockTree.root;
+      assertTruthy(root?.kind === "split", `${entry.zone} self-drop should create split root`);
+      if (!root || root.kind !== "split") {
+        continue;
+      }
+
+      assertEqual(root.orientation, entry.orientation, `${entry.zone} self-drop should map to expected orientation`);
+      const movedBranch = entry.movedBranch === "first" ? root.first : root.second;
+      assertTruthy(movedBranch.kind === "stack", `${entry.zone} self-drop should place moved stack in ${entry.movedBranch} branch`);
+      if (movedBranch.kind === "stack") {
+        assertEqual(movedBranch.tabIds.join(","), "tab-a", `${entry.zone} self-drop branch should contain tab`);
+        assertEqual(movedBranch.activeTabId, "tab-a", `${entry.zone} self-drop branch should activate tab`);
+      }
+      const siblingBranch = entry.movedBranch === "first" ? root.second : root.first;
+      assertTruthy(siblingBranch.kind === "stack", `${entry.zone} self-drop should keep sibling stack`);
+      if (siblingBranch.kind === "stack") {
+        assertEqual(siblingBranch.tabIds.join(","), "tab-b", `${entry.zone} self-drop should retain remaining tabs in sibling stack`);
+      }
+      assertEqual(state.activeTabId, "tab-a", `${entry.zone} self-drop should keep tab active`);
+    }
+  });
+
   test("dock-tree bottom drop creates top/bottom split under target and moved tab becomes active", () => {
     let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
     state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });

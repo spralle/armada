@@ -25,9 +25,11 @@ export function applyDockTabDrop(tree: DockTreeState, input: DockTabDropInput): 
     return tree;
   }
 
+  const sourceTarget = locateStackByTabId(tree.root, input.targetTabId);
   const removed = removeTabFromDockTree(tree, input.tabId);
   const withoutMovedRoot = cloneDockNode(removed.root);
-  const target = locateStackByTabId(withoutMovedRoot, input.targetTabId);
+  const target = locateStackByTabId(withoutMovedRoot, input.targetTabId)
+    ?? resolveSelfDropTarget(withoutMovedRoot, sourceTarget, input);
   if (!target) {
     return ensureTabRegisteredInDockTree(removed, input.tabId);
   }
@@ -108,6 +110,43 @@ function locateStackByTabId(node: DockNode | null, targetTabId: string): DockLoc
     stack: inSecond.stack,
     path: ["second", ...inSecond.path],
   };
+}
+
+function resolveSelfDropTarget(
+  root: DockNode | null,
+  sourceTarget: DockLocateResult | null,
+  input: DockTabDropInput,
+): DockLocateResult | null {
+  if (input.zone === "center" || input.tabId !== input.targetTabId || !sourceTarget) {
+    return null;
+  }
+
+  const stackAtOriginalPath = locateStackAtPath(root, sourceTarget.path);
+  if (!stackAtOriginalPath) {
+    return null;
+  }
+
+  return {
+    stack: stackAtOriginalPath,
+    path: sourceTarget.path,
+  };
+}
+
+function locateStackAtPath(node: DockNode | null, path: DockPathSegment[]): DockStackNode | null {
+  if (!node) {
+    return null;
+  }
+
+  if (path.length === 0) {
+    return node.kind === "stack" ? node : null;
+  }
+
+  if (node.kind === "stack") {
+    return null;
+  }
+
+  const [segment, ...rest] = path;
+  return locateStackAtPath(segment === "first" ? node.first : node.second, rest);
 }
 
 function insertTabInStack(

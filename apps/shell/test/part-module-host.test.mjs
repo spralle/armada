@@ -65,6 +65,19 @@ function createRuntimeStub(pluginId) {
   };
 }
 
+function createRuntimeWithMutablePlugin(pluginSnapshot) {
+  return {
+    windowId: "window-test",
+    registry: {
+      getSnapshot() {
+        return {
+          plugins: [pluginSnapshot],
+        };
+      },
+    },
+  };
+}
+
 test("part module host mounts and unmounts plugin part lifecycle", async () => {
   const pluginId = "com.armada.test.plugin";
   const part = {
@@ -283,4 +296,100 @@ test("part module host preserves backward compatibility for legacy part shape", 
       partId: "part.legacy",
     },
   ]);
+});
+
+test("part module host remounts after plugin lifecycle transition and clears stale fallback", async () => {
+  const pluginId = "com.armada.test.plugin";
+  const part = {
+    id: "part.one",
+    instanceId: "instance.part.one",
+    definitionId: "part.one",
+    title: "Part One",
+    slot: "main",
+    pluginId,
+    args: {},
+  };
+  const root = createRoot([part.instanceId]);
+  const mounts = [];
+  let lastTransitionAt = "2026-04-08T00:00:00.000Z";
+  let lifecycleState = "registered";
+  let hasContract = false;
+
+  const runtime = createRuntimeWithMutablePlugin({
+    id: pluginId,
+    enabled: true,
+    descriptor: {
+      id: pluginId,
+      entry: "https://plugins.example/mf-manifest.json",
+    },
+    contract: null,
+    failure: null,
+    lifecycle: {
+      state: "registered",
+      lastTransitionAt,
+      lastTrigger: null,
+    },
+  });
+
+  const host = createPartModuleHostRuntime(runtime, {
+    federationRuntime: {
+      registerRemote() {},
+      async loadRemoteModule() {
+        return {
+          parts: {
+            [part.id]: {
+              mount(_target, context) {
+                mounts.push(context.instanceId);
+                return {
+                  unmount() {},
+                };
+              },
+            },
+          },
+        };
+      },
+      async loadPluginContract() {
+        return {};
+      },
+    },
+  });
+
+  await host.syncRenderedParts(root, [part]);
+  assert.equal(root.fallback[0].hidden, true);
+  assert.deepEqual(mounts, [part.instanceId]);
+
+  root.fallback[0].hidden = false;
+  await host.syncRenderedParts(root, [part]);
+  assert.equal(root.fallback[0].hidden, true);
+  assert.deepEqual(mounts, [part.instanceId]);
+
+  lifecycleState = "active";
+  hasContract = true;
+  lastTransitionAt = "2026-04-08T00:00:01.000Z";
+  runtime.registry.getSnapshot = () => ({
+    plugins: [
+      {
+        id: pluginId,
+        enabled: true,
+        descriptor: {
+          id: pluginId,
+          entry: "https://plugins.example/mf-manifest.json",
+        },
+        contract: hasContract ? {} : null,
+        failure: null,
+        lifecycle: {
+          state: lifecycleState,
+          lastTransitionAt,
+          lastTrigger: {
+            type: "view",
+            id: "shell.render",
+          },
+        },
+      },
+    ],
+  });
+
+  await host.syncRenderedParts(root, [part]);
+  assert.deepEqual(mounts, [part.instanceId, part.instanceId]);
+  assert.equal(root.fallback[0].hidden, true);
 });

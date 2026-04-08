@@ -48,6 +48,8 @@ class TestBridge implements WindowBridge {
     this.recoverCalls += 1;
   }
 
+  dispose(): void {}
+
   emit(event: WindowBridgeEvent): void {
     for (const listener of this.listeners) {
       listener(event);
@@ -87,6 +89,13 @@ function createRuntime(bridge: TestBridge): ShellRuntime {
     bridge,
     dragSessionBroker: {
       available: true,
+      create() {
+        return { id: "unused" };
+      },
+      consume() {
+        return null;
+      },
+      dispose() {},
     },
     syncDegraded: false,
     syncDegradedReason: null,

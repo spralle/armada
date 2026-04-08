@@ -206,15 +206,6 @@ export function renderTabStrip(
     return `<div class="part-tab-item" data-tab-item="${part.instanceId}" data-tab-can-close="${closeability.canClose ? "true" : "false"}" data-part-id="${part.instanceId}">
         <button
           type="button"
-          class="part-tab-handle"
-          data-action="drag-tab-handle"
-          data-tab-id="${part.id}"
-          draggable="true"
-          aria-label="Drag ${escapeHtml(part.title)} tab"
-          title="Drag tab"
-        >⋮⋮</button>
-        <button
-          type="button"
           role="tab"
           class="part-tab${isActive ? " is-active" : ""}"
           id="tab-${part.instanceId}"

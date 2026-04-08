@@ -48,6 +48,7 @@ import {
   bindKeyboardShortcuts as bindKeyboardHandlers,
   dismissIntentChooser as dismissIntentChooserState,
 } from "./shell-runtime/keyboard-handlers.js";
+import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 
 export type {
   ShellCoreApi,
@@ -56,8 +57,17 @@ export type {
   ShellRendererAdapter,
 } from "./app/contracts.js";
 
+interface ShellMountState {
+  windowId: string;
+  dispose: () => void;
+}
+
 export function startShell(root: HTMLElement): ShellRuntime {
+  const hmrRegistry = getShellHmrRegistry();
+  hmrRegistry.byRoot.get(root)?.dispose();
+
   const shellRuntime = createShellRuntime();
+  let disposed = false;
   const flags = readShellMigrationFlags();
   const composition = createShellBootstrapComposition(root, shellRuntime, flags, {
     activatePluginForBoundary: (options) => activatePluginForBoundary(root, shellRuntime, options),
@@ -73,21 +83,46 @@ export function startShell(root: HTMLElement): ShellRuntime {
     summarizeSelectionPriorities: () => summarizeSelectionPriorities(shellRuntime),
   });
   registerShellBootstrapComposition(shellRuntime, composition);
-  mountShell(root, shellRuntime, composition);
+  const disposeMount = mountShell(root, shellRuntime, composition);
   composition.initialize(root, shellRuntime);
 
+  hmrRegistry.windowIds.add(shellRuntime.windowId);
+
+  const mountState: ShellMountState = {
+    windowId: shellRuntime.windowId,
+    dispose: () => {
+      if (disposed) {
+        return;
+      }
+
+      disposed = true;
+      disposeMount();
+      shellRuntime.dragSessionBroker.dispose();
+      shellRuntime.bridge.dispose();
+      hmrRegistry.windowIds.delete(shellRuntime.windowId);
+      if (hmrRegistry.byRoot.get(root)?.windowId === shellRuntime.windowId) {
+        hmrRegistry.byRoot.delete(root);
+      }
+      console.info("[shell] window unregistered", shellRuntime.windowId, "count", hmrRegistry.windowIds.size);
+    },
+  };
+
+  hmrRegistry.byRoot.set(root, mountState);
+
   if (!shellRuntime.isPopout) {
-    void hydratePluginRegistry(root, shellRuntime);
+    void hydratePluginRegistry(root, shellRuntime, () => !disposed);
   }
 
-  console.log("[shell] POC shell stub ready", shellBootstrapState.mode);
+  console.log("[shell] POC shell stub ready", shellBootstrapState.mode, "windowCount", hmrRegistry.windowIds.size);
 
   return shellRuntime;
 }
 
-function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: ReturnType<typeof getShellBootstrapComposition>): void {
+function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: ReturnType<typeof getShellBootstrapComposition>): () => void {
+  const disposers: Array<() => void> = [];
+
   if (runtime.isPopout) {
-    composition.mountPopout(root, runtime, {
+    disposers.push(composition.mountPopout(root, runtime, {
       renderParts: () => renderParts(root, runtime),
       updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
       setupResize: () => setupResize(root, runtime),
@@ -100,33 +135,42 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: Retur
           sourceWindowId: runtime.windowId,
         }, createBridgeBindings(root, runtime));
       },
-    });
+    }));
   } else {
-    composition.mountMainWindow(root, {
+    disposers.push(composition.mountMainWindow(root, {
       renderParts: () => renderParts(root, runtime),
       updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
       setupResize: () => setupResize(root, runtime),
       publishRestoreRequestOnUnload: () => {},
-    });
+    }));
     applyLayout(root, runtime.layout);
-    startPopoutWatchdog(root, runtime, {
+    disposers.push(startPopoutWatchdog(root, runtime, {
       renderParts: () => renderParts(root, runtime),
       renderSyncStatus: () => renderSyncStatus(root, runtime),
-    });
+    }));
   }
 
-  bindBridgeSync(root, runtime, {
+  disposers.push(bindBridgeSync(root, runtime, {
     applyContext: composition.applyContext,
     applySelection: composition.applySelection,
-  });
-  bindKeyboardShortcuts(root, runtime);
+  }));
+  disposers.push(bindKeyboardShortcuts(root, runtime));
+
+  return () => {
+    for (const dispose of disposers) {
+      dispose();
+    }
+  };
 }
 
-async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
+async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, isActive: () => boolean): Promise<void> {
   try {
     const state = await bootstrapShellWithTenantManifest({
       tenantId: "demo",
     });
+    if (!isActive()) {
+      return;
+    }
     runtime.registry = state.registry;
     refreshCommandContributions(runtime);
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);
@@ -156,17 +200,17 @@ function bindBridgeSync(
   root: HTMLElement,
   runtime: ShellRuntime,
   core: Pick<ReturnType<typeof createRuntimeEventHandlers>, "applyContext" | "applySelection">,
-): void {
-  bindBridgeSyncHandlers(root, runtime, {
+): () => void {
+  return bindBridgeSyncHandlers(root, runtime, {
     ...createBridgeBindings(root, runtime),
     applyContext: core.applyContext,
     applySelection: core.applySelection,
   });
 }
 
-function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): void {
+function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): () => void {
   const handlers = createRuntimeEventHandlers(root, runtime, createRuntimeEventHandlerBindings(root, runtime));
-  bindKeyboardHandlers(root, runtime, {
+  return bindKeyboardHandlers(root, runtime, {
     activatePluginForBoundary: (options) => activatePluginForBoundary(root, runtime, options),
     applySelection: handlers.applySelection,
     announce: (message) => announce(root, runtime, message),

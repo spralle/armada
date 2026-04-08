@@ -3,11 +3,11 @@ import type { ShellRuntime } from "../app/types.js";
 type MountDeps = {
   renderParts: () => void;
   updateWindowReadOnlyState: () => void;
-  setupResize: () => void;
+  setupResize: () => () => void;
   publishRestoreRequestOnUnload: () => void;
 };
 
-export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
+export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void {
   root.innerHTML = `
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
@@ -28,8 +28,8 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .dock-stack-panels { min-height: 0; overflow: hidden; padding: 0; position: relative; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"] { min-height: 0; height: 100%; flex: 1 1 auto; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"][hidden] { display: none; }
-    .dock-tabpanel { min-width: 0; min-height: 0; overflow: auto; flex: 1 1 auto; display: flex; }
-    .dock-tabpanel-content { min-width: 0; min-height: 100%; height: auto; flex: 1 1 auto; padding: 6px; box-sizing: border-box; display: flex; flex-direction: column; }
+    .dock-tabpanel { min-width: 0; min-height: 0; overflow: hidden; flex: 1 1 auto; display: flex; }
+    .dock-tabpanel-content { min-width: 0; min-height: 0; height: 100%; overflow: auto; flex: 1 1 auto; padding: 6px; box-sizing: border-box; display: flex; flex-direction: column; }
     .dock-node-split { --dock-splitter-size: 12px; display: grid; gap: 0; min-width: 0; min-height: 0; }
     .dock-node-split-horizontal { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .dock-node-split-vertical { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
@@ -46,12 +46,9 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .is-dock-splitter-dragging .dock-splitter-vertical { cursor: row-resize; }
     .part-tab-strip { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: thin; padding: 2px; }
     .part-tab-item { display: inline-flex; align-items: center; gap: 2px; position: relative; }
-    .part-tab-handle { appearance: none; border: 1px solid transparent; background: transparent; color: #93a4c2; border-radius: 4px; padding: 2px 4px; cursor: grab; }
-    .part-tab-handle:hover { border-color: #334564; color: #d8e2f5; }
-    .part-tab-handle:active { cursor: grabbing; }
-    .part-tab-handle:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
-    .part-tab { appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none; color: #c6d0e0; padding: 5px 7px; border-radius: 4px 4px 0 0; cursor: pointer; white-space: nowrap; }
+    .part-tab { appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none; color: #c6d0e0; padding: 5px 7px; border-radius: 4px 4px 0 0; cursor: grab; white-space: nowrap; }
     .part-tab:hover { background: #1a2230; color: #e9edf3; }
+    .part-tab:active { cursor: grabbing; }
     .part-tab:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
     .part-tab.is-active { background: #1d2635; border-color: #334564; color: #f4f8ff; }
     .part-tab-close { appearance: none; background: transparent; border: 1px solid transparent; color: #aebbd0; border-radius: 3px; cursor: pointer; width: 18px; height: 18px; line-height: 1; padding: 0; }
@@ -120,10 +117,14 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
 
   deps.renderParts();
   deps.updateWindowReadOnlyState();
-  deps.setupResize();
+  const disposeResize = deps.setupResize();
+
+  return () => {
+    disposeResize();
+  };
 }
 
-export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: MountDeps): void {
+export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: MountDeps): () => void {
   root.innerHTML = `
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
@@ -170,11 +171,19 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
 
   deps.renderParts();
   deps.updateWindowReadOnlyState();
+  const disposeResize = deps.setupResize();
 
-  window.addEventListener("beforeunload", () => {
+  const onBeforeUnload = () => {
     if (!runtime.popoutTabId || !runtime.hostWindowId) {
       return;
     }
     deps.publishRestoreRequestOnUnload();
-  });
+  };
+
+  window.addEventListener("beforeunload", onBeforeUnload);
+
+  return () => {
+    disposeResize();
+    window.removeEventListener("beforeunload", onBeforeUnload);
+  };
 }

@@ -8,8 +8,14 @@ type DockSplitterDeps = {
 
 const DRAGGING_CLASS = "is-dock-splitter-dragging";
 const DRAG_ACTIVE_ATTR = "data-dock-splitter-drag-active";
+const splitterBindingsByRoot = new WeakMap<HTMLElement, AbortController>();
 
 export function wireDockSplitterDrag(root: HTMLElement, runtime: ShellRuntime, deps: DockSplitterDeps): void {
+  splitterBindingsByRoot.get(root)?.abort();
+  const bindings = new AbortController();
+  splitterBindingsByRoot.set(root, bindings);
+  const listenerOptions = { signal: bindings.signal };
+
   for (const splitter of root.querySelectorAll<HTMLElement>("[data-dock-splitter='true'][data-dock-split-id][data-dock-orientation]")) {
     splitter.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) {
@@ -32,6 +38,7 @@ export function wireDockSplitterDrag(root: HTMLElement, runtime: ShellRuntime, d
       if (!(containerSize > 0)) {
         return;
       }
+      const containerStart = orientation === "horizontal" ? rect.left : rect.top;
 
       const eventWindow = root.ownerDocument?.defaultView;
       if (!eventWindow) {
@@ -45,16 +52,18 @@ export function wireDockSplitterDrag(root: HTMLElement, runtime: ShellRuntime, d
 
       const startAxis = axisValue(event, orientation);
       const startRatio = readSplitRatioById(runtime.contextState.dockTree.root, splitId);
+      const startOffset = (startRatio * containerSize);
+      const pointerAnchorOffset = startAxis - containerStart - startOffset;
       const onMove = (moveEvent: PointerEvent) => {
         if (moveEvent.pointerId !== event.pointerId) {
           return;
         }
 
-        const delta = axisValue(moveEvent, orientation) - startAxis;
-        const ratioDelta = delta / containerSize;
+        const pointerOffset = axisValue(moveEvent, orientation) - containerStart - pointerAnchorOffset;
+        const nextRatio = pointerOffset / containerSize;
         const nextState = setDockSplitRatio(runtime.contextState, {
           splitId,
-          ratio: startRatio + ratioDelta,
+          ratio: nextRatio,
         });
 
         if (nextState !== runtime.contextState) {
@@ -86,7 +95,7 @@ export function wireDockSplitterDrag(root: HTMLElement, runtime: ShellRuntime, d
       eventWindow.addEventListener("pointercancel", cleanup);
       eventWindow.addEventListener("blur", cleanup);
       splitter.addEventListener("lostpointercapture", cleanup);
-    });
+    }, listenerOptions);
   }
 }
 

@@ -45,6 +45,8 @@ class FakeTabButton {
 class FakeRoot {
   constructor(private readonly tabButtons: FakeTabButton[]) {}
 
+  addEventListener(_type: string, _listener: EventListenerOrEventListenerObject): void {}
+
   querySelectorAll<T>(_selector: string): T[] {
     return this.tabButtons as unknown as T[];
   }
@@ -88,6 +90,7 @@ function createRuntime(): ShellRuntime {
       available: false,
       create: () => ({ id: "unused" }),
       consume: () => null,
+      dispose: () => {},
     },
     contextPersistence: {
       save() {

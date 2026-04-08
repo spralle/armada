@@ -53,7 +53,14 @@ class FakeDockSplitter {
       dockOrientation: orientation,
     };
     this.parentElement = {
-      getBoundingClientRect: () => ({ width: size.width, height: size.height } as DOMRect),
+      getBoundingClientRect: () => ({
+        left: 0,
+        top: 0,
+        right: size.width,
+        bottom: size.height,
+        width: size.width,
+        height: size.height,
+      } as DOMRect),
     };
   }
 

@@ -39,8 +39,8 @@ export function bindKeyboardShortcuts(
   root: HTMLElement,
   runtime: ShellRuntime,
   bindings: KeyboardBindings,
-): void {
-  root.addEventListener("keydown", async (event) => {
+): () => void {
+  const onKeyDown = async (event: KeyboardEvent) => {
     if (handleChooserKeyboardEvent(runtime, event, bindings)) {
       return;
     }
@@ -131,7 +131,13 @@ export function bindKeyboardShortcuts(
       apply?.click();
       event.preventDefault();
     }
-  });
+  };
+
+  root.addEventListener("keydown", onKeyDown);
+
+  return () => {
+    root.removeEventListener("keydown", onKeyDown);
+  };
 }
 
 function handleTabLifecycleShortcut(
@@ -230,7 +236,6 @@ function handleChooserKeyboardEvent(
 
 const TAB_SCOPE_NAVIGATION_ACTIONS = new Set([
   "activate-tab",
-  "drag-tab-handle",
   "close-tab",
   "reopen-closed-tab",
 ]);

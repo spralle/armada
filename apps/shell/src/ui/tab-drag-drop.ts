@@ -21,6 +21,7 @@ interface DockDragPayload {
 }
 
 const pendingDragCleanupByRoot = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+const tabDragBindingsByRoot = new WeakMap<HTMLElement, AbortController>();
 const SPLITTER_DRAG_ACTIVE_ATTR = "data-dock-splitter-drag-active";
 
 export function wireTabStripDragDrop(
@@ -28,6 +29,19 @@ export function wireTabStripDragDrop(
   runtime: ShellRuntime,
   onTabMoved: (tabId: string) => void,
 ): void {
+  tabDragBindingsByRoot.get(root)?.abort();
+  const bindings = new AbortController();
+  tabDragBindingsByRoot.set(root, bindings);
+  const listenerOptions = { signal: bindings.signal };
+
+  root.addEventListener("dragend", () => {
+    scheduleDragCleanup(root);
+  }, listenerOptions);
+
+  root.addEventListener("drop", () => {
+    scheduleDragCleanup(root);
+  }, listenerOptions);
+
   const tabItems = getTabDragItems(root);
 
   for (const tabItem of tabItems) {
@@ -39,7 +53,7 @@ export function wireTabStripDragDrop(
 
     tabButton.draggable = true;
 
-    tabItem.addEventListener("dragstart", (event) => {
+    tabButton.addEventListener("dragstart", (event) => {
       cancelPendingDragCleanup(root);
 
       if (isSplitterDragActive(root)) {
@@ -91,23 +105,23 @@ export function wireTabStripDragDrop(
         types: Array.from(dataTransfer.types ?? []),
         stack: new Error().stack,
       });
-    });
+    }, listenerOptions);
 
-    tabItem.addEventListener("drag", () => {
+    tabButton.addEventListener("drag", () => {
       const activePayload = readActiveDockDragPayload(root);
       if (activePayload?.tabId !== tabId) {
         return;
       }
       addRootClass(root, "is-dock-dragging");
-    });
+    }, listenerOptions);
 
-    tabItem.addEventListener("dragend", () => {
+    tabButton.addEventListener("dragend", () => {
       scheduleDragCleanup(root);
       console.log("[shell:dnd:tab] dragend", {
         tabId,
         stack: new Error().stack,
       });
-    });
+    }, listenerOptions);
 
     tabItem.addEventListener("dragover", (event) => {
       if (!event.dataTransfer || runtime.syncDegraded) {
@@ -116,7 +130,7 @@ export function wireTabStripDragDrop(
 
       event.preventDefault();
       event.dataTransfer.dropEffect = "move";
-    });
+    }, listenerOptions);
 
     tabItem.addEventListener("drop", (event) => {
       event.preventDefault();
@@ -161,7 +175,7 @@ export function wireTabStripDragDrop(
         targetTabId,
         stack: new Error().stack,
       });
-    });
+    }, listenerOptions);
   }
 }
 

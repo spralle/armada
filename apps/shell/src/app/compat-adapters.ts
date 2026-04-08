@@ -90,10 +90,10 @@ export function createShellRuntimeCompatibilityAdapters(
       });
     },
     mountMainWindow: (viewRoot, deps) => {
-      mountMainWindow(viewRoot, deps);
+      return mountMainWindow(viewRoot, deps);
     },
     mountPopout: (viewRoot, viewRuntime, deps) => {
-      mountPopout(viewRoot, viewRuntime, deps);
+      return mountPopout(viewRoot, viewRuntime, deps);
     },
     renderPanels: (viewRoot, viewRuntime) => {
       renderPanelsView(viewRoot, viewRuntime);

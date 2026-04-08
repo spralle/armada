@@ -6,12 +6,13 @@ export function applyLayout(root: HTMLElement, layout: ShellLayoutState): void {
   root.style.setProperty("--secondary-size", `${Math.round(layout.secondarySize * 100)}vh`);
 }
 
-export function setupResize(root: HTMLElement, runtime: ShellRuntime): void {
+export function setupResize(root: HTMLElement, runtime: ShellRuntime): () => void {
   const sideSplitter = root.querySelector<HTMLElement>("#splitter-side");
   const secondarySplitter = root.querySelector<HTMLElement>("#splitter-secondary");
+  const disposers: Array<() => void> = [];
 
   if (sideSplitter) {
-    registerDrag(sideSplitter, (delta) => {
+    disposers.push(registerDrag(sideSplitter, (delta) => {
       runtime.layout = applyPaneResize(runtime.layout, {
         pane: "side",
         deltaPx: delta,
@@ -19,11 +20,11 @@ export function setupResize(root: HTMLElement, runtime: ShellRuntime): void {
       });
       applyLayout(root, runtime.layout);
       runtime.persistence.save(runtime.layout);
-    });
+    }));
   }
 
   if (secondarySplitter) {
-    registerDrag(secondarySplitter, (delta) => {
+    disposers.push(registerDrag(secondarySplitter, (delta) => {
       runtime.layout = applyPaneResize(runtime.layout, {
         pane: "secondary",
         deltaPx: -delta,
@@ -31,12 +32,20 @@ export function setupResize(root: HTMLElement, runtime: ShellRuntime): void {
       });
       applyLayout(root, runtime.layout);
       runtime.persistence.save(runtime.layout);
-    });
+    }));
   }
+
+  return () => {
+    for (const dispose of disposers) {
+      dispose();
+    }
+  };
 }
 
-function registerDrag(splitter: HTMLElement, onDelta: (delta: number) => void): void {
-  splitter.addEventListener("pointerdown", (event) => {
+function registerDrag(splitter: HTMLElement, onDelta: (delta: number) => void): () => void {
+  let detachActive: (() => void) | null = null;
+
+  const onPointerDown = (event: PointerEvent) => {
     splitter.setPointerCapture(event.pointerId);
     let previous = axisValue(event, splitter.dataset.pane);
 
@@ -50,12 +59,23 @@ function registerDrag(splitter: HTMLElement, onDelta: (delta: number) => void): 
       splitter.removeEventListener("pointermove", onMove);
       splitter.removeEventListener("pointerup", onUp);
       splitter.removeEventListener("pointercancel", onUp);
+      detachActive = null;
     };
 
     splitter.addEventListener("pointermove", onMove);
     splitter.addEventListener("pointerup", onUp);
     splitter.addEventListener("pointercancel", onUp);
-  });
+    detachActive = onUp;
+  };
+
+  splitter.addEventListener("pointerdown", onPointerDown);
+
+  return () => {
+    splitter.removeEventListener("pointerdown", onPointerDown);
+    if (detachActive) {
+      detachActive();
+    }
+  };
 }
 
 function axisValue(event: PointerEvent, pane: string | undefined): number {

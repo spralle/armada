@@ -62,15 +62,15 @@ export interface ShellRendererAdapter {
   mountMainWindow(root: HTMLElement, deps: {
     renderParts: () => void;
     updateWindowReadOnlyState: () => void;
-    setupResize: () => void;
+    setupResize: () => () => void;
     publishRestoreRequestOnUnload: () => void;
-  }): void;
+  }): () => void;
   mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: {
     renderParts: () => void;
     updateWindowReadOnlyState: () => void;
-    setupResize: () => void;
+    setupResize: () => () => void;
     publishRestoreRequestOnUnload: () => void;
-  }): void;
+  }): () => void;
   renderPanels(root: HTMLElement, runtime: ShellRuntime): void;
   renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void;
   renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void;
