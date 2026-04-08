@@ -6,12 +6,12 @@ import type { ContextSyncEvent, SelectionSyncEvent, WindowBridgeEvent } from "./
 
 type TestCase = {
   name: string;
-  run: () => void;
+  run: () => void | Promise<void>;
 };
 
 const tests: TestCase[] = [];
 
-function test(name: string, run: () => void): void {
+function test(name: string, run: () => void | Promise<void>): void {
   tests.push({ name, run });
 }
 
@@ -499,7 +499,7 @@ test("async compatibility shim normalizes timeout and closed publish rejections"
 let passed = 0;
 for (const caseItem of tests) {
   try {
-    caseItem.run();
+    await caseItem.run();
     passed += 1;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

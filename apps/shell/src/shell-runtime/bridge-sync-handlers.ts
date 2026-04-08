@@ -41,7 +41,8 @@ export function bindBridgeSync(
   runtime: ShellRuntime,
   bindings: BridgeSyncBindings,
 ): () => void {
-  let lastHealthSequence = 0;
+  let lastProcessedHealthSequence = 0;
+  let fallbackHealthSequence = 0;
 
   const compatRuntime = runtime as ShellRuntime & {
     asyncBridge?: {
@@ -53,9 +54,9 @@ export function bindBridgeSync(
     ? (listener: (health: AsyncWindowBridgeHealth) => void) => compatRuntime.asyncBridge!.subscribeHealth(listener)
     : (listener: (health: AsyncWindowBridgeHealth) => void) =>
       runtime.bridge.subscribeHealth((health) => {
-        lastHealthSequence += 1;
+        fallbackHealthSequence += 1;
         listener({
-          sequence: lastHealthSequence,
+          sequence: fallbackHealthSequence,
           state: health.reason === "unavailable"
             ? "unavailable"
             : health.degraded
@@ -66,10 +67,10 @@ export function bindBridgeSync(
       });
 
   const unsubscribeHealth = subscribeHealth((health) => {
-    if (health.sequence <= lastHealthSequence) {
+    if (health.sequence <= lastProcessedHealthSequence) {
       return;
     }
-    lastHealthSequence = health.sequence;
+    lastProcessedHealthSequence = health.sequence;
 
     if (health.state === "unavailable") {
       runtime.syncDegraded = false;
