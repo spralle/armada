@@ -80,6 +80,7 @@ function createDragEvent(dataTransfer: DragDataTransfer): DragEvent {
   return {
     dataTransfer: dataTransfer as unknown as DataTransfer,
     preventDefault() {},
+    stopPropagation() {},
   } as DragEvent;
 }
 

@@ -34,6 +34,7 @@ export function wireTabStripDragDrop(
   for (const tabButton of root.querySelectorAll<HTMLButtonElement>("button[data-action='activate-tab']")) {
     tabButton.draggable = true;
     tabButton.addEventListener("dragstart", (event) => {
+      event.stopPropagation();
       const dataTransfer = event.dataTransfer;
       const tabId = tabButton.dataset.partId;
       if (!dataTransfer || !tabId || runtime.syncDegraded) {
@@ -60,12 +61,7 @@ export function wireTabStripDragDrop(
         sourceWindowId: runtime.windowId,
       });
 
-      if (runtime.dragSessionBroker.available) {
-        const ref = runtime.dragSessionBroker.create(payload);
-        dataTransfer.setData("text/plain", `${DRAG_REF_PREFIX}${ref.id}`);
-      } else {
-        dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
-      }
+      dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
 
       dataTransfer.effectAllowed = "move";
       logTabDnd("dragstart", {
