@@ -56,3 +56,27 @@ test("remote invalid contracts report INVALID_CONTRACT diagnostics", async () =>
   assert.equal(remoteDiagnostics[0]?.level, "warn");
   assert.match(remoteDiagnostics[0]?.message ?? "", /^Remote plugin '.+' returned invalid contract:/);
 });
+
+test("remote contracts wrapped as default export modules are unwrapped before validation", async () => {
+  const remoteLoader = createRuntimeFirstPluginLoader({
+    federationRuntime: {
+      registerRemote() {
+        // no-op in test
+      },
+      async loadPluginContract() {
+        return {
+          default: {
+            manifest: {
+              id: "com.armada.parity.wrapped-contract",
+              name: "Wrapped Contract",
+              version: "0.1.0",
+            },
+          },
+        };
+      },
+    },
+  });
+
+  const contract = await remoteLoader.loadPluginContract(createDescriptor("remote-manifest"));
+  assert.equal(contract.manifest.id, "com.armada.parity.wrapped-contract");
+});
