@@ -1,5 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
 import { isUtilityTabId } from "../utility-tabs.js";
+import { wireDockSplitterDrag } from "./dock-splitter-dnd.js";
 import { wireDockTabDragDrop } from "./dock-tab-dnd.js";
 import {
   createDragSessionPayload,
@@ -43,6 +44,9 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   }
 
   wirePartActions(root, runtime, deps);
+  wireDockSplitterDrag(root, runtime, {
+    renderParts: () => deps.renderParts(),
+  });
   wireDockTabDragDrop(root, runtime, deps);
   wireDragDrop(root, runtime);
   wireTabStripDragDrop(root, runtime, (tabId) => {

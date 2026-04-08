@@ -11,6 +11,8 @@ import { registerDragSessionSpecs } from "./context-state.spec-drag-session.js";
 import { registerActionContextSpecs } from "./context-state.spec-action-context.js";
 import { registerCompositionParitySpecs } from "./context-state.spec-composition-parity.js";
 import { registerBridgeUnavailableSpecs } from "./context-state.spec-bridge-unavailable.js";
+import { registerDockSplitRenderingSpecs } from "./context-state.spec-dock-split-rendering.js";
+import { registerDockSplitterDragSpecs } from "./context-state.spec-dock-splitter-drag.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -26,6 +28,8 @@ registerDragSessionSpecs(harness);
 registerActionContextSpecs(harness);
 registerCompositionParitySpecs(harness);
 registerBridgeUnavailableSpecs(harness);
+registerDockSplitRenderingSpecs(harness);
+registerDockSplitterDragSpecs(harness);
 
 const { passed, total } = runAll();
 

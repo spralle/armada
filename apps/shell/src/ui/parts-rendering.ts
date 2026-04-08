@@ -4,7 +4,9 @@ import { DEV_MODE } from "../app/constants.js";
 import { escapeHtml } from "../app/utils.js";
 import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
-import { listAvailableUtilityTabs, resolveUtilityTabById } from "../utility-tabs.js";
+import { listAvailableUtilityTabs } from "../utility-tabs.js";
+import { renderPartBody } from "./parts-rendering-body.js";
+import { renderDockSplitTrackStyle } from "./parts-rendering-dock-split-style.js";
 
 export interface ComposedShellPart {
   instanceId: string;
@@ -297,8 +299,17 @@ function renderDockNode(
       return first;
     }
 
-    return `<section class="dock-node dock-node-split dock-node-split-${node.orientation}" data-dock-node-id="${node.id}" data-dock-orientation="${node.orientation}">
+    return `<section class="dock-node dock-node-split dock-node-split-${node.orientation}"${renderDockSplitTrackStyle(node)} data-dock-node-id="${node.id}" data-dock-orientation="${node.orientation}">
       <section class="dock-split-branch" data-dock-branch="first">${first}</section>
+      <div
+        class="dock-splitter dock-splitter-${node.orientation}"
+        role="separator"
+        aria-orientation="${node.orientation === "horizontal" ? "vertical" : "horizontal"}"
+        aria-label="Resize split"
+        data-dock-splitter="true"
+        data-dock-split-id="${node.id}"
+        data-dock-orientation="${node.orientation}"
+      ></div>
       <section class="dock-split-branch" data-dock-branch="second">${second}</section>
     </section>`;
   }
@@ -345,24 +356,4 @@ function resolveStackActiveTabId(
   }
 
   return tabs[0]!.id;
-}
-
-function renderPartBody(part: ComposedShellPart): string {
-  const utilityTab = resolveUtilityTabById(part.id);
-  if (utilityTab) {
-    return `<section class="domain-panel" data-domain-panel="utility-host" data-part-panel-for="${part.id}">
-      <section class="domain-panel-host" id="${utilityTab.panelHostId}" data-part-content-for="${part.id}"></section>
-      <section class="domain-panel-fallback" data-part-fallback-for="${part.id}" hidden></section>
-    </section>`;
-  }
-
-  const componentLabel = part.component ?? part.definitionId ?? part.id;
-  return `<section class="domain-panel" data-domain-panel="runtime-host" data-part-panel-for="${part.instanceId}">
-      <section class="domain-panel-host" data-part-content-for="${part.instanceId}"></section>
-      <section class="domain-panel-fallback" data-part-fallback-for="${part.instanceId}">
-        <h3>${escapeHtml(part.title)}</h3>
-        <p class="domain-hint">Component '${escapeHtml(componentLabel)}' is unavailable in this shell runtime.</p>
-        <p class="domain-hint">Composition remains extension-driven; this host provides generic fallback rendering only.</p>
-      </section>
-    </section>`;
 }

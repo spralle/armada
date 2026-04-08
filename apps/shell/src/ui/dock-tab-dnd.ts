@@ -6,6 +6,8 @@ import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
 import { safeParse } from "../app/utils.js";
 
 const TAB_DRAG_MIME = "application/x-armada-tab-drag";
+const DOCK_DRAGGING_CLASS = "is-dock-dragging";
+const SPLITTER_DRAG_ACTIVE_ATTR = "data-dock-splitter-drag-active";
 
 type DragPayload = {
   tabId: string;
@@ -21,6 +23,12 @@ type DockDragDeps = {
 export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, deps: DockDragDeps): void {
   for (const handle of root.querySelectorAll<HTMLElement>("[data-action='drag-tab-handle']")) {
     handle.addEventListener("dragstart", (event) => {
+      if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
+        root.classList.remove(DOCK_DRAGGING_CLASS);
+        event.preventDefault();
+        return;
+      }
+
       const dataTransfer = event.dataTransfer;
       const tabId = handle.dataset.tabId;
       if (!dataTransfer || !tabId || !runtime.contextState.tabs[tabId]) {
@@ -36,11 +44,11 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
       dataTransfer.effectAllowed = "move";
       dataTransfer.setData(TAB_DRAG_MIME, JSON.stringify(payload));
       dataTransfer.setData("text/plain", tabId);
-      root.classList.add("is-dock-dragging");
+      root.classList.add(DOCK_DRAGGING_CLASS);
     });
 
     handle.addEventListener("dragend", () => {
-      root.classList.remove("is-dock-dragging");
+      root.classList.remove(DOCK_DRAGGING_CLASS);
     });
   }
 
@@ -48,6 +56,12 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
     zoneNode.addEventListener("dragover", (event) => {
       const dataTransfer = event.dataTransfer;
       if (!dataTransfer) {
+        return;
+      }
+
+      if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
+        root.classList.remove(DOCK_DRAGGING_CLASS);
+        dataTransfer.dropEffect = "none";
         return;
       }
 
@@ -59,22 +73,28 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
 
       event.preventDefault();
       dataTransfer.dropEffect = "move";
-      root.classList.add("is-dock-dragging");
+      root.classList.add(DOCK_DRAGGING_CLASS);
     });
 
     zoneNode.addEventListener("drop", (event) => {
+      if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
+        event.preventDefault();
+        root.classList.remove(DOCK_DRAGGING_CLASS);
+        return;
+      }
+
       event.preventDefault();
       const dataTransfer = event.dataTransfer;
       const targetTabId = zoneNode.dataset.targetTabId;
       const zone = zoneNode.dataset.dockDropZone;
       if (!dataTransfer || !targetTabId || !isDockDropZone(zone)) {
-        root.classList.remove("is-dock-dragging");
+        root.classList.remove(DOCK_DRAGGING_CLASS);
         return;
       }
 
       const payload = readTabDragPayload(dataTransfer, runtime.windowId);
       if (!payload) {
-        root.classList.remove("is-dock-dragging");
+        root.classList.remove(DOCK_DRAGGING_CLASS);
         return;
       }
 
@@ -84,7 +104,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         targetTabId,
         zone,
       });
-      root.classList.remove("is-dock-dragging");
+      root.classList.remove(DOCK_DRAGGING_CLASS);
     });
   }
 }

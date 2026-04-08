@@ -17,10 +17,17 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .dock-node { min-width: 0; min-height: 0; }
     .dock-node-stack { display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; border: 1px solid #2b3040; border-radius: 6px; background: #121922; overflow: hidden; }
     .dock-stack-panels { min-height: 0; overflow: auto; padding: 10px 12px; }
-    .dock-node-split { display: grid; gap: 8px; min-width: 0; min-height: 0; }
+    .dock-node-split { --dock-splitter-size: 8px; display: grid; gap: 0; min-width: 0; min-height: 0; }
     .dock-node-split-horizontal { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .dock-node-split-vertical { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
     .dock-split-branch { min-width: 0; min-height: 0; }
+    .dock-splitter { background: #2b3040; user-select: none; touch-action: none; position: relative; z-index: 2; }
+    .dock-splitter-horizontal { cursor: col-resize; }
+    .dock-splitter-vertical { cursor: row-resize; }
+    .dock-splitter:hover { background: #3a4661; }
+    .is-dock-splitter-dragging { cursor: grabbing; }
+    .is-dock-splitter-dragging .dock-splitter-horizontal { cursor: col-resize; }
+    .is-dock-splitter-dragging .dock-splitter-vertical { cursor: row-resize; }
     .part-tab-strip { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: thin; }
     .part-tab-item { display: inline-flex; align-items: center; gap: 2px; position: relative; }
     .part-tab-handle { appearance: none; border: 1px solid transparent; background: transparent; color: #93a4c2; border-radius: 4px; padding: 2px 4px; cursor: grab; }

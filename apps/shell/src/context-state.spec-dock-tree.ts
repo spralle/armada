@@ -1,7 +1,10 @@
 import {
   createInitialShellContextState,
   moveTabInDockTree,
+  readDockSplitRatio,
   registerTab,
+  setDockSplitRatio,
+  setDockSplitRatioById,
   setActiveTab,
   closeTab,
   type DockNode,
@@ -159,5 +162,58 @@ export function registerDockTreeStateSpecs(harness: SpecHarness): void {
 
     assertEqual(state.activeTabId, "tab-a", "closing active split branch should fallback deterministically to remaining tab");
     assertTruthy(state.dockTree.root?.kind === "stack", "single remaining tab should collapse to stack root");
+  });
+
+  test("dock-tree split ratio defaults and clamps deterministically", () => {
+    assertEqual(readDockSplitRatio({ ratio: undefined }), 0.5, "missing split ratio should default to 0.5");
+    assertEqual(readDockSplitRatio({ ratio: -1 }), 0.15, "split ratio should clamp to lower bound");
+    assertEqual(readDockSplitRatio({ ratio: 2 }), 0.85, "split ratio should clamp to upper bound");
+    assertEqual(readDockSplitRatio({ ratio: Number.NaN }), 0.5, "non-finite split ratio should default to 0.5");
+  });
+
+  test("dock-tree split ratio update is immutable and targeted by split id", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+    state = moveTabInDockTree(state, { tabId: "tab-b", targetTabId: "tab-a", zone: "right" });
+
+    const root = state.dockTree.root;
+    assertTruthy(root?.kind === "split", "right drop should create split root before ratio update");
+    if (!root || root.kind !== "split") {
+      return;
+    }
+
+    const unchanged = setDockSplitRatioById(state.dockTree, "missing-split", 0.7);
+    assertEqual(unchanged, state.dockTree, "missing split id should return original tree reference");
+
+    const updated = setDockSplitRatioById(state.dockTree, root.id, 0.91);
+    assertTruthy(updated !== state.dockTree, "updating existing split should return a new tree object");
+    assertTruthy(updated.root !== state.dockTree.root, "updating existing split should return a new root node");
+    if (updated.root?.kind === "split") {
+      assertEqual(updated.root.ratio, 0.85, "updated split ratio should clamp to upper bound");
+    }
+    assertEqual(readDockSplitRatio(root), 0.5, "original split node should remain unchanged after immutable update");
+  });
+
+  test("context-state split ratio updater mutates only dock tree immutably", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
+    state = moveTabInDockTree(state, { tabId: "tab-b", targetTabId: "tab-a", zone: "right" });
+
+    const root = state.dockTree.root;
+    assertTruthy(root?.kind === "split", "right drop should create split root before state ratio update");
+    if (!root || root.kind !== "split") {
+      return;
+    }
+
+    const unchanged = setDockSplitRatio(state, { splitId: "missing-split", ratio: 0.2 });
+    assertEqual(unchanged, state, "missing split id should keep state reference unchanged");
+
+    const updated = setDockSplitRatio(state, { splitId: root.id, ratio: 0.1 });
+    assertTruthy(updated !== state, "existing split id should return new state object");
+    assertTruthy(updated.dockTree !== state.dockTree, "existing split id should return new dock tree object");
+    if (updated.dockTree.root?.kind === "split") {
+      assertEqual(updated.dockTree.root.ratio, 0.15, "state split ratio update should clamp to lower bound");
+    }
+    assertEqual(updated.activeTabId, state.activeTabId, "state split ratio update should preserve active tab id");
   });
 }
