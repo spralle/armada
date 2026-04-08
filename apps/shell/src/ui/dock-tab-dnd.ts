@@ -3,11 +3,20 @@ import { updateContextState } from "../context/runtime-state.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { DockDropZone } from "../context-state.js";
 import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX } from "../app/constants.js";
+import { TAB_DOCK_DRAG_MIME } from "../app/constants.js";
 import { safeParse } from "../app/utils.js";
-
-const TAB_DRAG_MIME = "application/x-armada-tab-drag";
-const DOCK_DRAGGING_CLASS = "is-dock-dragging";
-const SPLITTER_DRAG_ACTIVE_ATTR = "data-dock-splitter-drag-active";
+import {
+  clearActiveDockDragPayload,
+  readActiveDockDragPayload,
+  setActiveDockDragPayload,
+} from "./dock-drag-session.js";
+import {
+  addRootClass,
+  clearDockDropPreview,
+  clearDockDropPreviews,
+  removeRootClass,
+  setDockDropPreview,
+} from "./dock-tab-dnd-ui.js";
 
 type DragPayload = {
   tabId: string;
@@ -20,36 +29,47 @@ type DockDragDeps = {
   renderSyncStatus: () => void;
 };
 
+type ActiveDockDropTarget = {
+  tabId: string;
+  targetTabId: string;
+  zone: DockDropZone;
+};
+
+const dockDragBindingsByRoot = new WeakMap<HTMLElement, AbortController>();
+const activeDockDropTargetByRoot = new WeakMap<HTMLElement, ActiveDockDropTarget>();
+const SPLITTER_DRAG_ACTIVE_ATTR = "data-dock-splitter-drag-active";
+
 export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, deps: DockDragDeps): void {
-  for (const handle of root.querySelectorAll<HTMLElement>("[data-action='drag-tab-handle']")) {
-    handle.addEventListener("dragstart", (event) => {
-      if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
-        root.classList.remove(DOCK_DRAGGING_CLASS);
-        event.preventDefault();
-        return;
+  dockDragBindingsByRoot.get(root)?.abort();
+  const bindings = new AbortController();
+  dockDragBindingsByRoot.set(root, bindings);
+  const listenerOptions = { signal: bindings.signal };
+
+  if (typeof root.addEventListener === "function") {
+    root.addEventListener("dragend", () => {
+      const payload = readActiveDockDragPayload(root);
+      const dropTarget = activeDockDropTargetByRoot.get(root);
+      if (payload && dropTarget && dropTarget.tabId === payload.tabId) {
+        const moved = moveDockTabThroughRuntime(runtime, deps, {
+          tabId: payload.tabId,
+          sourceWindowId: payload.sourceWindowId,
+          targetTabId: dropTarget.targetTabId,
+          zone: dropTarget.zone,
+        });
+        console.log("[shell:dnd:dock] dragend-fallback", {
+          targetTabId: dropTarget.targetTabId,
+          zone: dropTarget.zone,
+          payload,
+          moved,
+          stack: new Error().stack,
+        });
       }
 
-      const dataTransfer = event.dataTransfer;
-      const tabId = handle.dataset.tabId;
-      if (!dataTransfer || !tabId || !runtime.contextState.tabs[tabId]) {
-        event.preventDefault();
-        return;
-      }
-
-      const payload: DragPayload = {
-        tabId,
-        sourceWindowId: runtime.windowId,
-      };
-
-      dataTransfer.effectAllowed = "move";
-      dataTransfer.setData(TAB_DRAG_MIME, JSON.stringify(payload));
-      dataTransfer.setData("text/plain", tabId);
-      root.classList.add(DOCK_DRAGGING_CLASS);
-    });
-
-    handle.addEventListener("dragend", () => {
-      root.classList.remove(DOCK_DRAGGING_CLASS);
-    });
+      clearActiveDockDragPayload(root);
+      activeDockDropTargetByRoot.delete(root);
+      clearDockDropPreviews(root);
+      removeRootClass(root, "is-dock-dragging");
+    }, listenerOptions);
   }
 
   for (const zoneNode of root.querySelectorAll<HTMLElement>("[data-dock-drop-zone][data-target-tab-id]")) {
@@ -59,53 +79,154 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         return;
       }
 
+      const payload = readTabDragPayload(dataTransfer, runtime.windowId)
+        ?? readActiveDockDragPayload(root)
+        ?? null;
       if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
-        root.classList.remove(DOCK_DRAGGING_CLASS);
+        removeRootClass(root, "is-dock-dragging");
         dataTransfer.dropEffect = "none";
+        console.log("[shell:dnd:dock] dragover-ignored", {
+          targetTabId: zoneNode.dataset.targetTabId,
+          zone: zoneNode.dataset.dockDropZone,
+          payload,
+          windowId: runtime.windowId,
+          reason: "splitter-active",
+          stack: new Error().stack,
+        });
         return;
       }
 
-      const payload = readTabDragPayload(dataTransfer, runtime.windowId);
       if (!payload || payload.sourceWindowId !== runtime.windowId) {
         dataTransfer.dropEffect = "none";
+        console.log("[shell:dnd:dock] dragover-ignored", {
+          targetTabId: zoneNode.dataset.targetTabId,
+          zone: zoneNode.dataset.dockDropZone,
+          payload,
+          windowId: runtime.windowId,
+          stack: new Error().stack,
+        });
         return;
       }
 
       event.preventDefault();
+      if (typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
       dataTransfer.dropEffect = "move";
-      root.classList.add(DOCK_DRAGGING_CLASS);
-    });
+      addRootClass(root, "is-dock-dragging");
+      setActiveDockDragPayload(root, payload);
+      const targetTabId = zoneNode.dataset.targetTabId;
+      const zone = zoneNode.dataset.dockDropZone;
+      if (targetTabId && isDockDropZone(zone)) {
+        activeDockDropTargetByRoot.set(root, {
+          tabId: payload.tabId,
+          targetTabId,
+          zone,
+        });
+        setDockDropPreview(zoneNode, zone);
+      }
+      console.log("[shell:dnd:dock] dragover-armed", {
+        targetTabId: zoneNode.dataset.targetTabId,
+        zone: zoneNode.dataset.dockDropZone,
+        payload,
+        stack: new Error().stack,
+      });
+    }, listenerOptions);
+
+    zoneNode.addEventListener("dragleave", (event) => {
+      const targetTabId = zoneNode.dataset.targetTabId;
+      const zone = zoneNode.dataset.dockDropZone;
+      const active = activeDockDropTargetByRoot.get(root);
+      if (!active || !targetTabId || !isDockDropZone(zone)) {
+        return;
+      }
+
+      const overlay = typeof zoneNode.closest === "function"
+        ? zoneNode.closest<HTMLElement>(".dock-drop-overlay")
+        : null;
+      const relatedTarget = event.relatedTarget as Node | null;
+      if (overlay && relatedTarget && overlay.contains(relatedTarget)) {
+        return;
+      }
+
+      if (active.targetTabId === targetTabId && active.zone === zone) {
+        activeDockDropTargetByRoot.delete(root);
+        clearDockDropPreview(zoneNode);
+      }
+    }, listenerOptions);
 
     zoneNode.addEventListener("drop", (event) => {
+      event.preventDefault();
+      if (typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
       if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
-        event.preventDefault();
-        root.classList.remove(DOCK_DRAGGING_CLASS);
+        console.log("[shell:dnd:dock] drop-blocked", {
+          targetTabId: zoneNode.dataset.targetTabId,
+          zone: zoneNode.dataset.dockDropZone,
+          reason: "splitter-active",
+          stack: new Error().stack,
+        });
+        activeDockDropTargetByRoot.delete(root);
+        clearDockDropPreviews(root);
+        clearActiveDockDragPayload(root);
+        removeRootClass(root, "is-dock-dragging");
         return;
       }
 
-      event.preventDefault();
       const dataTransfer = event.dataTransfer;
       const targetTabId = zoneNode.dataset.targetTabId;
       const zone = zoneNode.dataset.dockDropZone;
-      if (!dataTransfer || !targetTabId || !isDockDropZone(zone)) {
-        root.classList.remove(DOCK_DRAGGING_CLASS);
+      if (!targetTabId || !isDockDropZone(zone)) {
+        console.log("[shell:dnd:dock] drop-blocked", {
+          targetTabId,
+          zone,
+          stack: new Error().stack,
+        });
+        activeDockDropTargetByRoot.delete(root);
+        clearDockDropPreviews(root);
+        removeRootClass(root, "is-dock-dragging");
         return;
       }
 
-      const payload = readTabDragPayload(dataTransfer, runtime.windowId);
+      const payload = (dataTransfer
+        ? readTabDragPayload(dataTransfer, runtime.windowId)
+        : null)
+        ?? readActiveDockDragPayload(root)
+        ?? null;
       if (!payload) {
-        root.classList.remove(DOCK_DRAGGING_CLASS);
+        console.log("[shell:dnd:dock] drop-no-payload", {
+          targetTabId,
+          zone,
+          hasDataTransfer: Boolean(dataTransfer),
+          types: dataTransfer ? Array.from(dataTransfer.types ?? []) : [],
+          stack: new Error().stack,
+        });
+        clearActiveDockDragPayload(root);
+        activeDockDropTargetByRoot.delete(root);
+        clearDockDropPreviews(root);
+        removeRootClass(root, "is-dock-dragging");
         return;
       }
 
-      moveDockTabThroughRuntime(runtime, deps, {
+      const moved = moveDockTabThroughRuntime(runtime, deps, {
         tabId: payload.tabId,
         sourceWindowId: payload.sourceWindowId,
         targetTabId,
         zone,
       });
-      root.classList.remove(DOCK_DRAGGING_CLASS);
-    });
+      console.log("[shell:dnd:dock] drop", {
+        targetTabId,
+        zone,
+        payload,
+        moved,
+        stack: new Error().stack,
+      });
+      clearActiveDockDragPayload(root);
+      activeDockDropTargetByRoot.delete(root);
+      clearDockDropPreviews(root);
+      removeRootClass(root, "is-dock-dragging");
+    }, listenerOptions);
   }
 }
 
@@ -119,13 +240,33 @@ export function moveDockTabThroughRuntime(
     zone: DockDropZone;
   },
 ): boolean {
+  console.log("[shell:dnd:dock] move-attempt", {
+    tabId: input.tabId,
+    sourceWindowId: input.sourceWindowId,
+    targetTabId: input.targetTabId,
+    zone: input.zone,
+    runtimeWindowId: runtime.windowId,
+    sourceTabExists: Boolean(runtime.contextState.tabs[input.tabId]),
+    targetTabExists: Boolean(runtime.contextState.tabs[input.targetTabId]),
+    stack: new Error().stack,
+  });
+
   if (input.sourceWindowId !== runtime.windowId) {
     runtime.notice = "Cross-window tab drag is out of scope in docking v1.";
     deps.renderSyncStatus();
+    console.log("[shell:dnd:dock] move-rejected-cross-window", {
+      input,
+      runtimeWindowId: runtime.windowId,
+      stack: new Error().stack,
+    });
     return false;
   }
 
   if (!runtime.contextState.tabs[input.tabId] || !runtime.contextState.tabs[input.targetTabId]) {
+    console.log("[shell:dnd:dock] move-rejected-missing-tab", {
+      input,
+      stack: new Error().stack,
+    });
     return false;
   }
 
@@ -142,11 +283,17 @@ export function moveDockTabThroughRuntime(
   deps.renderContextControls();
   deps.renderParts();
   deps.renderSyncStatus();
+  console.log("[shell:dnd:dock] move-applied", {
+    tabId: input.tabId,
+    targetTabId: input.targetTabId,
+    zone: input.zone,
+    stack: new Error().stack,
+  });
   return true;
 }
 
 function readTabDragPayload(dataTransfer: DataTransfer, windowId: string): DragPayload | null {
-  const raw = dataTransfer.getData(TAB_DRAG_MIME);
+  const raw = dataTransfer.getData(TAB_DOCK_DRAG_MIME);
   if (raw) {
     const parsed = parseDragPayloadRaw(raw);
     if (parsed) {
