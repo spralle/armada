@@ -38,7 +38,7 @@ export function publishWithDegrade(
     return false;
   }
 
-  const result = publishBridgeEvent(runtime, event, bindings);
+  const result = publishBridgeEvent(runtime, event);
   if (result.status === "rejected") {
     runtime.syncDegraded = true;
     runtime.syncDegradedReason = result.reason;
@@ -64,7 +64,7 @@ export function requestSyncProbe(runtime: ShellRuntime, bindings: BridgeRenderBi
     type: "sync-probe",
     probeId,
     sourceWindowId: runtime.windowId,
-  }, bindings);
+  });
 
   if (result.status === "rejected") {
     runtime.syncDegraded = true;
@@ -87,31 +87,15 @@ export function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent): v
     probeId: event.probeId,
     targetWindowId: event.sourceWindowId,
     sourceWindowId: runtime.windowId,
-  }, null);
+  });
 }
 
 function publishBridgeEvent(
   runtime: ShellRuntime,
   event: Parameters<WindowBridge["publish"]>[0],
-  bindings: BridgeRenderBindings | null,
 ): AsyncWindowBridgePublishResult {
   if (runtime.activeTransportPath === "async-scomp-adapter") {
-    void runtime.asyncBridge.publish(event).then((publishResult) => {
-      if (publishResult.status === "accepted") {
-        return;
-      }
-
-      runtime.syncDegraded = true;
-      runtime.syncDegradedReason = publishResult.reason;
-      runtime.pendingProbeId = null;
-
-      if (bindings) {
-        bindings.announce(formatDegradedModeAnnouncement(true, runtime.syncDegradedReason));
-        bindings.updateWindowReadOnlyState();
-        bindings.renderSyncStatus();
-        bindings.renderContextControls();
-      }
-    });
+    void runtime.asyncBridge.publish(event);
 
     return {
       status: "accepted",
