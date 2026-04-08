@@ -5,6 +5,7 @@ import { updateContextState } from "../context/runtime-state.js";
 import { safeParse } from "../app/utils.js";
 import {
   clearActiveDockDragPayload,
+  readActiveDockDragPayload,
   setActiveDockDragPayload,
 } from "./dock-drag-session.js";
 
@@ -12,6 +13,11 @@ const TAB_DOCK_DRAG_MIME = "application/x-armada-tab-drag";
 
 interface TabDragPayload {
   kind: "shell-tab-dnd";
+  tabId: string;
+  sourceWindowId: string;
+}
+
+interface DockDragPayload {
   tabId: string;
   sourceWindowId: string;
 }
@@ -62,7 +68,6 @@ export function wireTabStripDragDrop(
       }
 
       dataTransfer.effectAllowed = "move";
-      root.classList.add("is-dock-dragging");
       logTabDnd("dragstart", {
         tabId,
         sourceWindowId: runtime.windowId,
@@ -73,7 +78,6 @@ export function wireTabStripDragDrop(
 
     tabButton.addEventListener("dragend", () => {
       clearActiveDockDragPayload(root);
-      root.classList.remove("is-dock-dragging");
       logTabDnd("dragend", {
         tabId: tabButton.dataset.partId,
       });
@@ -90,9 +94,8 @@ export function wireTabStripDragDrop(
 
     tabButton.addEventListener("drop", (event) => {
       event.preventDefault();
-      clearActiveDockDragPayload(root);
-      root.classList.remove("is-dock-dragging");
       if (runtime.syncDegraded || !event.dataTransfer) {
+        clearActiveDockDragPayload(root);
         logTabDnd("drop-blocked", {
           hasDataTransfer: Boolean(event.dataTransfer),
           syncDegraded: runtime.syncDegraded,
@@ -102,11 +105,10 @@ export function wireTabStripDragDrop(
       }
 
       const targetTabId = tabButton.dataset.partId;
-      const raw = event.dataTransfer.getData("text/plain");
-      const payload = parseTabDragPayload(runtime, raw);
+      const payload = readDraggedTabPayload(runtime, event.dataTransfer, root);
+      clearActiveDockDragPayload(root);
       logTabDnd("drop", {
         targetTabId,
-        raw,
         payload,
       });
       if (!targetTabId || !payload || payload.sourceWindowId !== runtime.windowId || payload.tabId === targetTabId) {
@@ -145,6 +147,52 @@ function parseTabDragPayload(runtime: ShellRuntime, raw: string): TabDragPayload
   return null;
 }
 
+function readDraggedTabPayload(
+  runtime: ShellRuntime,
+  dataTransfer: DataTransfer,
+  root: HTMLElement,
+): TabDragPayload | null {
+  const rawText = dataTransfer.getData("text/plain");
+  const rawDock = dataTransfer.getData(TAB_DOCK_DRAG_MIME);
+  logTabDnd("read-payload", {
+    rawText,
+    rawDock,
+    types: Array.from(dataTransfer.types ?? []),
+  });
+  const parsedTabDrag = parseTabDragPayload(runtime, rawText);
+  if (parsedTabDrag) {
+    return parsedTabDrag;
+  }
+
+  const dockPayload = asDockDragPayload(safeParse(dataTransfer.getData(TAB_DOCK_DRAG_MIME)));
+  if (dockPayload) {
+    return {
+      kind: "shell-tab-dnd",
+      tabId: dockPayload.tabId,
+      sourceWindowId: dockPayload.sourceWindowId,
+    };
+  }
+
+  const activeDockPayload = readActiveDockDragPayload(root);
+  if (activeDockPayload) {
+    return {
+      kind: "shell-tab-dnd",
+      tabId: activeDockPayload.tabId,
+      sourceWindowId: activeDockPayload.sourceWindowId,
+    };
+  }
+
+  if (runtime.contextState.tabs[rawText]) {
+    return {
+      kind: "shell-tab-dnd",
+      tabId: rawText,
+      sourceWindowId: runtime.windowId,
+    };
+  }
+
+  return null;
+}
+
 function asTabDragPayload(value: unknown): TabDragPayload | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -161,6 +209,22 @@ function asTabDragPayload(value: unknown): TabDragPayload | null {
 
   return {
     kind: payload.kind,
+    tabId: payload.tabId,
+    sourceWindowId: payload.sourceWindowId,
+  };
+}
+
+function asDockDragPayload(value: unknown): DockDragPayload | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const payload = value as Record<string, unknown>;
+  if (typeof payload.tabId !== "string" || typeof payload.sourceWindowId !== "string") {
+    return null;
+  }
+
+  return {
     tabId: payload.tabId,
     sourceWindowId: payload.sourceWindowId,
   };
