@@ -26,6 +26,10 @@ export function publishWithDegrade(
   event: Parameters<WindowBridge["publish"]>[0],
   bindings: BridgeRenderBindings,
 ): boolean {
+  if (!runtime.bridge.available) {
+    return false;
+  }
+
   if (runtime.syncDegraded) {
     return false;
   }

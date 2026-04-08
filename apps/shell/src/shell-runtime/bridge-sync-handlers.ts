@@ -41,6 +41,16 @@ export function bindBridgeSync(
   bindings: BridgeSyncBindings,
 ): void {
   runtime.bridge.subscribeHealth((health) => {
+    if (health.reason === "unavailable") {
+      runtime.syncDegraded = false;
+      runtime.syncDegradedReason = null;
+      runtime.pendingProbeId = null;
+      updateWindowReadOnlyState(root, runtime);
+      bindings.renderSyncStatus();
+      bindings.renderContextControlsPanel();
+      return;
+    }
+
     if (health.degraded) {
       runtime.syncDegraded = true;
       runtime.syncDegradedReason = health.reason;

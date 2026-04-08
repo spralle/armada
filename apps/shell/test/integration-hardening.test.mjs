@@ -510,7 +510,7 @@ test("dock move/split mutations apply in same-window mode and activate moved tab
   assert.equal(renders.sync, 1);
 });
 
-test("dock move/split mutations are blocked in degraded mode", () => {
+test("dock move/split mutations remain local in degraded mode", () => {
   const fixture = createDockMoveRuntimeFixture();
   const { runtime, deps, renders } = fixture;
   runtime.syncDegraded = true;
@@ -523,11 +523,11 @@ test("dock move/split mutations are blocked in degraded mode", () => {
     zone: "right",
   });
 
-  assert.equal(moved, false);
-  assert.equal(JSON.stringify(runtime.contextState.dockTree), beforeDockTree);
-  assert.equal(runtime.notice.includes("read-only"), true);
-  assert.equal(renders.context, 0);
-  assert.equal(renders.parts, 0);
+  assert.equal(moved, true);
+  assert.equal(JSON.stringify(runtime.contextState.dockTree) !== beforeDockTree, true);
+  assert.equal(runtime.contextState.activeTabId, "tab-b");
+  assert.equal(renders.context, 1);
+  assert.equal(renders.parts, 1);
   assert.equal(renders.sync, 1);
 });
 

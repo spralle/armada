@@ -52,7 +52,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .dock-drop-zone-bottom { left: 20%; bottom: 0; width: 60%; height: 24%; }
     .dock-drop-zone-center { left: 28%; top: 28%; width: 44%; height: 44%; border-color: #516a95; }
     .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
-    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); pointer-events: none; }
+    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); }
     .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
     .plugin-row { display:block; margin: 6px 0; }
     .plugin-error { margin: 4px 0 0 22px; color: #f5b8b8; font-size: 12px; }
@@ -103,7 +103,7 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
     .part-actions { display: flex; gap: 8px; margin-bottom: 8px; }
     .part-actions button { background: #1d2635; border: 1px solid #334564; border-radius: 4px; color: #e9edf3; padding: 4px 8px; cursor: pointer; }
     .bridge-warning { border-left: 3px solid #f2a65a; padding: 6px 8px; background: #30261a; color: #f5d7b5; margin-bottom: 8px; }
-    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); pointer-events: none; }
+    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); }
     .runtime-note { color: #c6d0e0; font-size: 12px; margin: 0; }
     .dev-inspector { border-color: #495f87; background: #0f1622; }
     .dev-inspector details { margin-bottom: 6px; }
