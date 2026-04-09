@@ -11,6 +11,7 @@ import { registerRuntimeEventHandlersSpecs } from "./shell-runtime/runtime-event
 import { registerActionContextSpecs } from "./context-state.spec-action-context.js";
 import { registerCompositionParitySpecs } from "./context-state.spec-composition-parity.js";
 import { registerBridgeRaceAndParitySpecs } from "./context-state.spec-bridge-race-parity.js";
+import { registerDndSessionBrokerSpecs } from "./context-state.spec-dnd-session-broker.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -26,6 +27,7 @@ registerRuntimeEventHandlersSpecs(harness);
 registerActionContextSpecs(harness);
 registerCompositionParitySpecs(harness);
 registerBridgeRaceAndParitySpecs(harness);
+registerDndSessionBrokerSpecs(harness);
 
 const { passed, total } = await runAll();
 

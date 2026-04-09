@@ -71,7 +71,9 @@ export function createShellRuntime(options?: {
     popoutHandles: new Map<string, Window>(),
     poppedOutTabIds: new Set<string>(),
     closeableTabIds: new Set<string>(),
-    dragSessionBroker: createDragSessionBroker(bridge, windowId),
+    dragSessionBroker: createDragSessionBroker(bridge, windowId, {
+      isDegraded: () => runtime.syncDegraded,
+    }),
     syncDegraded: !bridge.available,
     syncHealthState: bridge.available ? "healthy" : "unavailable",
     syncDegradedReason: bridge.available ? null : "unavailable",

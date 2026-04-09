@@ -89,7 +89,10 @@ export function wireTabStripDragDrop(
 
       if (runtime.dragSessionBroker.available) {
         const ref = runtime.dragSessionBroker.create(payload);
-        dataTransfer.setData("text/plain", `${DRAG_REF_PREFIX}${ref.id}`);
+        dataTransfer.setData(
+          "text/plain",
+          ref ? `${DRAG_REF_PREFIX}${ref.id}` : `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`,
+        );
       } else {
         dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
       }
@@ -240,7 +243,6 @@ function addRootClass(root: HTMLElement, className: string): void {
   if (!root.classList || typeof root.classList.add !== "function") {
     return;
   }
-
   root.classList.add(className);
 }
 
@@ -248,7 +250,6 @@ function removeRootClass(root: HTMLElement, className: string): void {
   if (!root.classList || typeof root.classList.remove !== "function") {
     return;
   }
-
   root.classList.remove(className);
 }
 
@@ -316,7 +317,6 @@ function asTabDragPayload(value: unknown): TabDragPayload | null {
   if (!value || typeof value !== "object") {
     return null;
   }
-
   const payload = value as Record<string, unknown>;
   if (
     payload.kind !== "shell-tab-dnd"
@@ -337,7 +337,6 @@ function asDockDragPayload(value: unknown): DockDragPayload | null {
   if (!value || typeof value !== "object") {
     return null;
   }
-
   const payload = value as Record<string, unknown>;
   if (typeof payload.tabId !== "string" || typeof payload.sourceWindowId !== "string") {
     return null;
