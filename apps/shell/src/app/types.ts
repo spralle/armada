@@ -32,6 +32,11 @@ import type {
 import type { ActionSurface } from "../action-surface.js";
 import type { ShellPartHostAdapter } from "./contracts.js";
 import type { ShellTransportPath } from "./migration-flags.js";
+import type {
+  DndDiagnosticEnvelope,
+  DndDiagnosticRuntime,
+  DndDiagnosticPath,
+} from "./dnd-diagnostics.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -45,7 +50,7 @@ export interface ShellBootstrapOptions {
   enableByDefault?: boolean;
 }
 
-export interface ShellRuntime {
+export interface ShellRuntime extends DndDiagnosticRuntime {
   layout: ShellLayoutState;
   persistence: ShellLayoutPersistence;
   contextPersistence: ShellContextStatePersistence;
@@ -83,6 +88,10 @@ export interface ShellRuntime {
   partHost: ShellPartHostAdapter;
   activeTransportPath: ShellTransportPath;
   activeTransportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
+  activeDndPath: DndDiagnosticPath;
+  activeDndReason: "kill-switch-force-disabled" | "flag-enabled" | "default-same-window-only";
+  crossWindowDndEnabled: boolean;
+  lastDndDiagnostic: DndDiagnosticEnvelope | null;
 }
 
 export interface TenantPluginDescriptor {
