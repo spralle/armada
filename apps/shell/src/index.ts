@@ -134,9 +134,6 @@ export function startShell(root: HTMLElement): ShellRuntime {
   return shellRuntime;
 }
 
-function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: ReturnType<typeof getShellBootstrapComposition>): () => void {
-  const disposers: Array<() => void> = [];
-
 function registerRuntimeTeardown(runtime: ShellRuntime): void {
   let closed = false;
   const teardown = () => {
@@ -152,6 +149,8 @@ function registerRuntimeTeardown(runtime: ShellRuntime): void {
 }
 
 function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: ReturnType<typeof getShellBootstrapComposition>): () => void {
+  const disposers: Array<() => void> = [];
+
   if (runtime.isPopout) {
     disposers.push(composition.mountPopout(root, runtime, {
       renderParts: () => renderParts(root, runtime),

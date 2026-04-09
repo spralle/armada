@@ -64,6 +64,7 @@ export class FakeDockZone {
 
 export class FakeDockRoot {
   private readonly classes = new Set<string>();
+  private readonly attributes = new Map<string, string>();
 
   readonly classList = {
     add: (className: string) => {
@@ -80,6 +81,18 @@ export class FakeDockRoot {
   constructor(
     private readonly zones: FakeDockZone[],
   ) {}
+
+  setAttribute(name: string, value: string): void {
+    this.attributes.set(name, value);
+  }
+
+  removeAttribute(name: string): void {
+    this.attributes.delete(name);
+  }
+
+  hasAttribute(name: string): boolean {
+    return this.attributes.has(name);
+  }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
     const normalized = typeof listener === "function"
