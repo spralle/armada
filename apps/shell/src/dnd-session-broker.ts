@@ -11,7 +11,6 @@ import {
 } from "./dnd-session-broker-protocol.js";
 
 const DEFAULT_TTL_MS = 60_000;
-
 export interface DragSessionRef {
   id: string;
 }
@@ -181,11 +180,6 @@ export function createDragSessionBroker(
         consumedByWindowId,
         sourceWindowId: windowId,
       });
-
-      const committed = this.commit(ref, consumedByWindowId);
-      if (!committed) {
-        return null;
-      }
 
       return entry.payload;
     },

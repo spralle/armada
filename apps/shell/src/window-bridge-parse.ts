@@ -118,8 +118,8 @@ export function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
     if (
       typeof event.id === "string" &&
       typeof event.expiresAt === "number" &&
-      isOptionalLifecycle((event as { lifecycle?: unknown }).lifecycle) &&
       isOptionalString((event as { correlationId?: unknown }).correlationId) &&
+      isOptionalDndSessionUpsertLifecycle((event as { lifecycle?: unknown }).lifecycle) &&
       isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId) &&
       isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId) &&
       typeof event.sourceWindowId === "string"
@@ -131,12 +131,12 @@ export function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
 
   if (event.type === "dnd-session-delete") {
     if (
-      typeof event.id === "string" &&
-      isOptionalTerminalLifecycle((event as { lifecycle?: unknown }).lifecycle) &&
-      isOptionalString((event as { correlationId?: unknown }).correlationId) &&
-      isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId) &&
-      isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId) &&
-      typeof event.sourceWindowId === "string"
+      typeof event.id === "string"
+      && isOptionalString((event as { correlationId?: unknown }).correlationId)
+      && isOptionalDndSessionDeleteLifecycle((event as { lifecycle?: unknown }).lifecycle)
+      && isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId)
+      && isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId)
+      && typeof event.sourceWindowId === "string"
     ) {
       return event as DndSessionDeleteEvent;
     }
@@ -203,6 +203,14 @@ function isOptionalContextScope(value: unknown): value is "group" | "global" | u
   return value === undefined || value === "group" || value === "global";
 }
 
+function isOptionalDndSessionUpsertLifecycle(value: unknown): value is "start" | "consume" | undefined {
+  return value === undefined || value === "start" || value === "consume";
+}
+
+function isOptionalDndSessionDeleteLifecycle(value: unknown): value is "commit" | "abort" | "timeout" | undefined {
+  return value === undefined || value === "commit" || value === "abort" || value === "timeout";
+}
+
 function isOptionalRevision(
   value: unknown,
 ): value is { timestamp: number; writer: string } | undefined {
@@ -218,10 +226,3 @@ function isOptionalRevision(
   return typeof revision.timestamp === "number" && typeof revision.writer === "string";
 }
 
-function isOptionalLifecycle(value: unknown): value is "start" | "consume" | undefined {
-  return value === undefined || value === "start" || value === "consume";
-}
-
-function isOptionalTerminalLifecycle(value: unknown): value is "commit" | "abort" | "timeout" | undefined {
-  return value === undefined || value === "commit" || value === "abort" || value === "timeout";
-}
