@@ -6,6 +6,7 @@ import type {
 } from "./contracts.js";
 import type { ShellRuntime } from "./types.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
+import type { WindowBridgeEvent } from "../window-bridge.js";
 import { createRuntimeEventHandlers } from "../shell-runtime/runtime-event-handlers.js";
 import { createShellCoreApi } from "./shell-core.js";
 import {
@@ -32,7 +33,7 @@ interface ShellCompatibilityAdapterDeps {
   announce: (message: string) => void;
   dismissIntentChooser: () => void;
   primeEnabledPluginActivations: () => Promise<void>;
-  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => boolean;
+  publishWithDegrade: (event: WindowBridgeEvent) => void;
   refreshCommandContributions: () => void;
   summarizeSelectionPriorities: () => string;
 }

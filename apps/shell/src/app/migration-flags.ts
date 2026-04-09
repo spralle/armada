@@ -1,16 +1,29 @@
 export interface ShellMigrationFlags {
   useContractCoreApi: boolean;
   useAdapterComposition: boolean;
+  enableAsyncScompAdapter: boolean;
+  forceLegacyBridge: boolean;
 }
 
 export interface ShellMigrationFlagOverride {
   useContractCoreApi?: boolean;
   useAdapterComposition?: boolean;
+  enableAsyncScompAdapter?: boolean;
+  forceLegacyBridge?: boolean;
+}
+
+export type ShellTransportPath = "legacy-bridge" | "async-scomp-adapter";
+
+export interface ShellTransportDecision {
+  path: ShellTransportPath;
+  reason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
 }
 
 const DEFAULT_SHELL_MIGRATION_FLAGS: ShellMigrationFlags = {
   useContractCoreApi: true,
   useAdapterComposition: true,
+  enableAsyncScompAdapter: false,
+  forceLegacyBridge: false,
 };
 
 const ENABLED_FLAG_VALUES = new Set([
@@ -41,13 +54,38 @@ export function readShellMigrationFlags(
 ): ShellMigrationFlags {
   const coreFromQuery = parseBooleanFlag(searchParams.get("shellCoreContract"));
   const adapterFromQuery = parseBooleanFlag(searchParams.get("shellAdapterComposition"));
+  const asyncTransportFromQuery = parseBooleanFlag(searchParams.get("shellAsyncScompAdapter"));
+  const forceLegacyFromQuery = parseBooleanFlag(searchParams.get("shellLegacyBridgeKillSwitch"));
 
   return {
     useContractCoreApi: override?.useContractCoreApi ?? coreFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.useContractCoreApi,
     useAdapterComposition: override?.useAdapterComposition ?? adapterFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.useAdapterComposition,
+    enableAsyncScompAdapter: override?.enableAsyncScompAdapter ?? asyncTransportFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.enableAsyncScompAdapter,
+    forceLegacyBridge: override?.forceLegacyBridge ?? forceLegacyFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.forceLegacyBridge,
   };
 }
 
 export function shouldUseContractComposition(flags: ShellMigrationFlags): boolean {
   return flags.useContractCoreApi && flags.useAdapterComposition;
+}
+
+export function selectShellTransportPath(flags: ShellMigrationFlags): ShellTransportDecision {
+  if (flags.forceLegacyBridge) {
+    return {
+      path: "legacy-bridge",
+      reason: "kill-switch-force-legacy",
+    };
+  }
+
+  if (flags.enableAsyncScompAdapter) {
+    return {
+      path: "async-scomp-adapter",
+      reason: "async-flag-enabled",
+    };
+  }
+
+  return {
+    path: "legacy-bridge",
+    reason: "default-legacy",
+  };
 }

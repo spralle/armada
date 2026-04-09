@@ -27,7 +27,7 @@ export interface RuntimeRenderBindings {
     intent: import("../intent-runtime.js").ShellIntent | null,
   ) => Promise<void>;
   primeEnabledPluginActivations: () => Promise<void>;
-  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => boolean;
+  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => void;
   refreshCommandContributions: () => void;
   renderCommandSurface: () => void;
   renderContextControlsPanel: () => void;

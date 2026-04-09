@@ -1,14 +1,17 @@
 import { createWindowBridge } from "./window-bridge.js";
+import {
+  createAsyncWindowBridgeCompatibilityShim,
+} from "./app/async-bridge.js";
 import type { ContextSyncEvent, SelectionSyncEvent, WindowBridgeEvent } from "./window-bridge.js";
 
 type TestCase = {
   name: string;
-  run: () => void;
+  run: () => void | Promise<void>;
 };
 
 const tests: TestCase[] = [];
 
-function test(name: string, run: () => void): void {
+function test(name: string, run: () => void | Promise<void>): void {
   tests.push({ name, run });
 }
 
@@ -120,12 +123,12 @@ test("bridge detects publish failure and can recover", () => {
   }
 });
 
-test("bridge dispose closes channel and detaches listeners", () => {
+test("bridge close deterministically tears down channel", () => {
   const previous = (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel;
   (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
 
   try {
-    const bridge = createWindowBridge("armada.test.bridge.dispose");
+    const bridge = createWindowBridge("armada.test.bridge.close");
     const channel = FakeBroadcastChannel.lastInstance;
     assertTruthy(channel, "expected fake broadcast channel instance");
 
@@ -138,16 +141,16 @@ test("bridge dispose closes channel and detaches listeners", () => {
       healthCalls += 1;
     });
 
-    bridge.dispose();
+    bridge.close();
     channel!.emit("message", {
       type: "sync-probe",
-      probeId: "p-after-dispose",
+      probeId: "p-after-close",
       sourceWindowId: "w-1",
     });
 
-    assertEqual(channel!.closed, true, "dispose should close underlying channel");
-    assertEqual(eventCalls, 0, "dispose should clear event listeners before follow-up messages");
-    assertEqual(healthCalls > 0, true, "health subscription should receive initial state before dispose");
+    assertEqual(channel!.closed, true, "close should close underlying channel");
+    assertEqual(eventCalls, 0, "close should clear event listeners before follow-up messages");
+    assertEqual(healthCalls > 0, true, "health subscription should receive initial state before close");
   } finally {
     (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
   }
@@ -419,10 +422,84 @@ test("bridge compatibility parses legacy and instance-aware migration payload va
   }
 });
 
+test("async compatibility shim returns accepted/enqueued and deterministic health snapshots", async () => {
+  const previous = (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel;
+  (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
+
+  try {
+    const legacyBridge = createWindowBridge("armada.test.bridge.async-shim");
+    const shim = createAsyncWindowBridgeCompatibilityShim(legacyBridge);
+    const channel = FakeBroadcastChannel.lastInstance;
+    assertTruthy(channel, "expected fake broadcast channel instance");
+
+    const seenHealth: Array<{ sequence: number; state: string; reason: string | null }> = [];
+    shim.subscribeHealth((health) => {
+      seenHealth.push({
+        sequence: health.sequence,
+        state: health.state,
+        reason: health.reason,
+      });
+    });
+
+    const published = await shim.publish({
+      type: "sync-probe",
+      probeId: "probe-async-1",
+      sourceWindowId: "window-a",
+    });
+
+    assertEqual(published.status, "accepted", "shim should report accepted publish");
+    if (published.status === "accepted") {
+      assertEqual(published.disposition, "enqueued", "shim accepted publish should be enqueued");
+    }
+
+    channel!.emit("messageerror");
+    channel!.emit("messageerror");
+    assertEqual(seenHealth.length, 2, "health snapshots should emit only for state changes");
+    assertEqual(seenHealth[0]?.state, "healthy", "initial health snapshot should be healthy");
+    assertEqual(seenHealth[1]?.state, "degraded", "messageerror should emit degraded snapshot");
+    assertEqual(seenHealth[1]?.sequence > seenHealth[0]!.sequence, true, "health sequence should increase monotonically");
+  } finally {
+    (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
+  }
+});
+
+test("async compatibility shim normalizes timeout and closed publish rejections", async () => {
+  const previous = (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel;
+  (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
+
+  try {
+    const legacyBridge = createWindowBridge("armada.test.bridge.async-timeout");
+    const shim = createAsyncWindowBridgeCompatibilityShim(legacyBridge);
+
+    const timedOut = await shim.publish({
+      type: "sync-probe",
+      probeId: "probe-timeout",
+      sourceWindowId: "window-a",
+    }, { timeoutMs: 0 });
+    assertEqual(timedOut.status, "rejected", "timeout publish should reject");
+    if (timedOut.status === "rejected") {
+      assertEqual(timedOut.reason, "timeout", "timeout publish should normalize timeout reason");
+    }
+
+    shim.close();
+    const closed = await shim.publish({
+      type: "sync-probe",
+      probeId: "probe-closed",
+      sourceWindowId: "window-a",
+    });
+    assertEqual(closed.status, "rejected", "closed shim publish should reject");
+    if (closed.status === "rejected") {
+      assertEqual(closed.reason, "closed", "closed shim publish should report closed reason");
+    }
+  } finally {
+    (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
+  }
+});
+
 let passed = 0;
 for (const caseItem of tests) {
   try {
-    caseItem.run();
+    await caseItem.run();
     passed += 1;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

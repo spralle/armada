@@ -4,6 +4,7 @@ import type { ComposedShellPart } from "../ui/parts-rendering.js";
 import type {
   ContextSyncEvent,
   SelectionSyncEvent,
+  WindowBridgeEvent,
 } from "../window-bridge.js";
 import type {
   IntentActionMatch,
@@ -49,7 +50,7 @@ export interface ShellEffectsPort {
     triggerId: string;
   }): Promise<boolean>;
   announce(message: string): void;
-  publishWithDegrade(event: Parameters<ShellRuntime["bridge"]["publish"]>[0]): boolean;
+  publishWithDegrade(event: WindowBridgeEvent): void;
   renderCommandSurface(): void;
   renderContextControlsPanel(): void;
   renderParts(): void;

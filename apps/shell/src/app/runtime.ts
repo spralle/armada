@@ -10,12 +10,15 @@ import { buildActionSurface } from "../action-surface.js";
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { createWindowBridge } from "../window-bridge.js";
+import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
+import { createAsyncScompWindowBridge } from "../window-bridge-scomp.js";
 import {
   BRIDGE_CHANNEL,
   DEFAULT_GROUP_COLOR,
   DEFAULT_GROUP_ID,
 } from "./constants.js";
 import type { ShellRuntime } from "./types.js";
+import type { ShellTransportPath } from "./migration-flags.js";
 import {
   createWindowId,
   getCurrentUserId,
@@ -23,10 +26,17 @@ import {
   readPopoutParams,
 } from "./utils.js";
 
-export function createShellRuntime(): ShellRuntime {
+export function createShellRuntime(options?: {
+  transportPath?: ShellTransportPath;
+}): ShellRuntime {
   const popoutParams = readPopoutParams();
   const windowId = createWindowId();
   const bridge = createWindowBridge(BRIDGE_CHANNEL);
+  const asyncBridge = options?.transportPath === "async-scomp-adapter"
+    ? createAsyncScompWindowBridge({
+      channelName: BRIDGE_CHANNEL,
+    })
+    : createAsyncWindowBridgeCompatibilityShim(bridge);
 
   const intentRuntime = createIntentRuntime();
 
@@ -40,6 +50,7 @@ export function createShellRuntime(): ShellRuntime {
     }),
     registry: createShellPluginRegistry(),
     bridge,
+    asyncBridge,
     windowId,
     hostWindowId: popoutParams.hostWindowId,
     popoutTabId: popoutParams.tabId,
@@ -61,8 +72,9 @@ export function createShellRuntime(): ShellRuntime {
     poppedOutTabIds: new Set<string>(),
     closeableTabIds: new Set<string>(),
     dragSessionBroker: createDragSessionBroker(bridge, windowId),
-    syncDegraded: false,
-    syncDegradedReason: null,
+    syncDegraded: !bridge.available,
+    syncHealthState: bridge.available ? "healthy" : "unavailable",
+    syncDegradedReason: bridge.available ? null : "unavailable",
     pendingProbeId: null,
     announcement: "",
     chooserFocusIndex: 0,
@@ -72,6 +84,8 @@ export function createShellRuntime(): ShellRuntime {
     intentRuntime,
     commandNotice: "",
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,
+    activeTransportPath: "legacy-bridge",
+    activeTransportReason: "default-legacy",
   };
 
   runtime.partHost = createShellPartHostAdapter(runtime);

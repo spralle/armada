@@ -96,7 +96,7 @@ export interface WindowBridge {
   subscribe(listener: (event: WindowBridgeEvent) => void): () => void;
   subscribeHealth(listener: (health: WindowBridgeHealth) => void): () => void;
   recover(): void;
-  dispose(): void;
+  close(): void;
 }
 
 export function createWindowBridge(channelName: string): WindowBridge {
@@ -183,7 +183,7 @@ export function createWindowBridge(channelName: string): WindowBridge {
         reason: null,
       });
     },
-    dispose() {
+    close() {
       listeners.clear();
       healthListeners.clear();
       channel.close();
@@ -216,7 +216,7 @@ function createUnavailableBridge(): WindowBridge {
     recover() {
       // unavailable transport cannot recover at runtime
     },
-    dispose() {
+    close() {
       // no-op fallback
     },
   };

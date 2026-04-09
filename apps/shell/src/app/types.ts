@@ -11,8 +11,11 @@ import type {
 import type { ShellPluginRegistry } from "../plugin-registry.js";
 import type {
   WindowBridge,
-  WindowBridgeHealth,
 } from "../window-bridge.js";
+import type {
+  AsyncWindowBridge,
+  AsyncWindowBridgeRejectReason,
+} from "./async-bridge.js";
 import type {
   ContextTabCloseability,
   DerivedLaneDefinition,
@@ -28,6 +31,7 @@ import type {
 } from "../intent-runtime.js";
 import type { ActionSurface } from "../action-surface.js";
 import type { ShellPartHostAdapter } from "./contracts.js";
+import type { ShellTransportPath } from "./migration-flags.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -47,6 +51,7 @@ export interface ShellRuntime {
   contextPersistence: ShellContextStatePersistence;
   registry: ShellPluginRegistry;
   bridge: WindowBridge;
+  asyncBridge: AsyncWindowBridge;
   windowId: string;
   hostWindowId: string | null;
   popoutTabId: string | null;
@@ -65,7 +70,8 @@ export interface ShellRuntime {
   closeableTabIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
   syncDegraded: boolean;
-  syncDegradedReason: WindowBridgeHealth["reason"];
+  syncHealthState: "healthy" | "degraded" | "unavailable";
+  syncDegradedReason: AsyncWindowBridgeRejectReason | null;
   pendingProbeId: string | null;
   announcement: string;
   chooserFocusIndex: number;
@@ -75,6 +81,8 @@ export interface ShellRuntime {
   intentRuntime: IntentRuntime;
   commandNotice: string;
   partHost: ShellPartHostAdapter;
+  activeTransportPath: ShellTransportPath;
+  activeTransportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
 }
 
 export interface TenantPluginDescriptor {

@@ -197,6 +197,26 @@ Shell contract-driven composition is now default-on. You can force fallback/base
 
 - `?shellCoreContract=0&shellAdapterComposition=0`
 
+### Async SCOMP transport quick reference
+
+Use these shell query flags during rollout verification:
+
+- Enable async path:
+  - `?shellAsyncScompAdapter=1`
+- Force legacy rollback (kill switch):
+  - `?shellLegacyBridgeKillSwitch=1`
+- Verify precedence behavior (kill switch wins):
+  - `?shellAsyncScompAdapter=1&shellLegacyBridgeKillSwitch=1`
+
+Expected runtime diagnostics:
+
+- `transportPath`: `legacy-bridge` or `async-scomp-adapter`
+- `transportReason`: `default-legacy`, `async-flag-enabled`, or `kill-switch-force-legacy`
+
+Operator note:
+
+- Same-window docking boundaries are unchanged by async transport rollout.
+
 For full rollout, canary progression, and rollback playbook details, see:
 
 - `docs/architecture/shell-adapter-rollout.md`
