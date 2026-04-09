@@ -53,12 +53,20 @@ export interface DndSessionUpsertEvent {
   id: string;
   payload: unknown;
   expiresAt: number;
+  correlationId?: string;
+  lifecycle?: "start" | "consume";
+  ownerWindowId?: string;
+  consumedByWindowId?: string;
   sourceWindowId: string;
 }
 
 export interface DndSessionDeleteEvent {
   type: "dnd-session-delete";
   id: string;
+  correlationId?: string;
+  lifecycle?: "commit" | "abort" | "timeout";
+  ownerWindowId?: string;
+  consumedByWindowId?: string;
   sourceWindowId: string;
 }
 
