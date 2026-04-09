@@ -1,4 +1,5 @@
 import { DRAG_INLINE_PREFIX } from "./app/constants.js";
+import { TAB_DOCK_DRAG_MIME } from "./app/constants.js";
 import type { ShellRuntime } from "./app/types.js";
 import {
   createInitialShellContextState,
@@ -13,6 +14,7 @@ interface DragDataTransfer {
   dropEffect: string;
   setData: (format: string, value: string) => void;
   getData: (format: string) => string;
+  setDragImage: (image: Element, x: number, y: number) => void;
 }
 
 type DragListener = (event: DragEvent) => void;
@@ -35,20 +37,86 @@ class FakeTabButton {
     this.listeners.set(type, existing);
   }
 
-  dispatch(type: "dragstart" | "drop", event: DragEvent): void {
+  dispatch(type: "dragstart" | "drag" | "dragend", event: DragEvent): void {
     for (const listener of this.listeners.get(type) ?? []) {
       listener(event);
     }
   }
 }
 
+class FakeTabItem {
+  readonly dataset: DOMStringMap;
+  draggable = false;
+  private readonly listeners = new Map<string, DragListener[]>();
+
+  constructor(tabId: string, private readonly tabButton: FakeTabButton) {
+    this.dataset = { tabItem: tabId };
+  }
+
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    const normalized = typeof listener === "function"
+      ? (listener as DragListener)
+      : ((event: DragEvent) => listener.handleEvent(event as unknown as Event));
+    const existing = this.listeners.get(type) ?? [];
+    existing.push(normalized);
+    this.listeners.set(type, existing);
+  }
+
+  querySelector<T>(selector: string): T | null {
+    if (selector === "button[data-action='activate-tab']") {
+      return this.tabButton as unknown as T;
+    }
+    return null;
+  }
+
+  dispatch(type: "dragstart" | "dragend" | "drop", event: DragEvent): void {
+    for (const listener of this.listeners.get(type) ?? []) {
+      listener(event);
+    }
+  }
+}
+
+class FakeButtonNode {
+  constructor(private readonly owner: FakeTabButton) {}
+
+  closest(selector: string): FakeTabButton | null {
+    if (selector === "button[data-action='activate-tab'][data-part-id]") {
+      return this.owner;
+    }
+    return null;
+  }
+}
+
 class FakeRoot {
-  constructor(private readonly tabButtons: FakeTabButton[]) {}
+  private readonly classes = new Set<string>();
+  private readonly listeners = new Map<string, DragListener[]>();
 
-  addEventListener(_type: string, _listener: EventListenerOrEventListenerObject): void {}
+  readonly classList = {
+    add: (className: string) => {
+      this.classes.add(className);
+    },
+    remove: (className: string) => {
+      this.classes.delete(className);
+    },
+    contains: (className: string) => this.classes.has(className),
+  };
 
-  querySelectorAll<T>(_selector: string): T[] {
-    return this.tabButtons as unknown as T[];
+  constructor(private readonly tabItems: FakeTabItem[]) {}
+
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    const normalized = typeof listener === "function"
+      ? (listener as DragListener)
+      : ((event: DragEvent) => listener.handleEvent(event as unknown as Event));
+    const existing = this.listeners.get(type) ?? [];
+    existing.push(normalized);
+    this.listeners.set(type, existing);
+  }
+
+  querySelectorAll<T>(selector: string): T[] {
+    if (selector === "[data-tab-item]") {
+      return this.tabItems as unknown as T[];
+    }
+    return [];
   }
 }
 
@@ -64,13 +132,31 @@ class MemoryDataTransfer implements DragDataTransfer {
   getData(format: string): string {
     return this.data.get(format) ?? "";
   }
+
+  setDragImage(_image: Element, _x: number, _y: number): void {}
 }
 
-function createDragEvent(dataTransfer: DragDataTransfer): DragEvent {
+class EmptyReadDataTransfer extends MemoryDataTransfer {
+  override getData(_format: string): string {
+    return "";
+  }
+}
+
+function createDragEvent(dataTransfer: DragDataTransfer, target?: EventTarget): DragEvent {
   return {
     dataTransfer: dataTransfer as unknown as DataTransfer,
+    target: target ?? null,
     preventDefault() {},
+    stopPropagation() {},
   } as DragEvent;
+}
+
+async function flushTimers(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+function createButtonTarget(button: FakeTabButton): EventTarget {
+  return new FakeButtonNode(button) as unknown as EventTarget;
 }
 
 function createRuntime(): ShellRuntime {
@@ -90,7 +176,6 @@ function createRuntime(): ShellRuntime {
       available: false,
       create: () => ({ id: "unused" }),
       consume: () => null,
-      dispose: () => {},
     },
     contextPersistence: {
       save() {
@@ -102,52 +187,76 @@ function createRuntime(): ShellRuntime {
   return runtime;
 }
 
+function createTabHarness(tabIds: string[]): {
+  root: FakeRoot;
+  tabButtons: Map<string, FakeTabButton>;
+  tabItems: Map<string, FakeTabItem>;
+} {
+  const tabButtons = new Map<string, FakeTabButton>();
+  const tabItems = new Map<string, FakeTabItem>();
+  const items: FakeTabItem[] = [];
+
+  for (const tabId of tabIds) {
+    const button = new FakeTabButton(tabId);
+    const item = new FakeTabItem(tabId, button);
+    tabButtons.set(tabId, button);
+    tabItems.set(tabId, item);
+    items.push(item);
+  }
+
+  return {
+    root: new FakeRoot(items),
+    tabButtons,
+    tabItems,
+  };
+}
+
 export function registerTabDragDropSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
 
-  test("same-window tab drop reorders and activates dragged tab", () => {
+  test("same-window tab drop reorders and activates dragged tab", async () => {
     const runtime = createRuntime();
-    const buttons = [new FakeTabButton("tab-a"), new FakeTabButton("tab-b"), new FakeTabButton("tab-c")];
-    const root = new FakeRoot(buttons);
+    const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
-    wireTabStripDragDrop(root as unknown as HTMLElement, runtime, (tabId) => {
+    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
       moved.push(tabId);
     });
 
     const dragTransfer = new MemoryDataTransfer();
-    buttons[2]!.dispatch("dragstart", createDragEvent(dragTransfer));
-    buttons[1]!.dispatch("drop", createDragEvent(dragTransfer));
+    tabHarness.tabButtons.get("tab-c")!.dispatch(
+      "dragstart",
+      createDragEvent(dragTransfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
+    );
+    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(dragTransfer));
 
     assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "drop should deterministically reorder tab order");
     assertEqual(runtime.contextState.activeTabId, "tab-c", "drop should activate moved tab");
     assertEqual(moved.join(","), "tab-c", "drop callback should run for moved tab");
   });
 
-  test("malformed drag payload is ignored as safe no-op", () => {
+  test("malformed drag payload is ignored as safe no-op", async () => {
     const runtime = createRuntime();
     const before = runtime.contextState;
-    const buttons = [new FakeTabButton("tab-a"), new FakeTabButton("tab-b"), new FakeTabButton("tab-c")];
-    const root = new FakeRoot(buttons);
+    const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
-    wireTabStripDragDrop(root as unknown as HTMLElement, runtime, (tabId) => {
+    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
       moved.push(tabId);
     });
 
     const transfer = new MemoryDataTransfer();
     transfer.setData("text/plain", `${DRAG_INLINE_PREFIX}{\"kind\":\"invalid\"}`);
-    buttons[1]!.dispatch("drop", createDragEvent(transfer));
+    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState, before, "invalid payload should not mutate context state");
     assertEqual(moved.length, 0, "invalid payload should not trigger move callback");
   });
 
-  test("cross-window payload is blocked as no-op", () => {
+  test("cross-window payload is blocked as no-op", async () => {
     const runtime = createRuntime();
     const before = runtime.contextState;
-    const buttons = [new FakeTabButton("tab-a"), new FakeTabButton("tab-b"), new FakeTabButton("tab-c")];
-    const root = new FakeRoot(buttons);
+    const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
-    wireTabStripDragDrop(root as unknown as HTMLElement, runtime, (tabId) => {
+    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
       moved.push(tabId);
     });
 
@@ -156,9 +265,70 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
       "text/plain",
       `${DRAG_INLINE_PREFIX}{\"kind\":\"shell-tab-dnd\",\"tabId\":\"tab-c\",\"sourceWindowId\":\"window-b\"}`,
     );
-    buttons[1]!.dispatch("drop", createDragEvent(transfer));
+    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState, before, "cross-window payload should not mutate context state");
     assertEqual(moved.length, 0, "cross-window payload should not trigger move callback");
+  });
+
+  test("tab drop reorders using dock MIME payload fallback", async () => {
+    const runtime = createRuntime();
+    const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
+    const moved: string[] = [];
+    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
+      moved.push(tabId);
+    });
+
+    const transfer = new MemoryDataTransfer();
+    transfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({ tabId: "tab-c", sourceWindowId: "window-a" }));
+    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+
+    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "dock MIME fallback should reorder tabs");
+    assertEqual(runtime.contextState.activeTabId, "tab-c", "dock MIME fallback should activate dragged tab");
+    assertEqual(moved.join(","), "tab-c", "dock MIME fallback should trigger move callback");
+  });
+
+  test("tab drop reorders using active drag payload fallback when reads are empty", async () => {
+    const runtime = createRuntime();
+    const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
+    const moved: string[] = [];
+    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
+      moved.push(tabId);
+    });
+
+    const dragStartTransfer = new MemoryDataTransfer();
+    tabHarness.tabButtons.get("tab-c")!.dispatch(
+      "dragstart",
+      createDragEvent(dragStartTransfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
+    );
+
+    const emptyReadTransfer = new EmptyReadDataTransfer();
+    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(emptyReadTransfer));
+
+    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "active payload fallback should reorder tabs");
+    assertEqual(runtime.contextState.activeTabId, "tab-c", "active payload fallback should activate dragged tab");
+    assertEqual(moved.join(","), "tab-c", "active payload fallback should trigger move callback");
+  });
+
+  test("drop applies when browser emits dragend before drop", async () => {
+    const runtime = createRuntime();
+    const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
+    const moved: string[] = [];
+    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
+      moved.push(tabId);
+    });
+
+    const transfer = new MemoryDataTransfer();
+    tabHarness.tabButtons.get("tab-c")!.dispatch(
+      "dragstart",
+      createDragEvent(transfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
+    );
+    tabHarness.tabButtons.get("tab-c")!.dispatch("dragend", createDragEvent(transfer));
+    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+    await flushTimers();
+
+    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "drop after premature dragend should reorder tabs");
+    assertEqual(runtime.contextState.activeTabId, "tab-c", "drop after premature dragend should activate dragged tab");
+    assertEqual(moved.join(","), "tab-c", "drop after premature dragend should trigger move callback");
   });
 }

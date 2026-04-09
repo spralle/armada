@@ -7,7 +7,6 @@ import { registerSyncPopoutDegradedSpecs } from "./context-state.spec-sync-popou
 import { registerTabDragDropSpecs } from "./context-state.spec-tab-drag-drop.js";
 import { registerDockTabDragDropSpecs } from "./context-state.spec-dock-tab-drag-drop.js";
 import { registerRuntimeEventHandlersSpecs } from "./shell-runtime/runtime-event-handlers.spec.js";
-import { registerDragSessionSpecs } from "./context-state.spec-drag-session.js";
 import { registerActionContextSpecs } from "./context-state.spec-action-context.js";
 import { registerCompositionParitySpecs } from "./context-state.spec-composition-parity.js";
 import { registerBridgeUnavailableSpecs } from "./context-state.spec-bridge-unavailable.js";
@@ -24,7 +23,6 @@ registerSyncPopoutDegradedSpecs(harness);
 registerTabDragDropSpecs(harness);
 registerDockTabDragDropSpecs(harness);
 registerRuntimeEventHandlersSpecs(harness);
-registerDragSessionSpecs(harness);
 registerActionContextSpecs(harness);
 registerCompositionParitySpecs(harness);
 registerBridgeUnavailableSpecs(harness);

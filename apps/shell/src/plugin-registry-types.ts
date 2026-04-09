@@ -1,0 +1,92 @@
+import type {
+  CompatibilityReasonCode,
+  PluginContract,
+  TenantPluginDescriptor,
+} from "@armada/plugin-contracts";
+import type { CapabilityDependencyFailureCode } from "./capability-registry.js";
+import type { RuntimeFirstPluginLoader, ShellPluginLoadMode } from "./plugin-loader.js";
+
+export interface PluginRuntimeFailure {
+  code:
+    | CompatibilityReasonCode
+    | "REMOTE_UNAVAILABLE"
+    | "INVALID_CONTRACT"
+    | "COMPONENTS_UNAVAILABLE"
+    | "SERVICES_UNAVAILABLE"
+    | CapabilityDependencyFailureCode
+    | "COMPONENT_EXPORT_MISSING"
+    | "SERVICE_EXPORT_MISSING"
+    | "LOCAL_SOURCE_UNAVAILABLE"
+    | "UNKNOWN_PLUGIN_LOAD_ERROR";
+  message: string;
+  retryable: boolean;
+}
+
+export type PluginActivationTriggerType = "command" | "view" | "intent";
+
+export type PluginLifecycleState =
+  | "disabled"
+  | "registered"
+  | "activating"
+  | "active"
+  | "failed";
+
+export interface PluginActivationTrigger {
+  type: PluginActivationTriggerType;
+  id: string;
+}
+
+export interface PluginLifecycleSnapshot {
+  state: PluginLifecycleState;
+  lastTransitionAt: string;
+  lastTrigger: PluginActivationTrigger | null;
+}
+
+export interface PluginRuntimeState {
+  descriptor: TenantPluginDescriptor;
+  enabled: boolean;
+  loadMode: ShellPluginLoadMode;
+  contract: PluginContract | null;
+  componentsModule: unknown | null;
+  servicesModule: unknown | null;
+  failure: PluginRuntimeFailure | null;
+  lifecycle: PluginLifecycleSnapshot;
+  activationPromise: Promise<void> | null;
+}
+
+export interface PluginRegistryDiagnostic {
+  at: string;
+  pluginId: string;
+  level: "info" | "warn";
+  code: string;
+  message: string;
+}
+
+export interface PluginRegistrySnapshot {
+  tenantId: string;
+  diagnostics: PluginRegistryDiagnostic[];
+  plugins: {
+    id: string;
+    enabled: boolean;
+    loadMode: ShellPluginLoadMode;
+    descriptor: TenantPluginDescriptor;
+    contract: PluginContract | null;
+    failure: PluginRuntimeFailure | null;
+    lifecycle: PluginLifecycleSnapshot;
+  }[];
+}
+
+export interface ShellPluginRegistry {
+  registerManifestDescriptors(tenantId: string, descriptors: TenantPluginDescriptor[]): void;
+  setEnabled(pluginId: string, enabled: boolean): Promise<void>;
+  activateByCommand(pluginId: string, commandId: string): Promise<boolean>;
+  activateByView(pluginId: string, viewId: string): Promise<boolean>;
+  activateByIntent(pluginId: string, intentId: string): Promise<boolean>;
+  resolveComponentCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
+  resolveServiceCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
+  getSnapshot(): PluginRegistrySnapshot;
+}
+
+export interface ShellPluginRegistryOptions {
+  pluginLoader?: RuntimeFirstPluginLoader;
+}
