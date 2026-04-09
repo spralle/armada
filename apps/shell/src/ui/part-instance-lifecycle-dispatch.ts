@@ -5,7 +5,11 @@ import {
   reopenMostRecentlyClosedTabThroughRuntime,
   type PartLifecycleDeps,
 } from "./part-instance-tab-lifecycle.js";
-import { openPopout, restorePart } from "./part-instance-popout-lifecycle.js";
+import {
+  openPopout,
+  requestPopoutFromHostShim,
+  restorePart,
+} from "./part-instance-popout-lifecycle.js";
 
 type LocalLifecycleActionId =
   | "part-instance.open"
@@ -40,6 +44,14 @@ export function dispatchLocalLifecycleAction(
       if (!tabInstanceId) {
         return false;
       }
+
+      if (runtime.isPopout) {
+        requestPopoutFromHostShim(tabInstanceId, runtime, {
+          renderSyncStatus: deps.renderSyncStatus,
+        });
+        return true;
+      }
+
       openPopout(tabInstanceId, runtime, deps);
       return true;
     }
