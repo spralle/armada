@@ -35,6 +35,7 @@ class FakeBroadcastChannel {
   };
 
   shouldThrowOnPost = false;
+  closed = false;
 
   constructor(_name: string) {
     FakeBroadcastChannel.lastInstance = this;
@@ -56,6 +57,10 @@ class FakeBroadcastChannel {
     for (const listener of this.listeners[type]) {
       listener({ data } as MessageEvent<unknown>);
     }
+  }
+
+  close(): void {
+    this.closed = true;
   }
 }
 
@@ -110,6 +115,39 @@ test("bridge detects publish failure and can recover", () => {
     bridge.recover();
     assertEqual(degraded, false, "recover should clear degraded state");
     assertEqual(reason, null, "recover should clear degraded reason");
+  } finally {
+    (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
+  }
+});
+
+test("bridge dispose closes channel and detaches listeners", () => {
+  const previous = (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel;
+  (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
+
+  try {
+    const bridge = createWindowBridge("armada.test.bridge.dispose");
+    const channel = FakeBroadcastChannel.lastInstance;
+    assertTruthy(channel, "expected fake broadcast channel instance");
+
+    let eventCalls = 0;
+    let healthCalls = 0;
+    bridge.subscribe(() => {
+      eventCalls += 1;
+    });
+    bridge.subscribeHealth(() => {
+      healthCalls += 1;
+    });
+
+    bridge.dispose();
+    channel!.emit("message", {
+      type: "sync-probe",
+      probeId: "p-after-dispose",
+      sourceWindowId: "w-1",
+    });
+
+    assertEqual(channel!.closed, true, "dispose should close underlying channel");
+    assertEqual(eventCalls, 0, "dispose should clear event listeners before follow-up messages");
+    assertEqual(healthCalls > 0, true, "health subscription should receive initial state before dispose");
   } finally {
     (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
   }

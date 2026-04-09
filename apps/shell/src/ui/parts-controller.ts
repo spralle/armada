@@ -1,5 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
 import { isUtilityTabId } from "../utility-tabs.js";
+import { wireDockSplitterDrag } from "./dock-splitter-dnd.js";
 import { wireDockTabDragDrop } from "./dock-tab-dnd.js";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
 import {
@@ -38,6 +39,9 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   }
 
   wirePartActions(root, runtime, deps);
+  wireDockSplitterDrag(root, runtime, {
+    renderParts: () => deps.renderParts(),
+  });
   wireDockTabDragDrop(root, runtime, deps);
   wireTabStripDragDrop(root, runtime, (tabId) => {
     dispatchLocalLifecycleAction(runtime, {
@@ -57,8 +61,8 @@ export function startPopoutWatchdog(
   root: HTMLElement,
   runtime: ShellRuntime,
   deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">,
-): void {
-  window.setInterval(() => {
+): () => void {
+  const timerId = window.setInterval(() => {
     const transition = resolveClosedPopoutTransition({
       popoutHandles: runtime.popoutHandles,
       poppedOutTabIds: runtime.poppedOutTabIds,
@@ -75,6 +79,10 @@ export function startPopoutWatchdog(
       deps.renderSyncStatus();
     }
   }, 1_000);
+
+  return () => {
+    window.clearInterval(timerId);
+  };
 }
 
 function renderPopoutPart(

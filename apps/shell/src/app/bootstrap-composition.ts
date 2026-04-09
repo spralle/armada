@@ -21,10 +21,10 @@ export interface ShellBootstrapComposition {
   applySelection: ReturnType<typeof createRuntimeEventHandlers>["applySelection"];
   initialize: (root: HTMLElement, runtime: ShellRuntime) => void;
   mountMainWindow: Parameters<typeof mountMainWindow>[1] extends infer T
-    ? (root: HTMLElement, deps: T) => void
+    ? (root: HTMLElement, deps: T) => () => void
     : never;
   mountPopout: Parameters<typeof mountPopout>[2] extends infer T
-    ? (root: HTMLElement, runtime: ShellRuntime, deps: T) => void
+    ? (root: HTMLElement, runtime: ShellRuntime, deps: T) => () => void
     : never;
   renderPanels: (root: HTMLElement, runtime: ShellRuntime) => void;
   renderParts: (root: HTMLElement, runtime: ShellRuntime) => void;
@@ -90,10 +90,10 @@ export function createShellBootstrapComposition(
         adapters.renderer.initialize(viewRoot, viewRuntime, adapters.effects);
       },
       mountMainWindow: (viewRoot, mountDeps) => {
-        adapters.renderer.mountMainWindow(viewRoot, mountDeps);
+        return adapters.renderer.mountMainWindow(viewRoot, mountDeps);
       },
       mountPopout: (viewRoot, viewRuntime, mountDeps) => {
-        adapters.renderer.mountPopout(viewRoot, viewRuntime, mountDeps);
+        return adapters.renderer.mountPopout(viewRoot, viewRuntime, mountDeps);
       },
       renderPanels: (viewRoot, viewRuntime) => {
         adapters.renderer.renderPanels(viewRoot, viewRuntime);
@@ -139,10 +139,10 @@ export function createShellBootstrapComposition(
       });
     },
     mountMainWindow: (viewRoot, mountDeps) => {
-      mountMainWindow(viewRoot, mountDeps);
+      return mountMainWindow(viewRoot, mountDeps);
     },
     mountPopout: (viewRoot, viewRuntime, mountDeps) => {
-      mountPopout(viewRoot, viewRuntime, mountDeps);
+      return mountPopout(viewRoot, viewRuntime, mountDeps);
     },
     renderPanels: (viewRoot, viewRuntime) => {
       renderPanelsView(viewRoot, viewRuntime);

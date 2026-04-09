@@ -36,6 +36,12 @@ class FakeTabButton {
     existing.push(normalized);
     this.listeners.set(type, existing);
   }
+
+  dispatch(type: "dragstart" | "drag" | "dragend", event: DragEvent): void {
+    for (const listener of this.listeners.get(type) ?? []) {
+      listener(event);
+    }
+  }
 }
 
 class FakeTabItem {
@@ -83,6 +89,7 @@ class FakeButtonNode {
 
 class FakeRoot {
   private readonly classes = new Set<string>();
+  private readonly listeners = new Map<string, DragListener[]>();
 
   readonly classList = {
     add: (className: string) => {
@@ -95,6 +102,15 @@ class FakeRoot {
   };
 
   constructor(private readonly tabItems: FakeTabItem[]) {}
+
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    const normalized = typeof listener === "function"
+      ? (listener as DragListener)
+      : ((event: DragEvent) => listener.handleEvent(event as unknown as Event));
+    const existing = this.listeners.get(type) ?? [];
+    existing.push(normalized);
+    this.listeners.set(type, existing);
+  }
 
   querySelectorAll<T>(selector: string): T[] {
     if (selector === "[data-tab-item]") {
@@ -207,7 +223,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     });
 
     const dragTransfer = new MemoryDataTransfer();
-    tabHarness.tabItems.get("tab-c")!.dispatch(
+    tabHarness.tabButtons.get("tab-c")!.dispatch(
       "dragstart",
       createDragEvent(dragTransfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
     );
@@ -281,7 +297,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     });
 
     const dragStartTransfer = new MemoryDataTransfer();
-    tabHarness.tabItems.get("tab-c")!.dispatch(
+    tabHarness.tabButtons.get("tab-c")!.dispatch(
       "dragstart",
       createDragEvent(dragStartTransfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
     );
@@ -303,11 +319,11 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     });
 
     const transfer = new MemoryDataTransfer();
-    tabHarness.tabItems.get("tab-c")!.dispatch(
+    tabHarness.tabButtons.get("tab-c")!.dispatch(
       "dragstart",
       createDragEvent(transfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
     );
-    tabHarness.tabItems.get("tab-c")!.dispatch("dragend", createDragEvent(transfer));
+    tabHarness.tabButtons.get("tab-c")!.dispatch("dragend", createDragEvent(transfer));
     tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
     await flushTimers();
 

@@ -39,8 +39,8 @@ export function bindBridgeSync(
   root: HTMLElement,
   runtime: ShellRuntime,
   bindings: BridgeSyncBindings,
-): void {
-  runtime.bridge.subscribeHealth((health) => {
+): () => void {
+  const unsubscribeHealth = runtime.bridge.subscribeHealth((health) => {
     if (health.reason === "unavailable") {
       runtime.syncDegraded = false;
       runtime.syncDegradedReason = null;
@@ -75,7 +75,7 @@ export function bindBridgeSync(
     updateWindowReadOnlyState(root, runtime);
   });
 
-  runtime.bridge.subscribe((event) => {
+  const unsubscribeEvents = runtime.bridge.subscribe((event) => {
     if (event.sourceWindowId === runtime.windowId) {
       return;
     }
@@ -122,6 +122,11 @@ export function bindBridgeSync(
       return;
     }
   });
+
+  return () => {
+    unsubscribeEvents();
+    unsubscribeHealth();
+  };
 }
 
 export function announce(root: HTMLElement, runtime: ShellRuntime, message: string): void {

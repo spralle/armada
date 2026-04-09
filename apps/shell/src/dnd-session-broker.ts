@@ -15,6 +15,7 @@ export interface DragSessionBroker {
   readonly available: boolean;
   create(payload: unknown, ttlMs?: number): DragSessionRef;
   consume(ref: DragSessionRef): unknown | null;
+  dispose(): void;
 }
 
 export function createDragSessionBroker(
@@ -22,8 +23,7 @@ export function createDragSessionBroker(
   windowId: string,
 ): DragSessionBroker {
   const sessions = new Map<string, SessionEntry>();
-
-  bridge.subscribe((event) => {
+  const unsubscribe = bridge.subscribe((event) => {
     if (event.sourceWindowId === windowId) {
       return;
     }
@@ -87,6 +87,10 @@ export function createDragSessionBroker(
         sourceWindowId: windowId,
       });
       return entry.payload;
+    },
+    dispose() {
+      unsubscribe();
+      sessions.clear();
     },
   };
 }

@@ -10,6 +10,13 @@ import {
   readActiveDockDragPayload,
   setActiveDockDragPayload,
 } from "./dock-drag-session.js";
+import {
+  addRootClass,
+  clearDockDropPreview,
+  clearDockDropPreviews,
+  removeRootClass,
+  setDockDropPreview,
+} from "./dock-tab-dnd-ui.js";
 
 type DragPayload = {
   tabId: string;
@@ -28,16 +35,9 @@ type ActiveDockDropTarget = {
   zone: DockDropZone;
 };
 
-const DOCK_PREVIEW_CLASSES = [
-  "is-preview-left",
-  "is-preview-right",
-  "is-preview-top",
-  "is-preview-bottom",
-  "is-preview-center",
-] as const;
-
 const dockDragBindingsByRoot = new WeakMap<HTMLElement, AbortController>();
 const activeDockDropTargetByRoot = new WeakMap<HTMLElement, ActiveDockDropTarget>();
+const SPLITTER_DRAG_ACTIVE_ATTR = "data-dock-splitter-drag-active";
 
 export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, deps: DockDragDeps): void {
   dockDragBindingsByRoot.get(root)?.abort();
@@ -45,30 +45,32 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
   dockDragBindingsByRoot.set(root, bindings);
   const listenerOptions = { signal: bindings.signal };
 
-  root.addEventListener("dragend", () => {
-    const payload = readActiveDockDragPayload(root);
-    const dropTarget = activeDockDropTargetByRoot.get(root);
-    if (payload && dropTarget && dropTarget.tabId === payload.tabId) {
-      const moved = moveDockTabThroughRuntime(runtime, deps, {
-        tabId: payload.tabId,
-        sourceWindowId: payload.sourceWindowId,
-        targetTabId: dropTarget.targetTabId,
-        zone: dropTarget.zone,
-      });
-      console.log("[shell:dnd:dock] dragend-fallback", {
-        targetTabId: dropTarget.targetTabId,
-        zone: dropTarget.zone,
-        payload,
-        moved,
-        stack: new Error().stack,
-      });
-    }
+  if (typeof root.addEventListener === "function") {
+    root.addEventListener("dragend", () => {
+      const payload = readActiveDockDragPayload(root);
+      const dropTarget = activeDockDropTargetByRoot.get(root);
+      if (payload && dropTarget && dropTarget.tabId === payload.tabId) {
+        const moved = moveDockTabThroughRuntime(runtime, deps, {
+          tabId: payload.tabId,
+          sourceWindowId: payload.sourceWindowId,
+          targetTabId: dropTarget.targetTabId,
+          zone: dropTarget.zone,
+        });
+        console.log("[shell:dnd:dock] dragend-fallback", {
+          targetTabId: dropTarget.targetTabId,
+          zone: dropTarget.zone,
+          payload,
+          moved,
+          stack: new Error().stack,
+        });
+      }
 
-    clearActiveDockDragPayload(root);
-    activeDockDropTargetByRoot.delete(root);
-    clearDockDropPreviews(root);
-    root.classList.remove("is-dock-dragging");
-  }, listenerOptions);
+      clearActiveDockDragPayload(root);
+      activeDockDropTargetByRoot.delete(root);
+      clearDockDropPreviews(root);
+      removeRootClass(root, "is-dock-dragging");
+    }, listenerOptions);
+  }
 
   for (const zoneNode of root.querySelectorAll<HTMLElement>("[data-dock-drop-zone][data-target-tab-id]")) {
     zoneNode.addEventListener("dragover", (event) => {
@@ -80,6 +82,20 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
       const payload = readTabDragPayload(dataTransfer, runtime.windowId)
         ?? readActiveDockDragPayload(root)
         ?? null;
+      if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
+        removeRootClass(root, "is-dock-dragging");
+        dataTransfer.dropEffect = "none";
+        console.log("[shell:dnd:dock] dragover-ignored", {
+          targetTabId: zoneNode.dataset.targetTabId,
+          zone: zoneNode.dataset.dockDropZone,
+          payload,
+          windowId: runtime.windowId,
+          reason: "splitter-active",
+          stack: new Error().stack,
+        });
+        return;
+      }
+
       if (!payload || payload.sourceWindowId !== runtime.windowId) {
         dataTransfer.dropEffect = "none";
         console.log("[shell:dnd:dock] dragover-ignored", {
@@ -93,9 +109,11 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
       }
 
       event.preventDefault();
-      event.stopPropagation();
+      if (typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
       dataTransfer.dropEffect = "move";
-      root.classList.add("is-dock-dragging");
+      addRootClass(root, "is-dock-dragging");
       setActiveDockDragPayload(root, payload);
       const targetTabId = zoneNode.dataset.targetTabId;
       const zone = zoneNode.dataset.dockDropZone;
@@ -123,7 +141,9 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         return;
       }
 
-      const overlay = zoneNode.closest<HTMLElement>(".dock-drop-overlay");
+      const overlay = typeof zoneNode.closest === "function"
+        ? zoneNode.closest<HTMLElement>(".dock-drop-overlay")
+        : null;
       const relatedTarget = event.relatedTarget as Node | null;
       if (overlay && relatedTarget && overlay.contains(relatedTarget)) {
         return;
@@ -137,7 +157,23 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
 
     zoneNode.addEventListener("drop", (event) => {
       event.preventDefault();
-      event.stopPropagation();
+      if (typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
+      if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
+        console.log("[shell:dnd:dock] drop-blocked", {
+          targetTabId: zoneNode.dataset.targetTabId,
+          zone: zoneNode.dataset.dockDropZone,
+          reason: "splitter-active",
+          stack: new Error().stack,
+        });
+        activeDockDropTargetByRoot.delete(root);
+        clearDockDropPreviews(root);
+        clearActiveDockDragPayload(root);
+        removeRootClass(root, "is-dock-dragging");
+        return;
+      }
+
       const dataTransfer = event.dataTransfer;
       const targetTabId = zoneNode.dataset.targetTabId;
       const zone = zoneNode.dataset.dockDropZone;
@@ -149,7 +185,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         });
         activeDockDropTargetByRoot.delete(root);
         clearDockDropPreviews(root);
-        root.classList.remove("is-dock-dragging");
+        removeRootClass(root, "is-dock-dragging");
         return;
       }
 
@@ -169,7 +205,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         clearActiveDockDragPayload(root);
         activeDockDropTargetByRoot.delete(root);
         clearDockDropPreviews(root);
-        root.classList.remove("is-dock-dragging");
+        removeRootClass(root, "is-dock-dragging");
         return;
       }
 
@@ -189,39 +225,8 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
       clearActiveDockDragPayload(root);
       activeDockDropTargetByRoot.delete(root);
       clearDockDropPreviews(root);
-      root.classList.remove("is-dock-dragging");
+      removeRootClass(root, "is-dock-dragging");
     }, listenerOptions);
-  }
-}
-
-function setDockDropPreview(zoneNode: HTMLElement, zone: DockDropZone): void {
-  const overlay = zoneNode.closest<HTMLElement>(".dock-drop-overlay");
-  if (!overlay) {
-    return;
-  }
-
-  clearDockDropPreviewClasses(overlay);
-  overlay.classList.add(`is-preview-${zone}`);
-}
-
-function clearDockDropPreview(zoneNode: HTMLElement): void {
-  const overlay = zoneNode.closest<HTMLElement>(".dock-drop-overlay");
-  if (!overlay) {
-    return;
-  }
-
-  clearDockDropPreviewClasses(overlay);
-}
-
-function clearDockDropPreviews(root: HTMLElement): void {
-  for (const overlay of root.querySelectorAll<HTMLElement>(".dock-drop-overlay")) {
-    clearDockDropPreviewClasses(overlay);
-  }
-}
-
-function clearDockDropPreviewClasses(overlay: HTMLElement): void {
-  for (const className of DOCK_PREVIEW_CLASSES) {
-    overlay.classList.remove(className);
   }
 }
 
@@ -324,17 +329,21 @@ function parseDragPayloadRaw(raw: string): DragPayload | null {
     return null;
   }
 }
+
 function asDragPayload(value: unknown): DragPayload | null {
   if (!value || typeof value !== "object") {
     return null;
   }
+
   const candidate = value as Partial<DragPayload>;
   if (typeof candidate.tabId !== "string") {
     return null;
   }
+
   if (typeof candidate.sourceWindowId !== "string") {
     return null;
   }
+
   return {
     tabId: candidate.tabId,
     sourceWindowId: candidate.sourceWindowId,

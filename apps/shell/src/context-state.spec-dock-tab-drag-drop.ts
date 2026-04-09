@@ -69,6 +69,7 @@ class FakeDockZone {
 
 class FakeDockRoot {
   private readonly classes = new Set<string>();
+  private readonly attributes = new Map<string, string>();
 
   readonly classList = {
     add: (className: string) => {
@@ -85,6 +86,18 @@ class FakeDockRoot {
   constructor(
     private readonly zones: FakeDockZone[],
   ) {}
+
+  setAttribute(name: string, value: string): void {
+    this.attributes.set(name, value);
+  }
+
+  removeAttribute(name: string): void {
+    this.attributes.delete(name);
+  }
+
+  hasAttribute(name: string): boolean {
+    return this.attributes.has(name);
+  }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
     const normalized = typeof listener === "function"
@@ -266,6 +279,53 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
 
     assertEqual(dragoverEvent.defaultPrevented, false, "tab-strip payloads should not arm dock drop zones");
     assertEqual(transfer.dropEffect, "none", "tab-strip payloads should force dropEffect none");
+  });
+
+  test("dock dragover is suppressed while splitter drag is active", () => {
+    const runtime = createRuntime();
+    const zone = createDockZone("tab-a", "left");
+    const root = new FakeDockRoot([zone]);
+
+    wireDockTabDragDrop(root as unknown as HTMLElement, runtime, {
+      renderContextControls() {},
+      renderParts() {},
+      renderSyncStatus() {},
+    });
+
+    root.classList.add("is-dock-dragging");
+    root.setAttribute("data-dock-splitter-drag-active", "true");
+    const transfer = new MemoryDataTransfer();
+    transfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({ tabId: "tab-b", sourceWindowId: "window-a" }));
+    const dragoverEvent = createDragEvent(transfer);
+    zone.dispatch("dragover", dragoverEvent);
+
+    assertEqual(dragoverEvent.defaultPrevented, false, "splitter-active dragover should not arm dock zones");
+    assertEqual(transfer.dropEffect, "none", "splitter-active dragover should force dropEffect none");
+    assertEqual(root.classList.contains("is-dock-dragging"), false, "splitter-active dragover should clear dock dragging class");
+  });
+
+  test("dock drop is ignored while splitter drag is active", () => {
+    const runtime = createRuntime();
+    const zone = createDockZone("tab-a", "bottom");
+    const root = new FakeDockRoot([zone]);
+
+    wireDockTabDragDrop(root as unknown as HTMLElement, runtime, {
+      renderContextControls() {},
+      renderParts() {},
+      renderSyncStatus() {},
+    });
+
+    const beforeActive = runtime.contextState.activeTabId;
+    root.classList.add("is-dock-dragging");
+    root.setAttribute("data-dock-splitter-drag-active", "true");
+    const transfer = new MemoryDataTransfer();
+    transfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({ tabId: "tab-b", sourceWindowId: "window-a" }));
+    const dropEvent = createDragEvent(transfer);
+    zone.dispatch("drop", dropEvent);
+
+    assertEqual(dropEvent.defaultPrevented, true, "splitter-active drop should prevent default and short-circuit");
+    assertEqual(runtime.contextState.activeTabId, beforeActive, "splitter-active drop should not move tabs");
+    assertEqual(root.classList.contains("is-dock-dragging"), false, "splitter-active drop should clear dock dragging class");
   });
 
   test("dock move remains local when bridge unavailable", () => {

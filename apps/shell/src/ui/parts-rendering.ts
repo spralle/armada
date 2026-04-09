@@ -4,7 +4,11 @@ import { DEV_MODE } from "../app/constants.js";
 import { escapeHtml } from "../app/utils.js";
 import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
-import { listAvailableUtilityTabs, resolveUtilityTabById } from "../utility-tabs.js";
+import { listAvailableUtilityTabs } from "../utility-tabs.js";
+import { renderPartBody } from "./parts-rendering-body.js";
+import { renderDockDropOverlay, renderDockPartPanel } from "./parts-rendering-dock-panel.js";
+import { renderDockSplitTrackStyle } from "./parts-rendering-dock-split-style.js";
+
 export interface ComposedShellPart {
   instanceId: string;
   definitionId: string;
@@ -24,6 +28,7 @@ export interface ComposedPartDefinition {
   component?: string;
   pluginId: string;
 }
+
 export type PartSlot = ComposedShellPart["slot"];
 
 export function composePartDefinitionsFromRegistrySnapshot(
@@ -45,6 +50,7 @@ export function composePartDefinitionsFromRegistrySnapshot(
     pluginId: part.pluginId,
   }));
 }
+
 function readDockContainer(part: unknown): string | undefined {
   if (!part || typeof part !== "object" || !("dock" in part)) {
     return undefined;
@@ -57,6 +63,7 @@ function readDockContainer(part: unknown): string | undefined {
 
   return typeof dock.container === "string" ? dock.container : undefined;
 }
+
 function resolveSlotFromDockContainer(container: string | undefined): PartSlot {
   if (container === "side") {
     return "side";
@@ -68,6 +75,7 @@ function resolveSlotFromDockContainer(container: string | undefined): PartSlot {
 
   return "main";
 }
+
 export function getVisiblePartDefinitions(runtime: ShellRuntime): ComposedPartDefinition[] {
   return composePartDefinitionsFromRegistrySnapshot(runtime.registry.getSnapshot());
 }
@@ -115,6 +123,7 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
 
   return [...utilityParts, ...pluginParts];
 }
+
 export function renderPartCard(
   part: ComposedShellPart,
   runtime: ShellRuntime,
@@ -136,17 +145,20 @@ export function renderPartCard(
     : "";
 
   return `
-    <article class="part-root" data-tab-id="${part.instanceId}" data-definition-id="${part.definitionId}" data-part-id="${part.instanceId}" ${closeabilityAttrs}>
+    <article class="part-root" data-tab-id="${part.instanceId}" data-definition-id="${part.definitionId}" data-part-id="${part.instanceId}" draggable="true" ${closeabilityAttrs}>
       <h2>${escapeHtml(part.title)}</h2>
       <div class="part-actions">
         ${popoutButton}
         ${restoreButton}
       </div>
       ${renderPartBody(part)}
+      <div class="dropzone" data-dropzone-for="${part.instanceId}">Drop cross-window payload here</div>
+      <p class="runtime-note" data-drop-result-for="${part.instanceId}"></p>
       <p class="runtime-note">Window: ${runtime.windowId}</p>
     </article>
   `;
 }
+
 export function updateSelectedStyles(root: HTMLElement, selectedPartId: string | null): void {
   for (const node of root.querySelectorAll<HTMLElement>("article[data-part-id]")) {
     const partId = node.dataset.partId;
@@ -157,9 +169,11 @@ export function updateSelectedStyles(root: HTMLElement, selectedPartId: string |
     }
   }
 }
+
 export function resolvePartTitle(partId: string, runtime: ShellRuntime): string {
   return getVisibleComposedParts(runtime).find((part) => part.instanceId === partId)?.title ?? partId;
 }
+
 export function renderTabStrip(
   slot: PartSlot,
   tabs: ComposedShellPart[],
@@ -223,20 +237,12 @@ export function renderTabStrip(
     </div>
   `;
 }
-function renderDockDropOverlay(targetTabId: string): string {
-  return `<div class="dock-drop-overlay" data-dock-drop-overlay-for="${targetTabId}" aria-hidden="true">
-      <div class="dock-drop-preview"></div>
-      <div class="dock-drop-zone dock-drop-zone-left" data-dock-drop-zone="left" data-target-tab-id="${targetTabId}" title="Split left"></div>
-      <div class="dock-drop-zone dock-drop-zone-right" data-dock-drop-zone="right" data-target-tab-id="${targetTabId}" title="Split right"></div>
-      <div class="dock-drop-zone dock-drop-zone-top" data-dock-drop-zone="top" data-target-tab-id="${targetTabId}" title="Split top"></div>
-      <div class="dock-drop-zone dock-drop-zone-bottom" data-dock-drop-zone="bottom" data-target-tab-id="${targetTabId}" title="Split bottom"></div>
-      <div class="dock-drop-zone dock-drop-zone-center" data-dock-drop-zone="center" data-target-tab-id="${targetTabId}" title="Merge into tab stack"></div>
-    </div>`;
-}
+
 export function isPartActivationNode(target: HTMLElement): target is HTMLButtonElement {
   const action = target.dataset.action;
   return target instanceof HTMLButtonElement && action === "activate-tab";
 }
+
 export function renderDockTree(
   root: DockNode | null,
   visibleParts: ComposedShellPart[],
@@ -274,8 +280,17 @@ function renderDockNode(
       return first;
     }
 
-    return `<section class="dock-node dock-node-split dock-node-split-${node.orientation}" data-dock-node-id="${node.id}" data-dock-orientation="${node.orientation}">
+    return `<section class="dock-node dock-node-split dock-node-split-${node.orientation}"${renderDockSplitTrackStyle(node)} data-dock-node-id="${node.id}" data-dock-orientation="${node.orientation}">
       <section class="dock-split-branch" data-dock-branch="first">${first}</section>
+      <div
+        class="dock-splitter dock-splitter-${node.orientation}"
+        role="separator"
+        aria-orientation="${node.orientation === "horizontal" ? "vertical" : "horizontal"}"
+        aria-label="Resize split"
+        data-dock-splitter="true"
+        data-dock-split-id="${node.id}"
+        data-dock-orientation="${node.orientation}"
+      ></div>
       <section class="dock-split-branch" data-dock-branch="second">${second}</section>
     </section>`;
   }
@@ -294,20 +309,10 @@ function renderDockNode(
   return `<section class="dock-node dock-node-stack" data-dock-node-id="${node.id}" data-dock-stack-id="${node.id}" data-slot="${panelSlot}">
       ${renderTabStrip(panelSlot, tabs, activeTabId, runtime, { tabScope, label: panelLabel })}
       <section class="dock-stack-panels" data-dock-stack-panels="${node.id}">
-        ${tabs.map((part) => renderPartPanel(part, runtime, part.id === activeTabId)).join("")}
+        ${tabs.map((part) => renderDockPartPanel(part, part.id === activeTabId)).join("")}
         ${renderDockDropOverlay(activeTabId)}
       </section>
     </section>`;
-}
-
-function renderPartPanel(part: ComposedShellPart, runtime: ShellRuntime, isActive: boolean): string {
-  return `<section
-      class="dock-tabpanel"
-      id="panel-${part.id}"
-      role="tabpanel"
-      aria-labelledby="tab-${part.id}"
-      ${isActive ? "" : "hidden"}
-    >${renderPartCard(part, runtime, { showPopoutButton: true })}</section>`;
 }
 
 function resolveStackActiveTabId(
@@ -324,24 +329,4 @@ function resolveStackActiveTabId(
   }
 
   return tabs[0]!.id;
-}
-
-function renderPartBody(part: ComposedShellPart): string {
-  const utilityTab = resolveUtilityTabById(part.id);
-  if (utilityTab) {
-    return `<section class="domain-panel" data-domain-panel="utility-host" data-part-panel-for="${part.id}">
-      <section class="domain-panel-host" id="${utilityTab.panelHostId}" data-part-content-for="${part.id}"></section>
-      <section class="domain-panel-fallback" data-part-fallback-for="${part.id}" hidden></section>
-    </section>`;
-  }
-
-  const componentLabel = part.component ?? part.definitionId ?? part.id;
-  return `<section class="domain-panel" data-domain-panel="runtime-host" data-part-panel-for="${part.instanceId}">
-      <section class="domain-panel-host" data-part-content-for="${part.instanceId}"></section>
-      <section class="domain-panel-fallback" data-part-fallback-for="${part.instanceId}">
-        <h3>${escapeHtml(part.title)}</h3>
-        <p class="domain-hint">Component '${escapeHtml(componentLabel)}' is unavailable in this shell runtime.</p>
-        <p class="domain-hint">Composition remains extension-driven; this host provides generic fallback rendering only.</p>
-      </section>
-    </section>`;
 }

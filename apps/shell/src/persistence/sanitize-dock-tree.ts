@@ -1,6 +1,7 @@
 import {
   createInitialDockTree,
   ensureTabRegisteredInDockTree,
+  readDockSplitRatio,
 } from "../context-state/dock-tree.js";
 import type {
   DockNode,
@@ -101,6 +102,9 @@ function sanitizeDockNode(input: unknown, validTabIds: Set<string>): SanitizedDo
     kind: "split",
     id: input.id,
     orientation,
+    ratio: readDockSplitRatio({
+      ratio: typeof input.ratio === "number" ? input.ratio : undefined,
+    }),
     first,
     second,
   };

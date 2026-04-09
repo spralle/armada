@@ -23,6 +23,7 @@ type MountPartFn = (
 interface PartModuleHostEntry {
   target: HTMLElement;
   cleanup: (() => void) | null;
+  mountKey: string;
 }
 
 type PartRendererRecord = Record<string, unknown>;
@@ -48,6 +49,8 @@ export function createPartModuleHostRuntime(
     async syncRenderedParts(root, parts) {
       generation += 1;
       const currentGeneration = generation;
+      const registrySnapshot = runtime.registry.getSnapshot();
+      const pluginsById = new Map(registrySnapshot.plugins.map((plugin) => [plugin.id, plugin]));
       const visiblePartsById = new Map(parts.map((part) => [resolvePartInstanceId(part), part]));
       const contentTargets = collectTargetsByPart(root, "partContentFor");
       const fallbackTargets = collectTargetsByPart(root, "partFallbackFor");
@@ -72,8 +75,12 @@ export function createPartModuleHostRuntime(
           continue;
         }
 
+        const fallbackTarget = fallbackTargets.get(instanceId) ?? null;
+        const mountKey = createPartMountKey(part, pluginsById.get(part.pluginId));
+
         const existing = mounted.get(instanceId);
-        if (existing && existing.target === target) {
+        if (existing && existing.target === target && existing.mountKey === mountKey) {
+          hideFallback(fallbackTarget);
           continue;
         }
 
@@ -84,11 +91,13 @@ export function createPartModuleHostRuntime(
 
         mountPromises.push(
           mountPart({
-            fallbackTarget: fallbackTargets.get(instanceId) ?? null,
+            fallbackTarget,
             federationRuntime,
             isCurrent: () => generation === currentGeneration && visiblePartsById.has(instanceId),
+            mountKey,
             mounted,
             part,
+            pluginSnapshot: pluginsById.get(part.pluginId),
             registeredRemoteIds,
             runtime,
             target,
@@ -115,8 +124,10 @@ interface MountPartOptions {
   fallbackTarget: HTMLElement | null;
   federationRuntime: ShellFederationRuntime;
   isCurrent: () => boolean;
+  mountKey: string;
   mounted: Map<string, PartModuleHostEntry>;
   part: ComposedShellPart;
+  pluginSnapshot: ReturnType<ShellRuntime["registry"]["getSnapshot"]>["plugins"][number] | undefined;
   registeredRemoteIds: Set<string>;
   runtime: ShellRuntime;
   target: HTMLElement;
@@ -127,18 +138,17 @@ async function mountPart(options: MountPartOptions): Promise<void> {
     fallbackTarget,
     federationRuntime,
     isCurrent,
+    mountKey,
     mounted,
     part,
+    pluginSnapshot,
     registeredRemoteIds,
     runtime,
     target,
   } = options;
 
   if (!registeredRemoteIds.has(part.pluginId)) {
-    const descriptor = runtime.registry
-      .getSnapshot()
-      .plugins
-      .find((plugin) => plugin.id === part.pluginId)?.descriptor;
+    const descriptor = pluginSnapshot?.descriptor;
     if (descriptor) {
       federationRuntime.registerRemote({ id: descriptor.id, entry: descriptor.entry });
       registeredRemoteIds.add(part.pluginId);
@@ -175,11 +185,37 @@ async function mountPart(options: MountPartOptions): Promise<void> {
     mounted.set(resolvePartInstanceId(part), {
       target,
       cleanup,
+      mountKey,
     });
     hideFallback(fallbackTarget);
   } catch {
     showFallback(target, fallbackTarget);
   }
+}
+
+function createPartMountKey(
+  part: ComposedShellPart,
+  pluginSnapshot: ReturnType<ShellRuntime["registry"]["getSnapshot"]>["plugins"][number] | undefined,
+): string {
+  if (!pluginSnapshot) {
+    return `${part.pluginId}|missing`;
+  }
+
+  const enabledState = typeof pluginSnapshot.enabled === "boolean"
+    ? (pluginSnapshot.enabled ? "enabled" : "disabled")
+    : "enabled:unknown";
+  const lifecycleState = pluginSnapshot.lifecycle?.state ?? "lifecycle:unknown";
+  const lifecycleTransition = pluginSnapshot.lifecycle?.lastTransitionAt ?? "transition:none";
+  const failureCode = pluginSnapshot.failure?.code ?? "failure:none";
+
+  return [
+    part.pluginId,
+    enabledState,
+    lifecycleState,
+    lifecycleTransition,
+    pluginSnapshot.contract ? "contract:present" : "contract:missing",
+    failureCode,
+  ].join("|");
 }
 
 function resolvePartMount(moduleValue: unknown, part: ComposedShellPart): MountPartFn | null {

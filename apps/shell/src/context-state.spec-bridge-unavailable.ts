@@ -27,6 +27,8 @@ class UnavailableBridge implements WindowBridge {
   }
 
   recover(): void {}
+
+  dispose(): void {}
 }
 
 function createSafeRoot(): HTMLElement {

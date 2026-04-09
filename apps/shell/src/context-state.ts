@@ -36,8 +36,12 @@ export {
   deriveDeterministicActiveTabId,
   ensureTabRegisteredInDockTree,
   moveTabWithinDockTree,
+  readDockSplitRatio,
   removeTabFromDockTree,
+  setDockSplitRatioById,
 } from "./context-state/dock-tree.js";
+
+export { setDockSplitRatio } from "./context-state/dock-tree-ratio.js";
 
 export { createInitialShellContextState } from "./context-state/state.js";
 

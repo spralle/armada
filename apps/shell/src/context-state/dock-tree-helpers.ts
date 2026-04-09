@@ -18,6 +18,7 @@ export function cloneDockNode(node: DockNode | null): DockNode | null {
     kind: "split",
     id: node.id,
     orientation: node.orientation,
+    ratio: node.ratio,
     first: cloneDockNode(node.first)!,
     second: cloneDockNode(node.second)!,
   };

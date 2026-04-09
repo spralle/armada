@@ -3,32 +3,52 @@ import type { ShellRuntime } from "../app/types.js";
 type MountDeps = {
   renderParts: () => void;
   updateWindowReadOnlyState: () => void;
-  setupResize: () => void;
+  setupResize: () => () => void;
   publishRestoreRequestOnUnload: () => void;
 };
 
-export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
+export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void {
   root.innerHTML = `
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     html, body { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: #14161a; color: #e9edf3; }
     .shell { display: grid; grid-template-columns: 1fr; min-height: 100vh; min-height: 100dvh; height: 100vh; height: 100dvh; overflow: hidden; }
-    .dock-root { background: #11151c; min-width: 0; min-height: 0; overflow: hidden; padding: 8px; display: flex; flex-direction: column; }
+    .shell,
+    .shell > .dock-root,
+    .dock-root > .dock-node,
+    .dock-split-branch > .dock-node,
+    .dock-node-split,
+    .dock-node-stack,
+    .dock-stack-panels { height: 100%; }
+    .dock-root { background: #11151c; min-width: 0; min-height: 0; overflow: hidden; padding: 6px; display: flex; flex-direction: column; }
     .dock-root > .dock-node { flex: 1 1 auto; }
     .dock-node { min-width: 0; min-height: 0; }
     .dock-node-stack { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; border: 1px solid #2b3040; border-radius: 4px; background: #121922; overflow: hidden; }
-    .dock-stack-panels { min-height: 0; overflow: auto; padding: 8px; position: relative; display: flex; flex-direction: column; }
-    .dock-stack-panels > [role="tabpanel"] { min-height: 0; height: 100%; display: flex; flex-direction: column; }
+    .dock-stack-panels { min-height: 0; overflow: hidden; padding: 0; position: relative; display: flex; flex-direction: column; }
+    .dock-stack-panels > [role="tabpanel"] { min-height: 0; height: 100%; flex: 1 1 auto; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"][hidden] { display: none; }
-    .dock-node-split { display: grid; gap: 6px; min-width: 0; min-height: 0; }
+    .dock-tabpanel { min-width: 0; min-height: 0; overflow: hidden; flex: 1 1 auto; display: flex; }
+    .dock-tabpanel-content { min-width: 0; min-height: 0; height: 100%; overflow: auto; flex: 1 1 auto; padding: 6px; box-sizing: border-box; display: flex; flex-direction: column; }
+    .dock-node-split { --dock-splitter-size: 12px; display: grid; gap: 0; min-width: 0; min-height: 0; }
     .dock-node-split-horizontal { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .dock-node-split-vertical { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
-    .dock-split-branch { min-width: 0; min-height: 0; }
-    .part-tab-strip { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: thin; }
+    .dock-split-branch { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+    .dock-splitter { position: relative; background: transparent; user-select: none; touch-action: none; z-index: 2; }
+    .dock-splitter::before { content: ""; position: absolute; background: #2b3040; pointer-events: none; }
+    .dock-splitter-horizontal { cursor: col-resize; }
+    .dock-splitter-horizontal::before { top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-0.5px); }
+    .dock-splitter-vertical { cursor: row-resize; }
+    .dock-splitter-vertical::before { left: 0; right: 0; top: 50%; height: 1px; transform: translateY(-0.5px); }
+    .dock-splitter:hover::before { background: #7cb4ff; }
+    .is-dock-splitter-dragging { cursor: grabbing; }
+    .is-dock-splitter-dragging .dock-splitter-horizontal { cursor: col-resize; }
+    .is-dock-splitter-dragging .dock-splitter-vertical { cursor: row-resize; }
+    .part-tab-strip { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: thin; padding: 2px; }
     .part-tab-item { display: inline-flex; align-items: center; gap: 2px; position: relative; }
-    .part-tab { appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none; color: #c6d0e0; padding: 6px 8px; border-radius: 4px 4px 0 0; cursor: pointer; white-space: nowrap; }
+    .part-tab { appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none; color: #c6d0e0; padding: 5px 7px; border-radius: 4px 4px 0 0; cursor: grab; white-space: nowrap; }
     .part-tab:hover { background: #1a2230; color: #e9edf3; }
+    .part-tab:active { cursor: grabbing; }
     .part-tab:focus-visible { outline: 2px solid #7cb4ff; outline-offset: 1px; }
     .part-tab.is-active { background: #1d2635; border-color: #334564; color: #f4f8ff; }
     .part-tab-close { appearance: none; background: transparent; border: 1px solid transparent; color: #aebbd0; border-radius: 3px; cursor: pointer; width: 18px; height: 18px; line-height: 1; padding: 0; }
@@ -73,7 +93,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
     .dev-inspector li { margin: 3px 0; }
     .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; flex: 1 1 auto; }
     .domain-panel-host,
-    .domain-panel-fallback { min-height: 0; }
+    .domain-panel-fallback { min-height: 0; overflow: auto; }
     .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
     .domain-list { display: grid; gap: 4px; }
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 4px; padding: 6px; cursor: pointer; }
@@ -97,10 +117,14 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): void {
 
   deps.renderParts();
   deps.updateWindowReadOnlyState();
-  deps.setupResize();
+  const disposeResize = deps.setupResize();
+
+  return () => {
+    disposeResize();
+  };
 }
 
-export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: MountDeps): void {
+export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: MountDeps): () => void {
   root.innerHTML = `
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
@@ -124,7 +148,7 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
     .dev-inspector li { margin: 3px 0; }
     .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; flex: 1 1 auto; }
     .domain-panel-host,
-    .domain-panel-fallback { min-height: 0; }
+    .domain-panel-fallback { min-height: 0; overflow: auto; }
     .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
     .domain-list { display: grid; gap: 4px; }
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 4px; padding: 6px; cursor: pointer; }
@@ -147,11 +171,19 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
 
   deps.renderParts();
   deps.updateWindowReadOnlyState();
+  const disposeResize = deps.setupResize();
 
-  window.addEventListener("beforeunload", () => {
+  const onBeforeUnload = () => {
     if (!runtime.popoutTabId || !runtime.hostWindowId) {
       return;
     }
     deps.publishRestoreRequestOnUnload();
-  });
+  };
+
+  window.addEventListener("beforeunload", onBeforeUnload);
+
+  return () => {
+    disposeResize();
+    window.removeEventListener("beforeunload", onBeforeUnload);
+  };
 }

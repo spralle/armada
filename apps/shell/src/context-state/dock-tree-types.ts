@@ -8,6 +8,7 @@ export interface DockSplitNode {
   kind: "split";
   id: string;
   orientation: DockOrientation;
+  ratio?: number;
   first: DockNode;
   second: DockNode;
 }

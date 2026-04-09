@@ -39,6 +39,8 @@ export class TestBridge implements WindowBridge {
     this.recoverCalls += 1;
   }
 
+  dispose(): void {}
+
   emit(event: WindowBridgeEvent): void {
     for (const listener of this.listeners) {
       listener(event);

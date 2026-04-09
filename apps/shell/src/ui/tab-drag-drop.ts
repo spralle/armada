@@ -21,25 +21,45 @@ interface DockDragPayload {
 }
 
 const pendingDragCleanupByRoot = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+const tabDragBindingsByRoot = new WeakMap<HTMLElement, AbortController>();
+const SPLITTER_DRAG_ACTIVE_ATTR = "data-dock-splitter-drag-active";
 
 export function wireTabStripDragDrop(
   root: HTMLElement,
   runtime: ShellRuntime,
   onTabMoved: (tabId: string) => void,
 ): void {
+  tabDragBindingsByRoot.get(root)?.abort();
+  const bindings = new AbortController();
+  tabDragBindingsByRoot.set(root, bindings);
+  const listenerOptions = { signal: bindings.signal };
+
+  root.addEventListener("dragend", () => {
+    scheduleDragCleanup(root);
+  }, listenerOptions);
+
+  root.addEventListener("drop", () => {
+    scheduleDragCleanup(root);
+  }, listenerOptions);
+
   const tabItems = getTabDragItems(root);
 
   for (const tabItem of tabItems) {
-    const tabButton = tabItem.querySelector<HTMLButtonElement>("button[data-action='activate-tab']");
-    const tabId = tabItem.dataset.tabItem ?? tabButton?.dataset.partId;
+    const tabButton = resolveTabButton(tabItem);
+    const tabId = readTabItemId(tabItem, tabButton);
     if (!tabButton || !tabId) {
       continue;
     }
 
     tabButton.draggable = true;
 
-    tabItem.addEventListener("dragstart", (event) => {
+    tabButton.addEventListener("dragstart", (event) => {
       cancelPendingDragCleanup(root);
+
+      if (isSplitterDragActive(root)) {
+        event.preventDefault();
+        return;
+      }
 
       const dataTransfer = event.dataTransfer;
       if (!dataTransfer || !tabId || runtime.syncDegraded) {
@@ -67,10 +87,17 @@ export function wireTabStripDragDrop(
         sourceWindowId: runtime.windowId,
       });
 
-      dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
+      if (runtime.dragSessionBroker.available) {
+        const ref = runtime.dragSessionBroker.create(payload);
+        dataTransfer.setData("text/plain", `${DRAG_REF_PREFIX}${ref.id}`);
+      } else {
+        dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
+      }
 
       dataTransfer.effectAllowed = "move";
-      dataTransfer.setDragImage(tabButton ?? tabItem, 16, 12);
+      if (typeof dataTransfer.setDragImage === "function") {
+        dataTransfer.setDragImage(tabButton ?? tabItem, 16, 12);
+      }
       console.log("[shell:dnd:tab] dragstart", {
         tabId,
         sourceWindowId: runtime.windowId,
@@ -78,23 +105,23 @@ export function wireTabStripDragDrop(
         types: Array.from(dataTransfer.types ?? []),
         stack: new Error().stack,
       });
-    });
+    }, listenerOptions);
 
-    tabItem.addEventListener("drag", () => {
+    tabButton.addEventListener("drag", () => {
       const activePayload = readActiveDockDragPayload(root);
       if (activePayload?.tabId !== tabId) {
         return;
       }
-      root.classList.add("is-dock-dragging");
-    });
+      addRootClass(root, "is-dock-dragging");
+    }, listenerOptions);
 
-    tabItem.addEventListener("dragend", () => {
+    tabButton.addEventListener("dragend", () => {
       scheduleDragCleanup(root);
       console.log("[shell:dnd:tab] dragend", {
         tabId,
         stack: new Error().stack,
       });
-    });
+    }, listenerOptions);
 
     tabItem.addEventListener("dragover", (event) => {
       if (!event.dataTransfer || runtime.syncDegraded) {
@@ -103,7 +130,7 @@ export function wireTabStripDragDrop(
 
       event.preventDefault();
       event.dataTransfer.dropEffect = "move";
-    });
+    }, listenerOptions);
 
     tabItem.addEventListener("drop", (event) => {
       event.preventDefault();
@@ -148,7 +175,7 @@ export function wireTabStripDragDrop(
         targetTabId,
         stack: new Error().stack,
       });
-    });
+    }, listenerOptions);
   }
 }
 
@@ -177,7 +204,52 @@ function cancelPendingDragCleanup(root: HTMLElement): void {
 
 function clearDragState(root: HTMLElement): void {
   clearActiveDockDragPayload(root);
-  root.classList.remove("is-dock-dragging");
+  removeRootClass(root, "is-dock-dragging");
+}
+
+function resolveTabButton(tabItem: HTMLElement): HTMLButtonElement | null {
+  if (typeof (tabItem as Partial<HTMLButtonElement>).dataset?.partId === "string") {
+    return tabItem as unknown as HTMLButtonElement;
+  }
+
+  if (typeof (tabItem as Partial<HTMLElement>).querySelector === "function") {
+    return tabItem.querySelector<HTMLButtonElement>("button[data-action='activate-tab']");
+  }
+
+  return null;
+}
+
+function readTabItemId(tabItem: HTMLElement, tabButton: HTMLButtonElement | null): string | undefined {
+  const itemDataset = (tabItem as Partial<HTMLElement>).dataset;
+  if (itemDataset && typeof itemDataset.tabItem === "string") {
+    return itemDataset.tabItem;
+  }
+
+  return tabButton?.dataset.partId;
+}
+
+function isSplitterDragActive(root: HTMLElement): boolean {
+  if (typeof (root as Partial<HTMLElement>).hasAttribute !== "function") {
+    return false;
+  }
+
+  return root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR);
+}
+
+function addRootClass(root: HTMLElement, className: string): void {
+  if (!root.classList || typeof root.classList.add !== "function") {
+    return;
+  }
+
+  root.classList.add(className);
+}
+
+function removeRootClass(root: HTMLElement, className: string): void {
+  if (!root.classList || typeof root.classList.remove !== "function") {
+    return;
+  }
+
+  root.classList.remove(className);
 }
 
 function parseTabDragPayload(runtime: ShellRuntime, raw: string): TabDragPayload | null {
