@@ -56,7 +56,7 @@
     "diplomat": {
       "description": "Coordinates PRs and delivery via gh CLI.",
       "mode": "subagent",
-      "temperature": 0.5,
+      "temperature": 0.2,
       "prompt": "{file:.opencode/prompts/diplomat.md}",
       "permission": {
         "edit": "ask"
@@ -78,6 +78,16 @@
       "prompt": "{file:.opencode/prompts/watchman.md}",
       "permission": {
         "edit": "deny"
+      }
+    },
+    "yolo": {
+      "description": "Purple neon speed lane for small low-risk tasks.",
+      "mode": "subagent",
+      "color": "#A020F0",
+      "temperature": 0.2,
+      "prompt": "{file:.opencode/prompts/yolo.md}",
+      "permission": {
+        "edit": "allow"
       }
     }
   }

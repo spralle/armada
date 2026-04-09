@@ -5,7 +5,6 @@ import { escapeHtml } from "../app/utils.js";
 import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
 import { listAvailableUtilityTabs, resolveUtilityTabById } from "../utility-tabs.js";
-
 export interface ComposedShellPart {
   instanceId: string;
   definitionId: string;
@@ -25,7 +24,6 @@ export interface ComposedPartDefinition {
   component?: string;
   pluginId: string;
 }
-
 export type PartSlot = ComposedShellPart["slot"];
 
 export function composePartDefinitionsFromRegistrySnapshot(
@@ -47,7 +45,6 @@ export function composePartDefinitionsFromRegistrySnapshot(
     pluginId: part.pluginId,
   }));
 }
-
 function readDockContainer(part: unknown): string | undefined {
   if (!part || typeof part !== "object" || !("dock" in part)) {
     return undefined;
@@ -60,7 +57,6 @@ function readDockContainer(part: unknown): string | undefined {
 
   return typeof dock.container === "string" ? dock.container : undefined;
 }
-
 function resolveSlotFromDockContainer(container: string | undefined): PartSlot {
   if (container === "side") {
     return "side";
@@ -72,7 +68,6 @@ function resolveSlotFromDockContainer(container: string | undefined): PartSlot {
 
   return "main";
 }
-
 export function getVisiblePartDefinitions(runtime: ShellRuntime): ComposedPartDefinition[] {
   return composePartDefinitionsFromRegistrySnapshot(runtime.registry.getSnapshot());
 }
@@ -120,7 +115,6 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
 
   return [...utilityParts, ...pluginParts];
 }
-
 export function renderPartCard(
   part: ComposedShellPart,
   runtime: ShellRuntime,
@@ -142,20 +136,17 @@ export function renderPartCard(
     : "";
 
   return `
-    <article class="part-root" data-tab-id="${part.instanceId}" data-definition-id="${part.definitionId}" data-part-id="${part.instanceId}" draggable="true" ${closeabilityAttrs}>
+    <article class="part-root" data-tab-id="${part.instanceId}" data-definition-id="${part.definitionId}" data-part-id="${part.instanceId}" ${closeabilityAttrs}>
       <h2>${escapeHtml(part.title)}</h2>
       <div class="part-actions">
         ${popoutButton}
         ${restoreButton}
       </div>
       ${renderPartBody(part)}
-      <div class="dropzone" data-dropzone-for="${part.instanceId}">Drop cross-window payload here</div>
-      <p class="runtime-note" data-drop-result-for="${part.instanceId}"></p>
       <p class="runtime-note">Window: ${runtime.windowId}</p>
     </article>
   `;
 }
-
 export function updateSelectedStyles(root: HTMLElement, selectedPartId: string | null): void {
   for (const node of root.querySelectorAll<HTMLElement>("article[data-part-id]")) {
     const partId = node.dataset.partId;
@@ -166,11 +157,9 @@ export function updateSelectedStyles(root: HTMLElement, selectedPartId: string |
     }
   }
 }
-
 export function resolvePartTitle(partId: string, runtime: ShellRuntime): string {
   return getVisibleComposedParts(runtime).find((part) => part.instanceId === partId)?.title ?? partId;
 }
-
 export function renderTabStrip(
   slot: PartSlot,
   tabs: ComposedShellPart[],
@@ -200,16 +189,7 @@ export function renderTabStrip(
             title="Close tab (Ctrl+W)"
           >×</button>`
       : "";
-    return `<div class="part-tab-item" data-tab-item="${part.instanceId}" data-tab-can-close="${closeability.canClose ? "true" : "false"}">
-        <button
-          type="button"
-          class="part-tab-handle"
-          data-action="drag-tab-handle"
-          data-tab-id="${part.id}"
-          draggable="true"
-          aria-label="Drag ${escapeHtml(part.title)} tab"
-          title="Drag tab"
-        >⋮⋮</button>
+    return `<div class="part-tab-item" data-tab-item="${part.instanceId}" data-tab-can-close="${closeability.canClose ? "true" : "false"}" data-part-id="${part.instanceId}">
         <button
           type="button"
           role="tab"
@@ -227,7 +207,6 @@ export function renderTabStrip(
           tabindex="${isActive ? "0" : "-1"}"
         >${escapeHtml(part.title)}</button>
         ${closeButton}
-        ${renderDockDropOverlay(part.id)}
       </div>`;
   }).join("")}
       <button
@@ -244,9 +223,9 @@ export function renderTabStrip(
     </div>
   `;
 }
-
 function renderDockDropOverlay(targetTabId: string): string {
   return `<div class="dock-drop-overlay" data-dock-drop-overlay-for="${targetTabId}" aria-hidden="true">
+      <div class="dock-drop-preview"></div>
       <div class="dock-drop-zone dock-drop-zone-left" data-dock-drop-zone="left" data-target-tab-id="${targetTabId}" title="Split left"></div>
       <div class="dock-drop-zone dock-drop-zone-right" data-dock-drop-zone="right" data-target-tab-id="${targetTabId}" title="Split right"></div>
       <div class="dock-drop-zone dock-drop-zone-top" data-dock-drop-zone="top" data-target-tab-id="${targetTabId}" title="Split top"></div>
@@ -254,12 +233,10 @@ function renderDockDropOverlay(targetTabId: string): string {
       <div class="dock-drop-zone dock-drop-zone-center" data-dock-drop-zone="center" data-target-tab-id="${targetTabId}" title="Merge into tab stack"></div>
     </div>`;
 }
-
 export function isPartActivationNode(target: HTMLElement): target is HTMLButtonElement {
   const action = target.dataset.action;
   return target instanceof HTMLButtonElement && action === "activate-tab";
 }
-
 export function renderDockTree(
   root: DockNode | null,
   visibleParts: ComposedShellPart[],
@@ -316,14 +293,16 @@ function renderDockNode(
   const panelLabel = `${tabs[0]?.title ?? panelSlot} panel tabs`;
   return `<section class="dock-node dock-node-stack" data-dock-node-id="${node.id}" data-dock-stack-id="${node.id}" data-slot="${panelSlot}">
       ${renderTabStrip(panelSlot, tabs, activeTabId, runtime, { tabScope, label: panelLabel })}
-      <section class="dock-stack-panels">
+      <section class="dock-stack-panels" data-dock-stack-panels="${node.id}">
         ${tabs.map((part) => renderPartPanel(part, runtime, part.id === activeTabId)).join("")}
+        ${renderDockDropOverlay(activeTabId)}
       </section>
     </section>`;
 }
 
 function renderPartPanel(part: ComposedShellPart, runtime: ShellRuntime, isActive: boolean): string {
   return `<section
+      class="dock-tabpanel"
       id="panel-${part.id}"
       role="tabpanel"
       aria-labelledby="tab-${part.id}"

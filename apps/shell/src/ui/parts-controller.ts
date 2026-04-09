@@ -1,11 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
 import { isUtilityTabId } from "../utility-tabs.js";
 import { wireDockTabDragDrop } from "./dock-tab-dnd.js";
-import {
-  createDragSessionPayload,
-  encodeDragSessionPayload,
-  resolveDroppedDragSessionResult,
-} from "./drag-session.js";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
 import {
   type PartLifecycleDeps,
@@ -44,7 +39,6 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
 
   wirePartActions(root, runtime, deps);
   wireDockTabDragDrop(root, runtime, deps);
-  wireDragDrop(root, runtime);
   wireTabStripDragDrop(root, runtime, (tabId) => {
     dispatchLocalLifecycleAction(runtime, {
       actionId: "part-instance.activate",
@@ -105,7 +99,6 @@ function renderPopoutPart(
   slot.innerHTML = renderPartCard(part, runtime, { showPopoutButton: false, showRestoreButton: true });
   wirePartActions(root, runtime, deps);
   wireDockTabDragDrop(root, runtime, deps);
-  wireDragDrop(root, runtime);
   wireTabStripDragDrop(root, runtime, (tabId) => {
     dispatchLocalLifecycleAction(runtime, {
       actionId: "part-instance.activate",
@@ -179,49 +172,3 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
   }
 }
 
-function wireDragDrop(root: HTMLElement, runtime: ShellRuntime): void {
-  for (const partNode of root.querySelectorAll<HTMLElement>("article[data-part-id]")) {
-    partNode.addEventListener("dragstart", (event) => {
-      const dataTransfer = event.dataTransfer;
-      const partId = partNode.dataset.partId;
-      if (!dataTransfer || !partId) {
-        return;
-      }
-
-      const tab = runtime.contextState.tabs[partId];
-      const payload = createDragSessionPayload({
-        partId,
-        partDefinitionId: tab?.partDefinitionId ?? tab?.definitionId ?? partId,
-        partTitle: resolvePartTitle(partId, runtime),
-        sourceWindowId: runtime.windowId,
-      });
-
-      dataTransfer.setData("text/plain", encodeDragSessionPayload(payload, runtime.dragSessionBroker));
-      dataTransfer.effectAllowed = "copyMove";
-    });
-
-    partNode.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      if (event.dataTransfer) {
-        event.dataTransfer.dropEffect = "copy";
-      }
-    });
-
-    partNode.addEventListener("drop", (event) => {
-      event.preventDefault();
-      const dataTransfer = event.dataTransfer;
-      const targetPartId = partNode.dataset.partId;
-      if (!dataTransfer || !targetPartId) {
-        return;
-      }
-
-      const raw = dataTransfer.getData("text/plain");
-      const resultNode = root.querySelector<HTMLElement>(`[data-drop-result-for='${targetPartId}']`);
-      if (!resultNode) {
-        return;
-      }
-
-      resultNode.textContent = resolveDroppedDragSessionResult(raw, runtime.dragSessionBroker);
-    });
-  }
-}
