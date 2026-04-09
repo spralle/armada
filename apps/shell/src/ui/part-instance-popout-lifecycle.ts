@@ -2,6 +2,27 @@ import { sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { PartLifecycleDeps } from "./part-instance-tab-lifecycle.js";
 
+export interface GhostOpenRequest {
+  hostWindowId: string | null;
+  sourcePartId: string | null;
+  targetPartId: string;
+}
+
+export interface GhostOpenResult {
+  status: "opened" | "blocked" | "unavailable" | "rejected";
+  notice: string;
+}
+
+export interface GhostShimContract {
+  open: (request: GhostOpenRequest) => GhostOpenResult;
+}
+
+declare global {
+  interface Window {
+    __ghost?: GhostShimContract;
+  }
+}
+
 export function openPopout(
   partId: string,
   runtime: ShellRuntime,
@@ -23,10 +44,33 @@ export function openPopout(
     return;
   }
 
+  injectGhostShim(popout, partId, runtime, deps);
   runtime.popoutHandles.set(partId, popout);
   runtime.poppedOutTabIds.add(partId);
   runtime.notice = `Part '${partId}' opened in a new window.`;
   deps.renderParts();
+  deps.renderSyncStatus();
+}
+
+export function requestPopoutFromHostShim(
+  targetPartId: string,
+  runtime: ShellRuntime,
+  deps: Pick<PartLifecycleDeps, "renderSyncStatus">,
+): void {
+  const shim = window.__ghost;
+  if (!shim || typeof shim.open !== "function") {
+    runtime.notice = "Host popout bridge unavailable. Please open this popout from the host window.";
+    deps.renderSyncStatus();
+    return;
+  }
+
+  const response = shim.open({
+    hostWindowId: runtime.hostWindowId,
+    sourcePartId: runtime.popoutTabId,
+    targetPartId,
+  });
+
+  runtime.notice = response.notice;
   deps.renderSyncStatus();
 }
 
@@ -46,4 +90,50 @@ export function restorePart(
   runtime.notice = `Part '${partId}' restored to host window.`;
   deps.renderParts();
   deps.renderSyncStatus();
+}
+
+function injectGhostShim(
+  popoutWindow: Window,
+  sourcePartId: string,
+  runtime: ShellRuntime,
+  deps: Pick<PartLifecycleDeps, "renderParts" | "renderSyncStatus">,
+): void {
+  popoutWindow.__ghost = {
+    open(request: GhostOpenRequest): GhostOpenResult {
+      if (request.hostWindowId !== runtime.windowId || request.sourcePartId !== sourcePartId) {
+        return {
+          status: "rejected",
+          notice: "Host popout request rejected: ownership mismatch.",
+        };
+      }
+
+      if (!request.targetPartId || !runtime.contextState.tabs[request.targetPartId]) {
+        return {
+          status: "rejected",
+          notice: "Host popout request rejected: target part not found.",
+        };
+      }
+
+      if (runtime.poppedOutTabIds.has(request.targetPartId)) {
+        return {
+          status: "rejected",
+          notice: `Part '${request.targetPartId}' is already popped out.`,
+        };
+      }
+
+      openPopout(request.targetPartId, runtime, deps);
+
+      if (!runtime.poppedOutTabIds.has(request.targetPartId)) {
+        return {
+          status: "blocked",
+          notice: `Popup blocked. Could not pop out '${request.targetPartId}'.`,
+        };
+      }
+
+      return {
+        status: "opened",
+        notice: `Host opened part '${request.targetPartId}' in a new window.`,
+      };
+    },
+  };
 }
