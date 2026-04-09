@@ -8,6 +8,7 @@ import { registerBridgeUnavailableSpecs } from "./context-state.spec-bridge-unav
 import { registerTabDragDropSpecs } from "./context-state.spec-tab-drag-drop.js";
 import { registerDockTabDragDropSpecs } from "./context-state.spec-dock-tab-drag-drop.js";
 import { registerRuntimeEventHandlersSpecs } from "./shell-runtime/runtime-event-handlers.spec.js";
+import { registerSourceTabTransferSpecs } from "./shell-runtime/source-tab-transfer.spec.js";
 import { registerActionContextSpecs } from "./context-state.spec-action-context.js";
 import { registerCompositionParitySpecs } from "./context-state.spec-composition-parity.js";
 import { registerBridgeRaceAndParitySpecs } from "./context-state.spec-bridge-race-parity.js";
@@ -23,6 +24,7 @@ registerBridgeUnavailableSpecs(harness);
 registerTabDragDropSpecs(harness);
 registerDockTabDragDropSpecs(harness);
 registerRuntimeEventHandlersSpecs(harness);
+registerSourceTabTransferSpecs(harness);
 registerActionContextSpecs(harness);
 registerCompositionParitySpecs(harness);
 registerBridgeRaceAndParitySpecs(harness);

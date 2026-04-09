@@ -17,7 +17,7 @@ import {
   DEFAULT_GROUP_COLOR,
   DEFAULT_GROUP_ID,
 } from "./constants.js";
-import type { ShellRuntime } from "./types.js";
+import type { ShellRuntime, SourceTabTransferPendingState } from "./types.js";
 import type { ShellTransportPath } from "./migration-flags.js";
 import {
   createWindowId,
@@ -72,6 +72,8 @@ export function createShellRuntime(options?: {
     poppedOutTabIds: new Set<string>(),
     closeableTabIds: new Set<string>(),
     dragSessionBroker: createDragSessionBroker(bridge, windowId),
+    sourceTabTransferPendingBySessionId: new Map<string, SourceTabTransferPendingState>(),
+    sourceTabTransferTerminalSessionIds: new Set<string>(),
     syncDegraded: !bridge.available,
     syncHealthState: bridge.available ? "healthy" : "unavailable",
     syncDegradedReason: bridge.available ? null : "unavailable",

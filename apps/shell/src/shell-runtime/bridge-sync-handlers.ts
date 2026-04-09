@@ -19,6 +19,10 @@ import type { ShellRuntime } from "../app/types.js";
 import type { AsyncWindowBridgeHealth } from "../app/async-bridge.js";
 import { getTabGroupId } from "../context-state.js";
 import { buildGroupContextSyncEvent } from "../sync/bridge-payloads.js";
+import {
+  applySourceTabTransferTerminal,
+  beginSourceTabTransferPending,
+} from "./source-tab-transfer.js";
 import type {
   ContextSyncEvent,
   SelectionSyncEvent,
@@ -93,6 +97,16 @@ export function bindBridgeSync(
       if (handleSyncAck(root, runtime, event, bindings)) {
         return;
       }
+    }
+
+    if (event.type === "dnd-session-upsert") {
+      beginSourceTabTransferPending(runtime, event);
+      return;
+    }
+
+    if (event.type === "dnd-session-delete") {
+      applySourceTabTransferTerminal(runtime, event);
+      return;
     }
 
     if (runtime.syncDegraded) {

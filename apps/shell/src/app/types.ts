@@ -69,6 +69,8 @@ export interface ShellRuntime {
   poppedOutTabIds: Set<string>;
   closeableTabIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
+  sourceTabTransferPendingBySessionId?: Map<string, SourceTabTransferPendingState>;
+  sourceTabTransferTerminalSessionIds?: Set<string>;
   syncDegraded: boolean;
   syncHealthState: "healthy" | "degraded" | "unavailable";
   syncDegradedReason: AsyncWindowBridgeRejectReason | null;
@@ -83,6 +85,15 @@ export interface ShellRuntime {
   partHost: ShellPartHostAdapter;
   activeTransportPath: ShellTransportPath;
   activeTransportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
+}
+
+export interface SourceTabTransferPendingState {
+  sessionId: string;
+  tabId: string;
+  restoreActiveTabId: string | null;
+  restoreSelectedPartId: string | null;
+  restoreSelectedPartTitle: string | null;
+  timeoutAt: number;
 }
 
 export interface TenantPluginDescriptor {
