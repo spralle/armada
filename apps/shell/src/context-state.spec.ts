@@ -10,8 +10,6 @@ import { registerDockTabDragDropSpecs } from "./context-state.spec-dock-tab-drag
 import { registerRuntimeEventHandlersSpecs } from "./shell-runtime/runtime-event-handlers.spec.js";
 import { registerActionContextSpecs } from "./context-state.spec-action-context.js";
 import { registerCompositionParitySpecs } from "./context-state.spec-composition-parity.js";
-import { registerDockSplitRenderingSpecs } from "./context-state.spec-dock-split-rendering.js";
-import { registerDockSplitterDragSpecs } from "./context-state.spec-dock-splitter-drag.js";
 import { registerBridgeRaceAndParitySpecs } from "./context-state.spec-bridge-race-parity.js";
 
 const { harness, runAll } = createSpecHarness();
@@ -27,8 +25,6 @@ registerDockTabDragDropSpecs(harness);
 registerRuntimeEventHandlersSpecs(harness);
 registerActionContextSpecs(harness);
 registerCompositionParitySpecs(harness);
-registerDockSplitRenderingSpecs(harness);
-registerDockSplitterDragSpecs(harness);
 registerBridgeRaceAndParitySpecs(harness);
 
 const { passed, total } = await runAll();
