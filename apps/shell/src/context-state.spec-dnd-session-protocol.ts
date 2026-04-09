@@ -72,11 +72,13 @@ export function registerDndSessionProtocolSpecs(harness: SpecHarness): void {
     const ref = sourceBroker.create({ tabId: "tab-a" });
     const consumed = targetBroker.consume(ref);
     const duplicateConsume = targetBroker.consume(ref);
+    const committed = targetBroker.commit(ref);
     const duplicateCommit = targetBroker.commit(ref);
     const duplicateAbort = targetBroker.abort(ref);
 
     assertTruthy(consumed && typeof consumed === "object", "first consume should return payload");
     assertEqual(duplicateConsume, null, "duplicate consume should be ignored as no-op");
+    assertEqual(committed, true, "first commit after consume should succeed");
     assertEqual(duplicateCommit, false, "duplicate commit after terminal should be ignored");
     assertEqual(duplicateAbort, false, "abort after commit should be ignored");
     assertEqual(countLifecycle(bridge.publishedEvents, "dnd-session-upsert", "consume"), 1, "consume lifecycle should publish once");

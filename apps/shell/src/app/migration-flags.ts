@@ -3,6 +3,8 @@ export interface ShellMigrationFlags {
   useAdapterComposition: boolean;
   enableAsyncScompAdapter: boolean;
   forceLegacyBridge: boolean;
+  enableCrossWindowDnd: boolean;
+  forceDisableCrossWindowDnd: boolean;
 }
 
 export interface ShellMigrationFlagOverride {
@@ -10,6 +12,8 @@ export interface ShellMigrationFlagOverride {
   useAdapterComposition?: boolean;
   enableAsyncScompAdapter?: boolean;
   forceLegacyBridge?: boolean;
+  enableCrossWindowDnd?: boolean;
+  forceDisableCrossWindowDnd?: boolean;
 }
 
 export type ShellTransportPath = "legacy-bridge" | "async-scomp-adapter";
@@ -24,6 +28,8 @@ const DEFAULT_SHELL_MIGRATION_FLAGS: ShellMigrationFlags = {
   useAdapterComposition: true,
   enableAsyncScompAdapter: false,
   forceLegacyBridge: false,
+  enableCrossWindowDnd: false,
+  forceDisableCrossWindowDnd: false,
 };
 
 const ENABLED_FLAG_VALUES = new Set([
@@ -56,12 +62,22 @@ export function readShellMigrationFlags(
   const adapterFromQuery = parseBooleanFlag(searchParams.get("shellAdapterComposition"));
   const asyncTransportFromQuery = parseBooleanFlag(searchParams.get("shellAsyncScompAdapter"));
   const forceLegacyFromQuery = parseBooleanFlag(searchParams.get("shellLegacyBridgeKillSwitch"));
+  const enableCrossWindowDndFromQuery = parseBooleanFlag(searchParams.get("shellCrossWindowDnd"));
+  const forceDisableCrossWindowDndFromQuery = parseBooleanFlag(searchParams.get("shellCrossWindowDndKillSwitch"));
 
   return {
     useContractCoreApi: override?.useContractCoreApi ?? coreFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.useContractCoreApi,
     useAdapterComposition: override?.useAdapterComposition ?? adapterFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.useAdapterComposition,
     enableAsyncScompAdapter: override?.enableAsyncScompAdapter ?? asyncTransportFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.enableAsyncScompAdapter,
     forceLegacyBridge: override?.forceLegacyBridge ?? forceLegacyFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.forceLegacyBridge,
+    enableCrossWindowDnd:
+      override?.enableCrossWindowDnd
+      ?? enableCrossWindowDndFromQuery
+      ?? DEFAULT_SHELL_MIGRATION_FLAGS.enableCrossWindowDnd,
+    forceDisableCrossWindowDnd:
+      override?.forceDisableCrossWindowDnd
+      ?? forceDisableCrossWindowDndFromQuery
+      ?? DEFAULT_SHELL_MIGRATION_FLAGS.forceDisableCrossWindowDnd,
   };
 }
 

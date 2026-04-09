@@ -19,6 +19,7 @@ import type {
 import type {
   ContextTabCloseability,
   DerivedLaneDefinition,
+  IncomingTransferJournal,
   RevisionMeta,
   SelectionPropagationRule,
   ShellContextState,
@@ -69,8 +70,11 @@ export interface ShellRuntime {
   poppedOutTabIds: Set<string>;
   closeableTabIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
+  incomingTransferJournal: IncomingTransferJournal;
   sourceTabTransferPendingBySessionId?: Map<string, SourceTabTransferPendingState>;
   sourceTabTransferTerminalSessionIds?: Set<string>;
+  crossWindowDndEnabled: boolean;
+  crossWindowDndKillSwitchActive: boolean;
   syncDegraded: boolean;
   syncHealthState: "healthy" | "degraded" | "unavailable";
   syncDegradedReason: AsyncWindowBridgeRejectReason | null;

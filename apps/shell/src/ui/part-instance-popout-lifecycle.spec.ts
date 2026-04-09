@@ -2,6 +2,7 @@ import type { ShellRuntime } from "../app/types.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
 import { openPopout } from "./part-instance-popout-lifecycle.js";
+import { createIncomingTransferJournal } from "../context-state.js";
 
 type WindowOpenFn = (url?: string | URL, target?: string) => Window | null;
 
@@ -174,6 +175,9 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     asyncBridge: {} as ShellRuntime["asyncBridge"],
     closeableTabIds: new Set<string>(),
     dragSessionBroker: {} as ShellRuntime["dragSessionBroker"],
+    incomingTransferJournal: createIncomingTransferJournal(),
+    crossWindowDndEnabled: false,
+    crossWindowDndKillSwitchActive: false,
     syncDegraded: false,
     syncHealthState: "healthy",
     syncDegradedReason: null,

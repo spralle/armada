@@ -43,12 +43,19 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
     renderParts: () => deps.renderParts(),
   });
   wireDockTabDragDrop(root, runtime, deps);
-  wireTabStripDragDrop(root, runtime, (tabId) => {
-    dispatchLocalLifecycleAction(runtime, {
-      actionId: "part-instance.activate",
-      tabInstanceId: tabId,
-      partTitle: resolvePartTitle(tabId, runtime),
-    }, deps as PartLifecycleDeps);
+  wireTabStripDragDrop(root, runtime, {
+    onTabMoved: (tabId) => {
+      dispatchLocalLifecycleAction(runtime, {
+        actionId: "part-instance.activate",
+        tabInstanceId: tabId,
+        partTitle: resolvePartTitle(tabId, runtime),
+      }, deps as PartLifecycleDeps);
+    },
+    onStateChange: () => {
+      deps.renderContextControls();
+      deps.renderParts();
+      deps.renderSyncStatus();
+    },
   });
   updateSelectedStyles(root, runtime.selectedPartId);
   void deps.partHost.syncRenderedParts(
@@ -107,12 +114,19 @@ function renderPopoutPart(
   slot.innerHTML = renderPartCard(part, runtime, { showPopoutButton: false, showRestoreButton: true });
   wirePartActions(root, runtime, deps);
   wireDockTabDragDrop(root, runtime, deps);
-  wireTabStripDragDrop(root, runtime, (tabId) => {
-    dispatchLocalLifecycleAction(runtime, {
-      actionId: "part-instance.activate",
-      tabInstanceId: tabId,
-      partTitle: resolvePartTitle(tabId, runtime),
-    }, deps as PartLifecycleDeps);
+  wireTabStripDragDrop(root, runtime, {
+    onTabMoved: (tabId) => {
+      dispatchLocalLifecycleAction(runtime, {
+        actionId: "part-instance.activate",
+        tabInstanceId: tabId,
+        partTitle: resolvePartTitle(tabId, runtime),
+      }, deps as PartLifecycleDeps);
+    },
+    onStateChange: () => {
+      deps.renderContextControls();
+      deps.renderParts();
+      deps.renderSyncStatus();
+    },
   });
   updateSelectedStyles(root, runtime.selectedPartId);
   void deps.partHost.syncRenderedParts(root, isUtilityTabId(part.id) ? [] : [part]);

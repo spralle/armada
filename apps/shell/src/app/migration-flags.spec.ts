@@ -62,6 +62,25 @@ test("migration flags support explicit rollback to baseline", () => {
   assertEqual(shouldUseContractComposition(flags), false, "explicit rollback should return baseline composition");
 });
 
+test("cross-window dnd flags default disabled and can enable", () => {
+  const defaults = readShellMigrationFlags(new URLSearchParams(), null);
+  const enabled = readShellMigrationFlags(new URLSearchParams("shellCrossWindowDnd=true"), null);
+
+  assertEqual(defaults.enableCrossWindowDnd, false, "cross-window dnd should be disabled by default");
+  assertEqual(defaults.forceDisableCrossWindowDnd, false, "cross-window dnd kill-switch should be off by default");
+  assertEqual(enabled.enableCrossWindowDnd, true, "cross-window dnd enable query flag should be honored");
+});
+
+test("cross-window dnd kill-switch override takes precedence", () => {
+  const flags = readShellMigrationFlags(
+    new URLSearchParams("shellCrossWindowDnd=true&shellCrossWindowDndKillSwitch=1"),
+    { enableCrossWindowDnd: true, forceDisableCrossWindowDnd: true },
+  );
+
+  assertEqual(flags.enableCrossWindowDnd, true, "cross-window dnd enable flag should remain set");
+  assertEqual(flags.forceDisableCrossWindowDnd, true, "cross-window dnd kill-switch should remain authoritative");
+});
+
 test("transport path defaults to legacy when async flag is unset", () => {
   const flags = readShellMigrationFlags(new URLSearchParams(), null);
   const decision = selectShellTransportPath(flags);
