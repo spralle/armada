@@ -221,6 +221,12 @@ For full rollout, canary progression, and rollback playbook details, see:
 
 - `docs/architecture/shell-adapter-rollout.md`
 
+## Cross-window DnD rollout quick reference
+
+For cross-window drag-and-drop rollout evidence, kill-switch controls, and troubleshooting matrix, see:
+
+- `docs/architecture/cross-window-dnd-rollout.md`
+
 ## Phase 2 closeable tabs regression validation matrix
 
 Use this focused command set to validate cross-cutting closeable-tab regressions before handoff:

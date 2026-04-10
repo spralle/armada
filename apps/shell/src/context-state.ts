@@ -69,6 +69,19 @@ export {
   setActiveTab,
 } from "./context-state/tabs-groups.js";
 
+export type {
+  IncomingTransferJournal,
+  IncomingTransferTab,
+  IncomingTransferTarget,
+  IncomingTransferTransactionInput,
+  IncomingTransferTransactionResult,
+} from "./context-state/incoming-transfer-transaction.js";
+
+export {
+  applyIncomingTransferTransaction,
+  createIncomingTransferJournal,
+} from "./context-state/incoming-transfer-transaction.js";
+
 export {
   closeTabIfAllowed,
   closeTabIfAllowedWithHistory,

@@ -1,5 +1,6 @@
 import {
   readShellMigrationFlags,
+  selectCrossWindowDnd,
   selectShellTransportPath,
   shouldUseContractComposition,
 } from "./migration-flags.js";
@@ -60,6 +61,25 @@ test("migration flags support explicit rollback to baseline", () => {
   assertEqual(flags.useContractCoreApi, false, "query should disable contract-core flag");
   assertEqual(flags.useAdapterComposition, false, "query should disable adapter-composition flag");
   assertEqual(shouldUseContractComposition(flags), false, "explicit rollback should return baseline composition");
+});
+
+test("cross-window dnd flags default disabled and can enable", () => {
+  const defaults = readShellMigrationFlags(new URLSearchParams(), null);
+  const enabled = readShellMigrationFlags(new URLSearchParams("shellCrossWindowDnd=true"), null);
+
+  assertEqual(defaults.enableCrossWindowDnd, false, "cross-window dnd should be disabled by default");
+  assertEqual(defaults.forceDisableCrossWindowDnd, false, "cross-window dnd kill-switch should be off by default");
+  assertEqual(enabled.enableCrossWindowDnd, true, "cross-window dnd enable query flag should be honored");
+});
+
+test("cross-window dnd kill-switch override takes precedence", () => {
+  const flags = readShellMigrationFlags(
+    new URLSearchParams("shellCrossWindowDnd=true&shellCrossWindowDndKillSwitch=1"),
+    { enableCrossWindowDnd: true, forceDisableCrossWindowDnd: true },
+  );
+
+  assertEqual(flags.enableCrossWindowDnd, true, "cross-window dnd enable flag should remain set");
+  assertEqual(flags.forceDisableCrossWindowDnd, true, "cross-window dnd kill-switch should remain authoritative");
 });
 
 test("transport path defaults to legacy when async flag is unset", () => {
@@ -155,6 +175,50 @@ test("transport feature-flag matrix preserves deterministic legacy/async parity"
     assertEqual(decision.path, scenario.expectedPath, `matrix path mismatch for ${scenario.name}`);
     assertEqual(decision.reason, scenario.expectedReason, `matrix reason mismatch for ${scenario.name}`);
   }
+});
+
+test("cross-window dnd defaults to same-window only", () => {
+  const flags = readShellMigrationFlags(new URLSearchParams(), null);
+  const decision = selectCrossWindowDnd(flags);
+
+  assertEqual(decision.enabled, false, "default dnd should remain same-window only");
+  assertEqual(decision.path, "same-window", "default dnd path should remain same-window");
+  assertEqual(decision.reason, "default-same-window-only", "default dnd reason should be explicit");
+});
+
+test("cross-window dnd flag can be enabled explicitly", () => {
+  const flags = readShellMigrationFlags(new URLSearchParams("shellCrossWindowDnd=true"), null);
+  const decision = selectCrossWindowDnd(flags);
+
+  assertEqual(decision.enabled, true, "cross-window dnd flag should enable cross-window path");
+  assertEqual(decision.path, "cross-window-bridge", "enabled dnd path should be cross-window bridge");
+  assertEqual(decision.reason, "flag-enabled", "enabled dnd reason should reflect feature gate");
+});
+
+test("cross-window dnd kill switch wins over enable flag", () => {
+  const flags = readShellMigrationFlags(
+    new URLSearchParams("shellCrossWindowDnd=true&shellCrossWindowDndKillSwitch=1"),
+    null,
+  );
+  const decision = selectCrossWindowDnd(flags);
+
+  assertEqual(decision.enabled, false, "dnd kill switch should disable cross-window path");
+  assertEqual(decision.path, "same-window", "dnd kill switch should force same-window path");
+  assertEqual(decision.reason, "kill-switch-force-disabled", "kill switch reason should be explicit");
+});
+
+test("cross-window dnd override kill switch wins over query enable", () => {
+  const flags = readShellMigrationFlags(
+    new URLSearchParams("shellCrossWindowDnd=true"),
+    {
+      forceDisableCrossWindowDnd: true,
+    },
+  );
+  const decision = selectCrossWindowDnd(flags);
+
+  assertEqual(decision.enabled, false, "override kill switch should disable cross-window dnd");
+  assertEqual(decision.path, "same-window", "override kill switch should keep same-window path");
+  assertEqual(decision.reason, "kill-switch-force-disabled", "override kill switch reason should be preserved");
 });
 
 let passed = 0;

@@ -118,6 +118,10 @@ export function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
     if (
       typeof event.id === "string" &&
       typeof event.expiresAt === "number" &&
+      isOptionalString((event as { correlationId?: unknown }).correlationId) &&
+      isOptionalDndSessionUpsertLifecycle((event as { lifecycle?: unknown }).lifecycle) &&
+      isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId) &&
+      isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId) &&
       typeof event.sourceWindowId === "string"
     ) {
       return event as DndSessionUpsertEvent;
@@ -126,7 +130,14 @@ export function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
   }
 
   if (event.type === "dnd-session-delete") {
-    if (typeof event.id === "string" && typeof event.sourceWindowId === "string") {
+    if (
+      typeof event.id === "string"
+      && isOptionalString((event as { correlationId?: unknown }).correlationId)
+      && isOptionalDndSessionDeleteLifecycle((event as { lifecycle?: unknown }).lifecycle)
+      && isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId)
+      && isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId)
+      && typeof event.sourceWindowId === "string"
+    ) {
       return event as DndSessionDeleteEvent;
     }
     return null;
@@ -192,6 +203,14 @@ function isOptionalContextScope(value: unknown): value is "group" | "global" | u
   return value === undefined || value === "group" || value === "global";
 }
 
+function isOptionalDndSessionUpsertLifecycle(value: unknown): value is "start" | "consume" | undefined {
+  return value === undefined || value === "start" || value === "consume";
+}
+
+function isOptionalDndSessionDeleteLifecycle(value: unknown): value is "commit" | "abort" | "timeout" | undefined {
+  return value === undefined || value === "commit" || value === "abort" || value === "timeout";
+}
+
 function isOptionalRevision(
   value: unknown,
 ): value is { timestamp: number; writer: string } | undefined {
@@ -206,3 +225,4 @@ function isOptionalRevision(
   const revision = value as { timestamp?: unknown; writer?: unknown };
   return typeof revision.timestamp === "number" && typeof revision.writer === "string";
 }
+
