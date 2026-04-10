@@ -18,7 +18,11 @@ import {
   DEFAULT_GROUP_ID,
 } from "./constants.js";
 import type { ShellRuntime, SourceTabTransferPendingState } from "./types.js";
-import type { ShellTransportPath } from "./migration-flags.js";
+import {
+  readShellMigrationFlags,
+  selectCrossWindowDnd,
+  type ShellTransportPath,
+} from "./migration-flags.js";
 import {
   createWindowId,
   getCurrentUserId,
@@ -29,6 +33,7 @@ import {
 export function createShellRuntime(options?: {
   transportPath?: ShellTransportPath;
 }): ShellRuntime {
+  const crossWindowDnd = selectCrossWindowDnd(readShellMigrationFlags());
   const popoutParams = readPopoutParams();
   const windowId = createWindowId();
   const bridge = createWindowBridge(BRIDGE_CHANNEL);
@@ -88,6 +93,10 @@ export function createShellRuntime(options?: {
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,
     activeTransportPath: "legacy-bridge",
     activeTransportReason: "default-legacy",
+    activeDndPath: crossWindowDnd.path,
+    activeDndReason: crossWindowDnd.reason,
+    crossWindowDndEnabled: crossWindowDnd.enabled,
+    lastDndDiagnostic: null,
   };
 
   runtime.partHost = createShellPartHostAdapter(runtime);
