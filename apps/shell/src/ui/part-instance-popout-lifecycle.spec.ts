@@ -124,6 +124,118 @@ export function registerPartInstancePopoutLifecycleSpecs(harness: SpecHarness): 
     });
   });
 
+  test("host shim rejects ownership mismatch requests", () => {
+    const openCalls: string[] = [];
+    const popoutA = {} as Window;
+    const runtime = createRuntime({
+      isPopout: false,
+      windowId: "host-1",
+      contextState: createContextState(["part-a", "part-b"]),
+    });
+    const deps = createDeps();
+
+    runWithWindowStub({
+      location: { href: "https://armada.local/shell?tenant=demo" } as Location,
+      open(url) {
+        openCalls.push(String(url ?? ""));
+        return popoutA;
+      },
+      close() {
+        // no-op
+      },
+    }, () => {
+      openPopout("part-a", runtime, deps);
+
+      const result = popoutA.__ghost?.open({
+        hostWindowId: "host-2",
+        sourcePartId: "part-a",
+        targetPartId: "part-b",
+      });
+
+      assertEqual(result?.status, "rejected", "ownership mismatch should be rejected by host shim");
+      assertTruthy(result?.notice.includes("ownership mismatch"), "ownership mismatch should return rejection notice");
+      assertEqual(openCalls.length, 1, "rejected request should not open another popout");
+      assertEqual(runtime.poppedOutTabIds.has("part-b"), false, "rejected request should not mutate target popout state");
+    });
+  });
+
+  test("host shim rejects missing or unknown target part", () => {
+    const openCalls: string[] = [];
+    const popoutA = {} as Window;
+    const runtime = createRuntime({
+      isPopout: false,
+      windowId: "host-1",
+      contextState: createContextState(["part-a", "part-b"]),
+    });
+    const deps = createDeps();
+
+    runWithWindowStub({
+      location: { href: "https://armada.local/shell?tenant=demo" } as Location,
+      open(url) {
+        openCalls.push(String(url ?? ""));
+        return popoutA;
+      },
+      close() {
+        // no-op
+      },
+    }, () => {
+      openPopout("part-a", runtime, deps);
+
+      const missingTarget = popoutA.__ghost?.open({
+        hostWindowId: "host-1",
+        sourcePartId: "part-a",
+        targetPartId: "",
+      });
+      const unknownTarget = popoutA.__ghost?.open({
+        hostWindowId: "host-1",
+        sourcePartId: "part-a",
+        targetPartId: "part-missing",
+      });
+
+      assertEqual(missingTarget?.status, "rejected", "missing target part should be rejected");
+      assertEqual(unknownTarget?.status, "rejected", "unknown target part should be rejected");
+      assertTruthy(unknownTarget?.notice.includes("target part not found"), "unknown target should include not-found notice");
+      assertEqual(openCalls.length, 1, "rejected target validation should not open another popout");
+      assertEqual(runtime.poppedOutTabIds.has("part-missing"), false, "rejected target validation should not mutate popout state");
+    });
+  });
+
+  test("host shim rejects target that is already popped out", () => {
+    const openCalls: string[] = [];
+    const popoutA = {} as Window;
+    const runtime = createRuntime({
+      isPopout: false,
+      windowId: "host-1",
+      contextState: createContextState(["part-a", "part-b"]),
+    });
+    runtime.poppedOutTabIds.add("part-b");
+    runtime.popoutHandles.set("part-b", {} as Window);
+    const deps = createDeps();
+
+    runWithWindowStub({
+      location: { href: "https://armada.local/shell?tenant=demo" } as Location,
+      open(url) {
+        openCalls.push(String(url ?? ""));
+        return popoutA;
+      },
+      close() {
+        // no-op
+      },
+    }, () => {
+      openPopout("part-a", runtime, deps);
+
+      const result = popoutA.__ghost?.open({
+        hostWindowId: "host-1",
+        sourcePartId: "part-a",
+        targetPartId: "part-b",
+      });
+
+      assertEqual(result?.status, "rejected", "already popped-out target should be rejected");
+      assertTruthy(result?.notice.includes("already popped out"), "already popped-out target should return rejection notice");
+      assertEqual(openCalls.length, 1, "already popped-out reject should not open another popout");
+    });
+  });
+
   test("non-popout lifecycle dispatch still uses direct host open flow", () => {
     const runtime = createRuntime({
       isPopout: false,
