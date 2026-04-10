@@ -284,7 +284,14 @@ export function createDragSessionBroker(
       }
 
       unsubscribe();
-      pruneExpiredSessions(sessions, terminalSessions, Date.now(), windowId, bridge);
+      const now = Date.now();
+      pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
+      const ownedPending = [...sessions.entries()]
+        .filter(([, entry]) => entry.ownerWindowId === windowId)
+        .sort(([leftId], [rightId]) => leftId.localeCompare(rightId));
+      for (const [id, entry] of ownedPending) {
+        finalizeSession(sessions, terminalSessions, bridge, windowId, id, entry, "abort", entry.consumedByWindowId);
+      }
       sessions.clear();
       terminalSessions.clear();
       disposed = true;
