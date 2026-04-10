@@ -95,7 +95,10 @@ export function wireTabStripDragDrop(
 
       if (runtime.dragSessionBroker.available) {
         const ref = runtime.dragSessionBroker.create(payload);
-        dataTransfer.setData("text/plain", `${DRAG_REF_PREFIX}${ref.id}`);
+        dataTransfer.setData(
+          "text/plain",
+          ref ? `${DRAG_REF_PREFIX}${ref.id}` : `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`,
+        );
       } else {
         dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
       }
@@ -311,7 +314,6 @@ function asTabDragPayload(value: unknown): TabDragPayload | null {
   if (!value || typeof value !== "object") {
     return null;
   }
-
   const payload = value as Record<string, unknown>;
   if (
     payload.kind !== "shell-tab-dnd"

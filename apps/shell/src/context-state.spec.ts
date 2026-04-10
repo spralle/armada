@@ -15,6 +15,7 @@ import { registerBridgeRaceAndParitySpecs } from "./context-state.spec-bridge-ra
 import { registerDndSessionProtocolSpecs } from "./context-state.spec-dnd-session-protocol.js";
 import { registerIncomingTransferTransactionSpecs } from "./context-state.spec-incoming-transfer-transaction.js";
 import { registerPartInstancePopoutLifecycleSpecs } from "./ui/part-instance-popout-lifecycle.spec.js";
+import { registerDndSessionBrokerSpecs } from "./context-state.spec-dnd-session-broker.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -34,6 +35,7 @@ registerBridgeRaceAndParitySpecs(harness);
 registerDndSessionProtocolSpecs(harness);
 registerIncomingTransferTransactionSpecs(harness);
 registerPartInstancePopoutLifecycleSpecs(harness);
+registerDndSessionBrokerSpecs(harness);
 
 const { passed, total } = await runAll();
 

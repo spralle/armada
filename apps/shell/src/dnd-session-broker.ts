@@ -11,13 +11,14 @@ import {
 } from "./dnd-session-broker-protocol.js";
 
 const DEFAULT_TTL_MS = 60_000;
+
 export interface DragSessionRef {
   id: string;
 }
 
 export interface DragSessionBroker {
   readonly available: boolean;
-  create(payload: unknown, ttlMs?: number): DragSessionRef;
+  create(payload: unknown, ttlMs?: number): DragSessionRef | null;
   consume(ref: DragSessionRef, consumedByWindowId?: string): unknown | null;
   commit(ref: DragSessionRef, consumedByWindowId?: string): boolean;
   abort(ref: DragSessionRef, sourceWindowId?: string): boolean;
@@ -28,10 +29,19 @@ export interface DragSessionBroker {
 export function createDragSessionBroker(
   bridge: WindowBridge,
   windowId: string,
+  options?: {
+    isDegraded?: () => boolean;
+  },
 ): DragSessionBroker {
+  const isDegraded = options?.isDegraded ?? (() => false);
   const sessions = new Map<string, SessionEntry>();
   const terminalSessions = new Map<string, number>();
+  let disposed = false;
   const unsubscribe = bridge.subscribe((event) => {
+    if (disposed) {
+      return;
+    }
+
     if (event.sourceWindowId === windowId) {
       return;
     }
@@ -110,9 +120,17 @@ export function createDragSessionBroker(
     }
   });
 
+  const isAvailable = (): boolean => bridge.available && !isDegraded();
+
   return {
-    available: bridge.available,
+    get available() {
+      return isAvailable();
+    },
     create(payload, ttlMs = DEFAULT_TTL_MS) {
+      if (!isAvailable() || disposed) {
+        return null;
+      }
+
       const now = Date.now();
       const id = createSessionId(windowId, now);
       const expiresAt = now + Math.max(MIN_TTL_MS, ttlMs);
@@ -129,7 +147,7 @@ export function createDragSessionBroker(
       pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
       pruneTerminals(terminalSessions, now);
 
-      bridge.publish({
+      const published = bridge.publish({
         type: "dnd-session-upsert",
         id,
         payload,
@@ -140,9 +158,18 @@ export function createDragSessionBroker(
         sourceWindowId: windowId,
       });
 
+      if (!published) {
+        sessions.delete(id);
+        return null;
+      }
+
       return { id };
     },
     consume(ref, consumedByWindowId = windowId) {
+      if (disposed) {
+        return null;
+      }
+
       const now = Date.now();
       pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
       pruneTerminals(terminalSessions, now);
@@ -252,9 +279,15 @@ export function createDragSessionBroker(
       return pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
     },
     dispose() {
+      if (disposed) {
+        return;
+      }
+
       unsubscribe();
+      pruneExpiredSessions(sessions, terminalSessions, Date.now(), windowId, bridge);
       sessions.clear();
       terminalSessions.clear();
+      disposed = true;
     },
   };
 }

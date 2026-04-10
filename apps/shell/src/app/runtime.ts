@@ -78,7 +78,9 @@ export function createShellRuntime(options?: {
     popoutHandles: new Map<string, Window>(),
     poppedOutTabIds: new Set<string>(),
     closeableTabIds: new Set<string>(),
-    dragSessionBroker: createDragSessionBroker(bridge, windowId),
+    dragSessionBroker: createDragSessionBroker(bridge, windowId, {
+      isDegraded: () => runtime.syncDegraded,
+    }),
     incomingTransferJournal: createIncomingTransferJournal(),
     sourceTabTransferPendingBySessionId: new Map<string, SourceTabTransferPendingState>(),
     sourceTabTransferTerminalSessionIds: new Set<string>(),

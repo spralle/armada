@@ -70,6 +70,10 @@ export function registerDndSessionProtocolSpecs(harness: SpecHarness): void {
     const targetBroker = createDragSessionBroker(bridge, "window-target");
 
     const ref = sourceBroker.create({ tabId: "tab-a" });
+    assertTruthy(ref !== null, "source broker should create transfer session");
+    if (!ref) {
+      throw new Error("expected non-null transfer session ref");
+    }
     const consumed = targetBroker.consume(ref);
     const duplicateConsume = targetBroker.consume(ref);
     const committed = targetBroker.commit(ref);
@@ -94,6 +98,10 @@ export function registerDndSessionProtocolSpecs(harness: SpecHarness): void {
     const targetBroker = createDragSessionBroker(bridge, "window-target");
 
     const ref = sourceBroker.create({ tabId: "tab-timeout" }, 1_000);
+    assertTruthy(ref !== null, "source broker should create timeout transfer session");
+    if (!ref) {
+      throw new Error("expected non-null timeout transfer session ref");
+    }
     const expired = sourceBroker.pruneExpired(Number.MAX_SAFE_INTEGER);
     const lateConsume = targetBroker.consume(ref);
     const lateCommit = targetBroker.commit(ref);
