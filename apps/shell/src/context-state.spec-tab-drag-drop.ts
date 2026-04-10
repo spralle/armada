@@ -2,6 +2,7 @@ import { DRAG_INLINE_PREFIX } from "./app/constants.js";
 import { TAB_DOCK_DRAG_MIME } from "./app/constants.js";
 import type { ShellRuntime } from "./app/types.js";
 import {
+  createIncomingTransferJournal,
   createInitialShellContextState,
   registerTab,
   type ShellContextState,
@@ -176,7 +177,14 @@ function createRuntime(): ShellRuntime {
       available: false,
       create: () => ({ id: "unused" }),
       consume: () => null,
+      commit: () => false,
+      abort: () => false,
+      pruneExpired: () => 0,
+      dispose: () => {},
     },
+    incomingTransferJournal: createIncomingTransferJournal(),
+    crossWindowDndEnabled: false,
+    crossWindowDndKillSwitchActive: false,
     contextPersistence: {
       save() {
         return { warning: null };
@@ -211,6 +219,21 @@ function createTabHarness(tabIds: string[]): {
   };
 }
 
+function wireWithMoved(
+  runtime: ShellRuntime,
+  tabHarness: ReturnType<typeof createTabHarness>,
+  moved: string[],
+): void {
+  wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, {
+    onTabMoved(tabId) { moved.push(tabId); },
+    onStateChange() {},
+  });
+}
+
+function wireNoop(runtime: ShellRuntime, tabHarness: ReturnType<typeof createTabHarness>): void {
+  wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, { onTabMoved() {}, onStateChange() {} });
+}
+
 export function registerTabDragDropSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
 
@@ -218,9 +241,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     const runtime = createRuntime();
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
-    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
-      moved.push(tabId);
-    });
+    wireWithMoved(runtime, tabHarness, moved);
 
     const dragTransfer = new MemoryDataTransfer();
     tabHarness.tabButtons.get("tab-c")!.dispatch(
@@ -239,9 +260,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     const before = runtime.contextState;
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
-    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
-      moved.push(tabId);
-    });
+    wireWithMoved(runtime, tabHarness, moved);
 
     const transfer = new MemoryDataTransfer();
     transfer.setData("text/plain", `${DRAG_INLINE_PREFIX}{\"kind\":\"invalid\"}`);
@@ -256,9 +275,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     const before = runtime.contextState;
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
-    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
-      moved.push(tabId);
-    });
+    wireWithMoved(runtime, tabHarness, moved);
 
     const transfer = new MemoryDataTransfer();
     transfer.setData(
@@ -267,17 +284,72 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     );
     tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
 
-    assertEqual(runtime.contextState, before, "cross-window payload should not mutate context state");
+    assertEqual(runtime.contextState, before, "cross-window payload without transfer session should not mutate context state");
     assertEqual(moved.length, 0, "cross-window payload should not trigger move callback");
+    assertEqual(runtime.notice, "Cross-window tab drag is disabled by current settings.", "cross-window inline payload should show clear disabled rejection notice");
+  });
+
+  test("cross-window tab drop applies through transfer transaction when enabled", async () => {
+    const runtime = createRuntime();
+    runtime.crossWindowDndEnabled = true;
+    const commits: string[] = [];
+    runtime.dragSessionBroker = {
+      ...runtime.dragSessionBroker,
+      consume: () => ({ kind: "shell-tab-dnd", tabId: "tab-c", sourceWindowId: "window-b" }),
+      commit(ref) {
+        commits.push(ref.id);
+        return true;
+      },
+      abort: () => false,
+    };
+
+    const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
+    const moved: string[] = [];
+    wireWithMoved(runtime, tabHarness, moved);
+
+    const transfer = new MemoryDataTransfer();
+    transfer.setData("text/plain", "armada-dnd-ref:session-cross-tab");
+    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+
+    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "enabled cross-window tab drop should insert via incoming transaction");
+    assertEqual(runtime.contextState.activeTabId, "tab-c", "enabled cross-window tab drop should activate incoming tab");
+    assertEqual(moved.join(","), "tab-c", "enabled cross-window tab drop should run move callback");
+    assertEqual(commits.join(","), "session-cross-tab", "enabled cross-window tab drop should commit transfer session");
+    assertEqual(runtime.notice, "", "enabled cross-window tab drop should clear rejection notice");
+  });
+
+  test("cross-window tab drop shows notice and aborts when disabled", async () => {
+    const runtime = createRuntime();
+    runtime.crossWindowDndEnabled = false;
+    const aborts: string[] = [];
+    runtime.dragSessionBroker = {
+      ...runtime.dragSessionBroker,
+      consume: () => ({ kind: "shell-tab-dnd", tabId: "tab-c", sourceWindowId: "window-b" }),
+      commit: () => false,
+      abort(ref) {
+        aborts.push(ref.id);
+        return true;
+      },
+    };
+
+    const before = runtime.contextState;
+    const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
+    wireNoop(runtime, tabHarness);
+
+    const transfer = new MemoryDataTransfer();
+    transfer.setData("text/plain", "armada-dnd-ref:session-cross-disabled");
+    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+
+    assertEqual(runtime.contextState, before, "disabled cross-window tab drop should preserve same-window-only state");
+    assertEqual(runtime.notice, "Cross-window tab drag is disabled by current settings.", "disabled cross-window tab drop should show clear rejection notice");
+    assertEqual(aborts.join(","), "session-cross-disabled", "disabled cross-window tab drop should abort transfer session");
   });
 
   test("tab drop reorders using dock MIME payload fallback", async () => {
     const runtime = createRuntime();
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
-    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
-      moved.push(tabId);
-    });
+    wireWithMoved(runtime, tabHarness, moved);
 
     const transfer = new MemoryDataTransfer();
     transfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({ tabId: "tab-c", sourceWindowId: "window-a" }));
@@ -292,9 +364,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     const runtime = createRuntime();
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
-    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
-      moved.push(tabId);
-    });
+    wireWithMoved(runtime, tabHarness, moved);
 
     const dragStartTransfer = new MemoryDataTransfer();
     tabHarness.tabButtons.get("tab-c")!.dispatch(
@@ -314,9 +384,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     const runtime = createRuntime();
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
     const moved: string[] = [];
-    wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, (tabId) => {
-      moved.push(tabId);
-    });
+    wireWithMoved(runtime, tabHarness, moved);
 
     const transfer = new MemoryDataTransfer();
     tabHarness.tabButtons.get("tab-c")!.dispatch(

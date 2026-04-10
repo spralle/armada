@@ -12,6 +12,9 @@ import { registerSourceTabTransferSpecs } from "./shell-runtime/source-tab-trans
 import { registerActionContextSpecs } from "./context-state.spec-action-context.js";
 import { registerCompositionParitySpecs } from "./context-state.spec-composition-parity.js";
 import { registerBridgeRaceAndParitySpecs } from "./context-state.spec-bridge-race-parity.js";
+import { registerDndSessionProtocolSpecs } from "./context-state.spec-dnd-session-protocol.js";
+import { registerIncomingTransferTransactionSpecs } from "./context-state.spec-incoming-transfer-transaction.js";
+import { registerPartInstancePopoutLifecycleSpecs } from "./ui/part-instance-popout-lifecycle.spec.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -28,6 +31,9 @@ registerSourceTabTransferSpecs(harness);
 registerActionContextSpecs(harness);
 registerCompositionParitySpecs(harness);
 registerBridgeRaceAndParitySpecs(harness);
+registerDndSessionProtocolSpecs(harness);
+registerIncomingTransferTransactionSpecs(harness);
+registerPartInstancePopoutLifecycleSpecs(harness);
 
 const { passed, total } = await runAll();
 

@@ -8,6 +8,8 @@ import {
   readActiveDockDragPayload,
   setActiveDockDragPayload,
 } from "./dock-drag-session.js";
+import { readTabDragPayload as readDockTabDragPayload } from "./dock-tab-dnd-payload.js";
+import { handleCrossWindowTabStripDrop } from "./tab-drag-drop-cross-window.js";
 
 interface TabDragPayload {
   kind: "shell-tab-dnd";
@@ -15,9 +17,13 @@ interface TabDragPayload {
   sourceWindowId: string;
 }
 
-interface DockDragPayload {
-  tabId: string;
-  sourceWindowId: string;
+interface ResolvedTabDragPayload {
+  payload: TabDragPayload;
+  transferSessionId: string | null;
+}
+interface TabDragDropDeps {
+  onTabMoved: (tabId: string) => void;
+  onStateChange: () => void;
 }
 
 const pendingDragCleanupByRoot = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
@@ -27,7 +33,7 @@ const SPLITTER_DRAG_ACTIVE_ATTR = "data-dock-splitter-drag-active";
 export function wireTabStripDragDrop(
   root: HTMLElement,
   runtime: ShellRuntime,
-  onTabMoved: (tabId: string) => void,
+  deps: TabDragDropDeps,
 ): void {
   tabDragBindingsByRoot.get(root)?.abort();
   const bindings = new AbortController();
@@ -98,13 +104,6 @@ export function wireTabStripDragDrop(
       if (typeof dataTransfer.setDragImage === "function") {
         dataTransfer.setDragImage(tabButton ?? tabItem, 16, 12);
       }
-      console.log("[shell:dnd:tab] dragstart", {
-        tabId,
-        sourceWindowId: runtime.windowId,
-        brokerAvailable: runtime.dragSessionBroker.available,
-        types: Array.from(dataTransfer.types ?? []),
-        stack: new Error().stack,
-      });
     }, listenerOptions);
 
     tabButton.addEventListener("drag", () => {
@@ -117,10 +116,6 @@ export function wireTabStripDragDrop(
 
     tabButton.addEventListener("dragend", () => {
       scheduleDragCleanup(root);
-      console.log("[shell:dnd:tab] dragend", {
-        tabId,
-        stack: new Error().stack,
-      });
     }, listenerOptions);
 
     tabItem.addEventListener("dragover", (event) => {
@@ -148,14 +143,24 @@ export function wireTabStripDragDrop(
       }
 
       const targetTabId = tabId;
-      const payload = readDraggedTabPayload(runtime, dataTransfer, root);
+      const resolved = readDraggedTabPayload(runtime, dataTransfer, root);
       clearDragState(root);
-      console.log("[shell:dnd:tab] drop", {
-        targetTabId,
-        payload,
-        stack: new Error().stack,
-      });
-      if (!targetTabId || !payload || payload.sourceWindowId !== runtime.windowId || payload.tabId === targetTabId) {
+      if (!targetTabId || !resolved || resolved.payload.tabId === targetTabId) {
+        return;
+      }
+
+      const payload = resolved.payload;
+      const isCrossWindow = payload.sourceWindowId !== runtime.windowId;
+      if (isCrossWindow) {
+        handleCrossWindowTabStripDrop(runtime, {
+          tabId: payload.tabId,
+          sourceWindowId: payload.sourceWindowId,
+          targetTabId,
+          transferSessionId: resolved.transferSessionId,
+        }, {
+          onTabMoved: deps.onTabMoved,
+          onStateChange: deps.onStateChange,
+        });
         return;
       }
 
@@ -169,12 +174,10 @@ export function wireTabStripDragDrop(
 
       updateContextState(runtime, reordered);
       updateContextState(runtime, setActiveTab(runtime.contextState, payload.tabId));
-      onTabMoved(payload.tabId);
-      console.log("[shell:dnd:tab] drop-applied", {
-        tabId: payload.tabId,
-        targetTabId,
-        stack: new Error().stack,
-      });
+      if (resolved.transferSessionId) {
+        runtime.dragSessionBroker.commit({ id: resolved.transferSessionId }, runtime.windowId);
+      }
+      deps.onTabMoved(payload.tabId);
     }, listenerOptions);
   }
 }
@@ -221,41 +224,28 @@ function resolveTabButton(tabItem: HTMLElement): HTMLButtonElement | null {
 
 function readTabItemId(tabItem: HTMLElement, tabButton: HTMLButtonElement | null): string | undefined {
   const itemDataset = (tabItem as Partial<HTMLElement>).dataset;
-  if (itemDataset && typeof itemDataset.tabItem === "string") {
-    return itemDataset.tabItem;
-  }
-
-  return tabButton?.dataset.partId;
+  return itemDataset && typeof itemDataset.tabItem === "string"
+    ? itemDataset.tabItem
+    : tabButton?.dataset.partId;
 }
 
 function isSplitterDragActive(root: HTMLElement): boolean {
-  if (typeof (root as Partial<HTMLElement>).hasAttribute !== "function") {
-    return false;
-  }
-
-  return root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR);
+  return typeof (root as Partial<HTMLElement>).hasAttribute === "function"
+    && root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR);
 }
 
 function addRootClass(root: HTMLElement, className: string): void {
-  if (!root.classList || typeof root.classList.add !== "function") {
-    return;
-  }
-
-  root.classList.add(className);
+  if (root.classList && typeof root.classList.add === "function") root.classList.add(className);
 }
 
 function removeRootClass(root: HTMLElement, className: string): void {
-  if (!root.classList || typeof root.classList.remove !== "function") {
-    return;
-  }
-
-  root.classList.remove(className);
+  if (root.classList && typeof root.classList.remove === "function") root.classList.remove(className);
 }
 
 function parseTabDragPayload(runtime: ShellRuntime, raw: string): TabDragPayload | null {
   if (raw.startsWith(DRAG_REF_PREFIX)) {
     const id = raw.slice(DRAG_REF_PREFIX.length);
-    return asTabDragPayload(runtime.dragSessionBroker.consume({ id }));
+    return asTabDragPayload(runtime.dragSessionBroker.consume({ id }, runtime.windowId));
   }
 
   if (raw.startsWith(DRAG_INLINE_PREFIX)) {
@@ -269,43 +259,48 @@ function readDraggedTabPayload(
   runtime: ShellRuntime,
   dataTransfer: DataTransfer,
   root: HTMLElement,
-): TabDragPayload | null {
+): ResolvedTabDragPayload | null {
   const rawText = dataTransfer.getData("text/plain");
-  const rawDock = dataTransfer.getData(TAB_DOCK_DRAG_MIME);
-  console.log("[shell:dnd:tab] read-payload", {
-    rawText,
-    rawDock,
-    types: Array.from(dataTransfer.types ?? []),
-    stack: new Error().stack,
-  });
   const parsedTabDrag = parseTabDragPayload(runtime, rawText);
   if (parsedTabDrag) {
-    return parsedTabDrag;
+    return {
+      payload: parsedTabDrag,
+      transferSessionId: rawText.startsWith(DRAG_REF_PREFIX) ? rawText.slice(DRAG_REF_PREFIX.length) : null,
+    };
   }
 
-  const dockPayload = asDockDragPayload(safeParse(dataTransfer.getData(TAB_DOCK_DRAG_MIME)));
+  const dockPayload = readDockTabDragPayload(dataTransfer, runtime, { consumeRef: false });
   if (dockPayload) {
     return {
-      kind: "shell-tab-dnd",
-      tabId: dockPayload.tabId,
-      sourceWindowId: dockPayload.sourceWindowId,
+      payload: {
+        kind: "shell-tab-dnd",
+        tabId: dockPayload.tabId,
+        sourceWindowId: dockPayload.sourceWindowId,
+      },
+      transferSessionId: dockPayload.transferSessionId ?? null,
     };
   }
 
   const activeDockPayload = readActiveDockDragPayload(root);
   if (activeDockPayload) {
     return {
-      kind: "shell-tab-dnd",
-      tabId: activeDockPayload.tabId,
-      sourceWindowId: activeDockPayload.sourceWindowId,
+      payload: {
+        kind: "shell-tab-dnd",
+        tabId: activeDockPayload.tabId,
+        sourceWindowId: activeDockPayload.sourceWindowId,
+      },
+      transferSessionId: null,
     };
   }
 
   if (runtime.contextState.tabs[rawText]) {
     return {
-      kind: "shell-tab-dnd",
-      tabId: rawText,
-      sourceWindowId: runtime.windowId,
+      payload: {
+        kind: "shell-tab-dnd",
+        tabId: rawText,
+        sourceWindowId: runtime.windowId,
+      },
+      transferSessionId: null,
     };
   }
 
@@ -328,22 +323,6 @@ function asTabDragPayload(value: unknown): TabDragPayload | null {
 
   return {
     kind: payload.kind,
-    tabId: payload.tabId,
-    sourceWindowId: payload.sourceWindowId,
-  };
-}
-
-function asDockDragPayload(value: unknown): DockDragPayload | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const payload = value as Record<string, unknown>;
-  if (typeof payload.tabId !== "string" || typeof payload.sourceWindowId !== "string") {
-    return null;
-  }
-
-  return {
     tabId: payload.tabId,
     sourceWindowId: payload.sourceWindowId,
   };

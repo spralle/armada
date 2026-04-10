@@ -19,6 +19,7 @@ import type {
 import type {
   ContextTabCloseability,
   DerivedLaneDefinition,
+  IncomingTransferJournal,
   RevisionMeta,
   SelectionPropagationRule,
   ShellContextState,
@@ -74,8 +75,11 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   poppedOutTabIds: Set<string>;
   closeableTabIds: Set<string>;
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
+  incomingTransferJournal: IncomingTransferJournal;
   sourceTabTransferPendingBySessionId?: Map<string, SourceTabTransferPendingState>;
   sourceTabTransferTerminalSessionIds?: Set<string>;
+  crossWindowDndEnabled: boolean;
+  crossWindowDndKillSwitchActive: boolean;
   syncDegraded: boolean;
   syncHealthState: "healthy" | "degraded" | "unavailable";
   syncDegradedReason: AsyncWindowBridgeRejectReason | null;
@@ -92,7 +96,6 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   activeTransportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
   activeDndPath: DndDiagnosticPath;
   activeDndReason: "kill-switch-force-disabled" | "flag-enabled" | "default-same-window-only";
-  crossWindowDndEnabled: boolean;
   lastDndDiagnostic: DndDiagnosticEnvelope | null;
 }
 

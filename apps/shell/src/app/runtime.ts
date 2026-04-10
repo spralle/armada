@@ -1,5 +1,6 @@
 import { createDragSessionBroker } from "../dnd-session-broker.js";
 import { createInitialShellContextState } from "../context-state.js";
+import { createIncomingTransferJournal } from "../context-state.js";
 import { createDefaultLayoutState } from "../layout.js";
 import {
   createLocalStorageContextStatePersistence,
@@ -13,16 +14,16 @@ import { createWindowBridge } from "../window-bridge.js";
 import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
 import { createAsyncScompWindowBridge } from "../window-bridge-scomp.js";
 import {
+  readShellMigrationFlags,
+  selectCrossWindowDnd,
+  type ShellTransportPath,
+} from "./migration-flags.js";
+import {
   BRIDGE_CHANNEL,
   DEFAULT_GROUP_COLOR,
   DEFAULT_GROUP_ID,
 } from "./constants.js";
 import type { ShellRuntime, SourceTabTransferPendingState } from "./types.js";
-import {
-  readShellMigrationFlags,
-  selectCrossWindowDnd,
-  type ShellTransportPath,
-} from "./migration-flags.js";
 import {
   createWindowId,
   getCurrentUserId,
@@ -33,7 +34,8 @@ import {
 export function createShellRuntime(options?: {
   transportPath?: ShellTransportPath;
 }): ShellRuntime {
-  const crossWindowDnd = selectCrossWindowDnd(readShellMigrationFlags());
+  const migrationFlags = readShellMigrationFlags();
+  const crossWindowDnd = selectCrossWindowDnd(migrationFlags);
   const popoutParams = readPopoutParams();
   const windowId = createWindowId();
   const bridge = createWindowBridge(BRIDGE_CHANNEL);
@@ -77,8 +79,11 @@ export function createShellRuntime(options?: {
     poppedOutTabIds: new Set<string>(),
     closeableTabIds: new Set<string>(),
     dragSessionBroker: createDragSessionBroker(bridge, windowId),
+    incomingTransferJournal: createIncomingTransferJournal(),
     sourceTabTransferPendingBySessionId: new Map<string, SourceTabTransferPendingState>(),
     sourceTabTransferTerminalSessionIds: new Set<string>(),
+    crossWindowDndEnabled: crossWindowDnd.enabled,
+    crossWindowDndKillSwitchActive: migrationFlags.forceDisableCrossWindowDnd,
     syncDegraded: !bridge.available,
     syncHealthState: bridge.available ? "healthy" : "unavailable",
     syncDegradedReason: bridge.available ? null : "unavailable",
@@ -95,7 +100,6 @@ export function createShellRuntime(options?: {
     activeTransportReason: "default-legacy",
     activeDndPath: crossWindowDnd.path,
     activeDndReason: crossWindowDnd.reason,
-    crossWindowDndEnabled: crossWindowDnd.enabled,
     lastDndDiagnostic: null,
   };
 

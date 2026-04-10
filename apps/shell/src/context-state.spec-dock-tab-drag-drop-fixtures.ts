@@ -1,5 +1,6 @@
 import type { ShellRuntime } from "./app/types.js";
 import {
+  createIncomingTransferJournal,
   createInitialShellContextState,
   registerTab,
   type ShellContextState,
@@ -197,6 +198,18 @@ export function createRuntime(): ShellRuntime {
     selectedPartTitle: "tab-a",
     pendingFocusSelector: null,
     notice: "",
+    dragSessionBroker: {
+      available: false,
+      create: () => ({ id: "unused" }),
+      consume: () => null,
+      commit: () => false,
+      abort: () => false,
+      pruneExpired: () => 0,
+      dispose: () => {},
+    },
+    incomingTransferJournal: createIncomingTransferJournal(),
+    crossWindowDndEnabled: false,
+    crossWindowDndKillSwitchActive: false,
     bridge: {
       available: false,
       publish(_event: LocalBridgeEvent) {

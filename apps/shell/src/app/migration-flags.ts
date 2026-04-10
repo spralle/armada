@@ -71,15 +71,21 @@ export function readShellMigrationFlags(
   const asyncTransportFromQuery = parseBooleanFlag(searchParams.get("shellAsyncScompAdapter"));
   const forceLegacyFromQuery = parseBooleanFlag(searchParams.get("shellLegacyBridgeKillSwitch"));
   const enableCrossWindowDndFromQuery = parseBooleanFlag(searchParams.get("shellCrossWindowDnd"));
-  const disableCrossWindowDndFromQuery = parseBooleanFlag(searchParams.get("shellCrossWindowDndKillSwitch"));
+  const forceDisableCrossWindowDndFromQuery = parseBooleanFlag(searchParams.get("shellCrossWindowDndKillSwitch"));
 
   return {
     useContractCoreApi: override?.useContractCoreApi ?? coreFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.useContractCoreApi,
     useAdapterComposition: override?.useAdapterComposition ?? adapterFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.useAdapterComposition,
     enableAsyncScompAdapter: override?.enableAsyncScompAdapter ?? asyncTransportFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.enableAsyncScompAdapter,
     forceLegacyBridge: override?.forceLegacyBridge ?? forceLegacyFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.forceLegacyBridge,
-    enableCrossWindowDnd: override?.enableCrossWindowDnd ?? enableCrossWindowDndFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.enableCrossWindowDnd,
-    forceDisableCrossWindowDnd: override?.forceDisableCrossWindowDnd ?? disableCrossWindowDndFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.forceDisableCrossWindowDnd,
+    enableCrossWindowDnd:
+      override?.enableCrossWindowDnd
+      ?? enableCrossWindowDndFromQuery
+      ?? DEFAULT_SHELL_MIGRATION_FLAGS.enableCrossWindowDnd,
+    forceDisableCrossWindowDnd:
+      override?.forceDisableCrossWindowDnd
+      ?? forceDisableCrossWindowDndFromQuery
+      ?? DEFAULT_SHELL_MIGRATION_FLAGS.forceDisableCrossWindowDnd,
   };
 }
 

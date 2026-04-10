@@ -225,3 +225,4 @@ function isOptionalRevision(
   const revision = value as { timestamp?: unknown; writer?: unknown };
   return typeof revision.timestamp === "number" && typeof revision.writer === "string";
 }
+
