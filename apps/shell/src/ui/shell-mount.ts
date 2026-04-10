@@ -26,10 +26,11 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .dock-node { min-width: 0; min-height: 0; }
     .dock-node-stack { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; border: 1px solid #2b3040; border-radius: 4px; background: #121922; overflow: hidden; }
     .dock-stack-panels { min-height: 0; overflow: hidden; padding: 0; position: relative; display: flex; flex-direction: column; }
-    .dock-stack-panels > [role="tabpanel"] { min-height: 0; height: 100%; flex: 1 1 auto; display: flex; flex-direction: column; }
+    .dock-stack-panels > [role="tabpanel"] { min-width: 0; min-height: 0; height: 100%; overflow: hidden; flex: 1 1 auto; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"][hidden] { display: none; }
     .dock-tabpanel { min-width: 0; min-height: 0; overflow: hidden; flex: 1 1 auto; display: flex; }
-    .dock-tabpanel-content { min-width: 0; min-height: 0; height: 100%; overflow: auto; flex: 1 1 auto; padding: 6px; box-sizing: border-box; display: flex; flex-direction: column; }
+    .dock-tabpanel-content { min-width: 0; min-height: 0; width: 100%; height: 100%; max-width: 100%; max-height: 100%; overflow: auto; flex: 1 1 auto; padding: 6px; box-sizing: border-box; display: flex; flex-direction: column; }
+    .dock-tabpanel-content > * { min-width: 0; }
     .dock-node-split { --dock-splitter-size: 12px; display: grid; gap: 0; min-width: 0; min-height: 0; }
     .dock-node-split-horizontal { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .dock-node-split-vertical { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
