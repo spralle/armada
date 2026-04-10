@@ -21,6 +21,9 @@ export function renderDockPartPanel(part: ComposedShellPart, isActive: boolean):
       ${isActive ? "" : "hidden"}
     >
       <section class="dock-tabpanel-content" data-tab-id="${part.id}" data-part-id="${part.id}">
+        <div class="part-actions">
+          <button type="button" data-action="popout" data-tab-id="${part.id}" data-part-id="${part.id}">Pop out</button>
+        </div>
         ${renderPartBody(part)}
       </section>
     </section>`;

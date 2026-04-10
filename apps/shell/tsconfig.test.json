@@ -22,6 +22,7 @@
     "src/local-plugin-sources.ts",
     "src/part-module-host.ts",
     "src/context-state.spec.ts",
+    "src/context-state.spec-dock-popout-action-rendering.ts",
     "src/app/shell-core.spec.ts",
     "src/app/migration-flags.spec.ts",
     "src/app/renderer-adapter-registry.spec.ts",
