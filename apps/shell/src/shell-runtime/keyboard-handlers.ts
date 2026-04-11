@@ -1,19 +1,18 @@
 import {
-  normalizeKeyboardEvent,
-  dispatchAction,
-  resolveKeybindingAction,
-} from "../action-surface.js";
-import {
   resolveChooserFocusRestoration,
   resolveChooserKeyboardAction,
   resolveDegradedKeyboardInteraction,
   resolveTabLifecycleShortcut,
 } from "../keyboard-a11y.js";
 import {
+  createKeybindingService,
+} from "./keybinding-service.js";
+import {
   closeTabThroughRuntime,
   reopenMostRecentlyClosedTabThroughRuntime,
 } from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
+import type { ActionKeybinding } from "../action-surface.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
 
@@ -33,6 +32,8 @@ export interface KeyboardBindings {
   renderCommandSurface: () => void;
   renderSyncStatus: () => void;
   toActionContext: () => Record<string, string>;
+  getDefaultKeybindings: () => ActionKeybinding[];
+  getUserOverrideKeybindings: () => ActionKeybinding[];
 }
 
 export function bindKeyboardShortcuts(
@@ -45,9 +46,11 @@ export function bindKeyboardShortcuts(
       return;
     }
 
+    const keybindingService = createRuntimeKeybindingService(runtime, bindings);
+
     if (runtime.syncDegraded) {
-      const normalizedKey = normalizeKeyboardEvent(event);
-      if (normalizedKey && handleTabLifecycleShortcut(normalizedKey, event, runtime, bindings)) {
+      const normalizedChord = keybindingService.normalizeEvent(event);
+      if (normalizedChord && handleTabLifecycleShortcut(normalizedChord.value, event, runtime, bindings)) {
         return;
       }
 
@@ -69,15 +72,16 @@ export function bindKeyboardShortcuts(
       return;
     }
 
-    const normalizedKey = normalizeKeyboardEvent(event);
-    if (normalizedKey && handleTabLifecycleShortcut(normalizedKey, event, runtime, bindings)) {
+    const normalizedChord = keybindingService.normalizeEvent(event);
+    if (normalizedChord && handleTabLifecycleShortcut(normalizedChord.value, event, runtime, bindings)) {
       return;
     }
 
-    if (normalizedKey) {
+    if (normalizedChord) {
       const context = bindings.toActionContext();
-      const action = resolveKeybindingAction(runtime.actionSurface, normalizedKey, context);
-      if (action) {
+      const resolution = keybindingService.resolve(normalizedChord, context);
+      if (resolution.match) {
+        const action = resolution.match.action;
         const activated = await bindings.activatePluginForBoundary({
           pluginId: action.pluginId,
           triggerType: "command",
@@ -90,10 +94,10 @@ export function bindKeyboardShortcuts(
         }
 
         event.preventDefault();
-        const executed = await dispatchAction(runtime.actionSurface, runtime.intentRuntime, action.id, context);
-        runtime.commandNotice = executed
-          ? `Keybinding (${normalizedKey}): Action '${action.id}' executed.`
-          : `Keybinding (${normalizedKey}): Action '${action.id}' is not executable in current context.`;
+        const result = await keybindingService.dispatch(normalizedChord, context);
+        runtime.commandNotice = result.executed
+          ? `Keybinding (${normalizedChord.value}): Action '${action.id}' executed.`
+          : `Keybinding (${normalizedChord.value}): Action '${action.id}' is not executable in current context.`;
         bindings.renderCommandSurface();
         return;
       }
@@ -138,6 +142,19 @@ export function bindKeyboardShortcuts(
   return () => {
     root.removeEventListener("keydown", onKeyDown);
   };
+}
+
+function createRuntimeKeybindingService(
+  runtime: ShellRuntime,
+  bindings: Pick<KeyboardBindings, "getDefaultKeybindings" | "getUserOverrideKeybindings">,
+) {
+  return createKeybindingService({
+    actionSurface: runtime.actionSurface,
+    intentRuntime: runtime.intentRuntime,
+    defaultBindings: bindings.getDefaultKeybindings(),
+    pluginBindings: runtime.actionSurface.keybindings,
+    userOverrideBindings: bindings.getUserOverrideKeybindings(),
+  });
 }
 
 function handleTabLifecycleShortcut(
