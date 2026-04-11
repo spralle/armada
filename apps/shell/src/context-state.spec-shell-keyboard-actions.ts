@@ -10,6 +10,7 @@ import type { ShellRuntime } from "./app/types.js";
 import { bindKeyboardShortcuts, type KeyboardBindings } from "./shell-runtime/keyboard-handlers.js";
 import {
   DEFAULT_SHELL_KEYBINDINGS,
+  DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
   createDefaultShellKeybindingContract,
   isBrowserSafeDefaultKeybinding,
 } from "./shell-runtime/default-shell-keybindings.js";
@@ -72,7 +73,9 @@ class FakeRoot {
   }
 }
 
-class FakeElement {}
+class FakeElement {
+  dataset: Record<string, string> = {};
+}
 
 export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
@@ -273,7 +276,11 @@ function createKeyboardBindings(runtime: ShellRuntime): KeyboardBindings {
     renderContextControls: () => {},
     renderParts: () => {},
     renderSyncStatus: () => {},
-    getDefaultKeybindings: () => [],
+    getDefaultKeybindings: () => DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
+      action: entry.action,
+      keybinding: entry.keybinding,
+      pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+    })),
     getUserOverrideKeybindings: () => [],
     toActionContext: () => ({
       "context.domain.selection": "none",

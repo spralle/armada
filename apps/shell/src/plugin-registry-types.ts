@@ -77,6 +77,7 @@ export interface PluginRegistrySnapshot {
 }
 
 export interface ShellPluginRegistry {
+  registerBuiltinPlugin(contract: PluginContract): void;
   registerManifestDescriptors(tenantId: string, descriptors: TenantPluginDescriptor[]): void;
   setEnabled(pluginId: string, enabled: boolean): Promise<void>;
   activateByCommand(pluginId: string, commandId: string): Promise<boolean>;

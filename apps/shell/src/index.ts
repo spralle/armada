@@ -208,6 +208,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
       return;
     }
     runtime.registry = state.registry;
+    runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
     refreshCommandContributions(runtime);
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);
     renderParts(root, runtime);

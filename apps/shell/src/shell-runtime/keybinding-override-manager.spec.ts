@@ -291,4 +291,44 @@ export function registerKeybindingOverrideManagerSpecs(harness: SpecHarness): vo
     assertEqual(overrides[0].action, "preloaded.action", "should have preloaded action");
     assertEqual(overrides[0].keybinding, "ctrl+p", "should have preloaded keybinding");
   });
+
+  test("listConflicts does not double-count when same binding appears in defaults only", () => {
+    const persistence = createMockPersistence();
+    // Simulate the FIXED wiring: defaults have ctrl+h, plugins do NOT have it
+    const manager = createKeybindingOverrideManager({
+      persistence,
+      getDefaultBindings: () => [
+        { action: "shell.focus.left", keybinding: "ctrl+h", pluginId: "com.ghost.shell.defaults" },
+      ],
+      getPluginBindings: () => [
+        // No duplicate here — defaults are filtered out of plugin bindings
+        { action: "plugin.action.search", keybinding: "ctrl+shift+f", pluginId: "com.ghost.plugin.search" },
+      ],
+    });
+
+    const conflicts = manager.listConflicts("ctrl+h");
+    assertEqual(conflicts.length, 1, "should find exactly one binding (no double-count)");
+    assertEqual(conflicts[0].layer, "defaults", "the single match should be from defaults layer");
+  });
+
+  test("listConflicts correctly detects real cross-layer conflict", () => {
+    const persistence = createMockPersistence();
+    const manager = createKeybindingOverrideManager({
+      persistence,
+      getDefaultBindings: () => [
+        { action: "shell.focus.left", keybinding: "ctrl+h", pluginId: "com.ghost.shell.defaults" },
+      ],
+      getPluginBindings: () => [
+        // A DIFFERENT action from a real plugin using the same chord — this IS a real conflict
+        { action: "plugin.action.help", keybinding: "ctrl+h", pluginId: "com.ghost.plugin.help" },
+      ],
+    });
+
+    const conflicts = manager.listConflicts("ctrl+h");
+    assertEqual(conflicts.length, 2, "should detect real cross-layer conflict");
+    const defaultConflict = conflicts.find((c) => c.layer === "defaults");
+    const pluginConflict = conflicts.find((c) => c.layer === "plugins");
+    assertTruthy(defaultConflict, "should have default layer conflict");
+    assertTruthy(pluginConflict, "should have plugin layer conflict");
+  });
 }

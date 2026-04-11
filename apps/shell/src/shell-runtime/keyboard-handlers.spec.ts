@@ -5,7 +5,7 @@ import {
   setActiveTab,
 } from "../context-state.js";
 import { bindKeyboardShortcuts, type KeyboardBindings } from "./keyboard-handlers.js";
-import { createDefaultShellKeybindingContract } from "./default-shell-keybindings.js";
+import { createDefaultShellKeybindingContract, DEFAULT_SHELL_KEYBINDINGS, DEFAULT_SHELL_KEYBINDING_PLUGIN_ID } from "./default-shell-keybindings.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import type { ShellRuntime } from "../app/types.js";
 
@@ -63,7 +63,9 @@ class FakeRoot {
   }
 }
 
-class FakeElement {}
+class FakeElement {
+  dataset: Record<string, string> = {};
+}
 
 export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
@@ -192,7 +194,11 @@ function createBindings(
     renderContextControls: () => {},
     renderParts: () => {},
     renderSyncStatus: () => {},
-    getDefaultKeybindings: () => [],
+    getDefaultKeybindings: () => DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
+      action: entry.action,
+      keybinding: entry.keybinding,
+      pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+    })),
     getUserOverrideKeybindings: () => [],
     toActionContext: () => ({
       "context.domain.selection": "none",
