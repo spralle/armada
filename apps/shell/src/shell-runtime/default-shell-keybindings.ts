@@ -27,7 +27,6 @@ export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.group.cycle.next",
   "shell.stack.cycle.prev",
   "shell.stack.cycle.next",
-  "shell.palette.toggle",
 ] as const;
 
 export type ShellKeyboardActionId = typeof SHELL_KEYBOARD_ACTION_IDS[number];
@@ -61,7 +60,6 @@ export const DEFAULT_SHELL_KEYBINDINGS: readonly ShellDefaultKeybinding[] = [
   { action: "shell.group.cycle.next", keybinding: "shift+alt+g" },
   { action: "shell.stack.cycle.prev", keybinding: "shift+alt+p" },
   { action: "shell.stack.cycle.next", keybinding: "shift+alt+n" },
-  { action: "shell.palette.toggle", keybinding: "ctrl+shift+p" },
 ];
 
 export const RESERVED_BROWSER_SHORTCUTS = new Set([

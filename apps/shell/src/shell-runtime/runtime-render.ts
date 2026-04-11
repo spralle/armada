@@ -14,7 +14,6 @@ import { getVisibleComposedParts } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
 import { deriveCloseableTabIds, rerenderAfterPluginToggle } from "./runtime-render-transition.js";
-import { dispatchAction } from "../action-surface.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
 
 type ReactPanelsHost = ReturnType<typeof createReactPanelsHost>;
@@ -99,27 +98,6 @@ export function initializeReactPanels(
     },
     onPendingFocusApplied: () => {
       runtime.pendingFocusSelector = null;
-    },
-    onExecutePaletteCommand: (entry) => {
-      void (async () => {
-        const activated = await bindings.activatePluginForBoundary({
-          pluginId: entry.pluginId,
-          triggerType: "command",
-          triggerId: entry.id,
-        });
-        if (!activated) {
-          runtime.commandNotice = `Palette action '${entry.id}' blocked: plugin '${entry.pluginId}' is not active.`;
-          bindings.renderCommandSurface();
-          return;
-        }
-        await dispatchAction(
-          runtime.actionSurface,
-          runtime.intentRuntime,
-          entry.id,
-          {},
-        );
-        renderPanels(root, runtime);
-      })();
     },
   });
 

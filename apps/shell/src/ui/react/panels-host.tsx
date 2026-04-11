@@ -9,13 +9,10 @@ import {
 } from "../../context/runtime-state.js";
 import { getBridgeWarningMessage } from "../../sync/bridge-degraded.js";
 import type { IntentActionMatch } from "../../intent-runtime.js";
-import type { ActionPaletteEntry } from "../../shell-runtime/action-palette-state.js";
 import type { ShellRuntime } from "../../app/types.js";
 import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";
 import { KeybindingsSettingsPanel } from "./keybinding-settings-panel.js";
-import { QuickPickOverlay } from "../quick-pick/quick-pick-overlay.js";
-import { adaptPaletteStateToQuickPick, type PaletteQuickPickItem } from "../quick-pick/palette-adapter.js";
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
@@ -23,7 +20,6 @@ type PanelsHostBindings = {
   onChooseIntentAction: (index: number) => void;
   onDismissChooser: () => void;
   onPendingFocusApplied: () => void;
-  onExecutePaletteCommand?: (entry: ActionPaletteEntry) => void;
 };
 
 type PanelsHost = {
@@ -114,22 +110,6 @@ export function createReactPanelsHost(
             manager={runtime.keybindingOverrideManager}
             pluginBindings={runtime.actionSurface.keybindings}
             onChanged={() => host.render()}
-          />,
-        );
-      }
-      const paletteRoot = ensureRoot("quick-pick-host");
-      if (paletteRoot) {
-        const ctrl = runtime.actionPaletteController;
-        const qpState = adaptPaletteStateToQuickPick(ctrl.getState());
-        paletteRoot.render(
-          <QuickPickOverlay<PaletteQuickPickItem>
-            state={qpState}
-            placeholder="Type an action..."
-            onFilterChange={(f) => { ctrl.dispatch({ type: "updateFilter", filter: f }); host.render(); }}
-            onSelectNext={() => { ctrl.dispatch({ type: "selectNext" }); host.render(); }}
-            onSelectPrevious={() => { ctrl.dispatch({ type: "selectPrevious" }); host.render(); }}
-            onAccept={(item) => { ctrl.close(); host.render(); bindings.onExecutePaletteCommand?.(item.entry); }}
-            onClose={() => { ctrl.close(); host.render(); }}
           />,
         );
       }
