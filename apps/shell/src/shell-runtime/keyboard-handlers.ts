@@ -96,9 +96,11 @@ export function bindKeyboardShortcuts(
 
         event.preventDefault();
         const shellResult = handleShellKeyboardAction(runtime, bindings, action.id);
-        const executed = shellResult.handled
-          ? shellResult.executed
-          : (await keybindingService.dispatch(normalizedChord, context)).executed;
+        let executed = shellResult.executed;
+        if (!shellResult.handled) {
+          const result = await keybindingService.dispatch(normalizedChord, context);
+          executed = result.executed;
+        }
         runtime.commandNotice = shellResult.handled
           ? `Keybinding (${normalizedChord.value}): ${shellResult.message}`
           : executed
