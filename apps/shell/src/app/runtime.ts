@@ -124,10 +124,13 @@ export function createShellRuntime(options?: {
       keybinding: entry.keybinding,
       pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
     })),
-    getPluginBindings: () => runtime.actionSurface.keybindings,
+    getPluginBindings: () => runtime.actionSurface.keybindings.filter(
+      (b) => b.pluginId !== DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+    ),
   });
 
   runtime.registry.registerManifestDescriptors("local", []);
+  runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
   runtime.layout = runtime.persistence.load();
   const contextLoad = runtime.contextPersistence.load(runtime.contextState);
   runtime.contextState = contextLoad.state;

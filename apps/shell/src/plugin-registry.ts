@@ -1,3 +1,4 @@
+import type { PluginContract } from "@ghost/plugin-contracts";
 import {
   createCapabilityRegistry,
   pickComponentModuleExport,
@@ -59,12 +60,45 @@ export function createShellPluginRegistry(
     capabilityRegistry,
   );
   let tenantId = "local";
+  const builtinContracts: PluginContract[] = [];
+
+  function seedBuiltinState(contract: PluginContract): void {
+    const pluginId = contract.manifest.id;
+    states.set(pluginId, {
+      descriptor: {
+        id: pluginId,
+        version: contract.manifest.version,
+        entry: "builtin://shell",
+        compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" },
+      },
+      enabled: true,
+      loadMode: "remote-manifest",
+      contract,
+      componentsModule: null,
+      servicesModule: null,
+      failure: null,
+      lifecycle: {
+        state: "active",
+        lastTransitionAt: new Date().toISOString(),
+        lastTrigger: null,
+      },
+      activationPromise: null,
+    });
+  }
 
   return {
+    registerBuiltinPlugin(contract: PluginContract) {
+      builtinContracts.push(contract);
+      seedBuiltinState(contract);
+    },
     registerManifestDescriptors(nextTenantId, descriptors) {
       tenantId = nextTenantId;
       states.clear();
       capabilityRegistry.clear();
+      // Re-register builtin plugins after clear
+      for (const contract of builtinContracts) {
+        seedBuiltinState(contract);
+      }
       for (const descriptor of descriptors) {
         states.set(descriptor.id, {
           descriptor,

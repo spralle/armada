@@ -7,6 +7,9 @@ import {
 import {
   createKeybindingService,
 } from "./keybinding-service.js";
+import type { KeybindingService } from "./keybinding-service.js";
+import type { ActionSurface } from "../action-surface.js";
+import { DEFAULT_SHELL_KEYBINDING_PLUGIN_ID } from "./default-shell-keybindings.js";
 import {
   closeTabThroughRuntime,
   reopenMostRecentlyClosedTabThroughRuntime,
@@ -42,12 +45,39 @@ export function bindKeyboardShortcuts(
   runtime: ShellRuntime,
   bindings: KeyboardBindings,
 ): () => void {
+  let cachedService: KeybindingService | null = null;
+  let cachedActionSurface: ActionSurface | null = null;
+  let cachedOverrideCount = -1;
+
+  function getKeybindingService(): KeybindingService {
+    const overrides = bindings.getUserOverrideKeybindings();
+    if (
+      cachedService &&
+      cachedActionSurface === runtime.actionSurface &&
+      cachedOverrideCount === overrides.length
+    ) {
+      return cachedService;
+    }
+    cachedActionSurface = runtime.actionSurface;
+    cachedOverrideCount = overrides.length;
+    cachedService = createKeybindingService({
+      actionSurface: runtime.actionSurface,
+      intentRuntime: runtime.intentRuntime,
+      defaultBindings: bindings.getDefaultKeybindings(),
+      pluginBindings: runtime.actionSurface.keybindings.filter(
+        (b) => b.pluginId !== DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+      ),
+      userOverrideBindings: overrides,
+    });
+    return cachedService;
+  }
+
   const onKeyDown = async (event: KeyboardEvent) => {
     if (handleChooserKeyboardEvent(runtime, event, bindings)) {
       return;
     }
 
-    const keybindingService = createRuntimeKeybindingService(runtime, bindings);
+    const keybindingService = getKeybindingService();
 
     if (runtime.syncDegraded) {
       const normalizedChord = keybindingService.normalizeEvent(event);
@@ -155,19 +185,6 @@ export function bindKeyboardShortcuts(
   return () => {
     root.removeEventListener("keydown", onKeyDown);
   };
-}
-
-function createRuntimeKeybindingService(
-  runtime: ShellRuntime,
-  bindings: Pick<KeyboardBindings, "getDefaultKeybindings" | "getUserOverrideKeybindings">,
-) {
-  return createKeybindingService({
-    actionSurface: runtime.actionSurface,
-    intentRuntime: runtime.intentRuntime,
-    defaultBindings: bindings.getDefaultKeybindings(),
-    pluginBindings: runtime.actionSurface.keybindings,
-    userOverrideBindings: bindings.getUserOverrideKeybindings(),
-  });
 }
 
 function handleTabLifecycleShortcut(

@@ -109,37 +109,6 @@ export function resolveMenuActions(
     .filter((action) => evaluatePredicate(action.predicate, context, matcher));
 }
 
-export function resolveKeybindingAction(
-  surface: ActionSurface,
-  normalizedKeybinding: string,
-  context: ActionSurfaceContext,
-  matcher: ContributionPredicateMatcher = defaultPredicateMatcher,
-): InvokableAction | null {
-  const key = normalizeKeybinding(normalizedKeybinding);
-  for (const contribution of surface.keybindings) {
-    if (normalizeKeybinding(contribution.keybinding) !== key) {
-      continue;
-    }
-
-    if (!evaluatePredicate(contribution.when, context, matcher)) {
-      continue;
-    }
-
-    const action = findAction(surface.actions, contribution.action);
-    if (!action) {
-      continue;
-    }
-
-    if (!evaluatePredicate(action.predicate, context, matcher)) {
-      continue;
-    }
-
-    return action;
-  }
-
-  return null;
-}
-
 export async function dispatchAction(
   surface: ActionSurface,
   runtime: IntentRuntime,
@@ -166,30 +135,6 @@ export async function dispatchAction(
   });
 
   return result.executed;
-}
-
-export function normalizeKeyboardEvent(event: KeyboardEvent): string | null {
-  const key = event.key.toLowerCase();
-  if (!key || key === "shift" || key === "control" || key === "alt" || key === "meta") {
-    return null;
-  }
-
-  const parts: string[] = [];
-  if (event.ctrlKey) {
-    parts.push("ctrl");
-  }
-  if (event.shiftKey) {
-    parts.push("shift");
-  }
-  if (event.altKey) {
-    parts.push("alt");
-  }
-  if (event.metaKey) {
-    parts.push("meta");
-  }
-
-  parts.push(key);
-  return parts.join("+");
 }
 
 function mapAction(pluginId: string, contribution: PluginActionContribution): InvokableAction {
@@ -251,15 +196,6 @@ function evaluatePredicate(
   }
 
   return matcher.evaluate(predicate, context).matched;
-}
-
-function normalizeKeybinding(keybinding: string): string {
-  return keybinding
-    .toLowerCase()
-    .split("+")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join("+");
 }
 
 function normalizeContext(context: ActionSurfaceContext): Record<string, string> {

@@ -25,6 +25,7 @@ import { registerKeyboardHandlersSpecs } from "./shell-runtime/keyboard-handlers
 import { registerKeybindingPersistenceSpecs } from "./persistence/keybinding-persistence.spec.js";
 import { registerKeybindingOverrideManagerSpecs } from "./shell-runtime/keybinding-override-manager.spec.js";
 import { registerKeybindingImportExportSpecs } from "./shell-runtime/keybinding-import-export.spec.js";
+import { registerPluginRegistryBuiltinSpecs } from "./shell-runtime/plugin-registry-builtin.spec.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -56,6 +57,7 @@ registerKeyboardHandlersSpecs(harness);
 registerKeybindingPersistenceSpecs(harness);
 registerKeybindingOverrideManagerSpecs(harness);
 registerKeybindingImportExportSpecs(harness);
+registerPluginRegistryBuiltinSpecs(harness);
 
 const { passed, total } = await runAll();
 

@@ -11,7 +11,6 @@ import {
 import {
   buildActionSurface,
   dispatchAction,
-  resolveKeybindingAction,
   resolveMenuActions,
 } from "../../../apps/shell/src/action-surface.ts";
 
@@ -703,11 +702,5 @@ test("action-surface menu and keybinding predicate semantics match default match
       `menu parity failed for ${testCase.name}`,
     );
 
-    const resolvedKeybinding = resolveKeybindingAction(surface, "CTRL+SHIFT+S", testCase.facts);
-    assert.equal(
-      resolvedKeybinding !== null,
-      expected,
-      `keybinding parity failed for ${testCase.name}`,
-    );
   }
 });
