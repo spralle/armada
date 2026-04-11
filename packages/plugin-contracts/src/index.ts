@@ -1,3 +1,8 @@
+export type { Disposable } from "./disposable.js";
+
+export type { Event, EventEmitter } from "./event.js";
+export { createEventEmitter } from "./event.js";
+
 export type {
   PluginManifestIdentity,
   PluginViewContribution,
