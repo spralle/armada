@@ -135,6 +135,7 @@ export function createShellBootstrapComposition(
     applySelection: handlers.applySelection,
     initialize: (viewRoot, viewRuntime) => {
       initializeReactPanels(viewRoot, viewRuntime, {
+        activatePluginForBoundary: (options) => deps.activatePluginForBoundary(options),
         applySelection: (event) => handlers.applySelection(event),
         dismissIntentChooser: () => deps.dismissIntentChooser(),
         executeResolvedAction: (match, intent) => handlers.executeResolvedAction(match, intent),
@@ -158,6 +159,7 @@ export function createShellBootstrapComposition(
     },
     renderParts: (viewRoot, viewRuntime) => {
       renderPartsView(viewRoot, viewRuntime, {
+        activatePluginForBoundary: (options) => deps.activatePluginForBoundary(options),
         applySelection: (event) => handlers.applySelection(event),
         dismissIntentChooser: () => deps.dismissIntentChooser(),
         executeResolvedAction: (match, intent) => handlers.executeResolvedAction(match, intent),

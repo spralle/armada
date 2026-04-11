@@ -51,7 +51,7 @@ test("returns typed data for a valid plugin contract", () => {
       ],
       menus: [
         {
-          menu: "commandPalette",
+          menu: "actionPalette",
           action: "valid.action",
           group: "navigation",
           order: 10,
@@ -305,7 +305,7 @@ test("accepts actions/menu/keybindings for action surface", () => {
       menus: [
         {
           action: "surface.action",
-          menu: "commandPalette",
+          menu: "actionPalette",
         },
       ],
       keybindings: [
@@ -677,7 +677,7 @@ test("action-surface menu and keybinding predicate semantics match default match
           ],
           menus: [
             {
-              menu: "commandPalette",
+              menu: "actionPalette",
               action: "surface.action",
               when: testCase.when,
             },
@@ -695,7 +695,7 @@ test("action-surface menu and keybinding predicate semantics match default match
 
     const expected = evaluateContributionPredicate(testCase.when, testCase.facts);
 
-    const resolvedMenu = resolveMenuActions(surface, "commandPalette", testCase.facts);
+    const resolvedMenu = resolveMenuActions(surface, "actionPalette", testCase.facts);
     assert.equal(
       resolvedMenu.length > 0,
       expected,

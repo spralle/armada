@@ -3,6 +3,7 @@ import type { SpecHarness } from "../context-state.spec-harness.js";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
 import { openPopout } from "./part-instance-popout-lifecycle.js";
 import { createIncomingTransferJournal } from "../context-state.js";
+import { createActionPaletteController } from "../shell-runtime/action-palette-controller.js";
 
 type WindowOpenFn = (url?: string | URL, target?: string) => Window | null;
 
@@ -314,6 +315,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     activeDndPath: "same-window",
     activeDndReason: "default-same-window-only",
     lastDndDiagnostic: null,
+    actionPaletteController: createActionPaletteController(),
     ...overrides,
   };
 }

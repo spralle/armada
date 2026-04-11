@@ -37,7 +37,7 @@ const fixturePlugin: PluginContract = {
     ],
     menus: [
       {
-        menu: "commandPalette",
+        menu: "actionPalette",
         action: "fixture.action"
       }
     ],
