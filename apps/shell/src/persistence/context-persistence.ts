@@ -8,9 +8,7 @@ import type {
 } from "./contracts.js";
 import {
   CONTEXT_STATE_SCHEMA_VERSION,
-  getLegacyContextStorageKey,
   getUnifiedStorageKey,
-  loadLegacyContextState,
   loadUnifiedEnvelope,
   migrateContextStateEnvelope,
   SHELL_PERSISTENCE_SCHEMA_VERSION,
@@ -23,7 +21,6 @@ export function createLocalStorageContextStatePersistence(
   options: ContextStatePersistenceOptions,
 ): ShellContextStatePersistence {
   const storageKey = getUnifiedStorageKey(options.userId);
-  const legacyStorageKey = getLegacyContextStorageKey(options.userId);
 
   return {
     load(fallback) {
@@ -54,28 +51,6 @@ export function createLocalStorageContextStatePersistence(
         }
 
         sectionWarning = migration.warning;
-      }
-
-      const legacy = loadLegacyContextState(storage, legacyStorageKey);
-      if (legacy.ok) {
-        const sanitizedState = sanitizeContextState(legacy.value.contextState, safeFallback);
-        const dockReport = sanitizeDockTreeStateWithReport(
-          getDockTreeInput(legacy.value.contextState),
-          sanitizedState.tabs,
-          sanitizedState.tabOrder,
-          sanitizedState.activeTabId,
-        );
-        return {
-          state: sanitizedState,
-          warning: joinWarnings(legacy.warning, dockReport.warning),
-        };
-      }
-
-      if (legacy.warning) {
-        return {
-          state: safeFallback,
-          warning: legacy.warning,
-        };
       }
 
       if (persistedEnvelope.warning) {

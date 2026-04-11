@@ -18,7 +18,7 @@ export function registerContextPersistenceUnifiedSpecs(harness: SpecHarness): vo
   test("unified persistence saves layout and context into one envelope key", () => {
     const storage = new MemoryStorage();
     const userId = "spec-user";
-    const unifiedKey = `armada.shell.persistence.v1.${userId}`;
+    const unifiedKey = `ghost.shell.persistence.v1.${userId}`;
     const layoutPersistence = createLocalStorageLayoutPersistence(storage, { userId });
     const contextPersistence = createLocalStorageContextStatePersistence(storage, { userId });
 
@@ -62,7 +62,7 @@ export function registerContextPersistenceUnifiedSpecs(harness: SpecHarness): vo
   test("unified persistence tolerates corrupt context and preserves valid layout", () => {
     const storage = new MemoryStorage();
     const userId = "spec-user";
-    const unifiedKey = `armada.shell.persistence.v1.${userId}`;
+    const unifiedKey = `ghost.shell.persistence.v1.${userId}`;
     storage.setItem(unifiedKey, JSON.stringify({
       version: 1,
       layout: {
@@ -94,7 +94,7 @@ export function registerContextPersistenceUnifiedSpecs(harness: SpecHarness): vo
   test("unified persistence tolerates corrupt layout and preserves valid context", () => {
     const storage = new MemoryStorage();
     const userId = "spec-user";
-    const unifiedKey = `armada.shell.persistence.v1.${userId}`;
+    const unifiedKey = `ghost.shell.persistence.v1.${userId}`;
     storage.setItem(unifiedKey, JSON.stringify({
       version: 1,
       layout: {
