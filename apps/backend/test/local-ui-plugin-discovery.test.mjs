@@ -122,7 +122,7 @@ test("discoverLocalUiPlugins rejects invalid plugin IDs clearly", () => {
         appsRoot: "apps",
         definitions: [
           {
-            id: "Com.Armada.Invalid",
+            id: "Ghost.Invalid",
             folderName: "broken-plugin",
             devPort: 4301,
             version: "0.1.0",
@@ -130,7 +130,7 @@ test("discoverLocalUiPlugins rejects invalid plugin IDs clearly", () => {
           },
         ],
       }),
-    /Invalid local plugin id 'Com\.Armada\.Invalid' for folder 'broken-plugin'/,
+    /Invalid local plugin id 'Ghost\.Invalid' for folder 'broken-plugin'/,
   );
 });
 

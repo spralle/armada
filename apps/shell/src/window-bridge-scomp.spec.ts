@@ -81,7 +81,7 @@ class FakeScompTransport {
 test("scomp adapter publishes accepted and routes parsed events", async () => {
   const transport = new FakeScompTransport();
   const bridge = createAsyncScompWindowBridge({
-    channelName: "armada.test.scomp",
+    channelName: "ghost.test.scomp",
     loadTransport: async () => transport,
   });
 
@@ -116,7 +116,7 @@ test("scomp adapter publishes accepted and routes parsed events", async () => {
 test("scomp adapter normalizes health reasons and close teardown is deterministic", async () => {
   const transport = new FakeScompTransport();
   const bridge = createAsyncScompWindowBridge({
-    channelName: "armada.test.scomp.health",
+    channelName: "ghost.test.scomp.health",
     loadTransport: async () => transport,
   });
 
@@ -163,7 +163,7 @@ test("scomp adapter normalizes health reasons and close teardown is deterministi
 test("scomp adapter maps transport publish failures to normalized reject reasons", async () => {
   const transport = new FakeScompTransport();
   const bridge = createAsyncScompWindowBridge({
-    channelName: "armada.test.scomp.errors",
+    channelName: "ghost.test.scomp.errors",
     loadTransport: async () => transport,
   });
 

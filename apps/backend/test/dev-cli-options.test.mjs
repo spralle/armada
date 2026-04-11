@@ -58,9 +58,9 @@ test("parseBackendDevCliOptions rejects invalid plugin ID format with actionable
     () =>
       parseBackendDevCliOptions([
         "--local-plugin",
-        "Com.Armada.Invalid",
+        "Ghost.Invalid",
       ]),
-    /Invalid local plugin id 'Com\.Armada\.Invalid' from --local-plugin argument\./,
+    /Invalid local plugin id 'Ghost\.Invalid' from --local-plugin argument\./,
   );
 });
 
@@ -69,9 +69,9 @@ test("parseBackendDevCliOptions rejects unknown plugin IDs with actionable error
     () =>
       parseBackendDevCliOptions([
         "--local-plugin",
-        "com.armada.unknown.plugin",
+        "ghost.unknown.plugin",
       ]),
-    /Unknown local plugin id\(s\): com\.armada\.unknown\.plugin\..*Available local plugin id\(s\): .*Use --local-plugin <pluginId> with one of the available IDs\./,
+    /Unknown local plugin id\(s\): ghost\.unknown\.plugin\..*Available local plugin id\(s\): .*Use --local-plugin <pluginId> with one of the available IDs\./,
   );
 });
 
@@ -105,9 +105,9 @@ test("formatLocalPluginOverrideStartupSummary fails fast for missing selected ma
   assert.throws(
     () =>
       formatLocalPluginOverrideStartupSummary(
-        ["com.armada.plugin-starter"],
+        ["ghost.plugin-starter"],
         new Map(),
       ),
-    /Missing local plugin override entry mapping for selected plugin 'com\.armada\.plugin-starter'/,
+    /Missing local plugin override entry mapping for selected plugin 'ghost\.plugin-starter'/,
   );
 });

@@ -79,7 +79,7 @@ function createRuntimeWithMutablePlugin(pluginSnapshot) {
 }
 
 test("part module host mounts and unmounts plugin part lifecycle", async () => {
-  const pluginId = "com.armada.test.plugin";
+  const pluginId = "ghost.test.plugin";
   const part = {
     id: "part.one",
     instanceId: "instance.part.one",
@@ -140,7 +140,7 @@ test("part module host mounts and unmounts plugin part lifecycle", async () => {
 });
 
 test("part module host shows fallback when module missing or invalid", async () => {
-  const pluginId = "com.armada.test.plugin";
+  const pluginId = "ghost.test.plugin";
   const part = {
     id: "part.one",
     instanceId: "instance.part.one",
@@ -184,7 +184,7 @@ test("part module host shows fallback when module missing or invalid", async () 
 });
 
 test("part module host keeps duplicate instances independent by instance identity", async () => {
-  const pluginId = "com.armada.test.plugin";
+  const pluginId = "ghost.test.plugin";
   const parts = [
     {
       id: "part.one",
@@ -252,7 +252,7 @@ test("part module host keeps duplicate instances independent by instance identit
 });
 
 test("part module host preserves backward compatibility for legacy part shape", async () => {
-  const pluginId = "com.armada.test.plugin";
+  const pluginId = "ghost.test.plugin";
   const legacyPart = {
     id: "part.legacy",
     title: "Legacy Part",
@@ -299,7 +299,7 @@ test("part module host preserves backward compatibility for legacy part shape", 
 });
 
 test("part module host remounts after plugin lifecycle transition and clears stale fallback", async () => {
-  const pluginId = "com.armada.test.plugin";
+  const pluginId = "ghost.test.plugin";
   const part = {
     id: "part.one",
     instanceId: "instance.part.one",

@@ -1,5 +1,7 @@
 # ADR: Docking architecture boundaries and migration strategy (armada-yc0)
 
+> Historical trace note: `armada-*` references in this document are legacy bead IDs only.
+
 ## Status
 
 Accepted (2026-04-06)

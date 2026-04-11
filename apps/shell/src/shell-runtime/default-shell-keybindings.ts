@@ -1,6 +1,6 @@
 import type { PluginContract } from "@armada/plugin-contracts";
 
-export const DEFAULT_SHELL_KEYBINDING_PLUGIN_ID = "com.armada.shell.keybindings.default";
+export const DEFAULT_SHELL_KEYBINDING_PLUGIN_ID = "com.ghost.shell.keybindings.default";
 
 export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.window.close",
