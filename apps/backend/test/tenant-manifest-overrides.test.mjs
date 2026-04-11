@@ -106,10 +106,10 @@ test("applyLocalPluginEntryOverrides fails fast when selected plugin has no mapp
   assert.throws(
     () =>
       applyLocalPluginEntryOverrides(baseline.plugins, {
-        selectedLocalPluginIds: ["com.armada.plugin-starter"],
+        selectedLocalPluginIds: ["ghost.plugin-starter"],
         pluginEntryUrlOverridesById: new Map(),
       }),
-    /Missing local plugin override entry mapping for selected plugin id\(s\): com\.armada\.plugin-starter\./,
+    /Missing local plugin override entry mapping for selected plugin id\(s\): ghost\.plugin-starter\./,
   );
 });
 
@@ -146,12 +146,12 @@ test("applyLocalPluginEntryOverrides fails fast when selected plugin is not in m
   assert.throws(
     () =>
       applyLocalPluginEntryOverrides(baseline.plugins, {
-        selectedLocalPluginIds: ["com.armada.unknown.plugin"],
+        selectedLocalPluginIds: ["ghost.unknown.plugin"],
         pluginEntryUrlOverridesById: new Map([
-          ["com.armada.unknown.plugin", "http://127.0.0.1:4999/mf-manifest.json"],
+          ["ghost.unknown.plugin", "http://127.0.0.1:4999/mf-manifest.json"],
         ]),
       }),
-    /Selected local plugin id\(s\) not present in tenant manifest: com\.armada\.unknown\.plugin\./,
+    /Selected local plugin id\(s\) not present in tenant manifest: ghost\.unknown\.plugin\./,
   );
 });
 

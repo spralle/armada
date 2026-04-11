@@ -18,7 +18,7 @@ import {
 test("returns typed data for a valid plugin contract", () => {
   const result = parsePluginContract({
     manifest: {
-      id: "com.armada.valid",
+      id: "ghost.valid",
       name: "Valid Plugin",
       version: "1.0.0",
     },
@@ -90,7 +90,7 @@ test("returns typed data for a valid plugin contract", () => {
 
   assert.equal(result.success, true);
   if (result.success) {
-    assert.equal(result.data.manifest.id, "com.armada.valid");
+    assert.equal(result.data.manifest.id, "ghost.valid");
     assert.equal(result.data.contributes?.parts?.[0]?.dock?.container, "utility");
   }
 });
@@ -98,7 +98,7 @@ test("returns typed data for a valid plugin contract", () => {
 test("accepts the minimal sample contract-consumer plugin manifest", () => {
   const result = parsePluginContract({
     manifest: {
-      id: "com.armada.sample.contract-consumer",
+      id: "ghost.sample.contract-consumer",
       name: "Sample Contract Consumer",
       version: "0.1.0",
     },
@@ -137,7 +137,7 @@ test("returns structured errors for missing required manifest fields", () => {
 test("returns structured errors for invalid dock metadata fields", () => {
   const result = parsePluginContract({
     manifest: {
-      id: "com.armada.invalid-contrib",
+      id: "ghost.invalid-contrib",
       name: "Invalid Contribution Plugin",
       version: "1.0.0",
     },
@@ -166,7 +166,7 @@ test("returns structured errors for invalid dock metadata fields", () => {
 test("accepts capability declarations and explicit dependsOn requirements", () => {
   const result = parsePluginContract({
     manifest: {
-      id: "com.armada.capability-provider",
+      id: "ghost.capability-provider",
       name: "Capability Provider",
       version: "1.0.0",
     },
@@ -174,13 +174,13 @@ test("accepts capability declarations and explicit dependsOn requirements", () =
       capabilities: {
         components: [
           {
-            id: "com.armada.component.map-panel",
+            id: "ghost.component.map-panel",
             version: "1.2.0",
           },
         ],
         services: [
           {
-            id: "com.armada.service.route-planner",
+            id: "ghost.service.route-planner",
             version: "2.0.0",
           },
         ],
@@ -189,19 +189,19 @@ test("accepts capability declarations and explicit dependsOn requirements", () =
     dependsOn: {
       plugins: [
         {
-          pluginId: "com.armada.base-runtime",
+          pluginId: "ghost.base-runtime",
           versionRange: "^3.0.0",
         },
       ],
       components: [
         {
-          id: "com.armada.component.map-panel",
+          id: "ghost.component.map-panel",
           versionRange: "^1.0.0",
         },
       ],
       services: [
         {
-          id: "com.armada.service.weather",
+          id: "ghost.service.weather",
           versionRange: "~1.4.0",
           optional: true,
         },
@@ -220,7 +220,7 @@ test("accepts capability declarations and explicit dependsOn requirements", () =
 test("rejects invalid capability and dependency declaration shapes", () => {
   const result = parsePluginContract({
     manifest: {
-      id: "com.armada.invalid-capability-deps",
+      id: "ghost.invalid-capability-deps",
       name: "Invalid Capability Deps",
       version: "1.0.0",
     },
@@ -228,7 +228,7 @@ test("rejects invalid capability and dependency declaration shapes", () => {
       capabilities: {
         components: [
           {
-            id: "com.armada.component.map-panel",
+            id: "ghost.component.map-panel",
             version: 42,
           },
         ],
@@ -237,12 +237,12 @@ test("rejects invalid capability and dependency declaration shapes", () => {
     dependsOn: {
       plugins: [
         {
-          pluginId: "com.armada.base-runtime",
+          pluginId: "ghost.base-runtime",
         },
       ],
       services: [
         {
-          id: "com.armada.service.weather",
+          id: "ghost.service.weather",
           versionRange: "^1.0.0",
           optional: "sometimes",
         },
@@ -272,7 +272,7 @@ test("rejects invalid capability and dependency declaration shapes", () => {
 test("rejects unexpected top-level fields", () => {
   const result = parsePluginContract({
     manifest: {
-      id: "com.armada.extra-field",
+      id: "ghost.extra-field",
       name: "Extra Field Plugin",
       version: "1.0.0",
     },
@@ -291,7 +291,7 @@ test("rejects unexpected top-level fields", () => {
 test("accepts actions/menu/keybindings for action surface", () => {
   const result = parsePluginContract({
     manifest: {
-      id: "com.armada.command-surface",
+      id: "ghost.command-surface",
       name: "Command Surface Plugin",
       version: "1.0.0",
     },
@@ -354,7 +354,7 @@ test("tenant manifest parser accepts typed plugin descriptors", () => {
     tenantId: "demo",
     plugins: [
       {
-        id: "com.armada.plugin-starter",
+        id: "ghost.plugin-starter",
         version: "0.1.0",
         entry: "local://apps/plugin-starter/src/index.ts",
         compatibility: {
@@ -376,7 +376,7 @@ test("tenant manifest parser reports nested field validation errors", () => {
     tenantId: "demo",
     plugins: [
       {
-        id: "com.armada.plugin-starter",
+        id: "ghost.plugin-starter",
         version: "0.1.0",
         entry: "local://apps/plugin-starter/src/index.ts",
         compatibility: {
@@ -404,11 +404,11 @@ test("tenant manifest parser reports nested field validation errors", () => {
 test("composeEnabledPluginContributions composes parts from enabled plugin contracts only", () => {
   const composed = composeEnabledPluginContributions([
     {
-      id: "com.armada.domain.unplanned-orders",
+      id: "ghost.domain.unplanned-orders",
       enabled: true,
       contract: {
         manifest: {
-          id: "com.armada.domain.unplanned-orders",
+          id: "ghost.domain.unplanned-orders",
           name: "Unplanned Orders",
           version: "0.1.0",
         },
@@ -435,11 +435,11 @@ test("composeEnabledPluginContributions composes parts from enabled plugin contr
       },
     },
     {
-      id: "com.armada.domain.vessel-view",
+      id: "ghost.domain.vessel-view",
       enabled: true,
       contract: {
         manifest: {
-          id: "com.armada.domain.vessel-view",
+          id: "ghost.domain.vessel-view",
           name: "Vessel View",
           version: "0.1.0",
         },
@@ -459,11 +459,11 @@ test("composeEnabledPluginContributions composes parts from enabled plugin contr
       },
     },
     {
-      id: "com.armada.disabled-plugin",
+      id: "ghost.disabled-plugin",
       enabled: false,
       contract: {
         manifest: {
-          id: "com.armada.disabled-plugin",
+          id: "ghost.disabled-plugin",
           name: "Disabled",
           version: "0.1.0",
         },
@@ -488,12 +488,12 @@ test("composeEnabledPluginContributions composes parts from enabled plugin contr
   assert.deepEqual(
     composed.parts.map((part) => `${part.pluginId}:${part.id}:${part.dock?.container ?? "none"}`),
     [
-      "com.armada.domain.unplanned-orders:domain.unplanned-orders.part:workbench-main",
-      "com.armada.domain.vessel-view:domain.vessel-view.part:workbench-secondary",
+      "ghost.domain.unplanned-orders:domain.unplanned-orders.part:workbench-main",
+      "ghost.domain.vessel-view:domain.vessel-view.part:workbench-secondary",
     ],
   );
   assert.equal(composed.views.length, 1);
-  assert.equal(composed.views[0].pluginId, "com.armada.domain.unplanned-orders");
+  assert.equal(composed.views[0].pluginId, "ghost.domain.unplanned-orders");
 });
 
 test("contribution predicate matcher supports deterministic operators", () => {
@@ -616,7 +616,7 @@ test("action-surface dispatch predicate semantics stay in parity with default ma
     const surface = buildActionSurface([
       {
         manifest: {
-          id: "com.armada.matcher-parity",
+          id: "ghost.matcher-parity",
           name: "Matcher Parity",
           version: "1.0.0",
         },
@@ -664,7 +664,7 @@ test("action-surface menu and keybinding predicate semantics match default match
     const surface = buildActionSurface([
       {
         manifest: {
-          id: "com.armada.surface-parity",
+          id: "ghost.surface-parity",
           name: "Surface Parity",
           version: "1.0.0",
         },

@@ -1,5 +1,7 @@
 # Cross-window drag-and-drop rollout and verification (armada-n0j.7)
 
+> Historical trace note: `armada-*` references in this document are legacy bead IDs only.
+
 This document is the closeout runbook for the cross-window DnD epic handoff.
 
 ## Scope

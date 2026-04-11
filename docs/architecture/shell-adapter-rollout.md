@@ -1,5 +1,7 @@
 # Shell adapter migration rollout (armada-72w.9, armada-xcj.7)
 
+> Historical trace note: `armada-*` references in this document are legacy bead IDs only.
+
 This runbook defines staged rollout and cross-team handoff for async SCOMP window sync migration.
 
 ## Scope and invariants

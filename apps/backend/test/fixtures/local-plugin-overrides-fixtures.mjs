@@ -1,9 +1,9 @@
 export const LOCAL_PLUGIN_IDS = Object.freeze({
-  domainUnplannedOrders: "com.armada.domain.unplanned-orders",
-  domainVesselView: "com.armada.domain.vessel-view",
-  pluginStarter: "com.armada.plugin-starter",
-  sharedUiCapabilities: "com.armada.shared.ui-capabilities",
-  sampleContractConsumer: "com.armada.sample.contract-consumer",
+  domainUnplannedOrders: "ghost.domain.unplanned-orders",
+  domainVesselView: "ghost.domain.vessel-view",
+  pluginStarter: "ghost.plugin-starter",
+  sharedUiCapabilities: "ghost.shared.ui-capabilities",
+  sampleContractConsumer: "ghost.sample.contract-consumer",
 });
 
 export const SORTED_LOCAL_PLUGIN_IDS = Object.freeze([

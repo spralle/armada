@@ -15,7 +15,7 @@ import { renderDockTree } from "../dist/ui/parts-rendering.js";
 import { createInitialShellContextState, registerTab } from "../dist/context-state.js";
 
 const DOMAIN_UNPLANNED = {
-  id: "com.armada.domain.unplanned-orders",
+  id: "ghost.domain.unplanned-orders",
   version: "0.1.0",
   entry: "http://127.0.0.1:4173/mf-manifest.json",
   compatibility: {
@@ -25,7 +25,7 @@ const DOMAIN_UNPLANNED = {
 };
 
 const DOMAIN_VESSEL = {
-  id: "com.armada.domain.vessel-view",
+  id: "ghost.domain.vessel-view",
   version: "0.1.0",
   entry: "http://127.0.0.1:4174/mf-manifest.json",
   compatibility: {
@@ -85,7 +85,7 @@ test("context-gated command visibility and enablement are resolved from runtime 
   const contracts = [
     {
       manifest: {
-        id: "com.armada.integration.commands",
+        id: "ghost.integration.commands",
         name: "Integration Commands",
         version: "0.1.0",
       },
@@ -135,7 +135,7 @@ test("context-gated command visibility and enablement are resolved from runtime 
 test("keybinding execution only runs visible+enabled commands", () => {
   const commands = [
     {
-      pluginId: "com.armada.integration.commands",
+      pluginId: "ghost.integration.commands",
       commandId: "domain.open-order",
       title: "Open order",
       handler: "openOrder",
@@ -146,7 +146,7 @@ test("keybinding execution only runs visible+enabled commands", () => {
       enabled: true,
     },
     {
-      pluginId: "com.armada.integration.commands",
+      pluginId: "ghost.integration.commands",
       commandId: "domain.hidden-order",
       title: "Hidden order",
       handler: "openHiddenOrder",
@@ -183,7 +183,7 @@ test("lazy activation triggers activate plugin once and track latest trigger", a
 
   runtime.registerContract({
     manifest: {
-      id: "com.armada.integration.activatable",
+      id: "ghost.integration.activatable",
       name: "Activatable",
       version: "0.1.0",
     },
@@ -210,7 +210,7 @@ test("lazy activation triggers activate plugin once and track latest trigger", a
 
   assert.equal(activationCalls.length, 1);
   assert.deepEqual(activationCalls[0], {
-    pluginId: "com.armada.integration.activatable",
+    pluginId: "ghost.integration.activatable",
     trigger: { type: "command", id: "domain.open-order" },
   });
 
@@ -251,7 +251,7 @@ test("shell bootstrap treats local scheme override entries as inner-loop", async
     plugins: [
       {
         ...DOMAIN_UNPLANNED,
-        entry: "local://com.armada.domain.unplanned-orders/mf-manifest.json",
+        entry: "local://ghost.domain.unplanned-orders/mf-manifest.json",
       },
       {
         ...DOMAIN_VESSEL,
@@ -278,7 +278,7 @@ test("shell bootstrap keeps integration mode when non-loopback plugin entries ex
       },
       {
         ...DOMAIN_VESSEL,
-        entry: "https://plugins.armada.example/mf-manifest.json",
+        entry: "https://plugins.ghost.example/mf-manifest.json",
       },
     ],
   };
@@ -326,11 +326,11 @@ function createCloseRuntimeFixture() {
         return {
           plugins: [
             {
-              id: "com.armada.integration.parts",
+              id: "ghost.integration.parts",
               enabled: true,
               contract: {
                 manifest: {
-                  id: "com.armada.integration.parts",
+                  id: "ghost.integration.parts",
                   name: "Integration Parts",
                   version: "0.1.0",
                 },

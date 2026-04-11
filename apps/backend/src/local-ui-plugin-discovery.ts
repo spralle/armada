@@ -25,7 +25,7 @@ const VALID_LOCAL_PLUGIN_ID_PATTERN =
   /^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)*$/;
 
 /**
- * Canonical local UI plugin conventions for Armada development.
+ * Canonical local UI plugin conventions for Ghost development.
  *
  * - local plugin folders live under `apps/<folderName>`
  * - each plugin serves a module federation manifest at `/mf-manifest.json`
@@ -33,35 +33,35 @@ const VALID_LOCAL_PLUGIN_ID_PATTERN =
  */
 export const CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS: readonly CanonicalLocalUiPluginDefinition[] = [
   {
-    id: "com.armada.plugin-starter",
+    id: "ghost.plugin-starter",
     folderName: "plugin-starter",
     devPort: 4171,
     version: "0.1.0",
     entryPath: "/mf-manifest.json",
   },
   {
-    id: "com.armada.sample.contract-consumer",
+    id: "ghost.sample.contract-consumer",
     folderName: "sample-contract-consumer-plugin",
     devPort: 4172,
     version: "0.1.0",
     entryPath: "/mf-manifest.json",
   },
   {
-    id: "com.armada.domain.unplanned-orders",
+    id: "ghost.domain.unplanned-orders",
     folderName: "domain-unplanned-orders-plugin",
     devPort: 4173,
     version: "0.1.0",
     entryPath: "/mf-manifest.json",
   },
   {
-    id: "com.armada.domain.vessel-view",
+    id: "ghost.domain.vessel-view",
     folderName: "domain-vessel-view-plugin",
     devPort: 4174,
     version: "0.1.0",
     entryPath: "/mf-manifest.json",
   },
   {
-    id: "com.armada.shared.ui-capabilities",
+    id: "ghost.shared.ui-capabilities",
     folderName: "shared-ui-capability-plugin",
     devPort: 4175,
     version: "0.1.0",

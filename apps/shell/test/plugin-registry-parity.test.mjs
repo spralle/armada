@@ -45,7 +45,7 @@ test("registry maps remote invalid contracts to INVALID_CONTRACT", async () => {
     },
   });
 
-  const remoteDescriptor = createDescriptor("com.armada.remote");
+  const remoteDescriptor = createDescriptor("ghost.remote");
   registry.registerManifestDescriptors("demo", [remoteDescriptor]);
 
   await registry.setEnabled(remoteDescriptor.id, true);
