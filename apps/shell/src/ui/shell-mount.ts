@@ -92,9 +92,9 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .dev-inspector pre { margin: 6px 0; max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; border: 1px solid #334564; background: #0a111c; color: #cfe3ff; font-size: 11px; }
     .dev-inspector ul { margin: 6px 0; padding-left: 18px; }
     .dev-inspector li { margin: 3px 0; }
-    .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; flex: 1 1 auto; }
+    .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; flex: 1 1 auto; }
     .domain-panel-host,
-    .domain-panel-fallback { min-height: 0; overflow: auto; }
+    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; }
     .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
     .domain-list { display: grid; gap: 4px; }
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 4px; padding: 6px; cursor: pointer; }
@@ -147,9 +147,9 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
     .dev-inspector pre { margin: 6px 0; max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; border: 1px solid #334564; background: #0a111c; color: #cfe3ff; font-size: 11px; }
     .dev-inspector ul { margin: 6px 0; padding-left: 18px; }
     .dev-inspector li { margin: 3px 0; }
-    .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; flex: 1 1 auto; }
+    .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; flex: 1 1 auto; }
     .domain-panel-host,
-    .domain-panel-fallback { min-height: 0; overflow: auto; }
+    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; }
     .domain-hint { margin: 0; color: #b6c2d8; font-size: 12px; }
     .domain-list { display: grid; gap: 4px; }
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid #334564; background: #1a2230; color: #e9edf3; border-radius: 4px; padding: 6px; cursor: pointer; }
