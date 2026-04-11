@@ -33,6 +33,9 @@
     },
     {
       "path": "./apps/theme-default-plugin"
+    },
+    {
+      "path": "./apps/shadcn-theme-bridge-plugin"
     }
   ]
 }

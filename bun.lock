@@ -55,6 +55,16 @@
         "vite": "^5.4.19",
       },
     },
+    "apps/shadcn-theme-bridge-plugin": {
+      "name": "@ghost/shadcn-theme-bridge-plugin",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
     "apps/shared-ui-capability-plugin": {
       "name": "@ghost/shared-ui-capability-plugin",
       "dependencies": {
@@ -206,6 +216,8 @@
     "@ghost/plugin-starter": ["@ghost/plugin-starter@workspace:apps/plugin-starter"],
 
     "@ghost/sample-contract-consumer-plugin": ["@ghost/sample-contract-consumer-plugin@workspace:apps/sample-contract-consumer-plugin"],
+
+    "@ghost/shadcn-theme-bridge-plugin": ["@ghost/shadcn-theme-bridge-plugin@workspace:apps/shadcn-theme-bridge-plugin"],
 
     "@ghost/shared-ui-capability-plugin": ["@ghost/shared-ui-capability-plugin@workspace:apps/shared-ui-capability-plugin"],
 
@@ -628,6 +640,8 @@
     "@ghost/plugin-starter/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost/sample-contract-consumer-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost/shadcn-theme-bridge-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost/shared-ui-capability-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 

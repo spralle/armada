@@ -74,6 +74,13 @@ export const CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS: readonly CanonicalLocalUiPlu
     version: "1.0.0",
     entryPath: "/mf-manifest.json",
   },
+  {
+    id: "ghost.shadcn.theme-bridge",
+    folderName: "shadcn-theme-bridge-plugin",
+    devPort: 4177,
+    version: "1.0.0",
+    entryPath: "/mf-manifest.json",
+  },
 ] as const;
 
 export function discoverLocalUiPlugins(
