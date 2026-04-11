@@ -183,7 +183,7 @@ function createRuntime(): ShellRuntime {
       dispose: () => {},
     },
     incomingTransferJournal: createIncomingTransferJournal(),
-    crossWindowDndEnabled: false,
+    crossWindowDndEnabled: true,
     crossWindowDndKillSwitchActive: false,
     contextPersistence: {
       save() {
@@ -270,7 +270,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     assertEqual(moved.length, 0, "invalid payload should not trigger move callback");
   });
 
-  test("cross-window payload is blocked as no-op", async () => {
+  test("cross-window payload without transfer session is rejected as invalid payload", async () => {
     const runtime = createRuntime();
     const before = runtime.contextState;
     const tabHarness = createTabHarness(["tab-a", "tab-b", "tab-c"]);
@@ -286,7 +286,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
 
     assertEqual(runtime.contextState, before, "cross-window payload without transfer session should not mutate context state");
     assertEqual(moved.length, 0, "cross-window payload should not trigger move callback");
-    assertEqual(runtime.notice, "Cross-window tab drag is disabled by current settings.", "cross-window inline payload should show clear disabled rejection notice");
+    assertEqual(runtime.notice, "Cross-window tab drag payload is invalid.", "cross-window inline payload without transfer session should surface invalid payload notice");
   });
 
   test("cross-window tab drop applies through transfer transaction when enabled", async () => {
