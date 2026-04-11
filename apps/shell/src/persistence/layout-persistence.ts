@@ -53,6 +53,7 @@ export function createLocalStorageLayoutPersistence(
           ? {
               layout: existingEnvelope.value.layout,
               context: existingEnvelope.value.context,
+              keybindings: existingEnvelope.value.keybindings,
             }
           : {}),
         layout: {

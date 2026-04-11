@@ -22,6 +22,9 @@ import { registerDockOverlayRenderingSpecs } from "./context-state.spec-dock-ove
 import { registerKeybindingServiceSpecs } from "./shell-runtime/keybinding-service.spec.js";
 import { registerShellKeyboardActionSpecs } from "./context-state.spec-shell-keyboard-actions.js";
 import { registerKeyboardHandlersSpecs } from "./shell-runtime/keyboard-handlers.spec.js";
+import { registerKeybindingPersistenceSpecs } from "./persistence/keybinding-persistence.spec.js";
+import { registerKeybindingOverrideManagerSpecs } from "./shell-runtime/keybinding-override-manager.spec.js";
+import { registerKeybindingImportExportSpecs } from "./shell-runtime/keybinding-import-export.spec.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -50,6 +53,9 @@ registerShellKeyboardActionSpecs(harness);
 registerKeybindingServiceSpecs(harness);
 registerShellKeyboardActionSpecs(harness);
 registerKeyboardHandlersSpecs(harness);
+registerKeybindingPersistenceSpecs(harness);
+registerKeybindingOverrideManagerSpecs(harness);
+registerKeybindingImportExportSpecs(harness);
 
 const { passed, total } = await runAll();
 

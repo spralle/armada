@@ -4,11 +4,17 @@ import { createIncomingTransferJournal } from "../context-state.js";
 import { createDefaultLayoutState } from "../layout.js";
 import {
   createLocalStorageContextStatePersistence,
+  createLocalStorageKeybindingPersistence,
   createLocalStorageLayoutPersistence,
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
 import { buildActionSurface } from "../action-surface.js";
-import { createDefaultShellKeybindingContract } from "../shell-runtime/default-shell-keybindings.js";
+import {
+  createDefaultShellKeybindingContract,
+  DEFAULT_SHELL_KEYBINDINGS,
+  DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+} from "../shell-runtime/default-shell-keybindings.js";
+import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { createWindowBridge } from "../window-bridge.js";
@@ -56,6 +62,9 @@ export function createShellRuntime(options?: {
     contextPersistence: createLocalStorageContextStatePersistence(getStorage(), {
       userId: getCurrentUserId(),
     }),
+    keybindingPersistence: createLocalStorageKeybindingPersistence(getStorage(), {
+      userId: getCurrentUserId(),
+    }),
     registry: createShellPluginRegistry(),
     bridge,
     asyncBridge,
@@ -96,6 +105,7 @@ export function createShellRuntime(options?: {
     pendingFocusSelector: null,
     chooserReturnFocusSelector: null,
     actionSurface: buildActionSurface([createDefaultShellKeybindingContract()]),
+    keybindingOverrideManager: null as unknown as ShellRuntime["keybindingOverrideManager"],
     intentRuntime,
     commandNotice: "",
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,
@@ -107,6 +117,15 @@ export function createShellRuntime(options?: {
   };
 
   runtime.partHost = createShellPartHostAdapter(runtime);
+  runtime.keybindingOverrideManager = createKeybindingOverrideManager({
+    persistence: runtime.keybindingPersistence,
+    getDefaultBindings: () => DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
+      action: entry.action,
+      keybinding: entry.keybinding,
+      pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+    })),
+    getPluginBindings: () => runtime.actionSurface.keybindings,
+  });
 
   runtime.registry.registerManifestDescriptors("local", []);
   runtime.layout = runtime.persistence.load();

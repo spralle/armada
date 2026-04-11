@@ -1,5 +1,6 @@
 import type {
   ContextStateEnvelopeV2,
+  KeybindingOverridesEnvelopeV1,
   LayoutEnvelopeV1,
   StorageLike,
   UnifiedShellPersistenceEnvelopeV1,
@@ -9,6 +10,7 @@ export const SHELL_PERSISTENCE_STORAGE_KEY = "ghost.shell.persistence";
 export const SHELL_PERSISTENCE_SCHEMA_VERSION = 1;
 export const LAYOUT_SECTION_SCHEMA_VERSION = 1;
 export const CONTEXT_STATE_SCHEMA_VERSION = 2;
+export const KEYBINDING_OVERRIDES_SCHEMA_VERSION = 1;
 
 export function getUnifiedStorageKey(userId: string): string {
   return `${SHELL_PERSISTENCE_STORAGE_KEY}.v${SHELL_PERSISTENCE_SCHEMA_VERSION}.${userId}`;
@@ -70,6 +72,7 @@ export function migrateUnifiedShellEnvelope(input: unknown):
       version: SHELL_PERSISTENCE_SCHEMA_VERSION,
       layout: input.layout,
       context: input.context,
+      keybindings: input.keybindings,
     },
     warning: null,
   };
@@ -176,6 +179,47 @@ export function migrateContextStateEnvelope(input: unknown):
   return {
     ok: false,
     warning: `Persisted context state schema v${String(input.version)} is unsupported. Using defaults.`,
+  };
+}
+
+export function migrateKeybindingOverridesEnvelope(input: unknown):
+  | { ok: true; value: KeybindingOverridesEnvelopeV1; warning: string | null }
+  | { ok: false; warning: string | null } {
+  if (input === undefined) {
+    return {
+      ok: false,
+      warning: null,
+    };
+  }
+
+  if (!isRecord(input) || typeof input.version !== "number") {
+    return {
+      ok: false,
+      warning: "Persisted keybinding overrides had invalid schema envelope. Using defaults.",
+    };
+  }
+
+  if (input.version !== KEYBINDING_OVERRIDES_SCHEMA_VERSION) {
+    return {
+      ok: false,
+      warning: `Persisted keybinding overrides schema v${String(input.version)} is unsupported. Using defaults.`,
+    };
+  }
+
+  if (!Array.isArray(input.overrides)) {
+    return {
+      ok: false,
+      warning: "Persisted keybinding overrides payload was invalid. Using defaults.",
+    };
+  }
+
+  return {
+    ok: true,
+    value: {
+      version: KEYBINDING_OVERRIDES_SCHEMA_VERSION,
+      overrides: input.overrides as KeybindingOverridesEnvelopeV1["overrides"],
+    },
+    warning: null,
   };
 }
 

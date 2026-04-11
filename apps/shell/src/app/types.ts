@@ -6,6 +6,7 @@ import { createDragSessionBroker } from "../dnd-session-broker.js";
 import type { ShellLayoutState } from "../layout.js";
 import type {
   ShellContextStatePersistence,
+  ShellKeybindingPersistence,
   ShellLayoutPersistence,
 } from "../persistence.js";
 import type { ShellPluginRegistry } from "../plugin-registry.js";
@@ -31,6 +32,7 @@ import type {
   ShellIntent,
 } from "../intent-runtime.js";
 import type { ActionSurface } from "../action-surface.js";
+import type { KeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import type { ShellPartHostAdapter } from "./contracts.js";
 import type { ShellTransportPath } from "./migration-flags.js";
 import type {
@@ -55,6 +57,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   layout: ShellLayoutState;
   persistence: ShellLayoutPersistence;
   contextPersistence: ShellContextStatePersistence;
+  keybindingPersistence: ShellKeybindingPersistence;
   registry: ShellPluginRegistry;
   bridge: WindowBridge;
   asyncBridge: AsyncWindowBridge;
@@ -89,6 +92,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   pendingFocusSelector: string | null;
   chooserReturnFocusSelector: string | null;
   actionSurface: ActionSurface;
+  keybindingOverrideManager: KeybindingOverrideManager;
   intentRuntime: IntentRuntime;
   commandNotice: string;
   partHost: ShellPartHostAdapter;
