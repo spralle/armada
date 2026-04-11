@@ -29,6 +29,7 @@ import { registerPluginRegistryBuiltinSpecs } from "./shell-runtime/plugin-regis
 import { registerActionPaletteCatalogSpecs } from "./shell-runtime/action-palette-catalog.spec.js";
 import { registerActionPaletteStateSpecs } from "./shell-runtime/action-palette-state.spec.js";
 import { registerActionServiceSpecs } from "./plugin-api/action-service.spec.js";
+import { registerQuickPickStateSpecs } from "./ui/quick-pick/quick-pick-state.spec.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -62,6 +63,7 @@ registerPluginRegistryBuiltinSpecs(harness);
 registerActionPaletteCatalogSpecs(harness);
 registerActionPaletteStateSpecs(harness);
 registerActionServiceSpecs(harness);
+registerQuickPickStateSpecs(harness);
 
 const { passed, total } = await runAll();
 

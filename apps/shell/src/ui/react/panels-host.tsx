@@ -14,7 +14,8 @@ import type { ShellRuntime } from "../../app/types.js";
 import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";
 import { KeybindingsSettingsPanel } from "./keybinding-settings-panel.js";
-import { ActionPaletteOverlay } from "./action-palette-overlay.js";
+import { QuickPickOverlay } from "../quick-pick/quick-pick-overlay.js";
+import { adaptPaletteStateToQuickPick, type PaletteQuickPickItem } from "../quick-pick/palette-adapter.js";
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
@@ -116,16 +117,18 @@ export function createReactPanelsHost(
           />,
         );
       }
-      const paletteRoot = ensureRoot("action-palette-host");
+      const paletteRoot = ensureRoot("quick-pick-host");
       if (paletteRoot) {
         const ctrl = runtime.actionPaletteController;
+        const qpState = adaptPaletteStateToQuickPick(ctrl.getState());
         paletteRoot.render(
-          <ActionPaletteOverlay
-            state={ctrl.getState()}
+          <QuickPickOverlay<PaletteQuickPickItem>
+            state={qpState}
+            placeholder="Type an action..."
             onFilterChange={(f) => { ctrl.dispatch({ type: "updateFilter", filter: f }); host.render(); }}
             onSelectNext={() => { ctrl.dispatch({ type: "selectNext" }); host.render(); }}
             onSelectPrevious={() => { ctrl.dispatch({ type: "selectPrevious" }); host.render(); }}
-            onExecute={(e) => { ctrl.close(); host.render(); bindings.onExecutePaletteCommand?.(e); }}
+            onAccept={(item) => { ctrl.close(); host.render(); bindings.onExecutePaletteCommand?.(item.entry); }}
             onClose={() => { ctrl.close(); host.render(); }}
           />,
         );

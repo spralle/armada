@@ -114,7 +114,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     <section class="dock-root" id="dock-tree-root" data-slot="main"></section>
   </main>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <div id="action-palette-host"></div>
+  <div id="quick-pick-host"></div>
   `;
 
   deps.renderParts();
