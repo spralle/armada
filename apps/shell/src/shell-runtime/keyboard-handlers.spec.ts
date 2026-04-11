@@ -6,6 +6,7 @@ import {
 } from "../context-state.js";
 import { bindKeyboardShortcuts, type KeyboardBindings } from "./keyboard-handlers.js";
 import { createDefaultShellKeybindingContract, DEFAULT_SHELL_KEYBINDINGS, DEFAULT_SHELL_KEYBINDING_PLUGIN_ID } from "./default-shell-keybindings.js";
+import { createCommandPaletteController } from "./command-palette-controller.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import type { ShellRuntime } from "../app/types.js";
 
@@ -173,6 +174,7 @@ function createRuntimeFixture(): ShellRuntime {
     syncDegradedReason: null,
     syncHealthState: "healthy",
     windowId: "window-a",
+    commandPaletteController: createCommandPaletteController(),
   } as unknown as ShellRuntime;
 }
 

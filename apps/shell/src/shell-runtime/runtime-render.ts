@@ -14,6 +14,7 @@ import { getVisibleComposedParts } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
 import { deriveCloseableTabIds, rerenderAfterPluginToggle } from "./runtime-render-transition.js";
+import { dispatchAction } from "../action-surface.js";
 
 type ReactPanelsHost = ReturnType<typeof createReactPanelsHost>;
 
@@ -92,6 +93,15 @@ export function initializeReactPanels(
     },
     onPendingFocusApplied: () => {
       runtime.pendingFocusSelector = null;
+    },
+    onExecutePaletteCommand: (entry) => {
+      void dispatchAction(
+        runtime.actionSurface,
+        runtime.intentRuntime,
+        entry.id,
+        {},
+      );
+      renderPanels(root, runtime);
     },
   });
 

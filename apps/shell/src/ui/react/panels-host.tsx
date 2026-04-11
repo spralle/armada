@@ -9,10 +9,12 @@ import {
 } from "../../context/runtime-state.js";
 import { getBridgeWarningMessage } from "../../sync/bridge-degraded.js";
 import type { IntentActionMatch } from "../../intent-runtime.js";
+import type { CommandPaletteEntry } from "../../shell-runtime/command-palette-state.js";
 import type { ShellRuntime } from "../../app/types.js";
 import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";
 import { KeybindingsSettingsPanel } from "./keybinding-settings-panel.js";
+import { CommandPaletteOverlay } from "./command-palette-overlay.js";
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
@@ -20,6 +22,7 @@ type PanelsHostBindings = {
   onChooseIntentAction: (index: number) => void;
   onDismissChooser: () => void;
   onPendingFocusApplied: () => void;
+  onExecutePaletteCommand?: (entry: CommandPaletteEntry) => void;
 };
 
 type PanelsHost = {
@@ -38,20 +41,10 @@ export function createReactPanelsHost(
 
   const ensureRoot = (containerId: string): Root | null => {
     const container = rootNode.querySelector<HTMLElement>(`#${containerId}`);
-    if (!container) {
-      return null;
-    }
-
+    if (!container) return null;
     const existing = roots.get(containerId);
-    if (existing && existing.container === container) {
-      return existing.root;
-    }
-
-    if (existing && existing.container !== container) {
-      existing.root.unmount();
-      roots.delete(containerId);
-    }
-
+    if (existing && existing.container === container) return existing.root;
+    if (existing) { existing.root.unmount(); roots.delete(containerId); }
     const createdRoot = createRoot(container);
     roots.set(containerId, { container, root: createdRoot });
     return createdRoot;
@@ -70,7 +63,6 @@ export function createReactPanelsHost(
           />,
         );
       }
-
       const syncRoot = ensureRoot("sync-status");
       if (syncRoot) {
         syncRoot.render(
@@ -93,7 +85,6 @@ export function createReactPanelsHost(
           />,
         );
       }
-
       const contextRoot = ensureRoot("context-controls");
       if (contextRoot) {
         contextRoot.render(
@@ -104,7 +95,6 @@ export function createReactPanelsHost(
           />,
         );
       }
-
       const inspectorRoot = ensureRoot("dev-context-inspector");
       if (inspectorRoot) {
         inspectorRoot.render(
@@ -123,6 +113,20 @@ export function createReactPanelsHost(
             manager={runtime.keybindingOverrideManager}
             pluginBindings={runtime.actionSurface.keybindings}
             onChanged={() => host.render()}
+          />,
+        );
+      }
+      const paletteRoot = ensureRoot("command-palette-host");
+      if (paletteRoot) {
+        const ctrl = runtime.commandPaletteController;
+        paletteRoot.render(
+          <CommandPaletteOverlay
+            state={ctrl.getState()}
+            onFilterChange={(f) => { ctrl.dispatch({ type: "updateFilter", filter: f }); host.render(); }}
+            onSelectNext={() => { ctrl.dispatch({ type: "selectNext" }); host.render(); }}
+            onSelectPrevious={() => { ctrl.dispatch({ type: "selectPrevious" }); host.render(); }}
+            onExecute={(e) => { ctrl.close(); host.render(); bindings.onExecutePaletteCommand?.(e); }}
+            onClose={() => { ctrl.close(); host.render(); }}
           />,
         );
       }
@@ -262,14 +266,8 @@ function ContextControlsPanel(props: {
   onApply: (value: string) => void;
 }) {
   const [inputValue, setInputValue] = useState(props.value);
-
-  useEffect(() => {
-    setInputValue(props.value);
-  }, [props.value]);
-
-  const apply = () => {
-    props.onApply(inputValue.trim() || "none");
-  };
+  useEffect(() => { setInputValue(props.value); }, [props.value]);
+  const apply = () => { props.onApply(inputValue.trim() || "none"); };
 
   return (
     <>
