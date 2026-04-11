@@ -1,5 +1,10 @@
 import { evaluateShellPluginCompatibility } from "@ghost/plugin-contracts";
 import type { CapabilityRegistry } from "./capability-registry.js";
+import {
+  createActivationContext,
+  createGhostApi,
+  type GhostApiFactoryDependencies,
+} from "./plugin-api/ghost-api-factory.js";
 import type { RuntimeFirstPluginLoader, PluginLoadError } from "./plugin-loader.js";
 import { pushDiagnostic, transitionLifecycle } from "./plugin-registry-diagnostics.js";
 import type {
@@ -16,6 +21,7 @@ export function createActivationController(
   diagnostics: PluginRegistryDiagnostic[],
   pluginLoader: RuntimeFirstPluginLoader,
   capabilityRegistry: CapabilityRegistry,
+  apiDeps?: GhostApiFactoryDependencies,
 ): (pluginId: string, trigger: PluginActivationTrigger) => Promise<boolean> {
   return async (pluginId, trigger) => {
     const state = states.get(pluginId);
@@ -58,6 +64,7 @@ export function createActivationController(
       diagnostics,
       pluginLoader,
       capabilityRegistry,
+      apiDeps,
     );
     await state.activationPromise;
     return state.contract !== null && state.lifecycle.state === "active";
@@ -71,9 +78,11 @@ async function activateState(
   diagnostics: PluginRegistryDiagnostic[],
   pluginLoader: RuntimeFirstPluginLoader,
   capabilityRegistry: CapabilityRegistry,
+  apiDeps?: GhostApiFactoryDependencies,
 ): Promise<void> {
   state.contract = null;
   state.failure = null;
+  state.activate = null;
   transitionLifecycle(state, "activating", trigger);
 
   const compatibility = evaluateShellPluginCompatibility(
@@ -99,7 +108,10 @@ async function activateState(
   }
 
   try {
-    state.contract = await pluginLoader.loadPluginContract(state.descriptor);
+    const loadResult = await pluginLoader.loadPluginContract(state.descriptor);
+    state.contract = loadResult.contract;
+    state.activate = loadResult.activate;
+
     const dependencyFailures = capabilityRegistry.validateDependencies({
       pluginId,
       pluginVersion: state.descriptor.version,
@@ -114,6 +126,7 @@ async function activateState(
           retryable: false,
         };
         state.contract = null;
+        state.activate = null;
         capabilityRegistry.unregisterPlugin(pluginId);
         transitionLifecycle(state, "failed", trigger);
         for (const failure of dependencyFailures) {
@@ -131,12 +144,47 @@ async function activateState(
     }
 
     capabilityRegistry.registerPlugin(pluginId, state.contract);
+
+    // Call the plugin's activate() lifecycle hook if present
+    if (state.activate && apiDeps) {
+      const { api } = createGhostApi(apiDeps);
+      const ctx = createActivationContext(pluginId);
+
+      try {
+        await state.activate(api, ctx);
+        state.activationSubscriptions = ctx.subscriptions;
+      } catch (activateError) {
+        const message = activateError instanceof Error
+          ? activateError.message
+          : String(activateError);
+        state.failure = {
+          code: "ACTIVATE_FAILED",
+          message: `Plugin '${pluginId}' activate() failed: ${message}`,
+          retryable: false,
+        };
+        state.contract = null;
+        state.activate = null;
+        capabilityRegistry.unregisterPlugin(pluginId);
+        transitionLifecycle(state, "failed", trigger);
+        pushDiagnostic(diagnostics, {
+          at: new Date().toISOString(),
+          pluginId,
+          level: "warn",
+          code: "ACTIVATE_FAILED",
+          message: state.failure.message,
+        });
+        state.activationPromise = null;
+        return;
+      }
+    }
+
     state.failure = null;
     transitionLifecycle(state, "active", trigger);
   } catch (error) {
     const failure = mapPluginLoadFailure(error);
     capabilityRegistry.unregisterPlugin(pluginId);
     state.contract = null;
+    state.activate = null;
     state.componentsModule = null;
     state.servicesModule = null;
     state.failure = failure;

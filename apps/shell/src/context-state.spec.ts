@@ -30,6 +30,7 @@ import { registerActionPaletteCatalogSpecs } from "./shell-runtime/action-palett
 import { registerActionPaletteStateSpecs } from "./shell-runtime/action-palette-state.spec.js";
 import { registerActionServiceSpecs } from "./plugin-api/action-service.spec.js";
 import { registerWindowServiceSpecs } from "./plugin-api/window-service.spec.js";
+import { registerGhostApiFactorySpecs } from "./plugin-api/ghost-api-factory.spec.js";
 import { registerQuickPickStateSpecs } from "./ui/quick-pick/quick-pick-state.spec.js";
 
 const { harness, runAll } = createSpecHarness();
@@ -65,6 +66,7 @@ registerActionPaletteCatalogSpecs(harness);
 registerActionPaletteStateSpecs(harness);
 registerActionServiceSpecs(harness);
 registerWindowServiceSpecs(harness);
+registerGhostApiFactorySpecs(harness);
 registerQuickPickStateSpecs(harness);
 
 const { passed, total } = await runAll();

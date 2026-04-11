@@ -52,7 +52,8 @@ test("activation fails with actionable dependency diagnostics and no auto-enable
         return "remote-manifest";
       },
       async loadPluginContract(target) {
-        return target.id === "ghost.provider" ? providerContract() : consumerContract();
+        const contract = target.id === "ghost.provider" ? providerContract() : consumerContract();
+        return { contract, activate: null };
       },
       async loadPluginComponents() {
         return {
@@ -104,7 +105,8 @@ test("resolves component/service capabilities from split plugin modules", async 
         return "remote-manifest";
       },
       async loadPluginContract(target) {
-        return target.id === "ghost.provider" ? providerContract() : consumerContract();
+        const contract = target.id === "ghost.provider" ? providerContract() : consumerContract();
+        return { contract, activate: null };
       },
       async loadPluginComponents() {
         return {

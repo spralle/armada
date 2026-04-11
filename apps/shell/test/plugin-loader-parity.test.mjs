@@ -78,5 +78,5 @@ test("remote contracts wrapped as default export modules are unwrapped before va
   });
 
   const contract = await remoteLoader.loadPluginContract(createDescriptor("remote-manifest"));
-  assert.equal(contract.manifest.id, "ghost.parity.wrapped-contract");
+  assert.equal(contract.contract.manifest.id, "ghost.parity.wrapped-contract");
 });

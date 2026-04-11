@@ -7,6 +7,7 @@ import {
 import {
   createRuntimeFirstPluginLoader,
 } from "./plugin-loader.js";
+import type { GhostApiFactoryDependencies } from "./plugin-api/ghost-api-factory.js";
 import { createActivationController } from "./plugin-registry-activation.js";
 import { readCapabilityComponents, readCapabilityServices } from "./plugin-registry-contract.js";
 import {
@@ -58,6 +59,7 @@ export function createShellPluginRegistry(
     diagnostics,
     pluginLoader,
     capabilityRegistry,
+    options.apiDeps,
   );
   let tenantId = "local";
   const builtinContracts: PluginContract[] = [];
@@ -83,6 +85,8 @@ export function createShellPluginRegistry(
         lastTrigger: null,
       },
       activationPromise: null,
+      activate: null,
+      activationSubscriptions: [],
     });
   }
 
@@ -114,6 +118,8 @@ export function createShellPluginRegistry(
             lastTrigger: null,
           },
           activationPromise: null,
+          activate: null,
+          activationSubscriptions: [],
         });
       }
     },
@@ -125,6 +131,7 @@ export function createShellPluginRegistry(
 
       state.enabled = enabled;
       if (!enabled) {
+        disposeActivationSubscriptions(state);
         capabilityRegistry.unregisterPlugin(pluginId);
         resetRuntimeState(state);
         transitionLifecycle(state, "disabled", null);
@@ -286,10 +293,19 @@ export function createShellPluginRegistry(
   };
 }
 
+function disposeActivationSubscriptions(state: PluginRuntimeState): void {
+  for (const sub of state.activationSubscriptions) {
+    sub.dispose();
+  }
+  state.activationSubscriptions = [];
+}
+
 function resetRuntimeState(state: PluginRuntimeState): void {
   state.contract = null;
   state.componentsModule = null;
   state.servicesModule = null;
   state.failure = null;
   state.activationPromise = null;
+  state.activate = null;
+  state.activationSubscriptions = [];
 }

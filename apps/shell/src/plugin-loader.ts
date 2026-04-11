@@ -1,5 +1,7 @@
 import {
   parsePluginContract,
+  type ActivationContext,
+  type GhostApi,
   type PluginContract,
   type TenantPluginDescriptor,
 } from "@ghost/plugin-contracts";
@@ -7,6 +9,16 @@ import {
   createShellFederationRuntime,
   type ShellFederationRuntime,
 } from "./federation-runtime.js";
+
+/** The activate() function signature exported by a plugin module. */
+export type PluginActivateFunction =
+  (api: GhostApi, context: ActivationContext) => void | Promise<void>;
+
+/** Result of loading and validating a plugin's contract module. */
+export interface PluginContractLoadResult {
+  contract: PluginContract;
+  activate: PluginActivateFunction | null;
+}
 
 export type ShellPluginLoadMode = "remote-manifest";
 
@@ -52,7 +64,7 @@ export class PluginLoadError extends Error {
 
 export interface RuntimeFirstPluginLoader {
   loadModeFor(descriptor: TenantPluginDescriptor): ShellPluginLoadMode;
-  loadPluginContract(descriptor: TenantPluginDescriptor): Promise<PluginContract>;
+  loadPluginContract(descriptor: TenantPluginDescriptor): Promise<PluginContractLoadResult>;
   loadPluginComponents(descriptor: TenantPluginDescriptor): Promise<unknown>;
   loadPluginServices(descriptor: TenantPluginDescriptor): Promise<unknown>;
 }
@@ -104,7 +116,8 @@ export function createRuntimeFirstPluginLoader(
         remoteLoadRetryDelayMs,
         onDiagnostic,
       });
-      const parsed = parsePluginContract(normalizeRemoteContractModule(rawContract));
+      const { contractData, activate } = extractContractAndActivate(rawContract);
+      const parsed = parsePluginContract(contractData);
 
       if (!parsed.success) {
         const details = parsed.errors
@@ -127,7 +140,7 @@ export function createRuntimeFirstPluginLoader(
         });
       }
 
-      return parsed.data;
+      return { contract: parsed.data, activate };
     },
     async loadPluginComponents(descriptor) {
       const mode: ShellPluginLoadMode = "remote-manifest";
@@ -338,4 +351,27 @@ function normalizeRemoteContractModule(input: unknown): unknown {
   }
 
   return candidate;
+}
+
+interface ExtractedContractModule {
+  contractData: unknown;
+  activate: PluginActivateFunction | null;
+}
+
+/**
+ * Extract contract data and optional activate function from a raw module.
+ * The activate function is a sidecar export alongside the contract data.
+ */
+function extractContractAndActivate(rawModule: unknown): ExtractedContractModule {
+  let activate: PluginActivateFunction | null = null;
+
+  if (rawModule && typeof rawModule === "object") {
+    const record = rawModule as Record<string, unknown>;
+    if (typeof record.activate === "function") {
+      activate = record.activate as PluginActivateFunction;
+    }
+  }
+
+  const contractData = normalizeRemoteContractModule(rawModule);
+  return { contractData, activate };
 }
