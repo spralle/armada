@@ -1,4 +1,4 @@
-import type { PluginContract } from "@armada/plugin-contracts";
+import type { PluginContract } from "@ghost/plugin-contracts";
 import { createShellPluginRegistry } from "../plugin-registry.js";
 import type {
   ShellBootstrapOptions,

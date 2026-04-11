@@ -51,7 +51,7 @@ test("discoverLocalUiPlugins rejects duplicate plugin ids with actionable error"
           },
         ],
       }),
-    /Duplicate local plugin id 'com\.armada\.plugin-starter' detected for folders 'plugin-starter' and 'plugin-starter-copy'/,
+    /Duplicate local plugin id 'ghost\.plugin-starter' detected for folders 'plugin-starter' and 'plugin-starter-copy'/,
   );
 });
 
@@ -97,7 +97,7 @@ test("discoverLocalUiPlugins rejects duplicate plugin ids that differ only by su
           },
         ],
       }),
-    /Duplicate local plugin id 'com\.armada\.plugin-starter' detected for folders 'plugin-starter' and 'plugin-starter-copy'/,
+    /Duplicate local plugin id 'ghost\.plugin-starter' detected for folders 'plugin-starter' and 'plugin-starter-copy'/,
   );
 });
 
@@ -141,7 +141,7 @@ test("discoverLocalUiPlugins rejects invalid entries clearly", () => {
         appsRoot: "apps",
         definitions: [
           {
-            id: "com.armada.invalid-entry",
+            id: "ghost.invalid-entry",
             folderName: "broken-plugin",
             devPort: 4302,
             version: "0.1.0",

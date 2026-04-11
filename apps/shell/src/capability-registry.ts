@@ -1,7 +1,7 @@
 import {
   evaluateShellPluginCompatibility,
   type PluginContract,
-} from "@armada/plugin-contracts";
+} from "@ghost/plugin-contracts";
 
 interface PluginCapabilityComponentContribution {
   id: string;

@@ -7,7 +7,7 @@ const SAMPLE_PLUGIN_DEV_ORIGIN = `http://127.0.0.1:${SAMPLE_PLUGIN_DEV_PORT}`;
 export default defineConfig({
   plugins: [
     federation({
-      name: "com.armada.sample.contract-consumer",
+      name: "ghost.sample.contract-consumer",
       filename: "remoteEntry.js",
       publicPath: `${SAMPLE_PLUGIN_DEV_ORIGIN}/`,
       manifest: {
@@ -20,7 +20,7 @@ export default defineConfig({
         "./pluginServices": "./src/plugin-services-expose.ts",
       },
       shared: {
-        "@armada/plugin-contracts": {
+        "@ghost/plugin-contracts": {
           singleton: true,
           requiredVersion: "^0.0.0",
         },

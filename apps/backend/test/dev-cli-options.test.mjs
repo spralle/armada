@@ -97,7 +97,7 @@ test("formatLocalPluginOverrideStartupSummary prints deterministic selected over
 
   assert.equal(
     summary,
-    "[backend] local plugin overrides (2): com.armada.plugin-starter -> http://127.0.0.1:4171/mf-manifest.json; com.armada.sample.contract-consumer -> http://127.0.0.1:4172/mf-manifest.json",
+    "[backend] local plugin overrides (2): ghost.plugin-starter -> http://127.0.0.1:4171/mf-manifest.json; ghost.sample.contract-consumer -> http://127.0.0.1:4172/mf-manifest.json",
   );
 });
 

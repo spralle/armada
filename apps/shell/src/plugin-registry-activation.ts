@@ -1,4 +1,4 @@
-import { evaluateShellPluginCompatibility } from "@armada/plugin-contracts";
+import { evaluateShellPluginCompatibility } from "@ghost/plugin-contracts";
 import type { CapabilityRegistry } from "./capability-registry.js";
 import type { RuntimeFirstPluginLoader, PluginLoadError } from "./plugin-loader.js";
 import { pushDiagnostic, transitionLifecycle } from "./plugin-registry-diagnostics.js";

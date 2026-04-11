@@ -7,7 +7,7 @@ const SHARED_UI_CAPABILITY_PLUGIN_DEV_ORIGIN = `http://127.0.0.1:${SHARED_UI_CAP
 export default defineConfig({
   plugins: [
     federation({
-      name: "com.armada.shared.ui-capabilities",
+      name: "ghost.shared.ui-capabilities",
       filename: "remoteEntry.js",
       publicPath: `${SHARED_UI_CAPABILITY_PLUGIN_DEV_ORIGIN}/`,
       manifest: {
@@ -20,7 +20,7 @@ export default defineConfig({
         "./pluginParts": "./src/plugin-parts.ts",
       },
       shared: {
-        "@armada/plugin-contracts": {
+        "@ghost/plugin-contracts": {
           singleton: true,
           requiredVersion: "^0.0.0",
         },

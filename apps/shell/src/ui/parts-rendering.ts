@@ -1,4 +1,4 @@
-import { composeEnabledPluginContributions } from "@armada/plugin-contracts";
+import { composeEnabledPluginContributions } from "@ghost/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
 import { DEV_MODE } from "../app/constants.js";
 import { escapeHtml } from "../app/utils.js";

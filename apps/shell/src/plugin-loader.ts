@@ -2,7 +2,7 @@ import {
   parsePluginContract,
   type PluginContract,
   type TenantPluginDescriptor,
-} from "@armada/plugin-contracts";
+} from "@ghost/plugin-contracts";
 import {
   createShellFederationRuntime,
   type ShellFederationRuntime,
