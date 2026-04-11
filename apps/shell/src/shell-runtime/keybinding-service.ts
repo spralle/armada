@@ -23,8 +23,12 @@ const DEFAULT_LAYER_PRECEDENCE: readonly KeybindingLayer[] = ["user-overrides", 
 
 export interface KeybindingLayerInput {
   layer: KeybindingLayer;
-  entries: readonly ActionKeybinding[];
+  entries: readonly ConfiguredKeybinding[];
 }
+
+export type ConfiguredKeybinding = Pick<ActionKeybinding, "action" | "keybinding" | "when"> & {
+  pluginId?: string;
+};
 
 export interface KeybindingResolution {
   chord: NormalizedKeybindingChord;
@@ -45,9 +49,9 @@ export interface KeybindingService {
 export interface KeybindingServiceOptions {
   actionSurface: ActionSurface;
   intentRuntime: IntentRuntime;
-  defaultBindings?: readonly ActionKeybinding[];
+  defaultBindings?: readonly ConfiguredKeybinding[];
   pluginBindings?: readonly ActionKeybinding[];
-  userOverrideBindings?: readonly ActionKeybinding[];
+  userOverrideBindings?: readonly ConfiguredKeybinding[];
   matcher?: ContributionPredicateMatcher;
 }
 
@@ -135,7 +139,7 @@ function buildRegistryRecords(
         when: entry.when,
         source: {
           layer: layer.layer,
-          pluginId: entry.pluginId,
+          pluginId: entry.pluginId ?? action.pluginId,
         },
       });
     }

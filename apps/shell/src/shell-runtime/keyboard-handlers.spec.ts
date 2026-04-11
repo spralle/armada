@@ -5,7 +5,10 @@ import {
   setActiveTab,
 } from "../context-state.js";
 import { bindKeyboardShortcuts, type KeyboardBindings } from "./keyboard-handlers.js";
-import { createDefaultShellKeybindingContract } from "./default-shell-keybindings.js";
+import {
+  createDefaultShellKeybindingContract,
+  DEFAULT_SHELL_KEYBINDINGS,
+} from "./default-shell-keybindings.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import type { ShellRuntime } from "../app/types.js";
 
@@ -85,6 +88,30 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
     assertEqual(result.prevented, true, "mapped shell keybinding should prevent browser default");
     assertEqual(runtime.contextState.tabs["tab-a"], undefined, "close action should remove active tab");
     assertTruthy(runtime.commandNotice.includes("shell.window.close"), "command notice should reference handled action id");
+
+    dispose();
+  });
+
+  test("keyboard handler resolves default layer bindings when plugin layer is empty", async () => {
+    const root = new FakeRoot();
+    const runtime = createRuntimeFixture();
+    runtime.actionSurface = {
+      ...runtime.actionSurface,
+      keybindings: [],
+    };
+    const bindings = createBindings(runtime);
+    const dispose = bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
+
+    const target = ensureDomElement();
+    const result = await root.dispatch({
+      key: "q",
+      altKey: true,
+      shiftKey: true,
+      target,
+    });
+
+    assertEqual(result.prevented, true, "default binding layer should resolve shell.window.close");
+    assertEqual(runtime.contextState.tabs["tab-a"], undefined, "close action should execute from default layer");
 
     dispose();
   });
@@ -192,7 +219,7 @@ function createBindings(
     renderContextControls: () => {},
     renderParts: () => {},
     renderSyncStatus: () => {},
-    getDefaultKeybindings: () => [],
+    getDefaultKeybindings: () => DEFAULT_SHELL_KEYBINDINGS,
     getUserOverrideKeybindings: () => [],
     toActionContext: () => ({
       "context.domain.selection": "none",

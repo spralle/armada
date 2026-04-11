@@ -13,7 +13,7 @@ import {
 } from "../ui/parts-controller.js";
 import { handleShellKeyboardAction } from "./shell-keyboard-actions.js";
 import type { ShellRuntime } from "../app/types.js";
-import type { ActionKeybinding } from "../action-surface.js";
+import type { ConfiguredKeybinding } from "./keybinding-service.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
 
@@ -33,8 +33,8 @@ export interface KeyboardBindings {
   renderCommandSurface: () => void;
   renderSyncStatus: () => void;
   toActionContext: () => Record<string, string>;
-  getDefaultKeybindings: () => ActionKeybinding[];
-  getUserOverrideKeybindings: () => ActionKeybinding[];
+  getDefaultKeybindings: () => readonly ConfiguredKeybinding[];
+  getUserOverrideKeybindings: () => readonly ConfiguredKeybinding[];
 }
 
 export function bindKeyboardShortcuts(
