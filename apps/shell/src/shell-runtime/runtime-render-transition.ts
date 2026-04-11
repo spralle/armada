@@ -6,3 +6,13 @@ export function deriveCloseableTabIds(parts: ReadonlyArray<ComposedShellPart>): 
     .filter((part) => !isUtilityTabId(part.id))
     .map((part) => part.id));
 }
+
+export function rerenderAfterPluginToggle(
+  renderParts: () => void,
+  renderPanels: () => void,
+  renderCommandSurface: () => void,
+): void {
+  renderParts();
+  renderPanels();
+  renderCommandSurface();
+}

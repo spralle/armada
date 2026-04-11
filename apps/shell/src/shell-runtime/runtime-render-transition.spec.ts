@@ -1,5 +1,5 @@
 import type { ComposedShellPart } from "../ui/parts-rendering.js";
-import { deriveCloseableTabIds } from "./runtime-render-transition.js";
+import { deriveCloseableTabIds, rerenderAfterPluginToggle } from "./runtime-render-transition.js";
 
 type TestCase = {
   name: string;
@@ -43,6 +43,27 @@ test("deriveCloseableTabIds excludes utility tabs", () => {
   assertEqual(result.has("tab-orders"), true, "part instance tabs should be closeable");
   assertEqual(result.has("tab-vessels"), true, "part instance tabs should remain closeable");
   assertEqual(result.size, 2, "only non-utility tabs should be included");
+});
+
+test("plugin toggle rerender updates parts before panels and command surface", () => {
+  const order: string[] = [];
+
+  rerenderAfterPluginToggle(
+    () => {
+      order.push("parts");
+    },
+    () => {
+      order.push("panels");
+    },
+    () => {
+      order.push("command-surface");
+    },
+  );
+
+  assertEqual(order[0], "parts", "parts should rerender before panels");
+  assertEqual(order[1], "panels", "panels should rerender immediately after parts");
+  assertEqual(order[2], "command-surface", "command surface should rerender last");
+  assertEqual(order.length, 3, "plugin toggle rerender should include exactly three render steps");
 });
 
 let passed = 0;
