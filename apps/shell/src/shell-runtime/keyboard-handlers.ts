@@ -13,6 +13,7 @@ import {
   closeTabThroughRuntime,
   reopenMostRecentlyClosedTabThroughRuntime,
 } from "../ui/parts-controller.js";
+import { handleShellKeyboardAction } from "./shell-keyboard-actions.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
@@ -90,10 +91,20 @@ export function bindKeyboardShortcuts(
         }
 
         event.preventDefault();
-        const executed = await dispatchAction(runtime.actionSurface, runtime.intentRuntime, action.id, context);
-        runtime.commandNotice = executed
-          ? `Keybinding (${normalizedKey}): Action '${action.id}' executed.`
-          : `Keybinding (${normalizedKey}): Action '${action.id}' is not executable in current context.`;
+        const shellResult = handleShellKeyboardAction(runtime, bindings, action.id);
+        const executed = shellResult.handled
+          ? shellResult.executed
+          : await dispatchAction(runtime.actionSurface, runtime.intentRuntime, action.id, context);
+        runtime.commandNotice = shellResult.handled
+          ? `Keybinding (${normalizedKey}): ${shellResult.message}`
+          : executed
+            ? `Keybinding (${normalizedKey}): Action '${action.id}' executed.`
+            : `Keybinding (${normalizedKey}): Action '${action.id}' is not executable in current context.`;
+        if (shellResult.handled) {
+          bindings.renderContextControls();
+          bindings.renderParts();
+          bindings.renderSyncStatus();
+        }
         bindings.renderCommandSurface();
         return;
       }

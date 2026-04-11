@@ -69,6 +69,15 @@ export {
   setActiveTab,
 } from "./context-state/tabs-groups.js";
 
+export {
+  cycleTabGroup,
+  cycleTabInActiveStack,
+  focusTabInDirection,
+  moveTabInDirection,
+  resizeInDirection,
+  swapTabInDirection,
+} from "./context-state/window-management.js";
+
 export type {
   IncomingTransferJournal,
   IncomingTransferTab,
