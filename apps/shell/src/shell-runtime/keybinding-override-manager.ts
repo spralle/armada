@@ -5,6 +5,8 @@ import type {
 } from "../persistence/contracts.js";
 import type { KeybindingLayer } from "./keybinding-resolver.js";
 import { normalizeConfiguredChord } from "./keybinding-normalizer.js";
+import type { KeybindingExportEnvelope, KeybindingImportResult } from "./keybinding-import-export.js";
+import { exportKeybindingOverrides, validateKeybindingImport } from "./keybinding-import-export.js";
 
 // ---------------------------------------------------------------------------
 // Public interfaces
@@ -31,6 +33,8 @@ export interface KeybindingOverrideManager {
   getOverrides(): KeybindingOverrideEntryV1[];
   getDefaultBindings(): ActionKeybinding[];
   getPluginBindings(): ActionKeybinding[];
+  exportOverrides(): KeybindingExportEnvelope;
+  importOverrides(input: unknown): KeybindingImportResult;
 }
 
 export interface KeybindingOverrideManagerOptions {
@@ -165,6 +169,13 @@ export function createKeybindingOverrideManager(
     }
   }
 
+  function buildKnownActions(): Set<string> {
+    return new Set<string>([
+      ...getDefaultBindings().map((b) => b.action),
+      ...getPluginBindings().map((b) => b.action),
+    ]);
+  }
+
   return {
     addOverride,
     removeOverride,
@@ -176,6 +187,17 @@ export function createKeybindingOverrideManager(
     },
     getPluginBindings() {
       return getPluginBindings();
+    },
+    exportOverrides() {
+      return exportKeybindingOverrides(overrides);
+    },
+    importOverrides(input: unknown): KeybindingImportResult {
+      const result = validateKeybindingImport(input, buildKnownActions());
+      if (result.success) {
+        overrides = result.entries.map((e) => ({ ...e }));
+        persistence.save(overrides);
+      }
+      return result;
     },
   };
 }
