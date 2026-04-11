@@ -44,12 +44,12 @@ test("runtime command surface path dispatches through action surface", async () 
   );
   assert.match(
     keyboardSource,
-    /const action = resolveKeybindingAction\(runtime\.actionSurface, normalizedKey, context\);/,
-    "keybindings should resolve from action surface",
+    /const resolution = keybindingService\.resolve\(normalizedChord, context\);/,
+    "keybindings should resolve through keybinding service",
   );
   assert.match(
     keyboardSource,
-    /await dispatchAction\(runtime\.actionSurface, runtime\.intentRuntime, action\.id, context\);/,
-    "keybinding dispatch should route through action surface",
+    /const result = await keybindingService\.dispatch\(normalizedChord, context\);/,
+    "keybinding dispatch should route through keybinding service",
   );
 });

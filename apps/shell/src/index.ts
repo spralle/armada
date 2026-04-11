@@ -254,6 +254,8 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): () => 
     renderCommandSurface: () => renderCommandSurface(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
     toActionContext: () => toActionContext(runtime),
+    getDefaultKeybindings: () => [],
+    getUserOverrideKeybindings: () => [],
   });
 }
 

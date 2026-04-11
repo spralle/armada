@@ -19,6 +19,7 @@ import { registerDndSessionBrokerSpecs } from "./context-state.spec-dnd-session-
 import { registerDockPopoutActionRenderingSpecs } from "./context-state.spec-dock-popout-action-rendering.js";
 import { registerDockSplitterDragSpecs } from "./context-state.spec-dock-splitter-drag.js";
 import { registerDockOverlayRenderingSpecs } from "./context-state.spec-dock-overlay-rendering.js";
+import { registerKeybindingServiceSpecs } from "./shell-runtime/keybinding-service.spec.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -42,6 +43,7 @@ registerDndSessionBrokerSpecs(harness);
 registerDockPopoutActionRenderingSpecs(harness);
 registerDockSplitterDragSpecs(harness);
 registerDockOverlayRenderingSpecs(harness);
+registerKeybindingServiceSpecs(harness);
 
 const { passed, total } = await runAll();
 
