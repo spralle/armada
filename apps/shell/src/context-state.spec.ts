@@ -20,6 +20,7 @@ import { registerDockPopoutActionRenderingSpecs } from "./context-state.spec-doc
 import { registerDockSplitterDragSpecs } from "./context-state.spec-dock-splitter-drag.js";
 import { registerDockOverlayRenderingSpecs } from "./context-state.spec-dock-overlay-rendering.js";
 import { registerKeybindingServiceSpecs } from "./shell-runtime/keybinding-service.spec.js";
+import { registerShellKeyboardActionSpecs } from "./context-state.spec-shell-keyboard-actions.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -44,6 +45,9 @@ registerDockPopoutActionRenderingSpecs(harness);
 registerDockSplitterDragSpecs(harness);
 registerDockOverlayRenderingSpecs(harness);
 registerKeybindingServiceSpecs(harness);
+registerShellKeyboardActionSpecs(harness);
+registerKeybindingServiceSpecs(harness);
+registerShellKeyboardActionSpecs(harness);
 
 const { passed, total } = await runAll();
 

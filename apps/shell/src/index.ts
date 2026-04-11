@@ -7,6 +7,7 @@ import {
 import {
   buildActionSurface,
 } from "./action-surface.js";
+import { createDefaultShellKeybindingContract } from "./shell-runtime/default-shell-keybindings.js";
 import {
   resolveChooserFocusRestoration,
 } from "./keyboard-a11y.js";
@@ -212,6 +213,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
 }
 
 function refreshCommandContributions(runtime: ShellRuntime): void {
+  const defaultKeybindingContract = createDefaultShellKeybindingContract();
   const contracts = runtime.registry
     .getSnapshot()
     .plugins
@@ -219,7 +221,7 @@ function refreshCommandContributions(runtime: ShellRuntime): void {
     .map((plugin) => plugin.contract)
     .filter((plugin): plugin is NonNullable<typeof plugin> => plugin !== null);
 
-  runtime.actionSurface = buildActionSurface(contracts);
+  runtime.actionSurface = buildActionSurface([defaultKeybindingContract, ...contracts]);
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
