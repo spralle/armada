@@ -3,7 +3,8 @@ import { updateContextState } from "../context/runtime-state.js";
 import type { ShellRuntime } from "../app/types.js";
 
 type DockSplitterDeps = {
-  renderParts: () => void;
+  previewSplitStyle: (input: { splitId: string; orientation: "horizontal" | "vertical"; ratio: number }) => void;
+  commitRender: () => void;
 };
 
 const DRAGGING_CLASS = "is-dock-splitter-dragging";
@@ -54,6 +55,7 @@ export function wireDockSplitterDrag(root: HTMLElement, runtime: ShellRuntime, d
       const startRatio = readSplitRatioById(runtime.contextState.dockTree.root, splitId);
       const startOffset = (startRatio * containerSize);
       const pointerAnchorOffset = startAxis - containerStart - startOffset;
+      let stateChanged = false;
       const onMove = (moveEvent: PointerEvent) => {
         if (moveEvent.pointerId !== event.pointerId) {
           return;
@@ -67,8 +69,13 @@ export function wireDockSplitterDrag(root: HTMLElement, runtime: ShellRuntime, d
         });
 
         if (nextState !== runtime.contextState) {
+          stateChanged = true;
           updateContextState(runtime, nextState);
-          deps.renderParts();
+          deps.previewSplitStyle({
+            splitId,
+            orientation,
+            ratio: readSplitRatioById(nextState.dockTree.root, splitId),
+          });
         }
       };
 
@@ -88,6 +95,9 @@ export function wireDockSplitterDrag(root: HTMLElement, runtime: ShellRuntime, d
         eventWindow.removeEventListener("pointercancel", cleanup);
         eventWindow.removeEventListener("blur", cleanup);
         splitter.removeEventListener("lostpointercapture", cleanup);
+        if (stateChanged) {
+          deps.commitRender();
+        }
       };
 
       eventWindow.addEventListener("pointermove", onMove);

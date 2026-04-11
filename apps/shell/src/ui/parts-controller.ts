@@ -18,6 +18,7 @@ import {
   resolvePartTitle,
   updateSelectedStyles,
 } from "./parts-rendering.js";
+import { renderDockSplitTrackValue } from "./parts-rendering-dock-split-style.js";
 import { resolveClosedPopoutTransition } from "./parts-controller-popout-transition.js";
 import type { PartsControllerDeps } from "./parts-controller-types.js";
 
@@ -40,7 +41,14 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
 
   wirePartActions(root, runtime, deps);
   wireDockSplitterDrag(root, runtime, {
-    renderParts: () => deps.renderParts(),
+    previewSplitStyle: ({ splitId, orientation, ratio }) => {
+      previewDockSplitStyle(root, {
+        splitId,
+        orientation,
+        ratio,
+      });
+    },
+    commitRender: () => deps.renderParts(),
   });
   wireDockTabDragDrop(root, runtime, deps);
   wireTabStripDragDrop(root, runtime, {
@@ -62,6 +70,26 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
     root,
     visibleParts.filter((part) => !runtime.poppedOutTabIds.has(part.instanceId) && !isUtilityTabId(part.id)),
   );
+}
+
+function previewDockSplitStyle(
+  root: HTMLElement,
+  input: { splitId: string; orientation: "horizontal" | "vertical"; ratio: number },
+): void {
+  const splitNode = root.querySelector<HTMLElement>(
+    `[data-dock-node-id="${input.splitId}"][data-dock-orientation="${input.orientation}"]`,
+  );
+  if (!splitNode) {
+    return;
+  }
+
+  const splitTrackValue = renderDockSplitTrackValue(input.ratio);
+  if (input.orientation === "horizontal") {
+    splitNode.style.setProperty("grid-template-columns", splitTrackValue);
+    return;
+  }
+
+  splitNode.style.setProperty("grid-template-rows", splitTrackValue);
 }
 
 export function startPopoutWatchdog(
