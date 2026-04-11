@@ -4,6 +4,7 @@ import { createIncomingTransferJournal } from "../context-state.js";
 import { createDefaultLayoutState } from "../layout.js";
 import {
   createLocalStorageContextStatePersistence,
+  createLocalStorageKeybindingPersistence,
   createLocalStorageLayoutPersistence,
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
@@ -54,6 +55,9 @@ export function createShellRuntime(options?: {
       userId: getCurrentUserId(),
     }),
     contextPersistence: createLocalStorageContextStatePersistence(getStorage(), {
+      userId: getCurrentUserId(),
+    }),
+    keybindingPersistence: createLocalStorageKeybindingPersistence(getStorage(), {
       userId: getCurrentUserId(),
     }),
     registry: createShellPluginRegistry(),

@@ -6,6 +6,7 @@ import { createDragSessionBroker } from "../dnd-session-broker.js";
 import type { ShellLayoutState } from "../layout.js";
 import type {
   ShellContextStatePersistence,
+  ShellKeybindingPersistence,
   ShellLayoutPersistence,
 } from "../persistence.js";
 import type { ShellPluginRegistry } from "../plugin-registry.js";
@@ -55,6 +56,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   layout: ShellLayoutState;
   persistence: ShellLayoutPersistence;
   contextPersistence: ShellContextStatePersistence;
+  keybindingPersistence: ShellKeybindingPersistence;
   registry: ShellPluginRegistry;
   bridge: WindowBridge;
   asyncBridge: AsyncWindowBridge;

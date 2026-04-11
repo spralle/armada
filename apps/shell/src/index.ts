@@ -12,6 +12,8 @@ import {
   DEFAULT_SHELL_KEYBINDINGS,
   DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
 } from "./shell-runtime/default-shell-keybindings.js";
+
+export const USER_KEYBINDING_OVERRIDE_PLUGIN_ID = "com.ghost.shell.keybindings.user";
 import {
   resolveChooserFocusRestoration,
 } from "./keyboard-a11y.js";
@@ -265,7 +267,11 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): () => 
       keybinding: entry.keybinding,
       pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
     })),
-    getUserOverrideKeybindings: () => [],
+    getUserOverrideKeybindings: () => runtime.keybindingPersistence.load().map((entry) => ({
+      action: entry.action,
+      keybinding: entry.keybinding,
+      pluginId: USER_KEYBINDING_OVERRIDE_PLUGIN_ID,
+    })),
   });
 }
 

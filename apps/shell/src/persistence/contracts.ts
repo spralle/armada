@@ -37,6 +37,7 @@ export interface UnifiedShellPersistenceEnvelopeV1 {
   version: 1;
   layout?: unknown;
   context?: unknown;
+  keybindings?: unknown;
 }
 
 export interface LayoutEnvelopeV1 {
@@ -47,4 +48,24 @@ export interface LayoutEnvelopeV1 {
 export interface ContextStateEnvelopeV2 {
   version: 2;
   contextState: unknown;
+}
+
+export interface KeybindingOverrideEntryV1 {
+  action: string;
+  keybinding: string;
+  removed?: boolean;
+}
+
+export interface KeybindingOverridesEnvelopeV1 {
+  version: 1;
+  overrides: KeybindingOverrideEntryV1[];
+}
+
+export interface ShellKeybindingPersistence {
+  load(): KeybindingOverrideEntryV1[];
+  save(overrides: KeybindingOverrideEntryV1[]): { warning: string | null };
+}
+
+export interface KeybindingPersistenceOptions {
+  userId: string;
 }
