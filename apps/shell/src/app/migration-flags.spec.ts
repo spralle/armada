@@ -63,13 +63,13 @@ test("migration flags support explicit rollback to baseline", () => {
   assertEqual(shouldUseContractComposition(flags), false, "explicit rollback should return baseline composition");
 });
 
-test("cross-window dnd flags default disabled and can enable", () => {
+test("cross-window dnd flags default enabled and can disable", () => {
   const defaults = readShellMigrationFlags(new URLSearchParams(), null);
-  const enabled = readShellMigrationFlags(new URLSearchParams("shellCrossWindowDnd=true"), null);
+  const disabled = readShellMigrationFlags(new URLSearchParams("shellCrossWindowDnd=0"), null);
 
-  assertEqual(defaults.enableCrossWindowDnd, false, "cross-window dnd should be disabled by default");
+  assertEqual(defaults.enableCrossWindowDnd, true, "cross-window dnd should be enabled by default");
   assertEqual(defaults.forceDisableCrossWindowDnd, false, "cross-window dnd kill-switch should be off by default");
-  assertEqual(enabled.enableCrossWindowDnd, true, "cross-window dnd enable query flag should be honored");
+  assertEqual(disabled.enableCrossWindowDnd, false, "cross-window dnd disable query flag should be honored");
 });
 
 test("cross-window dnd kill-switch override takes precedence", () => {
@@ -177,13 +177,13 @@ test("transport feature-flag matrix preserves deterministic legacy/async parity"
   }
 });
 
-test("cross-window dnd defaults to same-window only", () => {
+test("cross-window dnd defaults to cross-window bridge", () => {
   const flags = readShellMigrationFlags(new URLSearchParams(), null);
   const decision = selectCrossWindowDnd(flags);
 
-  assertEqual(decision.enabled, false, "default dnd should remain same-window only");
-  assertEqual(decision.path, "same-window", "default dnd path should remain same-window");
-  assertEqual(decision.reason, "default-same-window-only", "default dnd reason should be explicit");
+  assertEqual(decision.enabled, true, "default dnd should enable cross-window path");
+  assertEqual(decision.path, "cross-window-bridge", "default dnd path should be cross-window bridge");
+  assertEqual(decision.reason, "flag-enabled", "default dnd reason should reflect enabled baseline");
 });
 
 test("cross-window dnd flag can be enabled explicitly", () => {

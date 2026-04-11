@@ -36,7 +36,7 @@ const DEFAULT_SHELL_MIGRATION_FLAGS: ShellMigrationFlags = {
   useAdapterComposition: true,
   enableAsyncScompAdapter: false,
   forceLegacyBridge: false,
-  enableCrossWindowDnd: false,
+  enableCrossWindowDnd: true,
   forceDisableCrossWindowDnd: false,
 };
 

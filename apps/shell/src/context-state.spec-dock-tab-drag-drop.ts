@@ -95,6 +95,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
 
   test("dock drop blocks explicit cross-window payloads", () => {
     const runtime = createRuntime();
+    runtime.crossWindowDndEnabled = false;
     const zone = createDockZone("tab-a", "top");
     const root = new FakeDockRoot([zone]);
     let renderPartsCalls = 0;

@@ -36,13 +36,19 @@ npm run build --silent
 
 | Area | Scenario | Evidence source | Expected outcome |
 | --- | --- | --- | --- |
-| Tab-strip cross-window path | Explicit foreign-window payload is rejected safely (`sourceWindowId !== runtime.windowId`) | `context-state.spec-tab-drag-drop.ts` → `cross-window payload is blocked as no-op` via `node apps/shell/dist-test/src/context-state.spec.js` | No state mutation, no duplicate tab creation, no move callback |
-| Dock-zone cross-window path | Explicit foreign-window dock payload is rejected safely | `context-state.spec-dock-tab-drag-drop.ts` → `dock drop blocks explicit cross-window payloads` via `node apps/shell/dist-test/src/context-state.spec.js` | Active tab unchanged, no dock rerender side effect |
+| Tab-strip cross-window path | Explicit foreign-window payload without transfer session is rejected safely as invalid | `context-state.spec-tab-drag-drop.ts` → `cross-window payload without transfer session is rejected as invalid payload` via `node apps/shell/dist-test/src/context-state.spec.js` | No state mutation, no duplicate tab creation, no move callback, invalid-payload notice |
+| Dock-zone cross-window path | Cross-window transfer session applies by default when valid | `context-state.spec-dock-tab-drag-drop.ts` → `dock cross-window payload applies through transfer transaction when enabled` via `node apps/shell/dist-test/src/context-state.spec.js` | Incoming tab activates, rerender occurs, transfer session commits |
 | Same-window parity (tab-strip) | Same-window drop reorders and activates dragged tab | `context-state.spec-tab-drag-drop.ts` → `same-window tab drop reorders and activates dragged tab` | Deterministic reorder + active tab update |
 | Same-window parity (dock-zone) | Same-window dock drops apply deterministic move and render updates | `context-state.spec-dock-tab-drag-drop.ts` → `dock drag drop moves tab via text/plain fallback payload` | Move succeeds, context/parts/sync rerenders fire |
 | Degraded rejection | Degraded sync blocks tab-strip drag/drop mutations | `context-state.spec-tab-drag-drop.ts` checks `runtime.syncDegraded` block paths (covered in aggregate `context-state.spec.js`) | Drag start/drop blocked; safe no-op |
 | Degraded rollback safety | Degraded mode still preserves same-window dock moves; transport can recover to healthy | `context-state.spec-dock-tab-drag-drop.ts` (`degraded mode still permits same-window dock moves`), `window-bridge.spec.ts` (`recover should clear degraded state`) | No stale pending state, same-window UX remains operable, degraded reason clears on recovery |
 | Flag + kill-switch rollback | Kill switch forces legacy path over async enable | `migration-flags.spec.ts` matrix cases (`kill-switch-query-wins`, override precedence) | Deterministic rollback routing with explicit diagnostics reason |
+
+### Cross-window DnD defaults
+
+- Baseline runtime now defaults to cross-window DnD enabled (`enableCrossWindowDnd=true`).
+- Rollback remains explicit and authoritative through `shellCrossWindowDndKillSwitch=1` or `forceDisableCrossWindowDnd: true`.
+- Kill-switch precedence is unchanged: when enabled and kill-switch are both set, kill-switch forces same-window-only behavior with clear rejection notices.
 
 ## Troubleshooting guide
 

@@ -208,7 +208,7 @@ export function createRuntime(): ShellRuntime {
       dispose: () => {},
     },
     incomingTransferJournal: createIncomingTransferJournal(),
-    crossWindowDndEnabled: false,
+    crossWindowDndEnabled: true,
     crossWindowDndKillSwitchActive: false,
     bridge: {
       available: false,
