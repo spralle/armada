@@ -26,6 +26,8 @@ import { registerKeybindingPersistenceSpecs } from "./persistence/keybinding-per
 import { registerKeybindingOverrideManagerSpecs } from "./shell-runtime/keybinding-override-manager.spec.js";
 import { registerKeybindingImportExportSpecs } from "./shell-runtime/keybinding-import-export.spec.js";
 import { registerPluginRegistryBuiltinSpecs } from "./shell-runtime/plugin-registry-builtin.spec.js";
+import { registerCommandPaletteCatalogSpecs } from "./shell-runtime/command-palette-catalog.spec.js";
+import { registerCommandPaletteStateSpecs } from "./shell-runtime/command-palette-state.spec.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -51,13 +53,13 @@ registerDockSplitterDragSpecs(harness);
 registerDockOverlayRenderingSpecs(harness);
 registerKeybindingServiceSpecs(harness);
 registerShellKeyboardActionSpecs(harness);
-registerKeybindingServiceSpecs(harness);
-registerShellKeyboardActionSpecs(harness);
 registerKeyboardHandlersSpecs(harness);
 registerKeybindingPersistenceSpecs(harness);
 registerKeybindingOverrideManagerSpecs(harness);
 registerKeybindingImportExportSpecs(harness);
 registerPluginRegistryBuiltinSpecs(harness);
+registerCommandPaletteCatalogSpecs(harness);
+registerCommandPaletteStateSpecs(harness);
 
 const { passed, total } = await runAll();
 
