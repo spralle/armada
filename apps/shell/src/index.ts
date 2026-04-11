@@ -7,7 +7,11 @@ import {
 import {
   buildActionSurface,
 } from "./action-surface.js";
-import { createDefaultShellKeybindingContract } from "./shell-runtime/default-shell-keybindings.js";
+import {
+  createDefaultShellKeybindingContract,
+  DEFAULT_SHELL_KEYBINDINGS,
+  DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+} from "./shell-runtime/default-shell-keybindings.js";
 import {
   resolveChooserFocusRestoration,
 } from "./keyboard-a11y.js";
@@ -256,7 +260,11 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): () => 
     renderCommandSurface: () => renderCommandSurface(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
     toActionContext: () => toActionContext(runtime),
-    getDefaultKeybindings: () => [],
+    getDefaultKeybindings: () => DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
+      action: entry.action,
+      keybinding: entry.keybinding,
+      pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+    })),
     getUserOverrideKeybindings: () => [],
   });
 }
