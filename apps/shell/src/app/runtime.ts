@@ -8,6 +8,7 @@ import {
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
 import { buildActionSurface } from "../action-surface.js";
+import { createDefaultShellKeybindingContract } from "../shell-runtime/default-shell-keybindings.js";
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { createWindowBridge } from "../window-bridge.js";
@@ -94,7 +95,7 @@ export function createShellRuntime(options?: {
     chooserFocusIndex: 0,
     pendingFocusSelector: null,
     chooserReturnFocusSelector: null,
-    actionSurface: buildActionSurface([]),
+    actionSurface: buildActionSurface([createDefaultShellKeybindingContract()]),
     intentRuntime,
     commandNotice: "",
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,

@@ -1,5 +1,7 @@
 # Refactor/migration architecture baseline (armada-rje.9.11)
 
+> Historical trace note: `armada-*` references in this document are legacy bead IDs only.
+
 This document sets the baseline architecture and guardrails for the generic selection/context and React migration program.
 
 ## 1) Shell core boundaries (entity-agnostic)
@@ -41,7 +43,7 @@ This keeps selection machinery reusable across entity sets and avoids hardcoded 
 ### Difference vs VS Code actions
 
 - VS Code command/action patterns are primarily command-id execution plus enablement/when contexts in a VS Code-specific host model.
-- Armada intent/action model centers on **intent-first resolution** with explicit runtime traces and multi-match chooser behavior for shell context.
+- Ghost intent/action model centers on **intent-first resolution** with explicit runtime traces and multi-match chooser behavior for shell context.
 - Our model is aimed at cross-window selection/context orchestration and receiver-driven data flow, not editor-command UX parity.
 
 ## 4) Intent model vs Android intents

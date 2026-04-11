@@ -1,8 +1,8 @@
-import type { PluginContract } from "@armada/plugin-contracts";
+import type { PluginContract } from "@ghost/plugin-contracts";
 
 const pluginContract: PluginContract = {
   manifest: {
-    id: "com.armada.plugin-starter",
+    id: "ghost.plugin-starter",
     name: "Plugin Starter",
     version: "0.1.0",
   },

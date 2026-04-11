@@ -1,8 +1,8 @@
 {
-  "name": "@armada/typecheck-fixture",
+  "name": "@ghost/typecheck-fixture",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@armada/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
   }
 }

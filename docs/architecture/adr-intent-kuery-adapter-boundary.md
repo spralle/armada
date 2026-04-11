@@ -1,5 +1,7 @@
 # ADR: intent matcher boundary and kuery adapter timing (armada-rje.9.13)
 
+> Historical trace note: `armada-*` references in this document are legacy bead IDs only.
+
 ## Status
 
 Accepted (2026-04-05)

@@ -17,14 +17,14 @@ function descriptor(id) {
 function providerContract() {
   return {
     manifest: {
-      id: "com.armada.provider",
+      id: "ghost.provider",
       name: "Provider",
       version: "1.2.0",
     },
     contributes: {
       capabilities: {
-        components: [{ id: "com.armada.component.map", version: "1.2.0" }],
-        services: [{ id: "com.armada.service.route", version: "2.0.1" }],
+        components: [{ id: "ghost.component.map", version: "1.2.0" }],
+        services: [{ id: "ghost.service.route", version: "2.0.1" }],
       },
     },
   };
@@ -33,14 +33,14 @@ function providerContract() {
 function consumerContract() {
   return {
     manifest: {
-      id: "com.armada.consumer",
+      id: "ghost.consumer",
       name: "Consumer",
       version: "1.0.0",
     },
     dependsOn: {
-      plugins: [{ pluginId: "com.armada.provider", versionRange: "^1.0.0" }],
-      components: [{ id: "com.armada.component.map", versionRange: "^1.0.0" }],
-      services: [{ id: "com.armada.service.route", versionRange: "^2.0.0" }],
+      plugins: [{ pluginId: "ghost.provider", versionRange: "^1.0.0" }],
+      components: [{ id: "ghost.component.map", versionRange: "^1.0.0" }],
+      services: [{ id: "ghost.service.route", versionRange: "^2.0.0" }],
     },
   };
 }
@@ -52,33 +52,33 @@ test("activation fails with actionable dependency diagnostics and no auto-enable
         return "remote-manifest";
       },
       async loadPluginContract(target) {
-        return target.id === "com.armada.provider" ? providerContract() : consumerContract();
+        return target.id === "ghost.provider" ? providerContract() : consumerContract();
       },
       async loadPluginComponents() {
         return {
-          "com.armada.component.map": { component: "MapComponent" },
+          "ghost.component.map": { component: "MapComponent" },
         };
       },
       async loadPluginServices() {
         return {
-          "com.armada.service.route": { service: "RouteService" },
+          "ghost.service.route": { service: "RouteService" },
         };
       },
     },
   });
 
   registry.registerManifestDescriptors("demo", [
-    descriptor("com.armada.consumer"),
-    descriptor("com.armada.provider"),
+    descriptor("ghost.consumer"),
+    descriptor("ghost.provider"),
   ]);
 
-  await registry.setEnabled("com.armada.consumer", true);
-  const activated = await registry.activateByView("com.armada.consumer", "view.main");
+  await registry.setEnabled("ghost.consumer", true);
+  const activated = await registry.activateByView("ghost.consumer", "view.main");
   assert.equal(activated, false);
 
   const snapshot = registry.getSnapshot();
-  const consumer = snapshot.plugins.find((plugin) => plugin.id === "com.armada.consumer");
-  const provider = snapshot.plugins.find((plugin) => plugin.id === "com.armada.provider");
+  const consumer = snapshot.plugins.find((plugin) => plugin.id === "ghost.consumer");
+  const provider = snapshot.plugins.find((plugin) => plugin.id === "ghost.provider");
 
   assert.ok(consumer);
   assert.ok(provider);
@@ -104,39 +104,39 @@ test("resolves component/service capabilities from split plugin modules", async 
         return "remote-manifest";
       },
       async loadPluginContract(target) {
-        return target.id === "com.armada.provider" ? providerContract() : consumerContract();
+        return target.id === "ghost.provider" ? providerContract() : consumerContract();
       },
       async loadPluginComponents() {
         return {
-          "com.armada.component.map": providerComponent,
+          "ghost.component.map": providerComponent,
         };
       },
       async loadPluginServices() {
         return {
-          "com.armada.service.route": providerService,
+          "ghost.service.route": providerService,
         };
       },
     },
   });
 
   registry.registerManifestDescriptors("demo", [
-    descriptor("com.armada.consumer"),
-    descriptor("com.armada.provider"),
+    descriptor("ghost.consumer"),
+    descriptor("ghost.provider"),
   ]);
 
-  await registry.setEnabled("com.armada.provider", true);
-  await registry.setEnabled("com.armada.consumer", true);
+  await registry.setEnabled("ghost.provider", true);
+  await registry.setEnabled("ghost.consumer", true);
 
-  assert.equal(await registry.activateByView("com.armada.provider", "view.provider"), true);
-  assert.equal(await registry.activateByView("com.armada.consumer", "view.consumer"), true);
+  assert.equal(await registry.activateByView("ghost.provider", "view.provider"), true);
+  assert.equal(await registry.activateByView("ghost.consumer", "view.consumer"), true);
 
   const resolvedComponent = await registry.resolveComponentCapability(
-    "com.armada.consumer",
-    "com.armada.component.map",
+    "ghost.consumer",
+    "ghost.component.map",
   );
   const resolvedService = await registry.resolveServiceCapability(
-    "com.armada.consumer",
-    "com.armada.service.route",
+    "ghost.consumer",
+    "ghost.service.route",
   );
 
   assert.equal(resolvedComponent, providerComponent);

@@ -13,6 +13,6 @@ function makeLabelledRenderer(label: string): RenderableCapability {
 }
 
 export const pluginComponents = {
-  "com.armada.component.jsonform.control": makeLabelledRenderer("shared jsonform control"),
-  "com.armada.component.entity-list.seed": makeLabelledRenderer("shared entity list seed"),
+  "ghost.component.jsonform.control": makeLabelledRenderer("shared jsonform control"),
+  "ghost.component.entity-list.seed": makeLabelledRenderer("shared entity list seed"),
 };

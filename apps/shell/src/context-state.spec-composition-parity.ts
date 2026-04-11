@@ -85,11 +85,11 @@ export function registerCompositionParitySpecs(harness: SpecHarness): void {
 function runParityFlow(mode: FlowMode): ParityStepSnapshot[] {
   const pluginRecords: MutablePluginRecord[] = [
     {
-      id: "com.armada.intent.a",
+      id: "ghost.intent.a",
       enabled: true,
       contract: {
         manifest: {
-          id: "com.armada.intent.a",
+          id: "ghost.intent.a",
           name: "Intent A",
           version: "0.1.0",
         },
@@ -105,11 +105,11 @@ function runParityFlow(mode: FlowMode): ParityStepSnapshot[] {
       },
     },
     {
-      id: "com.armada.intent.b",
+      id: "ghost.intent.b",
       enabled: true,
       contract: {
         manifest: {
-          id: "com.armada.intent.b",
+          id: "ghost.intent.b",
           name: "Intent B",
           version: "0.1.0",
         },
@@ -192,7 +192,7 @@ function runParityFlow(mode: FlowMode): ParityStepSnapshot[] {
   captureSnapshot("chooser/dismiss");
 
   pluginRecords[1].enabled = false;
-  runtime.pluginNotice = "Plugin com.armada.intent.b disabled for parity toggle";
+  runtime.pluginNotice = "Plugin ghost.intent.b disabled for parity toggle";
   captureSnapshot("plugin-toggle/disable-b");
 
   runtime.poppedOutTabIds.add("tab-c");

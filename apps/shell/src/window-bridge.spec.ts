@@ -72,7 +72,7 @@ test("unavailable bridge reports degraded health and no-op publish", () => {
   delete (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel;
 
   try {
-    const bridge = createWindowBridge("armada.test.bridge.unavailable");
+    const bridge = createWindowBridge("ghost.test.bridge.unavailable");
     let healthReason: string | null = null;
     let degraded = false;
 
@@ -95,7 +95,7 @@ test("bridge detects publish failure and can recover", () => {
   (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
 
   try {
-    const bridge = createWindowBridge("armada.test.bridge.health");
+    const bridge = createWindowBridge("ghost.test.bridge.health");
     const channel = FakeBroadcastChannel.lastInstance;
     assertTruthy(channel, "expected fake broadcast channel instance");
 
@@ -128,7 +128,7 @@ test("bridge close deterministically tears down channel", () => {
   (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
 
   try {
-    const bridge = createWindowBridge("armada.test.bridge.close");
+    const bridge = createWindowBridge("ghost.test.bridge.close");
     const channel = FakeBroadcastChannel.lastInstance;
     assertTruthy(channel, "expected fake broadcast channel instance");
 
@@ -161,7 +161,7 @@ test("bridge parses sync events and selection revisions", () => {
   (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
 
   try {
-    const bridge = createWindowBridge("armada.test.bridge.parse");
+    const bridge = createWindowBridge("ghost.test.bridge.parse");
     const channel = FakeBroadcastChannel.lastInstance;
     assertTruthy(channel, "expected fake broadcast channel instance");
 
@@ -251,7 +251,7 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
   (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
 
   try {
-    const bridge = createWindowBridge("armada.test.bridge.tab-context");
+    const bridge = createWindowBridge("ghost.test.bridge.tab-context");
     const channel = FakeBroadcastChannel.lastInstance;
     assertTruthy(channel, "expected fake broadcast channel instance");
 
@@ -347,7 +347,7 @@ test("bridge compatibility parses legacy and instance-aware migration payload va
   (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
 
   try {
-    const bridge = createWindowBridge("armada.test.bridge.compat");
+    const bridge = createWindowBridge("ghost.test.bridge.compat");
     const channel = FakeBroadcastChannel.lastInstance;
     assertTruthy(channel, "expected fake broadcast channel instance");
 
@@ -427,7 +427,7 @@ test("async compatibility shim returns accepted/enqueued and deterministic healt
   (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
 
   try {
-    const legacyBridge = createWindowBridge("armada.test.bridge.async-shim");
+    const legacyBridge = createWindowBridge("ghost.test.bridge.async-shim");
     const shim = createAsyncWindowBridgeCompatibilityShim(legacyBridge);
     const channel = FakeBroadcastChannel.lastInstance;
     assertTruthy(channel, "expected fake broadcast channel instance");
@@ -468,7 +468,7 @@ test("async compatibility shim normalizes timeout and closed publish rejections"
   (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
 
   try {
-    const legacyBridge = createWindowBridge("armada.test.bridge.async-timeout");
+    const legacyBridge = createWindowBridge("ghost.test.bridge.async-timeout");
     const shim = createAsyncWindowBridgeCompatibilityShim(legacyBridge);
 
     const timedOut = await shim.publish({

@@ -2,7 +2,7 @@ import type {
   CompatibilityReasonCode,
   PluginContract,
   TenantPluginDescriptor,
-} from "@armada/plugin-contracts";
+} from "@ghost/plugin-contracts";
 import type { CapabilityDependencyFailureCode } from "./capability-registry.js";
 import type { RuntimeFirstPluginLoader, ShellPluginLoadMode } from "./plugin-loader.js";
 

@@ -4,7 +4,7 @@ import { createRuntimeFirstPluginLoader, PluginLoadError } from "../dist-test/sr
 
 function createDescriptor(mode) {
   return {
-    id: `com.armada.parity.${mode}`,
+    id: `ghost.parity.${mode}`,
     version: "0.1.0",
     entry: "https://example.com/mf-manifest.json",
     compatibility: {
@@ -67,7 +67,7 @@ test("remote contracts wrapped as default export modules are unwrapped before va
         return {
           default: {
             manifest: {
-              id: "com.armada.parity.wrapped-contract",
+              id: "ghost.parity.wrapped-contract",
               name: "Wrapped Contract",
               version: "0.1.0",
             },
@@ -78,5 +78,5 @@ test("remote contracts wrapped as default export modules are unwrapped before va
   });
 
   const contract = await remoteLoader.loadPluginContract(createDescriptor("remote-manifest"));
-  assert.equal(contract.manifest.id, "com.armada.parity.wrapped-contract");
+  assert.equal(contract.manifest.id, "ghost.parity.wrapped-contract");
 });

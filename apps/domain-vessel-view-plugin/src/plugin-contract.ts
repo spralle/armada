@@ -1,8 +1,8 @@
-import type { PluginContract } from "@armada/plugin-contracts";
+import type { PluginContract } from "@ghost/plugin-contracts";
 
 const pluginContract = {
   manifest: {
-    id: "com.armada.domain.vessel-view",
+    id: "ghost.domain.vessel-view",
     name: "Vessel View (RORO/ROPAX)",
     version: "0.1.0",
   },
@@ -28,17 +28,17 @@ const pluginContract = {
   dependsOn: {
     plugins: [
       {
-        pluginId: "com.armada.shared.ui-capabilities",
+        pluginId: "ghost.shared.ui-capabilities",
         versionRange: "^0.1.0",
       },
     ],
     components: [
       {
-        id: "com.armada.component.jsonform.control",
+        id: "ghost.component.jsonform.control",
         versionRange: "^0.1.0",
       },
       {
-        id: "com.armada.component.entity-list.seed",
+        id: "ghost.component.entity-list.seed",
         versionRange: "^0.1.0",
       },
     ],

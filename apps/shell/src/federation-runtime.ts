@@ -11,7 +11,7 @@ type RuntimeCreateOptions = Parameters<typeof createInstance>[0];
  * for POC work; no bundler plugin wiring is required here.
  */
 const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
-  "@armada/plugin-contracts": {
+  "@ghost/plugin-contracts": {
     shareConfig: {
       singleton: true,
       requiredVersion: "^0.0.0",
@@ -31,7 +31,7 @@ export interface ShellFederationRuntime {
 
 export function createShellFederationRuntime(): ShellFederationRuntime {
   const host = createInstance({
-    name: "armada_shell",
+    name: "ghost_shell",
     remotes: [],
     shared: SHARED_DEPENDENCIES,
     shareStrategy: "loaded-first",

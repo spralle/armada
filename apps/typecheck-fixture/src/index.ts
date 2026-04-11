@@ -1,8 +1,8 @@
-import type { PluginContract } from "@armada/plugin-contracts";
+import type { PluginContract } from "@ghost/plugin-contracts";
 
 const fixturePlugin: PluginContract = {
   manifest: {
-    id: "com.armada.fixture",
+    id: "ghost.fixture",
     name: "Typecheck Fixture",
     version: "0.1.0"
   },

@@ -11,7 +11,6 @@ import type {
   UnifiedShellPersistenceEnvelopeV1,
 } from "./contracts.js";
 import {
-  getLegacyLayoutStorageKey,
   getUnifiedStorageKey,
   LAYOUT_SECTION_SCHEMA_VERSION,
   loadUnifiedEnvelope,
@@ -24,7 +23,6 @@ export function createLocalStorageLayoutPersistence(
   options: LayoutPersistenceOptions,
 ): ShellLayoutPersistence {
   const storageKey = getUnifiedStorageKey(options.userId);
-  const legacyStorageKey = getLegacyLayoutStorageKey(options.userId);
 
   return {
     load() {
@@ -40,17 +38,7 @@ export function createLocalStorageLayoutPersistence(
         }
       }
 
-      const rawLegacy = storage.getItem(legacyStorageKey);
-      if (!rawLegacy) {
-        return createDefaultLayoutState();
-      }
-
-      const legacy = safeParse(rawLegacy);
-      if (!legacy) {
-        return createDefaultLayoutState();
-      }
-
-      return sanitizeLayoutState(legacy);
+      return createDefaultLayoutState();
     },
     save(state) {
       if (!storage) {
@@ -76,12 +64,4 @@ export function createLocalStorageLayoutPersistence(
       storage.setItem(storageKey, JSON.stringify(nextEnvelope));
     },
   };
-}
-
-function safeParse(input: string): PartialLayoutState | null {
-  try {
-    return JSON.parse(input) as PartialLayoutState;
-  } catch {
-    return null;
-  }
 }

@@ -14,7 +14,7 @@ export function registerContextPersistenceDockSpecs(harness: SpecHarness): void 
   test("context persistence migrates legacy slot-based dock payload to deterministic dock tree", () => {
     const storage = new MemoryStorage();
     const userId = "spec-user";
-    const unifiedKey = `armada.shell.persistence.v1.${userId}`;
+    const unifiedKey = `ghost.shell.persistence.v1.${userId}`;
     storage.setItem(unifiedKey, JSON.stringify({
       version: 1,
       context: {
@@ -67,7 +67,7 @@ export function registerContextPersistenceDockSpecs(harness: SpecHarness): void 
   test("context persistence sanitizes corrupt dock payload to fallback with warning", () => {
     const storage = new MemoryStorage();
     const userId = "spec-user";
-    const unifiedKey = `armada.shell.persistence.v1.${userId}`;
+    const unifiedKey = `ghost.shell.persistence.v1.${userId}`;
     storage.setItem(unifiedKey, JSON.stringify({
       version: 1,
       context: {

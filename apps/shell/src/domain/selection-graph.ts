@@ -1,7 +1,7 @@
 import type {
   PluginContract,
   PluginSelectionContribution,
-} from "@armada/plugin-contracts";
+} from "@ghost/plugin-contracts";
 import {
   type DerivedLaneDefinition,
   type SelectionPropagationRule,

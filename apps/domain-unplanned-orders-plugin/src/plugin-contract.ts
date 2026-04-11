@@ -1,8 +1,8 @@
-import type { PluginContract } from "@armada/plugin-contracts";
+import type { PluginContract } from "@ghost/plugin-contracts";
 
 const pluginContract: PluginContract = {
   manifest: {
-    id: "com.armada.domain.unplanned-orders",
+    id: "ghost.domain.unplanned-orders",
     name: "Unplanned Orders",
     version: "0.1.0",
   },

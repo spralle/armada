@@ -26,7 +26,7 @@ export function registerPartInstancePopoutLifecycleSpecs(harness: SpecHarness): 
     const deps = createDeps();
 
     runWithWindowStub({
-      location: { href: "https://armada.local/shell?tenant=demo" } as Location,
+      location: { href: "https://ghost.local/shell?tenant=demo" } as Location,
       open(url, target) {
         openCalls.push({
           url: String(url ?? ""),
@@ -70,7 +70,7 @@ export function registerPartInstancePopoutLifecycleSpecs(harness: SpecHarness): 
     const deps = createDeps();
 
     runWithWindowStub({
-      location: { href: "https://armada.local/shell?popout=1" } as Location,
+      location: { href: "https://ghost.local/shell?popout=1" } as Location,
       open() {
         return null;
       },
@@ -101,7 +101,7 @@ export function registerPartInstancePopoutLifecycleSpecs(harness: SpecHarness): 
     const deps = createDeps();
 
     runWithWindowStub({
-      location: { href: "https://armada.local/shell?tenant=demo" } as Location,
+      location: { href: "https://ghost.local/shell?tenant=demo" } as Location,
       open(url) {
         openCalls.push(String(url ?? ""));
         return openCalls.length === 1 ? popoutA : null;
@@ -135,7 +135,7 @@ export function registerPartInstancePopoutLifecycleSpecs(harness: SpecHarness): 
     const deps = createDeps();
 
     runWithWindowStub({
-      location: { href: "https://armada.local/shell?tenant=demo" } as Location,
+      location: { href: "https://ghost.local/shell?tenant=demo" } as Location,
       open(url) {
         openCalls.push(String(url ?? ""));
         return popoutA;
@@ -170,7 +170,7 @@ export function registerPartInstancePopoutLifecycleSpecs(harness: SpecHarness): 
     const deps = createDeps();
 
     runWithWindowStub({
-      location: { href: "https://armada.local/shell?tenant=demo" } as Location,
+      location: { href: "https://ghost.local/shell?tenant=demo" } as Location,
       open(url) {
         openCalls.push(String(url ?? ""));
         return popoutA;
@@ -213,7 +213,7 @@ export function registerPartInstancePopoutLifecycleSpecs(harness: SpecHarness): 
     const deps = createDeps();
 
     runWithWindowStub({
-      location: { href: "https://armada.local/shell?tenant=demo" } as Location,
+      location: { href: "https://ghost.local/shell?tenant=demo" } as Location,
       open(url) {
         openCalls.push(String(url ?? ""));
         return popoutA;
@@ -246,7 +246,7 @@ export function registerPartInstancePopoutLifecycleSpecs(harness: SpecHarness): 
     let openCallCount = 0;
 
     runWithWindowStub({
-      location: { href: "https://armada.local/shell" } as Location,
+      location: { href: "https://ghost.local/shell" } as Location,
       open() {
         openCallCount += 1;
         return {} as Window;

@@ -1,8 +1,8 @@
 {
-  "name": "@armada/__PLUGIN_NAME__",
+  "name": "@ghost/__PLUGIN_NAME__",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@armada/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
   }
 }

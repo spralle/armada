@@ -6,10 +6,10 @@ import type {
   PluginKeybindingContribution,
   PluginMenuContribution,
   PredicateFactBag,
-} from "@armada/plugin-contracts";
+} from "@ghost/plugin-contracts";
 import {
   createDefaultContributionPredicateMatcher,
-} from "@armada/plugin-contracts";
+} from "@ghost/plugin-contracts";
 import type { IntentRuntime } from "./intent-runtime.js";
 
 export interface ActionSurfaceContext {
