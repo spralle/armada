@@ -29,6 +29,8 @@ export interface KeybindingOverrideManager {
   resetToDefaults(): void;
   listConflicts(keybinding: string): KeybindingConflictInfo[];
   getOverrides(): KeybindingOverrideEntryV1[];
+  getDefaultBindings(): ActionKeybinding[];
+  getPluginBindings(): ActionKeybinding[];
 }
 
 export interface KeybindingOverrideManagerOptions {
@@ -169,5 +171,11 @@ export function createKeybindingOverrideManager(
     resetToDefaults,
     listConflicts,
     getOverrides,
+    getDefaultBindings() {
+      return getDefaultBindings();
+    },
+    getPluginBindings() {
+      return getPluginBindings();
+    },
   };
 }

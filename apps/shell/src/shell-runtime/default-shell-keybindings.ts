@@ -1,6 +1,7 @@
 import type { PluginContract } from "@ghost/plugin-contracts";
 
 export const DEFAULT_SHELL_KEYBINDING_PLUGIN_ID = "com.ghost.shell.keybindings.default";
+export const USER_KEYBINDING_OVERRIDE_PLUGIN_ID = "com.ghost.shell.keybindings.user";
 
 export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.window.close",
@@ -61,7 +62,7 @@ export const DEFAULT_SHELL_KEYBINDINGS: readonly ShellDefaultKeybinding[] = [
   { action: "shell.stack.cycle.next", keybinding: "shift+alt+n" },
 ];
 
-const RESERVED_BROWSER_SHORTCUTS = new Set([
+export const RESERVED_BROWSER_SHORTCUTS = new Set([
   "ctrl+w",
   "ctrl+t",
   "ctrl+n",

@@ -283,6 +283,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     persistence: {} as ShellRuntime["persistence"],
     contextPersistence: {} as ShellRuntime["contextPersistence"],
     keybindingPersistence: {} as ShellRuntime["keybindingPersistence"],
+    keybindingOverrideManager: {} as ShellRuntime["keybindingOverrideManager"],
     registry: {} as ShellRuntime["registry"],
     bridge: {} as ShellRuntime["bridge"],
     asyncBridge: {} as ShellRuntime["asyncBridge"],

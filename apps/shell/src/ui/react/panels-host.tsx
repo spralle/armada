@@ -12,6 +12,7 @@ import type { IntentActionMatch } from "../../intent-runtime.js";
 import type { ShellRuntime } from "../../app/types.js";
 import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";
+import { KeybindingsSettingsPanel } from "./keybinding-settings-panel.js";
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
@@ -56,7 +57,7 @@ export function createReactPanelsHost(
     return createdRoot;
   };
 
-  return {
+  const host: PanelsHost = {
     render() {
       const pluginRoot = ensureRoot("plugin-controls");
       if (pluginRoot) {
@@ -80,7 +81,7 @@ export function createReactPanelsHost(
             groupContext={readGroupSelectionContext(runtime)}
             intentNotice={runtime.intentNotice}
             notice={runtime.notice}
-            selectionPriorities={readSelectionPriorities(runtime)}
+            selectionPriorities={Object.entries(runtime.contextState.selectionByEntityType).map(([et, s]) => `${et}:${s.priorityId ?? "none"}`).join(", ") || "none"}
             pendingFocusSelector={runtime.pendingFocusSelector}
             selectedPartTitle={runtime.selectedPartTitle}
             warningMessage={getBridgeWarningMessage(runtime)}
@@ -114,6 +115,17 @@ export function createReactPanelsHost(
           />,
         );
       }
+
+      const keybindingsRoot = ensureRoot("keybinding-settings");
+      if (keybindingsRoot) {
+        keybindingsRoot.render(
+          <KeybindingsSettingsPanel
+            manager={runtime.keybindingOverrideManager}
+            pluginBindings={runtime.actionSurface.keybindings}
+            onChanged={() => host.render()}
+          />,
+        );
+      }
     },
     unmount() {
       for (const entry of roots.values()) {
@@ -122,6 +134,8 @@ export function createReactPanelsHost(
       roots.clear();
     },
   };
+
+  return host;
 }
 
 function PluginControlsPanel(props: {
@@ -297,9 +311,7 @@ function DevContextInspectorPanel(props: {
     <div className="dev-inspector">
       <h2>Dev context inspector</h2>
       <p className="runtime-note"><strong>Mode:</strong> development only</p>
-      <p className="runtime-note">
-        <strong>Intent trace:</strong> {props.trace ? `${props.trace.intentType} (${props.trace.matched.length} matches)` : "none yet"}
-      </p>
+      <p className="runtime-note"><strong>Intent trace:</strong> {props.trace ? `${props.trace.intentType} (${props.trace.matched.length} matches)` : "none yet"}</p>
       <details>
         <summary>Current context snapshot</summary>
         <pre>{toPrettyJson(props.contextState)}</pre>
@@ -332,17 +344,9 @@ function DevContextInspectorPanel(props: {
           </details>
         )) : <p className="runtime-note">No intent evaluations recorded.</p>}
         {props.trace ? (
-          <p className="runtime-note">
-            <strong>Matched actions:</strong> {props.trace.matched.map((item) => `${item.pluginId}.${item.actionId}`).join(", ") || "none"}
-          </p>
+          <p className="runtime-note"><strong>Matched actions:</strong> {props.trace.matched.map((item) => `${item.pluginId}.${item.actionId}`).join(", ") || "none"}</p>
         ) : null}
       </details>
     </div>
   );
-}
-
-function readSelectionPriorities(runtime: ShellRuntime): string {
-  const entries = Object.entries(runtime.contextState.selectionByEntityType)
-    .map(([entityType, selection]) => `${entityType}:${selection.priorityId ?? "none"}`);
-  return entries.length > 0 ? entries.join(", ") : "none";
 }

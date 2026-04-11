@@ -32,6 +32,7 @@ import type {
   ShellIntent,
 } from "../intent-runtime.js";
 import type { ActionSurface } from "../action-surface.js";
+import type { KeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import type { ShellPartHostAdapter } from "./contracts.js";
 import type { ShellTransportPath } from "./migration-flags.js";
 import type {
@@ -91,6 +92,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   pendingFocusSelector: string | null;
   chooserReturnFocusSelector: string | null;
   actionSurface: ActionSurface;
+  keybindingOverrideManager: KeybindingOverrideManager;
   intentRuntime: IntentRuntime;
   commandNotice: string;
   partHost: ShellPartHostAdapter;

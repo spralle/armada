@@ -3,6 +3,7 @@ export type UtilityTabId =
   | "utility.sync"
   | "utility.group-context"
   | "utility.commands"
+  | "utility.keybindings"
   | "utility.dev-inspector";
 
 export interface UtilityTabDescriptor {
@@ -39,6 +40,13 @@ const UTILITY_TAB_DESCRIPTORS: UtilityTabDescriptor[] = [
     id: "utility.commands",
     title: "Commands",
     panelHostId: "command-surface",
+    slot: "main",
+    available: "always",
+  },
+  {
+    id: "utility.keybindings",
+    title: "Keybindings",
+    panelHostId: "keybinding-settings",
     slot: "main",
     available: "always",
   },

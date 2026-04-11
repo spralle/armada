@@ -11,9 +11,8 @@ import {
   createDefaultShellKeybindingContract,
   DEFAULT_SHELL_KEYBINDINGS,
   DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+  USER_KEYBINDING_OVERRIDE_PLUGIN_ID,
 } from "./shell-runtime/default-shell-keybindings.js";
-
-export const USER_KEYBINDING_OVERRIDE_PLUGIN_ID = "com.ghost.shell.keybindings.user";
 import {
   resolveChooserFocusRestoration,
 } from "./keyboard-a11y.js";
