@@ -13,7 +13,7 @@ import { createReactPanelsHost } from "../ui/react/panels-host.js";
 import { getVisibleComposedParts } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
-import { deriveCloseableTabIds } from "./runtime-render-transition.js";
+import { deriveCloseableTabIds, rerenderAfterPluginToggle } from "./runtime-render-transition.js";
 
 type ReactPanelsHost = ReturnType<typeof createReactPanelsHost>;
 
@@ -73,9 +73,11 @@ export function initializeReactPanels(
         console.error("[shell] failed to toggle plugin", pluginId, error);
       }
 
-      renderPanels(root, runtime);
-      bindings.renderParts();
-      bindings.renderCommandSurface();
+      rerenderAfterPluginToggle(
+        () => bindings.renderParts(),
+        () => renderPanels(root, runtime),
+        () => bindings.renderCommandSurface(),
+      );
     },
     onChooseIntentAction: async (index) => {
       runtime.chooserFocusIndex = index;
