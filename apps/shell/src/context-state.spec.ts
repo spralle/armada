@@ -28,6 +28,7 @@ import { registerKeybindingImportExportSpecs } from "./shell-runtime/keybinding-
 import { registerPluginRegistryBuiltinSpecs } from "./shell-runtime/plugin-registry-builtin.spec.js";
 import { registerActionPaletteCatalogSpecs } from "./shell-runtime/action-palette-catalog.spec.js";
 import { registerActionPaletteStateSpecs } from "./shell-runtime/action-palette-state.spec.js";
+import { registerActionServiceSpecs } from "./plugin-api/action-service.spec.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -60,6 +61,7 @@ registerKeybindingImportExportSpecs(harness);
 registerPluginRegistryBuiltinSpecs(harness);
 registerActionPaletteCatalogSpecs(harness);
 registerActionPaletteStateSpecs(harness);
+registerActionServiceSpecs(harness);
 
 const { passed, total } = await runAll();
 
