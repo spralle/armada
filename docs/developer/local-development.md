@@ -2,6 +2,9 @@
 
 This repository is set up for a lightweight monorepo inner loop while shell/backend/plugin runtime details are still stubs.
 
+> Historical note: references to `armada-*` in architecture docs are retained only as bead/trace IDs.
+> Runtime/package/plugin identifiers in active flows use Ghost naming (`@ghost/*`, `com.ghost.*`, `ghost.*`).
+
 ## Install
 
 ```bash
@@ -110,24 +113,24 @@ npm run dev:shell
 
 Default local plugin URL map used by backend:
 
-- `com.armada.plugin-starter` -> `http://127.0.0.1:4171/mf-manifest.json`
-- `com.armada.sample.contract-consumer` -> `http://127.0.0.1:4172/mf-manifest.json`
-- `com.armada.domain.unplanned-orders` -> `http://127.0.0.1:4173/mf-manifest.json`
-- `com.armada.domain.vessel-view` -> `http://127.0.0.1:4174/mf-manifest.json`
-- `com.armada.shared.ui-capabilities` -> `http://127.0.0.1:4175/mf-manifest.json`
+- `com.ghost.plugin-starter` -> `http://127.0.0.1:4171/mf-manifest.json`
+- `com.ghost.sample.contract-consumer` -> `http://127.0.0.1:4172/mf-manifest.json`
+- `com.ghost.domain.unplanned-orders` -> `http://127.0.0.1:4173/mf-manifest.json`
+- `com.ghost.domain.vessel-view` -> `http://127.0.0.1:4174/mf-manifest.json`
+- `com.ghost.shared.ui-capabilities` -> `http://127.0.0.1:4175/mf-manifest.json`
 
 Select override targets by repeating `--local-plugin <pluginId>` on backend startup.
 
 Single plugin example:
 
 ```bash
-npm run dev:backend -- --local-plugin com.armada.plugin-starter
+npm run dev:backend -- --local-plugin com.ghost.plugin-starter
 ```
 
 Multiple plugins example:
 
 ```bash
-npm run dev:backend -- --local-plugin com.armada.plugin-starter --local-plugin com.armada.domain.vessel-view
+npm run dev:backend -- --local-plugin com.ghost.plugin-starter --local-plugin com.ghost.domain.vessel-view
 ```
 
 When selected remotes are running, toggling those plugins in shell loads contracts from MF remotes (`./pluginContract`).
@@ -189,7 +192,7 @@ Guardrails covered by tests:
 
 - local/remote contract-shape parity uses the same schema validation path.
 - backend domain plugin entries must stay remote MF manifests (`4173`/`4174`) and must not regress to shell local source composition.
-- shell runtime integration tests cover plugin-composed part visibility, context-gated command visibility/enablement, keybinding execution, and lazy activation trigger lifecycle.
+- shell runtime integration tests cover plugin-composed part visibility, context-gated command visibility/enablement, keybinding execution, browser-safe shell default keymaps, and lazy activation trigger lifecycle.
 
 ## Shell adapter migration flags (contract composition)
 

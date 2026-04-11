@@ -1,7 +1,8 @@
 # __PLUGIN_TITLE__
 
-Generated plugin scaffold for Armada POC.
+Generated plugin scaffold for Ghost shell runtime.
 
-- Keep imports on `@armada/plugin-contracts` public exports.
+- Keep imports on `@ghost/plugin-contracts` public exports.
 - Start with `src/index.ts` and evolve contributions as needed.
 - For core shell flows, model invocations with `contributes.actions` and object `when` predicates (including menu/keybinding gating).
+- Default shell keyboard behavior is browser-safe and modifier-based (`Shift+Alt` / `Ctrl+Alt` families) without requiring `Meta/Super` bindings.
