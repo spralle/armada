@@ -17,6 +17,7 @@ import { registerIncomingTransferTransactionSpecs } from "./context-state.spec-i
 import { registerPartInstancePopoutLifecycleSpecs } from "./ui/part-instance-popout-lifecycle.spec.js";
 import { registerDndSessionBrokerSpecs } from "./context-state.spec-dnd-session-broker.js";
 import { registerDockPopoutActionRenderingSpecs } from "./context-state.spec-dock-popout-action-rendering.js";
+import { registerDockSplitterDragSpecs } from "./context-state.spec-dock-splitter-drag.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -38,6 +39,7 @@ registerIncomingTransferTransactionSpecs(harness);
 registerPartInstancePopoutLifecycleSpecs(harness);
 registerDndSessionBrokerSpecs(harness);
 registerDockPopoutActionRenderingSpecs(harness);
+registerDockSplitterDragSpecs(harness);
 
 const { passed, total } = await runAll();
 

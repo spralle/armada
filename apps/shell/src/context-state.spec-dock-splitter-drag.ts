@@ -198,20 +198,26 @@ export function registerDockSplitterDragSpecs(harness: SpecHarness): void {
     const fakeWindow = new FakeWindow();
     const splitter = new FakeDockSplitter(splitId, "horizontal", { width: 1000, height: 600 });
     const root = new FakeRoot(splitter, fakeWindow);
-    let renderPartsCalls = 0;
+    let previewSplitStyleCalls = 0;
+    let commitRenderCalls = 0;
 
     wireDockSplitterDrag(root as unknown as HTMLElement, runtime, {
-      renderParts() {
-        renderPartsCalls += 1;
+      previewSplitStyle() {
+        previewSplitStyleCalls += 1;
+      },
+      commitRender() {
+        commitRenderCalls += 1;
       },
     });
 
     splitter.dispatch("pointerdown", pointerEvent({ pointerId: 1, clientX: 500, clientY: 10 }));
     fakeWindow.dispatch("pointermove", pointerEvent({ pointerId: 1, clientX: 650, clientY: 10 }));
+    assertEqual(previewSplitStyleCalls, 1, "horizontal drag should preview split style on move");
+    assertEqual(commitRenderCalls, 0, "horizontal drag should avoid full render while moving");
     fakeWindow.dispatch("pointerup", pointerEvent({ pointerId: 1, clientX: 650, clientY: 10 }));
 
     assertEqual(readDockSplitRatio(readRootSplit(runtime)), 0.65, "horizontal drag should adjust ratio from x-axis delta");
-    assertEqual(renderPartsCalls, 1, "horizontal drag should rerender once for state update");
+    assertEqual(commitRenderCalls, 1, "horizontal drag should rerender once after drag commit");
     assertTruthy(root.classList.contains("is-dock-splitter-dragging") === false, "dragging class should clear on pointerup");
   });
 
@@ -223,7 +229,8 @@ export function registerDockSplitterDragSpecs(harness: SpecHarness): void {
     const root = new FakeRoot(splitter, fakeWindow);
 
     wireDockSplitterDrag(root as unknown as HTMLElement, runtime, {
-      renderParts() {},
+      previewSplitStyle() {},
+      commitRender() {},
     });
 
     splitter.dispatch("pointerdown", pointerEvent({ pointerId: 2, clientX: 100, clientY: 500 }));
@@ -241,7 +248,8 @@ export function registerDockSplitterDragSpecs(harness: SpecHarness): void {
     const root = new FakeRoot(splitter, fakeWindow);
 
     wireDockSplitterDrag(root as unknown as HTMLElement, runtime, {
-      renderParts() {},
+      previewSplitStyle() {},
+      commitRender() {},
     });
 
     splitter.dispatch("pointerdown", pointerEvent({ button: 2, pointerId: 3, clientX: 500, clientY: 0 }));
@@ -262,7 +270,8 @@ export function registerDockSplitterDragSpecs(harness: SpecHarness): void {
     const root = new FakeRoot(splitter, fakeWindow);
 
     wireDockSplitterDrag(root as unknown as HTMLElement, runtime, {
-      renderParts() {},
+      previewSplitStyle() {},
+      commitRender() {},
     });
 
     splitter.dispatch("pointerdown", pointerEvent({ pointerId: 11, clientX: 500, clientY: 0 }));
@@ -278,5 +287,31 @@ export function registerDockSplitterDragSpecs(harness: SpecHarness): void {
     splitter.dispatch("lostpointercapture", pointerEvent({ pointerId: 12, clientX: 500, clientY: 0 }));
     assertTruthy(root.classList.contains("is-dock-splitter-dragging") === false, "dragging class should clear on lostpointercapture");
     assertTruthy(root.hasAttribute("data-dock-splitter-drag-active") === false, "splitter active attr should clear on lostpointercapture");
+  });
+
+  test("dock splitter drag does not commit render when split ratio stays unchanged", () => {
+    const runtime = createRuntime();
+    const splitId = readRootSplit(runtime).id;
+    const fakeWindow = new FakeWindow();
+    const splitter = new FakeDockSplitter(splitId, "horizontal", { width: 1000, height: 600 });
+    const root = new FakeRoot(splitter, fakeWindow);
+    let previewSplitStyleCalls = 0;
+    let commitRenderCalls = 0;
+
+    wireDockSplitterDrag(root as unknown as HTMLElement, runtime, {
+      previewSplitStyle() {
+        previewSplitStyleCalls += 1;
+      },
+      commitRender() {
+        commitRenderCalls += 1;
+      },
+    });
+
+    splitter.dispatch("pointerdown", pointerEvent({ pointerId: 5, clientX: 500, clientY: 10 }));
+    fakeWindow.dispatch("pointermove", pointerEvent({ pointerId: 5, clientX: 500, clientY: 10 }));
+    fakeWindow.dispatch("pointerup", pointerEvent({ pointerId: 5, clientX: 500, clientY: 10 }));
+
+    assertEqual(previewSplitStyleCalls, 0, "unchanged ratio should skip split style preview");
+    assertEqual(commitRenderCalls, 0, "unchanged ratio should skip full render on cleanup");
   });
 }
