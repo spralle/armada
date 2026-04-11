@@ -159,6 +159,12 @@ export function createShellPluginRegistry(
         id: intentId,
       });
     },
+    async activateByEvent(pluginId, eventName) {
+      return ensureActivated(pluginId, {
+        type: "event",
+        id: eventName,
+      });
+    },
     async resolveComponentCapability(requesterPluginId, capabilityId) {
       const provider = capabilityRegistry.resolveComponent(capabilityId, {
         requesterPluginId,

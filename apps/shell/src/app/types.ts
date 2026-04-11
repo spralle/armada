@@ -10,6 +10,7 @@ import type {
   ShellLayoutPersistence,
 } from "../persistence.js";
 import type { ShellPluginRegistry } from "../plugin-registry.js";
+import type { ThemeRegistry } from "../theme-registry.js";
 import type {
   WindowBridge,
 } from "../window-bridge.js";
@@ -45,12 +46,14 @@ export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
   loadedPlugins: PluginContract[];
   registry: ShellPluginRegistry;
+  themeRegistry?: ThemeRegistry | undefined;
 }
 
 export interface ShellBootstrapOptions {
   tenantId: string;
   fetchManifest?: (manifestUrl: string) => Promise<unknown>;
   enableByDefault?: boolean;
+  defaultThemeId?: string | undefined;
 }
 
 export interface ShellRuntime extends DndDiagnosticRuntime {

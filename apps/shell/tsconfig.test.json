@@ -21,6 +21,8 @@
     "src/federation-runtime.ts",
     "src/local-plugin-sources.ts",
     "src/part-module-host.ts",
+    "src/theme-registry.ts",
+    "src/theme-persistence.ts",
     "src/context-state.spec.ts",
     "src/context-state.spec-dock-popout-action-rendering.ts",
     "src/app/shell-core.spec.ts",

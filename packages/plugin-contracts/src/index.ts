@@ -24,6 +24,12 @@ export type {
   PluginDerivedLaneContribution,
   PluginDragDropSessionReference,
   PluginPopoutCapabilityFlags,
+  ThemeBackgroundEntry,
+  ThemeFonts,
+  ThemeContribution,
+  BrandingLogo,
+  BrandingLoadingScreen,
+  BrandingContribution,
   PluginContributions,
   PluginContract,
   PluginCompatibilityMetadata,
@@ -54,16 +60,23 @@ export {
   pluginCompatibilityMetadataSchema,
   tenantPluginDescriptorSchema,
   tenantPluginManifestResponseSchema,
+  themeContributionSchema,
+  brandingContributionSchema,
+  activationEventsSchema,
 } from "./schemas.js";
 
 export type {
   ComposedPluginViewContribution,
   ComposedPluginPartContribution,
   ComposedPluginContributions,
+  ComposedThemeContribution,
   PluginContributionSource,
 } from "./composition.js";
 
-export { composeEnabledPluginContributions } from "./composition.js";
+export {
+  composeEnabledPluginContributions,
+  composeThemeContributions,
+} from "./composition.js";
 
 export type {
   PluginContractValidationIssue,
@@ -104,3 +117,27 @@ export type {
   InputBoxOptions,
   ActivationContext,
 } from "./ghost-api.js";
+
+export type {
+  ThemeMode,
+  TerminalPalette,
+  PartialThemePalette,
+  FullThemePalette,
+} from "./theme-derivation.js";
+
+export {
+  partialThemePaletteSchema,
+  terminalPaletteSchema,
+  deriveFullPalette,
+  GHOST_THEME_CSS_VARS,
+} from "./theme-derivation.js";
+
+export {
+  adjustLightness,
+  desaturate,
+  contrastSafe,
+  blendWithBackground,
+  contrastRatio,
+  relativeLuminance,
+  isValidHex,
+} from "./theme-color-utils.js";

@@ -139,10 +139,10 @@ function PluginControlsPanel(props: {
   return (
     <>
       <h2>Plugins ({props.snapshot.tenantId})</h2>
-      <p style={{ margin: "0 0 8px", fontSize: 12, color: "#c6d0e0" }}>Loaded: {loadedContracts || "none"}</p>
+      <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--ghost-muted-foreground)" }}>Loaded: {loadedContracts || "none"}</p>
       {props.notice ? <p className="plugin-notice">{props.notice}</p> : null}
       {props.snapshot.plugins.length === 0 ? (
-        <p style={{ margin: 0, color: "#c6d0e0" }}>No registered plugin descriptors.</p>
+        <p style={{ margin: 0, color: "var(--ghost-muted-foreground)" }}>No registered plugin descriptors.</p>
       ) : (
         props.snapshot.plugins.map((plugin) => (
           <label className="plugin-row" key={plugin.id}>
@@ -164,7 +164,7 @@ function PluginControlsPanel(props: {
       )}
       {props.snapshot.diagnostics.length > 0 ? (
         <details>
-          <summary style={{ cursor: "pointer", fontSize: 12, color: "#c6d0e0" }}>Diagnostics (dev/demo)</summary>
+          <summary style={{ cursor: "pointer", fontSize: 12, color: "var(--ghost-muted-foreground)" }}>Diagnostics (dev/demo)</summary>
           <ul className="plugin-diag-list">
             {props.snapshot.diagnostics.slice(0, 5).map((item) => (
               <li key={`${item.at}:${item.code}:${item.pluginId}`}>
@@ -267,14 +267,14 @@ function ContextControlsPanel(props: {
             apply();
           }
         }}
-        style={{ width: "100%", boxSizing: "border-box", margin: "6px 0", padding: 4, background: "#0f1319", border: "1px solid #334564", color: "#e9edf3" }}
+        style={{ width: "100%", boxSizing: "border-box", margin: "6px 0", padding: 4, background: "var(--ghost-input)", border: "1px solid var(--ghost-border)", color: "var(--ghost-foreground)" }}
         value={inputValue}
       />
       <button
         disabled={props.disabled}
         id="context-apply"
         onClick={apply}
-        style={{ background: "#1d2635", border: "1px solid #334564", borderRadius: 4, color: "#e9edf3", padding: "4px 8px", cursor: "pointer" }}
+        style={{ background: "var(--ghost-surface-elevated)", border: "1px solid var(--ghost-border)", borderRadius: 4, color: "var(--ghost-foreground)", padding: "4px 8px", cursor: "pointer" }}
         type="button"
       >
         Apply + sync

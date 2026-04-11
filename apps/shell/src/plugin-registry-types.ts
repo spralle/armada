@@ -24,7 +24,7 @@ export interface PluginRuntimeFailure {
   retryable: boolean;
 }
 
-export type PluginActivationTriggerType = "command" | "view" | "intent";
+export type PluginActivationTriggerType = "command" | "view" | "intent" | "event";
 
 export type PluginLifecycleState =
   | "disabled"
@@ -89,6 +89,7 @@ export interface ShellPluginRegistry {
   activateByCommand(pluginId: string, commandId: string): Promise<boolean>;
   activateByView(pluginId: string, viewId: string): Promise<boolean>;
   activateByIntent(pluginId: string, intentId: string): Promise<boolean>;
+  activateByEvent(pluginId: string, eventName: string): Promise<boolean>;
   resolveComponentCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
   resolveServiceCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
   getSnapshot(): PluginRegistrySnapshot;

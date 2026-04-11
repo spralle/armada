@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+import {
+  partialThemePaletteSchema,
+  terminalPaletteSchema,
+} from "./theme-derivation.js";
+
 const nonEmptyString = z.string().trim().min(1);
 
 export const pluginManifestIdentitySchema = z
@@ -154,6 +159,58 @@ export const pluginPopoutCapabilityFlagsSchema = z
   })
   .strict();
 
+export const themeContributionSchema = z
+  .object({
+    id: nonEmptyString,
+    name: nonEmptyString,
+    mode: z.enum(["dark", "light"]),
+    palette: partialThemePaletteSchema,
+    backgrounds: z
+      .array(
+        z
+          .object({
+            url: nonEmptyString,
+            mode: z.enum(["cover", "contain", "tile"]).optional(),
+          })
+          .strict(),
+      )
+      .optional(),
+    fonts: z
+      .object({
+        body: z.string().optional(),
+        mono: z.string().optional(),
+        heading: z.string().optional(),
+      })
+      .strict()
+      .optional(),
+    terminal: terminalPaletteSchema.optional(),
+    preview: z.string().optional(),
+  })
+  .strict();
+
+export const brandingContributionSchema = z
+  .object({
+    appName: z.string().optional(),
+    logo: z
+      .object({
+        light: z.string().optional(),
+        dark: z.string().optional(),
+      })
+      .strict()
+      .optional(),
+    favicon: z.string().optional(),
+    loadingScreen: z
+      .object({
+        logo: z.string().optional(),
+        backgroundColor: z.string().optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+export const activationEventsSchema = z.array(z.enum(["onStartup"]));
+
 export const pluginContributionsSchema = z
   .object({
     views: z.array(pluginViewContributionSchema).optional(),
@@ -166,6 +223,8 @@ export const pluginContributionsSchema = z
     derivedLanes: z.array(pluginDerivedLaneContributionSchema).optional(),
     dragDropSessionReferences: z.array(pluginDragDropSessionReferenceSchema).optional(),
     popoutCapabilities: pluginPopoutCapabilityFlagsSchema.optional(),
+    themes: z.array(themeContributionSchema).optional(),
+    branding: brandingContributionSchema.optional(),
   })
   .strict();
 
@@ -174,6 +233,7 @@ export const pluginContractSchema = z
     manifest: pluginManifestIdentitySchema,
     contributes: pluginContributionsSchema.optional(),
     dependsOn: pluginDependenciesSchema.optional(),
+    activationEvents: activationEventsSchema.optional(),
   })
   .strict();
 
