@@ -26,8 +26,8 @@ import { registerKeybindingPersistenceSpecs } from "./persistence/keybinding-per
 import { registerKeybindingOverrideManagerSpecs } from "./shell-runtime/keybinding-override-manager.spec.js";
 import { registerKeybindingImportExportSpecs } from "./shell-runtime/keybinding-import-export.spec.js";
 import { registerPluginRegistryBuiltinSpecs } from "./shell-runtime/plugin-registry-builtin.spec.js";
-import { registerCommandPaletteCatalogSpecs } from "./shell-runtime/command-palette-catalog.spec.js";
-import { registerCommandPaletteStateSpecs } from "./shell-runtime/command-palette-state.spec.js";
+import { registerActionPaletteCatalogSpecs } from "./shell-runtime/action-palette-catalog.spec.js";
+import { registerActionPaletteStateSpecs } from "./shell-runtime/action-palette-state.spec.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -58,8 +58,8 @@ registerKeybindingPersistenceSpecs(harness);
 registerKeybindingOverrideManagerSpecs(harness);
 registerKeybindingImportExportSpecs(harness);
 registerPluginRegistryBuiltinSpecs(harness);
-registerCommandPaletteCatalogSpecs(harness);
-registerCommandPaletteStateSpecs(harness);
+registerActionPaletteCatalogSpecs(harness);
+registerActionPaletteStateSpecs(harness);
 
 const { passed, total } = await runAll();
 

@@ -9,12 +9,12 @@ import {
 } from "../../context/runtime-state.js";
 import { getBridgeWarningMessage } from "../../sync/bridge-degraded.js";
 import type { IntentActionMatch } from "../../intent-runtime.js";
-import type { CommandPaletteEntry } from "../../shell-runtime/command-palette-state.js";
+import type { ActionPaletteEntry } from "../../shell-runtime/action-palette-state.js";
 import type { ShellRuntime } from "../../app/types.js";
 import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";
 import { KeybindingsSettingsPanel } from "./keybinding-settings-panel.js";
-import { CommandPaletteOverlay } from "./command-palette-overlay.js";
+import { ActionPaletteOverlay } from "./action-palette-overlay.js";
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
@@ -22,7 +22,7 @@ type PanelsHostBindings = {
   onChooseIntentAction: (index: number) => void;
   onDismissChooser: () => void;
   onPendingFocusApplied: () => void;
-  onExecutePaletteCommand?: (entry: CommandPaletteEntry) => void;
+  onExecutePaletteCommand?: (entry: ActionPaletteEntry) => void;
 };
 
 type PanelsHost = {
@@ -116,11 +116,11 @@ export function createReactPanelsHost(
           />,
         );
       }
-      const paletteRoot = ensureRoot("command-palette-host");
+      const paletteRoot = ensureRoot("action-palette-host");
       if (paletteRoot) {
-        const ctrl = runtime.commandPaletteController;
+        const ctrl = runtime.actionPaletteController;
         paletteRoot.render(
-          <CommandPaletteOverlay
+          <ActionPaletteOverlay
             state={ctrl.getState()}
             onFilterChange={(f) => { ctrl.dispatch({ type: "updateFilter", filter: f }); host.render(); }}
             onSelectNext={() => { ctrl.dispatch({ type: "selectNext" }); host.render(); }}

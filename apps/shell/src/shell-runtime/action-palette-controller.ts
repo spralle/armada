@@ -1,24 +1,24 @@
 import type { ActionSurfaceContext } from "../action-surface.js";
 import {
-  buildCommandPaletteCatalog,
-  type CommandPaletteCatalogOptions,
-} from "./command-palette-catalog.js";
+  buildActionPaletteCatalog,
+  type ActionPaletteCatalogOptions,
+} from "./action-palette-catalog.js";
 import {
   createInitialPaletteState,
   reducePaletteState,
-  type CommandPaletteAction,
-  type CommandPaletteState,
-} from "./command-palette-state.js";
+  type ActionPaletteAction,
+  type ActionPaletteState,
+} from "./action-palette-state.js";
 
-export interface CommandPaletteController {
+export interface ActionPaletteController {
   isOpen(): boolean;
-  toggle(catalog: CommandPaletteCatalogOptions): void;
+  toggle(catalog: ActionPaletteCatalogOptions): void;
   close(): void;
-  getState(): CommandPaletteState;
-  dispatch(action: CommandPaletteAction): void;
+  getState(): ActionPaletteState;
+  dispatch(action: ActionPaletteAction): void;
 }
 
-export function createCommandPaletteController(): CommandPaletteController {
+export function createActionPaletteController(): ActionPaletteController {
   let state = createInitialPaletteState();
 
   return {
@@ -30,7 +30,7 @@ export function createCommandPaletteController(): CommandPaletteController {
       if (state.phase === "open") {
         state = reducePaletteState(state, { type: "close" });
       } else {
-        const entries = buildCommandPaletteCatalog(catalog);
+        const entries = buildActionPaletteCatalog(catalog);
         state = reducePaletteState(state, { type: "open", entries });
       }
     },

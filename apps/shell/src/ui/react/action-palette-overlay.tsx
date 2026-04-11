@@ -1,17 +1,17 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type {
-  CommandPaletteEntry,
-  CommandPaletteState,
-} from "../../shell-runtime/command-palette-state.js";
-import { getSelectedEntry } from "../../shell-runtime/command-palette-state.js";
+  ActionPaletteEntry,
+  ActionPaletteState,
+} from "../../shell-runtime/action-palette-state.js";
+import { getSelectedEntry } from "../../shell-runtime/action-palette-state.js";
 
-export interface CommandPaletteOverlayProps {
-  state: CommandPaletteState;
+export interface ActionPaletteOverlayProps {
+  state: ActionPaletteState;
   onFilterChange: (filter: string) => void;
   onSelectNext: () => void;
   onSelectPrevious: () => void;
-  onExecute: (entry: CommandPaletteEntry) => void;
+  onExecute: (entry: ActionPaletteEntry) => void;
   onClose: () => void;
 }
 
@@ -70,7 +70,7 @@ const srOnlyStyle: React.CSSProperties = {
   border: 0,
 };
 
-export function CommandPaletteOverlay(props: CommandPaletteOverlayProps) {
+export function ActionPaletteOverlay(props: ActionPaletteOverlayProps) {
   const { state, onFilterChange, onSelectNext, onSelectPrevious, onExecute, onClose } = props;
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -118,11 +118,11 @@ export function CommandPaletteOverlay(props: CommandPaletteOverlayProps) {
     <div
       style={backdropStyle}
       onClick={onClose}
-      data-testid="command-palette-backdrop"
+      data-testid="action-palette-backdrop"
     >
       <div
         role="dialog"
-        aria-label="Command palette"
+        aria-label="Action palette"
         style={dialogStyle}
         onClick={(e) => e.stopPropagation()}
       >
@@ -130,20 +130,20 @@ export function CommandPaletteOverlay(props: CommandPaletteOverlayProps) {
           ref={inputRef}
           role="combobox"
           aria-expanded={true}
-          aria-controls="command-palette-results"
-          aria-label="Search commands"
+          aria-controls="action-palette-results"
+          aria-label="Search actions"
           value={state.filter}
           onChange={(e) => onFilterChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a command..."
+          placeholder="Type an action..."
           style={inputStyle}
         />
         <div aria-live="polite" style={srOnlyStyle}>
           {state.filteredEntries.length} results
         </div>
-        <ul id="command-palette-results" role="listbox" style={listStyle}>
+        <ul id="action-palette-results" role="listbox" style={listStyle}>
           {state.filteredEntries.map((scored, index) => (
-            <CommandPaletteRow
+            <ActionPaletteRow
               key={scored.entry.id}
               entry={scored.entry}
               isSelected={index === state.selectedIndex}
@@ -157,8 +157,8 @@ export function CommandPaletteOverlay(props: CommandPaletteOverlayProps) {
   );
 }
 
-function CommandPaletteRow(props: {
-  entry: CommandPaletteEntry;
+function ActionPaletteRow(props: {
+  entry: ActionPaletteEntry;
   isSelected: boolean;
   onExecute: () => void;
 }) {

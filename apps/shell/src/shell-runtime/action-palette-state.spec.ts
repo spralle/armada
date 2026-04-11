@@ -1,18 +1,18 @@
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import type { CommandPaletteEntry } from "./command-palette-state.js";
+import type { ActionPaletteEntry } from "./action-palette-state.js";
 import {
   createInitialPaletteState,
   reducePaletteState,
   getSelectedEntry,
   scorePaletteEntries,
   computeFuzzyScore,
-} from "./command-palette-state.js";
+} from "./action-palette-state.js";
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
-function makeEntry(overrides: Partial<CommandPaletteEntry> & { id: string; title: string }): CommandPaletteEntry {
+function makeEntry(overrides: Partial<ActionPaletteEntry> & { id: string; title: string }): ActionPaletteEntry {
   return {
     category: "action",
     keybindingHint: null,
@@ -23,7 +23,7 @@ function makeEntry(overrides: Partial<CommandPaletteEntry> & { id: string; title
   };
 }
 
-function sampleEntries(): readonly CommandPaletteEntry[] {
+function sampleEntries(): readonly ActionPaletteEntry[] {
   return [
     makeEntry({ id: "shell.focus.left", title: "Focus Left Panel" }),
     makeEntry({ id: "shell.focus.right", title: "Focus Right Panel" }),
@@ -42,7 +42,7 @@ function sampleEntries(): readonly CommandPaletteEntry[] {
 // Spec registration
 // ---------------------------------------------------------------------------
 
-export function registerCommandPaletteStateSpecs(harness: SpecHarness): void {
+export function registerActionPaletteStateSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
 
   // 1. createInitialPaletteState returns closed state
@@ -237,7 +237,7 @@ export function registerCommandPaletteStateSpecs(harness: SpecHarness): void {
 
   // 15. Enabled entries sort before disabled when scores are equal
   test("enabled entries sort before disabled when scores are equal", () => {
-    const entries: readonly CommandPaletteEntry[] = [
+    const entries: readonly ActionPaletteEntry[] = [
       makeEntry({ id: "b.action", title: "Beta Action", enabled: false, disabledReason: "nope" }),
       makeEntry({ id: "a.action", title: "Alpha Action", enabled: true }),
     ];
@@ -248,7 +248,7 @@ export function registerCommandPaletteStateSpecs(harness: SpecHarness): void {
 
   // 16. Empty filter returns all entries sorted enabled-first then alphabetical
   test("empty filter returns all entries sorted enabled-first then alphabetical", () => {
-    const entries: readonly CommandPaletteEntry[] = [
+    const entries: readonly ActionPaletteEntry[] = [
       makeEntry({ id: "z.cmd", title: "Zebra Command", enabled: true }),
       makeEntry({ id: "a.cmd", title: "Alpha Command", enabled: false, disabledReason: "nope" }),
       makeEntry({ id: "m.cmd", title: "Middle Command", enabled: true }),

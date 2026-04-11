@@ -36,7 +36,7 @@ function dispatchShellKeyboardAction(
   actionId: ShellKeyboardActionId,
 ): ShellKeyboardActionResult {
   if (actionId === "shell.palette.toggle") {
-    runtime.commandPaletteController.toggle({
+    runtime.actionPaletteController.toggle({
       actionSurface: runtime.actionSurface,
       context: bindings.toActionContext(),
     });

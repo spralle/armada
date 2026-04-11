@@ -9,7 +9,7 @@ import type {
   ActionSurfaceContext,
 } from "../action-surface.js";
 
-export interface CommandPaletteCatalogEntry {
+export interface ActionPaletteCatalogEntry {
   id: string;
   title: string;
   category: "action";
@@ -19,7 +19,7 @@ export interface CommandPaletteCatalogEntry {
   pluginId: string;
 }
 
-export interface CommandPaletteCatalogOptions {
+export interface ActionPaletteCatalogOptions {
   actionSurface: ActionSurface;
   context: ActionSurfaceContext;
   matcher?: ContributionPredicateMatcher;
@@ -27,14 +27,14 @@ export interface CommandPaletteCatalogOptions {
 
 const defaultPredicateMatcher = createDefaultContributionPredicateMatcher();
 
-export function buildCommandPaletteCatalog(
-  options: CommandPaletteCatalogOptions,
-): CommandPaletteCatalogEntry[] {
+export function buildActionPaletteCatalog(
+  options: ActionPaletteCatalogOptions,
+): ActionPaletteCatalogEntry[] {
   const { actionSurface, context } = options;
   const matcher = options.matcher ?? defaultPredicateMatcher;
   const keybindingsByAction = indexKeybindingsByAction(actionSurface.keybindings);
 
-  const entries: CommandPaletteCatalogEntry[] = [];
+  const entries: ActionPaletteCatalogEntry[] = [];
 
   for (const action of actionSurface.actions) {
     const enabled = evaluatePredicate(action.predicate, context, matcher);

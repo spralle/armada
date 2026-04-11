@@ -1,7 +1,7 @@
-// Command palette state machine — pure state transitions and fuzzy scoring.
+// Action palette state machine — pure state transitions and fuzzy scoring.
 // No DOM, no React, no side effects. Deterministic: same input -> same output.
 
-export interface CommandPaletteEntry {
+export interface ActionPaletteEntry {
   id: string;
   title: string;
   category: "action" | "intent" | "command";
@@ -12,20 +12,20 @@ export interface CommandPaletteEntry {
 }
 
 export interface ScoredPaletteEntry {
-  entry: CommandPaletteEntry;
+  entry: ActionPaletteEntry;
   score: number;
 }
 
-export interface CommandPaletteState {
+export interface ActionPaletteState {
   phase: "closed" | "open";
   filter: string;
   selectedIndex: number;
-  entries: readonly CommandPaletteEntry[];
+  entries: readonly ActionPaletteEntry[];
   filteredEntries: readonly ScoredPaletteEntry[];
 }
 
-export type CommandPaletteAction =
-  | { type: "open"; entries: readonly CommandPaletteEntry[] }
+export type ActionPaletteAction =
+  | { type: "open"; entries: readonly ActionPaletteEntry[] }
   | { type: "close" }
   | { type: "updateFilter"; filter: string }
   | { type: "selectNext" }
@@ -36,7 +36,7 @@ export type CommandPaletteAction =
 // Initial state
 // ---------------------------------------------------------------------------
 
-export function createInitialPaletteState(): CommandPaletteState {
+export function createInitialPaletteState(): ActionPaletteState {
   return {
     phase: "closed",
     filter: "",
@@ -51,9 +51,9 @@ export function createInitialPaletteState(): CommandPaletteState {
 // ---------------------------------------------------------------------------
 
 export function reducePaletteState(
-  state: CommandPaletteState,
-  action: CommandPaletteAction,
-): CommandPaletteState {
+  state: ActionPaletteState,
+  action: ActionPaletteAction,
+): ActionPaletteState {
   switch (action.type) {
     case "open":
       return {
@@ -111,8 +111,8 @@ export function reducePaletteState(
 // ---------------------------------------------------------------------------
 
 export function getSelectedEntry(
-  state: CommandPaletteState,
-): CommandPaletteEntry | null {
+  state: ActionPaletteState,
+): ActionPaletteEntry | null {
   return state.filteredEntries[state.selectedIndex]?.entry ?? null;
 }
 
@@ -121,7 +121,7 @@ export function getSelectedEntry(
 // ---------------------------------------------------------------------------
 
 export function scorePaletteEntries(
-  entries: readonly CommandPaletteEntry[],
+  entries: readonly ActionPaletteEntry[],
   filter: string,
 ): ScoredPaletteEntry[] {
   if (!filter.trim()) {
@@ -165,7 +165,7 @@ export function scorePaletteEntries(
  * Higher tiers are checked first and the best score is returned.
  */
 export function computeFuzzyScore(
-  entry: CommandPaletteEntry,
+  entry: ActionPaletteEntry,
   needle: string,
 ): number {
   const titleLower = entry.title.toLowerCase();

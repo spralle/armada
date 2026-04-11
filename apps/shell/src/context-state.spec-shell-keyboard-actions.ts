@@ -14,7 +14,7 @@ import {
   createDefaultShellKeybindingContract,
   isBrowserSafeDefaultKeybinding,
 } from "./shell-runtime/default-shell-keybindings.js";
-import { createCommandPaletteController } from "./shell-runtime/command-palette-controller.js";
+import { createActionPaletteController } from "./shell-runtime/action-palette-controller.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 
 type KeydownListener = (event: KeyboardEvent) => Promise<void>;
@@ -259,7 +259,7 @@ function createKeyboardRuntimeFixture(): ShellRuntime {
     syncDegradedReason: null,
     syncHealthState: "healthy",
     windowId: "window-a",
-    commandPaletteController: createCommandPaletteController(),
+    actionPaletteController: createActionPaletteController(),
   } as unknown as ShellRuntime;
 }
 
