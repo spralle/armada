@@ -50,7 +50,7 @@ const ENABLED_FLAG_VALUES = new Set([
 
 declare global {
   interface Window {
-    __ARMADA_SHELL_MIGRATION_FLAGS__?: ShellMigrationFlagOverride;
+    __GHOST_SHELL_MIGRATION_FLAGS__?: ShellMigrationFlagOverride;
   }
 }
 
@@ -64,7 +64,7 @@ function parseBooleanFlag(raw: string | null): boolean | undefined {
 
 export function readShellMigrationFlags(
   searchParams: URLSearchParams = new URLSearchParams(window.location.search),
-  override: ShellMigrationFlagOverride | null = window.__ARMADA_SHELL_MIGRATION_FLAGS__ ?? null,
+  override: ShellMigrationFlagOverride | null = window.__GHOST_SHELL_MIGRATION_FLAGS__ ?? null,
 ): ShellMigrationFlags {
   const coreFromQuery = parseBooleanFlag(searchParams.get("shellCoreContract"));
   const adapterFromQuery = parseBooleanFlag(searchParams.get("shellAdapterComposition"));

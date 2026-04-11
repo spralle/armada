@@ -14,7 +14,7 @@ This document is the closeout runbook for the cross-window DnD epic handoff.
 
 Cross-window drag session propagation depends on shell transport selection.
 
-| Purpose | Query flag | Override field (`window.__ARMADA_SHELL_MIGRATION_FLAGS__`) | Expected transport decision |
+| Purpose | Query flag | Override field (`window.__GHOST_SHELL_MIGRATION_FLAGS__`) | Expected transport decision |
 | --- | --- | --- | --- |
 | Enable async transport for cross-window propagation | `shellAsyncScompAdapter=1` | `enableAsyncScompAdapter: true` | `path=async-scomp-adapter`, `reason=async-flag-enabled` |
 | Emergency rollback / kill switch | `shellLegacyBridgeKillSwitch=1` | `forceLegacyBridge: true` | `path=legacy-bridge`, `reason=kill-switch-force-legacy` |

@@ -13,7 +13,7 @@ This runbook defines staged rollout and cross-team handoff for async SCOMP windo
 
 ## Migration flags, kill switch, and diagnostics
 
-The shell reads query flags and optional `window.__ARMADA_SHELL_MIGRATION_FLAGS__` overrides.
+The shell reads query flags and optional `window.__GHOST_SHELL_MIGRATION_FLAGS__` overrides.
 
 ### Operator controls
 
@@ -31,7 +31,7 @@ Notes:
 ### Runtime override examples
 
 ```ts
-window.__ARMADA_SHELL_MIGRATION_FLAGS__ = {
+window.__GHOST_SHELL_MIGRATION_FLAGS__ = {
   useContractCoreApi: true,
   useAdapterComposition: true,
   enableAsyncScompAdapter: true,
@@ -42,7 +42,7 @@ window.__ARMADA_SHELL_MIGRATION_FLAGS__ = {
 Emergency rollback override:
 
 ```ts
-window.__ARMADA_SHELL_MIGRATION_FLAGS__ = {
+window.__GHOST_SHELL_MIGRATION_FLAGS__ = {
   forceLegacyBridge: true,
 };
 ```
