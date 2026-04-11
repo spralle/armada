@@ -96,13 +96,13 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
 
     const target = ensureDomElement();
     const beforeFocus = runtime.contextState.activeTabId;
-    await root.dispatchKey({ key: "l", altKey: true, shiftKey: true, target });
+    await root.dispatchKey({ key: "ArrowRight", altKey: true, shiftKey: true, target });
     assertEqual(beforeFocus, "tab-a", "fixture should start focused on left tab");
     assertEqual(runtime.contextState.activeTabId, "tab-b", "focus-right shortcut should activate right stack tab");
 
     runtime.contextState = setActiveTab(runtime.contextState, "tab-a");
     const beforeRatio = readRootSplitRatio(runtime.contextState);
-    await root.dispatchKey({ key: "p", ctrlKey: true, altKey: true, shiftKey: true, target });
+    await root.dispatchKey({ key: "ArrowRight", ctrlKey: true, shiftKey: true, target });
     const afterRatio = readRootSplitRatio(runtime.contextState);
     assertTruthy(beforeRatio !== null && afterRatio !== null, "fixture should contain split root for resize");
     assertEqual(afterRatio, 0.45, "resize-right shortcut should shrink active first branch ratio");
@@ -117,7 +117,7 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
     const moveRuntime = createKeyboardRuntimeFixture();
     const moveBindings = createKeyboardBindings(moveRuntime);
     const disposeMove = bindKeyboardShortcuts(moveRoot as unknown as HTMLElement, moveRuntime, moveBindings);
-    await moveRoot.dispatchKey({ key: "l", ctrlKey: true, altKey: true, target });
+    await moveRoot.dispatchKey({ key: "ArrowRight", ctrlKey: true, altKey: true, target });
     assertEqual(moveRuntime.contextState.activeTabId, "tab-a", "move-right should keep moved tab active");
     assertEqual(isTabInRightStack(moveRuntime.contextState, "tab-a"), true, "move-right should place active tab in right stack");
     disposeMove();
@@ -126,7 +126,7 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
     const swapRuntime = createKeyboardRuntimeFixture();
     const swapBindings = createKeyboardBindings(swapRuntime);
     const disposeSwap = bindKeyboardShortcuts(swapRoot as unknown as HTMLElement, swapRuntime, swapBindings);
-    await swapRoot.dispatchKey({ key: "l", ctrlKey: true, altKey: true, shiftKey: true, target });
+    await swapRoot.dispatchKey({ key: "ArrowRight", ctrlKey: true, altKey: true, shiftKey: true, target });
     assertEqual(swapRuntime.contextState.activeTabId, "tab-a", "swap-right should keep source tab active");
     disposeSwap();
 
