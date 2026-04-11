@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@armada/plugin-contracts": "file:../../packages/plugin-contracts",
+    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
     "@module-federation/enhanced": "^2.3.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

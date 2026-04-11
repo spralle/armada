@@ -1,7 +1,7 @@
 import {
   composeEnabledPluginContributions,
   type PluginContributionSource,
-} from "@armada/plugin-contracts";
+} from "@ghost/plugin-contracts";
 import { createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 
@@ -11,11 +11,11 @@ export function registerIntentRuntimePluginCompositionSpecs(harness: SpecHarness
   test("registry composition includes two plugin-contributed parts only from enabled contracts", () => {
     const composed = composeEnabledPluginContributions([
       {
-        id: "com.armada.domain.unplanned-orders",
+        id: "ghost.domain.unplanned-orders",
         enabled: true,
         contract: createContract({
           manifest: {
-            id: "com.armada.domain.unplanned-orders",
+            id: "ghost.domain.unplanned-orders",
             name: "Unplanned Orders",
             version: "0.1.0",
           },
@@ -34,11 +34,11 @@ export function registerIntentRuntimePluginCompositionSpecs(harness: SpecHarness
         }),
       },
       {
-        id: "com.armada.domain.vessel-view",
+        id: "ghost.domain.vessel-view",
         enabled: true,
         contract: createContract({
           manifest: {
-            id: "com.armada.domain.vessel-view",
+            id: "ghost.domain.vessel-view",
             name: "Vessel View",
             version: "0.1.0",
           },
@@ -57,11 +57,11 @@ export function registerIntentRuntimePluginCompositionSpecs(harness: SpecHarness
         }),
       },
       {
-        id: "com.armada.domain.disabled",
+        id: "ghost.domain.disabled",
         enabled: false,
         contract: createContract({
           manifest: {
-            id: "com.armada.domain.disabled",
+            id: "ghost.domain.disabled",
             name: "Disabled Domain",
             version: "0.1.0",
           },
@@ -84,7 +84,7 @@ export function registerIntentRuntimePluginCompositionSpecs(harness: SpecHarness
     assertEqual(composed.parts.length, 2, "only enabled plugin-contributed parts should be composed");
     assertEqual(
       composed.parts.map((part) => `${part.pluginId}:${part.id}`).join(","),
-      "com.armada.domain.unplanned-orders:domain.unplanned-orders.part,com.armada.domain.vessel-view:domain.vessel-view.part",
+      "ghost.domain.unplanned-orders:domain.unplanned-orders.part,ghost.domain.vessel-view:domain.vessel-view.part",
       "composed parts should preserve enabled plugin contribution ordering",
     );
   });

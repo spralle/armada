@@ -68,12 +68,12 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
   test("demo local plugins resolve single-match autorun for order->vessel intent", () => {
     const catalog = createCatalog([
       {
-        id: "com.armada.domain.unplanned-orders",
+        id: "ghost.domain.unplanned-orders",
         enabled: true,
         loadMode: "local-source",
         contract: createContract({
           manifest: {
-            id: "com.armada.domain.unplanned-orders",
+            id: "ghost.domain.unplanned-orders",
             name: "Unplanned Orders",
             version: "0.1.0",
           },
@@ -112,12 +112,12 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
   test("demo local plugins resolve chooser for order->vessel intent on RORO", () => {
     const catalog = createCatalog([
       {
-        id: "com.armada.domain.unplanned-orders",
+        id: "ghost.domain.unplanned-orders",
         enabled: true,
         loadMode: "local-source",
         contract: createContract({
           manifest: {
-            id: "com.armada.domain.unplanned-orders",
+            id: "ghost.domain.unplanned-orders",
             name: "Unplanned Orders",
             version: "0.1.0",
           },
@@ -138,12 +138,12 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
         }),
       },
       {
-        id: "com.armada.domain.vessel-view",
+        id: "ghost.domain.vessel-view",
         enabled: true,
         loadMode: "local-source",
         contract: createContract({
           manifest: {
-            id: "com.armada.domain.vessel-view",
+            id: "ghost.domain.vessel-view",
             name: "Vessel View (RORO/ROPAX)",
             version: "0.1.0",
           },
