@@ -1,6 +1,6 @@
-const REQUESTER_PLUGIN_ID = "com.armada.domain.vessel-view";
-const JSONFORM_COMPONENT_CAPABILITY = "com.armada.component.jsonform.control";
-const ENTITY_LIST_COMPONENT_CAPABILITY = "com.armada.component.entity-list.seed";
+const REQUESTER_PLUGIN_ID = "ghost.domain.vessel-view";
+const JSONFORM_COMPONENT_CAPABILITY = "ghost.component.jsonform.control";
+const ENTITY_LIST_COMPONENT_CAPABILITY = "ghost.component.entity-list.seed";
 
 type MountContext = {
   runtime: {

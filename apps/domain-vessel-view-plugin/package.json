@@ -1,12 +1,12 @@
 {
-  "name": "@armada/domain-vessel-view-plugin",
+  "name": "@ghost/domain-vessel-view-plugin",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite"
   },
   "dependencies": {
-    "@armada/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
   },
   "devDependencies": {
     "@module-federation/vite": "^1.8.1",

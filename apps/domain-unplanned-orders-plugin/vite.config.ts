@@ -7,7 +7,7 @@ const DOMAIN_UNPLANNED_ORDERS_DEV_ORIGIN = `http://127.0.0.1:${DOMAIN_UNPLANNED_
 export default defineConfig({
   plugins: [
     federation({
-      name: "com.armada.domain.unplanned-orders",
+      name: "ghost.domain.unplanned-orders",
       filename: "remoteEntry.js",
       publicPath: `${DOMAIN_UNPLANNED_ORDERS_DEV_ORIGIN}/`,
       manifest: {
@@ -20,7 +20,7 @@ export default defineConfig({
         "./pluginServices": "./src/plugin-services-expose.ts",
       },
       shared: {
-        "@armada/plugin-contracts": {
+        "@ghost/plugin-contracts": {
           singleton: true,
           requiredVersion: "^0.0.0",
         },

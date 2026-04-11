@@ -1,4 +1,4 @@
-import type { PluginContract } from "@armada/plugin-contracts";
+import type { PluginContract } from "@ghost/plugin-contracts";
 import { createDefaultIntentWhenMatcher } from "./intents/matcher/default-when-matcher.js";
 import type {
   IntentFactBag,
