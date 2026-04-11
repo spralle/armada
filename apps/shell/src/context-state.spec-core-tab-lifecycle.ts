@@ -16,11 +16,11 @@ import type { ShellRuntime } from "./app/types.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 import { collectRenderTabMetadata } from "./context/runtime-state.js";
 import { openPartInstanceWithArgs } from "./part-instance-flow.js";
-import { renderTabStrip } from "./ui/parts-rendering.js";
+import { renderPartCard, renderTabStrip } from "./ui/parts-rendering.js";
 import { isUtilityTabId } from "./utility-tabs.js";
 
 export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness): void {
-  const { test, assertEqual } = harness;
+  const { test, assertEqual, assertTruthy } = harness;
 
   test("moveTabBeforeTab reorders tab order deterministically", () => {
     let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
@@ -143,6 +143,23 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
   test("tab strip renders close affordance only for closeable tabs", () => {
     let state = createInitialShellContextState({ initialTabId: "tab-fixed", initialGroupId: "group-main" });
     state = registerTab(state, { tabId: "tab-closeable", groupId: "group-main", closePolicy: "closeable" });
+    state = {
+      ...state,
+      closedTabHistoryBySlot: {
+        ...state.closedTabHistoryBySlot,
+        main: [
+          {
+            tabId: "tab-reopenable",
+            partDefinitionId: "tab-reopenable",
+            groupId: "group-main",
+            label: "Reopenable",
+            closePolicy: "closeable",
+            slot: "main",
+            orderIndex: 1,
+          },
+        ],
+      },
+    };
 
     const html = renderTabStrip(
       "main",
@@ -194,9 +211,103 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
       "close control should expose keyboard shortcut semantics for assistive tech",
     );
     assertEqual(
+      html.includes('title="Close tab (Ctrl+W / ⌘W)"'),
+      true,
+      "close control should show clearer cross-platform shortcut hint",
+    );
+    assertEqual(
+      html.includes('title="Fixed tab — drag to rearrange"'),
+      true,
+      "tab title should include drag rearrange hint",
+    );
+    assertEqual(
       html.includes('aria-keyshortcuts="Control+Shift+T Meta+Shift+T"'),
       true,
       "reopen control should expose keyboard shortcut semantics for assistive tech",
+    );
+    assertEqual(
+      html.includes('title="Reopen closed tab (Ctrl+Shift+T / ⌘⇧T)"'),
+      true,
+      "reopen control should show clearer cross-platform shortcut hint",
+    );
+    assertEqual(
+      html.includes('aria-label="Reopen most recently closed tab in this panel"'),
+      true,
+      "reopen control should expose clearer enabled action copy",
+    );
+  });
+
+  test("tab strip render keeps reopen action wiring while clarifying disabled copy", () => {
+    const state = createInitialShellContextState({ initialTabId: "tab-fixed", initialGroupId: "group-main" });
+
+    const html = renderTabStrip(
+      "main",
+      [
+        {
+          instanceId: "tab-fixed",
+          definitionId: "tab-fixed",
+          id: "tab-fixed",
+          partDefinitionId: "tab-fixed",
+          title: "Fixed",
+          args: {},
+          slot: "main",
+          component: "c-fixed",
+          pluginId: "plugin-a",
+        },
+      ],
+      "tab-fixed",
+      {
+        contextState: state,
+        syncDegraded: true,
+      } as ShellRuntime,
+    );
+
+    assertTruthy(
+      html.includes('data-action="reopen-closed-tab"'),
+      "reopen action should keep action wiring attribute",
+    );
+    assertTruthy(
+      html.includes('data-slot="main"'),
+      "reopen action should keep slot wiring attribute",
+    );
+    assertTruthy(html.includes('disabled aria-disabled="true"'), "disabled semantics should remain intact");
+    assertTruthy(
+      html.includes('title="Reopen unavailable: no recently closed tab in this panel or sync is degraded"'),
+      "disabled reopen should explain why action is unavailable",
+    );
+  });
+
+  test("part card popout and restore actions keep wiring with consistent labels", () => {
+    const state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
+    const html = renderPartCard(
+      {
+        instanceId: "tab-a",
+        definitionId: "part-a",
+        id: "tab-a",
+        partDefinitionId: "part-a",
+        title: "Orders",
+        args: {},
+        slot: "main",
+        pluginId: "plugin-a",
+      },
+      {
+        contextState: state,
+        windowId: "win-main",
+      } as ShellRuntime,
+      { showPopoutButton: true, showRestoreButton: true },
+    );
+
+    assertTruthy(html.includes('data-action="popout"'), "part card popout action wiring should remain");
+    assertTruthy(html.includes('data-action="restore"'), "part card restore action wiring should remain");
+    assertTruthy(html.includes('>Pop out tab</button>'), "part card should use consistent popout label");
+    assertTruthy(html.includes('>Restore tab</button>'), "part card should use consistent restore label");
+    assertTruthy(
+      html.includes('aria-label="Pop out Orders to a new window"'),
+      "part card popout should include descriptive aria label",
+    );
+    assertTruthy(
+      html.includes('aria-label="Restore Orders to the host window"'),
+      "part card restore should include descriptive aria label",
     );
   });
 
