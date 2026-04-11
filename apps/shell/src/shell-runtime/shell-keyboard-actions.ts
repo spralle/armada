@@ -35,6 +35,14 @@ function dispatchShellKeyboardAction(
   bindings: KeyboardBindings,
   actionId: ShellKeyboardActionId,
 ): ShellKeyboardActionResult {
+  if (actionId === "shell.palette.toggle") {
+    runtime.commandPaletteController.toggle({
+      actionSurface: runtime.actionSurface,
+      context: bindings.toActionContext(),
+    });
+    return executed(actionId);
+  }
+
   if (actionId === "shell.window.close") {
     const activeTabId = runtime.contextState.activeTabId;
     if (!activeTabId) {

@@ -78,6 +78,7 @@ export function createShellRuntimeCompatibilityAdapters(
   renderer = {
     initialize: (viewRoot, viewRuntime) => {
       initializeReactPanels(viewRoot, viewRuntime, {
+        activatePluginForBoundary: (options) => effects.activatePluginForBoundary(options),
         applySelection: (event) => core.applySelection(event),
         dismissIntentChooser: () => deps.dismissIntentChooser(),
         executeResolvedAction: (match, intent) => core.executeResolvedAction(match, intent),
@@ -109,6 +110,7 @@ export function createShellRuntimeCompatibilityAdapters(
     },
     renderParts: (viewRoot, viewRuntime) => {
       renderPartsView(viewRoot, viewRuntime, {
+        activatePluginForBoundary: (options) => effects.activatePluginForBoundary(options),
         applySelection: (event) => core.applySelection(event),
         dismissIntentChooser: () => deps.dismissIntentChooser(),
         executeResolvedAction: (match, intent) => core.executeResolvedAction(match, intent),
