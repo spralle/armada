@@ -308,7 +308,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     wireWithMoved(runtime, tabHarness, moved);
 
     const transfer = new MemoryDataTransfer();
-    transfer.setData("text/plain", "armada-dnd-ref:session-cross-tab");
+    transfer.setData("text/plain", "ghost-dnd-ref:session-cross-tab");
     tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "enabled cross-window tab drop should insert via incoming transaction");
@@ -337,7 +337,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     wireNoop(runtime, tabHarness);
 
     const transfer = new MemoryDataTransfer();
-    transfer.setData("text/plain", "armada-dnd-ref:session-cross-disabled");
+    transfer.setData("text/plain", "ghost-dnd-ref:session-cross-disabled");
     tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState, before, "disabled cross-window tab drop should preserve same-window-only state");

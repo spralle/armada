@@ -144,7 +144,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     });
 
     const transfer = new MemoryDataTransfer();
-    transfer.setData("text/plain", "armada-dnd-ref:session-cross-dock");
+    transfer.setData("text/plain", "ghost-dnd-ref:session-cross-dock");
     zone.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState.activeTabId, "tab-b", "enabled cross-window dock drop should activate incoming tab");
@@ -178,7 +178,7 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
 
     const before = runtime.contextState;
     const transfer = new MemoryDataTransfer();
-    transfer.setData("text/plain", "armada-dnd-ref:session-cross-dock-kill");
+    transfer.setData("text/plain", "ghost-dnd-ref:session-cross-dock-kill");
     zone.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState, before, "kill-switch cross-window dock drop should preserve same-window behavior");
