@@ -294,7 +294,7 @@ function DevContextInspectorPanel(props: {
   trace: ShellRuntime["lastIntentTrace"];
 }) {
   return (
-    <>
+    <div className="dev-inspector">
       <h2>Dev context inspector</h2>
       <p className="runtime-note"><strong>Mode:</strong> development only</p>
       <p className="runtime-note">
@@ -337,7 +337,7 @@ function DevContextInspectorPanel(props: {
           </p>
         ) : null}
       </details>
-    </>
+    </div>
   );
 }
 
