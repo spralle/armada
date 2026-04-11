@@ -1,4 +1,4 @@
-import type { PluginContract } from "@armada/plugin-contracts";
+import type { PluginContract } from "@ghost/plugin-contracts";
 
 export const DEFAULT_SHELL_KEYBINDING_PLUGIN_ID = "com.ghost.shell.keybindings.default";
 

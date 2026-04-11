@@ -1,4 +1,4 @@
-import type { ContributionPredicateMatcher } from "@armada/plugin-contracts";
+import type { ContributionPredicateMatcher } from "@ghost/plugin-contracts";
 import { dispatchAction } from "../action-surface.js";
 import type {
   ActionKeybinding,

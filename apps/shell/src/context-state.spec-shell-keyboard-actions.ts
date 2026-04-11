@@ -273,6 +273,8 @@ function createKeyboardBindings(runtime: ShellRuntime): KeyboardBindings {
     renderContextControls: () => {},
     renderParts: () => {},
     renderSyncStatus: () => {},
+    getDefaultKeybindings: () => [],
+    getUserOverrideKeybindings: () => [],
     toActionContext: () => ({
       "context.domain.selection": "none",
       "shell.group-context": "none",
