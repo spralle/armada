@@ -1,0 +1,171 @@
+import type { Disposable } from "./disposable.js";
+import type { Event } from "./event.js";
+
+// ─── GhostApi (top-level namespace) ───
+
+/** The plugin-facing runtime API, injected during plugin activation. */
+export interface GhostApi {
+  /** Action registration, execution, and discovery. */
+  readonly actions: ActionService;
+  /** Window management and UI primitives. */
+  readonly window: WindowService;
+}
+
+// ─── ActionService ───
+
+/** Service for registering, executing, and discovering actions. */
+export interface ActionService {
+  /** Register a runtime action handler. Returns Disposable for cleanup. */
+  registerAction(
+    id: string,
+    handler: (...args: unknown[]) => unknown,
+  ): Disposable;
+
+  /** Execute an action by ID. Shell handles plugin activation transparently. */
+  executeAction<T = void>(id: string, ...args: unknown[]): Promise<T>;
+
+  /** Get all registered actions with current enabled state and keybinding hints. */
+  getActions(): Promise<ActionDescriptor[]>;
+
+  /** Fires when the action registry changes (plugin activated/deactivated). */
+  readonly onDidChangeActions: Event<void>;
+}
+
+/** Descriptor for a registered action, returned by getActions(). */
+export interface ActionDescriptor {
+  readonly id: string;
+  readonly title: string;
+  readonly category?: string;
+  readonly keybinding?: string;
+  readonly enabled: boolean;
+  readonly disabledReason?: string;
+  readonly pluginId: string;
+}
+
+// ─── WindowService ───
+
+/** Service for window management and UI primitives. */
+export interface WindowService {
+  /** The unique ID of the current window. */
+  readonly windowId: string;
+  /** Whether this window is a popout (lightweight tab renderer). */
+  readonly isPopout: boolean;
+
+  /** Get descriptors for all open windows. */
+  getWindows(): WindowDescriptor[];
+  /** Fires when windows open or close. */
+  readonly onDidChangeWindows: Event<void>;
+
+  /**
+   * Show a quick pick overlay with the given items.
+   * Returns the selected item, or undefined if dismissed.
+   */
+  showQuickPick<T extends QuickPickItem>(
+    items: T[],
+    options?: QuickPickOptions,
+  ): Promise<T | undefined>;
+
+  /**
+   * Create a QuickPick with full lifecycle control.
+   * Call show() to display, dispose() when done.
+   */
+  createQuickPick<T extends QuickPickItem>(): QuickPick<T>;
+
+  /**
+   * Show an input box overlay.
+   * Returns the entered text, or undefined if dismissed.
+   */
+  showInputBox(options?: InputBoxOptions): Promise<string | undefined>;
+
+  /** Show a notification message. */
+  showNotification(
+    message: string,
+    severity: "info" | "warning" | "error",
+  ): void;
+}
+
+/** Descriptor for an open window. */
+export interface WindowDescriptor {
+  readonly windowId: string;
+  readonly isPopout: boolean;
+  readonly hostWindowId: string | null;
+  readonly activePartId: string | null;
+}
+
+// ─── QuickPick ───
+
+/** An item in a QuickPick list. */
+export interface QuickPickItem {
+  /** Primary label text. */
+  readonly label: string;
+  /** Secondary description (shown to the right of label). */
+  readonly description?: string;
+  /** Detail text (shown below label). */
+  readonly detail?: string;
+  /** Whether this item can be selected. Defaults to true. */
+  readonly enabled?: boolean;
+}
+
+/** Options for showQuickPick(). */
+export interface QuickPickOptions {
+  /** Placeholder text in the filter input. */
+  readonly placeholder?: string;
+  /** Whether to match filter against description. */
+  readonly matchOnDescription?: boolean;
+  /** Whether to match filter against detail. */
+  readonly matchOnDetail?: boolean;
+}
+
+/** A QuickPick with full lifecycle control. */
+export interface QuickPick<T extends QuickPickItem> extends Disposable {
+  /** The items to display. Setting this triggers a re-render. */
+  items: T[];
+  /** The currently highlighted items. */
+  readonly activeItems: readonly T[];
+  /** The current filter text. */
+  value: string;
+  /** Placeholder text in the filter input. */
+  placeholder: string;
+
+  /** Fires when the filter text changes. */
+  readonly onDidChangeValue: Event<string>;
+  /** Fires when the highlighted item changes. */
+  readonly onDidChangeActive: Event<readonly T[]>;
+  /** Fires when the user accepts (Enter). */
+  readonly onDidAccept: Event<void>;
+  /** Fires when the QuickPick is hidden (Escape or blur). */
+  readonly onDidHide: Event<void>;
+
+  /** Show the QuickPick overlay. */
+  show(): void;
+  /** Hide the QuickPick overlay. */
+  hide(): void;
+}
+
+// ─── InputBox ───
+
+/** Options for showInputBox(). */
+export interface InputBoxOptions {
+  /** Placeholder text. */
+  readonly placeholder?: string;
+  /** Pre-filled value. */
+  readonly value?: string;
+  /** Prompt text above the input. */
+  readonly prompt?: string;
+}
+
+// ─── ActivationContext ───
+
+/**
+ * Context passed to a plugin's activate() function.
+ * Subscriptions are auto-disposed when the plugin deactivates.
+ */
+export interface ActivationContext {
+  /**
+   * Push Disposables here for automatic cleanup on deactivation.
+   * The shell disposes all items when the plugin is deactivated.
+   */
+  readonly subscriptions: Disposable[];
+  /** The ID of the plugin being activated. */
+  readonly pluginId: string;
+}

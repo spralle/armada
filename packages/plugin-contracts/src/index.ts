@@ -91,3 +91,16 @@ export type {
 } from "./compatibility.js";
 
 export { evaluateShellPluginCompatibility } from "./compatibility.js";
+
+export type {
+  GhostApi,
+  ActionService,
+  ActionDescriptor,
+  WindowService,
+  WindowDescriptor,
+  QuickPickItem,
+  QuickPickOptions,
+  QuickPick,
+  InputBoxOptions,
+  ActivationContext,
+} from "./ghost-api.js";
