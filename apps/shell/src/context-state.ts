@@ -20,6 +20,7 @@ export type {
 } from "./context-state/types.js";
 
 export type {
+  DockDirection,
   DockDropZone,
   DockNode,
   DockOrientation,
@@ -42,6 +43,15 @@ export {
 } from "./context-state/dock-tree.js";
 
 export { setDockSplitRatio } from "./context-state/dock-tree-ratio.js";
+
+export {
+  focusActiveTabInDirection,
+  focusAdjacentTabInActiveStack,
+  moveActiveTabInDirection,
+  moveActiveTabToDirectionalGroup,
+  resizeNearestSplitInDirection,
+  swapActiveTabInDirection,
+} from "./context-state/dock-tree-commands.js";
 
 export { createInitialShellContextState } from "./context-state/state.js";
 

@@ -1,5 +1,7 @@
 export type DockOrientation = "horizontal" | "vertical";
 
+export type DockDirection = "left" | "right" | "up" | "down";
+
 export type DockDropZone = "center" | "left" | "right" | "top" | "bottom";
 
 export type DockNode = DockSplitNode | DockStackNode;
