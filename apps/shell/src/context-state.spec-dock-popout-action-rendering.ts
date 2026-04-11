@@ -23,7 +23,15 @@ export function registerDockPopoutActionRenderingSpecs(harness: SpecHarness): vo
     assertTruthy(markup.includes("data-action=\"popout\""), "dock panel should render popout action");
     assertTruthy(markup.includes("data-tab-id=\"tab-1\""), "popout action should expose tab id");
     assertTruthy(markup.includes("data-part-id=\"tab-1\""), "popout action should expose part id");
-    assertTruthy(markup.includes(">Pop out</button>"), "popout action should be visibly labeled");
+    assertTruthy(markup.includes(">Pop out tab</button>"), "popout action should be visibly labeled");
+    assertTruthy(
+      markup.includes('aria-label="Pop out Sample tab to a new window"'),
+      "popout action should expose descriptive aria label",
+    );
+    assertTruthy(
+      markup.includes('title="Pop out tab to a new window"'),
+      "popout action should expose descriptive title",
+    );
   });
 
   test("dock panel rendering does not hide popout action when panel is inactive", () => {

@@ -138,10 +138,10 @@ export function renderPartCard(
   ].join(" ");
 
   const popoutButton = options.showPopoutButton
-    ? `<button type="button" data-action="popout" data-tab-id="${part.instanceId}" data-part-id="${part.instanceId}">Pop out</button>`
+    ? `<button type="button" data-action="popout" data-tab-id="${part.instanceId}" data-part-id="${part.instanceId}" aria-label="Pop out ${escapeHtml(part.title)} to a new window" title="Pop out tab to a new window">Pop out tab</button>`
     : "";
   const restoreButton = options.showRestoreButton
-    ? `<button type="button" data-action="restore" data-tab-id="${part.instanceId}" data-part-id="${part.instanceId}">Restore to host</button>`
+    ? `<button type="button" data-action="restore" data-tab-id="${part.instanceId}" data-part-id="${part.instanceId}" aria-label="Restore ${escapeHtml(part.title)} to the host window" title="Restore tab to host window">Restore tab</button>`
     : "";
 
   return `
@@ -187,6 +187,12 @@ export function renderTabStrip(
   const label = options?.label ?? `${slot} panel tabs`;
   const tabScope = options?.tabScope ?? `slot:${slot}`;
   const reopenEnabled = !runtime.syncDegraded && canReopenClosedTab(runtime.contextState, slot);
+  const reopenAriaLabel = reopenEnabled
+    ? "Reopen most recently closed tab in this panel"
+    : "Reopen unavailable: no recently closed tab in this panel or sync is degraded";
+  const reopenTitle = reopenEnabled
+    ? "Reopen closed tab (Ctrl+Shift+T / ⌘⇧T)"
+    : "Reopen unavailable: no recently closed tab in this panel or sync is degraded";
   return `
     <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}" data-tab-scope="${escapeHtml(tabScope)}">
       ${tabs.map((part) => {
@@ -198,9 +204,9 @@ export function renderTabStrip(
             class="part-tab-close"
             data-action="close-tab"
             data-tab-id="${part.instanceId}"
-            aria-label="Close ${escapeHtml(part.title)} tab"
+            aria-label="Close ${escapeHtml(part.title)} tab (Ctrl+W / ⌘W)"
             aria-keyshortcuts="Control+W Meta+W"
-            title="Close tab (Ctrl+W)"
+            title="Close tab (Ctrl+W / ⌘W)"
           >×</button>`
       : "";
     return `<div class="part-tab-item" data-tab-item="${part.instanceId}" data-tab-can-close="${closeability.canClose ? "true" : "false"}" data-part-id="${part.instanceId}">
@@ -219,6 +225,8 @@ export function renderTabStrip(
           aria-selected="${isActive ? "true" : "false"}"
           aria-controls="panel-${part.instanceId}"
           tabindex="${isActive ? "0" : "-1"}"
+          aria-label="${escapeHtml(part.title)} tab"
+          title="${escapeHtml(part.title)} tab — drag to rearrange"
         >${escapeHtml(part.title)}</button>
         ${closeButton}
       </div>`;
@@ -229,9 +237,9 @@ export function renderTabStrip(
         data-action="reopen-closed-tab"
         data-slot="${slot}"
         data-tab-scope="${escapeHtml(tabScope)}"
-        aria-label="Reopen recently closed tab"
+        aria-label="${reopenAriaLabel}"
         aria-keyshortcuts="Control+Shift+T Meta+Shift+T"
-        title="Reopen closed tab (Ctrl+Shift+T)"
+        title="${reopenTitle}"
         ${reopenEnabled ? "" : "disabled aria-disabled=\"true\""}
       >↶ Reopen</button>
     </div>
