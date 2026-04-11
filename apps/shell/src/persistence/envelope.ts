@@ -5,23 +5,13 @@ import type {
   UnifiedShellPersistenceEnvelopeV1,
 } from "./contracts.js";
 
-export const SHELL_PERSISTENCE_STORAGE_KEY = "armada.shell.persistence";
-export const LAYOUT_STORAGE_KEY = "armada.shell.layout.v1";
-export const CONTEXT_STATE_STORAGE_KEY = "armada.shell.context-state";
+export const SHELL_PERSISTENCE_STORAGE_KEY = "ghost.shell.persistence";
 export const SHELL_PERSISTENCE_SCHEMA_VERSION = 1;
 export const LAYOUT_SECTION_SCHEMA_VERSION = 1;
 export const CONTEXT_STATE_SCHEMA_VERSION = 2;
 
 export function getUnifiedStorageKey(userId: string): string {
   return `${SHELL_PERSISTENCE_STORAGE_KEY}.v${SHELL_PERSISTENCE_SCHEMA_VERSION}.${userId}`;
-}
-
-export function getLegacyLayoutStorageKey(userId: string): string {
-  return `${LAYOUT_STORAGE_KEY}.${userId}`;
-}
-
-export function getLegacyContextStorageKey(userId: string): string {
-  return `${CONTEXT_STATE_STORAGE_KEY}.v${CONTEXT_STATE_SCHEMA_VERSION}.${userId}`;
 }
 
 export function safeParseUnknown(input: string): { ok: true; value: unknown } | { ok: false } {
@@ -127,40 +117,6 @@ export function migrateLayoutSectionEnvelope(input: unknown):
   return {
     ok: false,
     warning: "Persisted layout section payload was invalid. Using defaults.",
-  };
-}
-
-export function loadLegacyContextState(
-  storage: StorageLike,
-  legacyStorageKey: string,
-):
-  | { ok: true; value: ContextStateEnvelopeV2; warning: string | null }
-  | { ok: false; warning: string | null } {
-  const legacyRaw = storage.getItem(legacyStorageKey);
-  if (!legacyRaw) {
-    return { ok: false, warning: null };
-  }
-
-  const parsedLegacy = safeParseUnknown(legacyRaw);
-  if (!parsedLegacy.ok) {
-    return {
-      ok: false,
-      warning: "Persisted context state was unreadable. Using defaults.",
-    };
-  }
-
-  const migration = migrateContextStateEnvelope(parsedLegacy.value);
-  if (!migration.ok) {
-    return {
-      ok: false,
-      warning: migration.warning,
-    };
-  }
-
-  return {
-    ok: true,
-    value: migration.value,
-    warning: migration.warning,
   };
 }
 

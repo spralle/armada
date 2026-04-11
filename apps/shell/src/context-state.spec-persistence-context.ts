@@ -93,28 +93,31 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
   test("context persistence migrates v1 envelope to current schema", () => {
     const storage = new MemoryStorage();
     const userId = "spec-user";
-    const storageKey = `armada.shell.context-state.v2.${userId}`;
+    const storageKey = `ghost.shell.persistence.v1.${userId}`;
     storage.setItem(storageKey, JSON.stringify({
       version: 1,
-      state: {
-        groups: {
-          "group-main": { id: "group-main", color: "blue" },
-        },
-        tabs: {
-          "tab-main": { id: "tab-main", groupId: "group-main", name: "Main" },
-        },
-        tabOrder: ["tab-main"],
-        activeTabId: "tab-main",
-        globalLanes: {
-          "shell.selection": {
-            value: "legacy",
-            revision: { timestamp: 1, writer: "legacy-writer" },
+      context: {
+        version: 1,
+        state: {
+          groups: {
+            "group-main": { id: "group-main", color: "blue" },
           },
-        },
-        groupLanes: {},
-        subcontextsByTab: {},
-        selectionByEntityType: {
-          order: { selectedIds: ["o-1"], priorityId: "o-1" },
+          tabs: {
+            "tab-main": { id: "tab-main", groupId: "group-main", name: "Main" },
+          },
+          tabOrder: ["tab-main"],
+          activeTabId: "tab-main",
+          globalLanes: {
+            "shell.selection": {
+              value: "legacy",
+              revision: { timestamp: 1, writer: "legacy-writer" },
+            },
+          },
+          groupLanes: {},
+          subcontextsByTab: {},
+          selectionByEntityType: {
+            order: { selectedIds: ["o-1"], priorityId: "o-1" },
+          },
         },
       },
     }));
@@ -141,37 +144,40 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
   test("context persistence keeps explicit closeable tabs and normalizes active-tab invariants", () => {
     const storage = new MemoryStorage();
     const userId = "spec-user";
-    const storageKey = `armada.shell.context-state.v2.${userId}`;
+    const storageKey = `ghost.shell.persistence.v1.${userId}`;
     storage.setItem(storageKey, JSON.stringify({
-      version: 2,
-      contextState: {
-        groups: {
-          "group-main": { id: "group-main", color: "blue" },
+      version: 1,
+      context: {
+        version: 2,
+        contextState: {
+          groups: {
+            "group-main": { id: "group-main", color: "blue" },
+          },
+          tabs: {
+            "tab-a": { id: "tab-a", groupId: "group-main", label: "A", closePolicy: "fixed" },
+            "tab-b": { id: "tab-b", groupId: "group-main", label: "B", closePolicy: "closeable" },
+          },
+          tabOrder: ["tab-b", "tab-a", "tab-b"],
+          activeTabId: "missing-tab",
+          closedTabHistoryBySlot: {
+            main: [
+              {
+                tabId: "tab-c",
+                groupId: "group-main",
+                label: "C",
+                closePolicy: "closeable",
+                slot: "main",
+                orderIndex: 2,
+              },
+            ],
+            secondary: [],
+            side: [],
+          },
+          globalLanes: {},
+          groupLanes: {},
+          subcontextsByTab: {},
+          selectionByEntityType: {},
         },
-        tabs: {
-          "tab-a": { id: "tab-a", groupId: "group-main", label: "A", closePolicy: "fixed" },
-          "tab-b": { id: "tab-b", groupId: "group-main", label: "B", closePolicy: "closeable" },
-        },
-        tabOrder: ["tab-b", "tab-a", "tab-b"],
-        activeTabId: "missing-tab",
-        closedTabHistoryBySlot: {
-          main: [
-            {
-              tabId: "tab-c",
-              groupId: "group-main",
-              label: "C",
-              closePolicy: "closeable",
-              slot: "main",
-              orderIndex: 2,
-            },
-          ],
-          secondary: [],
-          side: [],
-        },
-        globalLanes: {},
-        groupLanes: {},
-        subcontextsByTab: {},
-        selectionByEntityType: {},
       },
     }));
 
@@ -321,7 +327,7 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
   test("context persistence handles corruption with warning and safe fallback", () => {
     const storage = new MemoryStorage();
     const userId = "spec-user";
-    const storageKey = `armada.shell.context-state.v2.${userId}`;
+    const storageKey = `ghost.shell.persistence.v1.${userId}`;
     storage.setItem(storageKey, "{invalid-json");
     const fallback = createInitialShellContextState({ initialTabId: "fallback-tab" });
 
@@ -336,8 +342,11 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
   test("context persistence rejects unsupported schema version with fallback", () => {
     const storage = new MemoryStorage();
     const userId = "spec-user";
-    const storageKey = `armada.shell.context-state.v2.${userId}`;
-    storage.setItem(storageKey, JSON.stringify({ version: 99, contextState: {} }));
+    const storageKey = `ghost.shell.persistence.v1.${userId}`;
+    storage.setItem(storageKey, JSON.stringify({
+      version: 1,
+      context: { version: 99, contextState: {} },
+    }));
 
     const fallback = createInitialShellContextState({ initialTabId: "fallback-tab" });
     const persistence = createLocalStorageContextStatePersistence(storage, { userId });
