@@ -18,6 +18,7 @@ import { ContextControlsPanel } from "./context-controls-panel.js";
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
   onTogglePlugin: (pluginId: string, enabled: boolean) => Promise<void>;
+  onActivatePlugin: (pluginId: string) => Promise<void>;
   onChooseIntentAction: (index: number) => void;
   onDismissChooser: () => void;
   onPendingFocusApplied: () => void;
@@ -58,6 +59,7 @@ export function createReactPanelsHost(
             notice={runtime.pluginNotice}
             snapshot={runtime.registry.getSnapshot()}
             onToggle={bindings.onTogglePlugin}
+            onActivate={bindings.onActivatePlugin}
           />,
         );
       }
@@ -131,6 +133,7 @@ function PluginControlsPanel(props: {
   notice: string;
   disabled: boolean;
   onToggle: (pluginId: string, enabled: boolean) => Promise<void>;
+  onActivate: (pluginId: string) => Promise<void>;
 }) {
   const loadedContracts = props.snapshot.plugins
     .filter((plugin) => plugin.contract !== null)
@@ -157,6 +160,21 @@ function PluginControlsPanel(props: {
               type="checkbox"
             />
             <strong>{plugin.id}</strong> <small>({plugin.loadMode})</small>
+            {" "}
+            <small style={{ color: "var(--ghost-muted-foreground)" }}>[{plugin.lifecycle.state}]</small>
+            {plugin.enabled && plugin.lifecycle.state !== "active" && plugin.lifecycle.state !== "activating" ? (
+              <button
+                className="plugin-activate-btn"
+                disabled={props.disabled}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void props.onActivate(plugin.id);
+                }}
+                type="button"
+              >
+                Activate
+              </button>
+            ) : null}
             {plugin.failure ? (
               <p className="plugin-error">{plugin.failure.code}: {plugin.failure.message}</p>
             ) : null}
