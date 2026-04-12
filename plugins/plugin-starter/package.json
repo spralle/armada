@@ -2,6 +2,10 @@
   "name": "@ghost/plugin-starter",
   "private": true,
   "type": "module",
+  "ghost": {
+    "pluginId": "ghost.plugin-starter",
+    "devPort": 4171
+  },
   "scripts": {
     "dev": "vite"
   },

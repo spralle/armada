@@ -6,15 +6,16 @@ import {
   type ManagedViteInstance,
 } from "./vite-instance-factory.js";
 import {
-  lookupDefinition,
   resolvePluginConfigPath,
   resolvePluginDir,
 } from "./cli.js";
+import { discoverPlugins } from "./plugin-discovery.js";
 
 export interface PluginGatewayOptions {
   pluginIds: readonly string[];
   port: number;
   workspaceRoot: string;
+  pluginsDir: string;
 }
 
 export interface PluginGateway {
@@ -33,7 +34,7 @@ export interface PluginGateway {
 export function createPluginGateway(
   options: PluginGatewayOptions,
 ): PluginGateway {
-  const { pluginIds, port, workspaceRoot } = options;
+  const { pluginIds, port, workspaceRoot, pluginsDir } = options;
   let httpServer: HttpServer | undefined;
   let viteInstances: ManagedViteInstance[] = [];
 
@@ -46,8 +47,16 @@ export function createPluginGateway(
 
     httpServer = createHttpServer(handleRequest);
 
+    const allDefinitions = discoverPlugins(pluginsDir);
+    const definitionMap = new Map(allDefinitions.map((d) => [d.id, d]));
+
     const instancePromises = pluginIds.map((pluginId) => {
-      const definition = lookupDefinition(pluginId);
+      const definition = definitionMap.get(pluginId);
+      if (!definition) {
+        throw new Error(
+          `No definition found for plugin '${pluginId}'. Discovered: ${allDefinitions.map((d) => d.id).join(", ")}`,
+        );
+      }
       const configPath = resolvePluginConfigPath(definition, workspaceRoot);
       const pluginDir = resolvePluginDir(definition, workspaceRoot);
 

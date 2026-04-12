@@ -2,13 +2,16 @@ import { resolve } from "node:path";
 import { parsePluginDevHostArgs } from "./cli.js";
 import { createPluginGateway } from "./gateway-server.js";
 
-const cliOptions = parsePluginDevHostArgs(process.argv.slice(2));
 const workspaceRoot = resolve(import.meta.dirname, "../../..");
+const pluginsDir = resolve(workspaceRoot, "plugins");
+
+const cliOptions = parsePluginDevHostArgs(process.argv.slice(2), pluginsDir);
 
 const gateway = createPluginGateway({
   pluginIds: cliOptions.pluginIds,
   port: cliOptions.port,
   workspaceRoot,
+  pluginsDir,
 });
 
 gateway.start().catch((error: unknown) => {

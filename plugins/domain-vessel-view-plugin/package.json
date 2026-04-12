@@ -2,6 +2,10 @@
   "name": "@ghost/domain-vessel-view-plugin",
   "private": true,
   "type": "module",
+  "ghost": {
+    "pluginId": "ghost.domain.vessel-view",
+    "devPort": 4174
+  },
   "scripts": {
     "dev": "vite"
   },

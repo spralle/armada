@@ -1,7 +1,7 @@
 import {
-  CANONICAL_PLUGIN_DEFINITIONS,
-  type CanonicalPluginDefinition,
-} from "./canonical-plugins.js";
+  discoverPlugins,
+  type DiscoveredPluginDefinition,
+} from "./plugin-discovery.js";
 
 export const DEFAULT_GATEWAY_PORT = 41337;
 
@@ -12,13 +12,15 @@ export interface PluginDevHostCliOptions {
 
 export function parsePluginDevHostArgs(
   argv: readonly string[],
+  pluginsDir: string,
 ): PluginDevHostCliOptions {
-  const canonicalIds = CANONICAL_PLUGIN_DEFINITIONS.map((d) => d.id);
+  const definitions = discoverPlugins(pluginsDir);
+  const discoveredIds = definitions.map((d) => d.id);
   const hasOnly = argv.includes("--only");
   const hasAll = argv.includes("--all");
 
   if (!hasOnly && !hasAll) {
-    printUsageAndExit(canonicalIds);
+    printUsageAndExit(discoveredIds);
   }
 
   if (hasOnly && hasAll) {
@@ -27,41 +29,29 @@ export function parsePluginDevHostArgs(
 
   const port = parsePortFlag(argv);
   const pluginIds = hasAll
-    ? canonicalIds.slice()
-    : parseOnlyFlag(argv, canonicalIds);
+    ? discoveredIds.slice()
+    : parseOnlyFlag(argv, discoveredIds);
 
   return { pluginIds, port };
 }
 
 export function resolvePluginDir(
-  definition: CanonicalPluginDefinition,
+  definition: DiscoveredPluginDefinition,
   workspaceRoot: string,
 ): string {
   return `${workspaceRoot}/plugins/${definition.folderName}`;
 }
 
 export function resolvePluginConfigPath(
-  definition: CanonicalPluginDefinition,
+  definition: DiscoveredPluginDefinition,
   workspaceRoot: string,
 ): string {
   return `${resolvePluginDir(definition, workspaceRoot)}/vite.config.ts`;
 }
 
-export function lookupDefinition(
-  pluginId: string,
-): CanonicalPluginDefinition {
-  const found = CANONICAL_PLUGIN_DEFINITIONS.find(
-    (d) => d.id === pluginId,
-  );
-  if (!found) {
-    throw new Error(`No canonical definition found for plugin '${pluginId}'.`);
-  }
-  return found;
-}
-
 function parseOnlyFlag(
   argv: readonly string[],
-  canonicalIds: readonly string[],
+  discoveredIds: readonly string[],
 ): string[] {
   const onlyIndex = argv.indexOf("--only");
   const value = argv[onlyIndex + 1];
@@ -77,13 +67,13 @@ function parseOnlyFlag(
     exitWithError("--only value is empty. Provide comma-separated plugin FQDNs.");
   }
 
-  const canonicalIdSet = new Set(canonicalIds);
-  const unknownIds = requestedIds.filter((id) => !canonicalIdSet.has(id));
+  const idSet = new Set(discoveredIds);
+  const unknownIds = requestedIds.filter((id) => !idSet.has(id));
 
   if (unknownIds.length > 0) {
     exitWithError(
       `Unknown plugin FQDN(s): ${unknownIds.join(", ")}.\n` +
-        `Available plugins:\n${canonicalIds.map((id) => `  - ${id}`).join("\n")}`,
+        `Available plugins:\n${discoveredIds.map((id) => `  - ${id}`).join("\n")}`,
     );
   }
 
@@ -120,10 +110,10 @@ function printUsageAndExit(availableIds: readonly string[]): never {
     "",
     "Flags:",
     "  --only <ids>   Comma-separated plugin FQDNs to serve",
-    "  --all          Serve all canonical plugins",
+    "  --all          Serve all discovered plugins",
     "  --port <num>   Gateway port (default: 41337)",
     "",
-    "Available plugins:",
+    "Discovered plugins:",
     ...availableIds.map((id) => `  - ${id}`),
   ].join("\n");
 

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS,
+  discoverPluginDefinitions,
   discoverLocalUiPlugins,
 } from "../dist-test/src/local-ui-plugin-discovery.js";
 import {
@@ -38,12 +38,13 @@ test("discoverLocalUiPlugins returns deterministic plugin ordering", () => {
 });
 
 test("discoverLocalUiPlugins rejects duplicate plugin ids with actionable error", () => {
+  const discovered = discoverPluginDefinitions("plugins");
   assert.throws(
     () =>
       discoverLocalUiPlugins({
         appsRoot: "plugins",
         definitions: [
-          ...CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS,
+          ...discovered,
           {
             id: LOCAL_PLUGIN_IDS.pluginStarter,
             folderName: "plugin-starter-copy",
