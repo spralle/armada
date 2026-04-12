@@ -1,10 +1,11 @@
 import type {
   CompatibilityReasonCode,
+  Disposable,
   PluginContract,
   TenantPluginDescriptor,
 } from "@ghost/plugin-contracts";
 import type { CapabilityDependencyFailureCode } from "./capability-registry.js";
-import type { RuntimeFirstPluginLoader, ShellPluginLoadMode } from "./plugin-loader.js";
+import type { PluginActivateFunction, RuntimeFirstPluginLoader, ShellPluginLoadMode } from "./plugin-loader.js";
 
 export interface PluginRuntimeFailure {
   code:
@@ -17,7 +18,8 @@ export interface PluginRuntimeFailure {
     | "COMPONENT_EXPORT_MISSING"
     | "SERVICE_EXPORT_MISSING"
     | "LOCAL_SOURCE_UNAVAILABLE"
-    | "UNKNOWN_PLUGIN_LOAD_ERROR";
+    | "UNKNOWN_PLUGIN_LOAD_ERROR"
+    | "ACTIVATE_FAILED";
   message: string;
   retryable: boolean;
 }
@@ -52,6 +54,10 @@ export interface PluginRuntimeState {
   failure: PluginRuntimeFailure | null;
   lifecycle: PluginLifecycleSnapshot;
   activationPromise: Promise<void> | null;
+  /** The plugin's activate() export, extracted during contract loading. */
+  activate: PluginActivateFunction | null;
+  /** Disposables pushed by the plugin's activate() via ActivationContext.subscriptions. */
+  activationSubscriptions: Disposable[];
 }
 
 export interface PluginRegistryDiagnostic {
@@ -90,4 +96,6 @@ export interface ShellPluginRegistry {
 
 export interface ShellPluginRegistryOptions {
   pluginLoader?: RuntimeFirstPluginLoader;
+  /** Dependencies for creating GhostApi instances during plugin activation. */
+  apiDeps?: import("./plugin-api/ghost-api-factory.js").GhostApiFactoryDependencies;
 }

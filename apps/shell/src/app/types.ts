@@ -33,7 +33,6 @@ import type {
 } from "../intent-runtime.js";
 import type { ActionSurface } from "../action-surface.js";
 import type { KeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
-import type { ActionPaletteController } from "../shell-runtime/action-palette-controller.js";
 import type { ShellPartHostAdapter } from "./contracts.js";
 import type { ShellTransportPath } from "./migration-flags.js";
 import type {
@@ -102,7 +101,6 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   activeDndPath: DndDiagnosticPath;
   activeDndReason: "kill-switch-force-disabled" | "flag-enabled" | "default-same-window-only";
   lastDndDiagnostic: DndDiagnosticEnvelope | null;
-  actionPaletteController: ActionPaletteController;
 }
 
 export interface SourceTabTransferPendingState {

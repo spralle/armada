@@ -1,17 +1,16 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import type {
-  ActionPaletteEntry,
-  ActionPaletteState,
-} from "../../shell-runtime/action-palette-state.js";
-import { getSelectedEntry } from "../../shell-runtime/action-palette-state.js";
+import type { QuickPickItem } from "@ghost/plugin-contracts";
+import type { QuickPickState } from "./quick-pick-state.js";
+import { getSelectedItem } from "./quick-pick-state.js";
 
-export interface ActionPaletteOverlayProps {
-  state: ActionPaletteState;
+export interface QuickPickOverlayProps<T extends QuickPickItem> {
+  state: QuickPickState<T>;
+  placeholder?: string;
   onFilterChange: (filter: string) => void;
   onSelectNext: () => void;
   onSelectPrevious: () => void;
-  onExecute: (entry: ActionPaletteEntry) => void;
+  onAccept: (item: T) => void;
   onClose: () => void;
 }
 
@@ -70,8 +69,18 @@ const srOnlyStyle: React.CSSProperties = {
   border: 0,
 };
 
-export function ActionPaletteOverlay(props: ActionPaletteOverlayProps) {
-  const { state, onFilterChange, onSelectNext, onSelectPrevious, onExecute, onClose } = props;
+export function QuickPickOverlay<T extends QuickPickItem>(
+  props: QuickPickOverlayProps<T>,
+) {
+  const {
+    state,
+    placeholder,
+    onFilterChange,
+    onSelectNext,
+    onSelectPrevious,
+    onAccept,
+    onClose,
+  } = props;
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -100,9 +109,9 @@ export function ActionPaletteOverlay(props: ActionPaletteOverlayProps) {
 
       case "Enter": {
         event.preventDefault();
-        const selected = getSelectedEntry(state);
-        if (selected && selected.enabled) {
-          onExecute(selected);
+        const selected = getSelectedItem(state);
+        if (selected && selected.enabled !== false) {
+          onAccept(selected);
         }
         break;
       }
@@ -118,11 +127,11 @@ export function ActionPaletteOverlay(props: ActionPaletteOverlayProps) {
     <div
       style={backdropStyle}
       onClick={onClose}
-      data-testid="action-palette-backdrop"
+      data-testid="quick-pick-backdrop"
     >
       <div
         role="dialog"
-        aria-label="Action palette"
+        aria-label="Quick pick"
         style={dialogStyle}
         onClick={(e) => e.stopPropagation()}
       >
@@ -130,24 +139,24 @@ export function ActionPaletteOverlay(props: ActionPaletteOverlayProps) {
           ref={inputRef}
           role="combobox"
           aria-expanded={true}
-          aria-controls="action-palette-results"
-          aria-label="Search actions"
+          aria-controls="quick-pick-results"
+          aria-label="Search"
           value={state.filter}
           onChange={(e) => onFilterChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type an action..."
+          placeholder={placeholder ?? "Type to search..."}
           style={inputStyle}
         />
         <div aria-live="polite" style={srOnlyStyle}>
-          {state.filteredEntries.length} results
+          {state.filteredItems.length} results
         </div>
-        <ul id="action-palette-results" role="listbox" style={listStyle}>
-          {state.filteredEntries.map((scored, index) => (
-            <ActionPaletteRow
-              key={scored.entry.id}
-              entry={scored.entry}
+        <ul id="quick-pick-results" role="listbox" style={listStyle}>
+          {state.filteredItems.map((scored, index) => (
+            <QuickPickRow
+              key={scored.item.label + index.toString()}
+              item={scored.item}
               isSelected={index === state.selectedIndex}
-              onExecute={() => onExecute(scored.entry)}
+              onAccept={() => onAccept(scored.item)}
             />
           ))}
         </ul>
@@ -157,13 +166,14 @@ export function ActionPaletteOverlay(props: ActionPaletteOverlayProps) {
   );
 }
 
-function ActionPaletteRow(props: {
-  entry: ActionPaletteEntry;
+function QuickPickRow<T extends QuickPickItem>(props: {
+  item: T;
   isSelected: boolean;
-  onExecute: () => void;
+  onAccept: () => void;
 }) {
-  const { entry, isSelected, onExecute } = props;
+  const { item, isSelected, onAccept } = props;
   const ref = useRef<HTMLLIElement>(null);
+  const enabled = item.enabled !== false;
 
   useEffect(() => {
     if (isSelected && ref.current) {
@@ -176,41 +186,34 @@ function ActionPaletteRow(props: {
       ref={ref}
       role="option"
       aria-selected={isSelected}
-      aria-disabled={!entry.enabled}
-      onClick={entry.enabled ? onExecute : undefined}
+      aria-disabled={!enabled}
+      onClick={enabled ? onAccept : undefined}
       style={{
         padding: "6px 12px",
-        cursor: entry.enabled ? "pointer" : "default",
+        cursor: enabled ? "pointer" : "default",
         background: isSelected ? "#1d2635" : "transparent",
-        opacity: entry.enabled ? 1 : 0.5,
+        opacity: enabled ? 1 : 0.5,
         display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
+        flexDirection: "column",
+        gap: 2,
       }}
     >
-      <span>
-        <span style={{ color: entry.enabled ? "#e9edf3" : "#c6d0e0" }}>
-          {entry.title}
+      <span
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+      >
+        <span style={{ color: enabled ? "#e9edf3" : "#c6d0e0" }}>
+          {item.label}
         </span>
-        {entry.disabledReason ? (
-          <span style={{ fontSize: 10, color: "#8b3030", marginLeft: 8 }}>
-            {entry.disabledReason}
+        {item.description ? (
+          <span style={{ fontSize: 12, color: "#8b9cb8", marginLeft: 8 }}>
+            {item.description}
           </span>
         ) : null}
       </span>
-      {entry.keybindingHint ? (
-        <kbd
-          style={{
-            fontSize: 10,
-            padding: "1px 4px",
-            borderRadius: 3,
-            background: "#1d2635",
-            border: "1px solid #334564",
-            color: "#c6d0e0",
-          }}
-        >
-          {entry.keybindingHint}
-        </kbd>
+      {item.detail ? (
+        <span style={{ fontSize: 11, color: "#7a8a9e" }}>
+          {item.detail}
+        </span>
       ) : null}
     </li>
   );

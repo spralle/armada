@@ -16,7 +16,6 @@ import {
 } from "../shell-runtime/default-shell-keybindings.js";
 import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import { createIntentRuntime } from "../intent-runtime.js";
-import { createActionPaletteController } from "../shell-runtime/action-palette-controller.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { createWindowBridge } from "../window-bridge.js";
 import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
@@ -115,7 +114,6 @@ export function createShellRuntime(options?: {
     activeDndPath: crossWindowDnd.path,
     activeDndReason: crossWindowDnd.reason,
     lastDndDiagnostic: null,
-    actionPaletteController: createActionPaletteController(),
   };
 
   runtime.partHost = createShellPartHostAdapter(runtime);

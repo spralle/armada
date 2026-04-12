@@ -26,8 +26,10 @@ import { registerKeybindingPersistenceSpecs } from "./persistence/keybinding-per
 import { registerKeybindingOverrideManagerSpecs } from "./shell-runtime/keybinding-override-manager.spec.js";
 import { registerKeybindingImportExportSpecs } from "./shell-runtime/keybinding-import-export.spec.js";
 import { registerPluginRegistryBuiltinSpecs } from "./shell-runtime/plugin-registry-builtin.spec.js";
-import { registerActionPaletteCatalogSpecs } from "./shell-runtime/action-palette-catalog.spec.js";
-import { registerActionPaletteStateSpecs } from "./shell-runtime/action-palette-state.spec.js";
+import { registerActionServiceSpecs } from "./plugin-api/action-service.spec.js";
+import { registerWindowServiceSpecs } from "./plugin-api/window-service.spec.js";
+import { registerGhostApiFactorySpecs } from "./plugin-api/ghost-api-factory.spec.js";
+import { registerQuickPickStateSpecs } from "./ui/quick-pick/quick-pick-state.spec.js";
 
 const { harness, runAll } = createSpecHarness();
 
@@ -58,8 +60,10 @@ registerKeybindingPersistenceSpecs(harness);
 registerKeybindingOverrideManagerSpecs(harness);
 registerKeybindingImportExportSpecs(harness);
 registerPluginRegistryBuiltinSpecs(harness);
-registerActionPaletteCatalogSpecs(harness);
-registerActionPaletteStateSpecs(harness);
+registerActionServiceSpecs(harness);
+registerWindowServiceSpecs(harness);
+registerGhostApiFactorySpecs(harness);
+registerQuickPickStateSpecs(harness);
 
 const { passed, total } = await runAll();
 
