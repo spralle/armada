@@ -25,7 +25,8 @@
     "dev:plugin-shadcn-bridge": "npm run dev --workspace @ghost/shadcn-theme-bridge-plugin",
     "dev:plugin:all": "npx concurrently -n starter,sample,unplanned,vessel,shared,theme -c magenta,cyan,yellow,green,blue,red \"npm run dev:plugin\" \"npm run dev:plugin-sample\" \"npm run dev:plugin-unplanned-orders\" \"npm run dev:plugin-vessel-view\" \"npm run dev:plugin-shared-ui\" \"npm run dev:plugin-theme-default\"",
     "dev:integration": "bun --watch apps/shell/src/index.ts",
-    "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs"
+    "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs",
+    "generate:config-schema": "node ./scripts/build-config-schemas.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
