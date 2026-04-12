@@ -31,6 +31,13 @@ const localPluginEntryOverrides = backendDevCliOptions.gatewayPort
     })
   : getDefaultLocalPluginEntryUrlMap();
 
+// When --gateway-port is set but no --local-plugin flags provided,
+// auto-select all known plugins so every entry routes through the gateway.
+const effectiveSelectedPluginIds =
+  backendDevCliOptions.gatewayPort && backendDevCliOptions.selectedLocalPluginIds.length === 0
+    ? Array.from(localPluginEntryOverrides.keys())
+    : backendDevCliOptions.selectedLocalPluginIds;
+
 if (backendDevCliOptions.duplicateSelectedLocalPluginIds.length > 0) {
   console.warn(
     `[backend] duplicate --local-plugin values ignored after normalization: ${backendDevCliOptions.duplicateSelectedLocalPluginIds.join(", ")}`,
@@ -39,7 +46,7 @@ if (backendDevCliOptions.duplicateSelectedLocalPluginIds.length > 0) {
 
 console.log(
   formatLocalPluginOverrideStartupSummary(
-    backendDevCliOptions.selectedLocalPluginIds,
+    effectiveSelectedPluginIds,
     localPluginEntryOverrides,
   ),
 );
@@ -66,7 +73,7 @@ function startBackendDevServer(): void {
     fetch(request) {
       const url = new URL(request.url);
       const manifest = resolveTenantManifestRequest(url.pathname, {
-        selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
+        selectedLocalPluginIds: effectiveSelectedPluginIds,
         pluginEntryUrlOverridesById: localPluginEntryOverrides,
       });
       if (manifest) {
@@ -98,7 +105,7 @@ function startNodeBackendDevServer(): void {
       const server = createServer((req: NodeHttpRequestLike, res: NodeHttpResponseLike) => {
         const requestPath = req.url ? new URL(req.url, `http://${BACKEND_DEV_HOST}:${BACKEND_DEV_PORT}`).pathname : "/";
         const manifest = resolveTenantManifestRequest(requestPath, {
-          selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
+          selectedLocalPluginIds: effectiveSelectedPluginIds,
           pluginEntryUrlOverridesById: localPluginEntryOverrides,
         });
 

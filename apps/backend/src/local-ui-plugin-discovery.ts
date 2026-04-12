@@ -89,6 +89,13 @@ export const CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS: readonly CanonicalLocalUiPlu
     version: "1.0.0",
     entryPath: "/mf-manifest.json",
   },
+  {
+    id: "ghost.action-palette",
+    folderName: "action-palette-plugin",
+    devPort: 4179,
+    version: "0.1.0",
+    entryPath: "/mf-manifest.json",
+  },
 ] as const;
 
 export function discoverLocalUiPlugins(

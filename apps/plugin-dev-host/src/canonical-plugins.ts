@@ -21,4 +21,5 @@ export const CANONICAL_PLUGIN_DEFINITIONS: readonly CanonicalPluginDefinition[] 
   { id: "ghost.theme.default", folderName: "theme-default-plugin", devPort: 4176 },
   { id: "ghost.shadcn.theme-bridge", folderName: "shadcn-theme-bridge-plugin", devPort: 4177 },
   { id: "ghost.appearance-settings", folderName: "appearance-settings-plugin", devPort: 4178 },
+  { id: "ghost.action-palette", folderName: "action-palette-plugin", devPort: 4179 },
 ] as const;

@@ -23,7 +23,8 @@
     "dev:plugin-theme-default": "npm run dev --workspace @ghost/theme-default-plugin",
     "dev:plugin-shadcn-bridge": "npm run dev --workspace @ghost/shadcn-theme-bridge-plugin",
     "dev:plugin-appearance": "npm run dev --workspace @ghost/appearance-settings-plugin",
-    "dev:plugin:all": "npx concurrently -n starter,sample,unplanned,vessel,shared,theme,shadcn,appearance -c magenta,cyan,yellow,green,blue,red,white,gray \"npm run dev:plugin\" \"npm run dev:plugin-sample\" \"npm run dev:plugin-unplanned-orders\" \"npm run dev:plugin-vessel-view\" \"npm run dev:plugin-shared-ui\" \"npm run dev:plugin-theme-default\" \"npm run dev:plugin-shadcn-bridge\" \"npm run dev:plugin-appearance\"",
+    "dev:plugin-action-palette": "npm run dev --workspace @ghost/action-palette-plugin",
+    "dev:plugin:all": "npx concurrently -n starter,sample,unplanned,vessel,shared,theme,shadcn,appearance,action -c magenta,cyan,yellow,green,blue,red,white,gray,magentaBright \"npm run dev:plugin\" \"npm run dev:plugin-sample\" \"npm run dev:plugin-unplanned-orders\" \"npm run dev:plugin-vessel-view\" \"npm run dev:plugin-shared-ui\" \"npm run dev:plugin-theme-default\" \"npm run dev:plugin-shadcn-bridge\" \"npm run dev:plugin-appearance\" \"npm run dev:plugin-action-palette\"",
     "dev:plugins:gateway": "bun apps/plugin-dev-host/src/main.ts --all",
     "dev:integration": "bun --watch apps/shell/src/index.ts",
     "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs"
