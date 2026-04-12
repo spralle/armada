@@ -102,3 +102,14 @@ export {
   syncStatusSchema,
   configurationInspectionSchema,
 } from "./schemas-providers.js";
+
+// type-utils.ts — Compile-time mapped types for typesafe config access
+export type {
+  ConfigKeyPath,
+  ConfigValueAtPath,
+  TypedConfigurationService,
+} from "./type-utils.js";
+
+// view-config-declaration.ts — View config declaration type and factory
+export type { ViewConfigDeclaration } from "./view-config-declaration.js";
+export { defineViewConfig } from "./view-config-declaration.js";

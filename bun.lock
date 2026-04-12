@@ -33,6 +33,10 @@
     "apps/backend": {
       "name": "@ghost/backend-app",
       "dependencies": {
+        "@ghost/config-engine": "workspace:*",
+        "@ghost/config-providers": "workspace:*",
+        "@ghost/config-server": "workspace:*",
+        "@ghost/config-types": "workspace:*",
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
       },
     },
@@ -747,35 +751,13 @@
 
     "chalk/supports-color": ["supports-color@7.2.0", "", { "dependencies": { "has-flag": "^4.0.0" } }, "sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw=="],
 
-    "@ghost/action-palette-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/appearance-settings-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/backend-app/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/domain-unplanned-orders-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/domain-vessel-view-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/plugin-starter/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/sample-contract-consumer-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/shadcn-theme-bridge-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/shared-ui-capability-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
     "@ghost/shell-app/@ghost/config-engine/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost/shell-app/@ghost/config-providers/@ghost/config-engine": ["@ghost/config-engine@file:packages/config-engine", { "dependencies": { "@ghost/config-types": "workspace:*" } }],
 
     "@ghost/shell-app/@ghost/config-providers/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/shell-app/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/theme-default-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/typecheck-fixture/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
+    "@ghost/shell-app/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@workspace:packages/config-types"],
 
     "@module-federation/cli/chalk/supports-color": ["supports-color@7.2.0", "", { "dependencies": { "has-flag": "^4.0.0" } }, "sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw=="],
 

@@ -34,3 +34,10 @@ export { composeConfigurationSchemas } from "./schema-registry.js";
 
 // auth.ts — Authorization checks
 export { canRead, canWrite, filterVisibleKeys } from "./auth.js";
+
+// contract-derivation.ts — Package.json contract metadata extraction
+export type {
+  PackageJsonInput,
+  ContractMetadata,
+} from "./contract-derivation.js";
+export { deriveContractFromPackageJson } from "./contract-derivation.js";
