@@ -16,7 +16,12 @@ gateway.start().catch((error: unknown) => {
   process.exit(1);
 });
 
+let shuttingDown = false;
+
 function handleShutdown(): void {
+  if (shuttingDown) return;
+  shuttingDown = true;
+
   console.log("\n[plugin-dev-host] Shutting down...");
   gateway
     .stop()

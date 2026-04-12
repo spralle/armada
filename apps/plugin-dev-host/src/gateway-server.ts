@@ -39,6 +39,10 @@ export function createPluginGateway(
   return { start, stop };
 
   async function start(): Promise<void> {
+    if (httpServer) {
+      throw new Error("Gateway already started. Call stop() first.");
+    }
+
     httpServer = createHttpServer(handleRequest);
 
     const instancePromises = pluginIds.map((pluginId) => {
@@ -70,6 +74,9 @@ export function createPluginGateway(
     await closeAllViteInstances(viteInstances);
 
     if (httpServer) {
+      httpServer.removeAllListeners("request");
+      httpServer.removeAllListeners("upgrade");
+
       await new Promise<void>((resolve, reject) => {
         httpServer?.close((error) => {
           if (error) {
@@ -173,9 +180,13 @@ function setCorsHeaders(res: ServerResponse): void {
 
 function listen(server: HttpServer, port: number): Promise<void> {
   return new Promise((resolve, reject) => {
-    server.on("error", reject);
+    const onError = (err: Error) => {
+      server.removeListener("error", onError);
+      reject(err);
+    };
+    server.on("error", onError);
     server.listen(port, "127.0.0.1", () => {
-      server.removeListener("error", reject);
+      server.removeListener("error", onError);
       resolve();
     });
   });
