@@ -58,6 +58,7 @@ import {
   dismissIntentChooser as dismissIntentChooserState,
 } from "./shell-runtime/keyboard-handlers.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
+import { registerThemeService } from "./theme-service-registration.js";
 
 export type {
   ShellCoreApi,
@@ -209,6 +210,9 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
     }
     runtime.registry = state.registry;
     runtime.themeRegistry = state.themeRegistry ?? null;
+    if (runtime.themeRegistry) {
+      registerThemeService(runtime.services, runtime.themeRegistry);
+    }
     runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
     refreshCommandContributions(runtime);
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);

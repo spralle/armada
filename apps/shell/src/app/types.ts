@@ -10,6 +10,7 @@ import type {
   ShellLayoutPersistence,
 } from "../persistence.js";
 import type { ShellPluginRegistry } from "../plugin-registry.js";
+import type { ShellServiceRegistry } from "../service-registry.js";
 import type { ThemeRegistry } from "../theme-registry.js";
 import type {
   WindowBridge,
@@ -96,6 +97,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   chooserReturnFocusSelector: string | null;
   actionSurface: ActionSurface;
   keybindingOverrideManager: KeybindingOverrideManager;
+  services: ShellServiceRegistry;
   themeRegistry: ThemeRegistry | null;
   intentRuntime: IntentRuntime;
   commandNotice: string;

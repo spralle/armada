@@ -1,5 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
+import { createServiceRegistry } from "../service-registry.js";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
 import { openPopout } from "./part-instance-popout-lifecycle.js";
 import { createIncomingTransferJournal } from "../context-state.js";
@@ -302,6 +303,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     chooserReturnFocusSelector: null,
     actionSurface: {} as ShellRuntime["actionSurface"],
     intentRuntime: {} as ShellRuntime["intentRuntime"],
+    services: createServiceRegistry(),
     commandNotice: "",
     pluginNotice: "",
     intentNotice: "",

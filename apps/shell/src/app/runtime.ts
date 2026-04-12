@@ -8,6 +8,7 @@ import {
   createLocalStorageLayoutPersistence,
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
+import { createServiceRegistry } from "../service-registry.js";
 import { buildActionSurface } from "../action-surface.js";
 import {
   createDefaultShellKeybindingContract,
@@ -66,6 +67,7 @@ export function createShellRuntime(options?: {
       userId: getCurrentUserId(),
     }),
     registry: createShellPluginRegistry(),
+    services: createServiceRegistry(),
     bridge,
     asyncBridge,
     windowId,

@@ -145,3 +145,6 @@ export {
   relativeLuminance,
   isValidHex,
 } from "./theme-color-utils.js";
+
+export type { ThemeService, ThemeInfo, BackgroundInfo } from "./theme-service.js";
+export { THEME_SERVICE_ID } from "./theme-service.js";
