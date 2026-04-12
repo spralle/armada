@@ -1,9 +1,9 @@
 import {
   focusDockStackInDirection,
   moveActiveTabInDirection,
-  resizeDockInDirection,
   swapActiveTabInDirection,
 } from "./dock-tree-window-actions.js";
+import { resizeNearestSplitInDirection } from "./dock-tree-commands.js";
 import { setActiveTab } from "./tabs-groups.js";
 import type { DockNode, DockStackNode } from "./dock-tree-types.js";
 import type { ShellContextState } from "./types.js";
@@ -87,16 +87,13 @@ export function resizeInDirection(
     return { state, changed: false };
   }
 
-  const resized = resizeDockInDirection(state.dockTree, activeTabId, direction);
-  if (!resized.changed) {
+  const nextState = resizeNearestSplitInDirection(state, { direction });
+  if (nextState === state) {
     return { state, changed: false };
   }
 
   return {
-    state: {
-      ...state,
-      dockTree: resized.tree,
-    },
+    state: nextState,
     changed: true,
   };
 }

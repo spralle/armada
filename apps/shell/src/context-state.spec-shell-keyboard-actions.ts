@@ -108,7 +108,7 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
     await root.dispatchKey({ key: "ArrowRight", ctrlKey: true, shiftKey: true, target });
     const afterRatio = readRootSplitRatio(runtime.contextState);
     assertTruthy(beforeRatio !== null && afterRatio !== null, "fixture should contain split root for resize");
-    assertEqual(afterRatio, 0.45, "resize-right shortcut should shrink active first branch ratio");
+    assertEqual(afterRatio, 0.55, "resize-right shortcut should grow active first branch ratio");
 
     dispose();
   });
