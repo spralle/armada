@@ -82,7 +82,9 @@ export {
 export {
   cycleTabGroup,
   cycleTabInActiveStack,
+  equalizeSplits,
   focusTabInDirection,
+  gotoTabByIndex,
   moveTabInDirection,
   resizeInDirection,
   swapTabInDirection,

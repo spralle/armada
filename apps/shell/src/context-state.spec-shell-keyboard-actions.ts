@@ -108,7 +108,7 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
     await root.dispatchKey({ key: "ArrowRight", ctrlKey: true, shiftKey: true, target });
     const afterRatio = readRootSplitRatio(runtime.contextState);
     assertTruthy(beforeRatio !== null && afterRatio !== null, "fixture should contain split root for resize");
-    assertEqual(afterRatio, 0.45, "resize-right shortcut should shrink active first branch ratio");
+    assertEqual(afterRatio, 0.55, "resize-right shortcut should grow active first branch ratio");
 
     dispose();
   });
@@ -153,28 +153,89 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
   test("keyboard dispatch emits explicit no-op for unavailable actions", async () => {
     const root = new FakeRoot();
     const runtime = createKeyboardRuntimeFixture();
-    // shell.window.fullscreen.toggle and shell.window.mode.toggle no longer have
-    // default keybindings; provide them via user overrides to test the no-op path.
+    // shell.window.mode.toggle no longer has a default keybinding;
+    // provide it via user override to test the no-op path.
     const bindings = createKeyboardBindings(runtime, {
       getUserOverrideKeybindings: () => [
-        { action: "shell.window.fullscreen.toggle", keybinding: "shift+alt+f", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
         { action: "shell.window.mode.toggle", keybinding: "shift+alt+m", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
       ],
     });
     const dispose = bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
     const target = ensureDomElement();
 
-    const activeBefore = runtime.contextState.activeTabId;
-    await root.dispatchKey({ key: "f", altKey: true, shiftKey: true, target });
-
-    assertEqual(runtime.contextState.activeTabId, activeBefore, "fullscreen shortcut should not mutate state in browser shell");
-    assertTruthy(runtime.commandNotice.includes("no-op"), "fullscreen shortcut should report explicit no-op notice");
-
     await root.dispatchKey({ key: "m", altKey: true, shiftKey: true, target });
     assertTruthy(runtime.commandNotice.includes("no-op"), "mode toggle shortcut should report explicit no-op notice");
 
     await root.dispatchKey({ key: "q", altKey: true, shiftKey: true, target });
     assertEqual(runtime.contextState.tabs["tab-a"], undefined, "close shortcut should close active tab");
+
+    dispose();
+  });
+
+  test("fullscreen toggle keybinding is dispatched and not unavailable", async () => {
+    const root = new FakeRoot();
+    const runtime = createKeyboardRuntimeFixture();
+    const bindings = createKeyboardBindings(runtime);
+    const dispose = bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
+    const target = ensureDomElement();
+
+    // fullscreen.toggle is no longer in SHELL_UNAVAILABLE_ACTION_IDS so its
+    // default keybinding (shift+alt+f) is active and reaches the handler.
+    // In Node tests there is no real document, so the handler returns a
+    // graceful no-op ("not in browser environment") — but it should NOT
+    // report "action unavailable in browser shell runtime" (the old guard).
+    const activeBefore = runtime.contextState.activeTabId;
+    await root.dispatchKey({ key: "f", altKey: true, shiftKey: true, target });
+
+    assertEqual(runtime.contextState.activeTabId, activeBefore, "fullscreen toggle should not change active tab");
+    assertTruthy(runtime.commandNotice.includes("shell.window.fullscreen.toggle"), "fullscreen toggle should be referenced in command notice");
+    assertTruthy(!runtime.commandNotice.includes("action unavailable"), "fullscreen toggle should not report generic unavailable");
+
+    dispose();
+  });
+
+  test("equalize splits resets all ratios to 0.5", async () => {
+    const root = new FakeRoot();
+    const runtime = createKeyboardRuntimeFixture();
+    const bindings = createKeyboardBindings(runtime);
+    const dispose = bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
+    const target = ensureDomElement();
+
+    // Resize to change the ratio away from 0.5
+    await root.dispatchKey({ key: "ArrowRight", ctrlKey: true, shiftKey: true, target });
+    const ratioAfterResize = readRootSplitRatio(runtime.contextState);
+    assertTruthy(ratioAfterResize !== null && ratioAfterResize !== 0.5, "resize should change ratio away from 0.5");
+
+    // Equalize: shift+alt+e
+    await root.dispatchKey({ key: "e", altKey: true, shiftKey: true, target });
+    const ratioAfterEqualize = readRootSplitRatio(runtime.contextState);
+    assertEqual(ratioAfterEqualize, 0.5, "equalize splits should reset ratio to 0.5");
+
+    dispose();
+  });
+
+  test("tab-by-number activates Nth tab in active stack", async () => {
+    const root = new FakeRoot();
+    const runtime = createKeyboardRuntimeFixture();
+    const bindings = createKeyboardBindings(runtime);
+    const dispose = bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
+    const target = ensureDomElement();
+
+    // Fixture: tab-a is active in left stack, which also contains tab-d (added via center drop).
+    // Left stack should be [tab-a, tab-d].
+    assertEqual(runtime.contextState.activeTabId, "tab-a", "should start on tab-a");
+
+    // alt+2 should switch to second tab in the active stack
+    await root.dispatchKey({ key: "2", altKey: true, target });
+    assertEqual(runtime.contextState.activeTabId, "tab-d", "alt+2 should activate second tab in stack");
+
+    // alt+1 should switch back to first tab
+    await root.dispatchKey({ key: "1", altKey: true, target });
+    assertEqual(runtime.contextState.activeTabId, "tab-a", "alt+1 should activate first tab in stack");
+
+    // alt+9 should be a no-op (no tab at position 9)
+    await root.dispatchKey({ key: "9", altKey: true, target });
+    assertEqual(runtime.contextState.activeTabId, "tab-a", "alt+9 should be no-op when no tab at that position");
 
     dispose();
   });
