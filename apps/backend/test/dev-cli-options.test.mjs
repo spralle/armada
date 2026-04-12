@@ -17,6 +17,7 @@ test("parseBackendDevCliOptions keeps no-override baseline when no flags are pro
   assert.deepEqual(parsed, {
     selectedLocalPluginIds: [],
     duplicateSelectedLocalPluginIds: [],
+    gatewayPort: undefined,
   });
 });
 
@@ -109,5 +110,44 @@ test("formatLocalPluginOverrideStartupSummary fails fast for missing selected ma
         new Map(),
       ),
     /Missing local plugin override entry mapping for selected plugin 'ghost\.plugin-starter'/,
+  );
+});
+
+test("parseBackendDevCliOptions parses --gateway-port as positive integer", () => {
+  const parsed = parseBackendDevCliOptions(["--gateway-port", "41337"]);
+
+  assert.equal(parsed.gatewayPort, 41337);
+  assert.deepEqual(parsed.selectedLocalPluginIds, []);
+});
+
+test("parseBackendDevCliOptions returns undefined gatewayPort when flag is absent", () => {
+  const parsed = parseBackendDevCliOptions([]);
+
+  assert.equal(parsed.gatewayPort, undefined);
+});
+
+test("parseBackendDevCliOptions combines --gateway-port with --local-plugin", () => {
+  const parsed = parseBackendDevCliOptions([
+    "--gateway-port",
+    "9999",
+    "--local-plugin",
+    LOCAL_PLUGIN_IDS.themeDefault,
+  ]);
+
+  assert.equal(parsed.gatewayPort, 9999);
+  assert.deepEqual(parsed.selectedLocalPluginIds, [LOCAL_PLUGIN_IDS.themeDefault]);
+});
+
+test("parseBackendDevCliOptions rejects missing --gateway-port value", () => {
+  assert.throws(
+    () => parseBackendDevCliOptions(["--gateway-port"]),
+    /Missing value for --gateway-port\. Use --gateway-port <number>\./,
+  );
+});
+
+test("parseBackendDevCliOptions rejects non-numeric --gateway-port value", () => {
+  assert.throws(
+    () => parseBackendDevCliOptions(["--gateway-port", "abc"]),
+    /Invalid value 'abc' for --gateway-port\. Expected a positive integer\./,
   );
 });

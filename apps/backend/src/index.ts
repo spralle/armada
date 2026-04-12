@@ -1,6 +1,7 @@
 import {
   getTenantManifestEndpointPath,
   getDefaultLocalPluginEntryUrlMap,
+  createDefaultLocalPluginEntryUrlMap,
   resolveTenantManifestRequest,
 } from "./tenant-manifest.js";
 import {
@@ -23,7 +24,12 @@ interface NodeHttpResponseLike {
 }
 
 const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
-const localPluginEntryOverrides = getDefaultLocalPluginEntryUrlMap();
+const localPluginEntryOverrides = backendDevCliOptions.gatewayPort
+  ? createDefaultLocalPluginEntryUrlMap({
+      appsRoot: "apps",
+      gatewayPort: backendDevCliOptions.gatewayPort,
+    })
+  : getDefaultLocalPluginEntryUrlMap();
 
 if (backendDevCliOptions.duplicateSelectedLocalPluginIds.length > 0) {
   console.warn(

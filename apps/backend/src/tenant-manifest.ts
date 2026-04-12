@@ -56,6 +56,7 @@ export function createDefaultLocalPluginEntryUrlMap(options: {
   appsRoot: string;
   host?: string;
   protocol?: "http" | "https";
+  gatewayPort?: number;
 }): ReadonlyMap<string, string> {
   const discovered = discoverLocalUiPlugins(options);
 
