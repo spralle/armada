@@ -1,16 +1,11 @@
 import { federation } from "@module-federation/vite";
 import { defineConfig } from "vite";
 
-const gatewayOrigin = process.env.PLUGIN_DEV_GATEWAY_ORIGIN;
-
 export default defineConfig({
   plugins: [
     federation({
       name: "ghost.domain.unplanned-orders",
       filename: "remoteEntry.js",
-      ...(gatewayOrigin
-        ? { publicPath: `${gatewayOrigin}/ghost.domain.unplanned-orders/` }
-        : {}),
       manifest: {
         fileName: "mf-manifest.json",
       },

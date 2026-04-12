@@ -1,16 +1,11 @@
 import { federation } from "@module-federation/vite";
 import { defineConfig } from "vite";
 
-const gatewayOrigin = process.env.PLUGIN_DEV_GATEWAY_ORIGIN;
-
 export default defineConfig({
   plugins: [
     federation({
       name: "ghost.sample.contract-consumer",
       filename: "remoteEntry.js",
-      ...(gatewayOrigin
-        ? { publicPath: `${gatewayOrigin}/ghost.sample.contract-consumer/` }
-        : {}),
       manifest: {
         fileName: "mf-manifest.json",
       },
