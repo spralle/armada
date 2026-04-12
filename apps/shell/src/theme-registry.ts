@@ -8,7 +8,6 @@ import type {
   FullThemePalette,
   PluginContract,
   ThemeBackgroundEntry,
-  ThemeContribution,
 } from "@ghost/plugin-contracts";
 import {
   composeThemeContributions,
@@ -20,7 +19,11 @@ import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 import {
   readUserThemePreference,
   writeUserThemePreference,
+  readBackgroundPreference,
+  writeBackgroundPreference,
+  clearBackgroundPreference,
 } from "./theme-persistence.js";
+import { manageBackgroundImage } from "./theme-background.js";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -34,8 +37,16 @@ export interface ThemeRegistryOptions {
 export interface AvailableTheme {
   id: string;
   name: string;
+  author?: string | undefined;
   mode: string;
   pluginId: string;
+}
+
+export interface ActiveBackground {
+  url: string;
+  mode: "cover" | "contain" | "tile";
+  source: "theme" | "custom";
+  index: number | null;
 }
 
 export interface ThemeRegistry {
@@ -49,6 +60,16 @@ export interface ThemeRegistry {
   setTheme(themeId: string): boolean;
   /** Apply the resolved initial theme (user pref → tenant default → first available). */
   applyInitialTheme(): void;
+  /** Get the list of background entries for the active theme. */
+  getAvailableBackgrounds(): ThemeBackgroundEntry[];
+  /** Get info about the currently displayed background. Returns null if no background. */
+  getActiveBackground(): ActiveBackground | null;
+  /** Switch to a specific background from the active theme by index. Returns false if invalid. */
+  setBackground(index: number): boolean;
+  /** Set a custom background URL (not from the theme's array). */
+  setCustomBackground(url: string, mode?: "cover" | "contain" | "tile"): void;
+  /** Clear custom background, revert to theme's default (index 0) or no background. */
+  clearCustomBackground(): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -130,56 +151,8 @@ function resolveThemeId(
   return themes[0]?.id ?? null;
 }
 
-// ---------------------------------------------------------------------------
-// Background image management
-// ---------------------------------------------------------------------------
-
-const THEME_BACKGROUND_ID = "ghost-theme-background";
-
-/**
- * Create, update, or remove a fullscreen background image div behind all content.
- * When `backgrounds` is empty or undefined, the div is removed entirely.
- */
-export function manageBackgroundImage(
-  backgrounds: ThemeBackgroundEntry[] | undefined,
-): void {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const existing = document.getElementById(THEME_BACKGROUND_ID);
-
-  if (!backgrounds || backgrounds.length === 0) {
-    if (existing) {
-      existing.remove();
-    }
-    return;
-  }
-
-  const entry = backgrounds[0]!;
-  const div = existing ?? document.createElement("div");
-
-  if (!existing) {
-    div.id = THEME_BACKGROUND_ID;
-    document.body.prepend(div);
-  }
-
-  div.style.position = "fixed";
-  div.style.inset = "0";
-  div.style.zIndex = "-1";
-  div.style.backgroundImage = `url(${entry.url})`;
-
-  const mode = entry.mode ?? "cover";
-  if (mode === "tile") {
-    div.style.backgroundSize = "auto";
-    div.style.backgroundRepeat = "repeat";
-  } else {
-    div.style.backgroundSize = mode;
-    div.style.backgroundRepeat = "no-repeat";
-  }
-
-  div.style.backgroundPosition = "center";
-}
+// Re-export for backward compatibility.
+export { manageBackgroundImage } from "./theme-background.js";
 
 // ---------------------------------------------------------------------------
 // Factory
@@ -189,15 +162,61 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
   const { pluginRegistry, tenantDefaultThemeId } = options;
   let discoveredThemes: ComposedThemeContribution[] = [];
   let activeThemeId: string | null = null;
+  let activeBackground: ActiveBackground | null = null;
 
   function findTheme(themeId: string): ComposedThemeContribution | undefined {
     return discoveredThemes.find((t) => t.id === themeId);
   }
 
-  function applyTheme(theme: ThemeContribution): void {
+  function applyBackgroundEntry(
+    entry: ThemeBackgroundEntry,
+    source: "theme" | "custom",
+    index: number | null,
+  ): void {
+    manageBackgroundImage([entry]);
+    activeBackground = {
+      url: entry.url,
+      mode: entry.mode ?? "cover",
+      source,
+      index,
+    };
+  }
+
+  function applyThemeBackground(
+    theme: ComposedThemeContribution,
+    themeId: string,
+  ): void {
+    const pref = readBackgroundPreference(themeId);
+    const backgrounds = theme.backgrounds ?? [];
+
+    if (pref) {
+      if (pref.index !== null && pref.index >= 0 && pref.index < backgrounds.length) {
+        applyBackgroundEntry(backgrounds[pref.index]!, "theme", pref.index);
+        return;
+      }
+      if (pref.index === null && pref.custom) {
+        const entry: ThemeBackgroundEntry = {
+          url: pref.custom.url,
+          mode: pref.custom.mode,
+        };
+        applyBackgroundEntry(entry, "custom", null);
+        return;
+      }
+    }
+
+    // Default: first background or none
+    if (backgrounds.length > 0) {
+      applyBackgroundEntry(backgrounds[0]!, "theme", 0);
+    } else {
+      manageBackgroundImage(undefined);
+      activeBackground = null;
+    }
+  }
+
+  function applyTheme(theme: ComposedThemeContribution): void {
     const fullPalette = deriveFullPalette(theme.palette, theme.terminal);
     injectDerivedPaletteVariables(fullPalette);
-    manageBackgroundImage(theme.backgrounds);
+    applyThemeBackground(theme, theme.id);
   }
 
   return {
@@ -210,6 +229,7 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
       return discoveredThemes.map((theme) => ({
         id: theme.id,
         name: theme.name,
+        author: theme.author,
         mode: theme.mode,
         pluginId: theme.pluginId,
       }));
@@ -244,6 +264,60 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
 
       applyTheme(theme);
       activeThemeId = resolvedId;
+    },
+
+    getAvailableBackgrounds(): ThemeBackgroundEntry[] {
+      if (!activeThemeId) {
+        return [];
+      }
+      const theme = findTheme(activeThemeId);
+      return theme?.backgrounds ?? [];
+    },
+
+    getActiveBackground(): ActiveBackground | null {
+      return activeBackground;
+    },
+
+    setBackground(index: number): boolean {
+      if (!activeThemeId) {
+        return false;
+      }
+      const theme = findTheme(activeThemeId);
+      const backgrounds = theme?.backgrounds ?? [];
+      if (index < 0 || index >= backgrounds.length) {
+        return false;
+      }
+
+      applyBackgroundEntry(backgrounds[index]!, "theme", index);
+      writeBackgroundPreference(activeThemeId, { index });
+      return true;
+    },
+
+    setCustomBackground(url: string, mode?: "cover" | "contain" | "tile"): void {
+      const resolvedMode = mode ?? "cover";
+      const entry: ThemeBackgroundEntry = { url, mode: resolvedMode };
+      applyBackgroundEntry(entry, "custom", null);
+
+      if (activeThemeId) {
+        writeBackgroundPreference(activeThemeId, {
+          index: null,
+          custom: { url, mode: resolvedMode },
+        });
+      }
+    },
+
+    clearCustomBackground(): void {
+      if (activeThemeId) {
+        clearBackgroundPreference(activeThemeId);
+        const theme = findTheme(activeThemeId);
+        const backgrounds = theme?.backgrounds ?? [];
+        if (backgrounds.length > 0) {
+          applyBackgroundEntry(backgrounds[0]!, "theme", 0);
+        } else {
+          manageBackgroundImage(undefined);
+          activeBackground = null;
+        }
+      }
     },
   };
 }

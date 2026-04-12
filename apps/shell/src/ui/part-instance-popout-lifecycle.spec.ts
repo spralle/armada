@@ -314,6 +314,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     activeDndPath: "same-window",
     activeDndReason: "default-same-window-only",
     lastDndDiagnostic: null,
+    themeRegistry: null,
     ...overrides,
   };
 }

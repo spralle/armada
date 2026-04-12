@@ -96,6 +96,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   chooserReturnFocusSelector: string | null;
   actionSurface: ActionSurface;
   keybindingOverrideManager: KeybindingOverrideManager;
+  themeRegistry: ThemeRegistry | null;
   intentRuntime: IntentRuntime;
   commandNotice: string;
   partHost: ShellPartHostAdapter;

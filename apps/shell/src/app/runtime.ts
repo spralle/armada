@@ -106,6 +106,7 @@ export function createShellRuntime(options?: {
     chooserReturnFocusSelector: null,
     actionSurface: buildActionSurface([createDefaultShellKeybindingContract()]),
     keybindingOverrideManager: null as unknown as ShellRuntime["keybindingOverrideManager"],
+    themeRegistry: null,
     intentRuntime,
     commandNotice: "",
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,

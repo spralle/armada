@@ -1,6 +1,15 @@
 // theme-persistence.ts — User theme preference persistence via localStorage.
+//
+// Covers two concerns:
+//   1. Active theme ID preference.
+//   2. Per-theme background selection preference.
 
 const THEME_STORAGE_KEY = "ghost-shell-theme-preference";
+const BACKGROUND_STORAGE_KEY = "ghost-shell-background-preference";
+
+// ---------------------------------------------------------------------------
+// Theme preference
+// ---------------------------------------------------------------------------
 
 /**
  * Read the user's persisted theme preference from localStorage.
@@ -45,4 +54,80 @@ export function clearUserThemePreference(): void {
   } catch {
     // Silently ignore.
   }
+}
+
+// ---------------------------------------------------------------------------
+// Background preference (per-theme)
+// ---------------------------------------------------------------------------
+
+export interface BackgroundPreference {
+  /** Index into the theme's backgrounds array, or null if using custom. */
+  index: number | null;
+  /** Custom background entry (used when index is null). */
+  custom?: { url: string; mode?: "cover" | "contain" | "tile" } | undefined;
+}
+
+/** Internal: read the entire background preferences map from localStorage. */
+function readAllBackgroundPreferences(): Record<string, BackgroundPreference> {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) {
+      return {};
+    }
+    const raw = window.localStorage.getItem(BACKGROUND_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed as Record<string, BackgroundPreference>;
+  } catch {
+    return {};
+  }
+}
+
+/** Internal: write the entire background preferences map to localStorage. */
+function writeAllBackgroundPreferences(
+  prefs: Record<string, BackgroundPreference>,
+): void {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) {
+      return;
+    }
+    window.localStorage.setItem(BACKGROUND_STORAGE_KEY, JSON.stringify(prefs));
+  } catch {
+    // Silently ignore — localStorage may be full or unavailable.
+  }
+}
+
+/**
+ * Read per-theme background preference. Returns null if no preference stored.
+ */
+export function readBackgroundPreference(
+  themeId: string,
+): BackgroundPreference | null {
+  const all = readAllBackgroundPreferences();
+  return all[themeId] ?? null;
+}
+
+/**
+ * Write per-theme background preference.
+ */
+export function writeBackgroundPreference(
+  themeId: string,
+  pref: BackgroundPreference,
+): void {
+  const all = readAllBackgroundPreferences();
+  all[themeId] = pref;
+  writeAllBackgroundPreferences(all);
+}
+
+/**
+ * Clear per-theme background preference without affecting other themes.
+ */
+export function clearBackgroundPreference(themeId: string): void {
+  const all = readAllBackgroundPreferences();
+  delete all[themeId];
+  writeAllBackgroundPreferences(all);
 }

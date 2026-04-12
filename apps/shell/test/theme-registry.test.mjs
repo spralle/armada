@@ -402,3 +402,256 @@ test("theme switch between themes with and without backgrounds does not throw", 
   });
   assert.equal(themeRegistry.getActiveThemeId(), "with-bg");
 });
+
+// ---------------------------------------------------------------------------
+// Background selection API
+// ---------------------------------------------------------------------------
+
+test("getAvailableBackgrounds returns empty array when no theme active", () => {
+  const theme = createMockTheme("bg-theme", "BG Theme");
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+
+  assert.deepEqual(themeRegistry.getAvailableBackgrounds(), []);
+});
+
+test("getAvailableBackgrounds returns theme backgrounds after setTheme", () => {
+  const backgrounds = [
+    { url: "https://example.com/bg1.jpg", mode: "cover" },
+    { url: "https://example.com/bg2.jpg", mode: "tile" },
+  ];
+  const theme = { ...createMockTheme("bg-theme", "BG Theme"), backgrounds };
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  themeRegistry.setTheme("bg-theme");
+
+  const available = themeRegistry.getAvailableBackgrounds();
+  assert.equal(available.length, 2);
+  assert.equal(available[0].url, "https://example.com/bg1.jpg");
+  assert.equal(available[1].url, "https://example.com/bg2.jpg");
+});
+
+test("getAvailableBackgrounds returns empty array when theme has no backgrounds", () => {
+  const theme = createMockTheme("no-bg-theme", "No BG Theme");
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  themeRegistry.setTheme("no-bg-theme");
+
+  assert.deepEqual(themeRegistry.getAvailableBackgrounds(), []);
+});
+
+test("setBackground returns true for valid index and updates active background", () => {
+  const backgrounds = [
+    { url: "https://example.com/bg1.jpg", mode: "cover" },
+    { url: "https://example.com/bg2.jpg", mode: "tile" },
+  ];
+  const theme = { ...createMockTheme("bg-theme", "BG Theme"), backgrounds };
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  themeRegistry.setTheme("bg-theme");
+
+  const result = themeRegistry.setBackground(1);
+  assert.equal(result, true);
+
+  const active = themeRegistry.getActiveBackground();
+  assert.notEqual(active, null);
+  assert.equal(active.url, "https://example.com/bg2.jpg");
+  assert.equal(active.mode, "tile");
+  assert.equal(active.source, "theme");
+  assert.equal(active.index, 1);
+});
+
+test("setBackground returns false for out-of-bounds index", () => {
+  const backgrounds = [{ url: "https://example.com/bg.jpg" }];
+  const theme = { ...createMockTheme("bg-theme", "BG"), backgrounds };
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  themeRegistry.setTheme("bg-theme");
+
+  assert.equal(themeRegistry.setBackground(5), false);
+  assert.equal(themeRegistry.setBackground(-1), false);
+});
+
+test("setBackground returns false when no theme is active", () => {
+  const contract = createMockContract([createMockTheme("t", "T")]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+
+  assert.equal(themeRegistry.setBackground(0), false);
+});
+
+test("setCustomBackground applies custom URL and updates active background", () => {
+  const theme = {
+    ...createMockTheme("bg-theme", "BG"),
+    backgrounds: [{ url: "https://example.com/default.jpg" }],
+  };
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  themeRegistry.setTheme("bg-theme");
+
+  themeRegistry.setCustomBackground("https://example.com/custom.jpg", "contain");
+
+  const active = themeRegistry.getActiveBackground();
+  assert.notEqual(active, null);
+  assert.equal(active.url, "https://example.com/custom.jpg");
+  assert.equal(active.mode, "contain");
+  assert.equal(active.source, "custom");
+  assert.equal(active.index, null);
+});
+
+test("setCustomBackground defaults mode to cover", () => {
+  const theme = createMockTheme("bg-theme", "BG");
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  themeRegistry.setTheme("bg-theme");
+
+  themeRegistry.setCustomBackground("https://example.com/custom.jpg");
+
+  const active = themeRegistry.getActiveBackground();
+  assert.notEqual(active, null);
+  assert.equal(active.mode, "cover");
+});
+
+test("clearCustomBackground reverts to theme default background", () => {
+  const backgrounds = [{ url: "https://example.com/default.jpg", mode: "cover" }];
+  const theme = { ...createMockTheme("bg-theme", "BG"), backgrounds };
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  themeRegistry.setTheme("bg-theme");
+
+  themeRegistry.setCustomBackground("https://example.com/custom.jpg");
+  themeRegistry.clearCustomBackground();
+
+  const active = themeRegistry.getActiveBackground();
+  assert.notEqual(active, null);
+  assert.equal(active.url, "https://example.com/default.jpg");
+  assert.equal(active.source, "theme");
+  assert.equal(active.index, 0);
+});
+
+test("clearCustomBackground clears background when theme has no backgrounds", () => {
+  const theme = createMockTheme("no-bg", "No BG");
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  themeRegistry.setTheme("no-bg");
+
+  themeRegistry.setCustomBackground("https://example.com/custom.jpg");
+  themeRegistry.clearCustomBackground();
+
+  assert.equal(themeRegistry.getActiveBackground(), null);
+});
+
+test("getActiveBackground returns null when no theme is active", () => {
+  const contract = createMockContract([createMockTheme("t", "T")]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+
+  assert.equal(themeRegistry.getActiveBackground(), null);
+});
+
+test("getActiveBackground returns correct state after setTheme with backgrounds", () => {
+  const backgrounds = [
+    { url: "https://example.com/bg1.jpg", mode: "cover" },
+    { url: "https://example.com/bg2.jpg" },
+  ];
+  const theme = { ...createMockTheme("bg-theme", "BG Theme"), backgrounds };
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  themeRegistry.setTheme("bg-theme");
+
+  const active = themeRegistry.getActiveBackground();
+  assert.notEqual(active, null);
+  assert.equal(active.url, "https://example.com/bg1.jpg");
+  assert.equal(active.mode, "cover");
+  assert.equal(active.source, "theme");
+  assert.equal(active.index, 0);
+});
+
+test("getAvailableThemes includes author field from theme contribution", () => {
+  const theme = {
+    ...createMockTheme("authored-theme", "Authored Theme"),
+    author: "Test Author",
+  };
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+
+  const available = themeRegistry.getAvailableThemes();
+  assert.equal(available[0].author, "Test Author");
+});
+
+test("getAvailableThemes has undefined author when not set", () => {
+  const theme = createMockTheme("no-author-theme", "No Author");
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.default", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+
+  const available = themeRegistry.getAvailableThemes();
+  assert.equal(available[0].author, undefined);
+});

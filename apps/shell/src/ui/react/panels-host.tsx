@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import {
   collectLaneMetadata,
@@ -13,6 +13,8 @@ import type { ShellRuntime } from "../../app/types.js";
 import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";
 import { KeybindingsSettingsPanel } from "./keybinding-settings-panel.js";
+import { ContextControlsPanel } from "./context-controls-panel.js";
+import { AppearanceSettingsPanel } from "./appearance-settings-panel.js";
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
@@ -109,6 +111,16 @@ export function createReactPanelsHost(
           <KeybindingsSettingsPanel
             manager={runtime.keybindingOverrideManager}
             pluginBindings={runtime.actionSurface.keybindings}
+            onChanged={() => host.render()}
+          />,
+        );
+      }
+
+      const appearanceRoot = ensureRoot("appearance-settings");
+      if (appearanceRoot && runtime.themeRegistry) {
+        appearanceRoot.render(
+          <AppearanceSettingsPanel
+            themeRegistry={runtime.themeRegistry}
             onChanged={() => host.render()}
           />,
         );
@@ -243,45 +255,6 @@ function SyncStatusPanel(props: {
   );
 }
 
-function ContextControlsPanel(props: {
-  value: string;
-  disabled: boolean;
-  onApply: (value: string) => void;
-}) {
-  const [inputValue, setInputValue] = useState(props.value);
-  useEffect(() => { setInputValue(props.value); }, [props.value]);
-  const apply = () => { props.onApply(inputValue.trim() || "none"); };
-
-  return (
-    <>
-      <h2>Group context</h2>
-      <label className="runtime-note" htmlFor="context-value-input">{CORE_GROUP_CONTEXT_KEY}</label>
-      <input
-        id="context-value-input"
-        onChange={(event) => {
-          setInputValue(event.currentTarget.value);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            apply();
-          }
-        }}
-        style={{ width: "100%", boxSizing: "border-box", margin: "6px 0", padding: 4, background: "var(--ghost-input)", border: "1px solid var(--ghost-border)", color: "var(--ghost-foreground)" }}
-        value={inputValue}
-      />
-      <button
-        disabled={props.disabled}
-        id="context-apply"
-        onClick={apply}
-        style={{ background: "var(--ghost-surface-elevated)", border: "1px solid var(--ghost-border)", borderRadius: 4, color: "var(--ghost-foreground)", padding: "4px 8px", cursor: "pointer" }}
-        type="button"
-      >
-        Apply + sync
-      </button>
-    </>
-  );
-}
 
 function DevContextInspectorPanel(props: {
   contextState: ShellRuntime["contextState"];
