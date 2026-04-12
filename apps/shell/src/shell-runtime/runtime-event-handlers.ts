@@ -31,7 +31,7 @@ import type {
   SelectionSyncEvent,
 } from "../window-bridge.js";
 import { applySelectionPropagation } from "../domain/selection-graph.js";
-import { updateSelectedStyles } from "../ui/parts-rendering.js";
+import { updateDockTabVisibility } from "../ui/dock-tab-visibility.js";
 
 export interface RuntimeEventHandlerBindings {
   activatePluginForBoundary: (options: {
@@ -92,8 +92,7 @@ export function createRuntimeEventHandlers(
       runtime.notice = `Derived lane failures: ${selectionPropagation.derivedLaneFailures.join(", ")}`;
     }
 
-    bindings.renderParts();
-    updateSelectedStyles(root, runtime.selectedPartId);
+    updateDockTabVisibility(root, runtime);
     bindings.renderSyncStatus();
     bindings.announce(formatSelectionAnnouncement({
       selectedPartTitle: runtime.selectedPartTitle,
@@ -197,7 +196,7 @@ export function createRuntimeEventHandlers(
     runtime.pendingFocusSelector = restoreSelector;
     runtime.intentNotice = `Executed '${match.title}' via ${match.pluginId}.${match.handler}.`;
     bindings.announce(runtime.intentNotice);
-    bindings.renderParts();
+    updateDockTabVisibility(root, runtime);
   }
 
   return {
