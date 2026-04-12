@@ -1,4 +1,6 @@
 import { createEntityBridgeBroker } from "./entity-bridges/broker.js";
+import { createBridgeGraphReplica } from "./entity-bridges/bridge-graph-replica.js";
+import { createCrossWindowCorrelator } from "./entity-bridges/cross-window-correlator.js";
 import type {
   BridgeInvalidationEvent,
   EntityBridgeBroker,
@@ -9,6 +11,7 @@ import type {
   EntityBridgeHandler,
   PluginEntityBridgeContribution,
 } from "@ghost/entity-bridge-contracts";
+import type { BridgeActivationEvent, BridgeQueryResponseEvent, WindowBridgeEvent } from "./window-bridge.js";
 
 type TestCase = {
   name: string;
@@ -270,6 +273,242 @@ test("dispose clears all state", () => {
   // Listener should be cleared too
   broker.invalidate("sailing-order", "data-updated");
   assertEqual(events.length, 0, "no invalidation events should fire after dispose");
+});
+
+// --- bridge-graph-replica tests ---
+
+function makeActivationEvent(
+  bridgeId: string,
+  action: "activated" | "deactivated",
+  sourceWindowId: string,
+  sourceEntityType = "sailing",
+  targetEntityType = "order",
+): BridgeActivationEvent {
+  return {
+    type: "bridge-activation",
+    bridgeId,
+    action,
+    sourceEntityType,
+    targetEntityType,
+    sourceWindowId,
+  };
+}
+
+test("bridge-graph-replica: applyActivation adds remote bridge", () => {
+  const replica = createBridgeGraphReplica();
+
+  replica.applyActivation(
+    makeActivationEvent("sailing-order", "activated", "window-2"),
+  );
+
+  const bridges = replica.getRemoteBridges();
+  assertEqual(bridges.length, 1, "should have one remote bridge");
+  assertEqual(bridges[0].bridgeId, "sailing-order", "bridge id");
+  assertEqual(bridges[0].sourceEntityType, "sailing", "source entity type");
+  assertEqual(bridges[0].targetEntityType, "order", "target entity type");
+  assertEqual(bridges[0].ownerWindowId, "window-2", "owner window id");
+});
+
+test("bridge-graph-replica: deactivation removes remote bridge", () => {
+  const replica = createBridgeGraphReplica();
+
+  replica.applyActivation(
+    makeActivationEvent("sailing-order", "activated", "window-2"),
+  );
+  assertEqual(replica.getRemoteBridges().length, 1, "should have one bridge after activation");
+
+  replica.applyActivation(
+    makeActivationEvent("sailing-order", "deactivated", "window-2"),
+  );
+  assertEqual(replica.getRemoteBridges().length, 0, "should have no bridges after deactivation");
+});
+
+test("bridge-graph-replica: findOwnerWindow returns correct window", () => {
+  const replica = createBridgeGraphReplica();
+
+  replica.applyActivation(
+    makeActivationEvent("sailing-order", "activated", "window-3"),
+  );
+
+  assertEqual(
+    replica.findOwnerWindow("sailing-order"),
+    "window-3",
+    "findOwnerWindow should return the owner",
+  );
+  assertEqual(
+    replica.findOwnerWindow("nonexistent"),
+    null,
+    "findOwnerWindow should return null for unknown bridge",
+  );
+});
+
+test("bridge-graph-replica: removeWindow clears all entries for that window", () => {
+  const replica = createBridgeGraphReplica();
+
+  replica.applyActivation(
+    makeActivationEvent("sailing-order", "activated", "window-a"),
+  );
+  replica.applyActivation(
+    makeActivationEvent("order-invoice", "activated", "window-a", "order", "invoice"),
+  );
+  replica.applyActivation(
+    makeActivationEvent("vessel-crew", "activated", "window-b", "vessel", "crew"),
+  );
+
+  assertEqual(replica.getRemoteBridges().length, 3, "should have three bridges before removal");
+
+  replica.removeWindow("window-a");
+
+  const remaining = replica.getRemoteBridges();
+  assertEqual(remaining.length, 1, "should have one bridge after removing window-a");
+  assertEqual(remaining[0].bridgeId, "vessel-crew", "remaining bridge should be from window-b");
+  assertEqual(remaining[0].ownerWindowId, "window-b", "remaining bridge owner should be window-b");
+});
+
+// --- cross-window-correlator tests ---
+
+test("cross-window-correlator: sendQuery publishes request and resolves on response", async () => {
+  let counter = 0;
+  const correlator = createCrossWindowCorrelator({
+    createId: () => {
+      counter += 1;
+      return `test-q-${counter}`;
+    },
+  });
+
+  const published: WindowBridgeEvent[] = [];
+  const publish = (event: WindowBridgeEvent): boolean => {
+    published.push(event);
+    return true;
+  };
+
+  const promise = correlator.sendQuery(
+    "sailing-order",
+    { sourceIds: ["s1"] },
+    "window-target",
+    publish,
+    "window-source",
+  );
+
+  assertEqual(published.length, 1, "should publish one request event");
+  assertEqual(published[0].type, "bridge-query-request", "published event type");
+
+  const response: BridgeQueryResponseEvent = {
+    type: "bridge-query-response",
+    queryId: "test-q-1",
+    bridgeId: "sailing-order",
+    result: { ids: ["o1", "o2"], totalCount: 2 },
+    targetWindowId: "window-source",
+    sourceWindowId: "window-target",
+  };
+
+  const matched = correlator.handleResponse(response);
+  assertEqual(matched, true, "handleResponse should return true for matching queryId");
+
+  const result = await promise;
+  assertDeepEqual(result, { ids: ["o1", "o2"], totalCount: 2 }, "resolved result should match");
+  assertEqual(correlator.pendingCount(), 0, "no pending queries after resolution");
+});
+
+test("cross-window-correlator: timeout rejects pending query", async () => {
+  let counter = 0;
+  const correlator = createCrossWindowCorrelator({
+    defaultTimeoutMs: 10,
+    createId: () => {
+      counter += 1;
+      return `timeout-q-${counter}`;
+    },
+  });
+
+  const publish = (): boolean => true;
+
+  await assertRejects(
+    () =>
+      correlator.sendQuery(
+        "sailing-order",
+        { sourceIds: ["s1"] },
+        "window-target",
+        publish,
+        "window-source",
+      ),
+    "Bridge query timed out: sailing-order (queryId: timeout-q-1)",
+    "timeout should reject with descriptive message",
+  );
+
+  assertEqual(correlator.pendingCount(), 0, "no pending queries after timeout");
+});
+
+test("cross-window-correlator: error response rejects with error message", async () => {
+  let counter = 0;
+  const correlator = createCrossWindowCorrelator({
+    createId: () => {
+      counter += 1;
+      return `err-q-${counter}`;
+    },
+  });
+
+  const publish = (): boolean => true;
+
+  const promise = correlator.sendQuery(
+    "sailing-order",
+    { sourceIds: ["s1"] },
+    "window-target",
+    publish,
+    "window-source",
+  );
+
+  correlator.handleResponse({
+    type: "bridge-query-response",
+    queryId: "err-q-1",
+    bridgeId: "sailing-order",
+    result: { ids: [], totalCount: 0 },
+    error: "handler threw: internal error",
+    targetWindowId: "window-source",
+    sourceWindowId: "window-target",
+  });
+
+  await assertRejects(
+    () => promise,
+    "handler threw: internal error",
+    "error response should reject with error message",
+  );
+});
+
+test("cross-window-correlator: dispose rejects all pending queries", async () => {
+  let counter = 0;
+  const correlator = createCrossWindowCorrelator({
+    createId: () => {
+      counter += 1;
+      return `dispose-q-${counter}`;
+    },
+  });
+
+  const publish = (): boolean => true;
+
+  const p1 = correlator.sendQuery(
+    "bridge-a",
+    { sourceIds: ["s1"] },
+    "window-target",
+    publish,
+    "window-source",
+  );
+
+  const p2 = correlator.sendQuery(
+    "bridge-b",
+    { sourceIds: ["s2"] },
+    "window-target",
+    publish,
+    "window-source",
+  );
+
+  assertEqual(correlator.pendingCount(), 2, "should have two pending queries");
+
+  correlator.dispose();
+
+  assertEqual(correlator.pendingCount(), 0, "should have no pending queries after dispose");
+
+  await assertRejects(() => p1, "disposed", "first query should reject with disposed");
+  await assertRejects(() => p2, "disposed", "second query should reject with disposed");
 });
 
 // --- runner ---
