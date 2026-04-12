@@ -1,5 +1,7 @@
 import { createServer as createHttpServer, type Server as HttpServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { existsSync } from "node:fs";
+import { join, normalize, resolve } from "node:path";
 import {
   createPluginViteInstance,
   closeAllViteInstances,
@@ -9,10 +11,14 @@ import {
   resolvePluginConfigPath,
   resolvePluginDir,
 } from "./cli.js";
-import { discoverPlugins } from "./plugin-discovery.js";
+import { discoverPlugins, type DiscoveredPluginDefinition } from "./plugin-discovery.js";
+import { serveStaticFile } from "./static-serve.js";
 
 export interface PluginGatewayOptions {
+  /** All plugin IDs to serve (live + static). */
   pluginIds: readonly string[];
+  /** Subset of pluginIds that get live Vite dev servers. */
+  livePluginIds: readonly string[];
   port: number;
   workspaceRoot: string;
   pluginsDir: string;
@@ -34,7 +40,7 @@ export interface PluginGateway {
 export function createPluginGateway(
   options: PluginGatewayOptions,
 ): PluginGateway {
-  const { pluginIds, port, workspaceRoot, pluginsDir } = options;
+  const { pluginIds, livePluginIds, port, workspaceRoot, pluginsDir } = options;
   let httpServer: HttpServer | undefined;
   let viteInstances: ManagedViteInstance[] = [];
 
@@ -50,36 +56,49 @@ export function createPluginGateway(
     const allDefinitions = discoverPlugins(pluginsDir);
     const definitionMap = new Map(allDefinitions.map((d) => [d.id, d]));
 
-    const instancePromises = pluginIds.map((pluginId) => {
-      const definition = definitionMap.get(pluginId);
-      if (!definition) {
-        throw new Error(
-          `No definition found for plugin '${pluginId}'. Discovered: ${allDefinitions.map((d) => d.id).join(", ")}`,
-        );
-      }
-      const configPath = resolvePluginConfigPath(definition, workspaceRoot);
-      const pluginDir = resolvePluginDir(definition, workspaceRoot);
+    const liveSet = new Set(livePluginIds);
+    const staticPluginIds = pluginIds.filter((id) => !liveSet.has(id));
 
-      return createPluginViteInstance({
-        pluginId,
-        configPath,
-        pluginDir,
-        gatewayPort: port,
-        httpServer: httpServer as HttpServer,
+    // Build static-plugin dist directory map and warn about missing dist/
+    const staticDistMap = buildStaticDistMap(
+      staticPluginIds,
+      definitionMap,
+      pluginsDir,
+    );
+
+    // Create Vite instances only for live plugins
+    if (livePluginIds.length > 0) {
+      const instancePromises = livePluginIds.map((pluginId) => {
+        const definition = definitionMap.get(pluginId);
+        if (!definition) {
+          throw new Error(
+            `No definition found for plugin '${pluginId}'. Discovered: ${allDefinitions.map((d) => d.id).join(", ")}`,
+          );
+        }
+        const configPath = resolvePluginConfigPath(definition, workspaceRoot);
+        const pluginDir = resolvePluginDir(definition, workspaceRoot);
+
+        return createPluginViteInstance({
+          pluginId,
+          configPath,
+          pluginDir,
+          gatewayPort: port,
+          httpServer: httpServer as HttpServer,
+        });
       });
-    });
 
-    viteInstances = await Promise.all(instancePromises);
+      viteInstances = await Promise.all(instancePromises);
+    }
 
     const viteMap = buildViteMap(viteInstances);
 
     httpServer.removeAllListeners("request");
     httpServer.on("request", (req: IncomingMessage, res: ServerResponse) => {
-      handleRoutedRequest(req, res, viteMap);
+      handleRoutedRequest(req, res, viteMap, staticDistMap);
     });
 
     await listen(httpServer, port);
-    printStartupBanner(pluginIds, port);
+    printStartupBanner(pluginIds, livePluginIds, staticPluginIds, port);
   }
 
   async function stop(): Promise<void> {
@@ -122,6 +141,7 @@ function handleRoutedRequest(
   req: IncomingMessage,
   res: ServerResponse,
   viteMap: ReadonlyMap<string, ManagedViteInstance>,
+  staticDistMap: ReadonlyMap<string, string>,
 ): void {
   const url = req.url ?? "/";
 
@@ -142,28 +162,48 @@ function handleRoutedRequest(
     return;
   }
 
+  // Live Vite plugin — delegate to Vite middleware
   const instance = viteMap.get(routeResult.pluginId);
-  if (!instance) {
-    res.statusCode = 404;
-    res.setHeader("content-type", "application/json");
-    res.end(
-      JSON.stringify({
-        error: "unknown_plugin",
-        message: `Plugin '${routeResult.pluginId}' is not served by this gateway.`,
-        available: Array.from(viteMap.keys()),
-      }),
+  if (instance) {
+    req.url = routeResult.strippedPath;
+    instance.viteServer.middlewares.handle(
+      req,
+      res,
+      () => {
+        res.statusCode = 404;
+        res.end(`Not found: ${url}`);
+      },
     );
     return;
   }
 
-  req.url = routeResult.strippedPath;
-  instance.viteServer.middlewares.handle(
-    req,
-    res,
-    () => {
-      res.statusCode = 404;
-      res.end(`Not found: ${url}`);
-    },
+  // Static pre-built plugin — serve from dist/
+  const distDir = staticDistMap.get(routeResult.pluginId);
+  if (distDir) {
+    const requestedPath = routeResult.strippedPath === "/" ? "/index.html" : routeResult.strippedPath;
+    // Strip query string for file resolution
+    const pathWithoutQuery = requestedPath.split("?")[0];
+    const filePath = resolve(distDir, `.${pathWithoutQuery}`);
+    // Guard against path traversal
+    const normalizedFilePath = normalize(filePath);
+    if (!normalizedFilePath.startsWith(normalize(distDir))) {
+      res.statusCode = 403;
+      res.setHeader("content-type", "text/plain");
+      res.end("Forbidden");
+      return;
+    }
+    serveStaticFile(res, normalizedFilePath);
+    return;
+  }
+
+  res.statusCode = 404;
+  res.setHeader("content-type", "application/json");
+  res.end(
+    JSON.stringify({
+      error: "unknown_plugin",
+      message: `Plugin '${routeResult.pluginId}' is not served by this gateway.`,
+      available: [...Array.from(viteMap.keys()), ...Array.from(staticDistMap.keys())],
+    }),
   );
 }
 
@@ -190,6 +230,37 @@ function setCorsHeaders(res: ServerResponse): void {
   res.setHeader("access-control-allow-headers", "*");
 }
 
+function buildStaticDistMap(
+  staticPluginIds: readonly string[],
+  definitionMap: ReadonlyMap<string, DiscoveredPluginDefinition>,
+  pluginsDir: string,
+): Map<string, string> {
+  const map = new Map<string, string>();
+
+  for (const pluginId of staticPluginIds) {
+    const definition = definitionMap.get(pluginId);
+    if (!definition) {
+      console.warn(
+        `[plugin-dev-host] static plugin '${pluginId}' has no discovery definition — skipping`,
+      );
+      continue;
+    }
+
+    const distDir = join(pluginsDir, definition.folderName, "dist");
+    if (!existsSync(distDir)) {
+      console.warn(
+        `[plugin-dev-host] ⚠ plugin '${pluginId}' has no dist/ directory. ` +
+          `Run 'bun run build:plugins' to pre-build plugins.`,
+      );
+      continue;
+    }
+
+    map.set(pluginId, distDir);
+  }
+
+  return map;
+}
+
 function listen(server: HttpServer, port: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const onError = (err: Error) => {
@@ -205,16 +276,24 @@ function listen(server: HttpServer, port: number): Promise<void> {
 }
 
 function printStartupBanner(
-  pluginIds: readonly string[],
+  allPluginIds: readonly string[],
+  livePluginIds: readonly string[],
+  staticPluginIds: readonly string[],
   port: number,
 ): void {
-  const maxIdLength = Math.max(...pluginIds.map((id) => id.length));
-  const pluginLines = pluginIds
-    .map((id) => `  \u2713 ${id.padEnd(maxIdLength)}  \u2192  /${id}/`)
-    .join("\n");
+  const lines: string[] = [
+    `\n[plugin-dev-host] Serving ${allPluginIds.length} plugin${allPluginIds.length === 1 ? "" : "s"} on http://127.0.0.1:${port}`,
+  ];
 
-  console.log(
-    `\nPlugin Dev Host \u2014 http://127.0.0.1:${port}\n\n${pluginLines}\n\n` +
-      `Serving ${pluginIds.length} plugin${pluginIds.length === 1 ? "" : "s"}. Press Ctrl+C to stop.\n`,
-  );
+  if (livePluginIds.length > 0) {
+    lines.push(`  Live (HMR):  ${livePluginIds.join(", ")}`);
+  }
+  if (staticPluginIds.length > 0) {
+    lines.push(`  Static:      ${staticPluginIds.join(", ")}`);
+  }
+
+  lines.push("");
+  lines.push("Press Ctrl+C to stop.\n");
+
+  console.log(lines.join("\n"));
 }

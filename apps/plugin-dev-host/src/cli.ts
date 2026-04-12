@@ -6,7 +6,10 @@ import {
 export const DEFAULT_GATEWAY_PORT = 41337;
 
 export interface PluginDevHostCliOptions {
-  pluginIds: string[];
+  /** Every discovered plugin ID to serve (live + static). */
+  allPluginIds: string[];
+  /** Subset that get live Vite dev servers (from --only). */
+  livePluginIds: string[];
   port: number;
 }
 
@@ -28,11 +31,13 @@ export function parsePluginDevHostArgs(
   }
 
   const port = parsePortFlag(argv);
-  const pluginIds = hasAll
-    ? discoveredIds.slice()
-    : parseOnlyFlag(argv, discoveredIds);
 
-  return { pluginIds, port };
+  // --all: serve all plugins as static (no live Vite instances)
+  // --only <ids>: specified plugins get live Vite, all discovered are served
+  const livePluginIds = hasAll ? [] : parseOnlyFlag(argv, discoveredIds);
+  const allPluginIds = discoveredIds.slice();
+
+  return { allPluginIds, livePluginIds, port };
 }
 
 export function resolvePluginDir(

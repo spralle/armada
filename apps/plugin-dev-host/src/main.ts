@@ -8,7 +8,8 @@ const pluginsDir = resolve(workspaceRoot, "plugins");
 const cliOptions = parsePluginDevHostArgs(process.argv.slice(2), pluginsDir);
 
 const gateway = createPluginGateway({
-  pluginIds: cliOptions.pluginIds,
+  pluginIds: cliOptions.allPluginIds,
+  livePluginIds: cliOptions.livePluginIds,
   port: cliOptions.port,
   workspaceRoot,
   pluginsDir,
