@@ -48,7 +48,13 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
         ratio,
       });
     },
-    commitRender: () => deps.renderParts(),
+    commitRender: () => {
+      // State was persisted during drag via updateContextState().
+      // CSS preview styles were applied via previewSplitStyle().
+      // A full renderParts() would destroy the DOM and cause flickering.
+      // The next structural render (tab activation, tab move, etc.) will
+      // pick up the persisted ratio and produce matching HTML.
+    },
   });
   wireDockTabDragDrop(root, runtime, deps);
   wireTabStripDragDrop(root, runtime, {
