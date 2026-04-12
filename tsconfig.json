@@ -11,6 +11,9 @@
       "path": "./apps/backend"
     },
     {
+      "path": "./apps/plugin-dev-host"
+    },
+    {
       "path": "./apps/plugin-starter"
     },
     {

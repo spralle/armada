@@ -7,6 +7,7 @@ import { normalizeAndAssertValidLocalPluginId } from "./local-ui-plugin-discover
 export interface BackendDevCliOptions {
   selectedLocalPluginIds: string[];
   duplicateSelectedLocalPluginIds: string[];
+  gatewayPort: number | undefined;
 }
 
 export function parseBackendDevCliOptions(
@@ -26,9 +27,12 @@ export function parseBackendDevCliOptions(
 
   validateSelectedLocalPluginIds(selectedLocalPluginIds);
 
+  const gatewayPort = parseSingleNumericOption(argv, "--gateway-port");
+
   return {
     selectedLocalPluginIds,
     duplicateSelectedLocalPluginIds,
+    gatewayPort,
   };
 }
 
@@ -71,6 +75,35 @@ function collectRepeatableOptionValues(
   }
 
   return values;
+}
+
+function parseSingleNumericOption(
+  argv: readonly string[],
+  optionName: string,
+): number | undefined {
+  for (let index = 0; index < argv.length; index += 1) {
+    if (argv[index] !== optionName) {
+      continue;
+    }
+
+    const value = argv[index + 1];
+    if (typeof value !== "string" || value.startsWith("--")) {
+      throw new Error(
+        `Missing value for ${optionName}. Use ${optionName} <number>.`,
+      );
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0 || !Number.isInteger(parsed)) {
+      throw new Error(
+        `Invalid value '${value}' for ${optionName}. Expected a positive integer.`,
+      );
+    }
+
+    return parsed;
+  }
+
+  return undefined;
 }
 
 function validateSelectedLocalPluginIds(

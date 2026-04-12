@@ -19,6 +19,7 @@ export interface DiscoverLocalUiPluginsOptions {
   host?: string;
   protocol?: "http" | "https";
   definitions?: readonly CanonicalLocalUiPluginDefinition[];
+  gatewayPort?: number;
 }
 
 const VALID_LOCAL_PLUGIN_ID_PATTERN =
@@ -117,7 +118,9 @@ export function discoverLocalUiPlugins(
       options.appsRoot,
       definition.folderName,
     );
-    const entry = `${protocol}://${host}:${definition.devPort}${definition.entryPath}`;
+    const entry = options.gatewayPort
+      ? `${protocol}://${host}:${options.gatewayPort}/${definition.normalizedId}/mf-manifest.json`
+      : `${protocol}://${host}:${definition.devPort}${definition.entryPath}`;
 
     assertValidLocalPluginEntryUrl(
       entry,
@@ -188,9 +191,9 @@ export function assertValidLocalPluginEntryUrl(
     );
   }
 
-  if (parsed.pathname !== "/mf-manifest.json") {
+  if (!parsed.pathname.endsWith("/mf-manifest.json")) {
     throw new Error(
-      `Invalid local plugin entry URL '${entry}' ${context}: path must be '/mf-manifest.json'.`,
+      `Invalid local plugin entry URL '${entry}' ${context}: path must end with '/mf-manifest.json'.`,
     );
   }
 }

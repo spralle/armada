@@ -7,6 +7,8 @@ import {
 } from "../dist-test/src/local-ui-plugin-discovery.js";
 import {
   DEFAULT_LOCAL_PLUGIN_ENTRIES,
+  DEFAULT_GATEWAY_PLUGIN_ENTRIES,
+  DEFAULT_GATEWAY_PORT,
   LOCAL_PLUGIN_IDS,
   SORTED_LOCAL_PLUGIN_IDS,
 } from "./fixtures/local-plugin-overrides-fixtures.mjs";
@@ -149,6 +151,81 @@ test("discoverLocalUiPlugins rejects invalid entries clearly", () => {
           },
         ],
       }),
-    /path must be '\/mf-manifest\.json'/,
+    /path must end with '\/mf-manifest\.json'/,
   );
+});
+
+test("discoverLocalUiPlugins generates gateway-mode URLs when gatewayPort is set", () => {
+  const discovered = discoverLocalUiPlugins({
+    appsRoot: "apps",
+    gatewayPort: DEFAULT_GATEWAY_PORT,
+  });
+
+  assert.deepEqual(Array.from(discovered.keys()), SORTED_LOCAL_PLUGIN_IDS);
+
+  for (const [pluginId, plugin] of discovered) {
+    assert.equal(
+      plugin.entry,
+      DEFAULT_GATEWAY_PLUGIN_ENTRIES[pluginId],
+      `gateway entry mismatch for ${pluginId}`,
+    );
+  }
+});
+
+test("discoverLocalUiPlugins without gatewayPort returns legacy per-port URLs", () => {
+  const discovered = discoverLocalUiPlugins({
+    appsRoot: "apps",
+  });
+
+  for (const [pluginId, plugin] of discovered) {
+    assert.equal(
+      plugin.entry,
+      DEFAULT_LOCAL_PLUGIN_ENTRIES[pluginId],
+      `legacy entry mismatch for ${pluginId}`,
+    );
+  }
+});
+
+test("discoverLocalUiPlugins gateway-mode URLs use custom host and protocol", () => {
+  const discovered = discoverLocalUiPlugins({
+    appsRoot: "apps",
+    host: "localhost",
+    protocol: "https",
+    gatewayPort: 9999,
+  });
+
+  assert.equal(
+    discovered.get(LOCAL_PLUGIN_IDS.themeDefault)?.entry,
+    "https://localhost:9999/ghost.theme.default/mf-manifest.json",
+  );
+});
+
+test("assertValidLocalPluginEntryUrl accepts both root and prefixed mf-manifest paths", () => {
+  // Both should work without throwing
+  discoverLocalUiPlugins({
+    appsRoot: "apps",
+    definitions: [
+      {
+        id: "ghost.test-plugin",
+        folderName: "test-plugin",
+        devPort: 4999,
+        version: "0.1.0",
+        entryPath: "/mf-manifest.json",
+      },
+    ],
+  });
+
+  discoverLocalUiPlugins({
+    appsRoot: "apps",
+    gatewayPort: DEFAULT_GATEWAY_PORT,
+    definitions: [
+      {
+        id: "ghost.test-plugin",
+        folderName: "test-plugin",
+        devPort: 4999,
+        version: "0.1.0",
+        entryPath: "/mf-manifest.json",
+      },
+    ],
+  });
 });
