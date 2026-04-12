@@ -41,3 +41,20 @@ export type {
   ContractMetadata,
 } from "./contract-derivation.js";
 export { deriveContractFromPackageJson } from "./contract-derivation.js";
+
+// json-schema-generator.ts — JSON Schema generation
+export type {
+  JsonSchemaDocument,
+  JsonSchemaProperty,
+} from "./json-schema-generator.js";
+export {
+  generateJsonSchema,
+  generateSinglePropertySchema,
+} from "./json-schema-generator.js";
+
+// zod-schema-generator.ts — Zod codegen (string-based)
+export {
+  generateZodSchemaSource,
+  generateZodForProperty,
+  sanitizeKeyToIdentifier,
+} from "./zod-schema-generator.js";
