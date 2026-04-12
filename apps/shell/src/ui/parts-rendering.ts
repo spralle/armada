@@ -118,7 +118,7 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
       title: tab.title,
       args: {},
       slot: tab.slot,
-      pluginId: "shell.utility",
+      pluginId: tab.pluginId ?? "shell.utility",
     } satisfies ComposedShellPart));
 
   return [...utilityParts, ...pluginParts];

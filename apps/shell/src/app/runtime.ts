@@ -8,6 +8,7 @@ import {
   createLocalStorageLayoutPersistence,
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
+import { createPluginServicesBridge } from "../plugin-service-bridge.js";
 import { buildActionSurface } from "../action-surface.js";
 import {
   createDefaultShellKeybindingContract,
@@ -53,6 +54,7 @@ export function createShellRuntime(options?: {
     : createAsyncWindowBridgeCompatibilityShim(bridge);
 
   const intentRuntime = createIntentRuntime();
+  const registry = createShellPluginRegistry();
 
   const runtime: ShellRuntime = {
     layout: createDefaultLayoutState(),
@@ -65,7 +67,8 @@ export function createShellRuntime(options?: {
     keybindingPersistence: createLocalStorageKeybindingPersistence(getStorage(), {
       userId: getCurrentUserId(),
     }),
-    registry: createShellPluginRegistry(),
+    registry,
+    services: createPluginServicesBridge(registry),
     bridge,
     asyncBridge,
     windowId,
@@ -106,6 +109,7 @@ export function createShellRuntime(options?: {
     chooserReturnFocusSelector: null,
     actionSurface: buildActionSurface([createDefaultShellKeybindingContract()]),
     keybindingOverrideManager: null as unknown as ShellRuntime["keybindingOverrideManager"],
+    themeRegistry: null,
     intentRuntime,
     commandNotice: "",
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,

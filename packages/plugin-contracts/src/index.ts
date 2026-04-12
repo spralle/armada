@@ -4,6 +4,8 @@ export type { Event, EventEmitter } from "./event.js";
 export { createEventEmitter } from "./event.js";
 
 export type {
+  PluginGalleryBanner,
+  PluginGallery,
   PluginManifestIdentity,
   PluginViewContribution,
   PluginPartContribution,
@@ -24,6 +26,12 @@ export type {
   PluginDerivedLaneContribution,
   PluginDragDropSessionReference,
   PluginPopoutCapabilityFlags,
+  ThemeBackgroundEntry,
+  ThemeFonts,
+  ThemeContribution,
+  BrandingLogo,
+  BrandingLoadingScreen,
+  BrandingContribution,
   PluginContributions,
   PluginContract,
   PluginCompatibilityMetadata,
@@ -33,6 +41,8 @@ export type {
 
 export {
   pluginManifestIdentitySchema,
+  pluginGalleryBannerSchema,
+  pluginGallerySchema,
   pluginViewContributionSchema,
   pluginPartContributionSchema,
   pluginCapabilityComponentContributionSchema,
@@ -54,16 +64,23 @@ export {
   pluginCompatibilityMetadataSchema,
   tenantPluginDescriptorSchema,
   tenantPluginManifestResponseSchema,
+  themeContributionSchema,
+  brandingContributionSchema,
+  activationEventsSchema,
 } from "./schemas.js";
 
 export type {
   ComposedPluginViewContribution,
   ComposedPluginPartContribution,
   ComposedPluginContributions,
+  ComposedThemeContribution,
   PluginContributionSource,
 } from "./composition.js";
 
-export { composeEnabledPluginContributions } from "./composition.js";
+export {
+  composeEnabledPluginContributions,
+  composeThemeContributions,
+} from "./composition.js";
 
 export type {
   PluginContractValidationIssue,
@@ -104,3 +121,33 @@ export type {
   InputBoxOptions,
   ActivationContext,
 } from "./ghost-api.js";
+
+export type {
+  ThemeMode,
+  TerminalPalette,
+  PartialThemePalette,
+  FullThemePalette,
+} from "./theme-derivation.js";
+
+export {
+  partialThemePaletteSchema,
+  terminalPaletteSchema,
+  deriveFullPalette,
+} from "./theme-derivation.js";
+
+export { GHOST_THEME_CSS_VARS } from "./theme-css-vars.js";
+
+export {
+  adjustLightness,
+  desaturate,
+  contrastSafe,
+  blendWithBackground,
+  contrastRatio,
+  relativeLuminance,
+  isValidHex,
+} from "./theme-color-utils.js";
+
+export type { ThemeService, ThemeInfo, BackgroundInfo } from "./theme-service.js";
+export { THEME_SERVICE_ID } from "./theme-service.js";
+
+export type { PluginServices, PluginMountContext } from "./plugin-services.js";

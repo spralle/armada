@@ -62,10 +62,11 @@ export function createShellPluginRegistry(
     options.apiDeps,
   );
   let tenantId = "local";
-  const builtinContracts: PluginContract[] = [];
+  const builtinContracts: Array<{ contract: PluginContract; serviceInstances?: Record<string, unknown> }> = [];
 
-  function seedBuiltinState(contract: PluginContract): void {
+  function seedBuiltinState(contract: PluginContract, serviceInstances?: Record<string, unknown>): void {
     const pluginId = contract.manifest.id;
+    const instanceMap = serviceInstances ? new Map(Object.entries(serviceInstances)) : null;
     states.set(pluginId, {
       descriptor: {
         id: pluginId,
@@ -87,21 +88,24 @@ export function createShellPluginRegistry(
       activationPromise: null,
       activate: null,
       activationSubscriptions: [],
+      builtinServiceInstances: instanceMap,
     });
   }
 
   return {
-    registerBuiltinPlugin(contract: PluginContract) {
-      builtinContracts.push(contract);
-      seedBuiltinState(contract);
+    registerBuiltinPlugin(contract: PluginContract, serviceInstances?: Record<string, unknown>) {
+      builtinContracts.push({ contract, serviceInstances });
+      seedBuiltinState(contract, serviceInstances);
+      capabilityRegistry.registerPlugin(contract.manifest.id, contract);
     },
     registerManifestDescriptors(nextTenantId, descriptors) {
       tenantId = nextTenantId;
       states.clear();
       capabilityRegistry.clear();
       // Re-register builtin plugins after clear
-      for (const contract of builtinContracts) {
-        seedBuiltinState(contract);
+      for (const entry of builtinContracts) {
+        seedBuiltinState(entry.contract, entry.serviceInstances);
+        capabilityRegistry.registerPlugin(entry.contract.manifest.id, entry.contract);
       }
       for (const descriptor of descriptors) {
         states.set(descriptor.id, {
@@ -120,6 +124,7 @@ export function createShellPluginRegistry(
           activationPromise: null,
           activate: null,
           activationSubscriptions: [],
+          builtinServiceInstances: null,
         });
       }
     },
@@ -157,6 +162,12 @@ export function createShellPluginRegistry(
       return ensureActivated(pluginId, {
         type: "intent",
         id: intentId,
+      });
+    },
+    async activateByEvent(pluginId, eventName) {
+      return ensureActivated(pluginId, {
+        type: "event",
+        id: eventName,
       });
     },
     async resolveComponentCapability(requesterPluginId, capabilityId) {
@@ -255,6 +266,11 @@ export function createShellPluginRegistry(
         return null;
       }
 
+      // Short-circuit for builtin plugins with pre-registered instances
+      if (providerState.builtinServiceInstances?.has(capabilityId)) {
+        return providerState.builtinServiceInstances.get(capabilityId) ?? null;
+      }
+
       if (!providerState.servicesModule) {
         providerState.servicesModule = await pluginLoader.loadPluginServices(providerState.descriptor);
       }
@@ -274,6 +290,34 @@ export function createShellPluginRegistry(
       }
 
       return resolved;
+    },
+    getService<T = unknown>(serviceId: string): T | null {
+      const provider = capabilityRegistry.resolveService(serviceId, {
+        requesterPluginId: "shell",
+      });
+      if (!provider) return null;
+
+      const state = states.get(provider.providerPluginId);
+      if (!state) return null;
+
+      // Check builtin instances first
+      if (state.builtinServiceInstances?.has(serviceId)) {
+        return (state.builtinServiceInstances.get(serviceId) as T) ?? null;
+      }
+
+      // Check already-loaded services module
+      if (state.servicesModule && state.contract) {
+        const providerServices = readCapabilityServices(state.contract);
+        const cap = providerServices.find(s => s.id === serviceId);
+        if (cap) {
+          return (pickServiceModuleExport(state.servicesModule, cap) as T) ?? null;
+        }
+      }
+
+      return null;
+    },
+    hasService(serviceId: string): boolean {
+      return this.getService(serviceId) !== null;
     },
     getSnapshot() {
       return {
@@ -308,4 +352,5 @@ function resetRuntimeState(state: PluginRuntimeState): void {
   state.activationPromise = null;
   state.activate = null;
   state.activationSubscriptions = [];
+  // NOTE: Do NOT reset builtinServiceInstances — they persist across resets
 }

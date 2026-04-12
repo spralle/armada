@@ -1,7 +1,21 @@
+import type { PartialThemePalette, TerminalPalette } from "./theme-derivation.js";
+
+export interface PluginGalleryBanner {
+  color?: string | undefined;
+  theme?: "dark" | "light" | undefined;
+}
+
+export interface PluginGallery {
+  screenshots?: string[] | undefined;
+  banner?: PluginGalleryBanner | undefined;
+}
+
 export interface PluginManifestIdentity {
   id: string;
   name: string;
   version: string;
+  icon?: string | undefined;
+  gallery?: PluginGallery | undefined;
 }
 
 export interface PluginViewContribution {
@@ -113,6 +127,46 @@ export interface PluginPopoutCapabilityFlags {
   allowMultiplePopouts?: boolean | undefined;
 }
 
+export interface ThemeBackgroundEntry {
+  url: string;
+  mode?: "cover" | "contain" | "tile" | undefined;
+}
+
+export interface ThemeFonts {
+  body?: string | undefined;
+  mono?: string | undefined;
+  heading?: string | undefined;
+}
+
+export interface ThemeContribution {
+  id: string;
+  name: string;
+  author?: string | undefined;
+  mode: "dark" | "light";
+  palette: PartialThemePalette;
+  backgrounds?: ThemeBackgroundEntry[] | undefined;
+  fonts?: ThemeFonts | undefined;
+  terminal?: TerminalPalette | undefined;
+  preview?: string | undefined;
+}
+
+export interface BrandingLogo {
+  light?: string | undefined;
+  dark?: string | undefined;
+}
+
+export interface BrandingLoadingScreen {
+  logo?: string | undefined;
+  backgroundColor?: string | undefined;
+}
+
+export interface BrandingContribution {
+  appName?: string | undefined;
+  logo?: BrandingLogo | undefined;
+  favicon?: string | undefined;
+  loadingScreen?: BrandingLoadingScreen | undefined;
+}
+
 export interface PluginContributions {
   views?: PluginViewContribution[] | undefined;
   parts?: PluginPartContribution[] | undefined;
@@ -124,12 +178,15 @@ export interface PluginContributions {
   derivedLanes?: PluginDerivedLaneContribution[] | undefined;
   dragDropSessionReferences?: PluginDragDropSessionReference[] | undefined;
   popoutCapabilities?: PluginPopoutCapabilityFlags | undefined;
+  themes?: ThemeContribution[] | undefined;
+  branding?: BrandingContribution | undefined;
 }
 
 export interface PluginContract {
   manifest: PluginManifestIdentity;
   contributes?: PluginContributions | undefined;
   dependsOn?: PluginDependencies | undefined;
+  activationEvents?: ("onStartup")[] | undefined;
 }
 
 export interface PluginCompatibilityMetadata {

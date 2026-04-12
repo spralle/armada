@@ -21,24 +21,24 @@ export interface KeybindingsSettingsPanelProps {
 // ---------------------------------------------------------------------------
 
 const sectionStyle: React.CSSProperties = { marginBottom: 16 };
-const headingStyle: React.CSSProperties = { margin: "0 0 8px", fontSize: 14, color: "#e9edf3" };
+const headingStyle: React.CSSProperties = { margin: "0 0 8px", fontSize: 14, color: "var(--ghost-foreground)" };
 const tableStyle: React.CSSProperties = { width: "100%", borderCollapse: "collapse", fontSize: 12 };
-const thStyle: React.CSSProperties = { textAlign: "left", padding: "4px 8px", borderBottom: "1px solid #334564", color: "#c6d0e0" };
-const tdStyle: React.CSSProperties = { padding: "4px 8px", borderBottom: "1px solid #1d2635", color: "#e9edf3" };
+const thStyle: React.CSSProperties = { textAlign: "left", padding: "4px 8px", borderBottom: "1px solid var(--ghost-border)", color: "var(--ghost-muted-foreground)" };
+const tdStyle: React.CSSProperties = { padding: "4px 8px", borderBottom: "1px solid var(--ghost-surface-elevated)", color: "var(--ghost-foreground)" };
 const badgeBase: React.CSSProperties = { display: "inline-block", padding: "1px 6px", borderRadius: 3, fontSize: 10, marginLeft: 4 };
 const btnStyle: React.CSSProperties = {
-  background: "#1d2635", border: "1px solid #334564", borderRadius: 4,
-  color: "#e9edf3", padding: "2px 8px", cursor: "pointer", fontSize: 11,
+  background: "var(--ghost-surface-elevated)", border: "1px solid var(--ghost-border)", borderRadius: 4,
+  color: "var(--ghost-foreground)", padding: "2px 8px", cursor: "pointer", fontSize: 11,
 };
-const recordBtnStyle: React.CSSProperties = { ...btnStyle, background: "#7cb4ff", color: "#0f1319" };
-const conflictBadge: React.CSSProperties = { ...badgeBase, background: "#8b3030", color: "#ffc6c6" };
+const recordBtnStyle: React.CSSProperties = { ...btnStyle, background: "var(--ghost-primary)", color: "var(--ghost-input)" };
+const conflictBadge: React.CSSProperties = { ...badgeBase, background: "var(--ghost-error)", color: "var(--ghost-error-foreground)" };
 const layerBadge = (layer: string): React.CSSProperties => ({
   ...badgeBase,
-  background: layer === "user-overrides" ? "#2a4a2a" : layer === "plugins" ? "#2a3a5a" : "#333",
-  color: layer === "user-overrides" ? "#8fdf8f" : layer === "plugins" ? "#8fb8ff" : "#c6d0e0",
+  background: layer === "user-overrides" ? "var(--ghost-success-background)" : layer === "plugins" ? "var(--ghost-info-background)" : "var(--ghost-neutral-background)",
+  color: layer === "user-overrides" ? "var(--ghost-success-foreground)" : layer === "plugins" ? "var(--ghost-info-foreground)" : "var(--ghost-muted-foreground)",
 });
 const dangerBtnStyle: React.CSSProperties = {
-  ...btnStyle, marginTop: 12, background: "#3a2020", border: "1px solid #8b3030", color: "#ffc6c6",
+  ...btnStyle, marginTop: 12, background: "var(--ghost-error-background)", border: "1px solid var(--ghost-error)", color: "var(--ghost-error-foreground)",
 };
 
 // ---------------------------------------------------------------------------
@@ -141,11 +141,11 @@ export function KeybindingsSettingsPanel(props: KeybindingsSettingsPanelProps) {
   }, [manager, onChanged]);
 
   return (
-    <section aria-label="Keybinding settings" style={{ padding: 8, background: "#14161a", color: "#e9edf3" }}>
-      <h2 style={{ margin: "0 0 12px", fontSize: 16, color: "#e9edf3" }}>Keybinding Settings</h2>
+    <section aria-label="Keybinding settings" style={{ padding: 8, background: "var(--ghost-background)", color: "var(--ghost-foreground)" }}>
+      <h2 style={{ margin: "0 0 12px", fontSize: 16, color: "var(--ghost-foreground)" }}>Keybinding Settings</h2>
 
       {warning ? (
-        <div role="alert" style={{ padding: "4px 8px", marginBottom: 8, background: "#3a2020", border: "1px solid #8b3030", borderRadius: 4, fontSize: 12, color: "#ffc6c6" }}>
+        <div role="alert" style={{ padding: "4px 8px", marginBottom: 8, background: "var(--ghost-error-background)", border: "1px solid var(--ghost-error)", borderRadius: 4, fontSize: 12, color: "var(--ghost-error-foreground)" }}>
           {warning}
         </div>
       ) : null}
@@ -202,7 +202,7 @@ export function KeybindingsSettingsPanel(props: KeybindingsSettingsPanelProps) {
           </button>
         </div>
         {importStatus ? (
-          <div role="alert" style={{ marginTop: 6, fontSize: 11, color: "#c6d0e0" }}>
+           <div role="alert" style={{ marginTop: 6, fontSize: 11, color: "var(--ghost-muted-foreground)" }}>
             {importStatus}
           </div>
         ) : null}
@@ -246,7 +246,7 @@ function BindingSection(props: BindingSectionProps) {
   } = props;
 
   if (bindings.length === 0) {
-    return <div style={sectionStyle}><h3 style={headingStyle}>{title}</h3><p style={{ margin: 0, fontSize: 12, color: "#c6d0e0" }}>None</p></div>;
+    return <div style={sectionStyle}><h3 style={headingStyle}>{title}</h3><p style={{ margin: 0, fontSize: 12, color: "var(--ghost-muted-foreground)" }}>None</p></div>;
   }
 
   return (
@@ -268,13 +268,13 @@ function BindingSection(props: BindingSectionProps) {
                 <td style={tdStyle}>
                   {isRecording ? (
                     <span aria-live="assertive">
-                      <input ref={recordRef} aria-label={`Recording keybinding for ${binding.action}`} onBlur={onCancelRecord} onKeyDown={onKeyDown} placeholder="Press keys..." readOnly style={{ background: "#0f1319", border: "1px solid #7cb4ff", color: "#e9edf3", padding: "2px 4px", width: 120, fontSize: 11 }} />
+                      <input ref={recordRef} aria-label={`Recording keybinding for ${binding.action}`} onBlur={onCancelRecord} onKeyDown={onKeyDown} placeholder="Press keys..." readOnly style={{ background: "var(--ghost-input)", border: "1px solid var(--ghost-primary)", color: "var(--ghost-foreground)", padding: "2px 4px", width: 120, fontSize: 11 }} />
                     </span>
                   ) : <code style={{ fontSize: 11 }}>{binding.keybinding}</code>}
                   {conflict && !isRecording ? <span style={conflictBadge}>conflict</span> : null}
                 </td>
                 <td style={tdStyle}><span style={layerBadge(layer)}>{layer}</span></td>
-                {showPluginId ? <td style={tdStyle}><span style={{ fontSize: 10, color: "#c6d0e0" }}>{binding.pluginId}</span></td> : null}
+                {showPluginId ? <td style={tdStyle}><span style={{ fontSize: 10, color: "var(--ghost-muted-foreground)" }}>{binding.pluginId}</span></td> : null}
                 <td style={tdStyle}>
                   <BindingActions action={binding.action} editable={editable} allowOverride={allowOverride} alreadyOverridden={alreadyOverridden} isRecording={isRecording} onRecord={onRecord} onCancelRecord={onCancelRecord} onRemove={onRemove} />
                 </td>
@@ -307,7 +307,7 @@ function BindingActions(props: BindingActionsProps) {
       {editable && onRemove ? (
         <button aria-label={`Reset keybinding for ${action}`} onClick={() => onRemove(action)} style={{ ...btnStyle, marginLeft: 4 }} type="button">Reset</button>
       ) : null}
-      {alreadyOverridden ? <span style={{ fontSize: 10, color: "#c6d0e0", marginLeft: 4 }}>overridden</span> : null}
+      {alreadyOverridden ? <span style={{ fontSize: 10, color: "var(--ghost-muted-foreground)", marginLeft: 4 }}>overridden</span> : null}
     </>
   );
 }

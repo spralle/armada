@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import {
   collectLaneMetadata,
@@ -13,6 +13,7 @@ import type { ShellRuntime } from "../../app/types.js";
 import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";
 import { KeybindingsSettingsPanel } from "./keybinding-settings-panel.js";
+import { ContextControlsPanel } from "./context-controls-panel.js";
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
@@ -139,10 +140,10 @@ function PluginControlsPanel(props: {
   return (
     <>
       <h2>Plugins ({props.snapshot.tenantId})</h2>
-      <p style={{ margin: "0 0 8px", fontSize: 12, color: "#c6d0e0" }}>Loaded: {loadedContracts || "none"}</p>
+      <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--ghost-muted-foreground)" }}>Loaded: {loadedContracts || "none"}</p>
       {props.notice ? <p className="plugin-notice">{props.notice}</p> : null}
       {props.snapshot.plugins.length === 0 ? (
-        <p style={{ margin: 0, color: "#c6d0e0" }}>No registered plugin descriptors.</p>
+        <p style={{ margin: 0, color: "var(--ghost-muted-foreground)" }}>No registered plugin descriptors.</p>
       ) : (
         props.snapshot.plugins.map((plugin) => (
           <label className="plugin-row" key={plugin.id}>
@@ -164,7 +165,7 @@ function PluginControlsPanel(props: {
       )}
       {props.snapshot.diagnostics.length > 0 ? (
         <details>
-          <summary style={{ cursor: "pointer", fontSize: 12, color: "#c6d0e0" }}>Diagnostics (dev/demo)</summary>
+          <summary style={{ cursor: "pointer", fontSize: 12, color: "var(--ghost-muted-foreground)" }}>Diagnostics (dev/demo)</summary>
           <ul className="plugin-diag-list">
             {props.snapshot.diagnostics.slice(0, 5).map((item) => (
               <li key={`${item.at}:${item.code}:${item.pluginId}`}>
@@ -243,45 +244,6 @@ function SyncStatusPanel(props: {
   );
 }
 
-function ContextControlsPanel(props: {
-  value: string;
-  disabled: boolean;
-  onApply: (value: string) => void;
-}) {
-  const [inputValue, setInputValue] = useState(props.value);
-  useEffect(() => { setInputValue(props.value); }, [props.value]);
-  const apply = () => { props.onApply(inputValue.trim() || "none"); };
-
-  return (
-    <>
-      <h2>Group context</h2>
-      <label className="runtime-note" htmlFor="context-value-input">{CORE_GROUP_CONTEXT_KEY}</label>
-      <input
-        id="context-value-input"
-        onChange={(event) => {
-          setInputValue(event.currentTarget.value);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            apply();
-          }
-        }}
-        style={{ width: "100%", boxSizing: "border-box", margin: "6px 0", padding: 4, background: "#0f1319", border: "1px solid #334564", color: "#e9edf3" }}
-        value={inputValue}
-      />
-      <button
-        disabled={props.disabled}
-        id="context-apply"
-        onClick={apply}
-        style={{ background: "#1d2635", border: "1px solid #334564", borderRadius: 4, color: "#e9edf3", padding: "4px 8px", cursor: "pointer" }}
-        type="button"
-      >
-        Apply + sync
-      </button>
-    </>
-  );
-}
 
 function DevContextInspectorPanel(props: {
   contextState: ShellRuntime["contextState"];

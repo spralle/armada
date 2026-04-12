@@ -24,7 +24,7 @@ export interface PluginRuntimeFailure {
   retryable: boolean;
 }
 
-export type PluginActivationTriggerType = "command" | "view" | "intent";
+export type PluginActivationTriggerType = "command" | "view" | "intent" | "event";
 
 export type PluginLifecycleState =
   | "disabled"
@@ -58,6 +58,7 @@ export interface PluginRuntimeState {
   activate: PluginActivateFunction | null;
   /** Disposables pushed by the plugin's activate() via ActivationContext.subscriptions. */
   activationSubscriptions: Disposable[];
+  builtinServiceInstances: Map<string, unknown> | null;
 }
 
 export interface PluginRegistryDiagnostic {
@@ -83,14 +84,17 @@ export interface PluginRegistrySnapshot {
 }
 
 export interface ShellPluginRegistry {
-  registerBuiltinPlugin(contract: PluginContract): void;
+  registerBuiltinPlugin(contract: PluginContract, serviceInstances?: Record<string, unknown>): void;
   registerManifestDescriptors(tenantId: string, descriptors: TenantPluginDescriptor[]): void;
   setEnabled(pluginId: string, enabled: boolean): Promise<void>;
   activateByCommand(pluginId: string, commandId: string): Promise<boolean>;
   activateByView(pluginId: string, viewId: string): Promise<boolean>;
   activateByIntent(pluginId: string, intentId: string): Promise<boolean>;
+  activateByEvent(pluginId: string, eventName: string): Promise<boolean>;
   resolveComponentCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
   resolveServiceCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
+  getService<T = unknown>(serviceId: string): T | null;
+  hasService(serviceId: string): boolean;
   getSnapshot(): PluginRegistrySnapshot;
 }
 

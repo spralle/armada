@@ -25,5 +25,7 @@ These principles are mandatory for repository code changes.
 - [ ] No production source file exceeds 350 lines.
 - [ ] Barrels (if used) preserve boundaries and dependency direction.
 - [ ] Comments added only for intent/invariants/tradeoffs.
+- [ ] No hardcoded color values in UI code — use `var(--ghost-*)` CSS custom properties.
+- [ ] Theme-aware components use semantic tokens, not physical color names.
 - [ ] Tests added/updated based on risk.
 - [ ] `npm run lint` and `npm test` pass.

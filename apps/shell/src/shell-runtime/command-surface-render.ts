@@ -63,7 +63,7 @@ export function renderCommandSurface(
       (item) => `<button
         type="button"
         data-action-run="${escapeHtml(item.id)}"
-        style="display:block;width:100%;text-align:left;margin:0 0 6px;background:#1d2635;border:1px solid #334564;border-radius:4px;color:#e9edf3;padding:4px 8px;cursor:pointer;"
+        style="display:block;width:100%;text-align:left;margin:0 0 6px;background:var(--ghost-surface-elevated);border:1px solid var(--ghost-border);border-radius:4px;color:var(--ghost-foreground);padding:4px 8px;cursor:pointer;"
       >${escapeHtml(item.title)}</button>`,
     )
     .join("");

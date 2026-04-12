@@ -12,6 +12,7 @@ import type {
   PluginRegistryDiagnostic,
   PluginRuntimeFailure,
   PluginRuntimeState,
+  ShellPluginRegistry,
 } from "./plugin-registry-types.js";
 
 const SHELL_CONTRACT_DECLARATION = "^1.0.0";
@@ -223,4 +224,53 @@ function isPluginLoadError(error: unknown): error is PluginLoadError {
   }
 
   return "context" in error;
+}
+
+// ---------------------------------------------------------------------------
+// Startup activation event
+// ---------------------------------------------------------------------------
+
+export interface StartupActivationResult {
+  activated: string[];
+  skipped: string[];
+  failed: string[];
+}
+
+/**
+ * Eagerly activate all enabled plugins that declare `activationEvents`
+ * including `"onStartup"`.
+ *
+ * Because contracts are loaded lazily, this function activates every enabled
+ * plugin via the registry, then inspects the loaded contract for the
+ * `onStartup` event. Plugins whose contracts do not include `onStartup`
+ * are still activated as a side effect — this is intentional during bootstrap
+ * to front-load contract loading for theme discovery.
+ */
+export async function activateByStartupEvent(
+  registry: ShellPluginRegistry,
+): Promise<StartupActivationResult> {
+  const snapshot = registry.getSnapshot();
+  const result: StartupActivationResult = {
+    activated: [],
+    skipped: [],
+    failed: [],
+  };
+
+  const activationPromises = snapshot.plugins
+    .filter((plugin) => plugin.enabled)
+    .map(async (plugin) => {
+      try {
+        const success = await registry.activateByEvent(plugin.id, "onStartup");
+        if (success) {
+          result.activated.push(plugin.id);
+        } else {
+          result.failed.push(plugin.id);
+        }
+      } catch {
+        result.failed.push(plugin.id);
+      }
+    });
+
+  await Promise.all(activationPromises);
+  return result;
 }

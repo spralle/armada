@@ -1,6 +1,7 @@
 import type {
   PluginContract,
   PluginSelectionContribution,
+  PluginServices,
 } from "@ghost/plugin-contracts";
 import { createDragSessionBroker } from "../dnd-session-broker.js";
 import type { ShellLayoutState } from "../layout.js";
@@ -10,6 +11,7 @@ import type {
   ShellLayoutPersistence,
 } from "../persistence.js";
 import type { ShellPluginRegistry } from "../plugin-registry.js";
+import type { ThemeRegistry } from "../theme-registry.js";
 import type {
   WindowBridge,
 } from "../window-bridge.js";
@@ -45,12 +47,14 @@ export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
   loadedPlugins: PluginContract[];
   registry: ShellPluginRegistry;
+  themeRegistry?: ThemeRegistry | undefined;
 }
 
 export interface ShellBootstrapOptions {
   tenantId: string;
   fetchManifest?: (manifestUrl: string) => Promise<unknown>;
   enableByDefault?: boolean;
+  defaultThemeId?: string | undefined;
 }
 
 export interface ShellRuntime extends DndDiagnosticRuntime {
@@ -93,6 +97,8 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   chooserReturnFocusSelector: string | null;
   actionSurface: ActionSurface;
   keybindingOverrideManager: KeybindingOverrideManager;
+  services: PluginServices;
+  themeRegistry: ThemeRegistry | null;
   intentRuntime: IntentRuntime;
   commandNotice: string;
   partHost: ShellPartHostAdapter;

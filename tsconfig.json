@@ -30,6 +30,12 @@
     },
     {
       "path": "./apps/action-palette-plugin"
+    },
+    {
+      "path": "./apps/theme-default-plugin"
+    },
+    {
+      "path": "./apps/shadcn-theme-bridge-plugin"
     }
   ]
 }

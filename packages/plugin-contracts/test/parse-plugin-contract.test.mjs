@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   composeEnabledPluginContributions,
+  composeThemeContributions,
   createDefaultContributionPredicateMatcher,
   evaluateContributionPredicate,
   evaluateShellPluginCompatibility,
@@ -702,5 +703,378 @@ test("action-surface menu and keybinding predicate semantics match default match
       `menu parity failed for ${testCase.name}`,
     );
 
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Theme, branding, and activationEvents contract tests (armada-5q4)
+// ---------------------------------------------------------------------------
+
+test("accepts a plugin contract with contributes.themes", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.theme.dark-ocean",
+      name: "Dark Ocean Theme",
+      version: "1.0.0",
+    },
+    contributes: {
+      themes: [
+        {
+          id: "dark-ocean",
+          name: "Dark Ocean",
+          mode: "dark",
+          palette: {
+            background: "#1a1b26",
+            foreground: "#c0caf5",
+            accent: "#7aa2f7",
+          },
+          backgrounds: [
+            { url: "/assets/ocean.png", mode: "cover" },
+          ],
+          fonts: {
+            body: "Inter",
+            mono: "JetBrains Mono",
+          },
+          terminal: {
+            color0: "#15161e",
+            color1: "#f7768e",
+          },
+          preview: "https://example.com/dark-ocean-preview.png",
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.contributes?.themes?.[0]?.id, "dark-ocean");
+    assert.equal(result.data.contributes?.themes?.[0]?.mode, "dark");
+    assert.equal(result.data.contributes?.themes?.[0]?.palette.background, "#1a1b26");
+    assert.equal(result.data.contributes?.themes?.[0]?.fonts?.body, "Inter");
+  }
+});
+
+test("accepts a plugin contract with contributes.branding", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.branding.acme",
+      name: "ACME Branding",
+      version: "1.0.0",
+    },
+    contributes: {
+      branding: {
+        appName: "ACME Portal",
+        logo: {
+          light: "/assets/logo-light.svg",
+          dark: "/assets/logo-dark.svg",
+        },
+        favicon: "/assets/favicon.ico",
+        loadingScreen: {
+          logo: "/assets/loading-logo.svg",
+          backgroundColor: "#ffffff",
+        },
+      },
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.contributes?.branding?.appName, "ACME Portal");
+    assert.equal(result.data.contributes?.branding?.logo?.light, "/assets/logo-light.svg");
+    assert.equal(result.data.contributes?.branding?.loadingScreen?.backgroundColor, "#ffffff");
+  }
+});
+
+test("accepts a plugin contract with activationEvents: ['onStartup']", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.theme.eager",
+      name: "Eager Theme",
+      version: "1.0.0",
+    },
+    activationEvents: ["onStartup"],
+    contributes: {
+      themes: [
+        {
+          id: "eager-light",
+          name: "Eager Light",
+          mode: "light",
+          palette: {
+            background: "#ffffff",
+            foreground: "#1a1a1a",
+            primary: "#0066cc",
+          },
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.deepEqual(result.data.activationEvents, ["onStartup"]);
+  }
+});
+
+test("rejects unknown keys in theme contribution (strict mode)", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.theme.strict-test",
+      name: "Strict Theme",
+      version: "1.0.0",
+    },
+    contributes: {
+      themes: [
+        {
+          id: "strict",
+          name: "Strict",
+          mode: "dark",
+          palette: {
+            background: "#000000",
+            foreground: "#ffffff",
+            accent: "#ff0000",
+          },
+          unknownField: "should-fail",
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    const hasUnrecognized = result.errors.some(
+      (error) => error.code === "unrecognized_keys",
+    );
+    assert.equal(hasUnrecognized, true);
+  }
+});
+
+test("rejects unknown keys in branding contribution (strict mode)", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.branding.strict-test",
+      name: "Strict Branding",
+      version: "1.0.0",
+    },
+    contributes: {
+      branding: {
+        appName: "Test",
+        extraField: "should-fail",
+      },
+    },
+  });
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    const hasUnrecognized = result.errors.some(
+      (error) => error.code === "unrecognized_keys",
+    );
+    assert.equal(hasUnrecognized, true);
+  }
+});
+
+test("rejects invalid activationEvent string", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.theme.bad-event",
+      name: "Bad Event",
+      version: "1.0.0",
+    },
+    activationEvents: ["onStartup", "onFileOpen"],
+  });
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    const hasEventError = result.errors.some(
+      (error) => error.path.startsWith("activationEvents"),
+    );
+    assert.equal(hasEventError, true);
+  }
+});
+
+test("composeThemeContributions merges themes from multiple plugins with pluginId tagging", () => {
+  const composed = composeThemeContributions([
+    {
+      pluginId: "ghost.theme.ocean",
+      contract: {
+        manifest: { id: "ghost.theme.ocean", name: "Ocean", version: "1.0.0" },
+        contributes: {
+          themes: [
+            {
+              id: "ocean-dark",
+              name: "Ocean Dark",
+              mode: "dark",
+              palette: {
+                background: "#1a1b26",
+                foreground: "#c0caf5",
+                accent: "#7aa2f7",
+              },
+            },
+            {
+              id: "ocean-light",
+              name: "Ocean Light",
+              mode: "light",
+              palette: {
+                background: "#ffffff",
+                foreground: "#1a1a1a",
+                primary: "#0066cc",
+              },
+            },
+          ],
+        },
+      },
+    },
+    {
+      pluginId: "ghost.theme.forest",
+      contract: {
+        manifest: { id: "ghost.theme.forest", name: "Forest", version: "1.0.0" },
+        contributes: {
+          themes: [
+            {
+              id: "forest-dark",
+              name: "Forest Dark",
+              mode: "dark",
+              palette: {
+                background: "#1a2e1a",
+                foreground: "#c5e1c5",
+                accent: "#4caf50",
+              },
+            },
+          ],
+        },
+      },
+    },
+    {
+      pluginId: "ghost.no-themes",
+      contract: {
+        manifest: { id: "ghost.no-themes", name: "No Themes", version: "1.0.0" },
+      },
+    },
+  ]);
+
+  assert.equal(composed.length, 3);
+  assert.deepEqual(
+    composed.map((t) => `${t.pluginId}:${t.id}`),
+    [
+      "ghost.theme.ocean:ocean-dark",
+      "ghost.theme.ocean:ocean-light",
+      "ghost.theme.forest:forest-dark",
+    ],
+  );
+  assert.equal(composed[0].mode, "dark");
+  assert.equal(composed[1].mode, "light");
+  assert.equal(composed[2].palette.accent, "#4caf50");
+});
+
+// ---------------------------------------------------------------------------
+// Plugin manifest gallery: icon + screenshots (armada-4q5)
+// ---------------------------------------------------------------------------
+
+test("accepts a plugin contract with manifest.icon", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.plugin.with-icon",
+      name: "Plugin With Icon",
+      version: "1.0.0",
+      icon: "https://cdn.example.com/icons/plugin.png",
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.manifest.icon, "https://cdn.example.com/icons/plugin.png");
+  }
+});
+
+test("accepts a plugin contract with manifest.gallery.screenshots", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.plugin.with-gallery",
+      name: "Plugin With Gallery",
+      version: "1.0.0",
+      gallery: {
+        screenshots: [
+          "https://cdn.example.com/screenshots/1.png",
+          "https://cdn.example.com/screenshots/2.png",
+        ],
+      },
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.manifest.gallery?.screenshots?.length, 2);
+    assert.equal(
+      result.data.manifest.gallery?.screenshots?.[0],
+      "https://cdn.example.com/screenshots/1.png",
+    );
+  }
+});
+
+test("accepts a plugin contract with manifest.gallery.banner", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.plugin.with-banner",
+      name: "Plugin With Banner",
+      version: "1.0.0",
+      gallery: {
+        banner: {
+          color: "#1a1b26",
+          theme: "dark",
+        },
+      },
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.manifest.gallery?.banner?.color, "#1a1b26");
+    assert.equal(result.data.manifest.gallery?.banner?.theme, "dark");
+  }
+});
+
+test("rejects unknown keys in gallery (strict mode)", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.plugin.strict-gallery",
+      name: "Strict Gallery Plugin",
+      version: "1.0.0",
+      gallery: {
+        screenshots: [],
+        unknownGalleryField: "should-fail",
+      },
+    },
+  });
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    const hasUnrecognized = result.errors.some(
+      (error) => error.code === "unrecognized_keys",
+    );
+    assert.equal(hasUnrecognized, true);
+  }
+});
+
+test("existing contracts without icon/gallery still validate", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.legacy.plugin",
+      name: "Legacy Plugin",
+      version: "2.0.0",
+    },
+    contributes: {
+      views: [
+        {
+          id: "legacy.view",
+          title: "Legacy View",
+          component: "LegacyView",
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.manifest.icon, undefined);
+    assert.equal(result.data.manifest.gallery, undefined);
   }
 });

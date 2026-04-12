@@ -18,9 +18,13 @@
     "src/plugin-loader.ts",
     "src/plugin-registry.ts",
     "src/capability-registry.ts",
+    "src/plugin-service-bridge.ts",
     "src/federation-runtime.ts",
     "src/local-plugin-sources.ts",
     "src/part-module-host.ts",
+    "src/theme-registry.ts",
+    "src/theme-persistence.ts",
+    "src/theme-service-registration.ts",
     "src/context-state.spec.ts",
     "src/context-state.spec-dock-popout-action-rendering.ts",
     "src/app/shell-core.spec.ts",
@@ -37,6 +41,7 @@
     "src/ui/parts-controller-popout-transition.spec.ts",
     "src/ui/parts-controller-selection-transition.spec.ts",
     "src/ui/part-instance-popout-lifecycle.spec.ts",
-    "src/shell-runtime/runtime-render-transition.spec.ts"
+    "src/shell-runtime/runtime-render-transition.spec.ts",
+    "src/utility-tabs.ts"
   ]
 }

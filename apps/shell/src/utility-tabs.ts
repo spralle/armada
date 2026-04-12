@@ -3,6 +3,7 @@ export type UtilityTabId =
   | "utility.sync"
   | "utility.group-context"
   | "utility.commands"
+  | "utility.appearance"
   | "utility.keybindings"
   | "utility.dev-inspector";
 
@@ -12,6 +13,7 @@ export interface UtilityTabDescriptor {
   panelHostId: string;
   slot: "main";
   available: "always" | "development-only";
+  pluginId?: string | undefined;
 }
 
 const UTILITY_TAB_DESCRIPTORS: UtilityTabDescriptor[] = [
@@ -42,6 +44,14 @@ const UTILITY_TAB_DESCRIPTORS: UtilityTabDescriptor[] = [
     panelHostId: "command-surface",
     slot: "main",
     available: "always",
+  },
+  {
+    id: "utility.appearance",
+    title: "Appearance",
+    panelHostId: "appearance-settings",
+    slot: "main",
+    available: "always",
+    pluginId: "ghost.appearance-settings",
   },
   {
     id: "utility.keybindings",

@@ -3,6 +3,7 @@ import type {
   PluginContract,
   PluginPartContribution,
   PluginViewContribution,
+  ThemeContribution,
 } from "./types.js";
 
 export interface ComposedPluginViewContribution {
@@ -84,4 +85,31 @@ function toComposedPart(
     component: part.component,
     dock: part.dock,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Theme composition
+// ---------------------------------------------------------------------------
+
+export interface ComposedThemeContribution extends ThemeContribution {
+  pluginId: string;
+}
+
+/**
+ * Collect all theme contributions from the given plugins, tagging each with
+ * its originating pluginId.
+ */
+export function composeThemeContributions(
+  plugins: Array<{ pluginId: string; contract: PluginContract }>,
+): ComposedThemeContribution[] {
+  const result: ComposedThemeContribution[] = [];
+
+  for (const plugin of plugins) {
+    const themes = plugin.contract.contributes?.themes ?? [];
+    for (const theme of themes) {
+      result.push({ ...theme, pluginId: plugin.pluginId });
+    }
+  }
+
+  return result;
 }
