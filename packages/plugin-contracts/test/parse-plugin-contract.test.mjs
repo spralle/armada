@@ -964,3 +964,117 @@ test("composeThemeContributions merges themes from multiple plugins with pluginI
   assert.equal(composed[1].mode, "light");
   assert.equal(composed[2].palette.accent, "#4caf50");
 });
+
+// ---------------------------------------------------------------------------
+// Plugin manifest gallery: icon + screenshots (armada-4q5)
+// ---------------------------------------------------------------------------
+
+test("accepts a plugin contract with manifest.icon", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.plugin.with-icon",
+      name: "Plugin With Icon",
+      version: "1.0.0",
+      icon: "https://cdn.example.com/icons/plugin.png",
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.manifest.icon, "https://cdn.example.com/icons/plugin.png");
+  }
+});
+
+test("accepts a plugin contract with manifest.gallery.screenshots", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.plugin.with-gallery",
+      name: "Plugin With Gallery",
+      version: "1.0.0",
+      gallery: {
+        screenshots: [
+          "https://cdn.example.com/screenshots/1.png",
+          "https://cdn.example.com/screenshots/2.png",
+        ],
+      },
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.manifest.gallery?.screenshots?.length, 2);
+    assert.equal(
+      result.data.manifest.gallery?.screenshots?.[0],
+      "https://cdn.example.com/screenshots/1.png",
+    );
+  }
+});
+
+test("accepts a plugin contract with manifest.gallery.banner", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.plugin.with-banner",
+      name: "Plugin With Banner",
+      version: "1.0.0",
+      gallery: {
+        banner: {
+          color: "#1a1b26",
+          theme: "dark",
+        },
+      },
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.manifest.gallery?.banner?.color, "#1a1b26");
+    assert.equal(result.data.manifest.gallery?.banner?.theme, "dark");
+  }
+});
+
+test("rejects unknown keys in gallery (strict mode)", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.plugin.strict-gallery",
+      name: "Strict Gallery Plugin",
+      version: "1.0.0",
+      gallery: {
+        screenshots: [],
+        unknownGalleryField: "should-fail",
+      },
+    },
+  });
+
+  assert.equal(result.success, false);
+  if (!result.success) {
+    const hasUnrecognized = result.errors.some(
+      (error) => error.code === "unrecognized_keys",
+    );
+    assert.equal(hasUnrecognized, true);
+  }
+});
+
+test("existing contracts without icon/gallery still validate", () => {
+  const result = parsePluginContract({
+    manifest: {
+      id: "ghost.legacy.plugin",
+      name: "Legacy Plugin",
+      version: "2.0.0",
+    },
+    contributes: {
+      views: [
+        {
+          id: "legacy.view",
+          title: "Legacy View",
+          component: "LegacyView",
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.manifest.icon, undefined);
+    assert.equal(result.data.manifest.gallery, undefined);
+  }
+});

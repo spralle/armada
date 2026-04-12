@@ -7,11 +7,27 @@ import {
 
 const nonEmptyString = z.string().trim().min(1);
 
+export const pluginGalleryBannerSchema = z
+  .object({
+    color: z.string().optional(),
+    theme: z.enum(["dark", "light"]).optional(),
+  })
+  .strict();
+
+export const pluginGallerySchema = z
+  .object({
+    screenshots: z.array(z.string()).optional(),
+    banner: pluginGalleryBannerSchema.optional(),
+  })
+  .strict();
+
 export const pluginManifestIdentitySchema = z
   .object({
     id: nonEmptyString,
     name: nonEmptyString,
     version: nonEmptyString,
+    icon: z.string().optional(),
+    gallery: pluginGallerySchema.optional(),
   })
   .strict();
 

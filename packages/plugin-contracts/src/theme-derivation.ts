@@ -62,10 +62,11 @@ export interface PartialThemePalette {
   cursor?: string | undefined;
   selectionBackground?: string | undefined;
   radius?: string | undefined;
+  opacity?: number | undefined;
 }
 
 /**
- * Full 40-token theme palette — the output of derivation.
+ * Full 42-token theme palette — the output of derivation.
  * Every field is guaranteed present.
  */
 export interface FullThemePalette {
@@ -88,6 +89,7 @@ export interface FullThemePalette {
   cursor: string;
   selectionBackground: string;
   radius: string;
+  opacity: number;
   // 22 derived tokens
   surfaceForeground: string;
   overlayForeground: string;
@@ -162,6 +164,7 @@ export const partialThemePaletteSchema = z
     cursor: hexColorString.optional(),
     selectionBackground: hexColorString.optional(),
     radius: z.string().trim().min(1).optional(),
+    opacity: z.number().min(0).max(1).optional(),
   })
   .strict()
   .refine((data) => data.accent !== undefined || data.primary !== undefined, {
@@ -184,7 +187,7 @@ const FALLBACK_RADIUS = "0.625rem";
 // ---------------------------------------------------------------------------
 
 /**
- * Derive a complete 40-token palette from a partial input.
+ * Derive a complete 42-token palette from a partial input.
  * Terminal palette (Omarchy compat) maps color1→error, color2→success,
  * color3→warning, color6→info when those tokens are not explicitly set.
  *
@@ -218,6 +221,7 @@ export function deriveFullPalette(
   const cursor = input.cursor ?? input.foreground;
   const selectionBackground = input.selectionBackground ?? primary;
   const radius = input.radius ?? FALLBACK_RADIUS;
+  const opacity = input.opacity ?? 1.0;
 
   // Derived foreground tokens
   const primaryForeground = contrastSafe(primary);
@@ -265,6 +269,7 @@ export function deriveFullPalette(
     cursor,
     selectionBackground,
     radius,
+    opacity,
     surfaceForeground: input.foreground,
     overlayForeground: input.foreground,
     primaryForeground,
@@ -315,6 +320,7 @@ export const GHOST_THEME_CSS_VARS: Readonly<Record<keyof FullThemePalette, strin
   cursor: "--ghost-cursor",
   selectionBackground: "--ghost-selection-background",
   radius: "--ghost-radius",
+  opacity: "--ghost-background-opacity",
   surfaceForeground: "--ghost-surface-foreground",
   overlayForeground: "--ghost-overlay-foreground",
   primaryForeground: "--ghost-primary-foreground",

@@ -8,7 +8,7 @@ Ghost's theme system lets plugins define and switch color palettes at runtime th
 Plugin Contract                 Shell Theme Registry          DOM
 ┌─────────────────────┐        ┌────────────────────┐       ┌──────────┐
 │ contributes.themes  │──────> │ deriveFullPalette() │─────> │ :root    │
-│   partial palette   │        │ 3 → 41 tokens      │       │ --ghost-*│
+│   partial palette   │        │ 3 → 42 tokens      │       │ --ghost-*│
 │   terminal colors   │        │                    │       │ CSS vars │
 └─────────────────────┘        └────────────────────┘       └──────────┘
 ```
@@ -17,14 +17,14 @@ Key concepts:
 
 - **Themes as plugins**: A theme is a `contributes.themes` entry in a plugin contract. Themes are discovered, composed, and applied the same way as other plugin contributions.
 - **CSS custom properties**: All visual tokens are exposed as `--ghost-*` CSS variables on `:root`. Any component in any micro-frontend can consume them without importing JavaScript.
-- **Derivation engine**: A pure function in `@ghost/plugin-contracts` expands a minimum 3-value palette to the full 41-token set. Plugin authors supply what they know; the engine fills the rest.
+- **Derivation engine**: A pure function in `@ghost/plugin-contracts` expands a minimum 3-value palette to the full 42-token set. Plugin authors supply what they know; the engine fills the rest.
 - **Bridge plugin pattern**: Ghost's canonical tokens (`--ghost-*`) are decoupled from any UI library. A separate bridge plugin maps them to library-specific variables (e.g., shadcn's `--primary`, `--card`).
 
 ## Token Reference
 
-Ghost's theme system defines **18 core tokens** and **23 derived tokens** (41 total). Core tokens can be provided directly in the palette; derived tokens are computed by the derivation engine but can be influenced through the core inputs.
+Ghost's theme system defines **19 core tokens** and **23 derived tokens** (42 total). Core tokens can be provided directly in the palette; derived tokens are computed by the derivation engine but can be influenced through the core inputs.
 
-### Core Tokens (18)
+### Core Tokens (19)
 
 | Token | CSS Variable | Required | Description |
 |---|---|---|---|
@@ -46,6 +46,7 @@ Ghost's theme system defines **18 core tokens** and **23 derived tokens** (41 to
 | `cursor` | `--ghost-cursor` | No | Cursor color (derived: foreground) |
 | `selectionBackground` | `--ghost-selection-background` | No | Selection highlight background (derived: primary) |
 | `radius` | `--ghost-radius` | No | Border radius value (default: `0.625rem`) |
+| `opacity` | `--ghost-background-opacity` | No | Background opacity 0–1 (default: `1.0`). Controls panel transparency to let background images show through |
 
 ### Derived Tokens (23)
 
@@ -158,7 +159,7 @@ palette: {
 }
 ```
 
-The derivation engine computes all 41 tokens from these three values.
+The derivation engine computes all 42 tokens from these three values.
 
 ### Full 18 core tokens
 
@@ -315,7 +316,7 @@ color15 = "#acb0d0"
 }
 ```
 
-That's all it takes — 5 palette fields plus the 16 terminal colors. The derivation engine produces the full 41-token palette from this input.
+That's all it takes — 5 palette fields plus the 16 terminal colors. The derivation engine produces the full 42-token palette from this input.
 
 ## UI Library Bridge Pattern
 
@@ -375,6 +376,57 @@ A shadcn bridge plugin maps Ghost tokens to shadcn's CSS variable convention:
 - **Multiple bridges** can coexist if the shell uses components from more than one library.
 
 The bridge plugin itself is a standard Ghost plugin that sets `activationEvents: ["onStartup"]` and contributes nothing except the CSS mapping.
+
+## Background Images
+
+Themes can include background images that render behind all shell content, producing a wallpaper-like effect similar to [Omarchy](https://github.com/basecamp/omarchy).
+
+### How it works
+
+Omarchy uses compositor-level window transparency (0.97 active, 0.9 inactive) to let desktop wallpaper images show through semi-transparent application windows. Ghost translates this pattern to the web:
+
+1. A **`<div id="ghost-theme-background">`** is injected as a fixed, full-viewport element behind all content when the active theme includes a `backgrounds` array.
+2. The **`opacity` token** (`--ghost-background-opacity`) controls how transparent panels and surfaces are, letting the background show through.
+
+### Declaring a background
+
+```ts
+{
+  id: "ghost.theme.forest",
+  name: "Forest",
+  mode: "dark",
+  palette: {
+    background: "#1a1b26",
+    foreground: "#a9b1d6",
+    accent: "#7aa2f7",
+    opacity: 0.9,
+  },
+  backgrounds: [
+    { url: "https://cdn.example.com/forest.jpg", mode: "cover" },
+  ],
+}
+```
+
+### Background modes
+
+| Mode | CSS behavior | Use case |
+|---|---|---|
+| `"cover"` (default) | `background-size: cover` | Full-bleed photo wallpapers |
+| `"contain"` | `background-size: contain` | Images that should not be cropped |
+| `"tile"` | `background-size: auto; background-repeat: repeat` | Patterns and textures |
+
+### Using the opacity token
+
+Apply `--ghost-background-opacity` to panel or surface elements so the background image shows through:
+
+```css
+.panel {
+  background-color: var(--ghost-surface);
+  opacity: var(--ghost-background-opacity);
+}
+```
+
+When a theme sets `opacity: 0.9`, panels become slightly transparent. When no opacity is specified, it defaults to `1.0` (fully opaque, no show-through).
 
 ## Branding vs Themes
 

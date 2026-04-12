@@ -1,9 +1,21 @@
 import type { PartialThemePalette, TerminalPalette } from "./theme-derivation.js";
 
+export interface PluginGalleryBanner {
+  color?: string | undefined;
+  theme?: "dark" | "light" | undefined;
+}
+
+export interface PluginGallery {
+  screenshots?: string[] | undefined;
+  banner?: PluginGalleryBanner | undefined;
+}
+
 export interface PluginManifestIdentity {
   id: string;
   name: string;
   version: string;
+  icon?: string | undefined;
+  gallery?: PluginGallery | undefined;
 }
 
 export interface PluginViewContribution {

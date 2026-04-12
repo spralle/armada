@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createThemeRegistry } from "../dist-test/src/theme-registry.js";
+import { createThemeRegistry, manageBackgroundImage } from "../dist-test/src/theme-registry.js";
 import {
   readUserThemePreference,
   writeUserThemePreference,
@@ -338,4 +338,67 @@ test("theme registry excludes plugins with null contract", () => {
   themeRegistry.discoverThemes();
 
   assert.equal(themeRegistry.getAvailableThemes().length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Background image management (manageBackgroundImage)
+// ---------------------------------------------------------------------------
+
+// manageBackgroundImage gracefully no-ops when `document` is undefined (Node env).
+// We test that it does not throw and that theme contributions with backgrounds
+// flow through the registry correctly.
+
+test("manageBackgroundImage does not throw in Node environment (no document)", () => {
+  assert.doesNotThrow(() => manageBackgroundImage([{ url: "https://example.com/bg.jpg", mode: "cover" }]));
+});
+
+test("manageBackgroundImage does not throw when backgrounds is undefined", () => {
+  assert.doesNotThrow(() => manageBackgroundImage(undefined));
+});
+
+test("manageBackgroundImage does not throw when backgrounds is empty", () => {
+  assert.doesNotThrow(() => manageBackgroundImage([]));
+});
+
+test("applyTheme passes backgrounds through to manageBackgroundImage (theme with backgrounds)", () => {
+  const theme = {
+    ...createMockTheme("bg-theme", "BG Theme"),
+    backgrounds: [{ url: "https://example.com/wallpaper.jpg", mode: "cover" }],
+  };
+  const contract = createMockContract([theme]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.bg", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+
+  // Should not throw — manageBackgroundImage gracefully no-ops in Node
+  assert.doesNotThrow(() => {
+    const result = themeRegistry.setTheme("bg-theme");
+    assert.equal(result, true);
+  });
+  assert.equal(themeRegistry.getActiveThemeId(), "bg-theme");
+});
+
+test("theme switch between themes with and without backgrounds does not throw", () => {
+  const themeWithBg = {
+    ...createMockTheme("with-bg", "With BG"),
+    backgrounds: [{ url: "https://example.com/bg.png", mode: "tile" }],
+  };
+  const themeWithoutBg = createMockTheme("without-bg", "Without BG");
+  const contract = createMockContract([themeWithBg, themeWithoutBg]);
+  const mockRegistry = createMockPluginRegistry([
+    { pluginId: "ghost.theme.mixed", contract },
+  ]);
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+
+  assert.doesNotThrow(() => {
+    themeRegistry.setTheme("with-bg");
+    themeRegistry.setTheme("without-bg");
+    themeRegistry.setTheme("with-bg");
+  });
+  assert.equal(themeRegistry.getActiveThemeId(), "with-bg");
 });

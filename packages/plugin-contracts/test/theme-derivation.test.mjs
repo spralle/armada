@@ -50,11 +50,11 @@ const OMARCHY_TERMINAL = {
   color15: "#ffffff",
 };
 
-/** All 41 token keys expected in a full palette (18 core + 23 derived). */
+/** All 42 token keys expected in a full palette (19 core + 23 derived). */
 const ALL_TOKEN_KEYS = [
   "mode", "background", "surface", "overlay", "primary", "secondary", "accent",
   "muted", "foreground", "error", "warning", "success", "info", "border", "ring",
-  "cursor", "selectionBackground", "radius",
+  "cursor", "selectionBackground", "radius", "opacity",
   "surfaceForeground", "overlayForeground", "primaryForeground", "secondaryForeground",
   "accentForeground", "mutedForeground", "input", "selectionForeground",
   "hoverBackground", "activeBackground",
@@ -67,15 +67,15 @@ const ALL_TOKEN_KEYS = [
 // 1. deriveFullPalette from 3 minimal inputs produces all 41 tokens
 // ---------------------------------------------------------------------------
 
-test("deriveFullPalette produces all 41 tokens from 3 minimal inputs", () => {
+test("deriveFullPalette produces all 42 tokens from 3 minimal inputs", () => {
   const result = deriveFullPalette(MINIMAL_INPUT);
 
   for (const key of ALL_TOKEN_KEYS) {
     assert.notEqual(result[key], undefined, `Token "${key}" should be defined`);
   }
 
-  // Spec lists 18 core + 23 derived = 41 tokens (spec text says 22/40 but enumerates 23/41)
-  assert.equal(Object.keys(result).length, 41, "Should produce exactly 41 tokens");
+  // 19 core + 23 derived = 42 tokens
+  assert.equal(Object.keys(result).length, 42, "Should produce exactly 42 tokens");
 });
 
 test("deriveFullPalette defaults mode to dark when not provided", () => {
@@ -92,14 +92,14 @@ test("deriveFullPalette respects explicit light mode", () => {
 // 2. deriveFullPalette from Omarchy-style input (6 + terminal 16)
 // ---------------------------------------------------------------------------
 
-test("deriveFullPalette produces all 41 tokens from Omarchy-style input with terminal", () => {
+test("deriveFullPalette produces all 42 tokens from Omarchy-style input with terminal", () => {
   const result = deriveFullPalette(OMARCHY_INPUT, OMARCHY_TERMINAL);
 
   for (const key of ALL_TOKEN_KEYS) {
     assert.notEqual(result[key], undefined, `Token "${key}" should be defined`);
   }
 
-  assert.equal(Object.keys(result).length, 41);
+  assert.equal(Object.keys(result).length, 42);
 });
 
 test("Omarchy terminal colors map to semantic tokens", () => {
@@ -326,8 +326,8 @@ test("schema rejects unrecognized keys (strict mode)", () => {
 // CSS variable map
 // ---------------------------------------------------------------------------
 
-test("GHOST_THEME_CSS_VARS has entries for all 41 tokens", () => {
-  assert.equal(Object.keys(GHOST_THEME_CSS_VARS).length, 41);
+test("GHOST_THEME_CSS_VARS has entries for all 42 tokens", () => {
+  assert.equal(Object.keys(GHOST_THEME_CSS_VARS).length, 42);
   for (const key of ALL_TOKEN_KEYS) {
     assert.ok(
       key in GHOST_THEME_CSS_VARS,
@@ -375,4 +375,47 @@ test("fallback defaults are used for missing semantic colors without terminal", 
   assert.equal(result.success, "#22c55e");
   assert.equal(result.info, "#3b82f6");
   assert.equal(result.radius, "0.625rem");
+});
+
+// ---------------------------------------------------------------------------
+// Opacity token
+// ---------------------------------------------------------------------------
+
+test("opacity defaults to 1.0 when not provided", () => {
+  const result = deriveFullPalette(MINIMAL_INPUT);
+  assert.equal(result.opacity, 1.0);
+});
+
+test("opacity is preserved when explicitly set", () => {
+  const result = deriveFullPalette({ ...MINIMAL_INPUT, opacity: 0.85 });
+  assert.equal(result.opacity, 0.85);
+});
+
+test("GHOST_THEME_CSS_VARS has entry for opacity", () => {
+  assert.ok("opacity" in GHOST_THEME_CSS_VARS, "CSS var mapping missing for opacity");
+  assert.equal(GHOST_THEME_CSS_VARS.opacity, "--ghost-background-opacity");
+});
+
+test("schema accepts valid opacity value", () => {
+  const result = partialThemePaletteSchema.safeParse({
+    ...MINIMAL_INPUT,
+    opacity: 0.85,
+  });
+  assert.equal(result.success, true);
+});
+
+test("schema rejects opacity out of range (above 1)", () => {
+  const result = partialThemePaletteSchema.safeParse({
+    ...MINIMAL_INPUT,
+    opacity: 1.5,
+  });
+  assert.equal(result.success, false);
+});
+
+test("schema rejects opacity out of range (below 0)", () => {
+  const result = partialThemePaletteSchema.safeParse({
+    ...MINIMAL_INPUT,
+    opacity: -0.1,
+  });
+  assert.equal(result.success, false);
 });

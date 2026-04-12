@@ -4,6 +4,8 @@ export type { Event, EventEmitter } from "./event.js";
 export { createEventEmitter } from "./event.js";
 
 export type {
+  PluginGalleryBanner,
+  PluginGallery,
   PluginManifestIdentity,
   PluginViewContribution,
   PluginPartContribution,
@@ -39,6 +41,8 @@ export type {
 
 export {
   pluginManifestIdentitySchema,
+  pluginGalleryBannerSchema,
+  pluginGallerySchema,
   pluginViewContributionSchema,
   pluginPartContributionSchema,
   pluginCapabilityComponentContributionSchema,

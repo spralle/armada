@@ -43,6 +43,7 @@ export const GHOST_CSS_VAR_NAMES = {
   infoBackground: "--ghost-info-background",
   infoForeground: "--ghost-info-foreground",
   neutralBackground: "--ghost-neutral-background",
+  opacity: "--ghost-background-opacity",
 } as const;
 
 export type GhostTokenName = keyof typeof GHOST_CSS_VAR_NAMES;
@@ -89,6 +90,7 @@ export const DEFAULT_DARK_PALETTE: GhostPalette = {
   infoBackground: "#2a3a5a",
   infoForeground: "#8fb8ff",
   neutralBackground: "#333333",
+  opacity: "1",
 };
 
 // ---------------------------------------------------------------------------
