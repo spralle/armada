@@ -221,7 +221,6 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
 }
 
 function refreshCommandContributions(runtime: ShellRuntime): void {
-  const defaultKeybindingContract = createDefaultShellKeybindingContract();
   const contracts = runtime.registry
     .getSnapshot()
     .plugins
@@ -229,7 +228,7 @@ function refreshCommandContributions(runtime: ShellRuntime): void {
     .map((plugin) => plugin.contract)
     .filter((plugin): plugin is NonNullable<typeof plugin> => plugin !== null);
 
-  runtime.actionSurface = buildActionSurface([defaultKeybindingContract, ...contracts]);
+  runtime.actionSurface = buildActionSurface(contracts);
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
