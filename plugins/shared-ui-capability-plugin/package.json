@@ -2,6 +2,10 @@
   "name": "@ghost/shared-ui-capability-plugin",
   "private": true,
   "type": "module",
+  "ghost": {
+    "pluginId": "ghost.shared.ui-capabilities",
+    "devPort": 4175
+  },
   "scripts": {
     "dev": "vite"
   },

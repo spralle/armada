@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+
 export interface CanonicalLocalUiPluginDefinition {
   id: string;
   folderName: string;
@@ -26,85 +29,105 @@ const VALID_LOCAL_PLUGIN_ID_PATTERN =
   /^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)*$/;
 
 /**
+ * Scans a plugins directory and returns canonical definitions by reading
+ * each plugin's `package.json` for `ghost.pluginId`, `ghost.devPort`, and
+ * `version` fields.
+ *
+ * Plugins without a valid `package.json` or without `ghost.pluginId` are
+ * skipped with a warning. Results are sorted by folder name.
+ */
+export function discoverPluginDefinitions(
+  pluginsDir: string,
+): CanonicalLocalUiPluginDefinition[] {
+  const DEFAULT_DEV_PORT_BASE = 4170;
+
+  let entries: string[];
+  try {
+    entries = readdirSync(pluginsDir);
+  } catch (error: unknown) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT" || code === "ENOTDIR") {
+      console.warn(`[plugin-discovery] plugins directory not found: ${pluginsDir}`);
+      return [];
+    }
+    throw error;
+  }
+
+  const folderNames = entries
+    .filter((entry) => {
+      try {
+        return statSync(join(pluginsDir, entry)).isDirectory();
+      } catch {
+        return false;
+      }
+    })
+    .sort((a, b) => a.localeCompare(b));
+
+  const definitions: CanonicalLocalUiPluginDefinition[] = [];
+  let nextAutoPort = DEFAULT_DEV_PORT_BASE + 1;
+
+  for (const folderName of folderNames) {
+    const packageJsonPath = join(pluginsDir, folderName, "package.json");
+
+    let raw: string;
+    try {
+      raw = readFileSync(packageJsonPath, "utf-8");
+    } catch {
+      console.warn(`[plugin-discovery] skipping ${folderName}: no package.json`);
+      continue;
+    }
+
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      console.warn(`[plugin-discovery] skipping ${folderName}: invalid package.json`);
+      continue;
+    }
+
+    const ghost = parsed.ghost as { pluginId?: string; devPort?: number } | undefined;
+    const pluginId = ghost?.pluginId;
+    if (!pluginId) {
+      console.warn(`[plugin-discovery] skipping ${folderName}: no ghost.pluginId in package.json`);
+      continue;
+    }
+
+    const devPort = ghost.devPort ?? nextAutoPort;
+    if (!ghost.devPort) {
+      nextAutoPort += 1;
+    }
+
+    const version = typeof parsed.version === "string" ? parsed.version : "0.1.0";
+
+    definitions.push({
+      id: pluginId,
+      folderName,
+      devPort,
+      version,
+      entryPath: "/mf-manifest.json",
+    });
+  }
+
+  return definitions;
+}
+
+/**
  * Canonical local UI plugin conventions for Ghost development.
  *
- * - local plugin folders live under `apps/<folderName>`
+ * - local plugin folders live under `plugins/<folderName>`
  * - each plugin serves a module federation manifest at `/mf-manifest.json`
  * - IDs must be globally unique across local plugin folders
+ *
+ * When no explicit `definitions` are provided, the plugins directory
+ * (`appsRoot`) is scanned automatically using `discoverPluginDefinitions`.
  */
-export const CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS: readonly CanonicalLocalUiPluginDefinition[] = [
-  {
-    id: "ghost.plugin-starter",
-    folderName: "plugin-starter",
-    devPort: 4171,
-    version: "0.1.0",
-    entryPath: "/mf-manifest.json",
-  },
-  {
-    id: "ghost.sample.contract-consumer",
-    folderName: "sample-contract-consumer-plugin",
-    devPort: 4172,
-    version: "0.1.0",
-    entryPath: "/mf-manifest.json",
-  },
-  {
-    id: "ghost.domain.unplanned-orders",
-    folderName: "domain-unplanned-orders-plugin",
-    devPort: 4173,
-    version: "0.1.0",
-    entryPath: "/mf-manifest.json",
-  },
-  {
-    id: "ghost.domain.vessel-view",
-    folderName: "domain-vessel-view-plugin",
-    devPort: 4174,
-    version: "0.1.0",
-    entryPath: "/mf-manifest.json",
-  },
-  {
-    id: "ghost.shared.ui-capabilities",
-    folderName: "shared-ui-capability-plugin",
-    devPort: 4175,
-    version: "0.1.0",
-    entryPath: "/mf-manifest.json",
-  },
-  {
-    id: "ghost.theme.default",
-    folderName: "theme-default-plugin",
-    devPort: 4176,
-    version: "1.0.0",
-    entryPath: "/mf-manifest.json",
-  },
-  {
-    id: "ghost.shadcn.theme-bridge",
-    folderName: "shadcn-theme-bridge-plugin",
-    devPort: 4177,
-    version: "1.0.0",
-    entryPath: "/mf-manifest.json",
-  },
-  {
-    id: "ghost.appearance-settings",
-    folderName: "appearance-settings-plugin",
-    devPort: 4178,
-    version: "1.0.0",
-    entryPath: "/mf-manifest.json",
-  },
-  {
-    id: "ghost.action-palette",
-    folderName: "action-palette-plugin",
-    devPort: 4179,
-    version: "0.1.0",
-    entryPath: "/mf-manifest.json",
-  },
-] as const;
-
 export function discoverLocalUiPlugins(
   options: DiscoverLocalUiPluginsOptions,
 ): ReadonlyMap<string, DiscoveredLocalUiPlugin> {
   const host = options.host ?? "127.0.0.1";
   const protocol = options.protocol ?? "http";
   const definitions =
-    options.definitions ?? CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS;
+    options.definitions ?? discoverPluginDefinitions(options.appsRoot);
 
   const normalizedDefinitions = definitions.map((definition) => ({
     ...definition,

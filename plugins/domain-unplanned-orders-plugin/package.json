@@ -1,7 +1,11 @@
 {
-  "name": "@ghost/plugin-starter",
+  "name": "@ghost/domain-unplanned-orders-plugin",
   "private": true,
   "type": "module",
+  "ghost": {
+    "pluginId": "ghost.domain.unplanned-orders",
+    "devPort": 4173
+  },
   "scripts": {
     "dev": "vite"
   },

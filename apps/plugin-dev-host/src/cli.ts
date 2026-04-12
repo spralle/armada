@@ -1,82 +1,95 @@
 import {
-  CANONICAL_PLUGIN_DEFINITIONS,
-  type CanonicalPluginDefinition,
-} from "./canonical-plugins.js";
+  discoverPlugins,
+  type DiscoveredPluginDefinition,
+} from "./plugin-discovery.js";
 
 export const DEFAULT_GATEWAY_PORT = 41337;
 
 export interface PluginDevHostCliOptions {
-  pluginIds: string[];
+  /** Every discovered plugin ID to serve (live + static). */
+  allPluginIds: string[];
+  /** Subset that get live Vite dev servers (from --live / --only). */
+  livePluginIds: string[];
+  /** Build non-live plugins before starting the gateway. */
+  buildBeforeStart: boolean;
   port: number;
 }
 
 export function parsePluginDevHostArgs(
   argv: readonly string[],
+  pluginsDir: string,
 ): PluginDevHostCliOptions {
-  const canonicalIds = CANONICAL_PLUGIN_DEFINITIONS.map((d) => d.id);
+  const definitions = discoverPlugins(pluginsDir);
+  const discoveredIds = definitions.map((d) => d.id);
+  const hasLive = argv.includes("--live");
   const hasOnly = argv.includes("--only");
   const hasAll = argv.includes("--all");
 
-  if (!hasOnly && !hasAll) {
-    printUsageAndExit(canonicalIds);
+  if (!hasLive && !hasOnly && !hasAll) {
+    printUsageAndExit(discoveredIds);
   }
 
-  if (hasOnly && hasAll) {
-    exitWithError("Cannot use both --only and --all. Pick one.");
+  if (hasLive && hasOnly) {
+    exitWithError("Cannot use both --live and --only. They are aliases — pick one.");
+  }
+
+  if ((hasLive || hasOnly) && hasAll) {
+    exitWithError("Cannot use --live/--only together with --all. Pick one.");
   }
 
   const port = parsePortFlag(argv);
-  const pluginIds = hasAll
-    ? canonicalIds.slice()
-    : parseOnlyFlag(argv, canonicalIds);
+  const buildBeforeStart = argv.includes("--build");
 
-  return { pluginIds, port };
+  // --all: serve all plugins as static (no live Vite instances)
+  // --live / --only <ids>: specified plugins get live Vite, all discovered are served
+  const livePluginIds = hasAll
+    ? []
+    : parseLiveFlag(argv, hasLive ? "--live" : "--only", discoveredIds);
+  const allPluginIds = discoveredIds.slice();
+
+  return { allPluginIds, livePluginIds, buildBeforeStart, port };
+}
+
+export function resolvePluginDir(
+  definition: DiscoveredPluginDefinition,
+  workspaceRoot: string,
+): string {
+  return `${workspaceRoot}/plugins/${definition.folderName}`;
 }
 
 export function resolvePluginConfigPath(
-  definition: CanonicalPluginDefinition,
+  definition: DiscoveredPluginDefinition,
   workspaceRoot: string,
 ): string {
-  return `${workspaceRoot}/apps/${definition.folderName}/vite.config.ts`;
+  return `${resolvePluginDir(definition, workspaceRoot)}/vite.config.ts`;
 }
 
-export function lookupDefinition(
-  pluginId: string,
-): CanonicalPluginDefinition {
-  const found = CANONICAL_PLUGIN_DEFINITIONS.find(
-    (d) => d.id === pluginId,
-  );
-  if (!found) {
-    throw new Error(`No canonical definition found for plugin '${pluginId}'.`);
-  }
-  return found;
-}
-
-function parseOnlyFlag(
+function parseLiveFlag(
   argv: readonly string[],
-  canonicalIds: readonly string[],
+  flagName: "--live" | "--only",
+  discoveredIds: readonly string[],
 ): string[] {
-  const onlyIndex = argv.indexOf("--only");
-  const value = argv[onlyIndex + 1];
+  const flagIndex = argv.indexOf(flagName);
+  const value = argv[flagIndex + 1];
 
   if (!value || value.startsWith("--")) {
     exitWithError(
-      "Missing value for --only. Use --only <pluginId1>,<pluginId2>",
+      `Missing value for ${flagName}. Use ${flagName} <pluginId1>,<pluginId2>`,
     );
   }
 
   const requestedIds = value.split(",").map((s) => s.trim()).filter(Boolean);
   if (requestedIds.length === 0) {
-    exitWithError("--only value is empty. Provide comma-separated plugin FQDNs.");
+    exitWithError(`${flagName} value is empty. Provide comma-separated plugin FQDNs.`);
   }
 
-  const canonicalIdSet = new Set(canonicalIds);
-  const unknownIds = requestedIds.filter((id) => !canonicalIdSet.has(id));
+  const idSet = new Set(discoveredIds);
+  const unknownIds = requestedIds.filter((id) => !idSet.has(id));
 
   if (unknownIds.length > 0) {
     exitWithError(
       `Unknown plugin FQDN(s): ${unknownIds.join(", ")}.\n` +
-        `Available plugins:\n${canonicalIds.map((id) => `  - ${id}`).join("\n")}`,
+        `Available plugins:\n${discoveredIds.map((id) => `  - ${id}`).join("\n")}`,
     );
   }
 
@@ -104,19 +117,22 @@ function parsePortFlag(argv: readonly string[]): number {
 
 function printUsageAndExit(availableIds: readonly string[]): never {
   const message = [
-    "Plugin Dev Host — serve multiple plugin dev servers behind one port.",
+    "Plugin Dev Host — hybrid plugin server for development.",
     "",
     "Usage:",
-    "  bun apps/plugin-dev-host/src/main.ts --only <id1>,<id2>",
-    "  bun apps/plugin-dev-host/src/main.ts --all",
-    "  bun apps/plugin-dev-host/src/main.ts --only <id> --port 9999",
+    "  bun apps/plugin-dev-host/src/main.ts --live <id1>,<id2>         # Live HMR for specified, static for rest",
+    "  bun apps/plugin-dev-host/src/main.ts --live <id> --build        # Build non-live plugins first, then start",
+    "  bun apps/plugin-dev-host/src/main.ts --all                      # All plugins served static (integration mode)",
+    "  bun apps/plugin-dev-host/src/main.ts --all --build              # Build all, then serve static",
     "",
     "Flags:",
-    "  --only <ids>   Comma-separated plugin FQDNs to serve",
-    "  --all          Serve all canonical plugins",
+    "  --live <ids>   Comma-separated plugin IDs for live Vite dev servers (HMR)",
+    "  --only <ids>   Alias for --live",
+    "  --all          Serve all discovered plugins as pre-built static files",
+    "  --build        Build non-live plugins before starting",
     "  --port <num>   Gateway port (default: 41337)",
     "",
-    "Available plugins:",
+    "Discovered plugins:",
     ...availableIds.map((id) => `  - ${id}`),
   ].join("\n");
 

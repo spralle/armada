@@ -26,7 +26,7 @@ interface NodeHttpResponseLike {
 const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
 const localPluginEntryOverrides = backendDevCliOptions.gatewayPort
   ? createDefaultLocalPluginEntryUrlMap({
-      appsRoot: "apps",
+      appsRoot: "plugins",
       gatewayPort: backendDevCliOptions.gatewayPort,
     })
   : getDefaultLocalPluginEntryUrlMap();

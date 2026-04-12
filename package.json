@@ -4,6 +4,7 @@
   "packageManager": "bun@1.2.21",
   "workspaces": [
     "apps/*",
+    "plugins/*",
     "packages/*"
   ],
   "scripts": {
@@ -15,18 +16,10 @@
     "check:code-principles": "node ./scripts/check-code-principles.mjs",
     "dev:shell": "npm run dev --workspace @ghost/shell-app",
     "dev:backend": "bun --watch apps/backend/src/index.ts",
-    "dev:plugin": "npm run dev --workspace @ghost/plugin-starter",
-    "dev:plugin-sample": "npm run dev --workspace @ghost/sample-contract-consumer-plugin",
-    "dev:plugin-unplanned-orders": "npm run dev --workspace @ghost/domain-unplanned-orders-plugin",
-    "dev:plugin-vessel-view": "npm run dev --workspace @ghost/domain-vessel-view-plugin",
-    "dev:plugin-shared-ui": "npm run dev --workspace @ghost/shared-ui-capability-plugin",
-    "dev:plugin-theme-default": "npm run dev --workspace @ghost/theme-default-plugin",
-    "dev:plugin-shadcn-bridge": "npm run dev --workspace @ghost/shadcn-theme-bridge-plugin",
-    "dev:plugin-appearance": "npm run dev --workspace @ghost/appearance-settings-plugin",
-    "dev:plugin-action-palette": "npm run dev --workspace @ghost/action-palette-plugin",
-    "dev:plugin:all": "npx concurrently -n starter,sample,unplanned,vessel,shared,theme,shadcn,appearance,action -c magenta,cyan,yellow,green,blue,red,white,gray,magentaBright \"npm run dev:plugin\" \"npm run dev:plugin-sample\" \"npm run dev:plugin-unplanned-orders\" \"npm run dev:plugin-vessel-view\" \"npm run dev:plugin-shared-ui\" \"npm run dev:plugin-theme-default\" \"npm run dev:plugin-shadcn-bridge\" \"npm run dev:plugin-appearance\" \"npm run dev:plugin-action-palette\"",
-    "dev:plugins:gateway": "bun apps/plugin-dev-host/src/main.ts --all",
+    "dev:plugins": "bun apps/plugin-dev-host/src/main.ts --all --build",
+    "dev:plugins:live": "bun apps/plugin-dev-host/src/main.ts --live",
     "dev:integration": "bun --watch apps/shell/src/index.ts",
+    "build:plugins": "node ./scripts/build-plugins.mjs",
     "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs"
   },
   "devDependencies": {

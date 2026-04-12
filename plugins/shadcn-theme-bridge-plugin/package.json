@@ -1,7 +1,11 @@
 {
-  "name": "@ghost/domain-unplanned-orders-plugin",
+  "name": "@ghost/shadcn-theme-bridge-plugin",
   "private": true,
   "type": "module",
+  "ghost": {
+    "pluginId": "ghost.shadcn.theme-bridge",
+    "devPort": 4177
+  },
   "scripts": {
     "dev": "vite"
   },

@@ -1,7 +1,11 @@
 {
-  "name": "@ghost/appearance-settings-plugin",
+  "name": "@ghost/sample-contract-consumer-plugin",
   "private": true,
   "type": "module",
+  "ghost": {
+    "pluginId": "ghost.sample.contract-consumer",
+    "devPort": 4172
+  },
   "scripts": {
     "dev": "vite"
   },

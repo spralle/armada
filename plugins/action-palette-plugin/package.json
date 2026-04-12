@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "ghost": {
+    "pluginId": "ghost.action-palette",
+    "devPort": 4179
+  },
   "scripts": {
     "dev": "vite"
   },

@@ -1,7 +1,11 @@
 {
-  "name": "@ghost/sample-contract-consumer-plugin",
+  "name": "@ghost/theme-default-plugin",
   "private": true,
   "type": "module",
+  "ghost": {
+    "pluginId": "ghost.theme.default",
+    "devPort": 4176
+  },
   "scripts": {
     "dev": "vite"
   },

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS,
+  discoverPluginDefinitions,
   discoverLocalUiPlugins,
 } from "../dist-test/src/local-ui-plugin-discovery.js";
 import {
@@ -15,14 +15,14 @@ import {
 
 test("discoverLocalUiPlugins returns deterministic plugin ordering", () => {
   const discovered = discoverLocalUiPlugins({
-    appsRoot: "apps",
+    appsRoot: "plugins",
   });
 
   assert.deepEqual(Array.from(discovered.keys()), SORTED_LOCAL_PLUGIN_IDS);
 
   const pluginStarter = discovered.get(LOCAL_PLUGIN_IDS.pluginStarter);
   assert.ok(pluginStarter);
-  assert.equal(pluginStarter.folderPath, "apps/plugin-starter");
+  assert.equal(pluginStarter.folderPath, "plugins/plugin-starter");
   assert.equal(
     pluginStarter.entry,
     DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.pluginStarter],
@@ -30,7 +30,7 @@ test("discoverLocalUiPlugins returns deterministic plugin ordering", () => {
 
   const sharedUiCapabilities = discovered.get(LOCAL_PLUGIN_IDS.sharedUiCapabilities);
   assert.ok(sharedUiCapabilities);
-  assert.equal(sharedUiCapabilities.folderPath, "apps/shared-ui-capability-plugin");
+  assert.equal(sharedUiCapabilities.folderPath, "plugins/shared-ui-capability-plugin");
   assert.equal(
     sharedUiCapabilities.entry,
     DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.sharedUiCapabilities],
@@ -38,12 +38,13 @@ test("discoverLocalUiPlugins returns deterministic plugin ordering", () => {
 });
 
 test("discoverLocalUiPlugins rejects duplicate plugin ids with actionable error", () => {
+  const discovered = discoverPluginDefinitions("plugins");
   assert.throws(
     () =>
       discoverLocalUiPlugins({
-        appsRoot: "apps",
+        appsRoot: "plugins",
         definitions: [
-          ...CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS,
+          ...discovered,
           {
             id: LOCAL_PLUGIN_IDS.pluginStarter,
             folderName: "plugin-starter-copy",
@@ -59,7 +60,7 @@ test("discoverLocalUiPlugins rejects duplicate plugin ids with actionable error"
 
 test("discoverLocalUiPlugins normalizes surrounding whitespace in plugin IDs", () => {
   const discovered = discoverLocalUiPlugins({
-    appsRoot: "apps",
+    appsRoot: "plugins",
     definitions: [
       {
         id: `  ${LOCAL_PLUGIN_IDS.pluginStarter}  `,
@@ -81,7 +82,7 @@ test("discoverLocalUiPlugins rejects duplicate plugin ids that differ only by su
   assert.throws(
     () =>
       discoverLocalUiPlugins({
-        appsRoot: "apps",
+        appsRoot: "plugins",
         definitions: [
           {
             id: LOCAL_PLUGIN_IDS.pluginStarter,
@@ -105,7 +106,7 @@ test("discoverLocalUiPlugins rejects duplicate plugin ids that differ only by su
 
 test("discoverLocalUiPlugins supports deterministic host and protocol mapping", () => {
   const discovered = discoverLocalUiPlugins({
-    appsRoot: "apps",
+    appsRoot: "plugins",
     host: "localhost",
     protocol: "https",
   });
@@ -121,7 +122,7 @@ test("discoverLocalUiPlugins rejects invalid plugin IDs clearly", () => {
   assert.throws(
     () =>
       discoverLocalUiPlugins({
-        appsRoot: "apps",
+        appsRoot: "plugins",
         definitions: [
           {
             id: "Ghost.Invalid",
@@ -140,7 +141,7 @@ test("discoverLocalUiPlugins rejects invalid entries clearly", () => {
   assert.throws(
     () =>
       discoverLocalUiPlugins({
-        appsRoot: "apps",
+        appsRoot: "plugins",
         definitions: [
           {
             id: "ghost.invalid-entry",
@@ -157,7 +158,7 @@ test("discoverLocalUiPlugins rejects invalid entries clearly", () => {
 
 test("discoverLocalUiPlugins generates gateway-mode URLs when gatewayPort is set", () => {
   const discovered = discoverLocalUiPlugins({
-    appsRoot: "apps",
+    appsRoot: "plugins",
     gatewayPort: DEFAULT_GATEWAY_PORT,
   });
 
@@ -174,7 +175,7 @@ test("discoverLocalUiPlugins generates gateway-mode URLs when gatewayPort is set
 
 test("discoverLocalUiPlugins without gatewayPort returns legacy per-port URLs", () => {
   const discovered = discoverLocalUiPlugins({
-    appsRoot: "apps",
+    appsRoot: "plugins",
   });
 
   for (const [pluginId, plugin] of discovered) {
@@ -188,7 +189,7 @@ test("discoverLocalUiPlugins without gatewayPort returns legacy per-port URLs", 
 
 test("discoverLocalUiPlugins gateway-mode URLs use custom host and protocol", () => {
   const discovered = discoverLocalUiPlugins({
-    appsRoot: "apps",
+    appsRoot: "plugins",
     host: "localhost",
     protocol: "https",
     gatewayPort: 9999,
@@ -203,7 +204,7 @@ test("discoverLocalUiPlugins gateway-mode URLs use custom host and protocol", ()
 test("assertValidLocalPluginEntryUrl accepts both root and prefixed mf-manifest paths", () => {
   // Both should work without throwing
   discoverLocalUiPlugins({
-    appsRoot: "apps",
+    appsRoot: "plugins",
     definitions: [
       {
         id: "ghost.test-plugin",
@@ -216,7 +217,7 @@ test("assertValidLocalPluginEntryUrl accepts both root and prefixed mf-manifest 
   });
 
   discoverLocalUiPlugins({
-    appsRoot: "apps",
+    appsRoot: "plugins",
     gatewayPort: DEFAULT_GATEWAY_PORT,
     definitions: [
       {

@@ -157,7 +157,7 @@ test("applyLocalPluginEntryOverrides fails fast when selected plugin is not in m
 
 test("default override URL map is derived from discovery utility", () => {
   const defaultMap = createDefaultLocalPluginEntryUrlMap({
-    appsRoot: "apps",
+    appsRoot: "plugins",
   });
 
   assert.deepEqual(Array.from(defaultMap.keys()), SORTED_LOCAL_PLUGIN_IDS);

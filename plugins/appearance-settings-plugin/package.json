@@ -1,7 +1,11 @@
 {
-  "name": "@ghost/theme-default-plugin",
+  "name": "@ghost/appearance-settings-plugin",
   "private": true,
   "type": "module",
+  "ghost": {
+    "pluginId": "ghost.appearance-settings",
+    "devPort": 4178
+  },
   "scripts": {
     "dev": "vite"
   },

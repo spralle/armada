@@ -4,7 +4,7 @@ import {
   parsePluginContract,
   deriveFullPalette,
 } from "../../../packages/plugin-contracts/dist/index.js";
-import { pluginContract } from "../../theme-default-plugin/src/plugin-contract.ts";
+import { pluginContract } from "../../../plugins/theme-default-plugin/src/plugin-contract.ts";
 
 // ---------------------------------------------------------------------------
 // Contract validation

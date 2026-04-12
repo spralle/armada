@@ -4,6 +4,8 @@ import { createServer, type ViteDevServer } from "vite";
 export interface ViteInstanceOptions {
   pluginId: string;
   configPath: string;
+  /** Absolute path to the plugin's own directory — used as Vite `root` to scope file watching. */
+  pluginDir: string;
   gatewayPort: number;
   httpServer: HttpServer;
 }
@@ -25,10 +27,11 @@ export interface ManagedViteInstance {
 export async function createPluginViteInstance(
   options: ViteInstanceOptions,
 ): Promise<ManagedViteInstance> {
-  const { pluginId, configPath, gatewayPort, httpServer } = options;
+  const { pluginId, configPath, pluginDir, gatewayPort, httpServer } = options;
 
   const viteServer = await createServer({
     configFile: configPath,
+    root: pluginDir,
     base: `/${pluginId}/`,
     server: {
       middlewareMode: true,
@@ -37,6 +40,9 @@ export async function createPluginViteInstance(
         path: `/__vite_hmr/${pluginId}`,
       },
       cors: true,
+      watch: {
+        ignored: ["**/node_modules/**", "**/dist/**"],
+      },
     },
   });
 
