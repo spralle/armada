@@ -29,6 +29,12 @@ export async function createPluginViteInstance(
 ): Promise<ManagedViteInstance> {
   const { pluginId, configPath, pluginDir, gatewayPort, httpServer } = options;
 
+  // Expose the gateway origin so each plugin's vite.config.ts can set
+  // Module Federation `publicPath` to an absolute URL.  This prevents
+  // mf-manifest.json from containing relative paths that the browser
+  // would resolve against the *shell* origin instead of the gateway.
+  process.env.PLUGIN_DEV_GATEWAY_ORIGIN = `http://127.0.0.1:${gatewayPort}`;
+
   const viteServer = await createServer({
     configFile: configPath,
     root: pluginDir,
