@@ -1,4 +1,5 @@
 export const LOCAL_PLUGIN_IDS = Object.freeze({
+  actionPalette: "ghost.action-palette",
   appearanceSettings: "ghost.appearance-settings",
   domainUnplannedOrders: "ghost.domain.unplanned-orders",
   domainVesselView: "ghost.domain.vessel-view",
@@ -10,6 +11,7 @@ export const LOCAL_PLUGIN_IDS = Object.freeze({
 });
 
 export const SORTED_LOCAL_PLUGIN_IDS = Object.freeze([
+  LOCAL_PLUGIN_IDS.actionPalette,
   LOCAL_PLUGIN_IDS.appearanceSettings,
   LOCAL_PLUGIN_IDS.domainUnplannedOrders,
   LOCAL_PLUGIN_IDS.domainVesselView,
@@ -21,6 +23,7 @@ export const SORTED_LOCAL_PLUGIN_IDS = Object.freeze([
 ]);
 
 export const DEFAULT_LOCAL_PLUGIN_ENTRIES = Object.freeze({
+  [LOCAL_PLUGIN_IDS.actionPalette]: "http://127.0.0.1:4179/mf-manifest.json",
   [LOCAL_PLUGIN_IDS.appearanceSettings]: "http://127.0.0.1:4178/mf-manifest.json",
   [LOCAL_PLUGIN_IDS.domainUnplannedOrders]: "http://127.0.0.1:4173/mf-manifest.json",
   [LOCAL_PLUGIN_IDS.domainVesselView]: "http://127.0.0.1:4174/mf-manifest.json",
@@ -34,6 +37,7 @@ export const DEFAULT_LOCAL_PLUGIN_ENTRIES = Object.freeze({
 export const DEFAULT_GATEWAY_PORT = 41337;
 
 export const DEFAULT_GATEWAY_PLUGIN_ENTRIES = Object.freeze({
+  [LOCAL_PLUGIN_IDS.actionPalette]: `http://127.0.0.1:${DEFAULT_GATEWAY_PORT}/ghost.action-palette/mf-manifest.json`,
   [LOCAL_PLUGIN_IDS.appearanceSettings]: `http://127.0.0.1:${DEFAULT_GATEWAY_PORT}/ghost.appearance-settings/mf-manifest.json`,
   [LOCAL_PLUGIN_IDS.domainUnplannedOrders]: `http://127.0.0.1:${DEFAULT_GATEWAY_PORT}/ghost.domain.unplanned-orders/mf-manifest.json`,
   [LOCAL_PLUGIN_IDS.domainVesselView]: `http://127.0.0.1:${DEFAULT_GATEWAY_PORT}/ghost.domain.vessel-view/mf-manifest.json`,
