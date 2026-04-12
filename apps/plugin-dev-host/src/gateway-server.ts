@@ -1,6 +1,6 @@
 import { createServer as createHttpServer, type Server as HttpServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, normalize, resolve } from "node:path";
 import {
   createPluginViteInstance,
@@ -13,6 +13,7 @@ import {
 } from "./cli.js";
 import { discoverPlugins, type DiscoveredPluginDefinition } from "./plugin-discovery.js";
 import { serveStaticFile } from "./static-serve.js";
+import { rewriteManifestPublicPath } from "./manifest-rewrite.js";
 
 export interface PluginGatewayOptions {
   /** All plugin IDs to serve (live + static). */
@@ -94,7 +95,7 @@ export function createPluginGateway(
 
     httpServer.removeAllListeners("request");
     httpServer.on("request", (req: IncomingMessage, res: ServerResponse) => {
-      handleRoutedRequest(req, res, viteMap, staticDistMap);
+      handleRoutedRequest(req, res, viteMap, staticDistMap, port);
     });
 
     await listen(httpServer, port);
@@ -142,6 +143,7 @@ function handleRoutedRequest(
   res: ServerResponse,
   viteMap: ReadonlyMap<string, ManagedViteInstance>,
   staticDistMap: ReadonlyMap<string, string>,
+  port: number,
 ): void {
   const url = req.url ?? "/";
 
@@ -165,6 +167,43 @@ function handleRoutedRequest(
   // Live Vite plugin — delegate to Vite middleware
   const instance = viteMap.get(routeResult.pluginId);
   if (instance) {
+    // Intercept mf-manifest.json to rewrite asset URLs to absolute paths
+    if (routeResult.strippedPath === "/mf-manifest.json") {
+      req.url = routeResult.strippedPath;
+      const originalWrite = res.write.bind(res);
+      const originalEnd = res.end.bind(res);
+      const chunks: Buffer[] = [];
+
+      res.write = (chunk: unknown): boolean => {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
+        return true;
+      };
+
+      res.end = (chunk?: unknown): ServerResponse => {
+        if (chunk) {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string));
+        }
+        const body = Buffer.concat(chunks).toString("utf-8");
+        try {
+          const manifest = JSON.parse(body) as Record<string, unknown>;
+          const absoluteBase = `http://127.0.0.1:${port}/${routeResult.pluginId}/`;
+          const rewritten = rewriteManifestPublicPath(manifest, absoluteBase);
+          const rewrittenBody = JSON.stringify(rewritten);
+          res.setHeader("content-length", Buffer.byteLength(rewrittenBody));
+          originalEnd.call(res, rewrittenBody);
+        } catch {
+          originalEnd.call(res, body);
+        }
+        return res;
+      };
+
+      instance.viteServer.middlewares.handle(req, res, () => {
+        res.statusCode = 404;
+        originalEnd.call(res, `Not found: ${url}`);
+      });
+      return;
+    }
+
     req.url = routeResult.strippedPath;
     instance.viteServer.middlewares.handle(
       req,
@@ -192,6 +231,26 @@ function handleRoutedRequest(
       res.end("Forbidden");
       return;
     }
+
+    // Intercept mf-manifest.json to rewrite asset URLs to absolute paths
+    if (pathWithoutQuery === "/mf-manifest.json") {
+      try {
+        const raw = readFileSync(normalizedFilePath, "utf-8");
+        const manifest = JSON.parse(raw) as Record<string, unknown>;
+        const absoluteBase = `http://127.0.0.1:${port}/${routeResult.pluginId}/`;
+        const rewritten = rewriteManifestPublicPath(manifest, absoluteBase);
+        res.statusCode = 200;
+        res.setHeader("content-type", "application/json");
+        res.setHeader("cache-control", "no-cache");
+        res.end(JSON.stringify(rewritten));
+      } catch {
+        res.statusCode = 500;
+        res.setHeader("content-type", "text/plain");
+        res.end("Failed to rewrite manifest");
+      }
+      return;
+    }
+
     serveStaticFile(res, normalizedFilePath);
     return;
   }
@@ -281,19 +340,10 @@ function printStartupBanner(
   staticPluginIds: readonly string[],
   port: number,
 ): void {
-  const lines: string[] = [
-    `\n[plugin-dev-host] Serving ${allPluginIds.length} plugin${allPluginIds.length === 1 ? "" : "s"} on http://127.0.0.1:${port}`,
-  ];
-
-  if (livePluginIds.length > 0) {
-    lines.push(`  Live (HMR):  ${livePluginIds.join(", ")}`);
-  }
-  if (staticPluginIds.length > 0) {
-    lines.push(`  Static:      ${staticPluginIds.join(", ")}`);
-  }
-
-  lines.push("");
-  lines.push("Press Ctrl+C to stop.\n");
-
+  const s = allPluginIds.length === 1 ? "" : "s";
+  const lines = [`\n[plugin-dev-host] Serving ${allPluginIds.length} plugin${s} on http://127.0.0.1:${port}`];
+  if (livePluginIds.length > 0) lines.push(`  Live (HMR):  ${livePluginIds.join(", ")}`);
+  if (staticPluginIds.length > 0) lines.push(`  Static:      ${staticPluginIds.join(", ")}`);
+  lines.push("", "Press Ctrl+C to stop.\n");
   console.log(lines.join("\n"));
 }
