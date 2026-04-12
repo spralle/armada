@@ -1,5 +1,6 @@
 import {
   getTabGroupId,
+  openPartInstance,
   registerTab,
   setActiveTab,
   writeGlobalLane,
@@ -31,6 +32,7 @@ import type {
 } from "../window-bridge.js";
 import { applySelectionPropagation } from "../domain/selection-graph.js";
 import { updateDockTabVisibility } from "../ui/dock-tab-visibility.js";
+import { extractPartDefinitionId } from "../entity-bridges/open-part-handler.js";
 
 export interface RuntimeEventHandlerBindings {
   activatePluginForBoundary: (options: {
@@ -203,6 +205,23 @@ export function createRuntimeEventHandlers(
 
     const genericContextValue = intent ? `intent:${intent.type}` : "none";
     writeGroupSelectionContext(runtime, genericContextValue);
+
+    const partDefinitionId = extractPartDefinitionId(match.handler);
+    if (partDefinitionId) {
+      const activeTabId = resolveActiveTabId(runtime);
+      const sourceGroupId = activeTabId
+        ? (getTabGroupId(runtime.contextState, activeTabId) ?? undefined)
+        : undefined;
+
+      const { state: nextState } = openPartInstance(runtime.contextState, {
+        definitionId: partDefinitionId,
+        groupId: sourceGroupId,
+        tabLabel: match.title,
+        closePolicy: "closeable",
+      });
+
+      updateContextState(runtime, nextState);
+    }
 
     const restoreSelector = resolveChooserFocusRestoration("execute", runtime.activeIntentSession?.returnFocusSelector ?? null);
     runtime.activeIntentSession = null;

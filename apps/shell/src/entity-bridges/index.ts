@@ -6,6 +6,8 @@ export type {
   BridgeInvalidationListener,
   EntityBridgeBroker,
 } from "./broker-types.js";
+export { buildBridgeAvailabilityContext } from "./bridge-availability.js";
+export { isOpenPartHandler, extractPartDefinitionId } from "./open-part-handler.js";
 export { createBridgeGraphReplica } from "./bridge-graph-replica.js";
 export type { BridgeGraphReplica, RemoteBridgeEntry } from "./bridge-graph-replica.js";
 export { createCrossWindowCorrelator } from "./cross-window-correlator.js";
