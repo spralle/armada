@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import {
   getTenantManifestEndpointPath,
   getDefaultLocalPluginEntryUrlMap,
@@ -8,6 +9,7 @@ import {
   parseBackendDevCliOptions,
 } from "./dev-cli-options.js";
 import { createRouter, jsonResponse, type Route } from "./router.js";
+import { createConfigRoutes } from "./config-endpoints.js";
 
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
@@ -37,6 +39,10 @@ const overrideOptions = {
   pluginEntryUrlOverridesById: localPluginEntryOverrides,
 };
 
+const configRoutes = createConfigRoutes({
+  configDir: resolve(process.cwd(), "config"),
+});
+
 const routes: Route[] = [
   {
     method: "GET",
@@ -46,6 +52,7 @@ const routes: Route[] = [
       return jsonResponse(getTenantManifestResponse(tenantId, overrideOptions));
     },
   },
+  ...configRoutes,
 ];
 
 const router = createRouter(routes);
