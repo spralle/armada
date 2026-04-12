@@ -9,6 +9,17 @@
         "typescript": "^5.8.3",
       },
     },
+    "apps/action-palette-plugin": {
+      "name": "@ghost/action-palette-plugin",
+      "version": "1.0.0",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
     "apps/appearance-settings-plugin": {
       "name": "@ghost/appearance-settings-plugin",
       "dependencies": {
@@ -116,6 +127,28 @@
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
       },
     },
+    "packages/config-engine": {
+      "name": "@ghost/config-engine",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost/config-types": "workspace:*",
+      },
+    },
+    "packages/config-providers": {
+      "name": "@ghost/config-providers",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost/config-engine": "workspace:*",
+        "@ghost/config-types": "workspace:*",
+      },
+    },
+    "packages/config-types": {
+      "name": "@ghost/config-types",
+      "version": "0.0.0",
+      "dependencies": {
+        "zod": "^3.24.2",
+      },
+    },
     "packages/plugin-contracts": {
       "name": "@ghost/plugin-contracts",
       "version": "0.0.0",
@@ -215,9 +248,17 @@
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.21.5", "", { "os": "win32", "cpu": "x64" }, "sha512-tQd/1efJuzPC6rCFwEvLtci/xNFcTZknmXs98FYDfGE4wP9ClFV98nyKrzJKVPMhdDnjzLhdUyMX4PsQAPjwIw=="],
 
+    "@ghost/action-palette-plugin": ["@ghost/action-palette-plugin@workspace:apps/action-palette-plugin"],
+
     "@ghost/appearance-settings-plugin": ["@ghost/appearance-settings-plugin@workspace:apps/appearance-settings-plugin"],
 
     "@ghost/backend-app": ["@ghost/backend-app@workspace:apps/backend"],
+
+    "@ghost/config-engine": ["@ghost/config-engine@workspace:packages/config-engine"],
+
+    "@ghost/config-providers": ["@ghost/config-providers@workspace:packages/config-providers"],
+
+    "@ghost/config-types": ["@ghost/config-types@workspace:packages/config-types"],
 
     "@ghost/domain-unplanned-orders-plugin": ["@ghost/domain-unplanned-orders-plugin@workspace:apps/domain-unplanned-orders-plugin"],
 
@@ -642,6 +683,8 @@
     "yargs-parser": ["yargs-parser@21.1.1", "", {}, "sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw=="],
 
     "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
+
+    "@ghost/action-palette-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost/appearance-settings-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
