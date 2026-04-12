@@ -153,6 +153,7 @@
       "name": "@ghost/plugin-contracts",
       "version": "0.0.0",
       "dependencies": {
+        "@ghost/config-types": "workspace:*",
         "zod": "^3.24.2",
       },
     },

@@ -5,6 +5,8 @@ import {
   terminalPaletteSchema,
 } from "./theme-derivation.js";
 
+import { configurationPropertySchemaSchema } from "@ghost/config-types";
+
 const nonEmptyString = z.string().trim().min(1);
 
 export const pluginGalleryBannerSchema = z
@@ -228,6 +230,12 @@ export const brandingContributionSchema = z
 
 export const activationEventsSchema = z.array(z.enum(["onStartup"]));
 
+export const pluginConfigurationContributionSchema = z
+  .object({
+    properties: z.record(z.string(), configurationPropertySchemaSchema),
+  })
+  .strict();
+
 export const pluginContributionsSchema = z
   .object({
     views: z.array(pluginViewContributionSchema).optional(),
@@ -242,6 +250,7 @@ export const pluginContributionsSchema = z
     popoutCapabilities: pluginPopoutCapabilityFlagsSchema.optional(),
     themes: z.array(themeContributionSchema).optional(),
     branding: brandingContributionSchema.optional(),
+    configuration: pluginConfigurationContributionSchema.optional(),
   })
   .strict();
 
