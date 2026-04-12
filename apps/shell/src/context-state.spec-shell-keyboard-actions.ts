@@ -153,7 +153,14 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
   test("keyboard dispatch emits explicit no-op for unavailable actions", async () => {
     const root = new FakeRoot();
     const runtime = createKeyboardRuntimeFixture();
-    const bindings = createKeyboardBindings(runtime);
+    // shell.window.fullscreen.toggle and shell.window.mode.toggle no longer have
+    // default keybindings; provide them via user overrides to test the no-op path.
+    const bindings = createKeyboardBindings(runtime, {
+      getUserOverrideKeybindings: () => [
+        { action: "shell.window.fullscreen.toggle", keybinding: "shift+alt+f", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
+        { action: "shell.window.mode.toggle", keybinding: "shift+alt+m", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
+      ],
+    });
     const dispose = bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
     const target = ensureDomElement();
 
@@ -261,7 +268,10 @@ function createKeyboardRuntimeFixture(): ShellRuntime {
   } as unknown as ShellRuntime;
 }
 
-function createKeyboardBindings(runtime: ShellRuntime): KeyboardBindings {
+function createKeyboardBindings(
+  runtime: ShellRuntime,
+  overrides: Partial<KeyboardBindings> = {},
+): KeyboardBindings {
   return {
     activatePluginForBoundary: async () => true,
     announce: () => {},
@@ -287,6 +297,7 @@ function createKeyboardBindings(runtime: ShellRuntime): KeyboardBindings {
       "shell.group-context": "none",
       "selection.partInstanceId": runtime.contextState.activeTabId ?? "none",
     }),
+    ...overrides,
   };
 }
 

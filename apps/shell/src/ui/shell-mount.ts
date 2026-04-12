@@ -124,6 +124,11 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
   deps.updateWindowReadOnlyState();
   const disposeResize = deps.setupResize();
 
+  // Ensure shell keybindings are active from first load.
+  // tabindex="-1" makes the root programmatically focusable (not in tab order).
+  root.setAttribute("tabindex", "-1");
+  root.focus();
+
   return () => {
     disposeResize();
   };
