@@ -1,0 +1,6 @@
+{
+  "ghost.shell.display.dateFormat": "DD/MM/YYYY",
+  "ghost.shell.display.timezone": "Europe/Rotterdam",
+  "ghost.shell.display.locale": "nl-NL",
+  "ghost.shell.layout.sidebarPosition": "right"
+}

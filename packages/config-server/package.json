@@ -1,0 +1,16 @@
+{
+  "name": "@ghost/config-server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@ghost/config-types": "workspace:*",
+    "@ghost/config-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}

@@ -17,6 +17,7 @@
   "include": [
     "src/dev-cli-options.ts",
     "src/local-ui-plugin-discovery.ts",
+    "src/router.ts",
     "src/tenant-manifest.ts"
   ]
 }
