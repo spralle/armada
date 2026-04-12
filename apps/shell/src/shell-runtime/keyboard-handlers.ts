@@ -40,6 +40,15 @@ export interface KeyboardBindings {
   getUserOverrideKeybindings: () => ActionKeybinding[];
 }
 
+const DEBUG_KEYBINDINGS =
+  typeof localStorage !== "undefined" &&
+  localStorage.getItem("ghost.debug.keybindings") === "true";
+
+function computeOverrideFingerprint(overrides: ActionKeybinding[]): string {
+  if (overrides.length === 0) return "";
+  return overrides.map((o) => `${o.action}:${o.keybinding}`).join("|");
+}
+
 export function bindKeyboardShortcuts(
   root: HTMLElement,
   runtime: ShellRuntime,
@@ -47,19 +56,20 @@ export function bindKeyboardShortcuts(
 ): () => void {
   let cachedService: KeybindingService | null = null;
   let cachedActionSurface: ActionSurface | null = null;
-  let cachedOverrideCount = -1;
+  let cachedOverrideFingerprint = "";
 
   function getKeybindingService(): KeybindingService {
     const overrides = bindings.getUserOverrideKeybindings();
+    const fingerprint = computeOverrideFingerprint(overrides);
     if (
       cachedService &&
       cachedActionSurface === runtime.actionSurface &&
-      cachedOverrideCount === overrides.length
+      cachedOverrideFingerprint === fingerprint
     ) {
       return cachedService;
     }
     cachedActionSurface = runtime.actionSurface;
-    cachedOverrideCount = overrides.length;
+    cachedOverrideFingerprint = fingerprint;
     cachedService = createKeybindingService({
       actionSurface: runtime.actionSurface,
       intentRuntime: runtime.intentRuntime,
@@ -73,15 +83,37 @@ export function bindKeyboardShortcuts(
   }
 
   const onKeyDown = async (event: KeyboardEvent) => {
+    if (DEBUG_KEYBINDINGS) {
+      const targetEl = event.target;
+      const tagName = targetEl instanceof Element ? targetEl.tagName : String(targetEl);
+      console.debug("[shell:keybinding] event-received", {
+        key: event.key,
+        ctrl: event.ctrlKey,
+        alt: event.altKey,
+        shift: event.shiftKey,
+        meta: event.metaKey,
+        target: tagName,
+      });
+    }
+
     if (handleChooserKeyboardEvent(runtime, event, bindings)) {
+      if (DEBUG_KEYBINDINGS) {
+        console.debug("[shell:keybinding] chooser-intercepted");
+      }
       return;
     }
 
     const keybindingService = getKeybindingService();
 
     if (runtime.syncDegraded) {
+      if (DEBUG_KEYBINDINGS) {
+        console.debug("[shell:keybinding] degraded-mode-active");
+      }
       const normalizedChord = keybindingService.normalizeEvent(event);
       if (normalizedChord && handleTabLifecycleShortcut(normalizedChord.value, event, runtime, bindings)) {
+        if (DEBUG_KEYBINDINGS) {
+          console.debug("[shell:keybinding] tab-lifecycle-intercepted (degraded)", { chord: normalizedChord.value });
+        }
         return;
       }
 
@@ -89,28 +121,47 @@ export function bindKeyboardShortcuts(
       if (degradedInteraction === "dismiss-chooser") {
         event.preventDefault();
         bindings.dismissIntentChooser();
+        if (DEBUG_KEYBINDINGS) {
+          console.debug("[shell:keybinding] degraded-mode-blocked", { reason: "dismiss-chooser" });
+        }
         return;
       }
 
       if (degradedInteraction === "block") {
         event.preventDefault();
+        if (DEBUG_KEYBINDINGS) {
+          console.debug("[shell:keybinding] degraded-mode-blocked", { reason: "block" });
+        }
       }
       return;
     }
 
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
+    const normalizedChord = keybindingService.normalizeEvent(event);
+    if (DEBUG_KEYBINDINGS) {
+      console.debug("[shell:keybinding] normalized-chord", {
+        chord: normalizedChord?.value ?? null,
+      });
     }
 
-    const normalizedChord = keybindingService.normalizeEvent(event);
     if (normalizedChord && handleTabLifecycleShortcut(normalizedChord.value, event, runtime, bindings)) {
+      if (DEBUG_KEYBINDINGS) {
+        console.debug("[shell:keybinding] tab-lifecycle-intercepted", { chord: normalizedChord.value });
+      }
       return;
     }
 
     if (normalizedChord) {
       const context = bindings.toActionContext();
       const resolution = keybindingService.resolve(normalizedChord, context);
+      if (DEBUG_KEYBINDINGS) {
+        console.debug("[shell:keybinding] resolve-result", {
+          chord: normalizedChord.value,
+          matched: resolution.match !== null,
+          actionId: resolution.match?.action.id ?? null,
+          pluginId: resolution.match?.action.pluginId ?? null,
+        });
+      }
+
       if (resolution.match) {
         const action = resolution.match.action;
         const activated = await bindings.activatePluginForBoundary({
@@ -118,18 +169,40 @@ export function bindKeyboardShortcuts(
           triggerType: "command",
           triggerId: action.id,
         });
+        if (DEBUG_KEYBINDINGS) {
+          console.debug("[shell:keybinding] activation-gate", {
+            pluginId: action.pluginId,
+            actionId: action.id,
+            pass: activated,
+          });
+        }
         if (!activated) {
           runtime.commandNotice = `Action '${action.id}' blocked: plugin '${action.pluginId}' is not active.`;
           bindings.renderCommandSurface();
           return;
         }
 
-        event.preventDefault();
         const shellResult = handleShellKeyboardAction(runtime, bindings, action.id);
         let executed = shellResult.executed;
         if (!shellResult.handled) {
+          event.preventDefault();
           const result = await keybindingService.dispatch(normalizedChord, context);
           executed = result.executed;
+          if (DEBUG_KEYBINDINGS) {
+            console.debug("[shell:keybinding] non-shell-dispatch", {
+              actionId: action.id,
+              executed: result.executed,
+            });
+          }
+        } else if (shellResult.executed) {
+          event.preventDefault();
+        }
+        if (DEBUG_KEYBINDINGS) {
+          console.debug("[shell:keybinding] shell-action-dispatch", {
+            handled: shellResult.handled,
+            executed: shellResult.executed,
+            message: shellResult.message,
+          });
         }
         runtime.commandNotice = shellResult.handled
           ? `Keybinding (${normalizedChord.value}): ${shellResult.message}`
@@ -146,37 +219,45 @@ export function bindKeyboardShortcuts(
       }
     }
 
-    if (
-      (event.key === "ArrowDown"
-        || event.key === "ArrowUp"
-        || event.key === "ArrowLeft"
-        || event.key === "ArrowRight")
-      && isTabScopeNavigationNode(target)
-    ) {
-      const tabScope = target.dataset.tabScope;
-      const nodes = tabScope
-        ? [...root.querySelectorAll<HTMLButtonElement>(`button[data-tab-scope='${tabScope}'][data-action]`)]
-          .filter(isTabScopeNavigationNode)
-          .filter((node) => !node.disabled)
-        : [];
-      const index = nodes.indexOf(target);
-      if (index < 0 || nodes.length <= 1) {
+    const target = event.target;
+    if (target instanceof HTMLElement) {
+      if (
+        (event.key === "ArrowDown"
+          || event.key === "ArrowUp"
+          || event.key === "ArrowLeft"
+          || event.key === "ArrowRight")
+        && isTabScopeNavigationNode(target)
+      ) {
+        const tabScope = target.dataset.tabScope;
+        const nodes = tabScope
+          ? [...root.querySelectorAll<HTMLButtonElement>(`button[data-tab-scope='${tabScope}'][data-action]`)]
+            .filter(isTabScopeNavigationNode)
+            .filter((node) => !node.disabled)
+          : [];
+        const index = nodes.indexOf(target);
+        if (index < 0 || nodes.length <= 1) {
+          return;
+        }
+
+        const isForward = event.key === "ArrowDown" || event.key === "ArrowRight";
+        const nextIndex = isForward
+          ? (index + 1) % nodes.length
+          : (index - 1 + nodes.length) % nodes.length;
+        nodes[nextIndex]?.focus();
+        event.preventDefault();
         return;
       }
 
-      const isForward = event.key === "ArrowDown" || event.key === "ArrowRight";
-      const nextIndex = isForward
-        ? (index + 1) % nodes.length
-        : (index - 1 + nodes.length) % nodes.length;
-      nodes[nextIndex]?.focus();
-      event.preventDefault();
-      return;
-    }
-
-    if (event.key === "Enter" && target.id === "context-value-input") {
-      const apply = root.querySelector<HTMLButtonElement>("#context-apply");
-      apply?.click();
-      event.preventDefault();
+      if (event.key === "Enter" && target.id === "context-value-input") {
+        const apply = root.querySelector<HTMLButtonElement>("#context-apply");
+        apply?.click();
+        event.preventDefault();
+      }
+    } else if (DEBUG_KEYBINDINGS) {
+      console.debug("[shell:keybinding] target-guard-rejection", {
+        targetType: typeof target,
+        constructor: target?.constructor?.name ?? "unknown",
+      });
     }
   };
 

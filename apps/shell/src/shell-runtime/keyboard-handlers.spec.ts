@@ -39,7 +39,7 @@ class FakeRoot {
     ctrlKey?: boolean;
     altKey?: boolean;
     shiftKey?: boolean;
-    target: HTMLElement;
+    target: EventTarget;
   }): Promise<{ prevented: boolean }> {
     if (!this.onKeyDown) {
       throw new Error("keydown listener not registered");
@@ -115,6 +115,88 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
     assertEqual(activationCalls, 1, "activation boundary should be consulted once");
     assertTruthy(runtime.commandNotice.includes("blocked"), "blocked command should surface explicit notice");
     assertTruthy(runtime.commandNotice.includes("com.ghost.shell.keybindings.default"), "blocked notice should use ghost keybinding plugin id");
+  });
+
+  test("keyboard handler resolves keybinding when target is not an HTMLElement (Bug B)", async () => {
+    const root = new FakeRoot();
+    const runtime = createRuntimeFixture();
+    const bindings = createBindings(runtime);
+    bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
+
+    // Use a plain object as target to simulate SVG/shadow DOM element
+    const nonHtmlTarget = { tagName: "svg" } as unknown as EventTarget;
+    const result = await root.dispatch({
+      key: "q",
+      altKey: true,
+      shiftKey: true,
+      target: nonHtmlTarget,
+    });
+
+    assertEqual(result.prevented, true, "keybinding should resolve even with non-HTMLElement target");
+    assertEqual(runtime.contextState.tabs["tab-a"], undefined, "close action should execute despite non-HTMLElement target");
+    assertTruthy(runtime.commandNotice.includes("shell.window.close"), "command notice should reference action for non-HTMLElement target");
+  });
+
+  test("keyboard handler does not preventDefault for unavailable shell actions (Bug C)", async () => {
+    const root = new FakeRoot();
+    const runtime = createRuntimeFixture();
+    const bindings = createBindings(runtime);
+    bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
+
+    const target = ensureDomElement();
+    // shift+alt+m triggers shell.window.mode.toggle which is always unavailable
+    const result = await root.dispatch({
+      key: "m",
+      altKey: true,
+      shiftKey: true,
+      target,
+    });
+
+    assertEqual(result.prevented, false, "unavailable shell action should not consume keypress");
+    assertTruthy(
+      runtime.commandNotice.includes("shell.window.mode.toggle"),
+      "command notice should reference the unavailable action",
+    );
+    assertTruthy(
+      runtime.commandNotice.includes("no-op"),
+      "command notice should indicate action is a no-op",
+    );
+  });
+
+  test("keyboard handler invalidates cache when override content changes but count stays the same (Bug A)", async () => {
+    const root = new FakeRoot();
+    const runtime = createRuntimeFixture();
+    let overrideSet: { action: string; keybinding: string; pluginId: string }[] = [
+      { action: "shell.window.close", keybinding: "shift+alt+z", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
+    ];
+    const bindings = createBindings(runtime, {
+      getUserOverrideKeybindings: () => overrideSet,
+    });
+    bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
+
+    const target = ensureDomElement();
+
+    // First dispatch with override chord shift+alt+z — should resolve and close tab-a
+    const result1 = await root.dispatch({ key: "z", altKey: true, shiftKey: true, target });
+    assertEqual(result1.prevented, true, "first override chord should resolve and execute");
+    assertEqual(runtime.contextState.tabs["tab-a"], undefined, "first override should close tab-a");
+
+    // Now change override to different chord (same count=1) — remap close to shift+alt+x
+    overrideSet = [
+      { action: "shell.window.close", keybinding: "shift+alt+x", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
+    ];
+
+    // The old override chord should no longer resolve (defaults don't have shift+alt+z)
+    const resultOld = await root.dispatch({ key: "z", altKey: true, shiftKey: true, target });
+    assertEqual(resultOld.prevented, false, "old override chord should no longer match after content change");
+
+    // The new override chord should resolve
+    const resultNew = await root.dispatch({ key: "x", altKey: true, shiftKey: true, target });
+    assertEqual(resultNew.prevented, true, "new override chord should match after content change");
+    assertTruthy(
+      runtime.commandNotice.includes("shell.window.close"),
+      "new override chord should dispatch the remapped close action",
+    );
   });
 }
 
