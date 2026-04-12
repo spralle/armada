@@ -59,6 +59,8 @@ import {
 } from "./shell-runtime/keyboard-handlers.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 import { registerThemeServiceCapability } from "./theme-service-registration.js";
+import { registerConfigurationServiceCapability } from "./config-service-registration.js";
+import { createConfigurationService, InMemoryStorageProvider, StaticJsonStorageProvider } from "@ghost/config-providers";
 
 export type {
   ShellCoreApi,
@@ -213,6 +215,11 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
     if (runtime.themeRegistry) {
       registerThemeServiceCapability(runtime.registry, runtime.themeRegistry);
     }
+    const configService = await createConfigurationService({ providers: [
+      new StaticJsonStorageProvider({ id: "core-defaults", layer: "core", data: {} }),
+      new InMemoryStorageProvider({ id: "session-overrides", layer: "session" }),
+    ] });
+    registerConfigurationServiceCapability(runtime.registry, configService);
     runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
     refreshCommandContributions(runtime);
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);
