@@ -14,31 +14,31 @@
       "path": "./apps/plugin-dev-host"
     },
     {
-      "path": "./apps/plugin-starter"
+      "path": "./plugins/plugin-starter"
     },
     {
       "path": "./apps/typecheck-fixture"
     },
     {
-      "path": "./apps/sample-contract-consumer-plugin"
+      "path": "./plugins/sample-contract-consumer-plugin"
     },
     {
-      "path": "./apps/domain-unplanned-orders-plugin"
+      "path": "./plugins/domain-unplanned-orders-plugin"
     },
     {
-      "path": "./apps/domain-vessel-view-plugin"
+      "path": "./plugins/domain-vessel-view-plugin"
     },
     {
-      "path": "./apps/shared-ui-capability-plugin"
+      "path": "./plugins/shared-ui-capability-plugin"
     },
     {
-      "path": "./apps/action-palette-plugin"
+      "path": "./plugins/action-palette-plugin"
     },
     {
-      "path": "./apps/theme-default-plugin"
+      "path": "./plugins/theme-default-plugin"
     },
     {
-      "path": "./apps/shadcn-theme-bridge-plugin"
+      "path": "./plugins/shadcn-theme-bridge-plugin"
     }
   ]
 }

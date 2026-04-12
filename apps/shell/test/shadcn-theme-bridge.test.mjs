@@ -4,8 +4,8 @@ import {
   parsePluginContract,
   GHOST_THEME_CSS_VARS,
 } from "../../../packages/plugin-contracts/dist/index.js";
-import { pluginContract } from "../../shadcn-theme-bridge-plugin/src/plugin-contract.ts";
-import { GHOST_TO_SHADCN_MAP } from "../../shadcn-theme-bridge-plugin/src/bridge-mapping.ts";
+import { pluginContract } from "../../../plugins/shadcn-theme-bridge-plugin/src/plugin-contract.ts";
+import { GHOST_TO_SHADCN_MAP } from "../../../plugins/shadcn-theme-bridge-plugin/src/bridge-mapping.ts";
 
 // ---------------------------------------------------------------------------
 // Expected shadcn variable names (all 32 that shadcn/ui components use)

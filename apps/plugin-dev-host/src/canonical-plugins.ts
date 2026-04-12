@@ -4,6 +4,8 @@
  * This is duplicated from apps/backend/src/local-ui-plugin-discovery.ts to
  * avoid cross-project import issues (backend has noEmit: true, no exports field).
  * If a plugin is added or removed in the backend, this list must be updated.
+ *
+ * Plugin folders live under `plugins/<folderName>`.
  */
 
 export interface CanonicalPluginDefinition {

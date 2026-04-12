@@ -37,7 +37,7 @@ export function resolvePluginConfigPath(
   definition: CanonicalPluginDefinition,
   workspaceRoot: string,
 ): string {
-  return `${workspaceRoot}/apps/${definition.folderName}/vite.config.ts`;
+  return `${workspaceRoot}/plugins/${definition.folderName}/vite.config.ts`;
 }
 
 export function lookupDefinition(

@@ -37,7 +37,7 @@ async function main() {
   const pluginName = sanitizePluginName(parseArgs(process.argv.slice(2)));
   const root = process.cwd();
   const templateRoot = path.join(root, "templates", "plugin-app");
-  const targetRoot = path.join(root, "apps", pluginName);
+  const targetRoot = path.join(root, "plugins", pluginName);
 
   await mkdir(path.join(targetRoot, "src"), { recursive: true });
 
@@ -64,7 +64,7 @@ async function main() {
     await writeFile(targetPath, content, "utf8");
   }
 
-  console.log(`Scaffolded plugin app at apps/${pluginName}`);
+  console.log(`Scaffolded plugin app at plugins/${pluginName}`);
 }
 
 main().catch((error) => {

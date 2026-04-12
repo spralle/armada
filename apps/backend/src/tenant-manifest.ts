@@ -23,7 +23,7 @@ export interface TenantManifestOverrideOptions {
 const DEFAULT_TENANT = "demo";
 
 const DEFAULT_LOCAL_PLUGIN_ENTRY_URL_MAP = createDefaultLocalPluginEntryUrlMap({
-  appsRoot: "apps",
+  appsRoot: "plugins",
 });
 
 export function getDefaultLocalPluginEntryUrlMap(): ReadonlyMap<string, string> {
@@ -38,7 +38,7 @@ const inMemoryTenantPluginDescriptors: Readonly<
 
 export function createCanonicalLocalTenantDescriptors(): TenantPluginDescriptor[] {
   const plugins = discoverLocalUiPlugins({
-    appsRoot: "apps",
+    appsRoot: "plugins",
   });
 
   return Array.from(plugins.values()).map((plugin) => ({

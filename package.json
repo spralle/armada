@@ -4,6 +4,7 @@
   "packageManager": "bun@1.2.21",
   "workspaces": [
     "apps/*",
+    "plugins/*",
     "packages/*"
   ],
   "scripts": {

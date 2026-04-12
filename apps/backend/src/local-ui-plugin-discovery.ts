@@ -28,7 +28,7 @@ const VALID_LOCAL_PLUGIN_ID_PATTERN =
 /**
  * Canonical local UI plugin conventions for Ghost development.
  *
- * - local plugin folders live under `apps/<folderName>`
+ * - local plugin folders live under `plugins/<folderName>`
  * - each plugin serves a module federation manifest at `/mf-manifest.json`
  * - IDs must be globally unique across local plugin folders
  */

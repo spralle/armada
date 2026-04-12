@@ -9,51 +9,10 @@
         "typescript": "^5.8.3",
       },
     },
-    "apps/action-palette-plugin": {
-      "name": "@ghost/action-palette-plugin",
-      "version": "1.0.0",
-      "dependencies": {
-        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-      },
-      "devDependencies": {
-        "@module-federation/vite": "^1.8.1",
-        "vite": "^5.4.19",
-      },
-    },
-    "apps/appearance-settings-plugin": {
-      "name": "@ghost/appearance-settings-plugin",
-      "dependencies": {
-        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-      },
-      "devDependencies": {
-        "@module-federation/vite": "^1.8.1",
-        "vite": "^5.4.19",
-      },
-    },
     "apps/backend": {
       "name": "@ghost/backend-app",
       "dependencies": {
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-      },
-    },
-    "apps/domain-unplanned-orders-plugin": {
-      "name": "@ghost/domain-unplanned-orders-plugin",
-      "dependencies": {
-        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-      },
-      "devDependencies": {
-        "@module-federation/vite": "^1.8.1",
-        "vite": "^5.4.19",
-      },
-    },
-    "apps/domain-vessel-view-plugin": {
-      "name": "@ghost/domain-vessel-view-plugin",
-      "dependencies": {
-        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-      },
-      "devDependencies": {
-        "@module-federation/vite": "^1.8.1",
-        "vite": "^5.4.19",
       },
     },
     "apps/plugin-dev-host": {
@@ -64,46 +23,6 @@
       },
       "devDependencies": {
         "@types/node": "^22.0.0",
-      },
-    },
-    "apps/plugin-starter": {
-      "name": "@ghost/plugin-starter",
-      "dependencies": {
-        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-      },
-      "devDependencies": {
-        "@module-federation/vite": "^1.8.1",
-        "vite": "^5.4.19",
-      },
-    },
-    "apps/sample-contract-consumer-plugin": {
-      "name": "@ghost/sample-contract-consumer-plugin",
-      "dependencies": {
-        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-      },
-      "devDependencies": {
-        "@module-federation/vite": "^1.8.1",
-        "vite": "^5.4.19",
-      },
-    },
-    "apps/shadcn-theme-bridge-plugin": {
-      "name": "@ghost/shadcn-theme-bridge-plugin",
-      "dependencies": {
-        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-      },
-      "devDependencies": {
-        "@module-federation/vite": "^1.8.1",
-        "vite": "^5.4.19",
-      },
-    },
-    "apps/shared-ui-capability-plugin": {
-      "name": "@ghost/shared-ui-capability-plugin",
-      "dependencies": {
-        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-      },
-      "devDependencies": {
-        "@module-federation/vite": "^1.8.1",
-        "vite": "^5.4.19",
       },
     },
     "apps/shell": {
@@ -121,16 +40,6 @@
         "vite": "^5.4.19",
       },
     },
-    "apps/theme-default-plugin": {
-      "name": "@ghost/theme-default-plugin",
-      "dependencies": {
-        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-      },
-      "devDependencies": {
-        "@module-federation/vite": "^1.8.1",
-        "vite": "^5.4.19",
-      },
-    },
     "apps/typecheck-fixture": {
       "name": "@ghost/typecheck-fixture",
       "dependencies": {
@@ -142,6 +51,97 @@
       "version": "0.0.0",
       "dependencies": {
         "zod": "^3.24.2",
+      },
+    },
+    "plugins/action-palette-plugin": {
+      "name": "@ghost/action-palette-plugin",
+      "version": "1.0.0",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/appearance-settings-plugin": {
+      "name": "@ghost/appearance-settings-plugin",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/domain-unplanned-orders-plugin": {
+      "name": "@ghost/domain-unplanned-orders-plugin",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/domain-vessel-view-plugin": {
+      "name": "@ghost/domain-vessel-view-plugin",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/plugin-starter": {
+      "name": "@ghost/plugin-starter",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/sample-contract-consumer-plugin": {
+      "name": "@ghost/sample-contract-consumer-plugin",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/shadcn-theme-bridge-plugin": {
+      "name": "@ghost/shadcn-theme-bridge-plugin",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/shared-ui-capability-plugin": {
+      "name": "@ghost/shared-ui-capability-plugin",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/theme-default-plugin": {
+      "name": "@ghost/theme-default-plugin",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
       },
     },
   },
@@ -236,31 +236,31 @@
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.21.5", "", { "os": "win32", "cpu": "x64" }, "sha512-tQd/1efJuzPC6rCFwEvLtci/xNFcTZknmXs98FYDfGE4wP9ClFV98nyKrzJKVPMhdDnjzLhdUyMX4PsQAPjwIw=="],
 
-    "@ghost/action-palette-plugin": ["@ghost/action-palette-plugin@workspace:apps/action-palette-plugin"],
+    "@ghost/action-palette-plugin": ["@ghost/action-palette-plugin@workspace:plugins/action-palette-plugin"],
 
-    "@ghost/appearance-settings-plugin": ["@ghost/appearance-settings-plugin@workspace:apps/appearance-settings-plugin"],
+    "@ghost/appearance-settings-plugin": ["@ghost/appearance-settings-plugin@workspace:plugins/appearance-settings-plugin"],
 
     "@ghost/backend-app": ["@ghost/backend-app@workspace:apps/backend"],
 
-    "@ghost/domain-unplanned-orders-plugin": ["@ghost/domain-unplanned-orders-plugin@workspace:apps/domain-unplanned-orders-plugin"],
+    "@ghost/domain-unplanned-orders-plugin": ["@ghost/domain-unplanned-orders-plugin@workspace:plugins/domain-unplanned-orders-plugin"],
 
-    "@ghost/domain-vessel-view-plugin": ["@ghost/domain-vessel-view-plugin@workspace:apps/domain-vessel-view-plugin"],
+    "@ghost/domain-vessel-view-plugin": ["@ghost/domain-vessel-view-plugin@workspace:plugins/domain-vessel-view-plugin"],
 
     "@ghost/plugin-contracts": ["@ghost/plugin-contracts@workspace:packages/plugin-contracts"],
 
     "@ghost/plugin-dev-host": ["@ghost/plugin-dev-host@workspace:apps/plugin-dev-host"],
 
-    "@ghost/plugin-starter": ["@ghost/plugin-starter@workspace:apps/plugin-starter"],
+    "@ghost/plugin-starter": ["@ghost/plugin-starter@workspace:plugins/plugin-starter"],
 
-    "@ghost/sample-contract-consumer-plugin": ["@ghost/sample-contract-consumer-plugin@workspace:apps/sample-contract-consumer-plugin"],
+    "@ghost/sample-contract-consumer-plugin": ["@ghost/sample-contract-consumer-plugin@workspace:plugins/sample-contract-consumer-plugin"],
 
-    "@ghost/shadcn-theme-bridge-plugin": ["@ghost/shadcn-theme-bridge-plugin@workspace:apps/shadcn-theme-bridge-plugin"],
+    "@ghost/shadcn-theme-bridge-plugin": ["@ghost/shadcn-theme-bridge-plugin@workspace:plugins/shadcn-theme-bridge-plugin"],
 
-    "@ghost/shared-ui-capability-plugin": ["@ghost/shared-ui-capability-plugin@workspace:apps/shared-ui-capability-plugin"],
+    "@ghost/shared-ui-capability-plugin": ["@ghost/shared-ui-capability-plugin@workspace:plugins/shared-ui-capability-plugin"],
 
     "@ghost/shell-app": ["@ghost/shell-app@workspace:apps/shell"],
 
-    "@ghost/theme-default-plugin": ["@ghost/theme-default-plugin@workspace:apps/theme-default-plugin"],
+    "@ghost/theme-default-plugin": ["@ghost/theme-default-plugin@workspace:plugins/theme-default-plugin"],
 
     "@ghost/typecheck-fixture": ["@ghost/typecheck-fixture@workspace:apps/typecheck-fixture"],
 
