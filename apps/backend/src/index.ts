@@ -10,6 +10,7 @@ import {
 } from "./dev-cli-options.js";
 import { createRouter, jsonResponse, type Route } from "./router.js";
 import { createConfigRoutes } from "./config-endpoints.js";
+import { createOverrideRoutes } from "./override-endpoints.js";
 import { bootstrapBackendConfig, logConfigBootstrapSummary } from "./config-bootstrap.js";
 import { createInMemoryAuditLog, createInMemoryOverrideTracker } from "@ghost/config-server";
 
@@ -62,6 +63,11 @@ const configRoutes = createConfigRoutes({
   overrideTracker,
 });
 
+const overrideRoutes = createOverrideRoutes({
+  auditLog,
+  overrideTracker,
+});
+
 const routes: Route[] = [
   {
     method: "GET",
@@ -72,6 +78,7 @@ const routes: Route[] = [
     },
   },
   ...configRoutes,
+  ...overrideRoutes,
 ];
 
 const router = createRouter(routes);
@@ -95,6 +102,7 @@ function startBackendDevServer(): void {
         pathname: url.pathname,
         body: () => request.json().catch(() => null),
         headers,
+        search: url.search,
       });
     },
   });
@@ -111,14 +119,16 @@ function startNodeBackendDevServer(): void {
   import(nodeHttpModuleName)
     .then(({ createServer }) => {
       const server = createServer((req: NodeHttpRequestLike, res: NodeHttpResponseLike) => {
-        const pathname = req.url ? new URL(req.url, `http://${BACKEND_DEV_HOST}:${BACKEND_DEV_PORT}`).pathname : "/";
+        const parsedUrl = req.url ? new URL(req.url, `http://${BACKEND_DEV_HOST}:${BACKEND_DEV_PORT}`) : undefined;
+        const pathname = parsedUrl?.pathname ?? "/";
+        const search = parsedUrl?.search ?? "";
         const headers: Record<string, string> = {};
         if (req.headers) {
           for (const [k, v] of Object.entries(req.headers)) {
             if (typeof v === "string") { headers[k] = v; }
           }
         }
-        const response = router({ method: req.method ?? "GET", pathname, body: () => Promise.resolve(null), headers });
+        const response = router({ method: req.method ?? "GET", pathname, body: () => Promise.resolve(null), headers, search });
 
         void Promise.resolve(response).then((resolved) => {
           res.setHeader("content-type", "application/json; charset=utf-8");

@@ -62,3 +62,7 @@ export {
 // policy-engine.ts — Change policy evaluation
 export type { PolicyDecision, PolicyEvaluationContext } from "./policy-engine.js";
 export { evaluateChangePolicy } from "./policy-engine.js";
+
+// policy-validation.ts — Change policy convention validation
+export type { PolicyViolation } from "./policy-validation.js";
+export { validateChangePolicies } from "./policy-validation.js";

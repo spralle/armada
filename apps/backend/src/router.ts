@@ -16,6 +16,7 @@ export interface RequestInfo {
   pathname: string;
   body: () => Promise<unknown>;
   headers: Record<string, string>;
+  search?: string | undefined;
 }
 
 export function jsonResponse(body: unknown, status = 200): Response {
