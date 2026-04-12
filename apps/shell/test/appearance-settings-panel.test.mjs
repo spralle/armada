@@ -19,6 +19,7 @@ test("utility.appearance descriptor is registered", async () => {
   assert.equal(descriptor.panelHostId, "appearance-settings");
   assert.equal(descriptor.slot, "main");
   assert.equal(descriptor.available, "always");
+  assert.equal(descriptor.pluginId, "ghost.appearance-settings", "appearance tab should be backed by a plugin");
 
   const allTabs = listUtilityTabs();
   const appearanceIndex = allTabs.findIndex((t) => t.id === "utility.appearance");
@@ -47,10 +48,10 @@ test("appearance panelHostId matches expected container ID", async () => {
 
   const descriptor = resolveUtilityTabById("utility.appearance");
   assert.ok(descriptor);
-  // The panelHostId must match the container ID used in panels-host.tsx
+  // The panelHostId must match the container ID used in the part panel host
   assert.equal(
     descriptor.panelHostId,
     "appearance-settings",
-    "panelHostId must match the ensureRoot() call in panels-host.tsx",
+    "panelHostId must match the panel host container ID",
   );
 });

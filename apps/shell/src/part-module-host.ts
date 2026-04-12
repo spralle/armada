@@ -65,7 +65,7 @@ export function createPartModuleHostRuntime(
 
       const mountPromises: Promise<void>[] = [];
       for (const part of parts) {
-        if (isUtilityTabId(part.id)) {
+        if (isUtilityTabId(part.id) && part.pluginId === "shell.utility") {
           continue;
         }
 

@@ -13,6 +13,7 @@ export interface UtilityTabDescriptor {
   panelHostId: string;
   slot: "main";
   available: "always" | "development-only";
+  pluginId?: string | undefined;
 }
 
 const UTILITY_TAB_DESCRIPTORS: UtilityTabDescriptor[] = [
@@ -50,6 +51,7 @@ const UTILITY_TAB_DESCRIPTORS: UtilityTabDescriptor[] = [
     panelHostId: "appearance-settings",
     slot: "main",
     available: "always",
+    pluginId: "ghost.appearance-settings",
   },
   {
     id: "utility.keybindings",

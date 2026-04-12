@@ -81,6 +81,13 @@ export const CANONICAL_LOCAL_UI_PLUGIN_DEFINITIONS: readonly CanonicalLocalUiPlu
     version: "1.0.0",
     entryPath: "/mf-manifest.json",
   },
+  {
+    id: "ghost.appearance-settings",
+    folderName: "appearance-settings-plugin",
+    devPort: 4178,
+    version: "1.0.0",
+    entryPath: "/mf-manifest.json",
+  },
 ] as const;
 
 export function discoverLocalUiPlugins(

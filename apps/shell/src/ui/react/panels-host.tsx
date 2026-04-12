@@ -14,7 +14,6 @@ import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";
 import { KeybindingsSettingsPanel } from "./keybinding-settings-panel.js";
 import { ContextControlsPanel } from "./context-controls-panel.js";
-import { AppearanceSettingsPanel } from "./appearance-settings-panel.js";
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
@@ -111,16 +110,6 @@ export function createReactPanelsHost(
           <KeybindingsSettingsPanel
             manager={runtime.keybindingOverrideManager}
             pluginBindings={runtime.actionSurface.keybindings}
-            onChanged={() => host.render()}
-          />,
-        );
-      }
-
-      const appearanceRoot = ensureRoot("appearance-settings");
-      if (appearanceRoot && runtime.themeRegistry) {
-        appearanceRoot.render(
-          <AppearanceSettingsPanel
-            themeRegistry={runtime.themeRegistry}
             onChanged={() => host.render()}
           />,
         );
