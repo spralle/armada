@@ -1,18 +1,43 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createServiceRegistry } from "../dist-test/src/service-registry.js";
+import { createShellPluginRegistry } from "../dist-test/src/plugin-registry.js";
+import { createPluginServicesBridge } from "../dist-test/src/plugin-service-bridge.js";
 import { THEME_SERVICE_ID } from "../../../packages/plugin-contracts/dist/index.js";
 
 // ---------------------------------------------------------------------------
-// Plugin service access — end-to-end flow
+// Helper — register a builtin plugin with a service instance
 // ---------------------------------------------------------------------------
-// Validates the pattern a plugin would use: create a registry, register a
-// service, then access it via the PluginServices subset (getService/hasService).
 
-test("plugin can access ThemeService via services.getService", () => {
-  const registry = createServiceRegistry();
+function createRegistryWithService(serviceId, serviceInstance) {
+  const registry = createShellPluginRegistry();
+  registry.registerManifestDescriptors("local", []);
+  registry.registerBuiltinPlugin(
+    {
+      manifest: { id: "test.provider", name: "Test Provider", version: "1.0.0" },
+      contributes: {
+        capabilities: {
+          services: [{ id: serviceId, version: "1.0.0" }],
+        },
+      },
+    },
+    { [serviceId]: serviceInstance },
+  );
+  return registry;
+}
 
-  // Simulate shell bootstrap registering a ThemeService
+// ---------------------------------------------------------------------------
+// Plugin service access via createPluginServicesBridge
+// ---------------------------------------------------------------------------
+
+test("createPluginServicesBridge returns PluginServices-compatible object", () => {
+  const registry = createShellPluginRegistry();
+  registry.registerManifestDescriptors("local", []);
+  const bridge = createPluginServicesBridge(registry);
+  assert.equal(typeof bridge.getService, "function");
+  assert.equal(typeof bridge.hasService, "function");
+});
+
+test("bridge.getService returns registered builtin service instance", () => {
   const fakeThemeService = {
     listThemes: () => [{ id: "default", name: "Default", mode: "dark" }],
     getActiveThemeId: () => "default",
@@ -24,10 +49,10 @@ test("plugin can access ThemeService via services.getService", () => {
     clearCustomBackground: () => {},
   };
 
-  registry.registerService(THEME_SERVICE_ID, fakeThemeService);
+  const registry = createRegistryWithService(THEME_SERVICE_ID, fakeThemeService);
+  const bridge = createPluginServicesBridge(registry);
 
-  // Plugin access pattern — only uses getService (PluginServices subset)
-  const themeService = registry.getService(THEME_SERVICE_ID);
+  const themeService = bridge.getService(THEME_SERVICE_ID);
   assert.ok(themeService, "getService should return the registered service");
   assert.deepEqual(themeService.listThemes(), [
     { id: "default", name: "Default", mode: "dark" },
@@ -35,30 +60,30 @@ test("plugin can access ThemeService via services.getService", () => {
   assert.equal(themeService.getActiveThemeId(), "default");
 });
 
-test("services.getService returns null when service not registered", () => {
-  const registry = createServiceRegistry();
-  const result = registry.getService("ghost.nonexistent.Service");
+test("bridge.getService returns null when service not registered", () => {
+  const registry = createShellPluginRegistry();
+  registry.registerManifestDescriptors("local", []);
+  const bridge = createPluginServicesBridge(registry);
+  const result = bridge.getService("ghost.nonexistent.Service");
   assert.equal(result, null);
 });
 
-test("services.hasService reflects registration state", () => {
-  const registry = createServiceRegistry();
-  assert.equal(registry.hasService(THEME_SERVICE_ID), false);
-  registry.registerService(THEME_SERVICE_ID, { listThemes: () => [] });
-  assert.equal(registry.hasService(THEME_SERVICE_ID), true);
+test("bridge.hasService reflects registration state", () => {
+  const fakeService = { doStuff: () => {} };
+  const registry = createRegistryWithService("ghost.test.Service", fakeService);
+  const bridge = createPluginServicesBridge(registry);
+
+  assert.equal(bridge.hasService("ghost.test.Service"), true);
+  assert.equal(bridge.hasService("ghost.nonexistent"), false);
 });
 
-test("ShellServiceRegistry has PluginServices-compatible shape", () => {
-  const registry = createServiceRegistry();
+test("bridge preserves service reference identity", () => {
+  const fakeService = { counter: 0 };
+  const registry = createRegistryWithService("ghost.ref.Service", fakeService);
+  const bridge = createPluginServicesBridge(registry);
 
-  // PluginServices requires: getService<T>(id: string): T | null
-  assert.equal(typeof registry.getService, "function");
-
-  // PluginServices requires: hasService(id: string): boolean
-  assert.equal(typeof registry.hasService, "function");
-
-  // Verify the structural contract: getService returns null for missing
-  assert.equal(registry.getService("missing"), null);
-  // hasService returns boolean
-  assert.equal(registry.hasService("missing"), false);
+  const first = bridge.getService("ghost.ref.Service");
+  const second = bridge.getService("ghost.ref.Service");
+  assert.equal(first, second, "consecutive calls should return same reference");
+  assert.equal(first, fakeService, "returned value should be identical to registered object");
 });

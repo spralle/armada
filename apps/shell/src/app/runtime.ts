@@ -8,7 +8,7 @@ import {
   createLocalStorageLayoutPersistence,
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
-import { createServiceRegistry } from "../service-registry.js";
+import { createPluginServicesBridge } from "../plugin-service-bridge.js";
 import { buildActionSurface } from "../action-surface.js";
 import {
   createDefaultShellKeybindingContract,
@@ -54,6 +54,7 @@ export function createShellRuntime(options?: {
     : createAsyncWindowBridgeCompatibilityShim(bridge);
 
   const intentRuntime = createIntentRuntime();
+  const registry = createShellPluginRegistry();
 
   const runtime: ShellRuntime = {
     layout: createDefaultLayoutState(),
@@ -66,8 +67,8 @@ export function createShellRuntime(options?: {
     keybindingPersistence: createLocalStorageKeybindingPersistence(getStorage(), {
       userId: getCurrentUserId(),
     }),
-    registry: createShellPluginRegistry(),
-    services: createServiceRegistry(),
+    registry,
+    services: createPluginServicesBridge(registry),
     bridge,
     asyncBridge,
     windowId,

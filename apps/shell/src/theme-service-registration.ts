@@ -1,28 +1,21 @@
 // theme-service-registration.ts — ThemeService adapter and shell registration.
 //
 // Bridges the internal ThemeRegistry (shell-private) to the public
-// ThemeService contract (plugin-facing). Registers the service with
-// the shell's service registry during bootstrap.
+// ThemeService contract (plugin-facing). Registers the service as a
+// builtin plugin capability through the PluginRegistry.
 
 import type {
   ThemeService,
   ThemeInfo,
   BackgroundInfo,
   ThemeBackgroundEntry,
+  PluginContract,
 } from "@ghost/plugin-contracts";
 import { THEME_SERVICE_ID } from "@ghost/plugin-contracts";
 import type { ThemeRegistry } from "./theme-registry.js";
-import type { ShellServiceRegistry } from "./service-registry.js";
+import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
-// ---------------------------------------------------------------------------
-// Declaration merge — type-safe service lookup
-// ---------------------------------------------------------------------------
-
-declare module "./service-registry.js" {
-  interface ShellServiceIdMap {
-    "ghost.theme.Service": ThemeService;
-  }
-}
+export const THEME_SERVICE_PLUGIN_ID = "ghost.shell.theme-service";
 
 // ---------------------------------------------------------------------------
 // Adapter factory + registration
@@ -30,10 +23,10 @@ declare module "./service-registry.js" {
 
 /**
  * Create a ThemeService adapter from a ThemeRegistry and register it
- * with the shell service registry.
+ * as a builtin plugin capability on the plugin registry.
  */
-export function registerThemeService(
-  services: ShellServiceRegistry,
+export function registerThemeServiceCapability(
+  registry: ShellPluginRegistry,
   themeRegistry: ThemeRegistry,
 ): void {
   const themeService: ThemeService = {
@@ -74,5 +67,20 @@ export function registerThemeService(
     },
   };
 
-  services.registerService(THEME_SERVICE_ID, themeService);
+  const contract: PluginContract = {
+    manifest: {
+      id: THEME_SERVICE_PLUGIN_ID,
+      name: "Theme Service Provider",
+      version: "1.0.0",
+    },
+    contributes: {
+      capabilities: {
+        services: [
+          { id: THEME_SERVICE_ID, version: "1.0.0" },
+        ],
+      },
+    },
+  };
+
+  registry.registerBuiltinPlugin(contract, { [THEME_SERVICE_ID]: themeService });
 }

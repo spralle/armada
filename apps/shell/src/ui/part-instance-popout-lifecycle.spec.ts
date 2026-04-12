@@ -1,6 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import { createServiceRegistry } from "../service-registry.js";
+import type { PluginServices } from "@ghost/plugin-contracts";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
 import { openPopout } from "./part-instance-popout-lifecycle.js";
 import { createIncomingTransferJournal } from "../context-state.js";
@@ -10,6 +10,13 @@ type WindowOpenFn = (url?: string | URL, target?: string) => Window | null;
 type MinimalWindow = Pick<Window, "location" | "open" | "close"> & {
   __ghost?: Window["__ghost"];
 };
+
+function createStubPluginServices(): PluginServices {
+  return {
+    getService() { return null; },
+    hasService() { return false; },
+  };
+}
 
 export function registerPartInstancePopoutLifecycleSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
@@ -303,7 +310,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     chooserReturnFocusSelector: null,
     actionSurface: {} as ShellRuntime["actionSurface"],
     intentRuntime: {} as ShellRuntime["intentRuntime"],
-    services: createServiceRegistry(),
+    services: createStubPluginServices(),
     commandNotice: "",
     pluginNotice: "",
     intentNotice: "",
