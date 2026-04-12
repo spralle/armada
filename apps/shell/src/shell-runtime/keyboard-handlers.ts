@@ -261,11 +261,14 @@ export function bindKeyboardShortcuts(
     }
   };
 
+  // Attach to document so keybindings work regardless of focus location.
+  // Falls back to root in non-browser environments (Node.js tests).
+  if (typeof document !== "undefined") {
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }
   root.addEventListener("keydown", onKeyDown);
-
-  return () => {
-    root.removeEventListener("keydown", onKeyDown);
-  };
+  return () => root.removeEventListener("keydown", onKeyDown);
 }
 
 function handleTabLifecycleShortcut(

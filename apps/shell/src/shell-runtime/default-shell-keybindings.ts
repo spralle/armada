@@ -5,8 +5,6 @@ export const USER_KEYBINDING_OVERRIDE_PLUGIN_ID = "com.ghost.shell.keybindings.u
 
 export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.window.close",
-  "shell.window.mode.toggle",
-  "shell.window.fullscreen.toggle",
   "shell.focus.left",
   "shell.focus.down",
   "shell.focus.up",
@@ -31,6 +29,16 @@ export const SHELL_KEYBOARD_ACTION_IDS = [
 
 export type ShellKeyboardActionId = typeof SHELL_KEYBOARD_ACTION_IDS[number];
 
+/**
+ * Action IDs that are registered (for user override bindings) but permanently
+ * unavailable in the browser shell runtime. They have no default keybindings
+ * to avoid silently consuming keypresses.
+ */
+export const SHELL_UNAVAILABLE_ACTION_IDS = [
+  "shell.window.mode.toggle",
+  "shell.window.fullscreen.toggle",
+] as const;
+
 export interface ShellDefaultKeybinding {
   action: ShellKeyboardActionId;
   keybinding: string;
@@ -38,8 +46,6 @@ export interface ShellDefaultKeybinding {
 
 export const DEFAULT_SHELL_KEYBINDINGS: readonly ShellDefaultKeybinding[] = [
   { action: "shell.window.close", keybinding: "shift+alt+q" },
-  { action: "shell.window.mode.toggle", keybinding: "shift+alt+m" },
-  { action: "shell.window.fullscreen.toggle", keybinding: "shift+alt+f" },
   { action: "shell.focus.left", keybinding: "shift+alt+arrowleft" },
   { action: "shell.focus.down", keybinding: "shift+alt+arrowdown" },
   { action: "shell.focus.up", keybinding: "shift+alt+arrowup" },
@@ -75,6 +81,7 @@ export const RESERVED_BROWSER_SHORTCUTS = new Set([
 ]);
 
 export function createDefaultShellKeybindingContract(): PluginContract {
+  const allActionIds = [...SHELL_KEYBOARD_ACTION_IDS, ...SHELL_UNAVAILABLE_ACTION_IDS];
   return {
     manifest: {
       id: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
@@ -82,7 +89,7 @@ export function createDefaultShellKeybindingContract(): PluginContract {
       version: "1.0.0",
     },
     contributes: {
-      actions: SHELL_KEYBOARD_ACTION_IDS.map((actionId) => ({
+      actions: allActionIds.map((actionId) => ({
         id: actionId,
         title: actionId,
         intent: actionId,

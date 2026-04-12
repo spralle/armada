@@ -140,7 +140,13 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
   test("keyboard handler does not preventDefault for unavailable shell actions (Bug C)", async () => {
     const root = new FakeRoot();
     const runtime = createRuntimeFixture();
-    const bindings = createBindings(runtime);
+    // shell.window.mode.toggle is no longer in DEFAULT_SHELL_KEYBINDINGS, so provide
+    // the binding via user override to test the no-op handler path.
+    const bindings = createBindings(runtime, {
+      getUserOverrideKeybindings: () => [
+        { action: "shell.window.mode.toggle", keybinding: "shift+alt+m", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
+      ],
+    });
     bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
 
     const target = ensureDomElement();

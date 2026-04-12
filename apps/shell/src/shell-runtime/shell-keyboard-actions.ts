@@ -10,7 +10,7 @@ import { updateContextState } from "../context/runtime-state.js";
 import { closeTabThroughRuntime } from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
-import { isShellKeyboardActionId, type ShellKeyboardActionId } from "./default-shell-keybindings.js";
+import { isShellKeyboardActionId, SHELL_UNAVAILABLE_ACTION_IDS, type ShellKeyboardActionId } from "./default-shell-keybindings.js";
 
 export interface ShellKeyboardActionResult {
   handled: boolean;
@@ -18,11 +18,18 @@ export interface ShellKeyboardActionResult {
   message: string;
 }
 
+/** Set view of action IDs removed from default bindings but kept as no-op handlers. */
+const UNAVAILABLE_ACTION_SET = new Set<string>(SHELL_UNAVAILABLE_ACTION_IDS);
+
 export function handleShellKeyboardAction(
   runtime: ShellRuntime,
   bindings: KeyboardBindings,
   actionId: string,
 ): ShellKeyboardActionResult {
+  if (UNAVAILABLE_ACTION_SET.has(actionId)) {
+    return unavailable(actionId, "action unavailable in browser shell runtime");
+  }
+
   if (!isShellKeyboardActionId(actionId)) {
     return { handled: false, executed: false, message: "" };
   }
@@ -51,10 +58,6 @@ function dispatchShellKeyboardAction(
     return closed
       ? executed(actionId)
       : unavailable(actionId, "active tab is not closeable");
-  }
-
-  if (actionId === "shell.window.mode.toggle" || actionId === "shell.window.fullscreen.toggle") {
-    return unavailable(actionId, "action unavailable in browser shell runtime");
   }
 
   if (actionId === "shell.group.cycle.prev") {
