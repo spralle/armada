@@ -73,55 +73,159 @@ Result: { "ghost.shell.display.dateFormat": "EU",  "ghost.shell.display.timezone
 
 ## Key Format
 
-Configuration keys are fully qualified dot-separated identifiers:
+Configuration keys are flat, dot-separated identifiers stored as top-level record keys (not nested objects). Every key has exactly this structure:
 
 ```
-{namespace}.{category}.{setting}
+┌─ namespace ─┐  ┌─ relative key ─────────┐
+ghost.vesselView.map.defaultZoom
+  │      │        │       │
+  org  plugin  category setting
 ```
 
-- **3 to 5 segments**, each camelCase alphanumeric starting with a letter.
-- Example: `ghost.vesselView.map.defaultZoom`
+### Anatomy of a key
 
-### Namespace derivation
+A fully qualified key has **3 to 5 segments**, each camelCase alphanumeric starting with a letter:
 
-Plugin keys are declared as relative keys in the contract and auto-prefixed with the plugin's namespace:
+| Segments | Structure | Example |
+|---|---|---|
+| 3 | `{org}.{plugin}.{setting}` | `ghost.vesselView.theme` |
+| 4 | `{org}.{plugin}.{category}.{setting}` | `ghost.vesselView.map.defaultZoom` |
+| 5 | `{org}.{plugin}.{category}.{sub}.{setting}` | `ghost.vesselView.views.vesselGrid.pageSize` |
 
-| Plugin ID | Namespace | Relative Key | Fully Qualified Key |
-|---|---|---|---|
-| `ghost.vessel-view` | `ghost.vesselView` | `map.defaultZoom` | `ghost.vesselView.map.defaultZoom` |
-| `@ghost/vessel-view-plugin` | `ghost.vesselView` | `map.defaultZoom` | `ghost.vesselView.map.defaultZoom` |
+**Namespace** is always the first two segments (`{org}.{plugin}`). It identifies which plugin owns the key and serves as the isolation boundary — a plugin can only declare keys in its own namespace.
 
-Conversion rules: kebab-case segments become camelCase. Scoped package names (`@scope/name-plugin`) strip the `@` and `-plugin` suffix.
+**Relative key** is everything after the namespace. When a plugin declares config in its contract, it uses relative keys. The engine auto-prefixes them with the plugin's namespace.
+
+### Namespace derivation from plugin ID
+
+The `deriveNamespace()` function converts a plugin ID into its config namespace:
+
+| Plugin ID | Namespace | Rule |
+|---|---|---|
+| `ghost.vessel-view` | `ghost.vesselView` | Dotted ID: kebab segments → camelCase |
+| `ghost.vesselView` | `ghost.vesselView` | Already in namespace format: pass-through |
+| `@ghost/vessel-view-plugin` | `ghost.vesselView` | Scoped npm: strip `@`, `/` → `.`, strip `-plugin`, camelCase |
+| `@ghost/theme-default-plugin` | `ghost.themeDefault` | Same rule applied |
+
+The `extractNamespace()` function does the reverse — given a fully qualified key, it returns the first two segments: `ghost.vesselView.map.defaultZoom` → `ghost.vesselView`.
+
+### Relative key → fully qualified key
+
+`qualifyKey(namespace, relativeKey)` concatenates them with a dot:
+
+```
+qualifyKey("ghost.vesselView", "map.defaultZoom")
+  → "ghost.vesselView.map.defaultZoom"
+```
+
+This is how the engine transforms plugin contract declarations into the flat keys stored in layer data.
+
+### Key format validation
+
+`validateKeyFormat()` enforces:
+- 3 to 5 dot-separated segments
+- Each segment starts with a letter
+- Each segment is alphanumeric only (no hyphens, underscores, or special characters)
+- No empty segments
+
+Valid: `ghost.vesselView.map.defaultZoom` ✓
+Invalid: `ghost.vessel-view.map` ✗ (hyphen in segment), `ghost.vesselView` ✗ (only 2 segments)
 
 ### Category conventions
 
-Use domain-specific category names: `compliance`, `planning`, `capacity`, `display`, `behavior`, `data`, `network`, `security`, `integration`, `layout`.
+The third segment is typically a domain-specific category. These are conventions, not enforced by the key format validator:
+
+`compliance` · `planning` · `capacity` · `display` · `behavior` · `data` · `network` · `security` · `integration` · `layout`
+
+For 3-segment keys (e.g., `ghost.vesselView.theme`), there is no category — the setting sits directly under the namespace.
 
 ## Dynamic Scope Chain
 
-Tenants define their own organizational hierarchy. The scope chain lets configuration vary by business context, not just by user session.
+The scope chain is a variable-depth hierarchy of configuration layers that sits between `tenant` and `user` in the layer stack. It lets configuration vary by business context — not just by user or tenant.
 
-### Why it exists
+### The problem it solves
 
-A user viewing Rotterdam port data sees Rotterdam's config. The same user simultaneously viewing Singapore data sees Singapore's config. The scope is resolved per **business object context**.
+A maritime operations platform serves a shipping company with offices and operations in multiple regions. The company (tenant) wants:
+- Default vessel display units: metric (company-wide)
+- European region overrides: EU compliance date formats
+- Rotterdam port overrides: local berth numbering scheme
+- Singapore port overrides: different local regulations
 
-### Variable depth
+Without scope chain, you'd need a flat tenant-level override for each permutation. The scope chain lets you define a hierarchy and set overrides at each level.
 
-Each tenant defines a different number of scope levels. One tenant might use `Country → Region → Site`, another might use `Division → Department`.
+### How tenants define their hierarchy
 
-### Example
+A tenant declares a `TenantScopeHierarchy` — an ordered list of scope levels with parent-child relationships:
+
+```typescript
+// Tenant hierarchy definition
+const hierarchy: TenantScopeHierarchy = {
+  scopes: [
+    { id: "region", label: "Region" },
+    { id: "port",   label: "Port",   parentScopeId: "region" },
+    { id: "berth",  label: "Berth",  parentScopeId: "port" },
+  ],
+};
+```
+
+Each `ScopeDefinition` has:
+- `id` — machine identifier used in scope paths and layer keys
+- `label` — human-readable name for admin UIs
+- `parentScopeId` — the parent scope level (omit for root levels)
+
+Different tenants have different hierarchies. One might use `fleet → vessel → voyage`, another `division → department`, another `region → port → berth`. The engine does not know or care about the domain meaning — it only enforces parent-child ordering.
+
+### Scope paths
+
+When resolving configuration, the caller provides a **scope path** — a list of `ScopeInstance` values that identify the business context:
+
+```typescript
+// "Show me config for Rotterdam port in the Europe region"
+const scopePath: ScopeInstance[] = [
+  { scopeId: "region", value: "europe" },
+  { scopeId: "port",   value: "rotterdam" },
+];
+```
+
+Each `ScopeInstance` has:
+- `scopeId` — must match a `ScopeDefinition.id` in the tenant's hierarchy
+- `value` — the specific instance (e.g., `"rotterdam"`, `"europe"`)
+
+### How scope layers are inserted
+
+The `buildScopeChain()` function validates the scope path against the hierarchy and produces ordered scope layer entries. These are inserted between `tenant` and `user` in the layer stack:
 
 ```
-Hierarchy:  Country → Region → Site
-Scope path: [{ scopeId: "country", value: "NL" }, { scopeId: "region", value: "rotterdam" }]
+Without scope path:
+  CORE → APP → MODULE → INTEGRATOR → TENANT → USER → DEVICE → SESSION
 
-Layer stack becomes:
+With scope path [region:europe, port:rotterdam]:
   CORE → APP → MODULE → INTEGRATOR → TENANT
-    → scope:country:NL → scope:region:rotterdam
+    → scope:region:europe → scope:port:rotterdam
       → USER → DEVICE → SESSION
 ```
 
-The `buildScopeChain()` function validates that each scope instance exists in the tenant's hierarchy and that parent-child ordering is respected (a child scope must appear after its parent).
+Each scope layer has priority 4.5 (between `tenant` at 4 and `user` at 5). Within the scope chain, layers are ordered broadest to narrowest — a port-level override beats a region-level override.
+
+### Partial scope paths
+
+You don't need to specify all levels. A scope path of `[region:europe]` is valid — it applies region-level overrides without any port-specific ones. The hierarchy only requires that if you include a child scope, its parent must appear first:
+
+```
+Valid:   [region:europe]                          — region only
+Valid:   [region:europe, port:rotterdam]           — region + port
+Valid:   [region:europe, port:rotterdam, berth:A1] — all three levels
+Invalid: [port:rotterdam]                          — port without parent region
+Invalid: [port:rotterdam, region:europe]           — wrong order (child before parent)
+```
+
+### No scope path
+
+When `scopePath` is empty (e.g., a global settings view not tied to any business object), no scope layers are inserted. The stack is just the 8 fixed layers. This is the default behavior.
+
+### Scope path is per request, not per session
+
+A user can view Rotterdam data in one panel and Singapore data in another. Each panel resolves configuration with its own scope path. The scope is tied to the **business object being viewed**, not the user's session.
 
 ## Property Schema
 
