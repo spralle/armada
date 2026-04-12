@@ -113,3 +113,19 @@ export type {
 // view-config-declaration.ts — View config declaration type and factory
 export type { ViewConfigDeclaration } from "./view-config-declaration.js";
 export { defineViewConfig } from "./view-config-declaration.js";
+
+// promotion-types.ts — Promotion pipeline, audit, and emergency override types
+export type {
+  PromotionStatus,
+  PromotionRequest,
+  ConfigAuditEntry,
+  EmergencyOverrideRecord,
+} from "./promotion-types.js";
+
+// schemas-promotion.ts — Zod schemas for promotion types
+export {
+  promotionStatusSchema,
+  promotionRequestSchema,
+  configAuditEntrySchema,
+  emergencyOverrideRecordSchema,
+} from "./schemas-promotion.js";

@@ -58,3 +58,7 @@ export {
   generateZodForProperty,
   sanitizeKeyToIdentifier,
 } from "./zod-schema-generator.js";
+
+// policy-engine.ts — Change policy evaluation
+export type { PolicyDecision, PolicyEvaluationContext } from "./policy-engine.js";
+export { evaluateChangePolicy } from "./policy-engine.js";
