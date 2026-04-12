@@ -33,11 +33,18 @@ export function parsePluginDevHostArgs(
   return { pluginIds, port };
 }
 
+export function resolvePluginDir(
+  definition: CanonicalPluginDefinition,
+  workspaceRoot: string,
+): string {
+  return `${workspaceRoot}/plugins/${definition.folderName}`;
+}
+
 export function resolvePluginConfigPath(
   definition: CanonicalPluginDefinition,
   workspaceRoot: string,
 ): string {
-  return `${workspaceRoot}/plugins/${definition.folderName}/vite.config.ts`;
+  return `${resolvePluginDir(definition, workspaceRoot)}/vite.config.ts`;
 }
 
 export function lookupDefinition(

@@ -8,6 +8,7 @@ import {
 import {
   lookupDefinition,
   resolvePluginConfigPath,
+  resolvePluginDir,
 } from "./cli.js";
 
 export interface PluginGatewayOptions {
@@ -48,10 +49,12 @@ export function createPluginGateway(
     const instancePromises = pluginIds.map((pluginId) => {
       const definition = lookupDefinition(pluginId);
       const configPath = resolvePluginConfigPath(definition, workspaceRoot);
+      const pluginDir = resolvePluginDir(definition, workspaceRoot);
 
       return createPluginViteInstance({
         pluginId,
         configPath,
+        pluginDir,
         gatewayPort: port,
         httpServer: httpServer as HttpServer,
       });
