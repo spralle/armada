@@ -50,11 +50,12 @@ const OMARCHY_TERMINAL = {
   color15: "#ffffff",
 };
 
-/** All 42 token keys expected in a full palette (19 core + 23 derived). */
+/** All 47 token keys expected in a full palette (24 core + 23 derived). */
 const ALL_TOKEN_KEYS = [
   "mode", "background", "surface", "overlay", "primary", "secondary", "accent",
   "muted", "foreground", "error", "warning", "success", "info", "border", "ring",
   "cursor", "selectionBackground", "radius", "opacity",
+  "opacityActive", "opacityInactive", "borderActive", "borderInactive", "borderSize",
   "surfaceForeground", "overlayForeground", "primaryForeground", "secondaryForeground",
   "accentForeground", "mutedForeground", "input", "selectionForeground",
   "hoverBackground", "activeBackground",
@@ -64,18 +65,18 @@ const ALL_TOKEN_KEYS = [
 ];
 
 // ---------------------------------------------------------------------------
-// 1. deriveFullPalette from 3 minimal inputs produces all 41 tokens
+// 1. deriveFullPalette from 3 minimal inputs produces all 47 tokens
 // ---------------------------------------------------------------------------
 
-test("deriveFullPalette produces all 42 tokens from 3 minimal inputs", () => {
+test("deriveFullPalette produces all 47 tokens from 3 minimal inputs", () => {
   const result = deriveFullPalette(MINIMAL_INPUT);
 
   for (const key of ALL_TOKEN_KEYS) {
     assert.notEqual(result[key], undefined, `Token "${key}" should be defined`);
   }
 
-  // 19 core + 23 derived = 42 tokens
-  assert.equal(Object.keys(result).length, 42, "Should produce exactly 42 tokens");
+  // 24 core + 23 derived = 47 tokens
+  assert.equal(Object.keys(result).length, 47, "Should produce exactly 47 tokens");
 });
 
 test("deriveFullPalette defaults mode to dark when not provided", () => {
@@ -92,14 +93,14 @@ test("deriveFullPalette respects explicit light mode", () => {
 // 2. deriveFullPalette from Omarchy-style input (6 + terminal 16)
 // ---------------------------------------------------------------------------
 
-test("deriveFullPalette produces all 42 tokens from Omarchy-style input with terminal", () => {
+test("deriveFullPalette produces all 47 tokens from Omarchy-style input with terminal", () => {
   const result = deriveFullPalette(OMARCHY_INPUT, OMARCHY_TERMINAL);
 
   for (const key of ALL_TOKEN_KEYS) {
     assert.notEqual(result[key], undefined, `Token "${key}" should be defined`);
   }
 
-  assert.equal(Object.keys(result).length, 42);
+  assert.equal(Object.keys(result).length, 47);
 });
 
 test("Omarchy terminal colors map to semantic tokens", () => {
@@ -326,8 +327,8 @@ test("schema rejects unrecognized keys (strict mode)", () => {
 // CSS variable map
 // ---------------------------------------------------------------------------
 
-test("GHOST_THEME_CSS_VARS has entries for all 42 tokens", () => {
-  assert.equal(Object.keys(GHOST_THEME_CSS_VARS).length, 42);
+test("GHOST_THEME_CSS_VARS has entries for all 47 tokens", () => {
+  assert.equal(Object.keys(GHOST_THEME_CSS_VARS).length, 47);
   for (const key of ALL_TOKEN_KEYS) {
     assert.ok(
       key in GHOST_THEME_CSS_VARS,
@@ -383,12 +384,15 @@ test("fallback defaults are used for missing semantic colors without terminal", 
 
 test("opacity defaults to 1.0 when not provided", () => {
   const result = deriveFullPalette(MINIMAL_INPUT);
-  assert.equal(result.opacity, 1.0);
+  // opacity field now equals opacityActive (Hyprland default 0.97)
+  assert.equal(result.opacity, 0.97);
+  assert.equal(result.opacity, result.opacityActive, "opacity should equal opacityActive");
 });
 
 test("opacity is preserved when explicitly set", () => {
   const result = deriveFullPalette({ ...MINIMAL_INPUT, opacity: 0.85 });
   assert.equal(result.opacity, 0.85);
+  assert.equal(result.opacity, result.opacityActive, "opacity should equal opacityActive");
 });
 
 test("GHOST_THEME_CSS_VARS has entry for opacity", () => {
@@ -418,4 +422,104 @@ test("schema rejects opacity out of range (below 0)", () => {
     opacity: -0.1,
   });
   assert.equal(result.success, false);
+});
+
+// ---------------------------------------------------------------------------
+// Window appearance tokens (Hyprland-style)
+// ---------------------------------------------------------------------------
+
+test("split opacity defaults: no opacity input → opacityActive=0.97, opacityInactive=0.90", () => {
+  const result = deriveFullPalette(MINIMAL_INPUT);
+  assert.equal(result.opacityActive, 0.97);
+  assert.equal(result.opacityInactive, 0.90);
+});
+
+test("legacy opacity backward compat: opacity=0.85 → opacityActive=0.85, opacityInactive≈0.79", () => {
+  const result = deriveFullPalette({ ...MINIMAL_INPUT, opacity: 0.85 });
+  assert.equal(result.opacityActive, 0.85);
+  const expected = 0.85 * 0.93;
+  assert.ok(
+    Math.abs(result.opacityInactive - expected) < 0.001,
+    `Expected opacityInactive ≈ ${expected}, got ${result.opacityInactive}`,
+  );
+  assert.equal(result.opacity, result.opacityActive, "FullThemePalette.opacity === opacityActive");
+});
+
+test("explicit opacityActive/opacityInactive override legacy opacity and defaults", () => {
+  const result = deriveFullPalette({
+    ...MINIMAL_INPUT,
+    opacity: 0.85,
+    opacityActive: 0.95,
+    opacityInactive: 0.80,
+  });
+  assert.equal(result.opacityActive, 0.95);
+  assert.equal(result.opacityInactive, 0.80);
+  assert.equal(result.opacity, 0.95, "FullThemePalette.opacity should equal opacityActive");
+});
+
+test("borderActive derives from accent when not set", () => {
+  const result = deriveFullPalette(MINIMAL_INPUT);
+  assert.equal(result.borderActive, result.accent);
+});
+
+test("borderInactive derives from border when not set", () => {
+  const result = deriveFullPalette(MINIMAL_INPUT);
+  assert.equal(result.borderInactive, result.border);
+});
+
+test("borderSize defaults to 1px when not set", () => {
+  const result = deriveFullPalette(MINIMAL_INPUT);
+  assert.equal(result.borderSize, "1px");
+});
+
+test("explicit border appearance tokens override derivation", () => {
+  const result = deriveFullPalette({
+    ...MINIMAL_INPUT,
+    borderActive: "#ff0000",
+    borderInactive: "#00ff00",
+    borderSize: "2px",
+  });
+  assert.equal(result.borderActive, "#ff0000");
+  assert.equal(result.borderInactive, "#00ff00");
+  assert.equal(result.borderSize, "2px");
+});
+
+test("schema accepts new window appearance fields", () => {
+  const result = partialThemePaletteSchema.safeParse({
+    ...MINIMAL_INPUT,
+    opacityActive: 0.97,
+    opacityInactive: 0.90,
+    borderActive: "#ff0000",
+    borderInactive: "#00ff00",
+    borderSize: "2px",
+  });
+  assert.equal(result.success, true);
+});
+
+test("schema rejects opacityActive > 1", () => {
+  const result = partialThemePaletteSchema.safeParse({
+    ...MINIMAL_INPUT,
+    opacityActive: 1.5,
+  });
+  assert.equal(result.success, false);
+});
+
+test("schema rejects opacityInactive < 0", () => {
+  const result = partialThemePaletteSchema.safeParse({
+    ...MINIMAL_INPUT,
+    opacityInactive: -0.1,
+  });
+  assert.equal(result.success, false);
+});
+
+test("CSS var map has entries for all 5 new window appearance tokens", () => {
+  assert.equal(GHOST_THEME_CSS_VARS.opacityActive, "--ghost-opacity-active");
+  assert.equal(GHOST_THEME_CSS_VARS.opacityInactive, "--ghost-opacity-inactive");
+  assert.equal(GHOST_THEME_CSS_VARS.borderActive, "--ghost-border-active");
+  assert.equal(GHOST_THEME_CSS_VARS.borderInactive, "--ghost-border-inactive");
+  assert.equal(GHOST_THEME_CSS_VARS.borderSize, "--ghost-border-size");
+});
+
+test("--ghost-background-opacity CSS var unchanged (backward compat)", () => {
+  assert.equal(GHOST_THEME_CSS_VARS.opacity, "--ghost-background-opacity");
 });

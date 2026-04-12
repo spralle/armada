@@ -8,7 +8,7 @@ Ghost's theme system lets plugins define and switch color palettes at runtime th
 Plugin Contract                 Shell Theme Registry          DOM
 ┌─────────────────────┐        ┌────────────────────┐       ┌──────────┐
 │ contributes.themes  │──────> │ deriveFullPalette() │─────> │ :root    │
-│   partial palette   │        │ 3 → 42 tokens      │       │ --ghost-*│
+│   partial palette   │        │ 3 → 47 tokens      │       │ --ghost-*│
 │   terminal colors   │        │                    │       │ CSS vars │
 └─────────────────────┘        └────────────────────┘       └──────────┘
 ```
@@ -17,14 +17,14 @@ Key concepts:
 
 - **Themes as plugins**: A theme is a `contributes.themes` entry in a plugin contract. Themes are discovered, composed, and applied the same way as other plugin contributions.
 - **CSS custom properties**: All visual tokens are exposed as `--ghost-*` CSS variables on `:root`. Any component in any micro-frontend can consume them without importing JavaScript.
-- **Derivation engine**: A pure function in `@ghost/plugin-contracts` expands a minimum 3-value palette to the full 42-token set. Plugin authors supply what they know; the engine fills the rest.
+- **Derivation engine**: A pure function in `@ghost/plugin-contracts` expands a minimum 3-value palette to the full 47-token set. Plugin authors supply what they know; the engine fills the rest.
 - **Bridge plugin pattern**: Ghost's canonical tokens (`--ghost-*`) are decoupled from any UI library. A separate bridge plugin maps them to library-specific variables (e.g., shadcn's `--primary`, `--card`).
 
 ## Token Reference
 
-Ghost's theme system defines **19 core tokens** and **23 derived tokens** (42 total). Core tokens can be provided directly in the palette; derived tokens are computed by the derivation engine but can be influenced through the core inputs.
+Ghost's theme system defines **24 core tokens** and **23 derived tokens** (47 total). Core tokens can be provided directly in the palette; derived tokens are computed by the derivation engine but can be influenced through the core inputs.
 
-### Core Tokens (19)
+### Core Tokens (24)
 
 | Token | CSS Variable | Required | Description |
 |---|---|---|---|
@@ -47,6 +47,11 @@ Ghost's theme system defines **19 core tokens** and **23 derived tokens** (42 to
 | `selectionBackground` | `--ghost-selection-background` | No | Selection highlight background (derived: primary) |
 | `radius` | `--ghost-radius` | No | Border radius value (default: `0.625rem`) |
 | `opacity` | `--ghost-background-opacity` | No | Background opacity 0–1 (default: `1.0`). Controls panel transparency to let background images show through |
+| `opacityActive` | `--ghost-opacity-active` | No | Active window/panel opacity (default: same as `opacity`). Maps to Hyprland's active window opacity |
+| `opacityInactive` | `--ghost-opacity-inactive` | No | Inactive window/panel opacity (default: `opacity × 0.93` or `0.90`). Maps to Hyprland's inactive window opacity |
+| `borderActive` | `--ghost-border-active` | No | Border color for active window (derived: `accent`) |
+| `borderInactive` | `--ghost-border-inactive` | No | Border color for inactive window (derived: `border`) |
+| `borderSize` | `--ghost-border-size` | No | Border width for window chrome (default: `1px`) |
 
 ### Derived Tokens (23)
 
@@ -79,6 +84,54 @@ These are computed by the derivation engine. Plugin authors never need to set th
 | `sidebarRing` | `--ghost-sidebar-ring` | Same as `ring` |
 
 > **Note on lightness direction**: In dark mode, "+" means brighter and "-" means darker. In light mode, the sign is inverted so "surface" is always slightly elevated relative to the background.
+
+## Window Appearance Tokens
+
+Ghost supports Hyprland/Omarchy-style window appearance differentiation through split opacity and border tokens. These allow active and inactive windows to have distinct visual treatments.
+
+### Active/Inactive Opacity
+
+Omarchy uses compositor-level window rules to differentiate active and inactive windows:
+
+```conf
+# Hyprland windowrule
+windowrule = opacity 0.97 0.9, ^(.*)$
+```
+
+Ghost maps this pattern to two CSS tokens:
+
+| Token | CSS Variable | Default | Description |
+|---|---|---|---|
+| `opacityActive` | `--ghost-opacity-active` | Same as `opacity` (or `1.0`) | Applied to focused/active panels |
+| `opacityInactive` | `--ghost-opacity-inactive` | `opacity × 0.93` (or `0.90`) | Applied to unfocused/inactive panels |
+
+When the legacy `opacity` field is set, `opacityActive` inherits it directly and `opacityInactive` derives from it at 93%. When neither is set, `opacityActive` defaults to the base opacity (`1.0`) and `opacityInactive` defaults to `0.90`.
+
+**Backward compatibility**: `FullThemePalette.opacity` always equals `opacityActive`, so existing consumers of `--ghost-background-opacity` continue to work unchanged.
+
+### Border Tokens
+
+Active/inactive border colors let the shell visually distinguish focused windows:
+
+| Token | CSS Variable | Default | Description |
+|---|---|---|---|
+| `borderActive` | `--ghost-border-active` | Same as `accent` | Highlight border for focused window |
+| `borderInactive` | `--ghost-border-inactive` | Same as `border` | Subdued border for unfocused windows |
+| `borderSize` | `--ghost-border-size` | `1px` | Border width for window chrome |
+
+### CSS Usage Example
+
+```css
+.ghost-window {
+  border: var(--ghost-border-size) solid var(--ghost-border-inactive);
+  opacity: var(--ghost-opacity-inactive);
+}
+
+.ghost-window-active {
+  border-color: var(--ghost-border-active);
+  opacity: var(--ghost-opacity-active);
+}
+```
 
 ## Creating a Theme Plugin
 
@@ -159,7 +212,7 @@ palette: {
 }
 ```
 
-The derivation engine computes all 42 tokens from these three values.
+The derivation engine computes all 47 tokens from these three values.
 
 ### Full 18 core tokens
 
@@ -316,7 +369,7 @@ color15 = "#acb0d0"
 }
 ```
 
-That's all it takes — 5 palette fields plus the 16 terminal colors. The derivation engine produces the full 42-token palette from this input.
+That's all it takes — 5 palette fields plus the 16 terminal colors. The derivation engine produces the full 47-token palette from this input.
 
 ## UI Library Bridge Pattern
 

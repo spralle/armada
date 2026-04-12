@@ -133,8 +133,9 @@ export {
   partialThemePaletteSchema,
   terminalPaletteSchema,
   deriveFullPalette,
-  GHOST_THEME_CSS_VARS,
 } from "./theme-derivation.js";
+
+export { GHOST_THEME_CSS_VARS } from "./theme-css-vars.js";
 
 export {
   adjustLightness,

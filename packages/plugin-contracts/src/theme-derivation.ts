@@ -63,10 +63,15 @@ export interface PartialThemePalette {
   selectionBackground?: string | undefined;
   radius?: string | undefined;
   opacity?: number | undefined;
+  opacityActive?: number | undefined;
+  opacityInactive?: number | undefined;
+  borderActive?: string | undefined;
+  borderInactive?: string | undefined;
+  borderSize?: string | undefined;
 }
 
 /**
- * Full 42-token theme palette — the output of derivation.
+ * Full 47-token theme palette — the output of derivation.
  * Every field is guaranteed present.
  */
 export interface FullThemePalette {
@@ -90,6 +95,12 @@ export interface FullThemePalette {
   selectionBackground: string;
   radius: string;
   opacity: number;
+  // 5 window appearance tokens (Hyprland-style)
+  opacityActive: number;
+  opacityInactive: number;
+  borderActive: string;
+  borderInactive: string;
+  borderSize: string;
   // 22 derived tokens
   surfaceForeground: string;
   overlayForeground: string;
@@ -165,6 +176,11 @@ export const partialThemePaletteSchema = z
     selectionBackground: hexColorString.optional(),
     radius: z.string().trim().min(1).optional(),
     opacity: z.number().min(0).max(1).optional(),
+    opacityActive: z.number().min(0).max(1).optional(),
+    opacityInactive: z.number().min(0).max(1).optional(),
+    borderActive: hexColorString.optional(),
+    borderInactive: hexColorString.optional(),
+    borderSize: z.string().trim().min(1).optional(),
   })
   .strict()
   .refine((data) => data.accent !== undefined || data.primary !== undefined, {
@@ -187,7 +203,7 @@ const FALLBACK_RADIUS = "0.625rem";
 // ---------------------------------------------------------------------------
 
 /**
- * Derive a complete 42-token palette from a partial input.
+ * Derive a complete 47-token palette from a partial input.
  * Terminal palette (Omarchy compat) maps color1→error, color2→success,
  * color3→warning, color6→info when those tokens are not explicitly set.
  *
@@ -222,6 +238,14 @@ export function deriveFullPalette(
   const selectionBackground = input.selectionBackground ?? primary;
   const radius = input.radius ?? FALLBACK_RADIUS;
   const opacity = input.opacity ?? 1.0;
+
+  // Window appearance tokens (Hyprland-style split opacity + borders)
+  const opacityActive = input.opacityActive ?? input.opacity ?? 0.97;
+  const opacityInactive =
+    input.opacityInactive ?? (input.opacity != null ? input.opacity * 0.93 : 0.90);
+  const borderActive = input.borderActive ?? accent;
+  const borderInactive = input.borderInactive ?? border;
+  const borderSize = input.borderSize ?? "1px";
 
   // Derived foreground tokens
   const primaryForeground = contrastSafe(primary);
@@ -269,7 +293,12 @@ export function deriveFullPalette(
     cursor,
     selectionBackground,
     radius,
-    opacity,
+    opacity: opacityActive,
+    opacityActive,
+    opacityInactive,
+    borderActive,
+    borderInactive,
+    borderSize,
     surfaceForeground: input.foreground,
     overlayForeground: input.foreground,
     primaryForeground,
@@ -295,53 +324,3 @@ export function deriveFullPalette(
     sidebarRing,
   };
 }
-
-// ---------------------------------------------------------------------------
-// CSS variable mapping
-// ---------------------------------------------------------------------------
-
-/** Maps every palette token name to its Ghost CSS custom property name. */
-export const GHOST_THEME_CSS_VARS: Readonly<Record<keyof FullThemePalette, string>> = {
-  mode: "--ghost-mode",
-  background: "--ghost-background",
-  surface: "--ghost-surface",
-  overlay: "--ghost-overlay",
-  primary: "--ghost-primary",
-  secondary: "--ghost-secondary",
-  accent: "--ghost-accent",
-  muted: "--ghost-muted",
-  foreground: "--ghost-foreground",
-  error: "--ghost-error",
-  warning: "--ghost-warning",
-  success: "--ghost-success",
-  info: "--ghost-info",
-  border: "--ghost-border",
-  ring: "--ghost-ring",
-  cursor: "--ghost-cursor",
-  selectionBackground: "--ghost-selection-background",
-  radius: "--ghost-radius",
-  opacity: "--ghost-background-opacity",
-  surfaceForeground: "--ghost-surface-foreground",
-  overlayForeground: "--ghost-overlay-foreground",
-  primaryForeground: "--ghost-primary-foreground",
-  secondaryForeground: "--ghost-secondary-foreground",
-  accentForeground: "--ghost-accent-foreground",
-  mutedForeground: "--ghost-muted-foreground",
-  input: "--ghost-input",
-  selectionForeground: "--ghost-selection-foreground",
-  hoverBackground: "--ghost-hover-background",
-  activeBackground: "--ghost-active-background",
-  chart1: "--ghost-chart-1",
-  chart2: "--ghost-chart-2",
-  chart3: "--ghost-chart-3",
-  chart4: "--ghost-chart-4",
-  chart5: "--ghost-chart-5",
-  sidebar: "--ghost-sidebar",
-  sidebarForeground: "--ghost-sidebar-foreground",
-  sidebarPrimary: "--ghost-sidebar-primary",
-  sidebarPrimaryForeground: "--ghost-sidebar-primary-foreground",
-  sidebarAccent: "--ghost-sidebar-accent",
-  sidebarAccentForeground: "--ghost-sidebar-accent-foreground",
-  sidebarBorder: "--ghost-sidebar-border",
-  sidebarRing: "--ghost-sidebar-ring",
-} as const;
