@@ -141,6 +141,7 @@ export interface ThemeFonts {
 export interface ThemeContribution {
   id: string;
   name: string;
+  author?: string | undefined;
   mode: "dark" | "light";
   palette: PartialThemePalette;
   backgrounds?: ThemeBackgroundEntry[] | undefined;

@@ -22,17 +22,20 @@ test("default theme plugin contract validates against parsePluginContract", () =
 });
 
 // ---------------------------------------------------------------------------
-// Both themes are present
+// All five themes are present
 // ---------------------------------------------------------------------------
 
-test("plugin contract contains both Default Dark and Tokyo Night themes", () => {
+test("plugin contract contains all five built-in themes", () => {
   const themes = pluginContract.contributes?.themes;
 
   assert.ok(themes, "contributes.themes must be defined");
-  assert.equal(themes.length, 2, "Expected exactly 2 themes");
+  assert.equal(themes.length, 5, "Expected exactly 5 themes");
 
   const defaultDark = themes.find((t) => t.id === "ghost.theme.default.dark");
   const tokyoNight = themes.find((t) => t.id === "ghost.theme.tokyo-night");
+  const retro82 = themes.find((t) => t.id === "ghost.theme.retro-82");
+  const floridaMan = themes.find((t) => t.id === "ghost.theme.florida-man");
+  const catppuccinLatte = themes.find((t) => t.id === "ghost.theme.catppuccin-latte");
 
   assert.ok(defaultDark, "Default Dark theme must exist");
   assert.equal(defaultDark.name, "Default Dark");
@@ -41,6 +44,18 @@ test("plugin contract contains both Default Dark and Tokyo Night themes", () => 
   assert.ok(tokyoNight, "Tokyo Night theme must exist");
   assert.equal(tokyoNight.name, "Tokyo Night");
   assert.equal(tokyoNight.mode, "dark");
+
+  assert.ok(retro82, "Retro 82 theme must exist");
+  assert.equal(retro82.name, "Retro 82");
+  assert.equal(retro82.mode, "dark");
+
+  assert.ok(floridaMan, "Florida Man theme must exist");
+  assert.equal(floridaMan.name, "Florida Man");
+  assert.equal(floridaMan.mode, "dark");
+
+  assert.ok(catppuccinLatte, "Catppuccin Latte theme must exist");
+  assert.equal(catppuccinLatte.name, "Catppuccin Latte");
+  assert.equal(catppuccinLatte.mode, "light");
 });
 
 // ---------------------------------------------------------------------------
@@ -107,6 +122,102 @@ test("Tokyo Night theme has 16 terminal colors", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Tokyo Night background images
+// ---------------------------------------------------------------------------
+
+test("Tokyo Night theme has background images", () => {
+  const tokyoNight = pluginContract.contributes?.themes?.find(
+    (t) => t.id === "ghost.theme.tokyo-night",
+  );
+  assert.ok(tokyoNight);
+  assert.ok(tokyoNight.backgrounds, "Tokyo Night backgrounds must be defined");
+  assert.equal(tokyoNight.backgrounds.length, 7, "Expected 7 background images");
+  assert.ok(
+    tokyoNight.backgrounds[0].url.includes("swirl-buck"),
+    "First background should contain 'swirl-buck'",
+  );
+  assert.equal(tokyoNight.backgrounds[0].mode, "cover");
+});
+
+// ---------------------------------------------------------------------------
+// Retro 82 theme
+// ---------------------------------------------------------------------------
+
+test("Retro 82 theme has Omarchy-compatible palette and backgrounds", () => {
+  const retro82 = pluginContract.contributes?.themes?.find(
+    (t) => t.id === "ghost.theme.retro-82",
+  );
+  assert.ok(retro82, "Retro 82 theme must exist");
+  assert.equal(retro82.name, "Retro 82");
+  assert.equal(retro82.mode, "dark");
+  assert.ok(retro82.author?.includes("OldJobobo"), "Author must contain OldJobobo");
+
+  // Palette core
+  assert.ok(retro82.palette.background, "palette.background must be defined");
+  assert.ok(retro82.palette.foreground, "palette.foreground must be defined");
+  assert.ok(retro82.palette.accent, "palette.accent must be defined");
+
+  // Terminal has 16 colors
+  assert.ok(retro82.terminal, "terminal palette must be defined");
+  const terminalKeys = Object.keys(retro82.terminal);
+  assert.equal(terminalKeys.length, 16, "Expected 16 terminal colors");
+
+  // Backgrounds
+  assert.ok(retro82.backgrounds, "backgrounds must be defined");
+  assert.equal(retro82.backgrounds.length, 9, "Expected 9 background images");
+});
+
+// ---------------------------------------------------------------------------
+// Florida Man theme
+// ---------------------------------------------------------------------------
+
+test("Florida Man theme has Omarchy-compatible palette and backgrounds", () => {
+  const floridaMan = pluginContract.contributes?.themes?.find(
+    (t) => t.id === "ghost.theme.florida-man",
+  );
+  assert.ok(floridaMan, "Florida Man theme must exist");
+  assert.equal(floridaMan.name, "Florida Man");
+  assert.equal(floridaMan.mode, "dark");
+  assert.ok(floridaMan.author?.includes("OldJobobo"), "Author must contain OldJobobo");
+
+  // Palette core
+  assert.ok(floridaMan.palette.background, "palette.background must be defined");
+  assert.ok(floridaMan.palette.foreground, "palette.foreground must be defined");
+  assert.ok(floridaMan.palette.accent, "palette.accent must be defined");
+
+  // Terminal has 16 colors
+  assert.ok(floridaMan.terminal, "terminal palette must be defined");
+  const terminalKeys = Object.keys(floridaMan.terminal);
+  assert.equal(terminalKeys.length, 16, "Expected 16 terminal colors");
+
+  // Backgrounds
+  assert.ok(floridaMan.backgrounds, "backgrounds must be defined");
+  assert.equal(floridaMan.backgrounds.length, 11, "Expected 11 background images");
+});
+
+// ---------------------------------------------------------------------------
+// Catppuccin Latte — first light mode theme
+// ---------------------------------------------------------------------------
+
+test("Catppuccin Latte is a light mode theme with proper derivation", () => {
+  const catppuccinLatte = pluginContract.contributes?.themes?.find(
+    (t) => t.id === "ghost.theme.catppuccin-latte",
+  );
+  assert.ok(catppuccinLatte, "Catppuccin Latte theme must exist");
+  assert.equal(catppuccinLatte.mode, "light");
+  assert.ok(catppuccinLatte.author?.includes("Catppuccin"), "Author must contain Catppuccin");
+  assert.equal(catppuccinLatte.palette.background, "#eff1f5");
+
+  // Derivation produces light mode
+  const derived = deriveFullPalette(catppuccinLatte.palette, catppuccinLatte.terminal);
+  assert.equal(derived.mode, "light", "Derived mode must be light");
+
+  // Terminal-derived semantics
+  assert.equal(derived.error, "#d20f39", "error should come from terminal color1");
+  assert.equal(derived.success, "#40a02b", "success should come from terminal color2");
+});
+
+// ---------------------------------------------------------------------------
 // Derivation produces a complete palette from Tokyo Night's minimal input
 // ---------------------------------------------------------------------------
 
@@ -157,4 +268,17 @@ test("deriveFullPalette fills all gaps for Tokyo Night minimal palette", () => {
   assert.ok(derived.sidebarForeground, "sidebarForeground must be derived");
   assert.ok(derived.sidebarBorder, "sidebarBorder must be derived");
   assert.ok(derived.radius, "radius must be derived");
+});
+
+// ---------------------------------------------------------------------------
+// Author attribution
+// ---------------------------------------------------------------------------
+
+test("all themes have author attribution", () => {
+  const themes = pluginContract.contributes?.themes;
+  assert.ok(themes, "contributes.themes must be defined");
+
+  for (const theme of themes) {
+    assert.ok(theme.author, `Theme "${theme.name}" must have an author field`);
+  }
 });

@@ -179,6 +179,7 @@ export const themeContributionSchema = z
   .object({
     id: nonEmptyString,
     name: nonEmptyString,
+    author: z.string().optional(),
     mode: z.enum(["dark", "light"]),
     palette: partialThemePaletteSchema,
     backgrounds: z

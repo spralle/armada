@@ -4,8 +4,11 @@ import type { PluginContract } from "@ghost/plugin-contracts";
  * Ghost Default Themes plugin contract.
  *
  * Packages the default dark palette (matching the original hardcoded shell values)
- * plus a Tokyo Night theme using minimal Omarchy-compatible palette input
- * to prove the derivation engine fills all gaps.
+ * plus community-contributed Omarchy-compatible themes:
+ * - Tokyo Night by Enkia
+ * - Retro 82 by OldJobobo (palette by @niraletter)
+ * - Florida Man by OldJobobo
+ * - Catppuccin Latte by the Catppuccin project (first light mode theme)
  */
 export const pluginContract: PluginContract = {
   manifest: {
@@ -19,6 +22,7 @@ export const pluginContract: PluginContract = {
       {
         id: "ghost.theme.default.dark",
         name: "Default Dark",
+        author: "Ghost",
         mode: "dark",
         palette: {
           background: "#14161a",
@@ -42,6 +46,7 @@ export const pluginContract: PluginContract = {
       {
         id: "ghost.theme.tokyo-night",
         name: "Tokyo Night",
+        author: "Enkia (tokyo-night-vscode-theme)",
         mode: "dark",
         palette: {
           background: "#1a1b26",
@@ -68,6 +73,136 @@ export const pluginContract: PluginContract = {
           color14: "#0db9d7",
           color15: "#acb0d0",
         },
+        backgrounds: [
+          { url: "https://raw.githubusercontent.com/basecamp/omarchy/main/themes/tokyo-night/backgrounds/0-swirl-buck.jpg", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/basecamp/omarchy/main/themes/tokyo-night/backgrounds/1-sunset-lake.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/basecamp/omarchy/main/themes/tokyo-night/backgrounds/2-pawel-czerwinski.jpg", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/basecamp/omarchy/main/themes/tokyo-night/backgrounds/3-milad-fakurian.jpg", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-tokyo-night-addon-backgrounds/main/backgrounds/neon-city-aerial.jpg", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-tokyo-night-addon-backgrounds/main/backgrounds/neon-karaoke-alley.jpg", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-tokyo-night-addon-backgrounds/main/backgrounds/sakura-glow-trees.jpg", mode: "cover" },
+        ],
+      },
+      {
+        id: "ghost.theme.retro-82",
+        name: "Retro 82",
+        author: "OldJobobo (palette by @niraletter)",
+        mode: "dark",
+        palette: {
+          background: "#00172e",
+          foreground: "#f6dcac",
+          accent: "#faa968",
+          cursor: "#f6dcac",
+          selectionBackground: "#faa968",
+        },
+        terminal: {
+          color0: "#00172e",
+          color1: "#f85525",
+          color2: "#028391",
+          color3: "#e97b3c",
+          color4: "#faa968",
+          color5: "#3f8f8a",
+          color6: "#8cbfb8",
+          color7: "#a7c9c6",
+          color8: "#134e5a",
+          color9: "#f85525",
+          color10: "#028391",
+          color11: "#e97b3c",
+          color12: "#faa968",
+          color13: "#3f8f8a",
+          color14: "#8cbfb8",
+          color15: "#f6dcac",
+        },
+        backgrounds: [
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/main/backgrounds/01-omarchy.jpg", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/main/backgrounds/02-retro-sf.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/main/backgrounds/03-abstract-lines.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/main/backgrounds/05-gateway.jpg", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/main/backgrounds/06-livingroom-1982.jpg", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/main/backgrounds/07-zen-boat.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/main/backgrounds/08-walkman.jpg", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/main/backgrounds/09-pirate-bay.jpg", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/main/backgrounds/10-abstract-pyramids.jpg", mode: "cover" },
+        ],
+      },
+      {
+        id: "ghost.theme.florida-man",
+        name: "Florida Man",
+        author: "OldJobobo",
+        mode: "dark",
+        palette: {
+          background: "#303446",
+          foreground: "#b5bfe2",
+          accent: "#8caaee",
+          cursor: "#b5bfe2",
+          selectionBackground: "#f4b8e4",
+        },
+        terminal: {
+          color0: "#303446",
+          color1: "#e78284",
+          color2: "#a6d189",
+          color3: "#e5c890",
+          color4: "#8caaee",
+          color5: "#ca9ee6",
+          color6: "#81c8be",
+          color7: "#c6d0f5",
+          color8: "#51576d",
+          color9: "#e78284",
+          color10: "#a6d189",
+          color11: "#e5c890",
+          color12: "#8caaee",
+          color13: "#ca9ee6",
+          color14: "#81c8be",
+          color15: "#b5bfe2",
+        },
+        backgrounds: [
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/0-mud-monster.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/1-marina-garage.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/2-mangrove-causeway.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/3-gator-tour.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/4-motel-iguana.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/5-vice-marina.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/6-beach-shades.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/7-firewatch-eagle.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/8-mural-lot.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/9-ocean-view-hotel.png", mode: "cover" },
+          { url: "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/main/backgrounds/10-lifeguard-dusk.png", mode: "cover" },
+        ],
+      },
+      {
+        id: "ghost.theme.catppuccin-latte",
+        name: "Catppuccin Latte",
+        author: "Catppuccin project",
+        mode: "light",
+        palette: {
+          mode: "light",
+          background: "#eff1f5",
+          foreground: "#4c4f69",
+          accent: "#1e66f5",
+          cursor: "#dc8a78",
+          selectionBackground: "#dc8a78",
+        },
+        terminal: {
+          color0: "#bcc0cc",
+          color1: "#d20f39",
+          color2: "#40a02b",
+          color3: "#df8e1d",
+          color4: "#1e66f5",
+          color5: "#ea76cb",
+          color6: "#179299",
+          color7: "#5c5f77",
+          color8: "#acb0be",
+          color9: "#d20f39",
+          color10: "#40a02b",
+          color11: "#df8e1d",
+          color12: "#1e66f5",
+          color13: "#ea76cb",
+          color14: "#179299",
+          color15: "#6c6f85",
+        },
+        backgrounds: [
+          { url: "https://raw.githubusercontent.com/basecamp/omarchy/main/themes/catppuccin-latte/backgrounds/catppuccin-latte.png", mode: "cover" },
+        ],
       },
     ],
   },
