@@ -1,15 +1,11 @@
 import { federation } from "@module-federation/vite";
 import { defineConfig } from "vite";
 
-const DOMAIN_VESSEL_VIEW_DEV_PORT = 4174;
-const DOMAIN_VESSEL_VIEW_DEV_ORIGIN = `http://127.0.0.1:${DOMAIN_VESSEL_VIEW_DEV_PORT}`;
-
 export default defineConfig({
   plugins: [
     federation({
       name: "ghost.domain.vessel-view",
       filename: "remoteEntry.js",
-      publicPath: `${DOMAIN_VESSEL_VIEW_DEV_ORIGIN}/`,
       manifest: {
         fileName: "mf-manifest.json",
       },
@@ -29,8 +25,7 @@ export default defineConfig({
   ],
   server: {
     host: "127.0.0.1",
-    port: DOMAIN_VESSEL_VIEW_DEV_PORT,
-    origin: DOMAIN_VESSEL_VIEW_DEV_ORIGIN,
+    port: 4174,
     strictPort: true,
     cors: true,
   },
