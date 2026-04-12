@@ -86,10 +86,6 @@ export function createRuntimeEventHandlers(
     const selectionPropagation = applySelectionPropagation(runtime, event, revision);
     updateContextState(runtime, selectionPropagation.state);
 
-    if (selectionPropagation.derivedLaneFailures.length > 0) {
-      runtime.notice = `Derived lane failures: ${selectionPropagation.derivedLaneFailures.join(", ")}`;
-    }
-
     updateDockTabVisibility(root, runtime);
     bindings.renderSyncStatus();
     bindings.announce(formatSelectionAnnouncement({
