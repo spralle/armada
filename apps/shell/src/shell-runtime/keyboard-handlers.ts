@@ -4,11 +4,8 @@ import {
   resolveDegradedKeyboardInteraction,
   resolveTabLifecycleShortcut,
 } from "../keyboard-a11y.js";
-import {
-  createKeybindingService,
-} from "./keybinding-service.js";
-import type { KeybindingService } from "./keybinding-service.js";
-import type { ActionSurface } from "../action-surface.js";
+import { createKeybindingService, type KeybindingService } from "./keybinding-service.js";
+import type { ActionKeybinding, ActionSurface } from "../action-surface.js";
 import { DEFAULT_SHELL_KEYBINDING_PLUGIN_ID } from "./default-shell-keybindings.js";
 import {
   closeTabThroughRuntime,
@@ -16,9 +13,9 @@ import {
 } from "../ui/parts-controller.js";
 import { handleShellKeyboardAction } from "./shell-keyboard-actions.js";
 import type { ShellRuntime } from "../app/types.js";
-import type { ActionKeybinding } from "../action-surface.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
+import { updateDockTabVisibility, needsStructuralRender } from "../ui/dock-tab-visibility.js";
 
 export interface KeyboardBindings {
   activatePluginForBoundary: (options: {
@@ -211,7 +208,11 @@ export function bindKeyboardShortcuts(
             : `Keybinding (${normalizedChord.value}): Action '${action.id}' is not executable in current context.`;
         if (shellResult.handled) {
           bindings.renderContextControls();
-          bindings.renderParts();
+          if (shellResult.executed && needsStructuralRender(action.id)) {
+            bindings.renderParts();
+          } else if (shellResult.executed) {
+            updateDockTabVisibility(root, runtime);
+          }
           bindings.renderSyncStatus();
         }
         bindings.renderCommandSurface();
