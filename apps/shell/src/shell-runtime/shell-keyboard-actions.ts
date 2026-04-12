@@ -1,7 +1,9 @@
 import {
   cycleTabGroup,
   cycleTabInActiveStack,
+  equalizeSplits,
   focusTabInDirection,
+  gotoTabByIndex,
   moveTabInDirection,
   resizeInDirection,
   swapTabInDirection,
@@ -26,6 +28,40 @@ export function handleShellKeyboardAction(
   bindings: KeyboardBindings,
   actionId: string,
 ): ShellKeyboardActionResult {
+  if (actionId === "shell.window.fullscreen.toggle") {
+    if (typeof document === "undefined") {
+      return unavailable(actionId, "not in browser environment");
+    }
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+    } else {
+      void document.documentElement.requestFullscreen();
+    }
+    return executed(actionId);
+  }
+
+  if (actionId === "shell.command-palette.toggle") {
+    const commandsTabId = "utility.commands";
+    const currentState = runtime.contextState;
+    if (!currentState.tabs[commandsTabId]) {
+      return unavailable(actionId, "commands tab not registered");
+    }
+
+    if (currentState.activeTabId === commandsTabId) {
+      const previousTab = findPreviousNonUtilityTab(currentState, commandsTabId);
+      if (previousTab) {
+        updateContextState(runtime, { ...currentState, activeTabId: previousTab });
+        runtime.selectedPartId = previousTab;
+        runtime.selectedPartTitle = currentState.tabs[previousTab]?.label ?? previousTab;
+      }
+    } else {
+      updateContextState(runtime, { ...currentState, activeTabId: commandsTabId });
+      runtime.selectedPartId = commandsTabId;
+      runtime.selectedPartTitle = currentState.tabs[commandsTabId]?.label ?? commandsTabId;
+    }
+    return executed(actionId);
+  }
+
   if (UNAVAILABLE_ACTION_SET.has(actionId)) {
     return unavailable(actionId, "action unavailable in browser shell runtime");
   }
@@ -71,6 +107,17 @@ function dispatchShellKeyboardAction(
   }
   if (actionId === "shell.stack.cycle.next") {
     return applyContextMutation(runtime, cycleTabInActiveStack(runtime.contextState, 1), actionId, "stack cycle unavailable");
+  }
+
+  if (actionId === "shell.split.equalize") {
+    return applyContextMutation(runtime, equalizeSplits(runtime.contextState), actionId, "no splits to equalize");
+  }
+
+  if (actionId.startsWith("shell.tab.goto.")) {
+    const index = Number(actionId.slice("shell.tab.goto.".length));
+    if (index >= 1 && index <= 9) {
+      return applyContextMutation(runtime, gotoTabByIndex(runtime.contextState, index), actionId, `no tab at position ${index}`);
+    }
   }
 
   if (actionId === "shell.focus.left") {
@@ -158,4 +205,16 @@ function unavailable(actionId: string, reason: string): ShellKeyboardActionResul
     executed: false,
     message: `Keybinding action '${actionId}' is a no-op: ${reason}.`,
   };
+}
+
+function findPreviousNonUtilityTab(
+  state: ShellRuntime["contextState"],
+  utilityTabId: string,
+): string | null {
+  for (const tabId of state.tabOrder) {
+    if (tabId !== utilityTabId && state.tabs[tabId]) {
+      return tabId;
+    }
+  }
+  return null;
 }

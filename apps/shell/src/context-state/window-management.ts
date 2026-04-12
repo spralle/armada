@@ -4,6 +4,7 @@ import {
   swapActiveTabInDirection,
 } from "./dock-tree-window-actions.js";
 import { resizeNearestSplitInDirection } from "./dock-tree-commands.js";
+import { readDockSplitRatio } from "./dock-tree.js";
 import { setActiveTab } from "./tabs-groups.js";
 import type { DockNode, DockStackNode } from "./dock-tree-types.js";
 import type { ShellContextState } from "./types.js";
@@ -174,4 +175,73 @@ function findStackByTabId(root: DockNode | null, tabId: string): DockStackNode |
   }
 
   return findStackByTabId(root.first, tabId) ?? findStackByTabId(root.second, tabId);
+}
+
+export function equalizeSplits(
+  state: ShellContextState,
+): { state: ShellContextState; changed: boolean } {
+  if (!state.dockTree.root) {
+    return { state, changed: false };
+  }
+
+  const result = resetSplitRatios(state.dockTree.root);
+  if (!result.changed) {
+    return { state, changed: false };
+  }
+
+  return {
+    state: { ...state, dockTree: { ...state.dockTree, root: result.node } },
+    changed: true,
+  };
+}
+
+function resetSplitRatios(node: DockNode): { node: DockNode; changed: boolean } {
+  if (node.kind === "stack") {
+    return { node, changed: false };
+  }
+
+  const currentRatio = readDockSplitRatio(node);
+  const ratioChanged = currentRatio !== 0.5;
+
+  const first = resetSplitRatios(node.first);
+  const second = resetSplitRatios(node.second);
+
+  if (!ratioChanged && !first.changed && !second.changed) {
+    return { node, changed: false };
+  }
+
+  return {
+    node: {
+      ...node,
+      ratio: 0.5,
+      first: first.node,
+      second: second.node,
+    },
+    changed: true,
+  };
+}
+
+export function gotoTabByIndex(
+  state: ShellContextState,
+  index: number,
+): { state: ShellContextState; changed: boolean } {
+  const activeTabId = state.activeTabId;
+  if (!activeTabId) {
+    return { state, changed: false };
+  }
+
+  const stack = findStackByTabId(state.dockTree.root, activeTabId);
+  if (!stack) {
+    return { state, changed: false };
+  }
+
+  const targetTabId = stack.tabIds[index - 1];
+  if (!targetTabId || targetTabId === activeTabId) {
+    return { state, changed: false };
+  }
+
+  return {
+    state: setActiveTab(state, targetTabId),
+    changed: true,
+  };
 }
