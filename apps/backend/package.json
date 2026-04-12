@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@ghost/config-engine": "workspace:*",
+    "@ghost/config-providers": "workspace:*",
     "@ghost/config-server": "workspace:*",
     "@ghost/config-types": "workspace:*",
     "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"

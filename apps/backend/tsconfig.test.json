@@ -18,6 +18,12 @@
     },
     {
       "path": "../../packages/config-engine"
+    },
+    {
+      "path": "../../packages/config-providers"
+    },
+    {
+      "path": "../../packages/config-server"
     }
   ],
   "include": [
@@ -26,6 +32,7 @@
     "src/router.ts",
     "src/tenant-manifest.ts",
     "src/config-loader.ts",
-    "src/config-endpoints.ts"
+    "src/config-endpoints.ts",
+    "src/config-bootstrap.ts"
   ]
 }

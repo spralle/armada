@@ -10,6 +10,7 @@ import {
 } from "./dev-cli-options.js";
 import { createRouter, jsonResponse, type Route } from "./router.js";
 import { createConfigRoutes } from "./config-endpoints.js";
+import { bootstrapBackendConfig, logConfigBootstrapSummary } from "./config-bootstrap.js";
 
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
@@ -39,8 +40,19 @@ const overrideOptions = {
   pluginEntryUrlOverridesById: localPluginEntryOverrides,
 };
 
+const CONFIG_DIR = resolve(process.cwd(), "config");
+
+// Bootstrap backend config (async, but don't block server start)
+bootstrapBackendConfig({ configDir: CONFIG_DIR, tenantId: "demo" })
+  .then(() => {
+    logConfigBootstrapSummary(CONFIG_DIR, undefined, "demo");
+  })
+  .catch((error: unknown) => {
+    console.warn("[backend:config] bootstrap failed, continuing without config", error);
+  });
+
 const configRoutes = createConfigRoutes({
-  configDir: resolve(process.cwd(), "config"),
+  configDir: CONFIG_DIR,
 });
 
 const routes: Route[] = [

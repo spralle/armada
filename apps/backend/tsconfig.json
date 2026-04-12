@@ -17,6 +17,12 @@
     },
     {
       "path": "../../packages/config-engine"
+    },
+    {
+      "path": "../../packages/config-providers"
+    },
+    {
+      "path": "../../packages/config-server"
     }
   ],
   "include": [
