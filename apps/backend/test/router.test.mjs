@@ -28,6 +28,7 @@ test("createRouter matches route and returns handler response", async () => {
     method: "GET",
     pathname: "/items",
     body: () => Promise.resolve(null),
+    headers: {},
   });
 
   assert.equal(response.status, 200);
@@ -48,6 +49,7 @@ test("createRouter returns 404 for unmatched path", async () => {
     method: "GET",
     pathname: "/unknown",
     body: () => Promise.resolve(null),
+    headers: {},
   });
 
   assert.equal(response.status, 404);
@@ -69,6 +71,7 @@ test("createRouter returns 405 for matched path with wrong method", async () => 
     method: "POST",
     pathname: "/items",
     body: () => Promise.resolve(null),
+    headers: {},
   });
 
   assert.equal(response.status, 405);
@@ -90,6 +93,7 @@ test("createRouter extracts regex capture groups as params", async () => {
     method: "GET",
     pathname: "/tenants/demo/config/theme.color",
     body: () => Promise.resolve(null),
+    headers: {},
   });
 
   assert.equal(response.status, 200);
@@ -121,6 +125,7 @@ test("createRouter dispatches to correct route among multiple routes", async () 
     method: "GET",
     pathname: "/alpha",
     body: () => Promise.resolve(null),
+    headers: {},
   });
   assert.equal((await alphaRes.json()).route, "alpha");
 
@@ -128,6 +133,7 @@ test("createRouter dispatches to correct route among multiple routes", async () 
     method: "POST",
     pathname: "/beta",
     body: () => Promise.resolve(null),
+    headers: {},
   });
   assert.equal((await betaPostRes.json()).route, "beta-post");
 
@@ -135,6 +141,7 @@ test("createRouter dispatches to correct route among multiple routes", async () 
     method: "GET",
     pathname: "/beta",
     body: () => Promise.resolve(null),
+    headers: {},
   });
   assert.equal((await betaGetRes.json()).route, "beta-get");
 });

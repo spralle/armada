@@ -11,12 +11,13 @@ import {
 import { createRouter, jsonResponse, type Route } from "./router.js";
 import { createConfigRoutes } from "./config-endpoints.js";
 import { bootstrapBackendConfig, logConfigBootstrapSummary } from "./config-bootstrap.js";
+import { createInMemoryAuditLog, createInMemoryOverrideTracker } from "@ghost/config-server";
 
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
 const DEFAULT_TENANT = "demo";
 
-interface NodeHttpRequestLike { method?: string | undefined; url?: string | undefined }
+interface NodeHttpRequestLike { method?: string | undefined; url?: string | undefined; headers?: Record<string, string | string[] | undefined> | undefined }
 interface NodeHttpResponseLike { setHeader(name: string, value: string): void; statusCode: number; end(body?: string): void }
 
 const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
@@ -51,8 +52,14 @@ bootstrapBackendConfig({ configDir: CONFIG_DIR, tenantId: "demo" })
     console.warn("[backend:config] bootstrap failed, continuing without config", error);
   });
 
+const auditLog = createInMemoryAuditLog();
+const overrideTracker = createInMemoryOverrideTracker();
+
 const configRoutes = createConfigRoutes({
   configDir: CONFIG_DIR,
+}, {
+  auditLog,
+  overrideTracker,
 });
 
 const routes: Route[] = [
@@ -81,7 +88,14 @@ function startBackendDevServer(): void {
     port: BACKEND_DEV_PORT,
     fetch(request) {
       const url = new URL(request.url);
-      return router({ method: request.method, pathname: url.pathname, body: () => Promise.resolve(null) });
+      const headers: Record<string, string> = {};
+      request.headers.forEach((value, key) => { headers[key] = value; });
+      return router({
+        method: request.method,
+        pathname: url.pathname,
+        body: () => request.json().catch(() => null),
+        headers,
+      });
     },
   });
 
@@ -98,7 +112,13 @@ function startNodeBackendDevServer(): void {
     .then(({ createServer }) => {
       const server = createServer((req: NodeHttpRequestLike, res: NodeHttpResponseLike) => {
         const pathname = req.url ? new URL(req.url, `http://${BACKEND_DEV_HOST}:${BACKEND_DEV_PORT}`).pathname : "/";
-        const response = router({ method: req.method ?? "GET", pathname, body: () => Promise.resolve(null) });
+        const headers: Record<string, string> = {};
+        if (req.headers) {
+          for (const [k, v] of Object.entries(req.headers)) {
+            if (typeof v === "string") { headers[k] = v; }
+          }
+        }
+        const response = router({ method: req.method ?? "GET", pathname, body: () => Promise.resolve(null), headers });
 
         void Promise.resolve(response).then((resolved) => {
           res.setHeader("content-type", "application/json; charset=utf-8");

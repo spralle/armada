@@ -15,6 +15,7 @@ export interface RequestInfo {
   method: string;
   pathname: string;
   body: () => Promise<unknown>;
+  headers: Record<string, string>;
 }
 
 export function jsonResponse(body: unknown, status = 200): Response {

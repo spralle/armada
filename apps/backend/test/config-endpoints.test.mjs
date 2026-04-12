@@ -31,7 +31,7 @@ async function createTestConfigDir() {
 }
 
 /** Helper to invoke a route handler by matching against the route list. */
-async function callRoute(routes, method, pathname, bodyValue) {
+async function callRoute(routes, method, pathname, bodyValue, headers = {}) {
   const body = bodyValue !== undefined ? () => Promise.resolve(bodyValue) : () => Promise.resolve(null);
   for (const route of routes) {
     const match = pathname.match(route.pattern);
@@ -40,7 +40,7 @@ async function callRoute(routes, method, pathname, bodyValue) {
     for (let i = 1; i < match.length; i++) {
       params[i - 1] = match[i];
     }
-    return route.handler(params, { method, pathname, body });
+    return route.handler(params, { method, pathname, body, headers });
   }
   return null;
 }

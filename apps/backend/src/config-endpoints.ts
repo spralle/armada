@@ -3,7 +3,16 @@ import { jsonResponse } from "./router.js";
 import { createTenantConfigProviders, validateTenantId } from "./config-loader.js";
 import type { ConfigLoaderOptions } from "./config-loader.js";
 import { resolveConfiguration, inspectKey } from "@ghost/config-engine";
-import type { ConfigurationLayerEntry } from "@ghost/config-types";
+import type { ConfigurationLayerEntry, ConfigurationPropertySchema } from "@ghost/config-types";
+import type { ConfigAuditLog, OverrideTracker } from "@ghost/config-server";
+import {
+  extractAccessContext,
+  checkPolicy,
+  policyToResponse,
+  recordAudit,
+  recordOverride,
+  type PolicyCheckDeps,
+} from "./config-auth.js";
 
 async function loadLayerStack(
   options: ConfigLoaderOptions,
@@ -23,7 +32,21 @@ async function loadLayerStack(
   ];
 }
 
-export function createConfigRoutes(loaderOptions: ConfigLoaderOptions): Route[] {
+export interface ConfigRouteOptions {
+  schemaMap?: Map<string, ConfigurationPropertySchema> | undefined;
+  auditLog?: ConfigAuditLog | undefined;
+  overrideTracker?: OverrideTracker | undefined;
+}
+
+export function createConfigRoutes(
+  loaderOptions: ConfigLoaderOptions,
+  options?: ConfigRouteOptions | undefined,
+): Route[] {
+  const deps: PolicyCheckDeps = {
+    schemaMap: options?.schemaMap,
+    auditLog: options?.auditLog,
+    overrideTracker: options?.overrideTracker,
+  };
   return [
     // GET /api/tenants/{tenantId}/config — resolved merged config
     {
@@ -112,11 +135,46 @@ export function createConfigRoutes(loaderOptions: ConfigLoaderOptions): Route[] 
           return jsonResponse({ error: "invalid_body", message: "Body must contain { value: ... }" }, 400);
         }
 
+        // Policy enforcement
+        const context = extractAccessContext(request.headers);
+        const { decision, schema } = checkPolicy(key, deps, context, "tenant");
+        const rejection = policyToResponse(decision);
+        if (rejection !== undefined) {
+          return rejection;
+        }
+
         const providers = createTenantConfigProviders(loaderOptions, tenantId);
         const result = await providers.tenant.write(key, body.value);
 
         if (!result.success) {
           return jsonResponse({ error: "write_failed", message: result.error }, 500);
+        }
+
+        // Audit logging
+        const isEmergency = context.sessionMode === "emergency-override"
+          && schema?.changePolicy === "emergency-override";
+        await recordAudit(deps, {
+          timestamp: new Date().toISOString(),
+          actor: context.userId,
+          action: "set",
+          key,
+          layer: "tenant",
+          tenantId,
+          newValue: body.value,
+          changePolicy: schema?.changePolicy,
+          isEmergencyOverride: isEmergency,
+          overrideReason: isEmergency ? context.overrideReason : undefined,
+        });
+
+        // Emergency override tracking
+        if (isEmergency && context.overrideReason !== undefined) {
+          await recordOverride(deps, {
+            key,
+            actor: context.userId,
+            reason: context.overrideReason,
+            tenantId,
+            layer: "tenant",
+          });
         }
 
         return jsonResponse({ success: true, key, revision: result.revision });
@@ -127,11 +185,19 @@ export function createConfigRoutes(loaderOptions: ConfigLoaderOptions): Route[] 
     {
       method: "DELETE",
       pattern: /^\/api\/tenants\/([^/]+)\/config\/(.+)$/,
-      handler: async (params) => {
+      handler: async (params, request) => {
         const tenantId = params[0];
         const key = params[1];
         if (!validateTenantId(tenantId)) {
           return jsonResponse({ error: "invalid_tenant_id" }, 400);
+        }
+
+        // Policy enforcement
+        const context = extractAccessContext(request.headers);
+        const { decision, schema } = checkPolicy(key, deps, context, "tenant");
+        const rejection = policyToResponse(decision);
+        if (rejection !== undefined) {
+          return rejection;
         }
 
         const providers = createTenantConfigProviders(loaderOptions, tenantId);
@@ -140,6 +206,21 @@ export function createConfigRoutes(loaderOptions: ConfigLoaderOptions): Route[] 
         if (!result.success) {
           return jsonResponse({ error: "remove_failed", message: result.error }, 500);
         }
+
+        // Audit logging
+        const isEmergency = context.sessionMode === "emergency-override"
+          && schema?.changePolicy === "emergency-override";
+        await recordAudit(deps, {
+          timestamp: new Date().toISOString(),
+          actor: context.userId,
+          action: "remove",
+          key,
+          layer: "tenant",
+          tenantId,
+          changePolicy: schema?.changePolicy,
+          isEmergencyOverride: isEmergency,
+          overrideReason: isEmergency ? context.overrideReason : undefined,
+        });
 
         return jsonResponse({ success: true, key, revision: result.revision });
       },
