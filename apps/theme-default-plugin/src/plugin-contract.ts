@@ -16,7 +16,6 @@ export const pluginContract: PluginContract = {
     name: "Ghost Default Themes",
     version: "1.0.0",
   },
-  activationEvents: ["onStartup"],
   contributes: {
     themes: [
       {

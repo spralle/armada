@@ -56,6 +56,9 @@ export interface ThemeService {
 
   /** Clear custom background, revert to theme default. */
   clearCustomBackground(): void;
+
+  /** Load all available theme plugins and discover their themes. For gallery population. */
+  loadAllThemes(): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ThemeRegistry, AvailableTheme, ActiveBackground } from "../../theme-registry.js";
 import type { ThemeBackgroundEntry } from "@ghost/plugin-contracts";
 
@@ -138,6 +138,13 @@ export function AppearanceSettingsPanel(props: AppearanceSettingsPanelProps) {
   const { themeRegistry, onChanged } = props;
   const [customUrl, setCustomUrl] = useState("");
   const [customMode, setCustomMode] = useState<"cover" | "contain" | "tile">("cover");
+
+  // Load remaining theme plugins on first mount to populate the full gallery.
+  useEffect(() => {
+    let cancelled = false;
+    themeRegistry.loadAllThemes().then(() => { if (!cancelled) onChanged(); });
+    return () => { cancelled = true; };
+  }, [themeRegistry]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const themes = themeRegistry.getAvailableThemes();
   const activeThemeId = themeRegistry.getActiveThemeId();

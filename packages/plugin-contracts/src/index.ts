@@ -148,3 +148,5 @@ export {
 
 export type { ThemeService, ThemeInfo, BackgroundInfo } from "./theme-service.js";
 export { THEME_SERVICE_ID } from "./theme-service.js";
+
+export type { PluginServices, PluginMountContext } from "./plugin-services.js";

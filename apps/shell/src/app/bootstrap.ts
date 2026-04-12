@@ -3,6 +3,11 @@ import { createShellPluginRegistry } from "../plugin-registry.js";
 import { activateByStartupEvent } from "../plugin-registry-activation.js";
 import { createThemeRegistry } from "../theme-registry.js";
 import type { ThemeRegistry } from "../theme-registry.js";
+import { readUserThemePreference } from "../theme-persistence.js";
+import {
+  activatePreferredThemePlugin,
+  DEFAULT_THEME_PLUGIN_ID,
+} from "../theme-activation.js";
 import type {
   ShellBootstrapOptions,
   ShellBootstrapState,
@@ -70,9 +75,14 @@ export async function bootstrapShellWithTenantManifest(
   }
 
   // Eagerly activate plugins with onStartup activation events.
-  // This front-loads contract loading so theme discovery can find
-  // theme contributions from active plugins.
+  // Theme plugins no longer declare onStartup — they are loaded on demand.
   await activateByStartupEvent(registry);
+
+  // Activate only the preferred theme plugin (or the default fallback).
+  // Other theme plugins remain unloaded until the Appearance tab opens.
+  const themePref = readUserThemePreference();
+  const preferredPluginId = themePref?.pluginId || undefined;
+  await activatePreferredThemePlugin(registry, preferredPluginId, DEFAULT_THEME_PLUGIN_ID);
 
   // Initialize theme registry: discover themes from active plugins
   // and apply the resolved initial theme (user pref → tenant default → first).

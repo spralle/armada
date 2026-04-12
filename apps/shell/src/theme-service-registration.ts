@@ -68,6 +68,10 @@ export function registerThemeService(
     clearCustomBackground(): void {
       themeRegistry.clearCustomBackground();
     },
+
+    loadAllThemes(): Promise<void> {
+      return themeRegistry.loadAllThemes();
+    },
   };
 
   services.registerService(THEME_SERVICE_ID, themeService);

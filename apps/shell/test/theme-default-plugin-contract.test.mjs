@@ -17,7 +17,8 @@ test("default theme plugin contract validates against parsePluginContract", () =
   if (result.success) {
     assert.equal(result.data.manifest.id, "ghost.theme.default");
     assert.equal(result.data.manifest.name, "Ghost Default Themes");
-    assert.deepEqual(result.data.activationEvents, ["onStartup"]);
+    // Theme plugins no longer declare onStartup — they are activated on demand.
+    assert.equal(result.data.activationEvents, undefined);
   }
 });
 

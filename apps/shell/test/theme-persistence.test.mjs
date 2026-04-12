@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  readUserThemePreference,
+  writeUserThemePreference,
   readBackgroundPreference,
   writeBackgroundPreference,
   clearBackgroundPreference,
@@ -42,4 +44,19 @@ test("readBackgroundPreference returns null after write in Node (no storage)", (
   writeBackgroundPreference("test-theme", { index: 1 });
   const result = readBackgroundPreference("test-theme");
   assert.equal(result, null);
+});
+
+// ---------------------------------------------------------------------------
+// Theme preference — ThemePreferenceData format
+// ---------------------------------------------------------------------------
+
+test("readUserThemePreference returns null when no localStorage (Node env)", () => {
+  const result = readUserThemePreference();
+  assert.equal(result, null);
+});
+
+test("writeUserThemePreference with ThemePreferenceData does not throw in Node env", () => {
+  assert.doesNotThrow(() =>
+    writeUserThemePreference({ themeId: "ghost.theme.retro-82", pluginId: "ghost.theme.default" }),
+  );
 });

@@ -24,6 +24,7 @@ import {
   clearBackgroundPreference,
 } from "./theme-persistence.js";
 import { manageBackgroundImage } from "./theme-background.js";
+import { activateAllThemePlugins } from "./theme-activation.js";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -50,8 +51,10 @@ export interface ActiveBackground {
 }
 
 export interface ThemeRegistry {
-  /** Discover themes from all active plugins. */
+  /** Discover themes from all active plugins. Additive — merges with previously discovered themes. */
   discoverThemes(): void;
+  /** Load all remaining theme plugins and re-discover themes. For gallery population. */
+  loadAllThemes(): Promise<void>;
   /** Get list of available theme IDs, names, modes, and source plugins. */
   getAvailableThemes(): AvailableTheme[];
   /** Get the currently active theme ID (null if none applied). */
@@ -138,8 +141,8 @@ function resolveThemeId(
 
   // 1. User preference from localStorage
   const userPref = readUserThemePreference();
-  if (userPref && themes.some((t) => t.id === userPref)) {
-    return userPref;
+  if (userPref && themes.some((t) => t.id === userPref.themeId)) {
+    return userPref.themeId;
   }
 
   // 2. Tenant default
@@ -222,7 +225,31 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
   return {
     discoverThemes() {
       const sources = collectPluginThemeSources(pluginRegistry);
-      discoveredThemes = composeThemeContributions(sources);
+      const newThemes = composeThemeContributions(sources);
+      // Additive merge: update existing themes by ID, append new ones.
+      for (const theme of newThemes) {
+        const existingIndex = discoveredThemes.findIndex((t) => t.id === theme.id);
+        if (existingIndex >= 0) {
+          discoveredThemes[existingIndex] = theme;
+        } else {
+          discoveredThemes.push(theme);
+        }
+      }
+    },
+
+    async loadAllThemes() {
+      await activateAllThemePlugins(pluginRegistry);
+      // Re-discover additively after activating remaining plugins.
+      const sources = collectPluginThemeSources(pluginRegistry);
+      const newThemes = composeThemeContributions(sources);
+      for (const theme of newThemes) {
+        const existingIndex = discoveredThemes.findIndex((t) => t.id === theme.id);
+        if (existingIndex >= 0) {
+          discoveredThemes[existingIndex] = theme;
+        } else {
+          discoveredThemes.push(theme);
+        }
+      }
     },
 
     getAvailableThemes(): AvailableTheme[] {
@@ -247,7 +274,7 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
 
       applyTheme(theme);
       activeThemeId = themeId;
-      writeUserThemePreference(themeId);
+      writeUserThemePreference({ themeId, pluginId: theme.pluginId });
       return true;
     },
 

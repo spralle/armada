@@ -12,30 +12,76 @@ const BACKGROUND_STORAGE_KEY = "ghost-shell-background-preference";
 // ---------------------------------------------------------------------------
 
 /**
+ * Persisted theme preference containing both the theme ID and the plugin
+ * that provides it. The `pluginId` enables demand-driven plugin activation
+ * at startup — only the plugin for the active theme is loaded.
+ */
+export interface ThemePreferenceData {
+  themeId: string;
+  pluginId: string;
+}
+
+/**
  * Read the user's persisted theme preference from localStorage.
+ *
+ * Handles two storage formats for backward compatibility:
+ * - New format: JSON `{"themeId":"...","pluginId":"..."}`
+ * - Old format: plain string (theme ID only) → returns `pluginId: ""`
+ *
  * Returns null if no preference is stored or localStorage is unavailable.
  */
-export function readUserThemePreference(): string | null {
+export function readUserThemePreference(): ThemePreferenceData | null {
   try {
     if (typeof window === "undefined" || !window.localStorage) {
       return null;
     }
-    return window.localStorage.getItem(THEME_STORAGE_KEY);
+    const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+    return parseThemePreference(raw);
   } catch {
     return null;
   }
 }
 
+/** Parse a raw localStorage value into ThemePreferenceData. */
+function parseThemePreference(raw: string): ThemePreferenceData {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed) &&
+      "themeId" in parsed &&
+      typeof (parsed as Record<string, unknown>).themeId === "string"
+    ) {
+      const obj = parsed as Record<string, unknown>;
+      return {
+        themeId: obj.themeId as string,
+        pluginId: typeof obj.pluginId === "string" ? obj.pluginId : "",
+      };
+    }
+  } catch {
+    // Not valid JSON — fall through to old-format handling.
+  }
+  // Old format: plain string theme ID.
+  return { themeId: raw, pluginId: "" };
+}
+
 /**
- * Persist the user's selected theme ID to localStorage.
+ * Persist the user's selected theme preference to localStorage.
+ * Stores both the theme ID and the providing plugin ID for demand-driven
+ * activation at startup.
+ *
  * Silently fails if localStorage is unavailable.
  */
-export function writeUserThemePreference(themeId: string): void {
+export function writeUserThemePreference(data: ThemePreferenceData): void {
   try {
     if (typeof window === "undefined" || !window.localStorage) {
       return;
     }
-    window.localStorage.setItem(THEME_STORAGE_KEY, themeId);
+    window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(data));
   } catch {
     // Silently ignore — localStorage may be full or unavailable.
   }

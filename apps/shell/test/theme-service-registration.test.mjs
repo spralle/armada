@@ -15,6 +15,9 @@ function createMockThemeRegistry() {
       discoverThemes() {
         calls.push("discoverThemes");
       },
+      async loadAllThemes() {
+        calls.push("loadAllThemes");
+      },
       getAvailableThemes() {
         calls.push("getAvailableThemes");
         return [
@@ -185,4 +188,17 @@ test("ThemeService.clearCustomBackground delegates to ThemeRegistry.clearCustomB
   const svc = services.getService("ghost.theme.Service");
   svc.clearCustomBackground();
   assert.ok(calls.includes("clearCustomBackground"));
+});
+
+// ---------------------------------------------------------------------------
+// Delegation — loadAllThemes
+// ---------------------------------------------------------------------------
+
+test("ThemeService.loadAllThemes delegates to ThemeRegistry.loadAllThemes", async () => {
+  const services = createServiceRegistry();
+  const { registry, calls } = createMockThemeRegistry();
+  registerThemeService(services, registry);
+  const svc = services.getService("ghost.theme.Service");
+  await svc.loadAllThemes();
+  assert.ok(calls.includes("loadAllThemes"));
 });

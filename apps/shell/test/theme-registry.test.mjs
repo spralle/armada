@@ -196,7 +196,7 @@ test("clearUserThemePreference does not throw in Node environment", () => {
 
 test("writeUserThemePreference does not throw in Node environment", () => {
   // Should not throw when localStorage is unavailable.
-  assert.doesNotThrow(() => writeUserThemePreference("some-theme"));
+  assert.doesNotThrow(() => writeUserThemePreference({ themeId: "some-theme", pluginId: "p" }));
 });
 
 // ---------------------------------------------------------------------------
@@ -654,4 +654,121 @@ test("getAvailableThemes has undefined author when not set", () => {
 
   const available = themeRegistry.getAvailableThemes();
   assert.equal(available[0].author, undefined);
+});
+
+// ---------------------------------------------------------------------------
+// Additive discovery
+// ---------------------------------------------------------------------------
+
+test("discoverThemes merges themes additively across multiple calls", () => {
+  const themeA = createMockTheme("theme-a", "Theme A");
+  const contractA = createMockContract([themeA]);
+
+  const themeB = createMockTheme("theme-b", "Theme B");
+  const contractB = createMockContract([themeB]);
+
+  // Start with only plugin A active.
+  let activePlugins = [{ pluginId: "ghost.plugin-a", contract: contractA }];
+  const mockRegistry = {
+    ...createMockPluginRegistry([]),
+    getSnapshot() {
+      return createMockPluginRegistry(activePlugins).getSnapshot();
+    },
+  };
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  assert.equal(themeRegistry.getAvailableThemes().length, 1);
+  assert.equal(themeRegistry.getAvailableThemes()[0].id, "theme-a");
+
+  // Now add plugin B and re-discover — should merge, not replace.
+  activePlugins = [
+    { pluginId: "ghost.plugin-a", contract: contractA },
+    { pluginId: "ghost.plugin-b", contract: contractB },
+  ];
+  themeRegistry.discoverThemes();
+  assert.equal(themeRegistry.getAvailableThemes().length, 2);
+  assert.equal(themeRegistry.getAvailableThemes()[0].id, "theme-a");
+  assert.equal(themeRegistry.getAvailableThemes()[1].id, "theme-b");
+});
+
+test("discoverThemes updates existing theme when same ID re-discovered", () => {
+  const themeV1 = { ...createMockTheme("shared-id", "Version 1"), author: "v1" };
+  const contractV1 = createMockContract([themeV1]);
+
+  const themeV2 = { ...createMockTheme("shared-id", "Version 2"), author: "v2" };
+  const contractV2 = createMockContract([themeV2]);
+
+  let activePlugins = [{ pluginId: "ghost.plugin-a", contract: contractV1 }];
+  const mockRegistry = {
+    ...createMockPluginRegistry([]),
+    getSnapshot() {
+      return createMockPluginRegistry(activePlugins).getSnapshot();
+    },
+  };
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  assert.equal(themeRegistry.getAvailableThemes()[0].name, "Version 1");
+
+  // Re-discover with updated theme — same ID should be updated.
+  activePlugins = [{ pluginId: "ghost.plugin-a", contract: contractV2 }];
+  themeRegistry.discoverThemes();
+  assert.equal(themeRegistry.getAvailableThemes().length, 1);
+  assert.equal(themeRegistry.getAvailableThemes()[0].name, "Version 2");
+});
+
+// ---------------------------------------------------------------------------
+// loadAllThemes
+// ---------------------------------------------------------------------------
+
+test("loadAllThemes activates unloaded plugins and discovers their themes", async () => {
+  const themeA = createMockTheme("theme-a", "Theme A");
+  const contractA = createMockContract([themeA]);
+
+  const themeB = createMockTheme("theme-b", "Theme B");
+  const contractB = createMockContract([themeB]);
+
+  // Track plugin B's activation state via a mutable flag.
+  const state = { pluginBActivated: false };
+
+  const mockRegistry = {
+    ...createMockPluginRegistry([]),
+    getSnapshot() {
+      const plugins = [
+        {
+          id: "ghost.plugin-a",
+          enabled: true,
+          loadMode: "remote-manifest",
+          descriptor: { id: "ghost.plugin-a", version: "1.0.0", entry: "https://example.com/a.json", compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" } },
+          contract: contractA,
+          failure: null,
+          lifecycle: { state: "active", lastTransitionAt: new Date().toISOString(), lastTrigger: null },
+        },
+        {
+          id: "ghost.plugin-b",
+          enabled: true,
+          loadMode: "remote-manifest",
+          descriptor: { id: "ghost.plugin-b", version: "1.0.0", entry: "https://example.com/b.json", compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" } },
+          contract: state.pluginBActivated ? contractB : null,
+          failure: null,
+          lifecycle: { state: state.pluginBActivated ? "active" : "registered", lastTransitionAt: new Date().toISOString(), lastTrigger: null },
+        },
+      ];
+      return { tenantId: "demo", diagnostics: [], plugins };
+    },
+    async activateByEvent(pluginId, _event) {
+      if (pluginId === "ghost.plugin-b") {
+        state.pluginBActivated = true;
+      }
+      return true;
+    },
+  };
+
+  const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
+  themeRegistry.discoverThemes();
+  assert.equal(themeRegistry.getAvailableThemes().length, 1);
+
+  await themeRegistry.loadAllThemes();
+  assert.equal(themeRegistry.getAvailableThemes().length, 2);
 });
