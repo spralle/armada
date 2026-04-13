@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   collectPluginSchemaDeclarations,
   buildSchemaMap,
-  createIncrementalPluginSchemaRegistry,
+  createIncrementalSchemaRegistryAdapter,
 } from "../dist/index.js";
 
 test("collects schema from a single plugin with config", () => {
@@ -152,7 +152,7 @@ test("buildSchemaMap returns empty for plugins without config", () => {
 });
 
 test("incremental registry registers and unregisters plugin schema", () => {
-  const registry = createIncrementalPluginSchemaRegistry();
+  const registry = createIncrementalSchemaRegistryAdapter();
 
   const registerResult = registry.registerPlugin({
     pluginId: "ghost.vessel-view",
@@ -174,7 +174,7 @@ test("incremental registry registers and unregisters plugin schema", () => {
 });
 
 test("incremental registry reports duplicate-key collisions", () => {
-  const registry = createIncrementalPluginSchemaRegistry();
+  const registry = createIncrementalSchemaRegistryAdapter();
 
   registry.registerPlugin({
     pluginId: "ghost.vesselView",

@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  createPluginConfigurationLifecycleHooks,
-  createInMemoryPluginSchemaRegistry,
+  createConfigurationLifecycleHooks,
+  createInMemorySchemaRegistry,
   createStateContainer,
 } from "../dist/index.js";
 
@@ -17,7 +17,7 @@ function createPlugin(pluginId, properties) {
 
 test("install registers schema and seeds defaults into active layer", () => {
   const state = createStateContainer();
-  const hooks = createPluginConfigurationLifecycleHooks({
+  const hooks = createConfigurationLifecycleHooks({
     stateContainer: state,
     activeLayer: "module",
   });
@@ -48,7 +48,7 @@ test("install registers schema and seeds defaults into active layer", () => {
 
 test("disable removes schema + plugin keys; enable re-registers + re-seeds", () => {
   const state = createStateContainer();
-  const hooks = createPluginConfigurationLifecycleHooks({ stateContainer: state });
+  const hooks = createConfigurationLifecycleHooks({ stateContainer: state });
 
   const plugin = createPlugin("ghost.vessel-view", {
     theme: { type: "string", default: "dark" },
@@ -80,7 +80,7 @@ test("disable removes schema + plugin keys; enable re-registers + re-seeds", () 
 
 test("uninstall removes plugin state, schema, and config keys", () => {
   const state = createStateContainer();
-  const hooks = createPluginConfigurationLifecycleHooks({ stateContainer: state });
+  const hooks = createConfigurationLifecycleHooks({ stateContainer: state });
 
   const plugin = createPlugin("ghost.vessel-view", {
     theme: { type: "string", default: "dark" },
@@ -101,7 +101,7 @@ test("uninstall removes plugin state, schema, and config keys", () => {
 
 test("promote copies plugin namespace keys between layers", () => {
   const state = createStateContainer();
-  const hooks = createPluginConfigurationLifecycleHooks({
+  const hooks = createConfigurationLifecycleHooks({
     stateContainer: state,
     activeLayer: "module",
   });
@@ -135,8 +135,8 @@ test("promote copies plugin namespace keys between layers", () => {
 
 test("schema collisions are surfaced and state remains unchanged", () => {
   const state = createStateContainer();
-  const registry = createInMemoryPluginSchemaRegistry();
-  const hooks = createPluginConfigurationLifecycleHooks({
+  const registry = createInMemorySchemaRegistry();
+  const hooks = createConfigurationLifecycleHooks({
     stateContainer: state,
     schemaRegistry: registry,
   });

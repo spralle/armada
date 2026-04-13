@@ -25,7 +25,7 @@ export interface SchemaRegistryMutationResult {
   errors: SchemaCompositionError[];
 }
 
-export interface PluginSchemaRegistry {
+export interface SchemaRegistry {
   register(declaration: ConfigurationSchemaDeclaration): SchemaRegistryMutationResult;
   unregister(ownerId: string): void;
   snapshot(): ComposeResult;
@@ -43,31 +43,31 @@ export interface PluginConfigLifecycleResult {
   changedKeys: string[];
 }
 
-export interface PluginPromoteOptions {
+export interface PromoteOptions {
   pluginId: string;
   fromLayer: ConfigurationLayer | string;
   toLayer: ConfigurationLayer | string;
 }
 
-export interface PluginConfigurationLifecycleHooks {
+export interface ConfigurationLifecycleHooks {
   install(plugin: PluginConfigInput): PluginConfigLifecycleResult;
   uninstall(pluginId: string): PluginConfigLifecycleResult;
   enable(pluginId: string): PluginConfigLifecycleResult;
   disable(pluginId: string): PluginConfigLifecycleResult;
-  promote(options: PluginPromoteOptions): PluginConfigLifecycleResult;
+  promote(options: PromoteOptions): PluginConfigLifecycleResult;
   getPluginState(pluginId: string): Readonly<{ installed: boolean; enabled: boolean }>;
   getSchemaComposition(): ComposeResult;
 }
 
-export interface PluginConfigurationLifecycleOptions {
+export interface ConfigurationLifecycleOptions {
   stateContainer: PluginConfigLifecycleStateContainer;
   activeLayer?: ConfigurationLayer | string;
-  schemaRegistry?: PluginSchemaRegistry;
+  schemaRegistry?: SchemaRegistry;
 }
 
-export function createInMemoryPluginSchemaRegistry(
+export function createInMemorySchemaRegistry(
   initialDeclarations: ConfigurationSchemaDeclaration[] = [],
-): PluginSchemaRegistry {
+): SchemaRegistry {
   const declarationsByOwner = new Map<string, ConfigurationSchemaDeclaration>();
 
   for (const declaration of initialDeclarations) {
@@ -141,11 +141,11 @@ function removePluginKeys(
   return { next, removedKeys };
 }
 
-export function createPluginConfigurationLifecycleHooks(
-  options: PluginConfigurationLifecycleOptions,
-): PluginConfigurationLifecycleHooks {
+export function createConfigurationLifecycleHooks(
+  options: ConfigurationLifecycleOptions,
+): ConfigurationLifecycleHooks {
   const activeLayer = options.activeLayer ?? "module";
-  const schemaRegistry = options.schemaRegistry ?? createInMemoryPluginSchemaRegistry();
+  const schemaRegistry = options.schemaRegistry ?? createInMemorySchemaRegistry();
   const plugins = new Map<string, PluginRuntimeState>();
 
   function registerPluginSchema(plugin: PluginConfigInput): SchemaRegistryMutationResult {
@@ -271,7 +271,7 @@ export function createPluginConfigurationLifecycleHooks(
       };
     },
 
-    promote({ pluginId, fromLayer, toLayer }: PluginPromoteOptions): PluginConfigLifecycleResult {
+    promote({ pluginId, fromLayer, toLayer }: PromoteOptions): PluginConfigLifecycleResult {
       if (!plugins.has(pluginId)) {
         throw new Error(`Plugin \"${pluginId}\" is not installed`);
       }
@@ -317,3 +317,11 @@ export function createPluginConfigurationLifecycleHooks(
     },
   };
 }
+
+// Backward compatibility aliases
+export type PluginSchemaRegistry = SchemaRegistry;
+export type PluginPromoteOptions = PromoteOptions;
+export type PluginConfigurationLifecycleHooks = ConfigurationLifecycleHooks;
+export type PluginConfigurationLifecycleOptions = ConfigurationLifecycleOptions;
+export const createPluginConfigurationLifecycleHooks = createConfigurationLifecycleHooks;
+export const createInMemoryPluginSchemaRegistry = createInMemorySchemaRegistry;

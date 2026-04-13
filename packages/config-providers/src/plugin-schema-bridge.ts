@@ -56,7 +56,7 @@ export function buildSchemaMap(plugins: PluginConfigInput[]): ComposeResult {
   return composeConfigurationSchemas(declarations);
 }
 
-export interface IncrementalPluginSchemaRegistry {
+export interface IncrementalSchemaRegistryAdapter {
   registerPlugin(plugin: PluginConfigInput): RegisterSchemaResult;
   unregisterPlugin(pluginId: string): UnregisterSchemaResult;
   getSchema(fullyQualifiedKey: string): ReturnType<
@@ -71,8 +71,8 @@ export interface IncrementalPluginSchemaRegistry {
   >;
 }
 
-class DefaultIncrementalPluginSchemaRegistry
-  implements IncrementalPluginSchemaRegistry
+class DefaultIncrementalSchemaRegistryAdapter
+  implements IncrementalSchemaRegistryAdapter
 {
   private readonly registry = createSchemaRegistry();
 
@@ -116,6 +116,11 @@ class DefaultIncrementalPluginSchemaRegistry
   }
 }
 
-export function createIncrementalPluginSchemaRegistry(): IncrementalPluginSchemaRegistry {
-  return new DefaultIncrementalPluginSchemaRegistry();
+export function createIncrementalSchemaRegistryAdapter(): IncrementalSchemaRegistryAdapter {
+  return new DefaultIncrementalSchemaRegistryAdapter();
 }
+
+// Backward compatibility aliases
+export type IncrementalPluginSchemaRegistry = IncrementalSchemaRegistryAdapter;
+export const createIncrementalPluginSchemaRegistry =
+  createIncrementalSchemaRegistryAdapter;
