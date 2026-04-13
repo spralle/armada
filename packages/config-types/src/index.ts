@@ -18,6 +18,7 @@ export type {
   ConfigurationVisibility,
   ConfigurationRole,
   ConfigReloadBehavior,
+  ConfigurationJsonSchemaType,
   ConfigurationPropertySchema,
 } from "./property-schema.js";
 

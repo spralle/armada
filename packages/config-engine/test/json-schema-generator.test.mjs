@@ -77,6 +77,54 @@ describe("generateSinglePropertySchema", () => {
     assert.deepEqual(result.enum, ["dark", "light"]);
   });
 
+  it("preserves nested JSON Schema structures", () => {
+    const result = generateSinglePropertySchema(
+      "ghost.shell.layout",
+      entry("ghost.shell", {
+        type: "object",
+        required: ["panels"],
+        properties: {
+          panels: {
+            type: "array",
+            minItems: 1,
+            items: {
+              type: "object",
+              required: ["id"],
+              properties: {
+                id: { type: "string" },
+                width: { type: "integer", minimum: 1 },
+              },
+              additionalProperties: false,
+            },
+          },
+        },
+        additionalProperties: false,
+      }),
+    );
+
+    assert.equal(result.type, "object");
+    assert.deepEqual(result.required, ["panels"]);
+    assert.equal(result.additionalProperties, false);
+    assert.equal(result.properties.panels.type, "array");
+    assert.equal(result.properties.panels.minItems, 1);
+    assert.equal(result.properties.panels.items.type, "object");
+    assert.equal(result.properties.panels.items.properties.width.type, "integer");
+    assert.equal(result.properties.panels.items.additionalProperties, false);
+  });
+
+  it("preserves union JSON schema type arrays", () => {
+    const result = generateSinglePropertySchema(
+      "ghost.shell.sidebarWidth",
+      entry("ghost.shell", {
+        type: ["integer", "null"],
+        minimum: 10,
+      }),
+    );
+
+    assert.deepEqual(result.type, ["integer", "null"]);
+    assert.equal(result.minimum, 10);
+  });
+
   it("populates x-ghost-* extension fields", () => {
     const result = generateSinglePropertySchema(
       "ghost.shell.theme",

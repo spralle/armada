@@ -69,6 +69,43 @@ describe("generateZodForProperty", () => {
     assert.equal(result, "z.array(z.unknown())");
   });
 
+  it("generates nested object/array schemas", () => {
+    const result = generateZodForProperty(
+      "ghost.shell.layout",
+      entry("ghost.shell", {
+        type: "object",
+        properties: {
+          panels: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+              },
+            },
+          },
+        },
+      }),
+    );
+    assert.equal(result, 'z.object({ "panels": z.array(z.object({ "id": z.string() })) })');
+  });
+
+  it("generates integer as z.number().int()", () => {
+    const result = generateZodForProperty(
+      "ghost.map.grid",
+      entry("ghost.map", { type: "integer", minimum: 1, maximum: 9 }),
+    );
+    assert.equal(result, "z.number().int().min(1).max(9)");
+  });
+
+  it("uses first type for union type arrays in zod generation", () => {
+    const result = generateZodForProperty(
+      "ghost.map.optionalGrid",
+      entry("ghost.map", { type: ["integer", "null"], default: 3 }),
+    );
+    assert.equal(result, "z.number().int().default(3)");
+  });
+
   it("generates z.enum([...]) for string with enum", () => {
     const result = generateZodForProperty(
       "ghost.shell.theme",

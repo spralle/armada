@@ -2,6 +2,12 @@
 
 import type { ComposedSchemaEntry } from "./schema-registry.js";
 
+type PropertySchema = ComposedSchemaEntry["schema"];
+
+function isPropertySchema(value: PropertySchema | ReadonlyArray<PropertySchema>): value is PropertySchema {
+  return !Array.isArray(value);
+}
+
 /**
  * Converts a dot-delimited config key to a valid JS identifier.
  * Replaces dots and hyphens with underscores.
@@ -17,27 +23,59 @@ export function generateZodForProperty(
   _key: string,
   entry: ComposedSchemaEntry,
 ): string {
-  const { schema } = entry;
+  return generateZodExpression(entry.schema);
+}
+
+function generateZodExpression(schema: PropertySchema): string {
   const parts: string[] = [];
+  const schemaType = Array.isArray(schema.type) ? schema.type[0] : schema.type;
 
   // Handle string enums specially — z.enum([...]) instead of z.string()
-  if (schema.type === "string" && schema.enum !== undefined && schema.enum.length > 0) {
-    const enumValues = schema.enum.map((v) => JSON.stringify(v)).join(", ");
+  if (schemaType === "string" && schema.enum !== undefined && schema.enum.length > 0) {
+    const enumValues = schema.enum.map((v: unknown) => JSON.stringify(v)).join(", ");
     parts.push(`z.enum([${enumValues}])`);
   } else {
     // Base type
-    switch (schema.type) {
+    switch (schemaType) {
       case "number":
         parts.push("z.number()");
+        break;
+      case "integer":
+        parts.push("z.number().int()");
         break;
       case "boolean":
         parts.push("z.boolean()");
         break;
       case "object":
-        parts.push("z.record(z.string(), z.unknown())");
+        if (schema.properties !== undefined) {
+          const shape = Object.entries(schema.properties)
+            .map(([key, value]) => `${JSON.stringify(key)}: ${generateZodExpression(value)}`)
+            .join(", ");
+          parts.push(`z.object({ ${shape} })`);
+        } else if (schema.additionalProperties !== false) {
+          if (schema.additionalProperties !== undefined && schema.additionalProperties !== true) {
+            parts.push(`z.record(z.string(), ${generateZodExpression(schema.additionalProperties)})`);
+          } else {
+            parts.push("z.record(z.string(), z.unknown())");
+          }
+        } else {
+          parts.push("z.object({}).strict()");
+        }
         break;
       case "array":
-        parts.push("z.array(z.unknown())");
+        if (schema.items !== undefined) {
+          const itemsSchema = schema.items;
+          if (isPropertySchema(itemsSchema)) {
+            parts.push(`z.array(${generateZodExpression(itemsSchema)})`);
+          } else {
+            parts.push("z.array(z.unknown())");
+          }
+        } else {
+          parts.push("z.array(z.unknown())");
+        }
+        break;
+      case "null":
+        parts.push("z.null()");
         break;
       default:
         parts.push("z.string()");
@@ -46,7 +84,7 @@ export function generateZodForProperty(
   }
 
   // Chain constraints for number types
-  if (schema.type === "number") {
+  if (schemaType === "number" || schemaType === "integer") {
     if (schema.minimum !== undefined) {
       parts.push(`.min(${schema.minimum})`);
     }
