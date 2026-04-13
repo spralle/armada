@@ -2,7 +2,7 @@
 // Generalized from action-palette-state.ts to work with generic QuickPickItem.
 // No DOM, no React, no side effects. Deterministic: same input -> same output.
 
-import type { QuickPickItem } from "@ghost/plugin-contracts";
+import type { QuickPickItem } from "@ghost-shell/plugin-contracts";
 
 // ---------------------------------------------------------------------------
 // Options for scoring behavior

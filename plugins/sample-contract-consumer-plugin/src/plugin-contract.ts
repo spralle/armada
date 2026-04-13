@@ -1,4 +1,4 @@
-import type { PluginContract } from "@ghost/plugin-contracts";
+import type { PluginContract } from "@ghost-shell/plugin-contracts";
 
 const pluginContract: PluginContract = {
   manifest: {

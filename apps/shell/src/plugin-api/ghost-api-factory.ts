@@ -2,7 +2,7 @@ import type {
   ActivationContext,
   Disposable,
   GhostApi,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/plugin-contracts";
 import {
   createActionService,
   type ActionServiceDependencies,

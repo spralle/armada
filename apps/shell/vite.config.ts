@@ -12,7 +12,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@ghost/plugin-contracts": PLUGIN_CONTRACTS_SOURCE,
+      "@ghost-shell/plugin-contracts": PLUGIN_CONTRACTS_SOURCE,
     },
   },
   server: {

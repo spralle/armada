@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import type { QuickPickItem } from "@ghost/plugin-contracts";
+import type { QuickPickItem } from "@ghost-shell/plugin-contracts";
 import type { QuickPickState } from "./quick-pick-state.js";
 import { getSelectedItem } from "./quick-pick-state.js";
 

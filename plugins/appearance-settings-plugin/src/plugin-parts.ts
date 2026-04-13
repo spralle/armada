@@ -1,7 +1,7 @@
 // plugin-parts.ts — Mount function for the appearance settings plugin.
 
-import type { ThemeService, PluginMountContext } from "@ghost/plugin-contracts";
-import { THEME_SERVICE_ID } from "@ghost/plugin-contracts";
+import type { ThemeService, PluginMountContext } from "@ghost-shell/plugin-contracts";
+import { THEME_SERVICE_ID } from "@ghost-shell/plugin-contracts";
 import {
   injectAppearanceStyles,
   renderThemePicker,

@@ -1,70 +1,26 @@
-import {
-  createRevision,
-  ensureTabsRegistered,
-  updateContextState,
-  readGroupSelectionContext,
-} from "./context/runtime-state.js";
-import {
-  buildActionSurface,
-} from "./action-surface.js";
-import {
-  createDefaultShellKeybindingContract,
-  DEFAULT_SHELL_KEYBINDINGS,
-  DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
-  USER_KEYBINDING_OVERRIDE_PLUGIN_ID,
-} from "./shell-runtime/default-shell-keybindings.js";
-import {
-  resolveChooserFocusRestoration,
-} from "./keyboard-a11y.js";
+import { createRevision, ensureTabsRegistered, updateContextState, readGroupSelectionContext } from "./context/runtime-state.js";
+import { buildActionSurface } from "./action-surface.js";
+import { createDefaultShellKeybindingContract, DEFAULT_SHELL_KEYBINDINGS, DEFAULT_SHELL_KEYBINDING_PLUGIN_ID, USER_KEYBINDING_OVERRIDE_PLUGIN_ID } from "./shell-runtime/default-shell-keybindings.js";
+import { resolveChooserFocusRestoration } from "./keyboard-a11y.js";
 import { shellBootstrapState } from "./app/bootstrap.js";
 import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
-import {
-  createShellBootstrapComposition,
-  getShellBootstrapComposition,
-  registerShellBootstrapComposition,
-} from "./app/bootstrap-composition.js";
-import {
-  readShellMigrationFlags,
-  selectShellTransportPath,
-} from "./app/migration-flags.js";
+import { createShellBootstrapComposition, getShellBootstrapComposition, registerShellBootstrapComposition } from "./app/bootstrap-composition.js";
+import { readShellMigrationFlags, selectShellTransportPath } from "./app/migration-flags.js";
 import { createShellRuntime } from "./app/runtime.js";
 import type { ShellRuntime } from "./app/types.js";
 import type { PluginActivationTriggerType } from "./plugin-registry.js";
-import {
-  type ContextSyncEvent,
-  type SelectionSyncEvent,
-} from "./window-bridge.js";
-import {
-  startPopoutWatchdog,
-} from "./ui/parts-controller.js";
-import {
-  updateWindowReadOnlyState,
-} from "./ui/context-controls.js";
+import { type ContextSyncEvent, type SelectionSyncEvent } from "./window-bridge.js";
+import { startPopoutWatchdog } from "./ui/parts-controller.js";
+import { updateWindowReadOnlyState } from "./ui/context-controls.js";
 import { createWindowId } from "./app/utils.js";
 import { applyLayout, setupResize } from "./shell-runtime/layout-helpers.js";
-import {
-  renderCommandSurface as renderCommandSurfaceView,
-  summarizeSelectionPriorities,
-  toActionContext,
-} from "./shell-runtime/command-surface-render.js";
-import {
-  bindBridgeSync as bindBridgeSyncHandlers,
-  announce,
-  publishWithDegrade,
-} from "./shell-runtime/bridge-sync-handlers.js";
+import { renderCommandSurface as renderCommandSurfaceView, summarizeSelectionPriorities, toActionContext } from "./shell-runtime/command-surface-render.js";
+import { bindBridgeSync as bindBridgeSyncHandlers, announce, publishWithDegrade } from "./shell-runtime/bridge-sync-handlers.js";
 import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
-import {
-  bindKeyboardShortcuts as bindKeyboardHandlers,
-  dismissIntentChooser as dismissIntentChooserState,
-} from "./shell-runtime/keyboard-handlers.js";
+import { bindKeyboardShortcuts as bindKeyboardHandlers, dismissIntentChooser as dismissIntentChooserState } from "./shell-runtime/keyboard-handlers.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 
-export type {
-  ShellCoreApi,
-  ShellEffectsPort,
-  ShellPartHostAdapter,
-  ShellRendererAdapter,
-} from "./app/contracts.js";
+export type { ShellCoreApi, ShellEffectsPort, ShellPartHostAdapter, ShellRendererAdapter } from "./app/contracts.js";
 
 interface ShellMountState {
   windowId: string;
@@ -74,7 +30,6 @@ interface ShellMountState {
 export function startShell(root: HTMLElement): ShellRuntime {
   const hmrRegistry = getShellHmrRegistry();
   hmrRegistry.byRoot.get(root)?.dispose();
-
   let disposed = false;
   const flags = readShellMigrationFlags();
   const transportDecision = selectShellTransportPath(flags);
@@ -100,16 +55,13 @@ export function startShell(root: HTMLElement): ShellRuntime {
   shellRuntime.activeTransportReason = composition.transportReason;
   registerRuntimeTeardown(shellRuntime);
   composition.initialize(root, shellRuntime);
-
   hmrRegistry.windowIds.add(shellRuntime.windowId);
-
   const mountState: ShellMountState = {
     windowId: shellRuntime.windowId,
     dispose: () => {
       if (disposed) {
         return;
       }
-
       disposed = true;
       disposeMount();
       shellRuntime.dragSessionBroker.dispose();
@@ -122,13 +74,10 @@ export function startShell(root: HTMLElement): ShellRuntime {
       console.info("[shell] window unregistered", shellRuntime.windowId, "count", hmrRegistry.windowIds.size);
     },
   };
-
   hmrRegistry.byRoot.set(root, mountState);
-
   if (!shellRuntime.isPopout) {
     void hydratePluginRegistry(root, shellRuntime, () => !disposed);
   }
-
   console.log("[shell] POC shell stub ready", {
     bootstrapMode: shellBootstrapState.mode,
     compositionMode: composition.mode,
@@ -136,7 +85,6 @@ export function startShell(root: HTMLElement): ShellRuntime {
     transportReason: shellRuntime.activeTransportReason,
     windowCount: hmrRegistry.windowIds.size,
   });
-
   return shellRuntime;
 }
 
@@ -150,13 +98,11 @@ function registerRuntimeTeardown(runtime: ShellRuntime): void {
     runtime.asyncBridge.close();
     runtime.bridge.close();
   };
-
   window.addEventListener("beforeunload", teardown, { once: true });
 }
 
 function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: ReturnType<typeof getShellBootstrapComposition>): () => void {
   const disposers: Array<() => void> = [];
-
   if (runtime.isPopout) {
     disposers.push(composition.mountPopout(root, runtime, {
       renderParts: () => renderParts(root, runtime),
@@ -185,13 +131,11 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: Retur
       renderSyncStatus: () => renderSyncStatus(root, runtime),
     }));
   }
-
   disposers.push(bindBridgeSync(root, runtime, {
     applyContext: composition.applyContext,
     applySelection: composition.applySelection,
   }));
   disposers.push(bindKeyboardShortcuts(root, runtime));
-
   return () => {
     for (const dispose of disposers) {
       dispose();
@@ -227,7 +171,6 @@ function refreshCommandContributions(runtime: ShellRuntime): void {
     .filter((plugin) => plugin.enabled && plugin.contract !== null)
     .map((plugin) => plugin.contract)
     .filter((plugin): plugin is NonNullable<typeof plugin> => plugin !== null);
-
   runtime.actionSurface = buildActionSurface(contracts);
 }
 
@@ -313,11 +256,9 @@ async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRu
         triggerId: "shell.render",
       })
     );
-
   if (activations.length === 0) {
     return;
   }
-
   await Promise.all(activations);
   refreshCommandContributions(runtime);
   getShellBootstrapComposition(runtime).renderPanels(root, runtime);
@@ -341,13 +282,11 @@ async function activatePluginForBoundary(
         : options.triggerType === "intent"
           ? await runtime.registry.activateByIntent(options.pluginId, options.triggerId)
           : await runtime.registry.activateByView(options.pluginId, options.triggerId);
-
     if (!activated) {
       runtime.notice = `Plugin '${options.pluginId}' is not active for ${options.triggerType}:${options.triggerId}.`;
       renderSyncStatus(root, runtime);
       return false;
     }
-
     runtime.notice = "";
     refreshCommandContributions(runtime);
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);

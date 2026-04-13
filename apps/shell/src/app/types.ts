@@ -2,7 +2,7 @@ import type {
   PluginContract,
   PluginSelectionContribution,
   PluginServices,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/plugin-contracts";
 import { createDragSessionBroker } from "../dnd-session-broker.js";
 import type { ShellLayoutState } from "../layout.js";
 import type {

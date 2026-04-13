@@ -2,6 +2,17 @@
 
 We use git flow with `feature/*` for all feature/task branches.
 
+## Changesets Responsibilities
+
+- Engineer MUST include a changeset file in `.changeset/*.md` whenever a publishable package changes (for this repo, publishable packages are under the `@ghost-shell/*` scope).
+- Engineer MUST NOT add a changeset when changes are limited to non-publishable surfaces (examples: docs-only updates, CI/workflow-only changes, tests-only changes with no runtime package impact, or app-only/internal-only changes).
+- Engineer bump guidance:
+  - `patch`: backward-compatible bug fixes, small internal improvements, dependency updates with no API change.
+  - `minor`: backward-compatible new features or additive API surface.
+  - `major`: breaking API/behavior changes requiring consumer action.
+- Auditor MUST verify that a changeset exists for publishable package changes and that the bump type (patch/minor/major) matches the actual impact.
+- Auditor MUST verify no-changeset cases are correctly justified when no publishable package surface changed.
+
 ## Issue Tracking with bd (beads)
 
 Use Beads for all issue tracking. For worktrees, always use `bd worktree create` so the worktree is wired to the shared repo `.beads` database.

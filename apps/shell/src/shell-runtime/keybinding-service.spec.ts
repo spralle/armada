@@ -1,4 +1,4 @@
-import { createDefaultContributionPredicateMatcher } from "@ghost/plugin-contracts";
+import { createDefaultContributionPredicateMatcher } from "@ghost-shell/plugin-contracts";
 import type { ActionSurface } from "../action-surface.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import type { IntentRuntime } from "../intent-runtime.js";

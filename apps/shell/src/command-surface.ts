@@ -4,7 +4,7 @@ import type {
   PluginContract,
   PluginKeybindingContribution,
   PluginMenuContribution,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/plugin-contracts";
 import type { IntentRuntime } from "./intent-runtime.js";
 
 export interface CommandSurfaceContext {

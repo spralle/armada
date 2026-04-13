@@ -1,4 +1,4 @@
-import type { QuickPickItem } from "@ghost/plugin-contracts";
+import type { QuickPickItem } from "@ghost-shell/plugin-contracts";
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import {
   createWindowService,

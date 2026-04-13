@@ -1,6 +1,6 @@
 // appearance-dom.ts — Vanilla DOM rendering helpers for the appearance settings UI.
 
-import type { ThemeInfo, BackgroundInfo, ThemeBackgroundEntry } from "@ghost/plugin-contracts";
+import type { ThemeInfo, BackgroundInfo, ThemeBackgroundEntry } from "@ghost-shell/plugin-contracts";
 
 // ---------------------------------------------------------------------------
 // CSS styles (all colors via CSS custom properties)

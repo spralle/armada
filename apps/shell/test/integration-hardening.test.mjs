@@ -9,6 +9,7 @@ import {
 } from "../dist/command-runtime.js";
 import { createActivationRuntime } from "../dist/activation-runtime.js";
 import { bootstrapShellWithTenantManifest } from "../dist/app/bootstrap.js";
+import { THEME_SERVICE_PLUGIN_ID } from "../dist/theme-service-registration.js";
 import { closeTabThroughRuntime } from "../dist/ui/parts-controller.js";
 import { moveDockTabThroughRuntime } from "../dist/ui/dock-tab-dnd.js";
 import { renderDockTree } from "../dist/ui/parts-rendering.js";
@@ -242,7 +243,10 @@ test("shell bootstrap keeps inner-loop mode for loopback override entries", asyn
   });
 
   assert.equal(state.mode, "inner-loop");
-  assert.equal(state.registry.getSnapshot().plugins.length, 2);
+  assert.deepEqual(
+    state.registry.getSnapshot().plugins.map((plugin) => plugin.id).sort(),
+    [DOMAIN_UNPLANNED.id, DOMAIN_VESSEL.id, THEME_SERVICE_PLUGIN_ID],
+  );
 });
 
 test("shell bootstrap treats local scheme override entries as inner-loop", async () => {
@@ -291,7 +295,7 @@ test("shell bootstrap keeps integration mode when non-loopback plugin entries ex
   assert.equal(state.mode, "integration");
   assert.deepEqual(
     state.registry.getSnapshot().plugins.map((plugin) => plugin.id).sort(),
-    [DOMAIN_UNPLANNED.id, DOMAIN_VESSEL.id],
+    [DOMAIN_UNPLANNED.id, DOMAIN_VESSEL.id, THEME_SERVICE_PLUGIN_ID],
   );
 });
 

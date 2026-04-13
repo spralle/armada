@@ -6,7 +6,7 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+    "@ghost-shell/plugin-contracts": "file:../../packages/plugin-contracts",
     "@module-federation/enhanced": "^2.3.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

@@ -3,7 +3,7 @@ import type {
   Disposable,
   PluginContract,
   TenantPluginDescriptor,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/plugin-contracts";
 import type { CapabilityDependencyFailureCode } from "./capability-registry.js";
 import type { PluginActivateFunction, RuntimeFirstPluginLoader, ShellPluginLoadMode } from "./plugin-loader.js";
 

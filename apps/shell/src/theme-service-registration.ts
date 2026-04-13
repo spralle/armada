@@ -10,8 +10,8 @@ import type {
   BackgroundInfo,
   ThemeBackgroundEntry,
   PluginContract,
-} from "@ghost/plugin-contracts";
-import { THEME_SERVICE_ID } from "@ghost/plugin-contracts";
+} from "@ghost-shell/plugin-contracts";
+import { THEME_SERVICE_ID } from "@ghost-shell/plugin-contracts";
 import type { ThemeRegistry } from "./theme-registry.js";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 

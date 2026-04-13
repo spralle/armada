@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@ghost-shell/plugin-contracts": "file:../../packages/plugin-contracts"
   }
 }

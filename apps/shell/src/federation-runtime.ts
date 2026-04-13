@@ -11,10 +11,10 @@ type RuntimeCreateOptions = Parameters<typeof createInstance>[0];
  * for POC work; no bundler plugin wiring is required here.
  */
 const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
-  "@ghost/plugin-contracts": {
+  "@ghost-shell/plugin-contracts": {
     shareConfig: {
       singleton: true,
-      requiredVersion: "^0.0.0",
+      requiredVersion: "^0.1.0",
       strictVersion: false,
     },
     strategy: "loaded-first",

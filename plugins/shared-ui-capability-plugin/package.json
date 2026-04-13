@@ -1,7 +1,21 @@
 {
-  "name": "@ghost/shared-ui-capability-plugin",
-  "private": true,
+  "name": "@ghost-shell/shared-ui-capability-plugin",
+  "version": "0.1.0",
   "type": "module",
+  "main": "./dist/remoteEntry.js",
+  "module": "./dist/remoteEntry.js",
+  "types": "./src/plugin-contract.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": "./dist/remoteEntry.js",
+    "./pluginContract": "./src/plugin-contract.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "ghost": {
     "pluginId": "ghost.shared.ui-capabilities",
     "devPort": 4175
@@ -10,7 +24,7 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@ghost-shell/plugin-contracts": "file:../../packages/plugin-contracts"
   },
   "devDependencies": {
     "@module-federation/vite": "^1.8.1",

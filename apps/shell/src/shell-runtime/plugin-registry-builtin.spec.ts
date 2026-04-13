@@ -1,5 +1,5 @@
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import type { PluginContract } from "@ghost/plugin-contracts";
+import type { PluginContract } from "@ghost-shell/plugin-contracts";
 import { createShellPluginRegistry } from "../plugin-registry.js";
 
 function createTestBuiltinContract(): PluginContract {

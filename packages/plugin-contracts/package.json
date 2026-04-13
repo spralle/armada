@@ -1,9 +1,9 @@
 {
-  "name": "@ghost/plugin-contracts",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@ghost-shell/plugin-contracts",
+  "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -15,6 +15,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
