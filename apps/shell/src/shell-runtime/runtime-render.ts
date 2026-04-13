@@ -85,6 +85,23 @@ export function initializeReactPanels(
         () => bindings.renderCommandSurface(),
       );
     },
+    onActivatePlugin: async (pluginId) => {
+      try {
+        runtime.pluginNotice = "";
+        await bindings.activatePluginForBoundary({
+          pluginId,
+          triggerType: "view",
+          triggerId: "utility.plugins",
+        });
+        bindings.refreshCommandContributions();
+      } catch (error) {
+        runtime.pluginNotice = `Unable to activate plugin '${pluginId}'. See console diagnostics.`;
+        console.error("[shell] failed to activate plugin", pluginId, error);
+      }
+      renderPanels(root, runtime);
+      bindings.renderParts();
+      bindings.renderCommandSurface();
+    },
     onChooseIntentAction: async (index) => {
       runtime.chooserFocusIndex = index;
       const selectedMatch = runtime.pendingIntentMatches[index];

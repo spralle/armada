@@ -58,7 +58,6 @@ import {
   dismissIntentChooser as dismissIntentChooserState,
 } from "./shell-runtime/keyboard-handlers.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
-import { registerThemeServiceCapability } from "./theme-service-registration.js";
 
 export type {
   ShellCoreApi,
@@ -204,15 +203,13 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
   try {
     const state = await bootstrapShellWithTenantManifest({
       tenantId: "demo",
+      enableByDefault: true,
     });
     if (!isActive()) {
       return;
     }
     runtime.registry = state.registry;
     runtime.themeRegistry = state.themeRegistry ?? null;
-    if (runtime.themeRegistry) {
-      registerThemeServiceCapability(runtime.registry, runtime.themeRegistry);
-    }
     runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
     refreshCommandContributions(runtime);
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);
@@ -224,7 +221,6 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
 }
 
 function refreshCommandContributions(runtime: ShellRuntime): void {
-  const defaultKeybindingContract = createDefaultShellKeybindingContract();
   const contracts = runtime.registry
     .getSnapshot()
     .plugins
@@ -232,7 +228,7 @@ function refreshCommandContributions(runtime: ShellRuntime): void {
     .map((plugin) => plugin.contract)
     .filter((plugin): plugin is NonNullable<typeof plugin> => plugin !== null);
 
-  runtime.actionSurface = buildActionSurface([defaultKeybindingContract, ...contracts]);
+  runtime.actionSurface = buildActionSurface(contracts);
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {

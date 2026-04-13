@@ -86,6 +86,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .sync-degraded { opacity: 0.62; filter: grayscale(0.5); }
     .runtime-note { color: var(--ghost-muted-foreground); font-size: 12px; margin: 0; }
     .plugin-row { display:block; margin: 6px 0; }
+    .plugin-activate-btn { margin-left: 8px; padding: 2px 8px; font-size: 11px; cursor: pointer; }
     .plugin-error { margin: 4px 0 0 22px; color: var(--ghost-error-foreground-muted); font-size: 12px; }
     .plugin-notice { margin:0 0 8px; font-size:12px; color: var(--ghost-warning-foreground); }
     .plugin-diag-list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--ghost-muted-foreground); }
