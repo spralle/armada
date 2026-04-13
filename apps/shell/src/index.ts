@@ -59,7 +59,7 @@ import {
 } from "./shell-runtime/keyboard-handlers.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 import { registerConfigurationServiceCapability } from "./config-service-registration.js";
-import { createConfigurationService, InMemoryStorageProvider, StaticJsonStorageProvider } from "@ghost/config-providers";
+import { createShellConfigService, runPersistenceMigrations } from "./config-service-setup.js";
 
 export type {
   ShellCoreApi,
@@ -212,11 +212,16 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
     }
     runtime.registry = state.registry;
     runtime.themeRegistry = state.themeRegistry ?? null;
-    const configService = await createConfigurationService({ providers: [
-      new StaticJsonStorageProvider({ id: "core-defaults", layer: "core", data: {} }),
-      new InMemoryStorageProvider({ id: "session-overrides", layer: "session" }),
-    ] });
-    registerConfigurationServiceCapability(runtime.registry, configService);
+    try {
+      const { configService } = await createShellConfigService();
+      registerConfigurationServiceCapability(runtime.registry, configService);
+      const migrations = runPersistenceMigrations(configService);
+      if (migrations.layout.migrated || migrations.context.migrated || migrations.keybindings.migrated) {
+        console.info("[shell] persistence migrations completed", migrations);
+      }
+    } catch (configError) {
+      console.warn("[shell] config service creation failed, continuing without it", configError);
+    }
     runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
     refreshCommandContributions(runtime);
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);
