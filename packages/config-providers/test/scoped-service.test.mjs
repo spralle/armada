@@ -96,13 +96,37 @@ test("forView returns a ViewConfigurationService", async () => {
 });
 
 test("withScope returns scoped service with baked-in scope", async () => {
-  const svc = await makeService({
-    "ghost.vesselView.map.zoom": 5,
+  const core = new StaticJsonStorageProvider({
+    id: "core",
+    layer: "core",
+    data: {
+      "ghost.vesselView.map.zoom": 4,
+    },
+  });
+  const region = new InMemoryStorageProvider({
+    id: "region-eu",
+    layer: "region:europe",
+    initialEntries: {
+      "ghost.vesselView.map.zoom": 6,
+    },
+  });
+  const port = new InMemoryStorageProvider({
+    id: "port-rtm",
+    layer: "port:rotterdam",
+    initialEntries: {
+      "ghost.vesselView.map.zoom": 7,
+    },
+  });
+
+  const svc = await createConfigurationService({
+    providers: [core, region, port],
   });
   const scoped = createScopedConfigurationService(svc, "ghost.vesselView");
   const withScopeService = scoped.withScope([
-    { scopeId: "fleet", value: "f1" },
+    { scopeId: "region", value: "europe" },
+    { scopeId: "port", value: "rotterdam" },
   ]);
-  // Currently getForScope just returns the flat value
-  assert.equal(withScopeService.get("map.zoom"), 5);
+
+  assert.equal(withScopeService.get("map.zoom"), 7);
+  assert.equal(scoped.getForScope("map.zoom", [{ scopeId: "region", value: "europe" }]), 6);
 });

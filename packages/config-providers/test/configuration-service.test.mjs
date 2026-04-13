@@ -207,15 +207,113 @@ test("remove from read-only layer throws", async () => {
   );
 });
 
-test("getForScope returns flat value (scope not yet wired)", async () => {
+test("getForScope resolves with tenant -> scope-chain -> user precedence", async () => {
   const core = new StaticJsonStorageProvider({
     id: "core",
     layer: "core",
-    data: { "ghost.app.theme": "dark" },
+    data: { "ghost.app.theme": "light" },
   });
-  const svc = await createConfigurationService({ providers: [core] });
+  const tenant = new InMemoryStorageProvider({
+    id: "tenant",
+    layer: "tenant",
+    initialEntries: { "ghost.app.theme": "tenant" },
+  });
+  const region = new InMemoryStorageProvider({
+    id: "region-eu",
+    layer: "region:europe",
+    initialEntries: { "ghost.app.theme": "region" },
+  });
+  const port = new InMemoryStorageProvider({
+    id: "port-rtm",
+    layer: "port:rotterdam",
+    initialEntries: { "ghost.app.theme": "port" },
+  });
+  const user = new InMemoryStorageProvider({
+    id: "user",
+    layer: "user",
+    initialEntries: { "ghost.app.theme": "user" },
+  });
+
+  const svc = await createConfigurationService({
+    providers: [user, port, core, region, tenant],
+  });
+
   assert.equal(
-    svc.getForScope("ghost.app.theme", [{ scopeId: "fleet", value: "f1" }]),
-    "dark",
+    svc.getForScope("ghost.app.theme", [
+      { scopeId: "region", value: "europe" },
+      { scopeId: "port", value: "rotterdam" },
+    ]),
+    "user",
+  );
+});
+
+test("getForScope falls back when narrower dynamic scope layer is missing", async () => {
+  const tenant = new InMemoryStorageProvider({
+    id: "tenant",
+    layer: "tenant",
+    initialEntries: { "ghost.app.zoom": 3 },
+  });
+  const region = new InMemoryStorageProvider({
+    id: "region-eu",
+    layer: "region:europe",
+    initialEntries: { "ghost.app.zoom": 5 },
+  });
+
+  const svc = await createConfigurationService({ providers: [tenant, region] });
+
+  assert.equal(
+    svc.getForScope("ghost.app.zoom", [
+      { scopeId: "region", value: "europe" },
+      { scopeId: "port", value: "rotterdam" },
+    ]),
+    5,
+  );
+});
+
+test("getForScope falls back to tenant when no matching scope layers exist", async () => {
+  const tenant = new InMemoryStorageProvider({
+    id: "tenant",
+    layer: "tenant",
+    initialEntries: { "ghost.app.units": "metric" },
+  });
+  const region = new InMemoryStorageProvider({
+    id: "region-eu",
+    layer: "region:europe",
+    initialEntries: { "ghost.app.units": "nautical" },
+  });
+
+  const svc = await createConfigurationService({ providers: [tenant, region] });
+
+  assert.equal(
+    svc.getForScope("ghost.app.units", [{ scopeId: "region", value: "asia" }]),
+    "metric",
+  );
+});
+
+test("get remains unchanged and can include out-of-scope dynamic providers", async () => {
+  const tenant = new InMemoryStorageProvider({
+    id: "tenant",
+    layer: "tenant",
+    initialEntries: { "ghost.app.locale": "en" },
+  });
+  const regionEurope = new InMemoryStorageProvider({
+    id: "region-eu",
+    layer: "region:europe",
+    initialEntries: { "ghost.app.locale": "nb" },
+  });
+  const regionAsia = new InMemoryStorageProvider({
+    id: "region-asia",
+    layer: "region:asia",
+    initialEntries: { "ghost.app.locale": "ja" },
+  });
+
+  const svc = await createConfigurationService({
+    providers: [tenant, regionEurope, regionAsia],
+  });
+
+  assert.equal(svc.get("ghost.app.locale"), "ja");
+  assert.equal(
+    svc.getForScope("ghost.app.locale", [{ scopeId: "region", value: "europe" }]),
+    "nb",
   );
 });

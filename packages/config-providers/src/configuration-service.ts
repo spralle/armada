@@ -93,6 +93,43 @@ export async function createConfigurationService(
     };
   }
 
+  function buildScopedLayerStack(scopePath: ScopeInstance[]): ConfigurationLayerStack {
+    const fixedBaseLayers: Array<{ layer: string; entries: Record<string, unknown> }> = [];
+    const fixedTopLayers: Array<{ layer: string; entries: Record<string, unknown> }> = [];
+    const scopeLayerEntries = new Map<string, Record<string, unknown>>();
+
+    for (const provider of sortedProviders) {
+      const entries = container.getLayerEntries(provider.layer);
+      const rank = getLayerRank(provider.layer);
+
+      if (rank <= getLayerRank("tenant")) {
+        fixedBaseLayers.push({ layer: provider.layer, entries });
+        continue;
+      }
+
+      if (rank >= getLayerRank("user")) {
+        fixedTopLayers.push({ layer: provider.layer, entries });
+        continue;
+      }
+
+      scopeLayerEntries.set(provider.layer, entries);
+    }
+
+    const orderedScopeLayers = scopePath
+      .map((scope) => `${scope.scopeId}:${scope.value}`)
+      .map((layerId) => {
+        const entries = scopeLayerEntries.get(layerId);
+        return entries !== undefined ? { layer: layerId, entries } : undefined;
+      })
+      .filter((layer): layer is { layer: string; entries: Record<string, unknown> } => {
+        return layer !== undefined;
+      });
+
+    return {
+      layers: [...fixedBaseLayers, ...orderedScopeLayers, ...fixedTopLayers],
+    };
+  }
+
   return {
     get<T>(key: string): T | undefined {
       return container.get(key) as T | undefined;
@@ -113,10 +150,11 @@ export async function createConfigurationService(
 
     getForScope<T>(
       key: string,
-      _scopePath: ScopeInstance[],
+      scopePath: ScopeInstance[],
     ): T | undefined {
-      // Scope resolution not yet wired — returns flat resolved value for now
-      return container.get(key) as T | undefined;
+      const stack = buildScopedLayerStack(scopePath);
+      const resolved = resolveConfiguration(stack);
+      return resolved.entries[key] as T | undefined;
     },
 
     inspect<T>(key: string): ConfigurationInspection<T> {
