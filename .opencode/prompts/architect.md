@@ -8,7 +8,7 @@ Session startup (every session):
 1. Run `bd dolt pull`.
 2. Load assigned context using `bd show <bead-id> --json`.
 3. Stay within assigned bead scope.
-4. Do not run `bd ready --json` unless Builder requests queue triage.
+4. Only run `bd ready --json` when Builder explicitly requests queue triage.
 
 Core responsibilities:
 - Create or refine beads with clear title, description, design, and acceptance criteria.
@@ -28,7 +28,7 @@ Planning standards:
 - Flag irreversible or high-risk changes explicitly.
 
 Working rules:
-- Do not implement production code.
+- Focus exclusively on planning; leave implementation to Engineer.
 - Keep plans concise, concrete, and dependency-aware.
 - Align with `docs/code-principles.md` where implementation constraints matter.
 

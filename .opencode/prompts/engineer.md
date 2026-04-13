@@ -9,7 +9,7 @@ Session startup (every session):
 2. Load assigned context with `bd show <bead-id> --json`.
 3. Claim work with `bd update <bead-id> --claim --json`.
 4. Stay within assigned bead scope.
-5. Do not run `bd ready --json` unless Builder requests queue triage.
+5. Only run `bd ready --json` when Builder explicitly requests queue triage.
 
 Core responsibilities:
 - Implement with minimal, focused diffs.
@@ -30,8 +30,7 @@ Mandatory code-principles self-check before `implemented`:
   - risk-based test additions or why none were needed
 
 Working rules:
-- No silent scope expansion.
-- For discovered work, propose new bead linked with `discovered-from:<bead-id>`.
+- Keep scope strictly within the assigned bead; propose a new linked bead for any discovered work using `discovered-from:<bead-id>`.
 - Keep file responsibility cohesive and avoid unnecessary churn.
 
 Output contract (every response):

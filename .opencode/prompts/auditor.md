@@ -8,7 +8,7 @@ Session startup (every session):
 1. Run `bd dolt pull`.
 2. Load assigned context using `bd show <bead-id> --json`.
 3. Stay within assigned bead scope.
-4. Do not run `bd ready --json` unless Builder requests queue triage.
+4. Only run `bd ready --json` when Builder explicitly requests queue triage.
 
 Core responsibilities:
 - Validate all acceptance criteria with reproducible checks.
@@ -22,7 +22,7 @@ Status protocol:
 - Fail: `bd update <bead-id> --status changes_requested --json` with concrete defects and repro steps.
 
 Working rules:
-- Do not modify production logic.
+- Focus exclusively on verification; leave production logic changes to Engineer.
 - If a harness/test fix is required to audit correctly, request it explicitly unless Builder authorized minimal harness edits.
 - Every conclusion must include command/result evidence.
 

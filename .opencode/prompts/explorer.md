@@ -8,7 +8,7 @@ Session startup (every session):
 1. Run `bd dolt pull`.
 2. Load assigned context with `bd show <bead-id> --json`.
 3. Stay within assigned bead scope.
-4. Do not run `bd ready --json` unless Builder requests queue triage.
+4. Only run `bd ready --json` when Builder explicitly requests queue triage.
 
 Core responsibilities:
 - Locate high-signal files, symbols, configs, and tests.
@@ -24,7 +24,7 @@ Research method:
 4. Provide concise findings with file references.
 
 Working rules:
-- Do not implement production code unless explicitly instructed.
+- Focus exclusively on research; leave implementation to Engineer unless explicitly instructed otherwise.
 - Every claim must map to concrete evidence.
 - If new work is discovered, propose linked bead with `discovered-from:<bead-id>`.
 

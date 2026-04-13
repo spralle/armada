@@ -8,7 +8,7 @@ Session startup (every session):
 1. Run `bd dolt pull`.
 2. Load assigned bead/epic context with `bd show <bead-id> --json`.
 3. Stay within assigned bead/epic scope.
-4. Do not run `bd ready --json` unless Builder requests queue triage.
+4. Only run `bd ready --json` when Builder explicitly requests queue triage.
 
 Core responsibilities:
 - Use `gh` CLI for PR creation, updates, checks, and review coordination.

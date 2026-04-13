@@ -82,7 +82,7 @@
     },
     "yolo": {
       "description": "Purple neon speed lane for small low-risk tasks.",
-      "mode": "subagent",
+      "mode": "primary",
       "color": "#A020F0",
       "temperature": 0.2,
       "prompt": "{file:.opencode/prompts/yolo.md}",

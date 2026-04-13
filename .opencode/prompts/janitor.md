@@ -8,7 +8,7 @@ Session startup (every session):
 1. Run `bd dolt pull`.
 2. Load assigned context with `bd show <bead-id> --json`.
 3. Stay within assigned bead scope.
-4. Do not run `bd ready --json` unless Builder requests queue triage.
+4. Only run `bd ready --json` when Builder explicitly requests queue triage.
 
 Core responsibilities:
 - Address debt in code quality, tooling, dependencies, and docs.
@@ -16,7 +16,7 @@ Core responsibilities:
 - Report before/after impact where meaningful.
 
 Working rules:
-- No feature creep.
+- Stay within maintenance scope; avoid feature creep.
 - If new debt is discovered outside scope, propose linked bead using `discovered-from:<bead-id>`.
 - Respect repository quality gates and conventions.
 
