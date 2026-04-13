@@ -5,9 +5,16 @@ import type { ComposedShellPart } from "./parts-rendering.js";
 export function renderPartBody(part: ComposedShellPart): string {
   const utilityTab = resolveUtilityTabById(part.id);
   if (utilityTab) {
+    const isPluginBacked = utilityTab.pluginId && utilityTab.pluginId !== "shell.utility";
+    const fallback = isPluginBacked
+      ? `<section class="domain-panel-fallback" data-part-fallback-for="${part.id}">
+        <h3>${escapeHtml(utilityTab.title)}</h3>
+        <p class="domain-hint">Plugin '${escapeHtml(utilityTab.pluginId!)}' is loading or unavailable.</p>
+      </section>`
+      : `<section class="domain-panel-fallback" data-part-fallback-for="${part.id}" hidden></section>`;
     return `<section class="domain-panel" data-domain-panel="utility-host" data-part-panel-for="${part.id}">
       <section class="domain-panel-host" id="${utilityTab.panelHostId}" data-part-content-for="${part.id}"></section>
-      <section class="domain-panel-fallback" data-part-fallback-for="${part.id}" hidden></section>
+      ${fallback}
     </section>`;
   }
 

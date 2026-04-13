@@ -14,9 +14,9 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
   root.innerHTML = `
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-    html, body { width: 100%; height: 100%; overflow: hidden; }
+    html, body, #root { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: var(--ghost-background); color: var(--ghost-foreground); }
-    .shell { display: grid; grid-template-columns: 1fr; min-height: 100vh; min-height: 100dvh; height: 100vh; height: 100dvh; overflow: hidden; }
+    .shell { display: grid; grid-template-columns: 1fr; min-height: 100%; height: 100%; overflow: hidden; }
     .shell,
     .shell > .dock-root,
     .dock-root > .dock-node,
@@ -86,6 +86,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .sync-degraded { opacity: 0.62; filter: grayscale(0.5); }
     .runtime-note { color: var(--ghost-muted-foreground); font-size: 12px; margin: 0; }
     .plugin-row { display:block; margin: 6px 0; }
+    .plugin-activate-btn { margin-left: 8px; padding: 2px 8px; font-size: 11px; cursor: pointer; }
     .plugin-error { margin: 4px 0 0 22px; color: var(--ghost-error-foreground-muted); font-size: 12px; }
     .plugin-notice { margin:0 0 8px; font-size:12px; color: var(--ghost-warning-foreground); }
     .plugin-diag-list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--ghost-muted-foreground); }
@@ -124,6 +125,11 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
   deps.updateWindowReadOnlyState();
   const disposeResize = deps.setupResize();
 
+  // Ensure shell keybindings are active from first load.
+  // tabindex="-1" makes the root programmatically focusable (not in tab order).
+  root.setAttribute("tabindex", "-1");
+  root.focus();
+
   return () => {
     disposeResize();
   };
@@ -135,9 +141,9 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
   root.innerHTML = `
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-    html, body { width: 100%; height: 100%; overflow: hidden; }
+    html, body, #root { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: var(--ghost-background); color: var(--ghost-foreground); }
-    .popout { padding: 8px; min-height: 100vh; min-height: 100dvh; height: 100vh; height: 100dvh; box-sizing: border-box; overflow: hidden; }
+    .popout { padding: 8px; min-height: 100%; height: 100%; box-sizing: border-box; overflow: hidden; }
     #popout-slot { height: 100%; min-height: 0; }
     .card { border: 1px solid var(--ghost-border-alt); border-radius: 4px; margin-bottom: 6px; padding: 6px; }
     .part-root { border: 1px solid var(--ghost-border-alt); border-radius: 4px; margin-bottom: 0; padding: 6px; container-type: inline-size; display: flex; flex-direction: column; min-height: 0; height: 100%; }

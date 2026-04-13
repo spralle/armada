@@ -1,23 +1,17 @@
 import {
   deriveDeterministicActiveTabId,
-  readDockSplitRatio,
-  setDockSplitRatioById,
 } from "./dock-tree.js";
 import { cloneDockNode, collapseDockNode } from "./dock-tree-helpers.js";
 import type { DockNode, DockStackNode, DockTreeState } from "./dock-tree-types.js";
 import {
   collectSplitPath,
   collectStacks,
-  computeSplitDelta,
   directionalDistance,
-  findNearestSplitForDirection,
   findStackById,
   findStackByTabId,
 } from "./dock-tree-window-actions-helpers.js";
 
 type DockDirection = "left" | "right" | "up" | "down";
-
-const RESIZE_STEP = 0.05;
 
 interface FocusTarget {
   stack: DockStackNode;
@@ -147,34 +141,6 @@ export function swapActiveTabInDirection(
     tree: { root: nextRoot },
     activeTabId,
     changed: true,
-  };
-}
-
-export function resizeDockInDirection(
-  tree: DockTreeState,
-  activeTabId: string,
-  direction: DockDirection,
-): { tree: DockTreeState; changed: boolean } {
-  const source = findStackByTabId(tree.root, activeTabId);
-  if (!source) {
-    return { tree, changed: false };
-  }
-
-  const split = findNearestSplitForDirection(tree.root, source.path, direction);
-  if (!split) {
-    return { tree, changed: false };
-  }
-
-  const currentRatio = readDockSplitRatio(split.node);
-  const delta = computeSplitDelta(split.orientation, split.branch, direction, RESIZE_STEP);
-  if (delta === 0) {
-    return { tree, changed: false };
-  }
-
-  const nextTree = setDockSplitRatioById(tree, split.node.id, currentRatio + delta);
-  return {
-    tree: nextTree,
-    changed: nextTree !== tree,
   };
 }
 

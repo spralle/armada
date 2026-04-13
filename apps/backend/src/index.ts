@@ -3,6 +3,8 @@ import {
   getTenantManifestEndpointPath,
   getDefaultLocalPluginEntryUrlMap,
   getTenantManifestResponse,
+  createDefaultLocalPluginEntryUrlMap,
+  resolveTenantManifestRequest,
 } from "./tenant-manifest.js";
 import {
   formatLocalPluginOverrideStartupSummary,
@@ -22,7 +24,19 @@ interface NodeHttpRequestLike { method?: string | undefined; url?: string | unde
 interface NodeHttpResponseLike { setHeader(name: string, value: string): void; statusCode: number; end(body?: string): void }
 
 const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
-const localPluginEntryOverrides = getDefaultLocalPluginEntryUrlMap();
+const localPluginEntryOverrides = backendDevCliOptions.gatewayPort
+  ? createDefaultLocalPluginEntryUrlMap({
+      appsRoot: "plugins",
+      gatewayPort: backendDevCliOptions.gatewayPort,
+    })
+  : getDefaultLocalPluginEntryUrlMap();
+
+// When --gateway-port is set but no --local-plugin flags provided,
+// auto-select all known plugins so every entry routes through the gateway.
+const effectiveSelectedPluginIds =
+  backendDevCliOptions.gatewayPort && backendDevCliOptions.selectedLocalPluginIds.length === 0
+    ? Array.from(localPluginEntryOverrides.keys())
+    : backendDevCliOptions.selectedLocalPluginIds;
 
 if (backendDevCliOptions.duplicateSelectedLocalPluginIds.length > 0) {
   console.warn(
@@ -32,7 +46,7 @@ if (backendDevCliOptions.duplicateSelectedLocalPluginIds.length > 0) {
 
 console.log(
   formatLocalPluginOverrideStartupSummary(
-    backendDevCliOptions.selectedLocalPluginIds,
+    effectiveSelectedPluginIds,
     localPluginEntryOverrides,
   ),
 );

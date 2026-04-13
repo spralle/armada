@@ -13,5 +13,5 @@ export function ReactShellHost(): JSX.Element {
     startShell(root);
   }, []);
 
-  return <div ref={rootRef} />;
+  return <div ref={rootRef} style={{ height: "100%" }} />;
 }

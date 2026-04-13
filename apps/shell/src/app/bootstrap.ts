@@ -8,6 +8,7 @@ import {
   activatePreferredThemePlugin,
   DEFAULT_THEME_PLUGIN_ID,
 } from "../theme-activation.js";
+import { registerThemeServiceCapability } from "../theme-service-registration.js";
 import type {
   ShellBootstrapOptions,
   ShellBootstrapState,
@@ -74,24 +75,24 @@ export async function bootstrapShellWithTenantManifest(
     }
   }
 
-  // Eagerly activate plugins with onStartup activation events.
-  // Theme plugins no longer declare onStartup — they are loaded on demand.
-  await activateByStartupEvent(registry);
-
-  // Activate only the preferred theme plugin (or the default fallback).
-  // Other theme plugins remain unloaded until the Appearance tab opens.
+  // Activate the preferred theme plugin first — theme plugins contribute
+  // palette data and have no service dependencies of their own.
   const themePref = readUserThemePreference();
   const preferredPluginId = themePref?.pluginId || undefined;
   await activatePreferredThemePlugin(registry, preferredPluginId, DEFAULT_THEME_PLUGIN_ID);
 
-  // Initialize theme registry: discover themes from active plugins
-  // and apply the resolved initial theme (user pref → tenant default → first).
+  // Initialize theme registry and register the ThemeService builtin so that
+  // plugins depending on ghost.theme.Service pass dependency validation.
   const themeRegistry = createThemeRegistry({
     pluginRegistry: registry,
     tenantDefaultThemeId: options.defaultThemeId,
   });
   themeRegistry.discoverThemes();
   themeRegistry.applyInitialTheme();
+  registerThemeServiceCapability(registry, themeRegistry);
+
+  // Now activate onStartup plugins — ghost.theme.Service is available.
+  await activateByStartupEvent(registry);
 
   const snapshot = registry.getSnapshot();
 

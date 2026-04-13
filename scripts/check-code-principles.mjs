@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
 
-const sourceRoots = ["apps", "packages"];
+const sourceRoots = ["apps", "packages", "plugins"];
 const MAX_FILE_LINES = 350;
 
 const explicitAnyRegex = /\bany\b/;
@@ -16,6 +16,9 @@ const allowedDefaultExportPaths = new Set([
   "apps/*/vite.config.ts",
   "apps/*/src/plugin-contract.ts",
   "apps/*/src/plugin-contract-expose.ts",
+  "plugins/*/vite.config.ts",
+  "plugins/*/src/plugin-contract.ts",
+  "plugins/*/src/plugin-contract-expose.ts",
 ]);
 
 async function main() {

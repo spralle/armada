@@ -1,0 +1,19 @@
+{
+  "name": "@ghost/plugin-starter",
+  "private": true,
+  "type": "module",
+  "ghost": {
+    "pluginId": "ghost.plugin-starter",
+    "devPort": 4171
+  },
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
+  },
+  "devDependencies": {
+    "@module-federation/vite": "^1.8.1",
+    "vite": "^5.4.19"
+  }
+}

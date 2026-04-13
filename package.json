@@ -4,6 +4,7 @@
   "packageManager": "bun@1.2.21",
   "workspaces": [
     "apps/*",
+    "plugins/*",
     "packages/*"
   ],
   "scripts": {
@@ -15,17 +16,13 @@
     "check:code-principles": "node ./scripts/check-code-principles.mjs",
     "check:config-schema": "node ./scripts/check-config-schema.mjs",
     "check:change-policies": "node ./scripts/validate-change-policies.mjs",
+    "dev": "npx concurrently -n backend,plugins,shell -c blue,magenta,green \"npm run dev:backend\" \"npm run dev:plugins\" \"npm run dev:shell\"",
     "dev:shell": "npm run dev --workspace @ghost/shell-app",
-    "dev:backend": "bun --watch apps/backend/src/index.ts",
-    "dev:plugin": "npm run dev --workspace @ghost/plugin-starter",
-    "dev:plugin-sample": "npm run dev --workspace @ghost/sample-contract-consumer-plugin",
-    "dev:plugin-unplanned-orders": "npm run dev --workspace @ghost/domain-unplanned-orders-plugin",
-    "dev:plugin-vessel-view": "npm run dev --workspace @ghost/domain-vessel-view-plugin",
-    "dev:plugin-shared-ui": "npm run dev --workspace @ghost/shared-ui-capability-plugin",
-    "dev:plugin-theme-default": "npm run dev --workspace @ghost/theme-default-plugin",
-    "dev:plugin-shadcn-bridge": "npm run dev --workspace @ghost/shadcn-theme-bridge-plugin",
-    "dev:plugin:all": "npx concurrently -n starter,sample,unplanned,vessel,shared,theme -c magenta,cyan,yellow,green,blue,red \"npm run dev:plugin\" \"npm run dev:plugin-sample\" \"npm run dev:plugin-unplanned-orders\" \"npm run dev:plugin-vessel-view\" \"npm run dev:plugin-shared-ui\" \"npm run dev:plugin-theme-default\"",
+    "dev:backend": "bun --watch apps/backend/src/index.ts --gateway-port 41337",
+    "dev:plugins": "bun apps/plugin-dev-host/src/main.ts --all --build",
+    "dev:plugins:live": "bun apps/plugin-dev-host/src/main.ts --live",
     "dev:integration": "bun --watch apps/shell/src/index.ts",
+    "build:plugins": "node ./scripts/build-plugins.mjs",
     "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs",
     "generate:config-schema": "node ./scripts/build-config-schemas.mjs"
   },

@@ -58,7 +58,6 @@ import {
   dismissIntentChooser as dismissIntentChooserState,
 } from "./shell-runtime/keyboard-handlers.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
-import { registerThemeServiceCapability } from "./theme-service-registration.js";
 import { registerConfigurationServiceCapability } from "./config-service-registration.js";
 import { createConfigurationService, InMemoryStorageProvider, StaticJsonStorageProvider } from "@ghost/config-providers";
 
@@ -206,15 +205,13 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
   try {
     const state = await bootstrapShellWithTenantManifest({
       tenantId: "demo",
+      enableByDefault: true,
     });
     if (!isActive()) {
       return;
     }
     runtime.registry = state.registry;
     runtime.themeRegistry = state.themeRegistry ?? null;
-    if (runtime.themeRegistry) {
-      registerThemeServiceCapability(runtime.registry, runtime.themeRegistry);
-    }
     const configService = await createConfigurationService({ providers: [
       new StaticJsonStorageProvider({ id: "core-defaults", layer: "core", data: {} }),
       new InMemoryStorageProvider({ id: "session-overrides", layer: "session" }),
@@ -231,7 +228,6 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
 }
 
 function refreshCommandContributions(runtime: ShellRuntime): void {
-  const defaultKeybindingContract = createDefaultShellKeybindingContract();
   const contracts = runtime.registry
     .getSnapshot()
     .plugins
@@ -239,7 +235,7 @@ function refreshCommandContributions(runtime: ShellRuntime): void {
     .map((plugin) => plugin.contract)
     .filter((plugin): plugin is NonNullable<typeof plugin> => plugin !== null);
 
-  runtime.actionSurface = buildActionSurface([defaultKeybindingContract, ...contracts]);
+  runtime.actionSurface = buildActionSurface(contracts);
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {

@@ -169,7 +169,6 @@ export function reopenMostRecentlyClosedTabThroughRuntime(
   const reopenedTabId = runtime.contextState.activeTabId;
   if (!reopenedTabId || !runtime.contextState.tabs[reopenedTabId]) {
     deps.renderContextControls();
-    deps.renderParts();
     deps.renderSyncStatus();
     return false;
   }

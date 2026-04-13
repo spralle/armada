@@ -356,7 +356,7 @@ test("tenant manifest parser accepts typed plugin descriptors", () => {
       {
         id: "ghost.plugin-starter",
         version: "0.1.0",
-        entry: "local://apps/plugin-starter/src/index.ts",
+        entry: "local://plugins/plugin-starter/src/index.ts",
         compatibility: {
           shell: "^1.0.0",
           pluginContract: "^1.0.0",
@@ -378,7 +378,7 @@ test("tenant manifest parser reports nested field validation errors", () => {
       {
         id: "ghost.plugin-starter",
         version: "0.1.0",
-        entry: "local://apps/plugin-starter/src/index.ts",
+        entry: "local://plugins/plugin-starter/src/index.ts",
         compatibility: {
           shell: "",
         },

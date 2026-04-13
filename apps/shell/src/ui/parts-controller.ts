@@ -36,7 +36,29 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   const dockHost = root.querySelector<HTMLElement>("#dock-tree-root");
   if (dockHost) {
     const visibleDockParts = visibleParts.filter((part) => !runtime.poppedOutTabIds.has(part.instanceId));
+
+    // Preserve mounted plugin content across structural re-renders.
+    // Without this, innerHTML destroys all mounted content and forces
+    // async re-mounting via Module Federation, causing a visible blank flash.
+    const preserved = new Map<string, HTMLElement>();
+    for (const el of dockHost.querySelectorAll<HTMLElement>("[data-part-content-for]")) {
+      const partId = el.dataset.partContentFor;
+      if (partId && el.childNodes.length > 0) {
+        preserved.set(partId, el);
+      }
+    }
+
     dockHost.innerHTML = renderDockTree(runtime.contextState.dockTree.root, visibleDockParts, runtime);
+
+    // Re-attach preserved content elements into matching new containers.
+    // This keeps the same DOM element references so that syncRenderedParts
+    // recognizes them (target === entry.target) and skips re-mounting.
+    for (const [partId, oldEl] of preserved) {
+      const newEl = dockHost.querySelector<HTMLElement>(`[data-part-content-for="${partId}"]`);
+      if (newEl) {
+        newEl.replaceWith(oldEl);
+      }
+    }
   }
 
   wirePartActions(root, runtime, deps);
@@ -48,7 +70,13 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
         ratio,
       });
     },
-    commitRender: () => deps.renderParts(),
+    commitRender: () => {
+      // State was persisted during drag via updateContextState().
+      // CSS preview styles were applied via previewSplitStyle().
+      // A full renderParts() would destroy the DOM and cause flickering.
+      // The next structural render (tab activation, tab move, etc.) will
+      // pick up the persisted ratio and produce matching HTML.
+    },
   });
   wireDockTabDragDrop(root, runtime, deps);
   wireTabStripDragDrop(root, runtime, {
