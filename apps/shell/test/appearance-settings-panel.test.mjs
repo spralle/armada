@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 
 test("utility.appearance descriptor is registered", async () => {
   const { listUtilityTabs, isUtilityTabId, resolveUtilityTabById } = await import(
-    "../dist-test/src/utility-tabs.js"
+    "@ghost-shell/shell-dom/utility-tabs"
   );
 
   assert.ok(isUtilityTabId("utility.appearance"), "utility.appearance should be a valid UtilityTabId");
@@ -33,7 +33,7 @@ test("utility.appearance descriptor is registered", async () => {
 
 test("utility.appearance descriptor is available in non-dev mode", async () => {
   const { listAvailableUtilityTabs } = await import(
-    "../dist-test/src/utility-tabs.js"
+    "@ghost-shell/shell-dom/utility-tabs"
   );
 
   const available = listAvailableUtilityTabs({ devMode: false });
@@ -43,7 +43,7 @@ test("utility.appearance descriptor is available in non-dev mode", async () => {
 
 test("appearance panelHostId matches expected container ID", async () => {
   const { resolveUtilityTabById } = await import(
-    "../dist-test/src/utility-tabs.js"
+    "@ghost-shell/shell-dom/utility-tabs"
   );
 
   const descriptor = resolveUtilityTabById("utility.appearance");

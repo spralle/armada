@@ -4,7 +4,7 @@ import {
   activatePreferredThemePlugin,
   activateAllThemePlugins,
   DEFAULT_THEME_PLUGIN_ID,
-} from "../dist-test/src/theme-activation.js";
+} from "@ghost-shell/shell-core/themes";
 
 // ---------------------------------------------------------------------------
 // Helpers

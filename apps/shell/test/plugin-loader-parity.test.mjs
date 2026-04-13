@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createRuntimeFirstPluginLoader, PluginLoadError } from "../dist-test/src/plugin-loader.js";
+import { createRuntimeFirstPluginLoader, PluginLoadError } from "@ghost-shell/shell-core/plugins";
 
 function createDescriptor(mode) {
   return {

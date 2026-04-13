@@ -2,18 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   composeVisibleParts,
-} from "../dist/part-composition.js";
+} from "@ghost-shell/shell-dom/part-composition";
 import {
   composeRuntimeCommands,
   executeKeybinding,
-} from "../dist/command-runtime.js";
-import { createActivationRuntime } from "../dist/activation-runtime.js";
-import { bootstrapShellWithTenantManifest } from "../dist/app/bootstrap.js";
-import { THEME_SERVICE_PLUGIN_ID } from "../dist/theme-service-registration.js";
-import { closeTabThroughRuntime } from "../dist/ui/parts-controller.js";
-import { moveDockTabThroughRuntime } from "../dist/ui/dock-tab-dnd.js";
-import { renderDockTree } from "../dist/ui/parts-rendering.js";
-import { createInitialShellContextState, registerTab } from "../dist/context-state.js";
+} from "@ghost-shell/shell-dom/command-runtime";
+import { createActivationRuntime } from "@ghost-shell/shell-dom/activation-runtime";
+import { bootstrapShellWithTenantManifest } from "@ghost-shell/shell-dom/app/bootstrap";
+import { THEME_SERVICE_PLUGIN_ID } from "@ghost-shell/shell-core/themes";
+import { closeTabThroughRuntime } from "@ghost-shell/shell-dom/ui/parts-controller";
+import { moveDockTabThroughRuntime } from "@ghost-shell/shell-dom/ui/dock-tab-dnd";
+import { renderDockTree } from "@ghost-shell/shell-dom/ui/parts-rendering";
+import { createInitialShellContextState, registerTab } from "@ghost-shell/shell-core/state";
 
 const DOMAIN_UNPLANNED = {
   id: "ghost.domain.unplanned-orders",

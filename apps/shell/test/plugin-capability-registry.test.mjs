@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createShellPluginRegistry } from "../dist-test/src/plugin-registry.js";
+import { createShellPluginRegistry } from "@ghost-shell/shell-core/plugins";
 
 function descriptor(id) {
   return {

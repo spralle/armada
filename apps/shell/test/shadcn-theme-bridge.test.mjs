@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   parsePluginContract,
   GHOST_THEME_CSS_VARS,
-} from "../../../packages/plugin-contracts/dist/index.js";
+} from "@ghost-shell/plugin-contracts";
 import { pluginContract } from "../../../plugins/shadcn-theme-bridge-plugin/src/plugin-contract.ts";
 import { GHOST_TO_SHADCN_MAP } from "../../../plugins/shadcn-theme-bridge-plugin/src/bridge-mapping.ts";
 

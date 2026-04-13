@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createShellPluginRegistry } from "../dist-test/src/plugin-registry.js";
-import { registerThemeServiceCapability, THEME_SERVICE_PLUGIN_ID } from "../dist-test/src/theme-service-registration.js";
-import { THEME_SERVICE_ID } from "../../../packages/plugin-contracts/dist/index.js";
+import { createShellPluginRegistry } from "@ghost-shell/shell-core/plugins";
+import { registerThemeServiceCapability, THEME_SERVICE_PLUGIN_ID } from "@ghost-shell/shell-core/themes";
+import { THEME_SERVICE_ID } from "@ghost-shell/plugin-contracts";
 
 // ---------------------------------------------------------------------------
 // Mock ThemeRegistry

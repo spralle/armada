@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createThemeRegistry, manageBackgroundImage } from "../dist-test/src/theme-registry.js";
+import { createThemeRegistry, manageBackgroundImage } from "@ghost-shell/shell-core/themes";
 import {
   readUserThemePreference,
   writeUserThemePreference,
   clearUserThemePreference,
-} from "../dist-test/src/theme-persistence.js";
+} from "@ghost-shell/shell-core/themes";
 
 // ---------------------------------------------------------------------------
 // Helpers

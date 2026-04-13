@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   parsePluginContract,
   deriveFullPalette,
-} from "../../../packages/plugin-contracts/dist/index.js";
+} from "@ghost-shell/plugin-contracts";
 import { pluginContract } from "../../../plugins/theme-default-plugin/src/plugin-contract.ts";
 
 // ---------------------------------------------------------------------------

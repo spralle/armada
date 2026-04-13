@@ -7,12 +7,9 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
 
 const guardRoots = [
-  "apps/shell/src/index.ts",
-  "apps/shell/src/context",
-  "apps/shell/src/domain",
-  "apps/shell/src/sync",
-  "apps/shell/src/ui",
-  "apps/shell/src/app",
+  "packages/shell-core/src",
+  "packages/shell-dom/src",
+  "packages/shell-react/src",
 ];
 
 const importRegex = /^\s*import\s+[^;]*from\s+["']([^"']+)["']/gm;

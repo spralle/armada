@@ -6,7 +6,7 @@ import {
   readBackgroundPreference,
   writeBackgroundPreference,
   clearBackgroundPreference,
-} from "../dist-test/src/theme-persistence.js";
+} from "@ghost-shell/shell-core/themes";
 
 // ---------------------------------------------------------------------------
 // Background persistence — Node environment (no localStorage)

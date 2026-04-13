@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createPartModuleHostRuntime } from "../dist-test/src/part-module-host.js";
+import { createPartModuleHostRuntime } from "@ghost-shell/shell-dom/part-module-host";
 
 function createRoot(parts) {
   const content = [];

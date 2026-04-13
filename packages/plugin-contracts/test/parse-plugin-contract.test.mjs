@@ -13,7 +13,7 @@ import {
   buildActionSurface,
   dispatchAction,
   resolveMenuActions,
-} from "../../../apps/shell/src/action-surface.ts";
+} from "@ghost-shell/shell-core/actions";
 
 test("returns typed data for a valid plugin contract", () => {
   const result = parsePluginContract({
