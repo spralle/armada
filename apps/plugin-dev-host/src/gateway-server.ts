@@ -190,16 +190,16 @@ function handleRoutedRequest(
           const rewritten = rewriteManifestPublicPath(manifest, absoluteBase);
           const rewrittenBody = JSON.stringify(rewritten);
           res.setHeader("content-length", Buffer.byteLength(rewrittenBody));
-          originalEnd.call(res, rewrittenBody);
+          originalEnd(rewrittenBody);
         } catch {
-          originalEnd.call(res, body);
+          originalEnd(body);
         }
         return res;
       };
 
       instance.viteServer.middlewares.handle(req, res, () => {
         res.statusCode = 404;
-        originalEnd.call(res, `Not found: ${url}`);
+        originalEnd(`Not found: ${url}`);
       });
       return;
     }
