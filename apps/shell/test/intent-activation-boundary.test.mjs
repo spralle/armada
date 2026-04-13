@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 test("intent execution boundary activates plugin with intent trigger", async () => {
-  const sourcePath = resolve(process.cwd(), "apps/shell/src/shell-runtime/runtime-event-handlers.ts");
+  const sourcePath = resolve(process.cwd(), "packages/shell-dom/src/shell-runtime/runtime-event-handlers.ts");
   const source = await readFile(sourcePath, "utf8");
 
   const start = source.indexOf("async function executeResolvedAction(");
@@ -25,8 +25,8 @@ test("intent execution boundary activates plugin with intent trigger", async () 
 });
 
 test("runtime command surface path dispatches through action surface", async () => {
-  const commandSurfacePath = resolve(process.cwd(), "apps/shell/src/shell-runtime/command-surface-render.ts");
-  const keyboardPath = resolve(process.cwd(), "apps/shell/src/shell-runtime/keyboard-handlers.ts");
+  const commandSurfacePath = resolve(process.cwd(), "packages/shell-dom/src/shell-runtime/command-surface-render.ts");
+  const keyboardPath = resolve(process.cwd(), "packages/shell-dom/src/shell-runtime/keyboard-handlers.ts");
   const [commandSurfaceSource, keyboardSource] = await Promise.all([
     readFile(commandSurfacePath, "utf8"),
     readFile(keyboardPath, "utf8"),

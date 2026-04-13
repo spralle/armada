@@ -1,0 +1,12 @@
+export { startShell } from "./start-shell.js";
+export type { ShellRuntime } from "./app/types.js";
+export type { ShellCoreApi, ShellEffectsPort, ShellPartHostAdapter, ShellRendererAdapter } from "./app/contracts.js";
+export { createReactPanelsHost } from "./ui/react/panels-host.js";
+export { ContextControlsPanel } from "./ui/react/context-controls-panel.js";
+export type { ContextControlsPanelProps } from "./ui/react/context-controls-panel.js";
+export { KeybindingsSettingsPanel } from "./ui/react/keybinding-settings-panel.js";
+export type { KeybindingsSettingsPanelProps } from "./ui/react/keybinding-settings-panel.js";
+export type { KeybindingOverrideManager } from "./shell-runtime/keybinding-override-manager.js";
+export { normalizeKeyboardEventChord } from "./shell-runtime/keybinding-normalizer.js";
+export { isBrowserSafeDefaultKeybinding } from "./shell-runtime/default-shell-keybindings.js";
+export { downloadKeybindingExport, readKeybindingImportFile } from "./shell-runtime/keybinding-import-export.js";

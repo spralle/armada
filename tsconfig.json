@@ -5,6 +5,15 @@
       "path": "./packages/plugin-contracts"
     },
     {
+      "path": "./packages/shell-core"
+    },
+    {
+      "path": "./packages/shell-dom"
+    },
+    {
+      "path": "./packages/shell-react"
+    },
+    {
       "path": "./apps/shell"
     },
     {

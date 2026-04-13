@@ -1,4 +1,4 @@
-import { ReactShellHost } from "./app/ReactShellHost.js";
+import { ReactShellHost } from "@ghost-shell/shell-react";
 
 export function App() {
   return <ReactShellHost />;

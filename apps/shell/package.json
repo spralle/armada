@@ -7,6 +7,9 @@
   },
   "dependencies": {
     "@ghost-shell/plugin-contracts": "file:../../packages/plugin-contracts",
+    "@ghost-shell/shell-core": "file:../../packages/shell-core",
+    "@ghost-shell/shell-dom": "file:../../packages/shell-dom",
+    "@ghost-shell/shell-react": "file:../../packages/shell-react",
     "@module-federation/enhanced": "^2.3.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
