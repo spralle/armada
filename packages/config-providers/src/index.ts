@@ -17,8 +17,10 @@ export {
 
 export {
   type PluginConfigInput,
+  type IncrementalPluginSchemaRegistry,
   collectPluginSchemaDeclarations,
   buildSchemaMap,
+  createIncrementalPluginSchemaRegistry,
 } from "./plugin-schema-bridge.js";
 
 export {

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   collectPluginSchemaDeclarations,
   buildSchemaMap,
+  createIncrementalPluginSchemaRegistry,
 } from "../dist/index.js";
 
 test("collects schema from a single plugin with config", () => {
@@ -148,4 +149,56 @@ test("buildSchemaMap returns empty for plugins without config", () => {
   const result = buildSchemaMap(plugins);
   assert.equal(result.schemas.size, 0);
   assert.equal(result.errors.length, 0);
+});
+
+test("incremental registry registers and unregisters plugin schema", () => {
+  const registry = createIncrementalPluginSchemaRegistry();
+
+  const registerResult = registry.registerPlugin({
+    pluginId: "ghost.vessel-view",
+    configuration: {
+      properties: {
+        theme: { type: "string", default: "dark" },
+      },
+    },
+  });
+
+  assert.equal(registerResult.errors.length, 0);
+  assert.deepEqual(registerResult.registeredKeys, ["ghost.vesselView.theme"]);
+  assert.equal(registry.getSchemas().size, 1);
+  assert.equal(registry.getSchemasByOwner("ghost.vessel-view").size, 1);
+
+  const unregisterResult = registry.unregisterPlugin("ghost.vessel-view");
+  assert.deepEqual(unregisterResult.removedKeys, ["ghost.vesselView.theme"]);
+  assert.equal(registry.getSchemas().size, 0);
+});
+
+test("incremental registry reports duplicate-key collisions", () => {
+  const registry = createIncrementalPluginSchemaRegistry();
+
+  registry.registerPlugin({
+    pluginId: "ghost.vesselView",
+    configuration: {
+      properties: {
+        theme: { type: "string" },
+      },
+    },
+  });
+
+  const collision = registry.registerPlugin({
+    pluginId: "ghost.vessel-view",
+    configuration: {
+      properties: {
+        theme: { type: "number" },
+      },
+    },
+  });
+
+  assert.equal(collision.errors.length, 1);
+  assert.equal(collision.errors[0].type, "duplicate-key");
+  assert.deepEqual(collision.errors[0].ownerIds, [
+    "ghost.vesselView",
+    "ghost.vessel-view",
+  ]);
+  assert.equal(registry.getSchema("ghost.vesselView.theme").ownerId, "ghost.vesselView");
 });

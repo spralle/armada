@@ -4,10 +4,14 @@ import type { ConfigurationPropertySchema } from "@ghost/config-types";
 import type {
   ConfigurationSchemaDeclaration,
   ComposeResult,
+  ConfigurationSchemaRegistry,
+  RegisterSchemaResult,
+  UnregisterSchemaResult,
 } from "@ghost/config-engine";
 import {
   deriveNamespace,
   composeConfigurationSchemas,
+  createSchemaRegistry,
 } from "@ghost/config-engine";
 
 /**
@@ -50,4 +54,68 @@ export function collectPluginSchemaDeclarations(
 export function buildSchemaMap(plugins: PluginConfigInput[]): ComposeResult {
   const declarations = collectPluginSchemaDeclarations(plugins);
   return composeConfigurationSchemas(declarations);
+}
+
+export interface IncrementalPluginSchemaRegistry {
+  registerPlugin(plugin: PluginConfigInput): RegisterSchemaResult;
+  unregisterPlugin(pluginId: string): UnregisterSchemaResult;
+  getSchema(fullyQualifiedKey: string): ReturnType<
+    ConfigurationSchemaRegistry["getSchema"]
+  >;
+  getSchemas(): ReturnType<ConfigurationSchemaRegistry["getSchemas"]>;
+  getSchemasByOwner(pluginId: string): ReturnType<
+    ConfigurationSchemaRegistry["getSchemasByOwner"]
+  >;
+  getCompositionErrors(): ReturnType<
+    ConfigurationSchemaRegistry["getCompositionErrors"]
+  >;
+}
+
+class DefaultIncrementalPluginSchemaRegistry
+  implements IncrementalPluginSchemaRegistry
+{
+  private readonly registry = createSchemaRegistry();
+
+  registerPlugin(plugin: PluginConfigInput): RegisterSchemaResult {
+    if (plugin.configuration === undefined) {
+      this.registry.unregister(plugin.pluginId);
+      return { registeredKeys: [], errors: [] };
+    }
+
+    return this.registry.register({
+      ownerId: plugin.pluginId,
+      namespace: deriveNamespace(plugin.pluginId),
+      properties: plugin.configuration.properties,
+    });
+  }
+
+  unregisterPlugin(pluginId: string): UnregisterSchemaResult {
+    return this.registry.unregister(pluginId);
+  }
+
+  getSchema(
+    fullyQualifiedKey: string,
+  ): ReturnType<ConfigurationSchemaRegistry["getSchema"]> {
+    return this.registry.getSchema(fullyQualifiedKey);
+  }
+
+  getSchemas(): ReturnType<ConfigurationSchemaRegistry["getSchemas"]> {
+    return this.registry.getSchemas();
+  }
+
+  getSchemasByOwner(
+    pluginId: string,
+  ): ReturnType<ConfigurationSchemaRegistry["getSchemasByOwner"]> {
+    return this.registry.getSchemasByOwner(pluginId);
+  }
+
+  getCompositionErrors(): ReturnType<
+    ConfigurationSchemaRegistry["getCompositionErrors"]
+  > {
+    return this.registry.getCompositionErrors();
+  }
+}
+
+export function createIncrementalPluginSchemaRegistry(): IncrementalPluginSchemaRegistry {
+  return new DefaultIncrementalPluginSchemaRegistry();
 }

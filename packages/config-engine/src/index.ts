@@ -29,8 +29,14 @@ export type {
   ComposedSchemaEntry,
   SchemaCompositionError,
   ComposeResult,
+  RegisterSchemaResult,
+  UnregisterSchemaResult,
+  ConfigurationSchemaRegistry,
 } from "./schema-registry.js";
-export { composeConfigurationSchemas } from "./schema-registry.js";
+export {
+  composeConfigurationSchemas,
+  createSchemaRegistry,
+} from "./schema-registry.js";
 
 // auth.ts — Authorization checks
 export { canRead, canWrite, filterVisibleKeys } from "./auth.js";

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { composeConfigurationSchemas } from "../dist/index.js";
+import { composeConfigurationSchemas, createSchemaRegistry } from "../dist/index.js";
 
 test("composes from single declaration", () => {
   const result = composeConfigurationSchemas([
@@ -107,4 +107,110 @@ test("handles declarations with no properties", () => {
   ]);
   assert.equal(result.errors.length, 0);
   assert.equal(result.schemas.size, 0);
+});
+
+test("supports incremental register/get/getSchemasByOwner flows", () => {
+  const registry = createSchemaRegistry();
+  const registerResult = registry.register({
+    ownerId: "ghost.vesselView",
+    namespace: "ghost.vesselView",
+    properties: {
+      theme: { type: "string", default: "dark" },
+      zoom: { type: "number", default: 5 },
+    },
+  });
+
+  assert.equal(registerResult.errors.length, 0);
+  assert.deepEqual(registerResult.registeredKeys, [
+    "ghost.vesselView.theme",
+    "ghost.vesselView.zoom",
+  ]);
+
+  const schema = registry.getSchema("ghost.vesselView.theme");
+  assert.ok(schema);
+  assert.equal(schema.ownerId, "ghost.vesselView");
+  assert.equal(schema.schema.type, "string");
+
+  assert.equal(registry.getSchemas().size, 2);
+  assert.deepEqual(
+    [...registry.getSchemasByOwner("ghost.vesselView").keys()],
+    ["ghost.vesselView.theme", "ghost.vesselView.zoom"],
+  );
+});
+
+test("preserves first owner deterministically for duplicate keys", () => {
+  const registry = createSchemaRegistry();
+
+  const first = registry.register({
+    ownerId: "plugin-a",
+    namespace: "ghost.vesselView",
+    properties: {
+      theme: { type: "string" },
+    },
+  });
+  assert.equal(first.errors.length, 0);
+
+  const second = registry.register({
+    ownerId: "plugin-b",
+    namespace: "ghost.vesselView",
+    properties: {
+      theme: { type: "number" },
+    },
+  });
+  assert.equal(second.errors.length, 1);
+  assert.equal(second.errors[0].type, "duplicate-key");
+  assert.deepEqual(second.errors[0].ownerIds, ["plugin-a", "plugin-b"]);
+
+  const composed = registry.getSchema("ghost.vesselView.theme");
+  assert.equal(composed.ownerId, "plugin-a");
+  assert.equal(composed.schema.type, "string");
+});
+
+test("rebinds key ownership when first owner unregisters", () => {
+  const registry = createSchemaRegistry();
+
+  registry.register({
+    ownerId: "plugin-a",
+    namespace: "ghost.vesselView",
+    properties: {
+      theme: { type: "string" },
+    },
+  });
+  registry.register({
+    ownerId: "plugin-b",
+    namespace: "ghost.vesselView",
+    properties: {
+      theme: { type: "number" },
+    },
+  });
+
+  const unregisterResult = registry.unregister("plugin-a");
+  assert.deepEqual(unregisterResult.removedKeys, []);
+
+  const composed = registry.getSchema("ghost.vesselView.theme");
+  assert.ok(composed);
+  assert.equal(composed.ownerId, "plugin-b");
+  assert.equal(composed.schema.type, "number");
+  assert.equal(registry.getCompositionErrors().length, 0);
+});
+
+test("unregister removes all keys using owner index", () => {
+  const registry = createSchemaRegistry();
+
+  registry.register({
+    ownerId: "plugin-a",
+    namespace: "ghost.multi",
+    properties: {
+      alpha: { type: "string" },
+      beta: { type: "boolean" },
+    },
+  });
+
+  const unregisterResult = registry.unregister("plugin-a");
+  assert.deepEqual(unregisterResult.removedKeys, [
+    "ghost.multi.alpha",
+    "ghost.multi.beta",
+  ]);
+  assert.equal(registry.getSchemas().size, 0);
+  assert.equal(registry.getSchemasByOwner("plugin-a").size, 0);
 });
