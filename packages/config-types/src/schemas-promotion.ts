@@ -29,7 +29,15 @@ export const promotionRequestSchema = z.object({
 export const configAuditEntrySchema = z.object({
   timestamp: z.string(),
   actor: z.string(),
-  action: z.enum(["set", "remove"]),
+  action: z.enum([
+    "set",
+    "remove",
+    "install",
+    "uninstall",
+    "enable",
+    "disable",
+    "promote",
+  ]),
   key: z.string(),
   layer: z.string(),
   tenantId: z.string().optional(),

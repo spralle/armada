@@ -23,6 +23,30 @@ test("configAuditEntrySchema validates a valid entry", () => {
   assert.equal(result.success, true);
 });
 
+test("configAuditEntrySchema validates plugin-management action types", () => {
+  const pluginActions = [
+    "install",
+    "uninstall",
+    "enable",
+    "disable",
+    "promote",
+  ];
+
+  for (const action of pluginActions) {
+    const entry = {
+      timestamp: "2026-04-13T12:00:00Z",
+      actor: "user-1",
+      action,
+      key: "ghost.pluginManager.registry",
+      layer: "module",
+      isEmergencyOverride: false,
+    };
+
+    const result = configAuditEntrySchema.safeParse(entry);
+    assert.equal(result.success, true);
+  }
+});
+
 test("configAuditEntrySchema rejects entry missing required field", () => {
   const entry = {
     timestamp: "2026-04-13T12:00:00Z",
@@ -32,6 +56,20 @@ test("configAuditEntrySchema rejects entry missing required field", () => {
     layer: "tenant",
     // missing isEmergencyOverride
   };
+  const result = configAuditEntrySchema.safeParse(entry);
+  assert.equal(result.success, false);
+});
+
+test("configAuditEntrySchema rejects unknown action values", () => {
+  const entry = {
+    timestamp: "2026-04-13T12:00:00Z",
+    actor: "user-1",
+    action: "unknown-action",
+    key: "ghost.pluginManager.registry",
+    layer: "module",
+    isEmergencyOverride: false,
+  };
+
   const result = configAuditEntrySchema.safeParse(entry);
   assert.equal(result.success, false);
 });

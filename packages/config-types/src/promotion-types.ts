@@ -26,7 +26,14 @@ export interface PromotionRequest {
 export interface ConfigAuditEntry {
   readonly timestamp: string; // ISO
   readonly actor: string;
-  readonly action: "set" | "remove";
+  readonly action:
+    | "set"
+    | "remove"
+    | "install"
+    | "uninstall"
+    | "enable"
+    | "disable"
+    | "promote";
   readonly key: string;
   readonly layer: string;
   readonly tenantId?: string | undefined;
