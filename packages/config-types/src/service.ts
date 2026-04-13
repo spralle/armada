@@ -1,4 +1,21 @@
 import type { ConfigurationLayer, ScopeInstance } from "./types.js";
+import type {
+  GodModeSession,
+  SessionActivationRequest,
+  SessionDeactivationResult,
+} from "./session.js";
+
+/**
+ * Minimal handle for session lifecycle — satisfied by GodModeSessionController
+ * without creating a dependency from config-types to config-providers.
+ */
+export interface ConfigurationSessionHandle {
+  activate(request: SessionActivationRequest): GodModeSession;
+  deactivate(): SessionDeactivationResult;
+  extend(durationMs?: number | undefined): GodModeSession;
+  getSession(): GodModeSession | null;
+  isActive(): boolean;
+}
 
 export interface ConfigurationInspection<T> {
   key: string;
@@ -25,6 +42,7 @@ export interface ConfigurationService {
   remove(key: string, layer: ConfigurationLayer): void;
   onChange(key: string, listener: (value: unknown) => void): () => void;
   getNamespace(prefix: string): Record<string, unknown>;
+  readonly session?: ConfigurationSessionHandle | undefined;
 }
 
 export interface ScopedConfigurationService {

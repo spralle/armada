@@ -87,6 +87,8 @@ export function canRead(
  * 2. Key writeRestriction: if schema has writeRestriction, caller's role must be in it
  * 3. maxOverrideLayer: if schema has maxOverrideLayer and target layer is above it,
  *    deny UNLESS sessionMode === "emergency-override"
+ * 4. Session-layer sessionMode: if writing to "session" layer,
+ *    "blocked" → always deny, "restricted" → require god-mode session elevation
  */
 export function canWrite(
   accessContext: ConfigurationAccessContext,
@@ -139,6 +141,17 @@ export function canWrite(
     if (targetRank > ceilingRank) {
       // Deny unless emergency override
       return accessContext.sessionMode === "emergency-override";
+    }
+  }
+
+  // Check sessionMode enforcement for SESSION layer writes
+  if (layer === "session") {
+    const propertySessionMode = propertySchema.sessionMode ?? "allowed";
+    if (propertySessionMode === "blocked") {
+      return false;
+    }
+    if (propertySessionMode === "restricted") {
+      return accessContext.sessionMode === "god-mode";
     }
   }
 

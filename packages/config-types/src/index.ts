@@ -24,6 +24,7 @@ export type {
 
 // service.ts — Service interfaces
 export type {
+  ConfigurationSessionHandle,
   ConfigurationInspection,
   ConfigurationService,
   ScopedConfigurationService,
@@ -50,9 +51,14 @@ export type {
 
 // session.ts — Session layer types
 export type {
+  SessionType,
   SessionMode,
+  PropertySessionMode,
   SessionLayerMetadata,
   SessionLayer,
+  GodModeSession,
+  SessionActivationRequest,
+  SessionDeactivationResult,
 } from "./session.js";
 
 // access.ts — Permission types and default policies
@@ -81,8 +87,13 @@ export {
   configReloadBehaviorSchema,
   configurationPropertySchemaSchema,
   expressionValidationResultSchema,
+  sessionTypeSchema,
   sessionModeSchema,
+  propertySessionModeSchema,
   sessionLayerMetadataSchema,
+  godModeSessionSchema,
+  sessionActivationRequestSchema,
+  sessionDeactivationResultSchema,
   configurationAccessContextSchema,
   layerWriteConstraintSchema,
   layerWritePolicySchema,

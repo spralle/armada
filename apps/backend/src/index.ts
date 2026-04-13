@@ -13,8 +13,10 @@ import {
 import { createRouter, jsonResponse, type Route } from "./router.js";
 import { createConfigRoutes } from "./config-endpoints.js";
 import { createOverrideRoutes } from "./override-endpoints.js";
+import { createSessionRoutes } from "./session-endpoints.js";
 import { bootstrapBackendConfig, logConfigBootstrapSummary } from "./config-bootstrap.js";
 import { createInMemoryAuditLog, createInMemoryOverrideTracker } from "@ghost/config-server";
+import { createGodModeSessionProvider } from "@ghost/config-providers";
 
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
@@ -82,6 +84,9 @@ const overrideRoutes = createOverrideRoutes({
   overrideTracker,
 });
 
+const sessionController = createGodModeSessionProvider();
+const sessionRoutes = createSessionRoutes({ sessionController });
+
 const routes: Route[] = [
   {
     method: "GET",
@@ -93,6 +98,7 @@ const routes: Route[] = [
   },
   ...configRoutes,
   ...overrideRoutes,
+  ...sessionRoutes,
 ];
 
 const router = createRouter(routes);

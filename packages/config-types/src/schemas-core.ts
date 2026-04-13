@@ -96,6 +96,12 @@ export const configurationJsonSchemaTypeSchema = z.enum([
   "null",
 ]);
 
+export const propertySessionModeSchema = z.enum([
+  "allowed",
+  "restricted",
+  "blocked",
+]);
+
 export const configurationPropertySchemaSchema: z.ZodType<ConfigurationPropertySchema> = z.lazy(
   () => z.object({
     type: z.union([
@@ -151,6 +157,7 @@ export const configurationPropertySchemaSchema: z.ZodType<ConfigurationPropertyS
     viewConfig: z.boolean().optional(),
     instanceOverridable: z.boolean().optional(),
     reloadBehavior: configReloadBehaviorSchema.optional(),
+    sessionMode: propertySessionModeSchema.optional(),
   }).strict(),
 );
 
@@ -163,19 +170,48 @@ export const expressionValidationResultSchema = z.object({
 
 // --- Session schemas ---
 
-export const sessionModeSchema = z.enum([
+export const sessionTypeSchema = z.enum([
   "debug",
   "god-mode",
   "preview",
   "support",
 ]);
 
+/** @deprecated Use `sessionTypeSchema` instead. */
+export const sessionModeSchema = sessionTypeSchema;
+
 export const sessionLayerMetadataSchema = z.object({
   activatedBy: z.string(),
   activatedAt: z.number(),
   reason: z.string(),
-  mode: sessionModeSchema,
+  mode: sessionTypeSchema,
   expiresAt: z.number().optional(),
+}).strict();
+
+export const godModeSessionSchema = z.object({
+  id: z.string(),
+  activatedAt: z.string(),
+  expiresAt: z.string(),
+  activatedBy: z.string(),
+  reason: z.string(),
+  isActive: z.boolean(),
+  overrides: z.record(z.string(), z.unknown()),
+}).strict();
+
+export const sessionActivationRequestSchema = z.object({
+  reason: z.string(),
+  durationMs: z.number().optional(),
+  elevatedAuth: z.object({
+    token: z.string(),
+    method: z.string(),
+  }).strict().optional(),
+}).strict();
+
+export const sessionDeactivationResultSchema = z.object({
+  sessionId: z.string(),
+  deactivatedAt: z.string(),
+  overridesCleared: z.number(),
+  auditRecorded: z.boolean(),
 }).strict();
 
 // --- Access context schemas ---
@@ -185,7 +221,7 @@ export const configurationAccessContextSchema = z.object({
   tenantId: z.string(),
   roles: z.array(configurationRoleSchema).readonly(),
   assignedScopes: z.array(scopeInstanceSchema).readonly().optional(),
-  sessionMode: z.literal("emergency-override").optional(),
+  sessionMode: z.union([z.literal("emergency-override"), sessionTypeSchema]).optional(),
 }).strict();
 
 export const layerWriteConstraintSchema = z.object({

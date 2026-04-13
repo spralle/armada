@@ -1,4 +1,5 @@
 import type { ConfigurationLayer } from "./types.js";
+import type { PropertySessionMode } from "./session.js";
 
 export type ConfigChangePolicy =
   | "full-pipeline"
@@ -82,4 +83,5 @@ export interface ConfigurationPropertySchema {
   viewConfig?: boolean | undefined;
   instanceOverridable?: boolean | undefined;
   reloadBehavior?: ConfigReloadBehavior | undefined;
+  sessionMode?: PropertySessionMode | undefined;
 }

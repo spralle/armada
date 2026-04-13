@@ -35,6 +35,7 @@
     "src/config-auth.ts",
     "src/config-endpoints.ts",
     "src/override-endpoints.ts",
+    "src/session-endpoints.ts",
     "src/config-bootstrap.ts"
   ]
 }

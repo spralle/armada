@@ -1,12 +1,13 @@
 import type { ConfigurationLayer, ScopeInstance } from "./types.js";
 import type { ConfigurationRole } from "./property-schema.js";
+import type { SessionType } from "./session.js";
 
 export interface ConfigurationAccessContext {
   userId: string;
   tenantId: string;
   roles: ReadonlyArray<ConfigurationRole>;
   assignedScopes?: ReadonlyArray<ScopeInstance> | undefined;
-  sessionMode?: "emergency-override" | undefined;
+  sessionMode?: "emergency-override" | SessionType | undefined;
 }
 
 export interface LayerWriteConstraint {

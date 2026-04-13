@@ -8,5 +8,11 @@
   "ghost.shell.network.retryCount": 3,
   "ghost.shell.security.sessionTimeout": 3600000,
   "ghost.shell.layout.sidebarPosition": "left",
-  "ghost.shell.layout.defaultPanelSize": 300
+  "ghost.shell.layout.defaultPanelSize": 300,
+  "ghost.shell.migration.useContractCoreApi": true,
+  "ghost.shell.migration.useAdapterComposition": true,
+  "ghost.shell.migration.enableAsyncScompAdapter": false,
+  "ghost.shell.migration.forceLegacyBridge": false,
+  "ghost.shell.migration.enableCrossWindowDnd": true,
+  "ghost.shell.migration.forceDisableCrossWindowDnd": false
 }

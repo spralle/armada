@@ -1,10 +1,15 @@
-export type SessionMode = "debug" | "god-mode" | "preview" | "support";
+export type SessionType = "debug" | "god-mode" | "preview" | "support";
+
+/** @deprecated Use `SessionType` instead. */
+export type SessionMode = SessionType;
+
+export type PropertySessionMode = "allowed" | "restricted" | "blocked";
 
 export interface SessionLayerMetadata {
   activatedBy: string;
   activatedAt: number;
   reason: string;
-  mode: SessionMode;
+  mode: SessionType;
   expiresAt?: number | undefined;
 }
 
@@ -15,4 +20,27 @@ export interface SessionLayer {
   clear(): void;
   readonly active: boolean;
   readonly metadata: SessionLayerMetadata | null;
+}
+
+export interface GodModeSession {
+  id: string;
+  activatedAt: string;
+  expiresAt: string;
+  activatedBy: string;
+  reason: string;
+  isActive: boolean;
+  overrides: Record<string, unknown>;
+}
+
+export interface SessionActivationRequest {
+  reason: string;
+  durationMs?: number | undefined;
+  elevatedAuth?: { token: string; method: string } | undefined;
+}
+
+export interface SessionDeactivationResult {
+  sessionId: string;
+  deactivatedAt: string;
+  overridesCleared: number;
+  auditRecorded: boolean;
 }

@@ -57,3 +57,10 @@ export {
 export { createScopedConfigurationService } from "./scoped-service.js";
 
 export { createViewConfigurationService } from "./view-service.js";
+
+export {
+  createGodModeSessionProvider,
+  type AuditEntry,
+  type GodModeSessionProviderOptions,
+  type GodModeSessionController,
+} from "./session-provider.js";

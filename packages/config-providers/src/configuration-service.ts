@@ -6,11 +6,13 @@ import type {
   ConfigurationLayer,
   ConfigurationInspection,
   ConfigurationLayerStack,
+  ConfigurationSessionHandle,
 } from "@ghost/config-types";
 import type { ScopeInstance } from "@ghost/config-types";
 import { resolveConfiguration, inspectKey } from "@ghost/config-engine";
 import { createStateContainer } from "./state-container.js";
 import type { ConfigurationStateContainer } from "./state-container.js";
+import type { GodModeSessionController } from "./session-provider.js";
 
 const LAYER_RANK: Record<string, number> = {
   core: 0,
@@ -30,6 +32,7 @@ function getLayerRank(layer: string): number {
 
 export interface ConfigurationServiceOptions {
   providers: ConfigurationStorageProvider[];
+  session?: GodModeSessionController | undefined;
 }
 
 /**
@@ -43,8 +46,13 @@ export async function createConfigurationService(
 ): Promise<ConfigurationService> {
   const container = createStateContainer();
 
+  // When a session controller is provided, auto-register its provider
+  const allProviders = options.session !== undefined
+    ? [...options.providers, options.session.provider]
+    : [...options.providers];
+
   // Sort providers by layer rank for deterministic load order
-  const sortedProviders = [...options.providers].sort(
+  const sortedProviders = allProviders.sort(
     (a, b) => getLayerRank(a.layer) - getLayerRank(b.layer),
   );
 
@@ -130,6 +138,10 @@ export async function createConfigurationService(
     };
   }
 
+  // Expose session handle when session controller was provided
+  const sessionHandle: ConfigurationSessionHandle | undefined =
+    options.session !== undefined ? options.session : undefined;
+
   return {
     get<T>(key: string): T | undefined {
       return container.get(key) as T | undefined;
@@ -210,5 +222,7 @@ export async function createConfigurationService(
     getNamespace(prefix: string): Record<string, unknown> {
       return container.getNamespace(prefix);
     },
+
+    session: sessionHandle,
   };
 }
