@@ -23,7 +23,7 @@ export {
   buildSchemaMap,
   createIncrementalSchemaRegistryAdapter,
   createIncrementalPluginSchemaRegistry,
-} from "./plugin-schema-bridge.js";
+} from "@ghost/config-plugin-runtime";
 
 export {
   createConfigurationLifecycleHooks,
@@ -42,7 +42,7 @@ export {
   type PluginPromoteOptions,
   type PluginSchemaRegistry,
   type SchemaRegistryMutationResult,
-} from "./plugin-config-lifecycle-hooks.js";
+} from "@ghost/config-plugin-runtime";
 
 export {
   createStateContainer,

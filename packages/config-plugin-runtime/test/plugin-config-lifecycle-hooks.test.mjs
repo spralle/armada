@@ -3,8 +3,44 @@ import assert from "node:assert/strict";
 import {
   createConfigurationLifecycleHooks,
   createInMemorySchemaRegistry,
-  createStateContainer,
 } from "../dist/index.js";
+
+function createStateContainer() {
+  const layers = new Map();
+
+  return {
+    applyLayerData(layer, entries) {
+      layers.set(layer, { ...entries });
+    },
+    getLayerEntries(layer) {
+      const entries = layers.get(layer);
+      return entries === undefined ? {} : { ...entries };
+    },
+    get(key) {
+      const ordered = [...layers.entries()].sort(([a], [b]) => {
+        const rank = {
+          core: 0,
+          app: 1,
+          module: 2,
+          integrator: 3,
+          tenant: 4,
+          user: 5,
+          device: 6,
+          session: 7,
+        };
+        return (rank[a] ?? 4.5) - (rank[b] ?? 4.5);
+      });
+
+      let value;
+      for (const [, entries] of ordered) {
+        if (Object.prototype.hasOwnProperty.call(entries, key)) {
+          value = entries[key];
+        }
+      }
+      return value;
+    },
+  };
+}
 
 function createPlugin(pluginId, properties) {
   return {
@@ -106,9 +142,11 @@ test("promote copies plugin namespace keys between layers", () => {
     activeLayer: "module",
   });
 
-  hooks.install(createPlugin("ghost.vessel-view", {
-    theme: { type: "string", default: "dark" },
-  }));
+  hooks.install(
+    createPlugin("ghost.vessel-view", {
+      theme: { type: "string", default: "dark" },
+    }),
+  );
 
   state.applyLayerData("module", {
     ...state.getLayerEntries("module"),
