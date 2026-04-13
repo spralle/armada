@@ -114,6 +114,8 @@ export function startShell(root: HTMLElement): ShellRuntime {
 
       disposed = true;
       disposeMount();
+      shellRuntime.pluginConfigSyncDispose?.();
+      shellRuntime.pluginConfigSyncDispose = null;
       shellRuntime.dragSessionBroker.dispose();
       shellRuntime.asyncBridge.close();
       shellRuntime.bridge.close();
@@ -203,17 +205,20 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: Retur
 
 async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, isActive: () => boolean): Promise<void> {
   try {
+    const { configService } = await createShellConfigService();
     const state = await bootstrapShellWithTenantManifest({
       tenantId: "demo",
+      configurationService: configService,
       enableByDefault: true,
     });
     if (!isActive()) {
+      state.disposePluginConfigSync?.();
       return;
     }
     runtime.registry = state.registry;
+    runtime.pluginConfigSyncDispose = state.disposePluginConfigSync;
     runtime.themeRegistry = state.themeRegistry ?? null;
     try {
-      const { configService } = await createShellConfigService();
       registerConfigurationServiceCapability(runtime.registry, configService);
       const migrations = runPersistenceMigrations(configService);
       if (migrations.layout.migrated || migrations.context.migrated || migrations.keybindings.migrated) {
