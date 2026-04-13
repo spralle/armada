@@ -1,43 +1,6 @@
-## Git branch structure
-We use git flow with feature/* for all feature / tasks 
+## Git Branch Structure
 
-## Chain of Command
-
-Flow:
-
-Builder (Lead/Orchestrate) -> Architect (Plan) -> Engineer (Build) -> Auditor (Test) -> Diplomat (Deploy)
-
-Supporting role:
-
-Explorer (Research/Discovery) supports Builder and Architect with fast codebase investigation and evidence-backed handoff notes.
-
-Explorer usage policy (conditional, not default):
-
-- Use Explorer only when discovery is the bottleneck.
-- Do not invoke Explorer by default for every build task.
-- Invoke Explorer only if one or more are true:
-  - Target files/owners are unclear after quick direct search.
-  - The change likely spans multiple packages/domains.
-  - Risk/dependency mapping is needed before implementation.
-- If Architect already has high-confidence file targets and dependencies, skip Explorer.
-- Engineer should not repeat broad discovery; only do minimal gap-filling searches required to implement.
-
-Protocol:
-
-- The Bead ID is the source of truth at every hand-off.
-- Every stage transition must update the same Bead ID in bd before work is passed onward.
-- Builder decomposes user requests, verifies team composition, and delegates each step to the correct subagent(s).
-- Required hand-off statuses:
-  - Engineer sets `implemented` when coding is complete and ready for audit.
-  - Auditor sets `verified` on pass or `changes_requested` on fail.
-  - Diplomat sets `in_review` for PR workflow, then closes the Bead on merge/deploy.
-- Handoff artifacts must include the Bead ID in notes, PR descriptions, and release communication.
-
-## Mandatory Code Principles Enforcement
-
-- All agents MUST follow `docs/code-principles.md` for implementation and audit decisions.
-- Engineer MUST self-check the `docs/code-principles.md` PR checklist before setting a Bead to `implemented`.
-- Auditor MUST verify the same checklist and explicitly report any approved exceptions or violations in audit notes.
+We use git flow with `feature/*` for all feature/task branches.
 
 ## Issue Tracking with bd (beads)
 
@@ -147,40 +110,23 @@ bd automatically syncs via Dolt:
 
 ### Important Rules
 
-- ✅ Use bd for ALL task tracking
-- ✅ Always use `--json` flag for programmatic use
-- ✅ Link discovered work with `discovered-from` dependencies
-- ✅ Check `bd ready` before asking "what should I work on?"
-- ❌ Do NOT create markdown TODO lists
-- ❌ Do NOT use external issue trackers
-- ❌ Do NOT duplicate tracking systems
+- Use bd for ALL task tracking
+- Always use `--json` flag for programmatic use
+- Link discovered work with `discovered-from` dependencies
+- Check `bd ready` before asking "what should I work on?"
+- Do NOT create markdown TODO lists
+- Do NOT use external issue trackers
+- Do NOT duplicate tracking systems
 
 For more details, see README.md and docs/QUICKSTART.md.
 
-## Session Completion
+## Project-Specific Session Workflow
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+In addition to the global session completion protocol, this project requires:
 
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd dolt push
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-
-<!-- END BEADS INTEGRATION -->
+```bash
+git pull --rebase
+bd dolt push
+git push
+git status  # MUST show "up to date with origin"
+```
