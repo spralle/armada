@@ -42,6 +42,7 @@ import type {
   DndDiagnosticRuntime,
   DndDiagnosticPath,
 } from "./dnd-diagnostics.js";
+import type { ConfigurationService } from "@ghost/config-types";
 import type { PluginConfigSyncConfigurationService } from "../plugin-config-sync-controller.js";
 
 export interface ShellBootstrapState {
@@ -57,7 +58,7 @@ export interface ShellBootstrapOptions {
   fetchManifest?: (manifestUrl: string) => Promise<unknown>;
   enableByDefault?: boolean;
   defaultThemeId?: string | undefined;
-  configurationService?: PluginConfigSyncConfigurationService | undefined;
+  configurationService?: (ConfigurationService & PluginConfigSyncConfigurationService) | undefined;
 }
 
 export interface ShellRuntime extends DndDiagnosticRuntime {
