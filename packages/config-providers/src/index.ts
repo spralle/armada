@@ -71,3 +71,12 @@ export {
   IndexedDbDurableConfigCacheAdapter,
   type IndexedDbDurableConfigCacheOptions,
 } from "./sync/durable-cache-indexeddb.js";
+
+export {
+  ConfigSyncRpcTransportAdapter,
+  ConfigSyncRpcTransportError,
+  classifyRpcSyncError,
+  type ConfigSyncRpcClient,
+  type ConfigSyncRpcTransportOptions,
+  type ConfigSyncRpcTransportRoutes,
+} from "./sync/config-sync-rpc-transport.js";
