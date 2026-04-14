@@ -19,17 +19,6 @@
     "src"
   ],
   "references": [
-    {
-      "path": "../config-types"
-    },
-    {
-      "path": "../config-engine"
-    },
-    {
-      "path": "../config-plugin-runtime"
-    },
-    {
-      "path": "../config-sync"
-    }
+    { "path": "../config-types" }
   ]
 }

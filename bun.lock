@@ -60,20 +60,12 @@
         "@ghost/config-types": "workspace:*",
       },
     },
-    "packages/config-plugin-runtime": {
-      "name": "@ghost/config-plugin-runtime",
-      "version": "0.0.0",
-      "dependencies": {
-        "@ghost/config-engine": "workspace:*",
-        "@ghost/config-types": "workspace:*",
-      },
-    },
     "packages/config-providers": {
       "name": "@ghost/config-providers",
       "version": "0.0.0",
       "dependencies": {
         "@ghost/config-engine": "workspace:*",
-        "@ghost/config-plugin-runtime": "workspace:*",
+        "@ghost/config-sync": "workspace:*",
         "@ghost/config-types": "workspace:*",
       },
     },
@@ -86,6 +78,13 @@
       },
       "devDependencies": {
         "@types/node": "^22.0.0",
+      },
+    },
+    "packages/config-sync": {
+      "name": "@ghost/config-sync",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost/config-types": "workspace:*",
       },
     },
     "packages/config-types": {
@@ -294,11 +293,11 @@
 
     "@ghost/config-engine": ["@ghost/config-engine@workspace:packages/config-engine"],
 
-    "@ghost/config-plugin-runtime": ["@ghost/config-plugin-runtime@workspace:packages/config-plugin-runtime"],
-
     "@ghost/config-providers": ["@ghost/config-providers@workspace:packages/config-providers"],
 
     "@ghost/config-server": ["@ghost/config-server@workspace:packages/config-server"],
+
+    "@ghost/config-sync": ["@ghost/config-sync@workspace:packages/config-sync"],
 
     "@ghost/config-types": ["@ghost/config-types@workspace:packages/config-types"],
 

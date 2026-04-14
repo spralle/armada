@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/config-providers",
+  "name": "@ghost/config-sync",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -19,9 +19,6 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ghost/config-types": "workspace:*",
-    "@ghost/config-engine": "workspace:*",
-    "@ghost/config-plugin-runtime": "workspace:*",
-    "@ghost/config-sync": "workspace:*"
+    "@ghost/config-types": "workspace:*"
   }
 }

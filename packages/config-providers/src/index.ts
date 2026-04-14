@@ -80,3 +80,8 @@ export {
   type ConfigSyncRpcTransportOptions,
   type ConfigSyncRpcTransportRoutes,
 } from "./sync/config-sync-rpc-transport.js";
+
+export {
+  createSyncableStorageProvider,
+  type CreateSyncableStorageProviderOptions,
+} from "./sync/syncable-storage-provider.js";
