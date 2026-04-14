@@ -64,3 +64,10 @@ export {
   type GodModeSessionProviderOptions,
   type GodModeSessionController,
 } from "./session-provider.js";
+
+export { MemoryDurableConfigCacheAdapter } from "./sync/durable-cache-memory.js";
+
+export {
+  IndexedDbDurableConfigCacheAdapter,
+  type IndexedDbDurableConfigCacheOptions,
+} from "./sync/durable-cache-indexeddb.js";
