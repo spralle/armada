@@ -19,8 +19,6 @@
     "src"
   ],
   "references": [
-    { "path": "../config-types" },
-    { "path": "../config-engine" },
-    { "path": "../config-sync" }
+    { "path": "../config-types" }
   ]
 }

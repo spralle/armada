@@ -11,6 +11,9 @@
       "path": "./packages/config-engine"
     },
     {
+      "path": "./packages/config-sync"
+    },
+    {
       "path": "./packages/config-providers"
     },
     {
