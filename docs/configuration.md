@@ -362,9 +362,38 @@ const zoom = scopedConfig.get<number>("map.defaultZoom");
 |---|---|---|
 | `@ghost/config-types` | Pure types, interfaces, Zod schemas | `zod` only |
 | `@ghost/config-engine` | Pure functions (merge, resolve, namespace, scope, auth) | `@ghost/config-types` |
+| `@ghost/config-sync` | Offline-first sync orchestration (cache + transport) | `@ghost/config-types` |
 | `@ghost/config-providers` | Storage implementations, runtime service factory | Both above |
 
 The types package is dependency-free (aside from `zod`). The engine is pure functions over data — no I/O, no side effects. Storage and runtime wiring live in the providers package.
+
+## Edge/Offline Sync Behavior
+
+`@ghost/config-sync` composes two pluggable contracts from `@ghost/config-types`:
+
+- `DurableConfigCache` for tenant-scoped snapshot/queue persistence.
+- `ConfigSyncTransport` for pull/push/ack network synchronization.
+
+Behavioral guarantees in this lane:
+
+- **Offline-first boot:** service loads immediately from durable snapshot even when transport is unavailable.
+- **Non-blocking local writes:** writes update local snapshot and enqueue mutation; synchronization is background.
+- **Reconnect flush:** queued writes flush in batches on reconnect; pull runs after push pass.
+- **Conflict handling:** default is server-authoritative revisions; optional `lww-fallback` requeues local mutation against latest server revision.
+- **Retry policy:** retryable transport failures schedule exponential backoff retries with jitter and expose diagnostics (`retryAttempt`, `retryScheduledAt`, `lastError`).
+- **Tenant isolation:** cache queue/snapshot/cursor are keyed by tenant and never mixed.
+
+`@ghost/config-providers` integrates this through a thin adapter (`createSyncableStorageProvider`) that returns a `ConfigurationStorageProvider`-compatible implementation with sync status/diagnostics surface. This keeps sync internals out of `ConfigurationService` consumers.
+
+## Reliability Test Matrix (armada-1xg.6)
+
+| Scenario | Package/Test | Expected outcome |
+|---|---|---|
+| Offline boot from cache | `packages/config-sync/test/sync-orchestrator.test.mjs` (`offline boot reads cache snapshot without network`) | Cached snapshot loads without network calls |
+| Reconnect flush | `packages/config-sync/test/sync-orchestrator.test.mjs` (`reconnect flushes queued writes then pulls`) | Pending queue is pushed/acked and state becomes synced |
+| Conflict handling path | `packages/config-sync/test/sync-orchestrator.test.mjs` (`conflict path...`, `lww-fallback requeues...`) | Conflict state emitted; LWW fallback requeues with server revision |
+| Long-lived queue + retry behavior | `packages/config-sync/test/sync-orchestrator.test.mjs` (`retryable error keeps queue and schedules retry`) | Retry metadata exposed and queue preserved on retryable failure |
+| Tenant isolation | `packages/config-sync/test/sync-orchestrator.test.mjs` + `packages/config-providers/test/syncable-storage-provider.test.mjs` | Distinct tenant queues/snapshots remain isolated |
 
 ## Engine Functions
 
