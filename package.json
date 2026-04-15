@@ -8,12 +8,14 @@
     "packages/*"
   ],
   "scripts": {
-    "lint": "npm run check:architecture-guardrails --silent && npm run check:code-principles --silent && tsc --pretty false -p tsconfig.json --noEmit",
+    "lint": "npm run check:architecture-guardrails --silent && npm run check:code-principles --silent && npm run check:config-schema --silent && npm run check:change-policies --silent && tsc --pretty false -p tsconfig.json --noEmit",
     "typecheck": "tsc --pretty false -p tsconfig.json --noEmit",
-    "test": "npm run build --silent && tsc --pretty false -p apps/shell/tsconfig.test.json && tsc --pretty false -p apps/backend/tsconfig.test.json && node --test packages/plugin-contracts/test/parse-plugin-contract.test.mjs packages/plugin-contracts/test/event-emitter.test.mjs packages/plugin-contracts/test/theme-derivation.test.mjs packages/plugin-contracts/test/theme-service.test.mjs packages/plugin-contracts/test/plugin-services.test.mjs apps/shell/test/plugin-loader-parity.test.mjs apps/shell/test/plugin-registry-parity.test.mjs apps/shell/test/plugin-capability-registry.test.mjs apps/shell/test/integration-hardening.test.mjs apps/shell/test/part-module-host.test.mjs apps/shell/test/intent-activation-boundary.test.mjs apps/shell/test/theme-registry.test.mjs apps/shell/test/theme-persistence.test.mjs apps/shell/test/theme-default-plugin-contract.test.mjs apps/shell/test/shadcn-theme-bridge.test.mjs apps/shell/test/appearance-settings-panel.test.mjs apps/shell/test/plugin-service-access.test.mjs apps/shell/test/theme-service-registration.test.mjs apps/shell/test/theme-activation.test.mjs apps/shell/src/action-runtime.integration.test.mjs apps/shell/dist-test/src/context-state.spec.js apps/shell/dist-test/src/window-bridge.spec.js apps/backend/test/local-ui-plugin-discovery.test.mjs apps/backend/test/tenant-manifest-overrides.test.mjs apps/backend/test/dev-cli-options.test.mjs",
+    "test": "npm run build --silent && tsc --pretty false -p apps/shell/tsconfig.test.json && tsc --pretty false -p apps/backend/tsconfig.test.json && node --test packages/*/test/*.test.mjs apps/shell/test/*.test.mjs apps/shell/src/*.integration.test.mjs apps/shell/dist-test/src/context-state.spec.js apps/shell/dist-test/src/window-bridge.spec.js apps/backend/test/*.test.mjs scripts/test/*.test.mjs && node --test --import ./apps/backend/test/register-ts-hooks.mjs apps/backend/test/*.test-hooked.mjs",
     "build": "tsc -b --pretty false",
     "check:architecture-guardrails": "node ./scripts/check-architecture-guardrails.mjs",
     "check:code-principles": "node ./scripts/check-code-principles.mjs",
+    "check:config-schema": "node ./scripts/check-config-schema.mjs",
+    "check:change-policies": "node ./scripts/validate-change-policies.mjs",
     "dev": "npx concurrently -n backend,plugins,shell -c blue,magenta,green \"npm run dev:backend\" \"npm run dev:plugins\" \"npm run dev:shell\"",
     "dev:shell": "npm run dev --workspace @ghost/shell-app",
     "dev:backend": "bun --watch apps/backend/src/index.ts --gateway-port 41337",
@@ -21,7 +23,8 @@
     "dev:plugins:live": "bun apps/plugin-dev-host/src/main.ts --live",
     "dev:integration": "bun --watch apps/shell/src/index.ts",
     "build:plugins": "node ./scripts/build-plugins.mjs",
-    "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs"
+    "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs",
+    "generate:config-schema": "node ./scripts/build-config-schemas.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

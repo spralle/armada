@@ -1,4 +1,5 @@
 import type { PartialThemePalette, TerminalPalette } from "./theme-derivation.js";
+import type { ConfigurationPropertySchema } from "@ghost/config-types";
 
 export interface PluginGalleryBanner {
   color?: string | undefined;
@@ -167,6 +168,10 @@ export interface BrandingContribution {
   loadingScreen?: BrandingLoadingScreen | undefined;
 }
 
+export interface PluginConfigurationContribution {
+  properties: Record<string, ConfigurationPropertySchema>;
+}
+
 export interface PluginContributions {
   views?: PluginViewContribution[] | undefined;
   parts?: PluginPartContribution[] | undefined;
@@ -180,6 +185,7 @@ export interface PluginContributions {
   popoutCapabilities?: PluginPopoutCapabilityFlags | undefined;
   themes?: ThemeContribution[] | undefined;
   branding?: BrandingContribution | undefined;
+  configuration?: PluginConfigurationContribution | undefined;
 }
 
 export interface PluginContract {

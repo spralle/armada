@@ -1,0 +1,4 @@
+{
+  "ghost.shell.network.requestTimeout": 30000,
+  "ghost.shell.security.sessionTimeout": 7200000
+}

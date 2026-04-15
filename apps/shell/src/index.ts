@@ -58,6 +58,8 @@ import {
   dismissIntentChooser as dismissIntentChooserState,
 } from "./shell-runtime/keyboard-handlers.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
+import { registerConfigurationServiceCapability } from "./config-service-registration.js";
+import { createShellConfigService, runPersistenceMigrations } from "./config-service-setup.js";
 
 export type {
   ShellCoreApi,
@@ -112,6 +114,8 @@ export function startShell(root: HTMLElement): ShellRuntime {
 
       disposed = true;
       disposeMount();
+      shellRuntime.pluginConfigSyncDispose?.();
+      shellRuntime.pluginConfigSyncDispose = null;
       shellRuntime.dragSessionBroker.dispose();
       shellRuntime.asyncBridge.close();
       shellRuntime.bridge.close();
@@ -201,15 +205,28 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: Retur
 
 async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, isActive: () => boolean): Promise<void> {
   try {
+    const { configService } = await createShellConfigService();
     const state = await bootstrapShellWithTenantManifest({
       tenantId: "demo",
+      configurationService: configService,
       enableByDefault: true,
     });
     if (!isActive()) {
+      state.disposePluginConfigSync?.();
       return;
     }
     runtime.registry = state.registry;
+    runtime.pluginConfigSyncDispose = state.disposePluginConfigSync;
     runtime.themeRegistry = state.themeRegistry ?? null;
+    try {
+      registerConfigurationServiceCapability(runtime.registry, configService);
+      const migrations = runPersistenceMigrations(configService);
+      if (migrations.layout.migrated || migrations.context.migrated || migrations.keybindings.migrated) {
+        console.info("[shell] persistence migrations completed", migrations);
+      }
+    } catch (configError) {
+      console.warn("[shell] config service creation failed, continuing without it", configError);
+    }
     runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
     refreshCommandContributions(runtime);
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);

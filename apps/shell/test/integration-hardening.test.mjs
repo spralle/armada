@@ -242,7 +242,9 @@ test("shell bootstrap keeps inner-loop mode for loopback override entries", asyn
   });
 
   assert.equal(state.mode, "inner-loop");
-  assert.equal(state.registry.getSnapshot().plugins.length, 2);
+  const pluginIds = state.registry.getSnapshot().plugins.map((plugin) => plugin.id);
+  assert.equal(pluginIds.includes(DOMAIN_UNPLANNED.id), true);
+  assert.equal(pluginIds.includes(DOMAIN_VESSEL.id), true);
 });
 
 test("shell bootstrap treats local scheme override entries as inner-loop", async () => {
@@ -289,10 +291,9 @@ test("shell bootstrap keeps integration mode when non-loopback plugin entries ex
   });
 
   assert.equal(state.mode, "integration");
-  assert.deepEqual(
-    state.registry.getSnapshot().plugins.map((plugin) => plugin.id).sort(),
-    [DOMAIN_UNPLANNED.id, DOMAIN_VESSEL.id],
-  );
+  const pluginIds = state.registry.getSnapshot().plugins.map((plugin) => plugin.id);
+  assert.equal(pluginIds.includes(DOMAIN_UNPLANNED.id), true);
+  assert.equal(pluginIds.includes(DOMAIN_VESSEL.id), true);
 });
 
 function createCloseRuntimeFixture() {

@@ -1,6 +1,8 @@
+import { resolve } from "node:path";
 import {
   getTenantManifestEndpointPath,
   getDefaultLocalPluginEntryUrlMap,
+  getTenantManifestResponse,
   createDefaultLocalPluginEntryUrlMap,
   resolveTenantManifestRequest,
 } from "./tenant-manifest.js";
@@ -8,20 +10,20 @@ import {
   formatLocalPluginOverrideStartupSummary,
   parseBackendDevCliOptions,
 } from "./dev-cli-options.js";
+import { createRouter, jsonResponse, type Route } from "./router.js";
+import { createConfigRoutes } from "./config-endpoints.js";
+import { createOverrideRoutes } from "./override-endpoints.js";
+import { createSessionRoutes } from "./session-endpoints.js";
+import { bootstrapBackendConfig, logConfigBootstrapSummary } from "./config-bootstrap.js";
+import { createInMemoryAuditLog, createInMemoryOverrideTracker } from "@ghost/config-server";
+import { createGodModeSessionProvider } from "@ghost/config-providers";
 
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
 const DEFAULT_TENANT = "demo";
 
-interface NodeHttpRequestLike {
-  url?: string | undefined;
-}
-
-interface NodeHttpResponseLike {
-  setHeader(name: string, value: string): void;
-  statusCode: number;
-  end(body?: string): void;
-}
+interface NodeHttpRequestLike { method?: string | undefined; url?: string | undefined; headers?: Record<string, string | string[] | undefined> | undefined }
+interface NodeHttpResponseLike { setHeader(name: string, value: string): void; statusCode: number; end(body?: string): void }
 
 const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
 const localPluginEntryOverrides = backendDevCliOptions.gatewayPort
@@ -51,17 +53,58 @@ console.log(
   ),
 );
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-    },
+const overrideOptions = {
+  selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
+  pluginEntryUrlOverridesById: localPluginEntryOverrides,
+};
+
+const CONFIG_DIR = resolve(process.cwd(), "config");
+
+// Bootstrap backend config (async, but don't block server start)
+bootstrapBackendConfig({ configDir: CONFIG_DIR, tenantId: "demo" })
+  .then(() => {
+    logConfigBootstrapSummary(CONFIG_DIR, undefined, "demo");
+  })
+  .catch((error: unknown) => {
+    console.warn("[backend:config] bootstrap failed, continuing without config", error);
   });
-}
+
+const auditLog = createInMemoryAuditLog();
+const overrideTracker = createInMemoryOverrideTracker();
+
+const configRoutes = createConfigRoutes({
+  configDir: CONFIG_DIR,
+}, {
+  auditLog,
+  overrideTracker,
+});
+
+const overrideRoutes = createOverrideRoutes({
+  auditLog,
+  overrideTracker,
+});
+
+const sessionController = createGodModeSessionProvider();
+const sessionRoutes = createSessionRoutes({ sessionController });
+
+const routes: Route[] = [
+  {
+    method: "GET",
+    pattern: /^\/api\/tenants\/([^/]+)\/plugin-manifest$/,
+    handler: (params) => {
+      const tenantId = decodeURIComponent(params[0]);
+      return jsonResponse(getTenantManifestResponse(tenantId, overrideOptions));
+    },
+  },
+  ...configRoutes,
+  ...overrideRoutes,
+  ...sessionRoutes,
+];
+
+const router = createRouter(routes);
 
 function startBackendDevServer(): void {
-  const bun = (globalThis as { Bun?: { serve: (options: { hostname: string; port: number; fetch: (request: Request) => Response; }) => unknown; }; }).Bun;
+  const bun = (globalThis as { Bun?: { serve: (options: { hostname: string; port: number; fetch: (request: Request) => Response | Promise<Response>; }) => unknown; }; }).Bun;
   if (!bun) {
     startNodeBackendDevServer();
     return;
@@ -72,21 +115,15 @@ function startBackendDevServer(): void {
     port: BACKEND_DEV_PORT,
     fetch(request) {
       const url = new URL(request.url);
-      const manifest = resolveTenantManifestRequest(url.pathname, {
-        selectedLocalPluginIds: effectiveSelectedPluginIds,
-        pluginEntryUrlOverridesById: localPluginEntryOverrides,
+      const headers: Record<string, string> = {};
+      request.headers.forEach((value, key) => { headers[key] = value; });
+      return router({
+        method: request.method,
+        pathname: url.pathname,
+        body: () => request.json().catch(() => null),
+        headers,
+        search: url.search,
       });
-      if (manifest) {
-        return jsonResponse(manifest);
-      }
-
-      return jsonResponse(
-        {
-          error: "not_found",
-          message: `No route for ${url.pathname}`,
-        },
-        404,
-      );
     },
   });
 
@@ -99,31 +136,25 @@ function startBackendDevServer(): void {
 
 function startNodeBackendDevServer(): void {
   const nodeHttpModuleName = "node:http";
-
   import(nodeHttpModuleName)
     .then(({ createServer }) => {
       const server = createServer((req: NodeHttpRequestLike, res: NodeHttpResponseLike) => {
-        const requestPath = req.url ? new URL(req.url, `http://${BACKEND_DEV_HOST}:${BACKEND_DEV_PORT}`).pathname : "/";
-        const manifest = resolveTenantManifestRequest(requestPath, {
-          selectedLocalPluginIds: effectiveSelectedPluginIds,
-          pluginEntryUrlOverridesById: localPluginEntryOverrides,
-        });
-
-        res.setHeader("content-type", "application/json; charset=utf-8");
-
-        if (manifest) {
-          res.statusCode = 200;
-          res.end(JSON.stringify(manifest));
-          return;
+        const parsedUrl = req.url ? new URL(req.url, `http://${BACKEND_DEV_HOST}:${BACKEND_DEV_PORT}`) : undefined;
+        const pathname = parsedUrl?.pathname ?? "/";
+        const search = parsedUrl?.search ?? "";
+        const headers: Record<string, string> = {};
+        if (req.headers) {
+          for (const [k, v] of Object.entries(req.headers)) {
+            if (typeof v === "string") { headers[k] = v; }
+          }
         }
+        const response = router({ method: req.method ?? "GET", pathname, body: () => Promise.resolve(null), headers, search });
 
-        res.statusCode = 404;
-        res.end(
-          JSON.stringify({
-            error: "not_found",
-            message: `No route for ${requestPath}`,
-          }),
-        );
+        void Promise.resolve(response).then((resolved) => {
+          res.setHeader("content-type", "application/json; charset=utf-8");
+          res.statusCode = resolved.status;
+          void resolved.text().then((body) => res.end(body));
+        });
       });
 
       server.listen(BACKEND_DEV_PORT, BACKEND_DEV_HOST, () => {
@@ -149,12 +180,10 @@ function getRuntimeArgv(): string[] {
   if (!runtimeProcess || !Array.isArray(runtimeProcess.argv)) {
     return [];
   }
-
   return runtimeProcess.argv.slice(2);
 }
 
 startBackendDevServer();
-
 console.log("[backend] tenant manifest endpoint ready", {
   examplePath: getTenantManifestEndpointPath(DEFAULT_TENANT),
 });

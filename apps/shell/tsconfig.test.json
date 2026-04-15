@@ -12,6 +12,9 @@
   "references": [
     {
       "path": "../../packages/plugin-contracts"
+    },
+    {
+      "path": "../../packages/config-types"
     }
   ],
   "include": [
@@ -25,10 +28,16 @@
     "src/theme-registry.ts",
     "src/theme-persistence.ts",
     "src/theme-service-registration.ts",
+    "src/plugin-config-sync-controller.ts",
     "src/context-state.spec.ts",
     "src/context-state.spec-dock-popout-action-rendering.ts",
     "src/app/shell-core.spec.ts",
     "src/app/migration-flags.spec.ts",
+    "src/app/migration-flags-config.ts",
+    "src/persistence/layout-config-bridge.ts",
+    "src/persistence/context-config-bridge.ts",
+    "src/persistence/keybinding-config-bridge.ts",
+    "src/config-service-setup.ts",
     "src/app/renderer-adapter-registry.spec.ts",
     "src/app/async-bridge.spec.ts",
     "src/app/dnd-diagnostics.spec.ts",

@@ -42,12 +42,15 @@ import type {
   DndDiagnosticRuntime,
   DndDiagnosticPath,
 } from "./dnd-diagnostics.js";
+import type { ConfigurationService } from "@ghost/config-types";
+import type { PluginConfigSyncConfigurationService } from "../plugin-config-sync-controller.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
   loadedPlugins: PluginContract[];
   registry: ShellPluginRegistry;
   themeRegistry?: ThemeRegistry | undefined;
+  disposePluginConfigSync: (() => void) | null;
 }
 
 export interface ShellBootstrapOptions {
@@ -55,6 +58,7 @@ export interface ShellBootstrapOptions {
   fetchManifest?: (manifestUrl: string) => Promise<unknown>;
   enableByDefault?: boolean;
   defaultThemeId?: string | undefined;
+  configurationService?: (ConfigurationService & PluginConfigSyncConfigurationService) | undefined;
 }
 
 export interface ShellRuntime extends DndDiagnosticRuntime {
@@ -102,6 +106,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   intentRuntime: IntentRuntime;
   commandNotice: string;
   partHost: ShellPartHostAdapter;
+  pluginConfigSyncDispose: (() => void) | null;
   activeTransportPath: ShellTransportPath;
   activeTransportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
   activeDndPath: DndDiagnosticPath;
