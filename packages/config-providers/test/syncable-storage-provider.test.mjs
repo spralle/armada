@@ -55,7 +55,7 @@ test("syncable provider loads cached snapshot and writes queue", async () => {
   assert.equal(queue.length > 0, true);
 });
 
-test("sync diagnostics surface retry metadata", async () => {
+test("sync diagnostics surface MVP error payload", async () => {
   const cache = new MemoryDurableConfigCacheAdapter();
   const provider = createSyncableStorageProvider({
     id: "sync-user",
@@ -76,8 +76,15 @@ test("sync diagnostics surface retry metadata", async () => {
   await new Promise((resolve) => setTimeout(resolve, 0));
 
   const diagnostics = provider.getSyncDiagnostics();
-  assert.equal(diagnostics.retryAttempt > 0, true);
-  assert.equal(typeof diagnostics.retryScheduledAt, "number");
+  assert.equal(diagnostics.pendingCount, 1);
+  assert.equal("retryAttempt" in diagnostics, false);
+  assert.equal("retryScheduledAt" in diagnostics, false);
+  assert.equal("queue" in diagnostics, false);
+  assert.deepEqual(diagnostics.lastError, {
+    code: "network",
+    message: "offline",
+    retryable: true,
+  });
 });
 
 test("tenant isolation via separate providers and shared cache", async () => {
