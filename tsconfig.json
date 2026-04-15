@@ -11,6 +11,9 @@
       "path": "./packages/config-engine"
     },
     {
+      "path": "./packages/config-plugin-runtime"
+    },
+    {
       "path": "./packages/config-providers"
     },
     {

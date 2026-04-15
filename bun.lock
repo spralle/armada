@@ -60,11 +60,20 @@
         "@ghost/config-types": "workspace:*",
       },
     },
+    "packages/config-plugin-runtime": {
+      "name": "@ghost/config-plugin-runtime",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost/config-engine": "workspace:*",
+        "@ghost/config-types": "workspace:*",
+      },
+    },
     "packages/config-providers": {
       "name": "@ghost/config-providers",
       "version": "0.0.0",
       "dependencies": {
         "@ghost/config-engine": "workspace:*",
+        "@ghost/config-plugin-runtime": "workspace:*",
         "@ghost/config-types": "workspace:*",
       },
     },
@@ -284,6 +293,8 @@
     "@ghost/backend-app": ["@ghost/backend-app@workspace:apps/backend"],
 
     "@ghost/config-engine": ["@ghost/config-engine@workspace:packages/config-engine"],
+
+    "@ghost/config-plugin-runtime": ["@ghost/config-plugin-runtime@workspace:packages/config-plugin-runtime"],
 
     "@ghost/config-providers": ["@ghost/config-providers@workspace:packages/config-providers"],
 

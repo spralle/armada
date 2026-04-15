@@ -67,9 +67,7 @@ test("skips plugins without configuration", () => {
 });
 
 test("skips plugins with explicit undefined configuration", () => {
-  const plugins = [
-    { pluginId: "ghost.undef-config", configuration: undefined },
-  ];
+  const plugins = [{ pluginId: "ghost.undef-config", configuration: undefined }];
   const declarations = collectPluginSchemaDeclarations(plugins);
   assert.equal(declarations.length, 0);
 });
@@ -95,27 +93,6 @@ test("buildSchemaMap composes single plugin", () => {
 });
 
 test("buildSchemaMap detects duplicate keys across plugins", () => {
-  const plugins = [
-    {
-      pluginId: "ghost.plugin-a",
-      configuration: {
-        properties: {
-          theme: { type: "string" },
-        },
-      },
-    },
-    {
-      pluginId: "ghost.plugin-b",
-      configuration: {
-        properties: {
-          // Same namespace + same key → collision
-          // ghost.pluginA.theme vs ghost.pluginB.theme — these are different namespaces
-          // For a true collision, both plugins need the same derived namespace
-        },
-      },
-    },
-  ];
-  // To create a real duplicate, we need plugins that derive the same namespace
   const collidingPlugins = [
     {
       pluginId: "ghost.vesselView",
