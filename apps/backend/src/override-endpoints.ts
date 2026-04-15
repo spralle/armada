@@ -4,7 +4,7 @@ import type { Route } from "./router.js";
 import { jsonResponse } from "./router.js";
 import { validateTenantId } from "./config-loader.js";
 import type { ConfigAuditLog } from "@weaver/config-server";
-import type { OverrideTracker } from "@weaver/config-server";
+import type { OverrideTracker } from "@weaver/config-policy";
 
 export interface OverrideRouteOptions {
   auditLog: ConfigAuditLog;

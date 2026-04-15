@@ -1,11 +1,11 @@
 // Auth context extraction from request headers
 
 import type { ConfigurationRole } from "@weaver/config-types";
-import type { PolicyEvaluationContext } from "@weaver/config-engine";
+import type { PolicyEvaluationContext, PolicyDecision } from "@weaver/config-policy";
 import type { ConfigurationPropertySchema, ConfigAuditEntry } from "@weaver/config-types";
 import type { ConfigAuditLog } from "@weaver/config-server";
-import type { OverrideTracker } from "@weaver/config-server";
-import { evaluateChangePolicy, type PolicyDecision } from "@weaver/config-engine";
+import type { OverrideTracker } from "@weaver/config-policy";
+import { evaluateChangePolicy } from "@weaver/config-policy";
 import { jsonResponse } from "./router.js";
 
 const VALID_ROLES: ReadonlySet<string> = new Set([
@@ -63,7 +63,9 @@ export function checkPolicy(
   if (schema === undefined) {
     return { decision: { outcome: "allowed" }, schema: undefined };
   }
-  const decision = evaluateChangePolicy(schema, context, layer);
+  // Dev backend: allow all layer writes, let changePolicy decide
+  const alwaysAllowWrite = () => true;
+  const decision = evaluateChangePolicy(schema, context, layer, alwaysAllowWrite);
   return { decision, schema };
 }
 

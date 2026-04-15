@@ -8,6 +8,7 @@
   "dependencies": {
     "@weaver/config-engine": "*",
     "@weaver/config-providers": "*",
+    "@weaver/config-sessions": "*",
     "@weaver/config-types": "*",
     "@ghost/config-plugin-runtime": "workspace:*",
     "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",

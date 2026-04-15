@@ -4,7 +4,8 @@ import { createTenantConfigProviders, validateTenantId } from "./config-loader.j
 import type { ConfigLoaderOptions } from "./config-loader.js";
 import { resolveConfiguration, inspectKey } from "@weaver/config-engine";
 import type { ConfigurationLayerEntry, ConfigurationPropertySchema } from "@weaver/config-types";
-import type { ConfigAuditLog, OverrideTracker } from "@weaver/config-server";
+import type { ConfigAuditLog } from "@weaver/config-server";
+import type { OverrideTracker } from "@weaver/config-policy";
 import {
   extractAccessContext,
   checkPolicy,

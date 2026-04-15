@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createOverrideRoutes } from "../dist-test/src/override-endpoints.js";
-import { createInMemoryAuditLog, createInMemoryOverrideTracker } from "@weaver/config-server";
+import { createInMemoryAuditLog } from "@weaver/config-server";
+import { createInMemoryOverrideTracker } from "@weaver/config-policy";
 
 /** Helper to invoke a route handler by matching against the route list. */
 async function callRoute(routes, method, pathname, bodyValue, headers = {}, search = "") {

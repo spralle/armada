@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createSessionRoutes } from "../dist-test/src/session-endpoints.js";
-import { createGodModeSessionProvider } from "@weaver/config-providers";
+import { createOverrideSessionProvider } from "@weaver/config-sessions";
 
 /** Helper to invoke a route handler by matching against the route list. */
 async function callRoute(routes, method, pathname, bodyValue, headers = {}) {
@@ -22,7 +22,7 @@ async function callRoute(routes, method, pathname, bodyValue, headers = {}) {
 }
 
 function createTestRoutes() {
-  const sessionController = createGodModeSessionProvider();
+  const sessionController = createOverrideSessionProvider();
   const routes = createSessionRoutes({ sessionController });
   return { routes, sessionController };
 }

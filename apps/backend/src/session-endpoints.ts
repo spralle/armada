@@ -2,16 +2,16 @@
 
 import type { Route } from "./router.js";
 import { jsonResponse } from "./router.js";
-import type { GodModeSessionController } from "@weaver/config-providers";
+import type { OverrideSessionController } from "@weaver/config-sessions";
 import { sessionActivationRequestSchema } from "@weaver/config-types";
 
 export function createSessionRoutes(options: {
-  sessionController: GodModeSessionController;
+  sessionController: OverrideSessionController;
 }): Route[] {
   const { sessionController } = options;
 
   return [
-    // POST /api/session/activate — create a new god-mode session
+    // POST /api/session/activate — create a new override session
     {
       method: "POST",
       pattern: /^\/api\/session\/activate$/,

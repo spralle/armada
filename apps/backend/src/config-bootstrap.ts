@@ -9,6 +9,7 @@ import type {
   ConfigurationPropertySchema,
 } from "@weaver/config-types";
 import { resolve } from "node:path";
+import { armadaWeaver } from "@ghost/config-plugin-runtime";
 
 export interface BackendConfigBootstrapOptions {
   configDir: string;
@@ -56,11 +57,12 @@ export async function bootstrapBackendConfig(
 
   const configService = await createConfigurationService({
     providers: [coreProvider, appProvider, tenantProvider],
+    weaverConfig: armadaWeaver,
   });
 
   const serviceConfig = createServiceConfigurationService({
     configService,
-    namespace: "ghost.backend",
+    namespace: "armada.backend",
     schemaMap: backendSchemaMap,
   });
 
