@@ -318,6 +318,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     pendingIntent: null,
     lastIntentTrace: null,
     partHost: null as unknown as ShellRuntime["partHost"],
+    pluginConfigSyncDispose: null,
     activeTransportPath: "legacy-bridge",
     activeTransportReason: "default-legacy",
     activeDndPath: "same-window",

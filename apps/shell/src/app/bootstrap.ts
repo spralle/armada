@@ -9,6 +9,11 @@ import {
   DEFAULT_THEME_PLUGIN_ID,
 } from "../theme-activation.js";
 import { registerThemeServiceCapability } from "../theme-service-registration.js";
+import { registerConfigurationServiceCapability } from "../config-service-registration.js";
+import {
+  createPluginConfigSyncController,
+  deriveNamespace,
+} from "../plugin-config-sync-controller.js";
 import type {
   ShellBootstrapOptions,
   ShellBootstrapState,
@@ -69,7 +74,21 @@ export async function bootstrapShellWithTenantManifest(
   const registry = createShellPluginRegistry();
   registry.registerManifestDescriptors(parsedManifest.tenantId, parsedManifest.plugins);
 
-  if (options.enableByDefault) {
+  let disposePluginConfigSync: (() => void) | null = null;
+  if (options.configurationService) {
+    registerConfigurationServiceCapability(registry, options.configurationService);
+    const pluginConfigSyncController = createPluginConfigSyncController({
+      registry,
+      configurationService: options.configurationService,
+      deriveNamespace,
+      pluginIds: parsedManifest.plugins.map((plugin) => plugin.id),
+      defaultEnabled: options.enableByDefault ?? false,
+    });
+    await pluginConfigSyncController.applySnapshot();
+    disposePluginConfigSync = pluginConfigSyncController.start();
+  }
+
+  if (options.enableByDefault && !options.configurationService) {
     for (const descriptor of parsedManifest.plugins) {
       await registry.setEnabled(descriptor.id, true);
     }
@@ -103,6 +122,7 @@ export async function bootstrapShellWithTenantManifest(
       .filter((plugin): plugin is PluginContract => plugin !== null),
     registry,
     themeRegistry,
+    disposePluginConfigSync,
   };
 }
 
@@ -113,4 +133,5 @@ export const shellBootstrapState: ShellBootstrapState = {
   mode: "inner-loop",
   loadedPlugins: [],
   registry: emptyRegistry,
+  disposePluginConfigSync: null,
 };

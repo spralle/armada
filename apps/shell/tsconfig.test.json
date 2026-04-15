@@ -28,6 +28,7 @@
     "src/theme-registry.ts",
     "src/theme-persistence.ts",
     "src/theme-service-registration.ts",
+    "src/plugin-config-sync-controller.ts",
     "src/context-state.spec.ts",
     "src/context-state.spec-dock-popout-action-rendering.ts",
     "src/app/shell-core.spec.ts",
