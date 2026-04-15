@@ -21,6 +21,7 @@
   "dependencies": {
     "@ghost/config-types": "workspace:*",
     "@ghost/config-engine": "workspace:*",
-    "@ghost/config-sync": "workspace:*"
+    "@ghost/config-sync": "workspace:*",
+    "zod": "^3.24.2"
   }
 }

@@ -1,8 +1,4 @@
 import {
-  configSyncAckResponseSchema,
-  configSyncFeedEventSchema,
-  configSyncPullResponseSchema,
-  configSyncPushResponseSchema,
   type ConfigSyncAckRequest,
   type ConfigSyncAckResponse,
   type ConfigSyncFeedEvent,
@@ -15,6 +11,12 @@ import {
   type SyncErrorCode,
   type SyncErrorMetadata,
 } from "@ghost/config-types";
+import {
+  configSyncAckResponseSchema,
+  configSyncFeedEventSchema,
+  configSyncPullResponseSchema,
+  configSyncPushResponseSchema,
+} from "./sync-wire-schemas.js";
 
 export interface ConfigSyncRpcClient {
   request<TResponse>(route: string, payload: unknown): Promise<TResponse>;
