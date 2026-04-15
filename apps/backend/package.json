@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@ghost/config-engine": "workspace:*",
-    "@ghost/config-providers": "workspace:*",
-    "@ghost/config-server": "workspace:*",
-    "@ghost/config-types": "workspace:*",
+    "@weaver/config-engine": "*",
+    "@weaver/config-providers": "*",
+    "@weaver/config-server": "*",
+    "@weaver/config-types": "*",
     "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
   }
 }

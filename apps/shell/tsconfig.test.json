@@ -12,9 +12,6 @@
   "references": [
     {
       "path": "../../packages/plugin-contracts"
-    },
-    {
-      "path": "../../packages/config-types"
     }
   ],
   "include": [

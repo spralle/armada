@@ -1,11 +1,11 @@
 // Auth context extraction from request headers
 
-import type { ConfigurationRole } from "@ghost/config-types";
-import type { PolicyEvaluationContext } from "@ghost/config-engine";
-import type { ConfigurationPropertySchema, ConfigAuditEntry } from "@ghost/config-types";
-import type { ConfigAuditLog } from "@ghost/config-server";
-import type { OverrideTracker } from "@ghost/config-server";
-import { evaluateChangePolicy, type PolicyDecision } from "@ghost/config-engine";
+import type { ConfigurationRole } from "@weaver/config-types";
+import type { PolicyEvaluationContext } from "@weaver/config-engine";
+import type { ConfigurationPropertySchema, ConfigAuditEntry } from "@weaver/config-types";
+import type { ConfigAuditLog } from "@weaver/config-server";
+import type { OverrideTracker } from "@weaver/config-server";
+import { evaluateChangePolicy, type PolicyDecision } from "@weaver/config-engine";
 import { jsonResponse } from "./router.js";
 
 const VALID_ROLES: ReadonlySet<string> = new Set([

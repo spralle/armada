@@ -2,8 +2,8 @@
 
 import type { Route } from "./router.js";
 import { jsonResponse } from "./router.js";
-import type { GodModeSessionController } from "@ghost/config-providers";
-import { sessionActivationRequestSchema } from "@ghost/config-types";
+import type { GodModeSessionController } from "@weaver/config-providers";
+import { sessionActivationRequestSchema } from "@weaver/config-types";
 
 export function createSessionRoutes(options: {
   sessionController: GodModeSessionController;

@@ -1,4 +1,4 @@
-import { FileSystemStorageProvider } from "@ghost/config-server";
+import { FileSystemStorageProvider } from "@weaver/config-server";
 import { resolve } from "node:path";
 
 export interface ConfigLoaderOptions {

@@ -7,14 +7,14 @@
  * to existing localStorage persistence.
  */
 
-import type { ConfigurationService } from "@ghost/config-types";
+import type { ConfigurationService } from "@weaver/config-types";
 import {
   createConfigurationService,
   createGodModeSessionProvider,
   StaticJsonStorageProvider,
   type AuditEntry,
   type GodModeSessionController,
-} from "@ghost/config-providers";
+} from "@weaver/config-providers";
 import { createLayoutConfigBridge } from "./persistence/layout-config-bridge.js";
 import { createContextConfigBridge } from "./persistence/context-config-bridge.js";
 import { createKeybindingConfigBridge } from "./persistence/keybinding-config-bridge.js";

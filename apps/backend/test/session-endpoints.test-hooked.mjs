@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createSessionRoutes } from "../dist-test/src/session-endpoints.js";
-import { createGodModeSessionProvider } from "@ghost/config-providers";
+import { createGodModeSessionProvider } from "@weaver/config-providers";
 
 /** Helper to invoke a route handler by matching against the route list. */
 async function callRoute(routes, method, pathname, bodyValue, headers = {}) {

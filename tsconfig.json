@@ -5,22 +5,7 @@
       "path": "./packages/plugin-contracts"
     },
     {
-      "path": "./packages/config-types"
-    },
-    {
-      "path": "./packages/config-engine"
-    },
-    {
       "path": "./packages/config-plugin-runtime"
-    },
-    {
-      "path": "./packages/config-sync"
-    },
-    {
-      "path": "./packages/config-providers"
-    },
-    {
-      "path": "./packages/config-server"
     },
     {
       "path": "./apps/shell"

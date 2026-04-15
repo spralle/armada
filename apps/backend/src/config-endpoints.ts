@@ -2,9 +2,9 @@ import type { Route } from "./router.js";
 import { jsonResponse } from "./router.js";
 import { createTenantConfigProviders, validateTenantId } from "./config-loader.js";
 import type { ConfigLoaderOptions } from "./config-loader.js";
-import { resolveConfiguration, inspectKey } from "@ghost/config-engine";
-import type { ConfigurationLayerEntry, ConfigurationPropertySchema } from "@ghost/config-types";
-import type { ConfigAuditLog, OverrideTracker } from "@ghost/config-server";
+import { resolveConfiguration, inspectKey } from "@weaver/config-engine";
+import type { ConfigurationLayerEntry, ConfigurationPropertySchema } from "@weaver/config-types";
+import type { ConfigAuditLog, OverrideTracker } from "@weaver/config-server";
 import {
   extractAccessContext,
   checkPolicy,
