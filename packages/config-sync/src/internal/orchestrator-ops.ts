@@ -173,40 +173,61 @@ export async function pullChanges(args: CommonArgs): Promise<number> {
 }
 
 export function classifySyncError(error: unknown): SyncErrorMetadata {
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "syncError" in error &&
-    typeof (error as { syncError?: unknown }).syncError === "object"
-  ) {
-    return (error as { syncError: SyncErrorMetadata }).syncError;
+  const syncError =
+    typeof error === "object" && error !== null && "syncError" in error
+      ? (error as { syncError?: unknown }).syncError
+      : undefined;
+  if (isSyncErrorMetadata(syncError)) {
+    return syncError;
+  }
+
+  if (isSyncErrorMetadata(error)) {
+    return error;
   }
 
   if (
     typeof error === "object" &&
     error !== null &&
-    "code" in error &&
     "message" in error &&
-    "retryable" in error
+    typeof (error as { message?: unknown }).message === "string"
   ) {
-    const candidate = error as Partial<SyncErrorMetadata>;
     return {
-      code: candidate.code ?? "unknown",
-      message: candidate.message ?? "Config sync request failed.",
-      retryable: candidate.retryable ?? false,
-      status: candidate.status,
-      key: candidate.key,
-      mutationId: candidate.mutationId,
-      serverTime: candidate.serverTime,
-      details: candidate.details,
+      code: "unknown",
+      message: (error as { message: string }).message,
+      retryable: false,
     };
   }
 
   return {
     code: "unknown",
-    message: error instanceof Error ? error.message : "Config sync request failed.",
+    message: typeof error === "string" && error.length > 0 ? error : "Config sync request failed.",
     retryable: false,
   };
+}
+
+const SYNC_ERROR_CODES = new Set<SyncErrorMetadata["code"]>([
+  "network",
+  "timeout",
+  "unauthorized",
+  "forbidden",
+  "validation",
+  "conflict",
+  "rate-limited",
+  "server",
+  "unknown",
+]);
+
+function isSyncErrorMetadata(value: unknown): value is SyncErrorMetadata {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const candidate = value as Partial<SyncErrorMetadata>;
+  return (
+    typeof candidate.code === "string" &&
+    SYNC_ERROR_CODES.has(candidate.code as SyncErrorMetadata["code"]) &&
+    typeof candidate.message === "string" &&
+    typeof candidate.retryable === "boolean"
+  );
 }
 
 export function createMutation(
