@@ -67,6 +67,7 @@
         "@ghost/config-engine": "workspace:*",
         "@ghost/config-sync": "workspace:*",
         "@ghost/config-types": "workspace:*",
+        "zod": "^3.24.2",
       },
     },
     "packages/config-server": {
