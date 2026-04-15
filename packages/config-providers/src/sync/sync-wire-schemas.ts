@@ -113,36 +113,3 @@ export const configSyncAckResponseSchema = z.object({
   serverRevision: z.string(),
   serverTime: z.number(),
 }).strict();
-
-export const configSyncFeedSubscriptionRequestSchema = z.object({
-  tenantId: z.string(),
-  cursor: syncCursorSchema.optional(),
-}).strict();
-
-export const configSyncFeedReadyEventSchema = z.object({
-  type: z.literal("ready"),
-  cursor: syncCursorSchema,
-  serverTime: z.number(),
-}).strict();
-
-export const configSyncFeedChangeEventSchema = z.object({
-  type: z.literal("change"),
-  change: syncRemoteChangeSchema,
-}).strict();
-
-export const configSyncFeedErrorEventSchema = z.object({
-  type: z.literal("error"),
-  error: syncErrorMetadataSchema,
-}).strict();
-
-export const configSyncFeedClosedEventSchema = z.object({
-  type: z.literal("closed"),
-  reason: z.string().optional(),
-}).strict();
-
-export const configSyncFeedEventSchema = z.discriminatedUnion("type", [
-  configSyncFeedReadyEventSchema,
-  configSyncFeedChangeEventSchema,
-  configSyncFeedErrorEventSchema,
-  configSyncFeedClosedEventSchema,
-]);

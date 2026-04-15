@@ -13,7 +13,6 @@ import {
 } from "@ghost/config-types";
 import {
   configSyncAckResponseSchema,
-  configSyncFeedEventSchema,
   configSyncPullResponseSchema,
   configSyncPushResponseSchema,
 } from "./sync-wire-schemas.js";
@@ -135,25 +134,10 @@ export class ConfigSyncRpcTransportAdapter implements ConfigSyncTransport {
     request: ConfigSyncFeedSubscriptionRequest,
     onEvent: (event: ConfigSyncFeedEvent) => void,
   ): Promise<() => void> | (() => void) {
-    if (this.routes.feed === undefined || this.client.subscribe === undefined) {
-      return () => {};
-    }
-
-    try {
-      const subscription = this.client.subscribe(this.routes.feed, request, (event) => {
-        onEvent(configSyncFeedEventSchema.parse(event));
-      });
-
-      if (subscription instanceof Promise) {
-        return subscription.catch((error: unknown) => {
-          throw this.wrapError(error);
-        });
-      }
-
-      return subscription;
-    } catch (error) {
-      throw this.wrapError(error);
-    }
+    // Feed subscriptions are intentionally deferred until a concrete backend exists.
+    void request;
+    void onEvent;
+    return () => {};
   }
 
   private async request<TResponse>(
