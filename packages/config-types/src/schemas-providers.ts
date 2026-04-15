@@ -31,7 +31,6 @@ export const syncResultSchema = z.object({
 }).strict();
 
 export const syncQueueMetadataSchema = z.object({
-  tenantId: z.string(),
   pendingCount: z.number(),
   inFlightCount: z.number(),
   oldestQueuedAt: z.number().optional(),

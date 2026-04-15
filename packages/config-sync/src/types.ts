@@ -1,15 +1,18 @@
 import type {
+  ConfigurationChange,
+  ConfigurationLayer,
   ConfigurationLayerData,
   ConfigurationConflict,
-  DurableConfigCache,
   SyncErrorCode,
   SyncErrorMetadata,
   SyncQueueMetadata,
   SyncResult,
   SyncStatus,
-  SyncableStorageProvider,
   SyncQueuedMutation,
   ConfigSyncTransport,
+  SyncSnapshotCache,
+  SyncMutationQueue,
+  WriteResult,
 } from "@ghost/config-types";
 
 export interface SyncRetryPolicy {
@@ -18,13 +21,15 @@ export interface SyncRetryPolicy {
 }
 
 export interface ConfigSyncOrchestratorOptions {
-  tenantId: string;
-  cache: DurableConfigCache;
+  snapshotCache: SyncSnapshotCache;
+  mutationQueue: SyncMutationQueue;
   transport: ConfigSyncTransport;
   retryPolicy?: SyncRetryPolicy | undefined;
   conflictResolution?: "server-authoritative" | "lww-fallback" | undefined;
   batchSize?: number | undefined;
   now?: (() => number) | undefined;
+  onSyncStateChange?: ((state: SyncStatus) => void) | undefined;
+  onDiagnosticsChange?: ((diagnostics: SyncDiagnostics) => void) | undefined;
 }
 
 export interface SyncDiagnostics {
@@ -51,7 +56,18 @@ export interface ConfigSyncOrchestrator {
   getPendingWrites(): ReadonlyMap<string, unknown>;
 }
 
-export interface SyncableConfigStorageProvider extends SyncableStorageProvider {
+export interface SyncableConfigStorageProvider {
+  readonly id: string;
+  readonly layer: ConfigurationLayer | string;
+  readonly writable: true;
+  load(): Promise<ConfigurationLayerData>;
+  write(key: string, value: unknown): Promise<WriteResult>;
+  remove(key: string): Promise<WriteResult>;
+  onExternalChange?(listener: (changes: ConfigurationChange[]) => void): () => void;
+  readonly syncState: SyncStatus;
+  readonly pendingWrites: ReadonlyMap<string, unknown>;
+  sync(): Promise<SyncResult>;
+  onSyncStateChange(listener: (state: SyncStatus) => void): () => void;
   getSyncDiagnostics(): SyncDiagnostics;
   onSyncDiagnosticsChange(listener: (diagnostics: SyncDiagnostics) => void): () => void;
 }

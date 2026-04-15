@@ -56,11 +56,10 @@ export type {
   ConfigSyncPushResponse,
   ConfigSyncAckRequest,
   ConfigSyncAckResponse,
-  ConfigSyncFeedSubscriptionRequest,
-  ConfigSyncFeedEvent,
+  SyncSnapshotCache,
+  SyncMutationQueue,
   DurableConfigCache,
   ConfigSyncTransport,
-  SyncableStorageProvider,
 } from "./providers.js";
 
 // expressions.ts — Expression evaluator interface

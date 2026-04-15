@@ -7,7 +7,6 @@ import {
 
 test("syncQueueMetadataSchema accepts queue counters", () => {
   const result = syncQueueMetadataSchema.safeParse({
-    tenantId: "tenant-a",
     pendingCount: 3,
     inFlightCount: 1,
     oldestQueuedAt: 1713123400000,

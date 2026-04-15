@@ -15,7 +15,6 @@ function createTransportHarness() {
     async pull(request) {
       pulls.push(request);
       return pullQueue.shift() ?? {
-        tenantId: request.tenantId,
         cursor: { serverRevision: "rev-0", serverTime: 0 },
         serverTime: 0,
         changes: [],
@@ -28,7 +27,6 @@ function createTransportHarness() {
         throw next;
       }
       return next ?? {
-        tenantId: request.tenantId,
         requestId: request.requestId,
         serverRevision: "rev-1",
         serverTime: Date.now(),
@@ -42,7 +40,6 @@ function createTransportHarness() {
     async ack(request) {
       acks.push(request);
       return {
-        tenantId: request.tenantId,
         requestId: request.requestId,
         acked: true,
         serverRevision: "rev-ack",
@@ -56,15 +53,15 @@ function createTransportHarness() {
 
 test("offline boot reads cache snapshot without network", async () => {
   const cache = new MemoryDurableConfigCacheAdapter();
-  await cache.saveSnapshot("tenant-a", {
+  await cache.saveSnapshot({
     entries: { "ghost.theme": "dark" },
     revision: "rev-cached",
     lastSyncedAt: 100,
   });
   const harness = createTransportHarness();
   const orchestrator = createConfigSyncOrchestrator({
-    tenantId: "tenant-a",
-    cache,
+    snapshotCache: cache,
+    mutationQueue: cache,
     transport: harness.transport,
   });
 
@@ -81,18 +78,17 @@ test("reconnect flushes queued writes then pulls", async () => {
   const cache = new MemoryDurableConfigCacheAdapter();
   const harness = createTransportHarness();
   const orchestrator = createConfigSyncOrchestrator({
-    tenantId: "tenant-a",
-    cache,
+    snapshotCache: cache,
+    mutationQueue: cache,
     transport: harness.transport,
   });
 
   orchestrator.setOnline(false);
   await orchestrator.load();
   await orchestrator.write("ghost.theme", "dark");
-  assert.equal((await cache.getQueueMetadata("tenant-a")).pendingCount, 1);
+  assert.equal((await cache.getQueueMetadata()).pendingCount, 1);
 
   harness.pullQueue.push({
-    tenantId: "tenant-a",
     cursor: { serverRevision: "rev-2", serverTime: 300 },
     serverTime: 300,
     changes: [],
@@ -105,7 +101,7 @@ test("reconnect flushes queued writes then pulls", async () => {
   assert.equal(result.pulled, 0);
   assert.equal(harness.pushes.length, 1);
   assert.equal(harness.acks.length, 1);
-  assert.equal((await cache.getQueueMetadata("tenant-a")).pendingCount, 0);
+  assert.equal((await cache.getQueueMetadata()).pendingCount, 0);
   assert.equal(orchestrator.getSyncState().status, "synced");
 });
 
@@ -113,18 +109,17 @@ test("conflict path surfaces conflict state and server value", async () => {
   const cache = new MemoryDurableConfigCacheAdapter();
   const harness = createTransportHarness();
   const orchestrator = createConfigSyncOrchestrator({
-    tenantId: "tenant-a",
-    cache,
+    snapshotCache: cache,
+    mutationQueue: cache,
     transport: harness.transport,
   });
 
   orchestrator.setOnline(false);
   await orchestrator.load();
   await orchestrator.write("ghost.mode", "compact");
-  const queued = await cache.peekQueuedMutations("tenant-a", 10);
+  const queued = await cache.peekQueuedMutations(10);
 
   harness.pushQueue.push({
-    tenantId: "tenant-a",
     requestId: "req-1",
     serverRevision: "rev-22",
     serverTime: 500,
@@ -145,7 +140,6 @@ test("conflict path surfaces conflict state and server value", async () => {
     ],
   });
   harness.pullQueue.push({
-    tenantId: "tenant-a",
     cursor: { serverRevision: "rev-22", serverTime: 500 },
     serverTime: 500,
     changes: [],
@@ -162,8 +156,8 @@ test("lww-fallback requeues mutation after conflict", async () => {
   const cache = new MemoryDurableConfigCacheAdapter();
   const harness = createTransportHarness();
   const orchestrator = createConfigSyncOrchestrator({
-    tenantId: "tenant-a",
-    cache,
+    snapshotCache: cache,
+    mutationQueue: cache,
     transport: harness.transport,
     conflictResolution: "lww-fallback",
   });
@@ -171,10 +165,9 @@ test("lww-fallback requeues mutation after conflict", async () => {
   orchestrator.setOnline(false);
   await orchestrator.load();
   await orchestrator.write("ghost.mode", "compact");
-  const queued = await cache.peekQueuedMutations("tenant-a", 10);
+  const queued = await cache.peekQueuedMutations(10);
 
   harness.pushQueue.push({
-    tenantId: "tenant-a",
     requestId: "req-1",
     serverRevision: "rev-22",
     serverTime: 500,
@@ -199,7 +192,6 @@ test("lww-fallback requeues mutation after conflict", async () => {
   lwwError.retryable = true;
   harness.pushQueue.push(lwwError);
   harness.pullQueue.push({
-    tenantId: "tenant-a",
     cursor: { serverRevision: "rev-22", serverTime: 500 },
     serverTime: 500,
     changes: [],
@@ -207,7 +199,7 @@ test("lww-fallback requeues mutation after conflict", async () => {
 
   orchestrator.setOnline(true);
   await orchestrator.sync();
-  const after = await cache.peekQueuedMutations("tenant-a", 10);
+  const after = await cache.peekQueuedMutations(10);
   assert.equal(after.length, 1);
   assert.equal(after[0].baseRevision, "rev-22");
 });
@@ -217,8 +209,8 @@ test("retryable error keeps queue and schedules retry", async () => {
   const harness = createTransportHarness();
   const nowValues = [1000, 1010, 1020, 1030, 1040, 1050];
   const orchestrator = createConfigSyncOrchestrator({
-    tenantId: "tenant-a",
-    cache,
+    snapshotCache: cache,
+    mutationQueue: cache,
     transport: harness.transport,
     now: () => nowValues.shift() ?? 2000,
   });
@@ -233,7 +225,7 @@ test("retryable error keeps queue and schedules retry", async () => {
 
   orchestrator.setOnline(true);
   await new Promise((resolve) => setTimeout(resolve, 0));
-  const queue = await cache.getQueueMetadata("tenant-a");
+  const queue = await cache.getQueueMetadata();
   const diagnostics = orchestrator.getDiagnostics();
 
   assert.equal(queue.pendingCount, 1);
@@ -249,19 +241,20 @@ test("retryable error keeps queue and schedules retry", async () => {
   });
 });
 
-test("tenant isolation keeps queue/snapshot separated", async () => {
-  const cache = new MemoryDurableConfigCacheAdapter();
+test("tenant isolation via separate orchestrator instances with separate caches", async () => {
+  const cacheA = new MemoryDurableConfigCacheAdapter();
+  const cacheB = new MemoryDurableConfigCacheAdapter();
   const harnessA = createTransportHarness();
   const harnessB = createTransportHarness();
 
   const a = createConfigSyncOrchestrator({
-    tenantId: "tenant-a",
-    cache,
+    snapshotCache: cacheA,
+    mutationQueue: cacheA,
     transport: harnessA.transport,
   });
   const b = createConfigSyncOrchestrator({
-    tenantId: "tenant-b",
-    cache,
+    snapshotCache: cacheB,
+    mutationQueue: cacheB,
     transport: harnessB.transport,
   });
 
@@ -272,8 +265,8 @@ test("tenant isolation keeps queue/snapshot separated", async () => {
   await a.write("ghost.theme", "dark");
   await b.write("ghost.theme", "light");
 
-  const queueA = await cache.peekQueuedMutations("tenant-a", 10);
-  const queueB = await cache.peekQueuedMutations("tenant-b", 10);
+  const queueA = await cacheA.peekQueuedMutations(10);
+  const queueB = await cacheB.peekQueuedMutations(10);
 
   assert.equal(queueA.length, 1);
   assert.equal(queueB.length, 1);

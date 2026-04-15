@@ -66,22 +66,3 @@ export {
 } from "./session-provider.js";
 
 export { MemoryDurableConfigCacheAdapter } from "./sync/durable-cache-memory.js";
-
-export {
-  IndexedDbDurableConfigCacheAdapter,
-  type IndexedDbDurableConfigCacheOptions,
-} from "./sync/durable-cache-indexeddb.js";
-
-export {
-  ConfigSyncRpcTransportAdapter,
-  ConfigSyncRpcTransportError,
-  classifyRpcSyncError,
-  type ConfigSyncRpcClient,
-  type ConfigSyncRpcTransportOptions,
-  type ConfigSyncRpcTransportRoutes,
-} from "./sync/config-sync-rpc-transport.js";
-
-export {
-  createSyncableStorageProvider,
-  type CreateSyncableStorageProviderOptions,
-} from "./sync/syncable-storage-provider.js";

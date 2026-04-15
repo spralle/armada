@@ -22,7 +22,6 @@
     "@ghost/config-types": "workspace:*",
     "@ghost/config-engine": "workspace:*",
     "@ghost/config-plugin-runtime": "workspace:*",
-    "@ghost/config-sync": "workspace:*",
-    "zod": "^3.24.2"
+    "@ghost/config-sync": "workspace:*"
   }
 }

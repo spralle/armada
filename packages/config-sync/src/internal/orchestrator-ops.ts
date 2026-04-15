@@ -2,16 +2,17 @@ import type {
   ConfigSyncPushResult,
   ConfigurationConflict,
   ConfigurationLayerData,
-  DurableConfigCache,
   SyncErrorMetadata,
+  SyncMutationQueue,
   SyncQueuedMutation,
+  SyncSnapshotCache,
   ConfigSyncTransport,
 } from "@ghost/config-types";
 import type { LocalMutationContext, PushBatchOutcome } from "../types.js";
 
 interface CommonArgs {
-  tenantId: string;
-  cache: DurableConfigCache;
+  snapshotCache: SyncSnapshotCache;
+  mutationQueue: SyncMutationQueue;
   transport: ConfigSyncTransport;
   batchSize: number;
   now: () => number;
@@ -37,17 +38,16 @@ export async function flushQueue(args: FlushQueueArgs): Promise<PushBatchOutcome
   const conflicts: ConfigurationConflict[] = [];
 
   while (true) {
-    const queued = await args.cache.peekQueuedMutations(args.tenantId, args.batchSize);
+    const queued = await args.mutationQueue.peekQueuedMutations(args.batchSize);
     if (queued.length === 0) {
       return { pushed, conflicts, shouldStop: false };
     }
 
-    const requestId = createRequestId(args.tenantId, args.now);
-    await args.cache.markRequestInFlight(args.tenantId, requestId, queued.map((m) => m.mutationId));
+    const requestId = createRequestId(args.now);
+    await args.mutationQueue.markRequestInFlight(requestId, queued.map((m) => m.mutationId));
 
     try {
       const response = await args.transport.push({
-        tenantId: args.tenantId,
         requestId,
         mutations: queued,
       });
@@ -60,18 +60,18 @@ export async function flushQueue(args: FlushQueueArgs): Promise<PushBatchOutcome
 
       pushed += response.results.filter((r) => r.accepted).length;
       conflicts.push(...batchConflicts);
-      await args.cache.acknowledgeRequest(args.tenantId, requestId);
-      await args.transport.ack({ tenantId: args.tenantId, requestId });
-      await args.cache.setCursor(args.tenantId, {
+      await args.mutationQueue.acknowledgeRequest(requestId);
+      await args.transport.ack({ requestId });
+      await args.snapshotCache.setCursor({
         serverRevision: response.serverRevision,
         serverTime: response.serverTime,
       });
       args.snapshot.revision = response.serverRevision;
       args.snapshot.lastSyncedAt = response.serverTime;
-      await args.cache.saveSnapshot(args.tenantId, cloneSnapshot(args.snapshot));
+      await args.snapshotCache.saveSnapshot(cloneSnapshot(args.snapshot));
     } catch (error) {
       const syncError = classifySyncError(error);
-      await args.cache.releaseRequest(args.tenantId, requestId, syncError);
+      await args.mutationQueue.releaseRequest(requestId, syncError);
       await args.onError(syncError);
       return { pushed, conflicts, shouldStop: true, retryableError: syncError };
     }
@@ -136,7 +136,7 @@ async function applyPushResults(args: ApplyPushArgs): Promise<ConfigurationConfl
         localValue: value,
         localRevision: result.conflict.serverRevision,
       });
-      await args.cache.enqueueMutation(args.tenantId, retryMutation);
+      await args.mutationQueue.enqueueMutation(retryMutation);
     }
 
     args.localContext.delete(result.mutationId);
@@ -146,9 +146,8 @@ async function applyPushResults(args: ApplyPushArgs): Promise<ConfigurationConfl
 }
 
 export async function pullChanges(args: CommonArgs): Promise<number> {
-  const cursor = await args.cache.getCursor(args.tenantId);
+  const cursor = await args.snapshotCache.getCursor();
   const response = await args.transport.pull({
-    tenantId: args.tenantId,
     cursor,
     limit: args.batchSize,
   });
@@ -167,8 +166,8 @@ export async function pullChanges(args: CommonArgs): Promise<number> {
 
   args.snapshot.revision = response.cursor.serverRevision;
   args.snapshot.lastSyncedAt = response.serverTime;
-  await args.cache.setCursor(args.tenantId, response.cursor);
-  await args.cache.saveSnapshot(args.tenantId, cloneSnapshot(args.snapshot));
+  await args.snapshotCache.setCursor(response.cursor);
+  await args.snapshotCache.saveSnapshot(cloneSnapshot(args.snapshot));
   return response.changes.length;
 }
 
@@ -231,7 +230,7 @@ function isSyncErrorMetadata(value: unknown): value is SyncErrorMetadata {
 }
 
 export function createMutation(
-  tenantId: string,
+  instanceId: string,
   now: () => number,
   mutationCounter: number,
   operation: "set" | "remove",
@@ -240,8 +239,7 @@ export function createMutation(
   revision?: string | undefined,
 ): SyncQueuedMutation {
   return {
-    mutationId: `${tenantId}-${now()}-${mutationCounter}`,
-    tenantId,
+    mutationId: `mut-${instanceId}-${now()}-${mutationCounter}`,
     key,
     operation,
     value,
@@ -254,8 +252,8 @@ export function createMutation(
   };
 }
 
-export function createRequestId(tenantId: string, now: () => number): string {
-  return `req-${tenantId}-${now()}-${Math.random().toString(16).slice(2, 8)}`;
+export function createRequestId(now: () => number): string {
+  return `req-${now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
 
 export function cloneSnapshot(snapshot: ConfigurationLayerData): ConfigurationLayerData {
