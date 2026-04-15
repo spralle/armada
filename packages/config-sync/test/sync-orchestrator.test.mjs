@@ -238,8 +238,15 @@ test("retryable error keeps queue and schedules retry", async () => {
 
   assert.equal(queue.pendingCount, 1);
   assert.equal(orchestrator.getSyncState().status, "error");
-  assert.equal(diagnostics.retryAttempt > 0, true);
-  assert.equal(typeof diagnostics.retryScheduledAt, "number");
+  assert.equal(diagnostics.pendingCount, 1);
+  assert.equal("retryAttempt" in diagnostics, false);
+  assert.equal("retryScheduledAt" in diagnostics, false);
+  assert.equal("queue" in diagnostics, false);
+  assert.deepEqual(diagnostics.lastError, {
+    code: "network",
+    message: "offline",
+    retryable: true,
+  });
 });
 
 test("tenant isolation keeps queue/snapshot separated", async () => {

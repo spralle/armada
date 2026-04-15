@@ -2,6 +2,7 @@ import type {
   ConfigurationLayerData,
   ConfigurationConflict,
   DurableConfigCache,
+  SyncErrorCode,
   SyncErrorMetadata,
   SyncQueueMetadata,
   SyncResult,
@@ -27,12 +28,13 @@ export interface ConfigSyncOrchestratorOptions {
 }
 
 export interface SyncDiagnostics {
-  tenantId: string;
-  queue: SyncQueueMetadata;
+  pendingCount: number;
   lastSyncedAt?: number | undefined;
-  lastError?: SyncErrorMetadata | undefined;
-  retryScheduledAt?: number | undefined;
-  retryAttempt: number;
+  lastError?: {
+    code: SyncErrorCode;
+    message: string;
+    retryable: boolean;
+  } | undefined;
 }
 
 export interface ConfigSyncOrchestrator {

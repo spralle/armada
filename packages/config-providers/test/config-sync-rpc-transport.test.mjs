@@ -189,12 +189,14 @@ test("ConfigSyncRpcTransportAdapter maps ack request/response payloads", async (
   });
 });
 
-test("ConfigSyncRpcTransportAdapter classifies retryable vs non-retryable errors", async () => {
+test("ConfigSyncRpcTransportAdapter uses adapter-provided sync error metadata", async () => {
   const retryableClient = createFakeClient({
     request: async () => {
-      const error = new Error("offline");
-      error.code = "ECONNRESET";
-      throw error;
+      throw {
+        code: "network",
+        message: "offline",
+        retryable: true,
+      };
     },
   });
   const retryableTransport = new ConfigSyncRpcTransportAdapter({ client: retryableClient });
@@ -209,66 +211,44 @@ test("ConfigSyncRpcTransportAdapter classifies retryable vs non-retryable errors
     },
   );
 
-  const nonRetryableClient = createFakeClient({
+  const unknownClient = createFakeClient({
     request: async () => {
-      const error = new Error("unauthorized");
-      error.status = 401;
-      throw error;
+      throw new Error("unauthorized");
     },
   });
-  const nonRetryableTransport = new ConfigSyncRpcTransportAdapter({ client: nonRetryableClient });
+  const unknownTransport = new ConfigSyncRpcTransportAdapter({ client: unknownClient });
 
   await assert.rejects(
-    () => nonRetryableTransport.ack({ tenantId: "tenant-a", requestId: "req-x" }),
+    () => unknownTransport.ack({ tenantId: "tenant-a", requestId: "req-x" }),
     (error) => {
       assert.equal(error instanceof ConfigSyncRpcTransportError, true);
-      assert.equal(error.syncError.code, "unauthorized");
+      assert.equal(error.syncError.code, "unknown");
       assert.equal(error.syncError.retryable, false);
+      assert.equal(error.syncError.message, "unauthorized");
       return true;
     },
   );
 });
 
-test("ConfigSyncRpcTransportAdapter exposes optional feed subscription hook", async () => {
+test("ConfigSyncRpcTransportAdapter keeps feed subscription as no-op contract hook", async () => {
   const fakeClient = createFakeClient({
-    subscribe: (route, payload, onEvent) => {
-      onEvent({
-        type: "ready",
-        cursor: { serverRevision: "rev-feed", serverTime: 5000 },
-        serverTime: 5000,
-      });
-      return () => {
-        void route;
-        void payload;
-      };
+    subscribe: () => {
+      throw new Error("subscribe should not be called while feed backend is deferred");
     },
   });
 
-  const events = [];
   const transport = new ConfigSyncRpcTransportAdapter({
     client: fakeClient,
     routes: { feed: "rpc.config.feed" },
   });
 
-  const unsubscribe = await transport.subscribeToFeed(
+  const noopUnsubscribe = await transport.subscribeToFeed(
     { tenantId: "tenant-feed", cursor: { serverRevision: "rev-old", serverTime: 4900 } },
-    (event) => events.push(event),
+    () => {
+      throw new Error("onEvent should not be called while feed backend is deferred");
+    },
   );
 
-  assert.equal(typeof unsubscribe, "function");
-  assert.deepEqual(fakeClient.subscriptions[0], {
-    route: "rpc.config.feed",
-    payload: {
-      tenantId: "tenant-feed",
-      cursor: { serverRevision: "rev-old", serverTime: 4900 },
-    },
-  });
-  assert.equal(events[0].type, "ready");
-
-  const noFeedTransport = new ConfigSyncRpcTransportAdapter({
-    client: createFakeClient(),
-    routes: { feed: undefined },
-  });
-  const noopUnsubscribe = await noFeedTransport.subscribeToFeed({ tenantId: "tenant-feed" }, () => {});
   assert.equal(typeof noopUnsubscribe, "function");
+  assert.deepEqual(fakeClient.subscriptions, []);
 });
