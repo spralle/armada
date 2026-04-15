@@ -55,9 +55,10 @@ class ConfigSyncOrchestratorImpl implements ConfigSyncOrchestrator {
     this.conflictResolution = options.conflictResolution ?? "server-authoritative";
     this.now = options.now ?? (() => Date.now());
     this.store = new DiagnosticsStore({
-      tenantId: this.tenantId,
+      diagnostics: {
+        pendingCount: 0,
+      },
       queue: { tenantId: this.tenantId, pendingCount: 0, inFlightCount: 0 },
-      retryAttempt: 0,
     });
   }
 
@@ -65,13 +66,14 @@ class ConfigSyncOrchestratorImpl implements ConfigSyncOrchestrator {
     this.snapshot = await this.cache.loadSnapshot(this.tenantId);
     this.loaded = true;
     const queue = await this.cache.getQueueMetadata(this.tenantId);
-    this.store.updateDiagnostics({ queue, lastSyncedAt: this.snapshot.lastSyncedAt, retryAttempt: 0, retryScheduledAt: undefined });
+    this.store.setQueue(queue);
+    this.store.updateDiagnostics({ pendingCount: queue.pendingCount, lastSyncedAt: this.snapshot.lastSyncedAt });
 
     if (!this.online) {
       this.store.setSyncState({
         status: "offline",
         lastSyncedAt: this.snapshot.lastSyncedAt ?? 0,
-        pendingWriteCount: queue.pendingCount + queue.inFlightCount,
+        pendingWriteCount: this.store.getPendingWriteCount(),
       });
       return cloneSnapshot(this.snapshot);
     }
@@ -146,11 +148,10 @@ class ConfigSyncOrchestratorImpl implements ConfigSyncOrchestrator {
     this.online = isOnline;
     if (!isOnline) {
       this.clearRetryTimer();
-      const queue = this.store.getDiagnostics().queue;
       this.store.setSyncState({
         status: "offline",
         lastSyncedAt: this.snapshot.lastSyncedAt ?? 0,
-        pendingWriteCount: queue.pendingCount + queue.inFlightCount,
+        pendingWriteCount: this.store.getPendingWriteCount(),
       });
       return;
     }
@@ -182,11 +183,12 @@ class ConfigSyncOrchestratorImpl implements ConfigSyncOrchestrator {
     await this.ensureLoaded();
     if (!this.online) {
       const queue = await this.cache.getQueueMetadata(this.tenantId);
-      this.store.updateDiagnostics({ queue });
+      this.store.setQueue(queue);
+      this.store.updateDiagnostics({ pendingCount: queue.pendingCount });
       this.store.setSyncState({
         status: "offline",
         lastSyncedAt: this.snapshot.lastSyncedAt ?? 0,
-        pendingWriteCount: queue.pendingCount + queue.inFlightCount,
+        pendingWriteCount: this.store.getPendingWriteCount(),
       });
       return { pulled: 0, pushed: 0, conflicts: [] };
     }
@@ -219,7 +221,15 @@ class ConfigSyncOrchestratorImpl implements ConfigSyncOrchestrator {
       },
       onError: async (syncError) => {
         const queue = await this.cache.getQueueMetadata(this.tenantId);
-        this.store.updateDiagnostics({ queue, lastError: syncError });
+        this.store.setQueue(queue);
+        this.store.updateDiagnostics({
+          pendingCount: queue.pendingCount,
+          lastError: {
+            code: syncError.code,
+            message: syncError.message,
+            retryable: syncError.retryable,
+          },
+        });
         if (syncError.retryable) {
           this.scheduleRetry(syncError);
         } else {
@@ -251,12 +261,13 @@ class ConfigSyncOrchestratorImpl implements ConfigSyncOrchestrator {
 
     const queue = await this.cache.getQueueMetadata(this.tenantId);
     const lastSyncedAt = this.snapshot.lastSyncedAt ?? this.now();
-    this.store.updateDiagnostics({ queue, lastSyncedAt, retryAttempt: 0, retryScheduledAt: undefined });
+    this.store.setQueue(queue);
+    this.store.updateDiagnostics({ pendingCount: queue.pendingCount, lastSyncedAt, lastError: undefined });
     this.retryAttempt = 0;
 
     if (push.conflicts.length > 0) {
       this.store.setSyncState({ status: "conflict", conflicts: push.conflicts });
-    } else if (queue.pendingCount + queue.inFlightCount > 0) {
+    } else if (this.store.getPendingWriteCount() > 0) {
       this.store.setSyncState({ status: "syncing" });
     } else {
       this.store.setSyncState({ status: "synced", lastSyncedAt });
@@ -273,7 +284,6 @@ class ConfigSyncOrchestratorImpl implements ConfigSyncOrchestrator {
     });
     this.retryAttempt = next.retryAttempt;
     this.clearRetryTimer();
-    this.store.updateDiagnostics(next);
 
     const delay = calculateRetryDelay({
       retryAttempt: next.retryAttempt,
@@ -292,11 +302,10 @@ class ConfigSyncOrchestratorImpl implements ConfigSyncOrchestrator {
 
   private updateOfflineOrSchedule(): void {
     if (!this.online) {
-      const queue = this.store.getDiagnostics().queue;
       this.store.setSyncState({
         status: "offline",
         lastSyncedAt: this.snapshot.lastSyncedAt ?? 0,
-        pendingWriteCount: queue.pendingCount + queue.inFlightCount,
+        pendingWriteCount: this.store.getPendingWriteCount(),
       });
       return;
     }
@@ -304,7 +313,9 @@ class ConfigSyncOrchestratorImpl implements ConfigSyncOrchestrator {
   }
 
   private async refreshQueueDiagnostics(): Promise<void> {
-    this.store.updateDiagnostics({ queue: await this.cache.getQueueMetadata(this.tenantId) });
+    const queue = await this.cache.getQueueMetadata(this.tenantId);
+    this.store.setQueue(queue);
+    this.store.updateDiagnostics({ pendingCount: queue.pendingCount });
   }
 
   private clearRetryTimer(): void {

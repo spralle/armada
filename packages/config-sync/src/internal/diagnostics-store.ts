@@ -1,4 +1,4 @@
-import type { SyncStatus } from "@ghost/config-types";
+import type { SyncQueueMetadata, SyncStatus } from "@ghost/config-types";
 import type { SyncDiagnostics } from "../types.js";
 
 export type SyncStateListener = (state: SyncStatus) => void;
@@ -7,11 +7,13 @@ export type DiagnosticsListener = (diagnostics: SyncDiagnostics) => void;
 export class DiagnosticsStore {
   private syncState: SyncStatus = { status: "syncing" };
   private diagnostics: SyncDiagnostics;
+  private queue: SyncQueueMetadata;
   private readonly stateListeners = new Set<SyncStateListener>();
   private readonly diagnosticsListeners = new Set<DiagnosticsListener>();
 
-  constructor(initial: SyncDiagnostics) {
-    this.diagnostics = initial;
+  constructor(initial: { diagnostics: SyncDiagnostics; queue: SyncQueueMetadata }) {
+    this.diagnostics = initial.diagnostics;
+    this.queue = { ...initial.queue };
   }
 
   getSyncState(): SyncStatus {
@@ -19,10 +21,15 @@ export class DiagnosticsStore {
   }
 
   getDiagnostics(): SyncDiagnostics {
-    return {
-      ...this.diagnostics,
-      queue: { ...this.diagnostics.queue },
-    };
+    return { ...this.diagnostics };
+  }
+
+  setQueue(next: SyncQueueMetadata): void {
+    this.queue = { ...next };
+  }
+
+  getPendingWriteCount(): number {
+    return this.queue.pendingCount + this.queue.inFlightCount;
   }
 
   setSyncState(next: SyncStatus): void {
@@ -36,7 +43,6 @@ export class DiagnosticsStore {
     this.diagnostics = {
       ...this.diagnostics,
       ...partial,
-      queue: partial.queue === undefined ? this.diagnostics.queue : { ...partial.queue },
     };
     const current = this.getDiagnostics();
     for (const listener of this.diagnosticsListeners) {
