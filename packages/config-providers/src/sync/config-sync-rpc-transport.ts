@@ -46,6 +46,17 @@ const DEFAULT_ROUTES: ConfigSyncRpcTransportRoutes = {
 };
 
 const RETRYABLE_CODES = new Set<SyncErrorCode>(["network", "timeout", "rate-limited", "server"]);
+const SYNC_ERROR_CODES = new Set<SyncErrorCode>([
+  "network",
+  "timeout",
+  "unauthorized",
+  "forbidden",
+  "validation",
+  "conflict",
+  "rate-limited",
+  "server",
+  "unknown",
+]);
 
 export class ConfigSyncRpcTransportError extends Error {
   readonly syncError: SyncErrorMetadata;
@@ -83,12 +94,11 @@ export function classifyRpcSyncError(error: unknown): SyncErrorMetadata {
   };
 
   const status = asNumber(candidate?.status) ?? asNumber(candidate?.statusCode);
-  const normalizedCode = normalizeCode(candidate?.code, status);
-  const retryable =
-    typeof candidate?.retryable === "boolean" ? candidate.retryable : RETRYABLE_CODES.has(normalizedCode);
+  const code = asSyncErrorCode(candidate?.code) ?? "unknown";
+  const retryable = typeof candidate?.retryable === "boolean" ? candidate.retryable : RETRYABLE_CODES.has(code);
 
   return {
-    code: normalizedCode,
+    code,
     message: asMessage(candidate?.message),
     retryable,
     status,
@@ -162,63 +172,11 @@ export class ConfigSyncRpcTransportAdapter implements ConfigSyncTransport {
   }
 }
 
-function normalizeCode(code: unknown, status: number | undefined): SyncErrorCode {
-  if (typeof code === "string") {
-    const normalized = code.toLowerCase();
-    if (normalized.includes("timeout") || normalized === "etimedout") {
-      return "timeout";
-    }
-    if (normalized.includes("network") || normalized === "econnreset" || normalized === "econnrefused") {
-      return "network";
-    }
-    if (normalized === "unauthorized") {
-      return "unauthorized";
-    }
-    if (normalized === "forbidden") {
-      return "forbidden";
-    }
-    if (normalized === "validation" || normalized === "bad_request") {
-      return "validation";
-    }
-    if (normalized === "conflict") {
-      return "conflict";
-    }
-    if (normalized === "rate-limited" || normalized === "too_many_requests") {
-      return "rate-limited";
-    }
-    if (normalized === "server") {
-      return "server";
-    }
+function asSyncErrorCode(value: unknown): SyncErrorCode | undefined {
+  if (typeof value !== "string") {
+    return undefined;
   }
-
-  if (status !== undefined) {
-    if (status === 401) {
-      return "unauthorized";
-    }
-    if (status === 403) {
-      return "forbidden";
-    }
-    if (status === 408) {
-      return "timeout";
-    }
-    if (status === 409) {
-      return "conflict";
-    }
-    if (status === 422) {
-      return "validation";
-    }
-    if (status === 429) {
-      return "rate-limited";
-    }
-    if (status >= 500) {
-      return "server";
-    }
-    if (status >= 400) {
-      return "validation";
-    }
-  }
-
-  return "unknown";
+  return SYNC_ERROR_CODES.has(value as SyncErrorCode) ? (value as SyncErrorCode) : undefined;
 }
 
 function asNumber(value: unknown): number | undefined {

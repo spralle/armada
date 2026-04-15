@@ -189,12 +189,14 @@ test("ConfigSyncRpcTransportAdapter maps ack request/response payloads", async (
   });
 });
 
-test("ConfigSyncRpcTransportAdapter classifies retryable vs non-retryable errors", async () => {
+test("ConfigSyncRpcTransportAdapter uses adapter-provided sync error metadata", async () => {
   const retryableClient = createFakeClient({
     request: async () => {
-      const error = new Error("offline");
-      error.code = "ECONNRESET";
-      throw error;
+      throw {
+        code: "network",
+        message: "offline",
+        retryable: true,
+      };
     },
   });
   const retryableTransport = new ConfigSyncRpcTransportAdapter({ client: retryableClient });
@@ -209,21 +211,20 @@ test("ConfigSyncRpcTransportAdapter classifies retryable vs non-retryable errors
     },
   );
 
-  const nonRetryableClient = createFakeClient({
+  const unknownClient = createFakeClient({
     request: async () => {
-      const error = new Error("unauthorized");
-      error.status = 401;
-      throw error;
+      throw new Error("unauthorized");
     },
   });
-  const nonRetryableTransport = new ConfigSyncRpcTransportAdapter({ client: nonRetryableClient });
+  const unknownTransport = new ConfigSyncRpcTransportAdapter({ client: unknownClient });
 
   await assert.rejects(
-    () => nonRetryableTransport.ack({ tenantId: "tenant-a", requestId: "req-x" }),
+    () => unknownTransport.ack({ tenantId: "tenant-a", requestId: "req-x" }),
     (error) => {
       assert.equal(error instanceof ConfigSyncRpcTransportError, true);
-      assert.equal(error.syncError.code, "unauthorized");
+      assert.equal(error.syncError.code, "unknown");
       assert.equal(error.syncError.retryable, false);
+      assert.equal(error.syncError.message, "unauthorized");
       return true;
     },
   );
