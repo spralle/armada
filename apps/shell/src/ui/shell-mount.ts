@@ -23,6 +23,10 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .edge-slot-bottom { grid-area: bottom; flex-direction: row; }
     .edge-slot-left { grid-area: left; flex-direction: column; }
     .edge-slot-right { grid-area: right; flex-direction: column; }
+    .edge-slot-start, .edge-slot-center, .edge-slot-end { display: flex; align-items: center; }
+    .edge-slot-start { justify-content: flex-start; }
+    .edge-slot-center { flex: 1; justify-content: center; }
+    .edge-slot-end { justify-content: flex-end; }
     .dock-root { grid-area: main; }
     .shell,
     .shell > .dock-root,

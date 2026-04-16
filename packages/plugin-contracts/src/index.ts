@@ -80,6 +80,7 @@ export {
 export type {
   ComposedPluginViewContribution,
   ComposedPluginPartContribution,
+  ComposedPluginSlotContribution,
   ComposedPluginContributions,
   ComposedThemeContribution,
   PluginContributionSource,

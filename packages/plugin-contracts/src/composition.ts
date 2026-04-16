@@ -2,7 +2,10 @@ import type {
   PluginDockableTabMetadata,
   PluginContract,
   PluginPartContribution,
+  PluginSlotContribution,
   PluginViewContribution,
+  ShellEdgeSlot,
+  ShellEdgeSlotPosition,
   ThemeContribution,
 } from "./types.js";
 
@@ -21,9 +24,19 @@ export interface ComposedPluginPartContribution {
   dock?: PluginDockableTabMetadata | undefined;
 }
 
+export interface ComposedPluginSlotContribution {
+  pluginId: string;
+  id: string;
+  slot: ShellEdgeSlot;
+  position: ShellEdgeSlotPosition;
+  order: number;
+  component: string;
+}
+
 export interface ComposedPluginContributions {
   views: ComposedPluginViewContribution[];
   parts: ComposedPluginPartContribution[];
+  slots: ComposedPluginSlotContribution[];
 }
 
 export interface PluginContributionSource {
@@ -37,6 +50,7 @@ export function composeEnabledPluginContributions(
 ): ComposedPluginContributions {
   const views: ComposedPluginViewContribution[] = [];
   const parts: ComposedPluginPartContribution[] = [];
+  const slots: ComposedPluginSlotContribution[] = [];
 
   for (const plugin of plugins) {
     if (!plugin.enabled || !plugin.contract) {
@@ -46,6 +60,7 @@ export function composeEnabledPluginContributions(
     const contributes = plugin.contract.contributes;
     const pluginViews = contributes?.views ?? [];
     const pluginParts = contributes?.parts ?? [];
+    const pluginSlots = contributes?.slots ?? [];
 
     for (const view of pluginViews) {
       views.push(toComposedView(plugin.id, view));
@@ -54,11 +69,16 @@ export function composeEnabledPluginContributions(
     for (const part of pluginParts) {
       parts.push(toComposedPart(plugin.id, part));
     }
+
+    for (const slot of pluginSlots) {
+      slots.push(toComposedSlot(plugin.id, slot));
+    }
   }
 
   return {
     views,
     parts,
+    slots,
   };
 }
 
@@ -84,6 +104,20 @@ function toComposedPart(
     title: part.title,
     component: part.component,
     dock: part.dock,
+  };
+}
+
+function toComposedSlot(
+  pluginId: string,
+  slot: PluginSlotContribution,
+): ComposedPluginSlotContribution {
+  return {
+    pluginId,
+    id: slot.id,
+    slot: slot.slot,
+    position: slot.position,
+    order: slot.order,
+    component: slot.component,
   };
 }
 

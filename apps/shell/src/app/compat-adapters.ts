@@ -23,6 +23,7 @@ import {
   mountMainWindow,
   mountPopout,
 } from "../ui/shell-mount.js";
+import { renderEdgeSlots } from "../ui/edge-slot-renderer.js";
 
 interface ShellCompatibilityAdapterDeps {
   activatePluginForBoundary: (options: {
@@ -126,8 +127,8 @@ export function createShellRuntimeCompatibilityAdapters(
     renderSyncStatus: (viewRoot, viewRuntime) => {
       renderSyncStatusView(viewRoot, viewRuntime);
     },
-    renderEdgeSlots: (_viewRoot, _viewRuntime) => {
-      // No-op — edge slot rendering implemented in armada-vee5
+    renderEdgeSlots: (viewRoot, viewRuntime) => {
+      renderEdgeSlots(viewRoot, viewRuntime);
     },
   };
 
