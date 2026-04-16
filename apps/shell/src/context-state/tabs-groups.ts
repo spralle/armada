@@ -55,7 +55,7 @@ export function registerTab(
     partDefinitionId: resolvedPartDefinitionId,
     groupId: input.groupId,
     label: input.tabLabel ?? prior?.label ?? input.tabId,
-    closePolicy: input.closePolicy ?? prior?.closePolicy ?? "fixed",
+    closePolicy: input.closePolicy ?? prior?.closePolicy ?? "closeable",
     args: input.args ?? prior?.args ?? {},
   };
   if (!next.tabOrder.includes(input.tabId)) {

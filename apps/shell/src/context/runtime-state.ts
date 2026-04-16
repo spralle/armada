@@ -50,7 +50,7 @@ export function ensureTabsRegistered(state: ShellContextState, parts: ShellTabPa
       groupId: getTabGroupId(next, tabId) ?? DEFAULT_GROUP_ID,
       groupColor: DEFAULT_GROUP_COLOR,
       tabLabel: part.title,
-      closePolicy: isUtilityTabId(tabId) ? "fixed" : undefined,
+      closePolicy: isUtilityTabId(tabId) ? "fixed" : "closeable",
     });
   }
   return next;

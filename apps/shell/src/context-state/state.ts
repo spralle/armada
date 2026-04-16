@@ -23,7 +23,7 @@ export function createInitialShellContextState(options?: {
         definitionId: initialTabId,
         groupId: initialGroupId,
         label: initialTabId,
-        closePolicy: "fixed",
+        closePolicy: "closeable",
         args: {},
       },
     },
