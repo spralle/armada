@@ -24,6 +24,8 @@ export interface ActionServiceDependencies {
   getIntentRuntime(): IntentRuntime;
   /** Activates the plugin that owns the given trigger. */
   activatePlugin(pluginId: string, triggerId: string): Promise<boolean>;
+  /** Shared registry for cross-service runtime action dispatch. */
+  runtimeActionRegistry?: Map<string, (...args: unknown[]) => unknown>;
 }
 
 /**
@@ -58,10 +60,12 @@ export function createActionService(
       handler: (...args: unknown[]) => unknown,
     ): Disposable {
       runtimeActions.set(id, handler);
+      deps.runtimeActionRegistry?.set(id, handler);
       emitter.fire(undefined as never);
       return {
         dispose() {
           runtimeActions.delete(id);
+          deps.runtimeActionRegistry?.delete(id);
           emitter.fire(undefined as never);
         },
       };

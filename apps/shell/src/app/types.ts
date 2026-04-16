@@ -109,6 +109,8 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   services: PluginServices;
   themeRegistry: ThemeRegistry | null;
   intentRuntime: IntentRuntime;
+  /** Shared registry of runtime action handlers registered by plugins via ActionService. */
+  runtimeActionRegistry: Map<string, (...args: unknown[]) => unknown>;
   commandNotice: string;
   partHost: ShellPartHostAdapter;
   pluginConfigSyncDispose: (() => void) | null;
