@@ -65,6 +65,24 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   }
 
   wirePartActions(root, runtime, deps);
+
+  // Activate part instance when clicking inside panel content area.
+  if (dockHost) {
+    dockHost.addEventListener("pointerdown", (event) => {
+      if (runtime.syncDegraded) return;
+      const target = (event.target as HTMLElement).closest<HTMLElement>("[data-part-id]");
+      if (!target) return;
+      const partId = target.dataset.partId;
+      if (partId && partId !== runtime.selectedPartId) {
+        dispatchLocalLifecycleAction(runtime, {
+          actionId: "part-instance.activate",
+          tabInstanceId: partId,
+          partTitle: resolvePartTitle(partId, runtime),
+        }, deps as PartLifecycleDeps);
+      }
+    });
+  }
+
   wireDockSplitterDrag(root, runtime, {
     previewSplitStyle: ({ splitId, orientation, ratio }) => {
       previewDockSplitStyle(root, {

@@ -38,8 +38,9 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .dock-root { background: transparent; min-width: 0; min-height: 0; overflow: hidden; padding: var(--dock-panel-gap, 6px); display: flex; flex-direction: column; }
     .dock-root > .dock-node { flex: 1 1 auto; }
     .dock-node { min-width: 0; min-height: 0; }
-    .dock-node-stack { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; border: 1px solid var(--ghost-border-muted); border-radius: var(--dock-panel-radius, 6px); background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-background-opacity) * 100%), transparent); overflow: hidden; }
+    .dock-node-stack { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; border: 1px solid var(--ghost-border-muted); border-radius: var(--dock-panel-radius, 6px); background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-opacity-inactive, 0.9) * 100%), transparent); overflow: hidden; }
     .dock-node-stack:focus-within { background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-opacity-active, 1) * 100%), transparent); border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow-subtle); }
+    .dock-node-stack.is-active-stack { background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-opacity-active, 1) * 100%), transparent); border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow-subtle); }
     .dock-stack-panels { min-height: 0; overflow: hidden; padding: 0; position: relative; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"] { min-width: 0; min-height: 0; height: 100%; overflow: hidden; flex: 1 1 auto; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"][hidden] { display: none; }
@@ -110,7 +111,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .dev-inspector li { margin: 3px 0; }
     .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; flex: 1 1 auto; }
     .domain-panel-host,
-    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; background: var(--ghost-surface-inset); }
+    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; }
     .domain-hint { margin: 0; color: var(--ghost-dim-foreground); font-size: 12px; }
     .domain-list { display: grid; gap: 4px; }
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid var(--ghost-border); background: var(--ghost-surface-hover); color: var(--ghost-foreground); border-radius: 4px; padding: 6px; cursor: pointer; }
@@ -178,7 +179,7 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
     .dev-inspector li { margin: 3px 0; }
     .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; flex: 1 1 auto; }
     .domain-panel-host,
-    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; background: var(--ghost-surface-inset); }
+    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; }
     .domain-hint { margin: 0; color: var(--ghost-dim-foreground); font-size: 12px; }
     .domain-list { display: grid; gap: 4px; }
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid var(--ghost-border); background: var(--ghost-surface-hover); color: var(--ghost-foreground); border-radius: 4px; padding: 6px; cursor: pointer; }

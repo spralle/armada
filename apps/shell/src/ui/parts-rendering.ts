@@ -160,6 +160,10 @@ export function renderPartCard(
 }
 
 export function updateSelectedStyles(root: HTMLElement, selectedPartId: string | null): void {
+  for (const stack of root.querySelectorAll<HTMLElement>(".dock-node-stack")) {
+    stack.classList.remove("is-active-stack");
+  }
+
   for (const node of root.querySelectorAll<HTMLElement>("article[data-part-id]")) {
     const partId = node.dataset.partId;
     if (partId && partId === selectedPartId) {
@@ -167,6 +171,11 @@ export function updateSelectedStyles(root: HTMLElement, selectedPartId: string |
     } else {
       node.classList.remove("is-selected");
     }
+  }
+
+  if (selectedPartId) {
+    const activeContent = root.querySelector<HTMLElement>(`.dock-tabpanel-content[data-part-id="${selectedPartId}"]`);
+    activeContent?.closest(".dock-node-stack")?.classList.add("is-active-stack");
   }
 }
 
