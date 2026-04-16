@@ -227,13 +227,36 @@ function readPluginActions(contract: PluginContract): {
   return contributes?.actions ?? [];
 }
 
-export function createIntentRuntime(): IntentRuntime {
+export interface IntentRuntimeDeps {
+  getRegistrySnapshot?: () => Parameters<typeof createActionCatalogFromRegistrySnapshot>[0];
+}
+
+export function createIntentRuntime(deps?: IntentRuntimeDeps): IntentRuntime {
   return {
     resolveAndExecute(request) {
+      if (deps?.getRegistrySnapshot) {
+        const catalog = createActionCatalogFromRegistrySnapshot(deps.getRegistrySnapshot());
+        const resolution = resolveIntent(catalog, { type: request.intent, facts: request.context });
+
+        if (resolution.kind === "single-match" || resolution.kind === "multiple-matches") {
+          return {
+            executed: true,
+            intent: request.intent,
+            message: resolution.feedback,
+          };
+        }
+
+        return {
+          executed: false,
+          intent: request.intent,
+          message: resolution.feedback,
+        };
+      }
+
       return {
-        executed: true,
+        executed: false,
         intent: request.intent,
-        message: `Intent '${request.intent}' executed with ${Object.keys(request.context).length} context key(s).`,
+        message: `No intent runtime deps available for '${request.intent}'.`,
       };
     },
   };

@@ -55,7 +55,9 @@ export function createShellRuntime(options?: {
     })
     : createAsyncWindowBridgeCompatibilityShim(bridge);
 
-  const intentRuntime = createIntentRuntime();
+  const intentRuntime = createIntentRuntime({
+    getRegistrySnapshot: () => registry.getSnapshot(),
+  });
   const registry = createShellPluginRegistry();
 
   const runtime: ShellRuntime = {

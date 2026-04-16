@@ -34,13 +34,13 @@ test("runtime command surface path dispatches through action surface", async () 
 
   assert.match(
     commandSurfaceSource,
-    /const menuActions = resolveMenuActions\(runtime\.actionSurface, "sidePanel", context\);/,
-    "panel should resolve side panel menu actions from runtime action surface",
+    /const availableActions = runtime\.actionSurface\.actions\.filter\(/,
+    "panel should filter all actions from runtime action surface",
   );
   assert.match(
     commandSurfaceSource,
-    /await dispatchAction\(runtime\.actionSurface, runtime\.intentRuntime, actionId, toActionContext\(runtime\)\);/,
-    "panel dispatch should route through action surface",
+    /await bindings\.dispatchAction\(actionId, toActionContext\(runtime\)\);/,
+    "panel dispatch should route through dispatch binding",
   );
   assert.match(
     keyboardSource,
