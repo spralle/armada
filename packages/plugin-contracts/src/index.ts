@@ -129,6 +129,9 @@ export type {
   QuickPick,
   InputBoxOptions,
   ActivationContext,
+  ViewService,
+  ViewDescriptor,
+  OpenViewOptions,
 } from "./ghost-api.js";
 
 export type {

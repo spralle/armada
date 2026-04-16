@@ -2,6 +2,9 @@ import type { GhostApiFactoryDependencies } from "./ghost-api-factory.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { QuickPickBridge } from "../ui/quick-pick/quick-pick-bridge.js";
 import { toActionContext } from "../shell-runtime/command-surface-render.js";
+import { getVisiblePartDefinitions } from "../ui/parts-rendering.js";
+import { openPartInstanceWithArgs } from "../part-instance-flow.js";
+import { updateContextState } from "../context/runtime-state.js";
 
 /**
  * Construct GhostApiFactoryDependencies from the ShellRuntime and QuickPickBridge.
@@ -27,5 +30,14 @@ export function createGhostApiDeps(
     getSelectedPartId: () => runtime.selectedPartId,
     renderQuickPick: (controller) => quickPickBridge.render(controller as never),
     dismissQuickPick: () => quickPickBridge.dismiss(),
+
+    viewServiceDeps: {
+      getPartDefinitions: () => getVisiblePartDefinitions(runtime),
+      openPartInstance: (input) => {
+        const result = openPartInstanceWithArgs(runtime.contextState, input);
+        updateContextState(runtime, result.state);
+        return result.tabId;
+      },
+    },
   };
 }

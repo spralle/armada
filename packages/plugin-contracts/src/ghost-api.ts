@@ -9,6 +9,8 @@ export interface GhostApi {
   readonly actions: ActionService;
   /** Window management and UI primitives. */
   readonly window: WindowService;
+  /** View discovery and opening. */
+  readonly views: ViewService;
 }
 
 // ─── ActionService ───
@@ -140,6 +142,36 @@ export interface QuickPick<T extends QuickPickItem> extends Disposable {
   show(): void;
   /** Hide the QuickPick overlay. */
   hide(): void;
+}
+
+// ─── ViewService ───
+
+/** Descriptor for an available part/view definition. */
+export interface ViewDescriptor {
+  /** The part definition ID (used to open it). */
+  readonly definitionId: string;
+  /** Human-readable title. */
+  readonly title: string;
+  /** Which dock container slot this view prefers. */
+  readonly slot: "main" | "secondary" | "side";
+  /** The plugin that contributes this view. */
+  readonly pluginId: string;
+}
+
+/** Options for openView(). */
+export interface OpenViewOptions {
+  /** Override the default tab label. */
+  readonly label?: string;
+  /** Arguments to pass to the part instance. */
+  readonly args?: Record<string, string>;
+}
+
+/** Service for discovering and opening views (parts). */
+export interface ViewService {
+  /** Get all available part definitions from enabled plugins. */
+  getViewDefinitions(): ViewDescriptor[];
+  /** Open a view as a new tab in the dock tree. Returns the new tab ID. */
+  openView(definitionId: string, options?: OpenViewOptions): string;
 }
 
 // ─── InputBox ───
