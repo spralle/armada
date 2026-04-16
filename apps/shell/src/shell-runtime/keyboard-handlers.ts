@@ -228,6 +228,12 @@ export function bindKeyboardShortcuts(
             updateDockTabVisibility(root, runtime);
           }
           bindings.renderSyncStatus();
+        } else if (executed) {
+          // Plugin-registered actions may mutate context state (e.g., openView).
+          // Trigger a full structural re-render so new tabs/views appear.
+          bindings.renderContextControls();
+          bindings.renderParts();
+          bindings.renderSyncStatus();
         }
         bindings.renderCommandSurface();
         return;
