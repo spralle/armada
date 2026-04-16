@@ -32,7 +32,6 @@ export interface KeyboardBindings {
   renderContextControls: () => void;
   renderEdgeSlots: () => void;
   renderParts: () => void;
-  renderCommandSurface: () => void;
   renderSyncStatus: () => void;
   toActionContext: () => Record<string, string>;
   getDefaultKeybindings: () => ActionKeybinding[];
@@ -178,7 +177,6 @@ export function bindKeyboardShortcuts(
         }
         if (!activated) {
           runtime.commandNotice = `Action '${action.id}' blocked: plugin '${action.pluginId}' is not active.`;
-          bindings.renderCommandSurface();
           return;
         }
 
@@ -238,7 +236,6 @@ export function bindKeyboardShortcuts(
           bindings.renderParts();
           bindings.renderSyncStatus();
         }
-        bindings.renderCommandSurface();
         return;
       }
     }

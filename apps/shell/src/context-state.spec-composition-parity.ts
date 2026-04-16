@@ -239,7 +239,6 @@ function createDriver(mode: FlowMode, root: HTMLElement, runtime: ShellRuntime):
   const handlers = createRuntimeEventHandlers(root, runtime, {
     activatePluginForBoundary: async () => true,
     announce: () => {},
-    renderCommandSurface: () => {},
     renderContextControlsPanel: () => {},
     renderParts: () => {},
     renderSyncStatus: () => {},

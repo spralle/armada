@@ -7,7 +7,6 @@ import {
 } from "./context/runtime-state.js";
 import {
   buildActionSurface,
-  dispatchAction,
 } from "./action-surface.js";
 import {
   createDefaultShellKeybindingContract,
@@ -45,21 +44,18 @@ import {
 import { createWindowId } from "./app/utils.js";
 import { applyLayout, setupResize } from "./shell-runtime/layout-helpers.js";
 import {
-  renderCommandSurface as renderCommandSurfaceView,
   summarizeSelectionPriorities,
   toActionContext,
-} from "./shell-runtime/command-surface-render.js";
+} from "./shell-runtime/action-context.js";
 import {
   bindBridgeSync as bindBridgeSyncHandlers,
   announce,
   publishWithDegrade,
 } from "./shell-runtime/bridge-sync-handlers.js";
 import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
-import { handleShellKeyboardAction } from "./shell-runtime/shell-keyboard-actions.js";
 import {
   bindKeyboardShortcuts as bindKeyboardHandlers,
   dismissIntentChooser as dismissIntentChooserState,
-  type KeyboardBindings,
 } from "./shell-runtime/keyboard-handlers.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 import { registerConfigurationServiceCapability } from "./config-service-registration.js";
@@ -100,7 +96,6 @@ export function startShell(root: HTMLElement): ShellRuntime {
     primeEnabledPluginActivations: () => primeEnabledPluginActivations(root, shellRuntime),
     publishWithDegrade: (event) => publishWithDegrade(root, shellRuntime, event, createBridgeBindings(root, shellRuntime)),
     refreshCommandContributions: () => refreshCommandContributions(shellRuntime),
-    renderCommandSurface: () => renderCommandSurface(root, shellRuntime),
     renderContextControlsPanel: () => renderContextControlsPanel(root, shellRuntime),
     renderParts: () => renderParts(root, shellRuntime),
     renderSyncStatus: () => renderSyncStatus(root, shellRuntime),
@@ -267,7 +262,6 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
     refreshCommandContributions(runtime);
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);
     renderParts(root, runtime);
-    renderCommandSurface(root, runtime);
   } catch (error) {
     quickPickBridge.dispose();
     console.warn("[shell] plugin registry hydration skipped", error);
@@ -315,7 +309,6 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): () => 
     renderContextControls: () => renderContextControlsPanel(root, runtime),
     renderEdgeSlots: () => getShellBootstrapComposition(runtime).renderEdgeSlots(root, runtime),
     renderParts: () => renderParts(root, runtime),
-    renderCommandSurface: () => renderCommandSurface(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
     toActionContext: () => toActionContext(runtime),
     getDefaultKeybindings: () => DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
@@ -360,83 +353,6 @@ function renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): v
   getShellBootstrapComposition(runtime).renderContextControlsPanel(root, runtime);
 }
 
-function renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void {
-  renderCommandSurfaceView(root, runtime, {
-    activatePluginForBoundary: (options) => activatePluginForBoundary(root, runtime, options),
-    dispatchAction: (actionId, context) => dispatchCommandSurfaceAction(root, runtime, actionId, context),
-  });
-}
-
-async function dispatchCommandSurfaceAction(
-  root: HTMLElement,
-  runtime: ShellRuntime,
-  actionId: string,
-  context: Record<string, string>,
-): Promise<boolean> {
-  // 1. Try shell built-in action handlers (workspace, window mgmt, etc.)
-  const bindings = buildCommandSurfaceShellBindings(root, runtime);
-  const shellResult = handleShellKeyboardAction(runtime, bindings, actionId);
-  if (shellResult.handled) {
-    if (shellResult.executed) {
-      renderContextControlsPanel(root, runtime);
-      getShellBootstrapComposition(runtime).renderEdgeSlots(root, runtime);
-      renderParts(root, runtime);
-      renderSyncStatus(root, runtime);
-    }
-    return shellResult.executed;
-  }
-
-  // 2. Try runtime action registry (plugin-registered handlers)
-  const handler = runtime.runtimeActionRegistry.get(actionId);
-  if (handler) {
-    try {
-      await handler();
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  // 3. Fall back to intent dispatch
-  return dispatchAction(runtime.actionSurface, runtime.intentRuntime, actionId, context);
-}
-
-function buildCommandSurfaceShellBindings(root: HTMLElement, runtime: ShellRuntime): KeyboardBindings {
-  const handlers = createRuntimeEventHandlers(root, runtime, createRuntimeEventHandlerBindings(root, runtime));
-  return {
-    activatePluginForBoundary: async () => true,
-    announce: () => {},
-    applySelection: handlers.applySelection,
-    dismissIntentChooser: () => {},
-    executeResolvedAction: async () => {},
-    publishWithDegrade: (event) => {
-      publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
-    },
-    renderCommandSurface: () => renderCommandSurface(root, runtime),
-    renderContextControls: () => renderContextControlsPanel(root, runtime),
-    renderEdgeSlots: () => getShellBootstrapComposition(runtime).renderEdgeSlots(root, runtime),
-    renderParts: () => renderParts(root, runtime),
-    renderSyncStatus: () => renderSyncStatus(root, runtime),
-    toActionContext: () => toActionContext(runtime),
-    getDefaultKeybindings: () => [],
-    getUserOverrideKeybindings: () => [],
-    getWorkspaceSwitchDeps: () => ({
-      root,
-      runtime,
-      partsDeps: {
-        applySelection: handlers.applySelection,
-        partHost: runtime.partHost,
-        publishWithDegrade: (event) => {
-          publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
-        },
-        renderContextControls: () => renderContextControlsPanel(root, runtime),
-        renderParts: () => renderParts(root, runtime),
-        renderSyncStatus: () => renderSyncStatus(root, runtime),
-      },
-    }),
-  };
-}
-
 async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
   const snapshot = runtime.registry.getSnapshot();
   const activations = snapshot.plugins
@@ -462,7 +378,6 @@ async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRu
   refreshCommandContributions(runtime);
   getShellBootstrapComposition(runtime).renderPanels(root, runtime);
   renderParts(root, runtime);
-  renderCommandSurface(root, runtime);
 }
 
 async function activatePluginForBoundary(
@@ -522,7 +437,6 @@ function createRuntimeEventHandlerBindings(root: HTMLElement, runtime: ShellRunt
       triggerId: string;
     }) => activatePluginForBoundary(root, runtime, options),
     announce: (message: string) => announce(root, runtime, message),
-    renderCommandSurface: () => renderCommandSurface(root, runtime),
     renderContextControlsPanel: () => renderContextControlsPanel(root, runtime),
     renderParts: () => renderParts(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),

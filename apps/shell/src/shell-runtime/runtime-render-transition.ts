@@ -10,9 +10,7 @@ export function deriveCloseableTabIds(parts: ReadonlyArray<ComposedShellPart>): 
 export function rerenderAfterPluginToggle(
   renderParts: () => void,
   renderPanels: () => void,
-  renderCommandSurface: () => void,
 ): void {
   renderParts();
   renderPanels();
-  renderCommandSurface();
 }

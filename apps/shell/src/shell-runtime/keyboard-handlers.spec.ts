@@ -276,7 +276,6 @@ function createBindings(
     },
     executeResolvedAction: async () => {},
     publishWithDegrade: () => {},
-    renderCommandSurface: () => {},
     renderContextControls: () => {},
     renderEdgeSlots: () => {},
     renderParts: () => {},

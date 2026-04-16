@@ -52,7 +52,6 @@ export interface ShellEffectsPort {
   }): Promise<boolean>;
   announce(message: string): void;
   publishWithDegrade(event: WindowBridgeEvent): void;
-  renderCommandSurface(): void;
   renderContextControlsPanel(): void;
   renderParts(): void;
   renderSyncStatus(): void;
@@ -74,7 +73,6 @@ export interface ShellRendererAdapter {
     publishRestoreRequestOnUnload: () => void;
   }): () => void;
   renderPanels(root: HTMLElement, runtime: ShellRuntime): void;
-  renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void;
   renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void;
   renderParts(root: HTMLElement, runtime: ShellRuntime): void;
   renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void;

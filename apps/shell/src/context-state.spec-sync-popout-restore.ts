@@ -123,7 +123,6 @@ export function registerSyncPopoutRestoreSpecs(harness: SpecHarness): void {
     const handlers = createRuntimeEventHandlers(root, runtime, {
       activatePluginForBoundary: async () => false,
       announce() {},
-      renderCommandSurface() {},
       renderContextControlsPanel() {},
       renderParts() {},
       renderSyncStatus() {},

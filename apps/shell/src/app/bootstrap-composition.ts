@@ -48,7 +48,6 @@ export interface ShellBootstrapRuntimeDeps {
   publishWithDegrade: (event: PublishEvent) => void;
   refreshCommandContributions: () => void;
   summarizeSelectionPriorities: () => string;
-  renderCommandSurface: () => void;
   renderContextControlsPanel: () => void;
   renderParts: () => void;
   renderSyncStatus: () => void;
@@ -124,7 +123,6 @@ export function createShellBootstrapComposition(
   const handlers = createRuntimeEventHandlers(root, runtime, {
     activatePluginForBoundary: (options) => deps.activatePluginForBoundary(options),
     announce: (message) => deps.announce(message),
-    renderCommandSurface: () => deps.renderCommandSurface(),
     renderContextControlsPanel: () => deps.renderContextControlsPanel(),
     renderParts: () => deps.renderParts(),
     renderSyncStatus: () => deps.renderSyncStatus(),
@@ -146,7 +144,6 @@ export function createShellBootstrapComposition(
         primeEnabledPluginActivations: () => deps.primeEnabledPluginActivations(),
         publishWithDegrade: (event) => deps.publishWithDegrade(event),
         refreshCommandContributions: () => deps.refreshCommandContributions(),
-        renderCommandSurface: () => deps.renderCommandSurface(),
         renderContextControlsPanel: () => deps.renderContextControlsPanel(),
         renderParts: () => deps.renderParts(),
         renderSyncStatus: () => deps.renderSyncStatus(),
@@ -170,7 +167,6 @@ export function createShellBootstrapComposition(
         primeEnabledPluginActivations: () => deps.primeEnabledPluginActivations(),
         publishWithDegrade: (event) => deps.publishWithDegrade(event),
         refreshCommandContributions: () => deps.refreshCommandContributions(),
-        renderCommandSurface: () => deps.renderCommandSurface(),
         renderContextControlsPanel: () => deps.renderContextControlsPanel(),
         renderParts: () => deps.renderParts(),
         renderSyncStatus: () => deps.renderSyncStatus(),

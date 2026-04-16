@@ -1,7 +1,7 @@
 import type { GhostApiFactoryDependencies } from "./ghost-api-factory.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { QuickPickBridge } from "../ui/quick-pick/quick-pick-bridge.js";
-import { toActionContext } from "../shell-runtime/command-surface-render.js";
+import { toActionContext } from "../shell-runtime/action-context.js";
 import { getVisiblePartDefinitions } from "../ui/parts-rendering.js";
 import { openPartInstanceWithArgs } from "../part-instance-flow.js";
 import { updateContextState } from "../context/runtime-state.js";
