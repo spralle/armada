@@ -126,6 +126,9 @@ export function createShellRuntimeCompatibilityAdapters(
     renderSyncStatus: (viewRoot, viewRuntime) => {
       renderSyncStatusView(viewRoot, viewRuntime);
     },
+    renderEdgeSlots: (_viewRoot, _viewRuntime) => {
+      // No-op — edge slot rendering implemented in armada-vee5
+    },
   };
 
   const partHost: ShellPartHostAdapter = {
