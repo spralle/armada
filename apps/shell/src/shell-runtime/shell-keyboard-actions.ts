@@ -62,7 +62,7 @@ function dispatchShellKeyboardAction(
   bindings: KeyboardBindings,
   actionId: ShellKeyboardActionId,
 ): ShellKeyboardActionResult {
-  if (actionId === "shell.window.close") {
+  if (actionId === "shell.view.close") {
     const activeTabId = runtime.contextState.activeTabId;
     if (!activeTabId) {
       return unavailable(actionId, "no active tab");

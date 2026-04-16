@@ -87,7 +87,7 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
 
     assertEqual(result.prevented, true, "mapped shell keybinding should prevent browser default");
     assertEqual(runtime.contextState.tabs["tab-a"], undefined, "close action should remove active tab");
-    assertTruthy(runtime.commandNotice.includes("shell.window.close"), "command notice should reference handled action id");
+    assertTruthy(runtime.commandNotice.includes("shell.view.close"), "command notice should reference handled action id");
 
     dispose();
   });
@@ -135,7 +135,7 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
 
     assertEqual(result.prevented, true, "keybinding should resolve even with non-HTMLElement target");
     assertEqual(runtime.contextState.tabs["tab-a"], undefined, "close action should execute despite non-HTMLElement target");
-    assertTruthy(runtime.commandNotice.includes("shell.window.close"), "command notice should reference action for non-HTMLElement target");
+    assertTruthy(runtime.commandNotice.includes("shell.view.close"), "command notice should reference action for non-HTMLElement target");
   });
 
   test("keyboard handler does not preventDefault for unavailable shell actions (Bug C)", async () => {
@@ -174,7 +174,7 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
     const root = new FakeRoot();
     const runtime = createRuntimeFixture();
     let overrideSet: { action: string; keybinding: string; pluginId: string }[] = [
-      { action: "shell.window.close", keybinding: "shift+alt+z", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
+      { action: "shell.view.close", keybinding: "shift+alt+z", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
     ];
     const bindings = createBindings(runtime, {
       getUserOverrideKeybindings: () => overrideSet,
@@ -190,7 +190,7 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
 
     // Now change override to different chord (same count=1) — remap close to shift+alt+x
     overrideSet = [
-      { action: "shell.window.close", keybinding: "shift+alt+x", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
+      { action: "shell.view.close", keybinding: "shift+alt+x", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
     ];
 
     // The old override chord should no longer resolve (defaults don't have shift+alt+z)
@@ -201,7 +201,7 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
     const resultNew = await root.dispatch({ key: "x", altKey: true, shiftKey: true, target });
     assertEqual(resultNew.prevented, true, "new override chord should match after content change");
     assertTruthy(
-      runtime.commandNotice.includes("shell.window.close"),
+      runtime.commandNotice.includes("shell.view.close"),
       "new override chord should dispatch the remapped close action",
     );
   });
