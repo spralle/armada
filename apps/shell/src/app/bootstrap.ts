@@ -71,7 +71,9 @@ export async function bootstrapShellWithTenantManifest(
   const rawManifest = await fetchManifest(manifestUrl);
   const parsedManifest = parseTenantManifestFallback(rawManifest);
 
-  const registry = createShellPluginRegistry();
+  const registry = createShellPluginRegistry({
+    apiDeps: options.apiDeps,
+  });
   registry.registerManifestDescriptors(parsedManifest.tenantId, parsedManifest.plugins);
   options.onProgress?.(registry);
 
