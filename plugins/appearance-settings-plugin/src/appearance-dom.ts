@@ -102,6 +102,21 @@ const PANEL_STYLES = `
   }
   .appearance-custom-section { margin-top: 10px; }
   .appearance-unavailable { padding: 12px; color: var(--ghost-muted-foreground); font-size: 13px; }
+  .theme-swatch-toggle {
+    background: none; border: none; cursor: pointer; font-size: 11px;
+    color: var(--ghost-muted-foreground); padding: 2px 4px; margin-left: 6px;
+  }
+  .theme-swatch-toggle:hover { color: var(--ghost-foreground); }
+  .theme-swatch-container { display: none; padding: 6px 8px 2px; }
+  .theme-swatch-container.is-open { display: block; }
+  .theme-swatch-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+    gap: 4px;
+  }
+  .theme-swatch {
+    width: 24px; height: 24px; border-radius: 3px;
+    border: 1px solid var(--ghost-border); cursor: default;
+  }
 `;
 
 // ---------------------------------------------------------------------------
@@ -124,8 +139,27 @@ export function injectAppearanceStyles(): void {
 // Theme picker
 // ---------------------------------------------------------------------------
 
+/** Create a grid of color swatches from a CSS variable palette. */
+function createSwatchGrid(palette: Record<string, string>): HTMLElement {
+  const grid = document.createElement("div");
+  grid.className = "theme-swatch-grid";
+  for (const [cssVar, color] of Object.entries(palette)) {
+    // Skip non-color values (mode, radius, opacity, sizes)
+    if (!/^#|^rgb|^hsl|^color-mix/.test(color)) {
+      continue;
+    }
+    const swatch = document.createElement("div");
+    swatch.className = "theme-swatch";
+    swatch.style.backgroundColor = color;
+    swatch.title = cssVar;
+    grid.appendChild(swatch);
+  }
+  return grid;
+}
+
 export interface ThemePickerCallbacks {
   onSelect: (themeId: string) => void;
+  onGetPalette: (themeId: string) => Record<string, string> | null;
 }
 
 export function renderThemePicker(
@@ -176,6 +210,13 @@ export function renderThemePicker(
     row.appendChild(nameSpan);
     row.appendChild(badge);
 
+    const toggleBtn = document.createElement("button");
+    toggleBtn.className = "theme-swatch-toggle";
+    toggleBtn.type = "button";
+    toggleBtn.textContent = "▶";
+    toggleBtn.title = "Preview theme tokens";
+    row.appendChild(toggleBtn);
+
     row.addEventListener("click", () => callbacks.onSelect(theme.id));
     row.addEventListener("keydown", (event: KeyboardEvent) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -184,7 +225,23 @@ export function renderThemePicker(
       }
     });
 
+    const swatchContainer = document.createElement("div");
+    swatchContainer.className = "theme-swatch-container";
+
+    toggleBtn.addEventListener("click", (e: MouseEvent) => {
+      e.stopPropagation();
+      const isOpen = swatchContainer.classList.toggle("is-open");
+      toggleBtn.textContent = isOpen ? "▼" : "▶";
+      if (isOpen && swatchContainer.children.length === 0) {
+        const palette = callbacks.onGetPalette(theme.id);
+        if (palette) {
+          swatchContainer.appendChild(createSwatchGrid(palette));
+        }
+      }
+    });
+
     section.appendChild(row);
+    section.appendChild(swatchContainer);
   }
 
   return section;

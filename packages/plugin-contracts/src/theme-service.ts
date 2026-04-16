@@ -59,6 +59,9 @@ export interface ThemeService {
 
   /** Load all available theme plugins and discover their themes. For gallery population. */
   loadAllThemes(): Promise<void>;
+
+  /** Get all CSS variable values for a given theme, or null if not found. */
+  getThemePalette(themeId: string): Record<string, string> | null;
 }
 
 // ---------------------------------------------------------------------------

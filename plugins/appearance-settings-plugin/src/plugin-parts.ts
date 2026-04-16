@@ -81,6 +81,9 @@ function renderPanel(target: HTMLElement, themeService: ThemeService): void {
         themeService.setTheme(themeId);
         renderPanel(target, themeService);
       },
+      onGetPalette(themeId: string) {
+        return themeService.getThemePalette(themeId);
+      },
     }),
   );
 
