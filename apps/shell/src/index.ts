@@ -60,6 +60,7 @@ import {
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 import { registerConfigurationServiceCapability } from "./config-service-registration.js";
 import { createShellConfigService, runPersistenceMigrations } from "./config-service-setup.js";
+import { createPluginServicesBridge } from "./plugin-service-bridge.js";
 
 export type {
   ShellCoreApi,
@@ -210,12 +211,14 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
       tenantId: "demo",
       configurationService: configService,
       enableByDefault: true,
+      defaultThemeId: "ghost.theme.tokyo-night",
     });
     if (!isActive()) {
       state.disposePluginConfigSync?.();
       return;
     }
     runtime.registry = state.registry;
+    runtime.services = createPluginServicesBridge(state.registry);
     runtime.pluginConfigSyncDispose = state.disposePluginConfigSync;
     runtime.themeRegistry = state.themeRegistry ?? null;
     try {

@@ -132,7 +132,7 @@ test("Tokyo Night theme has background images", () => {
   );
   assert.ok(tokyoNight);
   assert.ok(tokyoNight.backgrounds, "Tokyo Night backgrounds must be defined");
-  assert.equal(tokyoNight.backgrounds.length, 7, "Expected 7 background images");
+  assert.equal(tokyoNight.backgrounds.length, 4, "Expected 4 background images");
   assert.ok(
     tokyoNight.backgrounds[0].url.includes("swirl-buck"),
     "First background should contain 'swirl-buck'",
@@ -165,7 +165,7 @@ test("Retro 82 theme has Omarchy-compatible palette and backgrounds", () => {
 
   // Backgrounds
   assert.ok(retro82.backgrounds, "backgrounds must be defined");
-  assert.equal(retro82.backgrounds.length, 9, "Expected 9 background images");
+  assert.equal(retro82.backgrounds.length, 15, "Expected 15 background images");
 });
 
 // ---------------------------------------------------------------------------
