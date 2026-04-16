@@ -16,6 +16,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     html, body, #root { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: transparent; color: var(--ghost-foreground); }
+    * { scrollbar-width: thin; scrollbar-color: var(--ghost-muted-foreground) transparent; }
     .shell { display: grid; grid-template-columns: 1fr; min-height: 100%; height: 100%; overflow: hidden; }
     .shell,
     .shell > .dock-root,
@@ -144,6 +145,7 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     html, body, #root { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: transparent; color: var(--ghost-foreground); }
+    * { scrollbar-width: thin; scrollbar-color: var(--ghost-muted-foreground) transparent; }
     .popout { padding: 8px; min-height: 100%; height: 100%; box-sizing: border-box; overflow: hidden; }
     #popout-slot { height: 100%; min-height: 0; }
     .card { border: 1px solid var(--ghost-border-alt); border-radius: 4px; margin-bottom: 6px; padding: 6px; }

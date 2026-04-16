@@ -58,6 +58,13 @@ const PANEL_STYLES = `
   .appearance-theme-row:focus-visible { outline: 2px solid var(--ghost-ring); outline-offset: 1px; }
   .appearance-theme-row.is-active {
     border: 2px solid var(--ghost-primary); background: var(--ghost-accent);
+    color: var(--ghost-accent-foreground);
+  }
+  .appearance-theme-row.is-active .appearance-theme-name { color: inherit; }
+  .appearance-theme-row.is-active .appearance-theme-author { color: inherit; opacity: 0.8; }
+  .appearance-theme-row.is-active .appearance-mode-badge {
+    background: color-mix(in srgb, var(--ghost-accent-foreground) 15%, transparent);
+    color: inherit; border-color: color-mix(in srgb, var(--ghost-accent-foreground) 30%, transparent);
   }
   .appearance-theme-name { font-size: 13px; font-weight: 600; color: var(--ghost-foreground); }
   .appearance-theme-author { font-size: 11px; color: var(--ghost-muted-foreground); margin-left: 6px; }
