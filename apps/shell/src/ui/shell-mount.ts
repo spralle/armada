@@ -100,7 +100,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .dev-inspector li { margin: 3px 0; }
     .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; flex: 1 1 auto; }
     .domain-panel-host,
-    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; }
+    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; background: var(--ghost-surface-inset); }
     .domain-hint { margin: 0; color: var(--ghost-dim-foreground); font-size: 12px; }
     .domain-list { display: grid; gap: 4px; }
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid var(--ghost-border); background: var(--ghost-surface-hover); color: var(--ghost-foreground); border-radius: 4px; padding: 6px; cursor: pointer; }
@@ -164,7 +164,7 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
     .dev-inspector li { margin: 3px 0; }
     .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; flex: 1 1 auto; }
     .domain-panel-host,
-    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; }
+    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; background: var(--ghost-surface-inset); }
     .domain-hint { margin: 0; color: var(--ghost-dim-foreground); font-size: 12px; }
     .domain-list { display: grid; gap: 4px; }
     .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid var(--ghost-border); background: var(--ghost-surface-hover); color: var(--ghost-foreground); border-radius: 4px; padding: 6px; cursor: pointer; }

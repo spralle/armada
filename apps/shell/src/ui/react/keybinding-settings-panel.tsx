@@ -141,7 +141,7 @@ export function KeybindingsSettingsPanel(props: KeybindingsSettingsPanelProps) {
   }, [manager, onChanged]);
 
   return (
-    <section aria-label="Keybinding settings" style={{ padding: 8, background: "var(--ghost-background)", color: "var(--ghost-foreground)" }}>
+    <section aria-label="Keybinding settings" style={{ padding: 8, color: "var(--ghost-foreground)" }}>
       <h2 style={{ margin: "0 0 12px", fontSize: 16, color: "var(--ghost-foreground)" }}>Keybinding Settings</h2>
 
       {warning ? (
