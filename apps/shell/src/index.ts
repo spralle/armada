@@ -3,6 +3,7 @@ import {
   ensureTabsRegistered,
   updateContextState,
   readGroupSelectionContext,
+  writeGroupSelectionContext,
 } from "./context/runtime-state.js";
 import {
   buildActionSurface,
@@ -64,6 +65,9 @@ import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 import { registerConfigurationServiceCapability } from "./config-service-registration.js";
 import { createShellConfigService, runPersistenceMigrations } from "./config-service-setup.js";
 import { createPluginServicesBridge } from "./plugin-service-bridge.js";
+import { registerSyncStatusServiceCapability } from "./sync-status-service-registration.js";
+import { registerContextServiceCapability } from "./context-service-registration.js";
+import { registerKeybindingServiceCapability } from "./keybinding-service-registration.js";
 import { createQuickPickBridge } from "./ui/quick-pick/quick-pick-bridge.js";
 import { createGhostApiDeps } from "./plugin-api/ghost-api-deps-factory.js";
 
@@ -245,6 +249,21 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
       console.warn("[shell] config service creation failed, continuing without it", configError);
     }
     runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
+    registerSyncStatusServiceCapability(runtime.registry, {
+      isSyncDegraded: () => runtime.syncDegraded,
+    });
+    registerContextServiceCapability(runtime.registry, {
+      getGroupSelectionContext: () => readGroupSelectionContext(runtime),
+      applyContextValue: (_key, value) => {
+        if (!runtime.syncDegraded) {
+          writeGroupSelectionContext(runtime, value);
+        }
+      },
+    });
+    registerKeybindingServiceCapability(runtime.registry, {
+      getOverrideManager: () => runtime.keybindingOverrideManager,
+      getKeybindings: () => runtime.actionSurface.keybindings,
+    });
     refreshCommandContributions(runtime);
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);
     renderParts(root, runtime);
