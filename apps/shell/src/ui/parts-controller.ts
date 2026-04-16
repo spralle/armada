@@ -1,5 +1,4 @@
 import type { ShellRuntime } from "../app/types.js";
-import { isUtilityTabId } from "../utility-tabs.js";
 import { wireDockSplitterDrag } from "./dock-splitter-dnd.js";
 import { wireDockTabDragDrop } from "./dock-tab-dnd.js";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
@@ -117,7 +116,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   updateSelectedStyles(root, runtime.selectedPartId);
   void deps.partHost.syncRenderedParts(
     root,
-    visibleParts.filter((part) => !runtime.poppedOutTabIds.has(part.instanceId) && !(isUtilityTabId(part.id) && part.pluginId === "shell.utility")),
+    visibleParts.filter((part) => !runtime.poppedOutTabIds.has(part.instanceId)),
   );
 }
 
@@ -206,7 +205,7 @@ function renderPopoutPart(
     },
   });
   updateSelectedStyles(root, runtime.selectedPartId);
-  void deps.partHost.syncRenderedParts(root, (isUtilityTabId(part.id) && part.pluginId === "shell.utility") ? [] : [part]);
+  void deps.partHost.syncRenderedParts(root, (part.pluginId === "shell.utility") ? [] : [part]);
 }
 
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {

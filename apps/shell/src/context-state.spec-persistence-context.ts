@@ -86,7 +86,7 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
       "derived/global lane metadata should restore",
     );
     assertEqual(loaded.state.tabs["tab-b"]?.label, "tab-b", "tab label should sanitize with deterministic default");
-    assertEqual(loaded.state.tabs["tab-b"]?.closePolicy, "fixed", "tab close policy should default to fixed");
+    assertEqual(loaded.state.tabs["tab-b"]?.closePolicy, "closeable", "tab close policy should default to closeable");
     assertEqual(loaded.state.dockTree.root?.kind, "stack", "default dock tree should persist for restored context");
   });
 
@@ -137,7 +137,7 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
       "v1 selection payload should be migrated",
     );
     assertEqual(loaded.state.tabs["tab-main"]?.label, "Main", "legacy name should migrate into tab label");
-    assertEqual(loaded.state.tabs["tab-main"]?.closePolicy, "fixed", "legacy tabs should default to fixed close policy");
+    assertEqual(loaded.state.tabs["tab-main"]?.closePolicy, "closeable", "legacy tabs should default to closeable close policy");
     assertEqual(loaded.state.dockTree.root?.kind, "stack", "legacy payload should synthesize fallback dock tree");
   });
 
@@ -154,7 +154,7 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
             "group-main": { id: "group-main", color: "blue" },
           },
           tabs: {
-            "tab-a": { id: "tab-a", groupId: "group-main", label: "A", closePolicy: "fixed" },
+            "tab-a": { id: "tab-a", groupId: "group-main", label: "A", closePolicy: "closeable" },
             "tab-b": { id: "tab-b", groupId: "group-main", label: "B", closePolicy: "closeable" },
           },
           tabOrder: ["tab-b", "tab-a", "tab-b"],
@@ -317,7 +317,7 @@ export function registerContextPersistenceContextSpecs(harness: SpecHarness): vo
     const once = sanitizeContextState(phase1LikeState, fallback);
     const twice = sanitizeContextState(once, fallback);
     assertEqual(once.tabs["tab-main"]?.label, "Main", "phase-1 name should normalize to label");
-    assertEqual(once.tabs["tab-main"]?.closePolicy, "fixed", "phase-1 tab should default to fixed close policy");
+    assertEqual(once.tabs["tab-main"]?.closePolicy, "closeable", "phase-1 tab should default to closeable close policy");
     assertEqual(once.tabOrder[0], "tab-main", "tab order should keep normalized persisted tab first");
     assertEqual(once.activeTabId, "tab-main", "invalid active tab should normalize to first ordered tab");
     assertEqual(JSON.stringify(twice), JSON.stringify(once), "normalization should be idempotent");

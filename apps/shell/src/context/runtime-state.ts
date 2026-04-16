@@ -15,7 +15,6 @@ import {
   DEFAULT_GROUP_ID,
 } from "../app/constants.js";
 import type { DevLaneMetadata, RenderTabMetadata, ShellRuntime } from "../app/types.js";
-import { isUtilityTabId } from "../utility-tabs.js";
 
 export const CORE_GROUP_CONTEXT_KEY = "shell.group-context";
 export const CORE_GLOBAL_SELECTION_KEY = "shell.selection";
