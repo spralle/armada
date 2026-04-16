@@ -15,7 +15,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     html, body, #root { width: 100%; height: 100%; overflow: hidden; }
-    body { margin: 0; background: var(--ghost-background); color: var(--ghost-foreground); }
+    body { margin: 0; background: color-mix(in srgb, var(--ghost-background) calc(var(--ghost-background-opacity) * 100%), transparent); color: var(--ghost-foreground); }
     .shell { display: grid; grid-template-columns: 1fr; min-height: 100%; height: 100%; overflow: hidden; }
     .shell,
     .shell > .dock-root,
@@ -24,10 +24,10 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .dock-node-split,
     .dock-node-stack,
     .dock-stack-panels { height: 100%; }
-    .dock-root { background: var(--ghost-background-dock); min-width: 0; min-height: 0; overflow: hidden; padding: 6px; display: flex; flex-direction: column; }
+    .dock-root { --dock-panel-gap: 6px; background: color-mix(in srgb, var(--ghost-background-dock) calc(var(--ghost-background-opacity) * 100%), transparent); min-width: 0; min-height: 0; overflow: hidden; padding: var(--dock-panel-gap); display: flex; flex-direction: column; }
     .dock-root > .dock-node { flex: 1 1 auto; }
     .dock-node { min-width: 0; min-height: 0; }
-    .dock-node-stack { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; border: 1px solid var(--ghost-border-muted); border-radius: 4px; background: var(--ghost-surface); overflow: hidden; }
+    .dock-node-stack { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; border: 1px solid var(--ghost-border-muted); border-radius: var(--dock-panel-radius, 6px); background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-background-opacity) * 100%), transparent); overflow: hidden; }
     .dock-stack-panels { min-height: 0; overflow: hidden; padding: 0; position: relative; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"] { min-width: 0; min-height: 0; height: 100%; overflow: hidden; flex: 1 1 auto; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"][hidden] { display: none; }
@@ -54,7 +54,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .part-tab:hover { background: var(--ghost-surface-hover); color: var(--ghost-foreground); }
     .part-tab:active { cursor: grabbing; }
     .part-tab:focus-visible { outline: 2px solid var(--ghost-primary); outline-offset: 1px; }
-    .part-tab.is-active { background: var(--ghost-surface-elevated); border-color: var(--ghost-border); color: var(--ghost-foreground-bright); }
+    .part-tab.is-active { background: color-mix(in srgb, var(--ghost-surface-elevated) calc(var(--ghost-background-opacity) * 100%), transparent); border-color: var(--ghost-border); color: var(--ghost-foreground-bright); }
     .part-tab-close { appearance: none; background: transparent; border: 1px solid transparent; color: var(--ghost-faint-foreground); border-radius: 3px; cursor: pointer; width: 18px; height: 18px; line-height: 1; padding: 0; }
     .part-tab-close:hover { background: var(--ghost-surface-hover); color: var(--ghost-foreground-bright); border-color: var(--ghost-border); }
     .part-tab-close:focus-visible { outline: 2px solid var(--ghost-primary); outline-offset: 1px; }
@@ -142,7 +142,7 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     html, body, #root { width: 100%; height: 100%; overflow: hidden; }
-    body { margin: 0; background: var(--ghost-background); color: var(--ghost-foreground); }
+    body { margin: 0; background: color-mix(in srgb, var(--ghost-background) calc(var(--ghost-background-opacity) * 100%), transparent); color: var(--ghost-foreground); }
     .popout { padding: 8px; min-height: 100%; height: 100%; box-sizing: border-box; overflow: hidden; }
     #popout-slot { height: 100%; min-height: 0; }
     .card { border: 1px solid var(--ghost-border-alt); border-radius: 4px; margin-bottom: 6px; padding: 6px; }
