@@ -35,6 +35,30 @@ const EDGE_SLOTS: ShellEdgeSlot[] = ["top", "bottom", "left", "right"];
 const POSITIONS: ShellEdgeSlotPosition[] = ["start", "center", "end"];
 
 // ---------------------------------------------------------------------------
+// Built-in slot mount registry
+// ---------------------------------------------------------------------------
+
+/**
+ * Registry for built-in slot component mount functions.
+ * Keyed by component name (from PluginSlotContribution.component).
+ * When the edge slot renderer encounters a contribution whose component
+ * is registered here, it uses this mount function directly instead of
+ * loading via Module Federation.
+ */
+const builtInSlotMounts = new Map<string, MountSlotComponentFn>();
+
+/**
+ * Register a built-in mount function for a slot component.
+ * Must be called before `renderEdgeSlots` to take effect.
+ */
+export function registerBuiltInSlotMount(
+  component: string,
+  mount: MountSlotComponentFn,
+): void {
+  builtInSlotMounts.set(component, mount);
+}
+
+// ---------------------------------------------------------------------------
 // Module-level state (mirrors part-module-host pattern)
 // ---------------------------------------------------------------------------
 
@@ -234,6 +258,26 @@ async function mountSlotComponent(
   mountKey: string,
   expectedGeneration: number,
 ): Promise<void> {
+  // --- Built-in fast path: skip Module Federation entirely ----------------
+  const builtInMount = builtInSlotMounts.get(contribution.component);
+  if (builtInMount) {
+    try {
+      const cleanupResult = await builtInMount(target, { contribution, runtime });
+      const cleanup = normalizeCleanup(cleanupResult);
+
+      if (generation !== expectedGeneration) {
+        safeUnmount(cleanup);
+        return;
+      }
+
+      mounted.set(contribution.id, { target, cleanup, mountKey });
+    } catch {
+      // Built-in mount failed — slot stays empty, no crash.
+    }
+    return;
+  }
+
+  // --- Module Federation path (remote plugins) ---------------------------
   const fedRuntime = getFederationRuntime();
   const snapshot = runtime.registry.getSnapshot();
   const pluginSnapshot = snapshot.plugins.find((p) => p.id === contribution.pluginId);

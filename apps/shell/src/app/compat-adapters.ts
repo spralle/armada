@@ -24,6 +24,8 @@ import {
   mountPopout,
 } from "../ui/shell-mount.js";
 import { renderEdgeSlots } from "../ui/edge-slot-renderer.js";
+import { registerBuiltInSlotMount } from "../ui/edge-slot-renderer.js";
+import { createWorkspaceIndicatorMount } from "../ui/workspace-indicator.js";
 
 interface ShellCompatibilityAdapterDeps {
   activatePluginForBoundary: (options: {
@@ -136,6 +138,29 @@ export function createShellRuntimeCompatibilityAdapters(
     syncRenderedParts: (viewRoot, parts) => runtime.partHost.syncRenderedParts(viewRoot, parts),
     unmountAll: () => runtime.partHost.unmountAll(),
   };
+
+  // Register built-in workspace indicator slot mount.
+  // The closure captures root, runtime, and the effects/core bindings needed
+  // to build PartsControllerDeps for workspace switching.
+  registerBuiltInSlotMount(
+    "workspace-indicator",
+    createWorkspaceIndicatorMount({
+      getRoot: () => root,
+      getRuntime: () => runtime,
+      getPartsDeps: () => ({
+        applySelection: (event) => core.applySelection(event),
+        partHost: runtime.partHost,
+        publishWithDegrade: (event) => effects.publishWithDegrade(event),
+        renderContextControls: () => effects.renderContextControlsPanel(),
+        renderParts: () => effects.renderParts(),
+        renderSyncStatus: () => effects.renderSyncStatus(),
+      }),
+      onStateChange: () => {
+        effects.renderParts();
+        effects.renderSyncStatus();
+      },
+    }),
+  );
 
   return {
     core,
