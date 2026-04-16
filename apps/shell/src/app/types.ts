@@ -59,6 +59,8 @@ export interface ShellBootstrapOptions {
   enableByDefault?: boolean;
   defaultThemeId?: string | undefined;
   configurationService?: (ConfigurationService & PluginConfigSyncConfigurationService) | undefined;
+  /** Called after manifest registration and after each plugin activation completes. */
+  onProgress?: (registry: ShellPluginRegistry) => void;
 }
 
 export interface ShellRuntime extends DndDiagnosticRuntime {

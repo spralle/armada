@@ -73,6 +73,7 @@ export async function bootstrapShellWithTenantManifest(
 
   const registry = createShellPluginRegistry();
   registry.registerManifestDescriptors(parsedManifest.tenantId, parsedManifest.plugins);
+  options.onProgress?.(registry);
 
   let disposePluginConfigSync: (() => void) | null = null;
   if (options.configurationService) {
@@ -111,7 +112,7 @@ export async function bootstrapShellWithTenantManifest(
   registerThemeServiceCapability(registry, themeRegistry);
 
   // Now activate onStartup plugins — ghost.theme.Service is available.
-  await activateByStartupEvent(registry);
+  await activateByStartupEvent(registry, options.onProgress ? () => options.onProgress!(registry) : undefined);
 
   const snapshot = registry.getSnapshot();
 
