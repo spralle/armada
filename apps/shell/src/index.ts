@@ -6,6 +6,7 @@ import {
 } from "./context/runtime-state.js";
 import {
   buildActionSurface,
+  dispatchAction,
 } from "./action-surface.js";
 import {
   createDefaultShellKeybindingContract,
@@ -53,9 +54,11 @@ import {
   publishWithDegrade,
 } from "./shell-runtime/bridge-sync-handlers.js";
 import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
+import { handleShellKeyboardAction } from "./shell-runtime/shell-keyboard-actions.js";
 import {
   bindKeyboardShortcuts as bindKeyboardHandlers,
   dismissIntentChooser as dismissIntentChooserState,
+  type KeyboardBindings,
 } from "./shell-runtime/keyboard-handlers.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 import { registerConfigurationServiceCapability } from "./config-service-registration.js";
@@ -305,6 +308,20 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): () => 
       keybinding: entry.keybinding,
       pluginId: USER_KEYBINDING_OVERRIDE_PLUGIN_ID,
     })),
+    getWorkspaceSwitchDeps: () => ({
+      root,
+      runtime,
+      partsDeps: {
+        applySelection: handlers.applySelection,
+        partHost: runtime.partHost,
+        publishWithDegrade: (event) => {
+          publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
+        },
+        renderContextControls: () => renderContextControlsPanel(root, runtime),
+        renderParts: () => renderParts(root, runtime),
+        renderSyncStatus: () => renderSyncStatus(root, runtime),
+      },
+    }),
   });
 }
 
@@ -326,7 +343,76 @@ function renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): v
 function renderCommandSurface(root: HTMLElement, runtime: ShellRuntime): void {
   renderCommandSurfaceView(root, runtime, {
     activatePluginForBoundary: (options) => activatePluginForBoundary(root, runtime, options),
+    dispatchAction: (actionId, context) => dispatchCommandSurfaceAction(root, runtime, actionId, context),
   });
+}
+
+async function dispatchCommandSurfaceAction(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  actionId: string,
+  context: Record<string, string>,
+): Promise<boolean> {
+  // 1. Try shell built-in action handlers (workspace, window mgmt, etc.)
+  const bindings = buildCommandSurfaceShellBindings(root, runtime);
+  const shellResult = handleShellKeyboardAction(runtime, bindings, actionId);
+  if (shellResult.handled) {
+    if (shellResult.executed) {
+      renderContextControlsPanel(root, runtime);
+      renderParts(root, runtime);
+      renderSyncStatus(root, runtime);
+    }
+    return shellResult.executed;
+  }
+
+  // 2. Try runtime action registry (plugin-registered handlers)
+  const handler = runtime.runtimeActionRegistry.get(actionId);
+  if (handler) {
+    try {
+      await handler();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // 3. Fall back to intent dispatch
+  return dispatchAction(runtime.actionSurface, runtime.intentRuntime, actionId, context);
+}
+
+function buildCommandSurfaceShellBindings(root: HTMLElement, runtime: ShellRuntime): KeyboardBindings {
+  const handlers = createRuntimeEventHandlers(root, runtime, createRuntimeEventHandlerBindings(root, runtime));
+  return {
+    activatePluginForBoundary: async () => true,
+    announce: () => {},
+    applySelection: handlers.applySelection,
+    dismissIntentChooser: () => {},
+    executeResolvedAction: async () => {},
+    publishWithDegrade: (event) => {
+      publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
+    },
+    renderCommandSurface: () => renderCommandSurface(root, runtime),
+    renderContextControls: () => renderContextControlsPanel(root, runtime),
+    renderParts: () => renderParts(root, runtime),
+    renderSyncStatus: () => renderSyncStatus(root, runtime),
+    toActionContext: () => toActionContext(runtime),
+    getDefaultKeybindings: () => [],
+    getUserOverrideKeybindings: () => [],
+    getWorkspaceSwitchDeps: () => ({
+      root,
+      runtime,
+      partsDeps: {
+        applySelection: handlers.applySelection,
+        partHost: runtime.partHost,
+        publishWithDegrade: (event) => {
+          publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
+        },
+        renderContextControls: () => renderContextControlsPanel(root, runtime),
+        renderParts: () => renderParts(root, runtime),
+        renderSyncStatus: () => renderSyncStatus(root, runtime),
+      },
+    }),
+  };
 }
 
 async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRuntime): Promise<void> {

@@ -15,6 +15,7 @@ import {
   isBrowserSafeDefaultKeybinding,
 } from "./shell-runtime/default-shell-keybindings.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
+import { createInitialWorkspaceManagerState } from "./context-state/workspace.js";
 
 type KeydownListener = (event: KeyboardEvent) => Promise<void>;
 
@@ -326,6 +327,7 @@ function createKeyboardRuntimeFixture(): ShellRuntime {
     syncDegradedReason: null,
     syncHealthState: "healthy",
     windowId: "window-a",
+    workspaceManager: createInitialWorkspaceManagerState(contextState),
   } as unknown as ShellRuntime;
 }
 
@@ -353,6 +355,18 @@ function createKeyboardBindings(
       pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
     })),
     getUserOverrideKeybindings: () => [],
+    getWorkspaceSwitchDeps: () => ({
+      root: {} as HTMLElement,
+      runtime,
+      partsDeps: {
+        applySelection: () => {},
+        partHost: runtime.partHost,
+        publishWithDegrade: () => {},
+        renderContextControls: () => {},
+        renderParts: () => {},
+        renderSyncStatus: () => {},
+      },
+    }),
     toActionContext: () => ({
       "context.domain.selection": "none",
       "shell.group-context": "none",

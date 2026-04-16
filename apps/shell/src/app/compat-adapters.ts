@@ -19,6 +19,7 @@ import {
 import {
   renderCommandSurface as renderCommandSurfaceView,
 } from "../shell-runtime/command-surface-render.js";
+import { dispatchAction } from "../action-surface.js";
 import {
   mountMainWindow,
   mountPopout,
@@ -110,6 +111,7 @@ export function createShellRuntimeCompatibilityAdapters(
     renderCommandSurface: (viewRoot, viewRuntime) => {
       renderCommandSurfaceView(viewRoot, viewRuntime, {
         activatePluginForBoundary: (options) => effects.activatePluginForBoundary(options),
+        dispatchAction: (actionId, context) => dispatchAction(viewRuntime.actionSurface, viewRuntime.intentRuntime, actionId, context),
       });
     },
     renderContextControlsPanel: (viewRoot, viewRuntime) => {

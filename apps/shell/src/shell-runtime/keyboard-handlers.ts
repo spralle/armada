@@ -16,6 +16,7 @@ import type { ShellRuntime } from "../app/types.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
 import { updateDockTabVisibility, needsStructuralRender } from "../ui/dock-tab-visibility.js";
+import type { WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
 
 export interface KeyboardBindings {
   activatePluginForBoundary: (options: {
@@ -35,6 +36,7 @@ export interface KeyboardBindings {
   toActionContext: () => Record<string, string>;
   getDefaultKeybindings: () => ActionKeybinding[];
   getUserOverrideKeybindings: () => ActionKeybinding[];
+  getWorkspaceSwitchDeps: () => WorkspaceSwitchDeps;
 }
 
 const DEBUG_KEYBINDINGS =

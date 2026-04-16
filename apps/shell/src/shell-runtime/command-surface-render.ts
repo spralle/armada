@@ -2,7 +2,7 @@ import {
   CORE_GROUP_CONTEXT_KEY,
   readGroupSelectionContext,
 } from "../context/runtime-state.js";
-import { dispatchAction, resolveMenuActions } from "../action-surface.js";
+import { resolveMenuActions } from "../action-surface.js";
 import { escapeHtml } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
@@ -48,6 +48,7 @@ export function renderCommandSurface(
       triggerType: PluginActivationTriggerType;
       triggerId: string;
     }) => Promise<boolean>;
+    dispatchAction: (actionId: string, context: Record<string, string>) => Promise<boolean>;
   },
 ): void {
   const node = root.querySelector<HTMLElement>("#command-surface");
@@ -101,7 +102,7 @@ export function renderCommandSurface(
         }
       }
 
-      const executed = await dispatchAction(runtime.actionSurface, runtime.intentRuntime, actionId, toActionContext(runtime));
+      const executed = await bindings.dispatchAction(actionId, toActionContext(runtime));
       runtime.commandNotice = executed
         ? `Action '${actionId}' executed.`
         : `Action '${actionId}' is not executable in current context.`;

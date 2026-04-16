@@ -4,6 +4,7 @@ import {
   registerTab,
   setActiveTab,
 } from "../context-state.js";
+import { createInitialWorkspaceManagerState } from "../context-state/workspace.js";
 import { bindKeyboardShortcuts, type KeyboardBindings } from "./keyboard-handlers.js";
 import { createDefaultShellKeybindingContract, DEFAULT_SHELL_KEYBINDINGS, DEFAULT_SHELL_KEYBINDING_PLUGIN_ID } from "./default-shell-keybindings.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
@@ -261,6 +262,7 @@ function createRuntimeFixture(): ShellRuntime {
     syncDegradedReason: null,
     syncHealthState: "healthy",
     windowId: "window-a",
+    workspaceManager: createInitialWorkspaceManagerState(contextState),
   } as unknown as ShellRuntime;
 }
 
@@ -288,6 +290,18 @@ function createBindings(
       pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
     })),
     getUserOverrideKeybindings: () => [],
+    getWorkspaceSwitchDeps: () => ({
+      root: {} as HTMLElement,
+      runtime,
+      partsDeps: {
+        applySelection: () => {},
+        partHost: runtime.partHost,
+        publishWithDegrade: () => {},
+        renderContextControls: () => {},
+        renderParts: () => {},
+        renderSyncStatus: () => {},
+      },
+    }),
     toActionContext: () => ({
       "context.domain.selection": "none",
       "shell.group-context": "none",
