@@ -22,9 +22,8 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
               {
                 id: "orders.assign",
                 title: "Assign",
-                handler: "assignOrderToVessel",
-                intentType: "domain.orders.assign-to-vessel",
-                when: {
+                intent: "domain.orders.assign-to-vessel",
+                predicate: {
                   sourceType: "order",
                   targetType: "vessel",
                   "target.vesselClass": "RORO",
@@ -49,7 +48,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
 
     assertEqual(resolution.kind, "single-match", "single matching action should autorun");
     if (resolution.kind === "single-match") {
-      assertEqual(resolution.matches[0].handler, "assignOrderToVessel", "single match should resolve expected handler");
+      assertEqual(resolution.matches[0].handler, "orders.assign", "single match should resolve expected handler");
     }
   });
 
@@ -70,9 +69,8 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
               {
                 id: "z-handler",
                 title: "Action Z",
-                handler: "zHandler",
-                intentType: "domain.orders.assign-to-vessel",
-                when: { sourceType: "order" },
+                intent: "domain.orders.assign-to-vessel",
+                predicate: { sourceType: "order" },
               },
             ],
           },
@@ -93,9 +91,8 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
               {
                 id: "a-handler",
                 title: "Action A",
-                handler: "aHandler",
-                intentType: "domain.orders.assign-to-vessel",
-                when: { sourceType: "order" },
+                intent: "domain.orders.assign-to-vessel",
+                predicate: { sourceType: "order" },
               },
             ],
           },
@@ -134,9 +131,8 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
               {
                 id: "orders.assign",
                 title: "Assign",
-                handler: "assignOrderToVessel",
-                intentType: "domain.orders.assign-to-vessel",
-                when: {
+                intent: "domain.orders.assign-to-vessel",
+                predicate: {
                   sourceType: "order",
                 },
               },
@@ -180,9 +176,8 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
               {
                 id: "orders.assign-roro",
                 title: "Assign RORO",
-                handler: "assignOrderToRoroVessel",
-                intentType: "domain.orders.assign-to-vessel",
-                when: {
+                intent: "domain.orders.assign-to-vessel",
+                predicate: {
                   sourceType: "order",
                   "target.vesselClass": "RORO",
                 },
@@ -190,9 +185,8 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
               {
                 id: "orders.assign-tanker",
                 title: "Assign tanker",
-                handler: "assignOrderToTanker",
-                intentType: "domain.orders.assign-to-vessel",
-                when: {
+                intent: "domain.orders.assign-to-vessel",
+                predicate: {
                   sourceType: "order",
                   "target.vesselClass": "TANKER",
                 },

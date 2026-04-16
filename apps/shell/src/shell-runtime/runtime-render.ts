@@ -103,12 +103,19 @@ export function initializeReactPanels(
       bindings.renderCommandSurface();
     },
     onChooseIntentAction: async (index) => {
-      runtime.chooserFocusIndex = index;
-      const selectedMatch = runtime.pendingIntentMatches[index];
+      if (!runtime.activeIntentSession) {
+        return;
+      }
+      runtime.activeIntentSession.chooserFocusIndex = index;
+      const selectedMatch = runtime.activeIntentSession.matches[index];
       if (!selectedMatch) {
         return;
       }
-      await bindings.executeResolvedAction(selectedMatch, runtime.pendingIntent);
+      if (runtime._pendingChooserResolve) {
+        runtime._pendingChooserResolve(selectedMatch);
+      } else {
+        await bindings.executeResolvedAction(selectedMatch, runtime.activeIntentSession.intent);
+      }
     },
     onDismissChooser: () => {
       bindings.dismissIntentChooser();

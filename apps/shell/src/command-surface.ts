@@ -5,7 +5,7 @@ import type {
   PluginKeybindingContribution,
   PluginMenuContribution,
 } from "@ghost/plugin-contracts";
-import type { IntentRuntime } from "./intent-runtime.js";
+import type { IntentResolutionDelegate, IntentRuntime } from "./intent-runtime.js";
 
 export interface CommandSurfaceContext {
   [key: string]: string;
@@ -56,12 +56,12 @@ export interface ShellCommandSurface {
     commandId: string,
     context: Readonly<CommandSurfaceContext>,
     args?: unknown,
-  ): CommandDispatchResult;
+  ): Promise<CommandDispatchResult>;
   dispatchKeybinding(
     key: string,
     context: Readonly<CommandSurfaceContext>,
     args?: unknown,
-  ): CommandDispatchResult | null;
+  ): Promise<CommandDispatchResult> | null;
 }
 
 interface RegistryState {
@@ -152,7 +152,7 @@ export function createShellCommandSurface(options: {
 
       return rows.map((row) => row.evaluated);
     },
-    dispatchCommand(commandId, context, args) {
+    async dispatchCommand(commandId, context, args) {
       const command = state.commands.find((item) => item.id === commandId);
       if (!command) {
         return {
@@ -178,16 +178,25 @@ export function createShellCommandSurface(options: {
         };
       }
 
-      const result = options.intentRuntime.resolveAndExecute({
-        intent: command.intent,
-        context,
-        args,
-      });
+      const noopDelegate: IntentResolutionDelegate = {
+        async showChooser() { return null; },
+        async activatePlugin() { return true; },
+        announce() {},
+      };
+
+      const outcome = await options.intentRuntime.resolve(
+        { type: command.intent, facts: context as Record<string, unknown> },
+        noopDelegate,
+      );
 
       return {
-        executed: result.executed,
+        executed: outcome.kind === "executed",
         commandId,
-        message: result.message,
+        message: outcome.kind === "executed"
+          ? `Executed '${commandId}'.`
+          : outcome.kind === "no-match"
+            ? (outcome as { feedback: string }).feedback
+            : `Command '${commandId}' cancelled.`,
       };
     },
     dispatchKeybinding(key, context, args) {

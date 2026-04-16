@@ -278,8 +278,7 @@ function createKeyboardRuntimeFixture(): ShellRuntime {
     actionSurface,
     announcement: "",
     bridge: ({ publish: () => true } as unknown) as ShellRuntime["bridge"],
-    chooserFocusIndex: 0,
-    chooserReturnFocusSelector: null,
+    activeIntentSession: null,
     closeableTabIds: new Set(["tab-a", "tab-b", "tab-c", "tab-d"]),
     commandNotice: "",
     contextPersistence: {
@@ -291,11 +290,11 @@ function createKeyboardRuntimeFixture(): ShellRuntime {
     hostWindowId: null,
     incomingTransferJournal: { bySessionId: {} },
     intentRuntime: {
-      resolveAndExecute(request: { intent: string }) {
+      async resolve() {
         return {
-          executed: false,
-          intent: request.intent,
-          message: "unused intent runtime",
+          kind: "no-match" as const,
+          feedback: "unused intent runtime",
+          trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] },
         };
       },
     },
@@ -306,8 +305,6 @@ function createKeyboardRuntimeFixture(): ShellRuntime {
     notice: "",
     partHost: { syncRenderedParts: async () => {}, unmountAll: () => {} } as ShellRuntime["partHost"],
     pendingFocusSelector: null,
-    pendingIntent: null,
-    pendingIntentMatches: [],
     pendingProbeId: null,
     persistence: { save: () => ({ warning: null }), load: () => ({ sideSize: 0.2, secondarySize: 0.3 }) },
     pluginNotice: "",
@@ -340,8 +337,7 @@ function createKeyboardBindings(
     announce: () => {},
     applySelection: () => {},
     dismissIntentChooser: () => {
-      runtime.pendingIntentMatches = [];
-      runtime.pendingIntent = null;
+      runtime.activeIntentSession = null;
     },
     executeResolvedAction: async () => {},
     publishWithDegrade: () => {},

@@ -3,10 +3,12 @@ import { registerIntentRuntimeResolutionSpecs } from "./context-state.spec-inten
 import { registerIntentRuntimeTraceOperatorsSpecs } from "./context-state.spec-intent-runtime-trace-operators.js";
 import { registerIntentRuntimeAdapterDemoSpecs } from "./context-state.spec-intent-runtime-adapter-demo.js";
 import { registerIntentRuntimePluginCompositionSpecs } from "./context-state.spec-intent-runtime-plugin-composition.js";
+import { registerIntentRuntimeIntegrationSpecs } from "./context-state.spec-intent-runtime-integration.js";
 
 export function registerIntentRuntimeCompositionSpecs(harness: SpecHarness): void {
   registerIntentRuntimeResolutionSpecs(harness);
   registerIntentRuntimeTraceOperatorsSpecs(harness);
   registerIntentRuntimeAdapterDemoSpecs(harness);
   registerIntentRuntimePluginCompositionSpecs(harness);
+  registerIntentRuntimeIntegrationSpecs(harness);
 }

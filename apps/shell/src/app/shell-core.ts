@@ -25,7 +25,7 @@ export function createShellCoreApi(
       pluginNotice: runtime.pluginNotice,
       intentNotice: runtime.intentNotice,
       commandNotice: runtime.commandNotice,
-      pendingIntentMatches: [...runtime.pendingIntentMatches],
+      activeIntentSession: runtime.activeIntentSession,
       lastIntentTrace: runtime.lastIntentTrace,
       tabMetadata: collectRenderTabMetadata(runtime.contextState),
       laneMetadata: collectLaneMetadata(runtime.contextState),

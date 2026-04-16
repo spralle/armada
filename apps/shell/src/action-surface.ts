@@ -10,7 +10,7 @@ import type {
 import {
   createDefaultContributionPredicateMatcher,
 } from "@ghost/plugin-contracts";
-import type { IntentRuntime } from "./intent-runtime.js";
+import type { IntentResolutionDelegate, IntentRuntime, ShellIntent, IntentFactBag } from "./intent-runtime.js";
 
 export interface ActionSurfaceContext {
   [key: string]: unknown;
@@ -109,12 +109,20 @@ export function resolveMenuActions(
     .filter((action) => evaluatePredicate(action.predicate, context, matcher));
 }
 
+/** Default delegate for action-by-ID dispatch: never shows chooser, assumes plugin already activated. */
+const actionByIdDelegate: IntentResolutionDelegate = {
+  async showChooser() { return null; },
+  async activatePlugin() { return true; },
+  announce() {},
+};
+
 export async function dispatchAction(
   surface: ActionSurface,
   runtime: IntentRuntime,
   actionId: string,
   context: ActionSurfaceContext,
   matcher: ContributionPredicateMatcher = defaultPredicateMatcher,
+  delegate: IntentResolutionDelegate = actionByIdDelegate,
 ): Promise<boolean> {
   const action = findAction(surface.actions, actionId);
   if (!action) {
@@ -125,16 +133,13 @@ export async function dispatchAction(
     return false;
   }
 
-  const result = runtime.resolveAndExecute({
-    intent: action.intent,
-    context: normalizeContext(context),
-    args: {
-      actionId: action.id,
-      pluginId: action.pluginId,
-    },
-  });
+  const intent: ShellIntent = {
+    type: action.intent,
+    facts: normalizeContext(context) as IntentFactBag,
+  };
 
-  return result.executed;
+  const outcome = await runtime.resolve(intent, delegate, { preferredActionId: actionId });
+  return outcome.kind === "executed";
 }
 
 function mapAction(pluginId: string, contribution: PluginActionContribution): InvokableAction {

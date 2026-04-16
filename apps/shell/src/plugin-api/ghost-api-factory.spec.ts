@@ -12,7 +12,7 @@ function createTestApiDeps(
   return {
     getActionSurface: () => ({ actions: [], menus: [], keybindings: [] }),
     getActionContext: () => ({}),
-    getIntentRuntime: () => ({ resolveAndExecute: () => ({ executed: false, intent: "", message: "" }) }),
+    getIntentRuntime: () => ({ async resolve() { return { kind: "no-match" as const, feedback: "", trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] } }; } }),
     activatePlugin: async () => true,
     getWindowId: () => "win-test",
     getIsPopout: () => false,

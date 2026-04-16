@@ -48,12 +48,8 @@ function createTestSurface(): ActionSurface {
 
 function createMockIntentRuntime(): IntentRuntime {
   return {
-    resolveAndExecute(request) {
-      return {
-        executed: true,
-        intent: request.intent,
-        message: `Executed ${request.intent}`,
-      };
+    async resolve(_intent, _delegate, _options) {
+      return { kind: "executed", match: { pluginId: "shell.core", pluginName: "Shell", actionId: "stub", title: "Stub", handler: "stub", intentType: "stub", when: {}, loadMode: "eager", registrationOrder: 0, sortKey: "stub" }, trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] } };
     },
   };
 }

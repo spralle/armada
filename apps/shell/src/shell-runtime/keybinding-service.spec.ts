@@ -50,17 +50,17 @@ function createActionSurface(): ActionSurface {
 
 function createIntentRuntime(calls: { intent: string; context: Readonly<Record<string, string>> }[]): IntentRuntime {
   return {
-    resolveAndExecute(request) {
+    async resolve(intent, _delegate, _options) {
       calls.push({
-        intent: request.intent,
-        context: request.context,
+        intent: intent.type,
+        context: intent.facts as Readonly<Record<string, string>>,
       });
 
-      return {
-        executed: request.intent !== "shell.intent.hidden",
-        intent: request.intent,
-        message: "ok",
-      };
+      const trace = { intentType: intent.type, evaluatedAt: 0, actions: [], matched: [] };
+      if (intent.type === "shell.intent.hidden") {
+        return { kind: "no-match", feedback: "no match", trace };
+      }
+      return { kind: "executed", match: { pluginId: "stub", pluginName: "Stub", actionId: "stub", title: "Stub", handler: "stub", intentType: intent.type, when: {}, loadMode: "eager", registrationOrder: 0, sortKey: "stub" }, trace };
     },
   };
 }
