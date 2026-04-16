@@ -53,6 +53,8 @@ export const pluginContract: PluginContract = {
           accent: "#7aa2f7",
           cursor: "#c0caf5",
           selectionBackground: "#7aa2f7",
+          opacity: 0.70,
+          opacityActive: 0.85,
         },
         terminal: {
           color0: "#32344a",
@@ -90,6 +92,8 @@ export const pluginContract: PluginContract = {
           accent: "#faa968",
           cursor: "#f6dcac",
           selectionBackground: "#faa968",
+          opacity: 0.70,
+          opacityActive: 0.85,
         },
         terminal: {
           color0: "#00172e",
@@ -138,6 +142,8 @@ export const pluginContract: PluginContract = {
           accent: "#8caaee",
           cursor: "#b5bfe2",
           selectionBackground: "#f4b8e4",
+          opacity: 0.70,
+          opacityActive: 0.85,
         },
         terminal: {
           color0: "#303446",
@@ -183,6 +189,8 @@ export const pluginContract: PluginContract = {
           accent: "#1e66f5",
           cursor: "#dc8a78",
           selectionBackground: "#dc8a78",
+          opacity: 0.70,
+          opacityActive: 0.85,
         },
         terminal: {
           color0: "#bcc0cc",

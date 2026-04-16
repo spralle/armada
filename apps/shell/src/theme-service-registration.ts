@@ -65,6 +65,10 @@ export function registerThemeServiceCapability(
     loadAllThemes(): Promise<void> {
       return themeRegistry.loadAllThemes();
     },
+
+    getThemePalette(themeId: string): Record<string, string> | null {
+      return themeRegistry.getThemePalette(themeId);
+    },
   };
 
   const contract: PluginContract = {

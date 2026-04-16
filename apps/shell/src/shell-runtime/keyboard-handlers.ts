@@ -183,12 +183,24 @@ export function bindKeyboardShortcuts(
         let executed = shellResult.executed;
         if (!shellResult.handled) {
           event.preventDefault();
-          const result = await keybindingService.dispatch(normalizedChord, context);
-          executed = result.executed;
+          const runtimeHandler = runtime.runtimeActionRegistry.get(action.id);
+          if (runtimeHandler) {
+            try {
+              await runtimeHandler();
+              executed = true;
+            } catch (runtimeError) {
+              console.warn("[shell:keybinding] runtime action failed", action.id, runtimeError);
+              executed = false;
+            }
+          } else {
+            const result = await keybindingService.dispatch(normalizedChord, context);
+            executed = result.executed;
+          }
           if (DEBUG_KEYBINDINGS) {
             console.debug("[shell:keybinding] non-shell-dispatch", {
               actionId: action.id,
-              executed: result.executed,
+              executed,
+              source: runtimeHandler ? "runtime-registry" : "intent-dispatch",
             });
           }
         } else if (shellResult.executed) {

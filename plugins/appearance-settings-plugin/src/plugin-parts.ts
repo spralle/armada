@@ -6,6 +6,8 @@ import {
   injectAppearanceStyles,
   renderThemePicker,
   renderBackgroundGallery,
+  updateBackgroundSelection,
+  revokeGalleryBlobUrls,
 } from "./appearance-dom.js";
 
 type PartMountCleanup = { unmount: () => void };
@@ -47,6 +49,7 @@ const mountAppearancePart: MountPartFn = async (target, context) => {
 
   return {
     unmount() {
+      revokeGalleryBlobUrls();
       target.innerHTML = "";
     },
   };
@@ -78,6 +81,9 @@ function renderPanel(target: HTMLElement, themeService: ThemeService): void {
         themeService.setTheme(themeId);
         renderPanel(target, themeService);
       },
+      onGetPalette(themeId: string) {
+        return themeService.getThemePalette(themeId);
+      },
     }),
   );
 
@@ -85,7 +91,7 @@ function renderPanel(target: HTMLElement, themeService: ThemeService): void {
     renderBackgroundGallery(backgrounds, activeBackground, {
       onBackgroundSelect(index: number) {
         themeService.setBackground(index);
-        renderPanel(target, themeService);
+        updateBackgroundSelection(target, themeService.getActiveBackground());
       },
       onApplyCustom(url: string, mode: "cover" | "contain" | "tile") {
         themeService.setCustomBackground(url, mode);

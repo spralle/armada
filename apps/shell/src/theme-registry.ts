@@ -74,6 +74,8 @@ export interface ThemeRegistry {
   setCustomBackground(url: string, mode?: "cover" | "contain" | "tile"): void;
   /** Clear custom background, revert to theme's default (index 0) or no background. */
   clearCustomBackground(): void;
+  /** Get all CSS variable values for a given theme, or null if not found. */
+  getThemePalette(themeId: string): Record<string, string> | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -349,6 +351,20 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
           activeBackground = null;
         }
       }
+    },
+
+    getThemePalette(themeId: string): Record<string, string> | null {
+      const theme = findTheme(themeId);
+      if (!theme) {
+        return null;
+      }
+      const full = deriveFullPalette(theme.palette, theme.terminal);
+      const result: Record<string, string> = {};
+      for (const [key, cssVar] of Object.entries(GHOST_THEME_CSS_VARS)) {
+        const value = full[key as keyof FullThemePalette];
+        result[cssVar] = String(value);
+      }
+      return result;
     },
   };
 }

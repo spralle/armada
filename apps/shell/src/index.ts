@@ -61,6 +61,8 @@ import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 import { registerConfigurationServiceCapability } from "./config-service-registration.js";
 import { createShellConfigService, runPersistenceMigrations } from "./config-service-setup.js";
 import { createPluginServicesBridge } from "./plugin-service-bridge.js";
+import { createQuickPickBridge } from "./ui/quick-pick/quick-pick-bridge.js";
+import { createGhostApiDeps } from "./plugin-api/ghost-api-deps-factory.js";
 
 export type {
   ShellCoreApi,
@@ -205,13 +207,16 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: Retur
 }
 
 async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, isActive: () => boolean): Promise<void> {
+  const quickPickBridge = createQuickPickBridge();
   try {
+    const apiDeps = createGhostApiDeps(runtime, quickPickBridge);
     const { configService } = await createShellConfigService();
     const state = await bootstrapShellWithTenantManifest({
       tenantId: "demo",
       configurationService: configService,
       enableByDefault: true,
       defaultThemeId: "ghost.theme.tokyo-night",
+      apiDeps,
       onProgress: (registry) => {
         if (!isActive()) return;
         runtime.registry = registry;
@@ -220,6 +225,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
     });
     if (!isActive()) {
       state.disposePluginConfigSync?.();
+      quickPickBridge.dispose();
       return;
     }
     runtime.registry = state.registry;
@@ -241,6 +247,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
     renderParts(root, runtime);
     renderCommandSurface(root, runtime);
   } catch (error) {
+    quickPickBridge.dispose();
     console.warn("[shell] plugin registry hydration skipped", error);
   }
 }

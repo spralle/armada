@@ -111,6 +111,7 @@ export function createShellRuntime(options?: {
     keybindingOverrideManager: null as unknown as ShellRuntime["keybindingOverrideManager"],
     themeRegistry: null,
     intentRuntime,
+    runtimeActionRegistry: new Map(),
     commandNotice: "",
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,
     pluginConfigSyncDispose: null,

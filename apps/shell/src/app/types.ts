@@ -44,6 +44,7 @@ import type {
 } from "./dnd-diagnostics.js";
 import type { ConfigurationService } from "@weaver/config-types";
 import type { PluginConfigSyncConfigurationService } from "../plugin-config-sync-controller.js";
+import type { GhostApiFactoryDependencies } from "../plugin-api/ghost-api-factory.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -61,6 +62,8 @@ export interface ShellBootstrapOptions {
   configurationService?: (ConfigurationService & PluginConfigSyncConfigurationService) | undefined;
   /** Called after manifest registration and after each plugin activation completes. */
   onProgress?: (registry: ShellPluginRegistry) => void;
+  /** Dependencies for constructing GhostApi instances during plugin activation. */
+  apiDeps?: GhostApiFactoryDependencies | undefined;
 }
 
 export interface ShellRuntime extends DndDiagnosticRuntime {
@@ -106,6 +109,8 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   services: PluginServices;
   themeRegistry: ThemeRegistry | null;
   intentRuntime: IntentRuntime;
+  /** Shared registry of runtime action handlers registered by plugins via ActionService. */
+  runtimeActionRegistry: Map<string, (...args: unknown[]) => unknown>;
   commandNotice: string;
   partHost: ShellPartHostAdapter;
   pluginConfigSyncDispose: (() => void) | null;

@@ -12,10 +12,32 @@ const require = createRequire(import.meta.url);
 
 /** Resolve the vite CLI entry point so we can spawn Node directly. */
 function resolveViteBin() {
-  const vitePkg = require.resolve("vite/package.json");
-  const viteDir = join(vitePkg, "..");
-  // vite's package.json exports bin.vite = "bin/vite.js"
-  return join(viteDir, "bin", "vite.js");
+  // Try standard resolution from the scripts directory.
+  try {
+    const vitePkg = require.resolve("vite/package.json");
+    return join(vitePkg, "..", "bin", "vite.js");
+  } catch {
+    // Vite not hoisted to root — try workspace node_modules as fallback.
+  }
+
+  // Bun hoists differently than npm: scan workspace packages for a local vite.
+  const fallbackDirs = [pluginsDir, resolve(import.meta.dirname, "..", "apps")];
+  for (const baseDir of fallbackDirs) {
+    try {
+      for (const name of readdirSync(baseDir)) {
+        const viteBinPath = join(baseDir, name, "node_modules", "vite", "bin", "vite.js");
+        if (existsSync(viteBinPath)) {
+          return viteBinPath;
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  throw new Error(
+    "Cannot resolve vite CLI. Ensure vite is installed in at least one workspace package.",
+  );
 }
 
 const viteBin = resolveViteBin();

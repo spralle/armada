@@ -2,22 +2,42 @@
 
 import type { ThemeInfo, BackgroundInfo, ThemeBackgroundEntry } from "@ghost/plugin-contracts";
 
+/** Memoized blob URLs to avoid creating duplicates and enable cleanup. */
+const blobUrlCache = new Map<string, string>();
+
 /**
  * Resolve a background URL through the Cache API for thumbnails.
  * Inline version to avoid cross-package dependency on shell.
  */
 async function resolveThumbnailUrl(url: string): Promise<string> {
+  const memo = blobUrlCache.get(url);
+  if (memo) return memo;
+
   if (typeof window === "undefined" || typeof caches === "undefined") return url;
   try {
     const cache = await caches.open("ghost-theme-backgrounds-v1");
-    const cached = await cache.match(url);
-    if (cached) return URL.createObjectURL(await cached.blob());
+    const cachedResponse = await cache.match(url);
+    if (cachedResponse) {
+      const blobUrl = URL.createObjectURL(await cachedResponse.blob());
+      blobUrlCache.set(url, blobUrl);
+      return blobUrl;
+    }
     const response = await fetch(url, { mode: "cors" });
     await cache.put(url, response.clone());
-    return URL.createObjectURL(await response.blob());
+    const blobUrl = URL.createObjectURL(await response.blob());
+    blobUrlCache.set(url, blobUrl);
+    return blobUrl;
   } catch {
     return url;
   }
+}
+
+/** Revoke all tracked blob URLs and clear the memo cache. */
+export function revokeGalleryBlobUrls(): void {
+  for (const blobUrl of blobUrlCache.values()) {
+    URL.revokeObjectURL(blobUrl);
+  }
+  blobUrlCache.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -38,6 +58,13 @@ const PANEL_STYLES = `
   .appearance-theme-row:focus-visible { outline: 2px solid var(--ghost-ring); outline-offset: 1px; }
   .appearance-theme-row.is-active {
     border: 2px solid var(--ghost-primary); background: var(--ghost-accent);
+    color: var(--ghost-accent-foreground);
+  }
+  .appearance-theme-row.is-active .appearance-theme-name { color: inherit; }
+  .appearance-theme-row.is-active .appearance-theme-author { color: inherit; opacity: 0.8; }
+  .appearance-theme-row.is-active .appearance-mode-badge {
+    background: color-mix(in srgb, var(--ghost-accent-foreground) 15%, transparent);
+    color: inherit; border-color: color-mix(in srgb, var(--ghost-accent-foreground) 30%, transparent);
   }
   .appearance-theme-name { font-size: 13px; font-weight: 600; color: var(--ghost-foreground); }
   .appearance-theme-author { font-size: 11px; color: var(--ghost-muted-foreground); margin-left: 6px; }
@@ -75,6 +102,21 @@ const PANEL_STYLES = `
   }
   .appearance-custom-section { margin-top: 10px; }
   .appearance-unavailable { padding: 12px; color: var(--ghost-muted-foreground); font-size: 13px; }
+  .theme-swatch-toggle {
+    background: none; border: none; cursor: pointer; font-size: 11px;
+    color: var(--ghost-muted-foreground); padding: 2px 4px; margin-left: 6px;
+  }
+  .theme-swatch-toggle:hover { color: var(--ghost-foreground); }
+  .theme-swatch-container { display: none; padding: 6px 8px 2px; }
+  .theme-swatch-container.is-open { display: block; }
+  .theme-swatch-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+    gap: 4px;
+  }
+  .theme-swatch {
+    width: 24px; height: 24px; border-radius: 3px;
+    border: 1px solid var(--ghost-border); cursor: default;
+  }
 `;
 
 // ---------------------------------------------------------------------------
@@ -97,8 +139,27 @@ export function injectAppearanceStyles(): void {
 // Theme picker
 // ---------------------------------------------------------------------------
 
+/** Create a grid of color swatches from a CSS variable palette. */
+function createSwatchGrid(palette: Record<string, string>): HTMLElement {
+  const grid = document.createElement("div");
+  grid.className = "theme-swatch-grid";
+  for (const [cssVar, color] of Object.entries(palette)) {
+    // Skip non-color values (mode, radius, opacity, sizes)
+    if (!/^#|^rgb|^hsl|^color-mix/.test(color)) {
+      continue;
+    }
+    const swatch = document.createElement("div");
+    swatch.className = "theme-swatch";
+    swatch.style.backgroundColor = color;
+    swatch.title = cssVar;
+    grid.appendChild(swatch);
+  }
+  return grid;
+}
+
 export interface ThemePickerCallbacks {
   onSelect: (themeId: string) => void;
+  onGetPalette: (themeId: string) => Record<string, string> | null;
 }
 
 export function renderThemePicker(
@@ -149,6 +210,13 @@ export function renderThemePicker(
     row.appendChild(nameSpan);
     row.appendChild(badge);
 
+    const toggleBtn = document.createElement("button");
+    toggleBtn.className = "theme-swatch-toggle";
+    toggleBtn.type = "button";
+    toggleBtn.textContent = "▶";
+    toggleBtn.title = "Preview theme tokens";
+    row.appendChild(toggleBtn);
+
     row.addEventListener("click", () => callbacks.onSelect(theme.id));
     row.addEventListener("keydown", (event: KeyboardEvent) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -157,7 +225,23 @@ export function renderThemePicker(
       }
     });
 
+    const swatchContainer = document.createElement("div");
+    swatchContainer.className = "theme-swatch-container";
+
+    toggleBtn.addEventListener("click", (e: MouseEvent) => {
+      e.stopPropagation();
+      const isOpen = swatchContainer.classList.toggle("is-open");
+      toggleBtn.textContent = isOpen ? "▼" : "▶";
+      if (isOpen && swatchContainer.children.length === 0) {
+        const palette = callbacks.onGetPalette(theme.id);
+        if (palette) {
+          swatchContainer.appendChild(createSwatchGrid(palette));
+        }
+      }
+    });
+
     section.appendChild(row);
+    section.appendChild(swatchContainer);
   }
 
   return section;
@@ -198,6 +282,7 @@ export function renderBackgroundGallery(
       const isActive = activeBackground?.source === "theme" && activeBackground.index === index;
       const img = document.createElement("img");
       img.className = isActive ? "appearance-bg-thumb is-active" : "appearance-bg-thumb";
+      img.loading = "lazy";
       img.src = bg.url;
       img.alt = `Background ${index + 1}`;
       // Async upgrade: resolve cached blob URL for thumbnail.
@@ -288,4 +373,20 @@ function renderCustomBackgroundInput(
   }
 
   return wrapper;
+}
+
+// ---------------------------------------------------------------------------
+// Incremental update helpers (avoid full DOM rebuild on selection change)
+// ---------------------------------------------------------------------------
+
+/** Toggle `is-active` on background thumbnails without rebuilding the DOM. */
+export function updateBackgroundSelection(
+  container: HTMLElement,
+  activeBackground: BackgroundInfo | null,
+): void {
+  const thumbs = container.querySelectorAll<HTMLElement>(".appearance-bg-thumb");
+  thumbs.forEach((thumb, index) => {
+    const isActive = activeBackground?.source === "theme" && activeBackground.index === index;
+    thumb.classList.toggle("is-active", isActive);
+  });
 }

@@ -310,6 +310,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     chooserReturnFocusSelector: null,
     actionSurface: {} as ShellRuntime["actionSurface"],
     intentRuntime: {} as ShellRuntime["intentRuntime"],
+    runtimeActionRegistry: new Map(),
     services: createStubPluginServices(),
     commandNotice: "",
     pluginNotice: "",
