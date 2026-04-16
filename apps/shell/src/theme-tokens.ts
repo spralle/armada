@@ -27,6 +27,8 @@ const DEFAULT_DARK_INPUT: PartialThemePalette = {
   ring: "#7cb4ff",
   cursor: "#e9edf3",
   selectionBackground: "#7cb4ff",
+  opacity: 0.70,
+  opacityActive: 0.85,
 };
 
 export const DEFAULT_DARK_PALETTE: FullThemePalette = deriveFullPalette(DEFAULT_DARK_INPUT);
