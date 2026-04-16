@@ -24,11 +24,11 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .dock-node-split,
     .dock-node-stack,
     .dock-stack-panels { height: 100%; }
-    .dock-root { --dock-panel-gap: 6px; background: transparent; min-width: 0; min-height: 0; overflow: hidden; padding: var(--dock-panel-gap); display: flex; flex-direction: column; }
+    .dock-root { background: transparent; min-width: 0; min-height: 0; overflow: hidden; padding: var(--dock-panel-gap, 6px); display: flex; flex-direction: column; }
     .dock-root > .dock-node { flex: 1 1 auto; }
     .dock-node { min-width: 0; min-height: 0; }
     .dock-node-stack { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; border: 1px solid var(--ghost-border-muted); border-radius: var(--dock-panel-radius, 6px); background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-background-opacity) * 100%), transparent); overflow: hidden; }
-    .dock-node-stack:focus-within { background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-opacity-active) * 100%), transparent); border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow-subtle); }
+    .dock-node-stack:focus-within { background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-opacity-active, 1) * 100%), transparent); border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow-subtle); }
     .dock-stack-panels { min-height: 0; overflow: hidden; padding: 0; position: relative; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"] { min-width: 0; min-height: 0; height: 100%; overflow: hidden; flex: 1 1 auto; display: flex; flex-direction: column; }
     .dock-stack-panels > [role="tabpanel"][hidden] { display: none; }
@@ -55,7 +55,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .part-tab:hover { background: var(--ghost-surface-hover); color: var(--ghost-foreground); }
     .part-tab:active { cursor: grabbing; }
     .part-tab:focus-visible { outline: 2px solid var(--ghost-primary); outline-offset: 1px; }
-    .part-tab.is-active { background: color-mix(in srgb, var(--ghost-surface-elevated) calc(var(--ghost-opacity-active) * 100%), transparent); border-color: var(--ghost-border); color: var(--ghost-foreground-bright); }
+    .part-tab.is-active { background: color-mix(in srgb, var(--ghost-surface-elevated) calc(var(--ghost-opacity-active, 1) * 100%), transparent); border-color: var(--ghost-border); color: var(--ghost-foreground-bright); }
     .part-tab-close { appearance: none; background: transparent; border: 1px solid transparent; color: var(--ghost-faint-foreground); border-radius: 3px; cursor: pointer; width: 18px; height: 18px; line-height: 1; padding: 0; }
     .part-tab-close:hover { background: var(--ghost-surface-hover); color: var(--ghost-foreground-bright); border-color: var(--ghost-border); }
     .part-tab-close:focus-visible { outline: 2px solid var(--ghost-primary); outline-offset: 1px; }
