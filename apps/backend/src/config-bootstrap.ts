@@ -1,14 +1,15 @@
 // Backend config bootstrap — creates a ConfigurationService at startup
 
-import { FileSystemStorageProvider } from "@ghost/config-server";
-import { createServiceConfigurationService } from "@ghost/config-server";
-import { createConfigurationService } from "@ghost/config-providers";
+import { FileSystemStorageProvider } from "@weaver/config-server";
+import { createServiceConfigurationService } from "@weaver/config-server";
+import { createConfigurationService } from "@weaver/config-providers";
 import type {
   ConfigurationService,
   ServiceConfigurationService,
   ConfigurationPropertySchema,
-} from "@ghost/config-types";
+} from "@weaver/config-types";
 import { resolve } from "node:path";
+import { armadaWeaver } from "@ghost/config-plugin-runtime";
 
 export interface BackendConfigBootstrapOptions {
   configDir: string;
@@ -56,11 +57,12 @@ export async function bootstrapBackendConfig(
 
   const configService = await createConfigurationService({
     providers: [coreProvider, appProvider, tenantProvider],
+    weaverConfig: armadaWeaver,
   });
 
   const serviceConfig = createServiceConfigurationService({
     configService,
-    namespace: "ghost.backend",
+    namespace: "armada.backend",
     schemaMap: backendSchemaMap,
   });
 

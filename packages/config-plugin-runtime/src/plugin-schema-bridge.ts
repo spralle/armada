@@ -1,18 +1,18 @@
 // Plugin schema ingestion bridge — extracts config schemas from plugin contracts
 
-import type { ConfigurationPropertySchema } from "@ghost/config-types";
+import type { ConfigurationPropertySchema } from "@weaver/config-types";
 import type {
   ConfigurationSchemaDeclaration,
   ComposeResult,
   ConfigurationSchemaRegistry,
   RegisterSchemaResult,
   UnregisterSchemaResult,
-} from "@ghost/config-engine";
+} from "@weaver/config-engine";
 import {
   deriveNamespace,
   composeConfigurationSchemas,
   createSchemaRegistry,
-} from "@ghost/config-engine";
+} from "@weaver/config-engine";
 
 /**
  * Minimal plugin configuration input to avoid circular dependency

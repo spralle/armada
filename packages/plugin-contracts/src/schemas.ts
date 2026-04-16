@@ -5,7 +5,7 @@ import {
   terminalPaletteSchema,
 } from "./theme-derivation.js";
 
-import { configurationPropertySchemaSchema } from "@ghost/config-types";
+import { configurationPropertySchemaSchema } from "@weaver/config-types";
 
 const nonEmptyString = z.string().trim().min(1);
 

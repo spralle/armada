@@ -6,7 +6,8 @@ import { tmpdir } from "node:os";
 
 import { createConfigRoutes } from "../dist-test/src/config-endpoints.js";
 import { extractAccessContext } from "../dist-test/src/config-auth.js";
-import { createInMemoryAuditLog, createInMemoryOverrideTracker } from "@ghost/config-server";
+import { createInMemoryAuditLog } from "@weaver/config-server";
+import { createInMemoryOverrideTracker } from "@weaver/config-policy";
 
 /** Create a temporary config directory with seed data for testing. */
 async function createTestConfigDir() {

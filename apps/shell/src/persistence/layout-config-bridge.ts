@@ -7,7 +7,7 @@
  * Fallback: if config service is unavailable, falls back to localStorage.
  */
 
-import type { ConfigurationPropertySchema, ConfigurationService } from "@ghost/config-types";
+import type { ConfigurationPropertySchema, ConfigurationService } from "@weaver/config-types";
 import {
   createDefaultLayoutState,
   sanitizeLayoutState,

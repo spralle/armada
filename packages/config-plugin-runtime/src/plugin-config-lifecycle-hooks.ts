@@ -1,17 +1,17 @@
 import type {
   ConfigurationLayer,
   ConfigurationPropertySchema,
-} from "@ghost/config-types";
+} from "@weaver/config-types";
 import type {
   ComposeResult,
   ConfigurationSchemaDeclaration,
   SchemaCompositionError,
-} from "@ghost/config-engine";
+} from "@weaver/config-engine";
 import {
   composeConfigurationSchemas,
   deriveNamespace,
   qualifyKey,
-} from "@ghost/config-engine";
+} from "@weaver/config-engine";
 import type { PluginConfigInput } from "./plugin-schema-bridge.js";
 import { collectPluginSchemaDeclarations } from "./plugin-schema-bridge.js";
 

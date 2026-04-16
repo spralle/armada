@@ -84,7 +84,7 @@ Ghost is a multi-tenant maritime platform with a plugin-based micro-frontend she
 
 ### Packaging
 
-**25) Three packages.** `@ghost/config-types` (types + schemas, zero runtime deps), `@ghost/config-engine` (pure resolution functions), `@ghost/config-providers` (storage I/O implementations).
+**25) Three packages.** `@weaver/config-types` (types + schemas, zero runtime deps), `@weaver/config-engine` (pure resolution functions), `@weaver/config-providers` (storage I/O implementations).
 
 ## Consequences
 

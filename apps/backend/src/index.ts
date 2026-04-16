@@ -15,8 +15,9 @@ import { createConfigRoutes } from "./config-endpoints.js";
 import { createOverrideRoutes } from "./override-endpoints.js";
 import { createSessionRoutes } from "./session-endpoints.js";
 import { bootstrapBackendConfig, logConfigBootstrapSummary } from "./config-bootstrap.js";
-import { createInMemoryAuditLog, createInMemoryOverrideTracker } from "@ghost/config-server";
-import { createGodModeSessionProvider } from "@ghost/config-providers";
+import { createInMemoryAuditLog } from "@weaver/config-server";
+import { createInMemoryOverrideTracker } from "@weaver/config-policy";
+import { createOverrideSessionProvider } from "@weaver/config-sessions";
 
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
@@ -84,7 +85,7 @@ const overrideRoutes = createOverrideRoutes({
   overrideTracker,
 });
 
-const sessionController = createGodModeSessionProvider();
+const sessionController = createOverrideSessionProvider();
 const sessionRoutes = createSessionRoutes({ sessionController });
 
 const routes: Route[] = [

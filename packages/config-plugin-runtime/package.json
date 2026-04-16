@@ -19,7 +19,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ghost/config-types": "workspace:*",
-    "@ghost/config-engine": "workspace:*"
+    "@weaver/config-types": "*",
+    "@weaver/config-engine": "*"
   }
 }

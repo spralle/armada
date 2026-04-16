@@ -8,7 +8,7 @@
  * Fallback: if config service is unavailable, falls back to localStorage.
  */
 
-import type { ConfigurationPropertySchema, ConfigurationService } from "@ghost/config-types";
+import type { ConfigurationPropertySchema, ConfigurationService } from "@weaver/config-types";
 import { createInitialShellContextState, type ShellContextState } from "../context-state.js";
 import type {
   ContextStateLoadResult,

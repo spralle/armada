@@ -19,7 +19,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ghost/config-types": "workspace:*",
+    "@weaver/config-types": "*",
     "zod": "^3.24.2"
   }
 }

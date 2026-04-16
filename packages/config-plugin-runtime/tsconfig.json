@@ -18,8 +18,5 @@
   "include": [
     "src"
   ],
-  "references": [
-    { "path": "../config-types" },
-    { "path": "../config-engine" }
-  ]
+  "references": []
 }

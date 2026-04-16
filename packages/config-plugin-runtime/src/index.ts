@@ -1,3 +1,5 @@
+export { armadaWeaver } from "./armada-layers.js";
+
 export {
   type PluginConfigInput,
   type IncrementalSchemaRegistryAdapter,

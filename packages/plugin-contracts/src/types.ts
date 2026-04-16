@@ -1,5 +1,5 @@
 import type { PartialThemePalette, TerminalPalette } from "./theme-derivation.js";
-import type { ConfigurationPropertySchema } from "@ghost/config-types";
+import type { ConfigurationPropertySchema } from "@weaver/config-types";
 
 export interface PluginGalleryBanner {
   color?: string | undefined;

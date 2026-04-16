@@ -6,8 +6,8 @@
  * The existing readShellMigrationFlags() remains fully functional as fallback.
  */
 
-import type { ConfigurationPropertySchema } from "@ghost/config-types";
-import type { ConfigurationService } from "@ghost/config-types";
+import type { ConfigurationPropertySchema } from "@weaver/config-types";
+import type { ConfigurationService } from "@weaver/config-types";
 import type { ShellMigrationFlags } from "./migration-flags.js";
 
 // ---------------------------------------------------------------------------

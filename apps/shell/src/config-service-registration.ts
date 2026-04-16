@@ -3,11 +3,11 @@
 // Registers the ConfigurationService as a builtin plugin capability,
 // following the same pattern as theme-service-registration.ts.
 
-import type { ConfigurationService } from "@ghost/config-types";
+import type { ConfigurationService } from "@weaver/config-types";
 import type { PluginContract } from "@ghost/plugin-contracts";
 import { CONFIG_SERVICE_ID } from "@ghost/plugin-contracts";
-import { createScopedConfigurationService } from "@ghost/config-providers";
-import { deriveNamespace } from "@ghost/config-engine";
+import { createScopedConfigurationService } from "@weaver/config-providers";
+import { deriveNamespace } from "@weaver/config-engine";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export const CONFIG_SERVICE_PLUGIN_ID = "ghost.shell.config-service";

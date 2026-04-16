@@ -6,9 +6,11 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ghost/config-engine": "file:../../packages/config-engine",
-    "@ghost/config-providers": "file:../../packages/config-providers",
-    "@ghost/config-types": "file:../../packages/config-types",
+    "@weaver/config-engine": "*",
+    "@weaver/config-providers": "*",
+    "@weaver/config-sessions": "*",
+    "@weaver/config-types": "*",
+    "@ghost/config-plugin-runtime": "workspace:*",
     "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
     "@module-federation/enhanced": "^2.3.1",
     "react": "^18.3.1",

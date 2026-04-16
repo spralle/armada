@@ -360,16 +360,16 @@ const zoom = scopedConfig.get<number>("map.defaultZoom");
 
 | Package | Purpose | Dependencies |
 |---|---|---|
-| `@ghost/config-types` | Pure types, interfaces, Zod schemas | `zod` only |
-| `@ghost/config-engine` | Pure functions (merge, resolve, namespace, scope, auth) | `@ghost/config-types` |
-| `@ghost/config-sync` | Offline-first sync orchestration (cache + transport) | `@ghost/config-types` |
-| `@ghost/config-providers` | Storage implementations, runtime service factory | Both above |
+| `@weaver/config-types` | Pure types, interfaces, Zod schemas | `zod` only |
+| `@weaver/config-engine` | Pure functions (merge, resolve, namespace, scope, auth) | `@weaver/config-types` |
+| `@weaver/config-sync` | Offline-first sync orchestration (cache + transport) | `@weaver/config-types` |
+| `@weaver/config-providers` | Storage implementations, runtime service factory | Both above |
 
 The types package is dependency-free (aside from `zod`). The engine is pure functions over data — no I/O, no side effects. Storage and runtime wiring live in the providers package.
 
 ## Edge/Offline Sync Behavior
 
-`@ghost/config-sync` composes two pluggable contracts from `@ghost/config-types`:
+`@weaver/config-sync` composes two pluggable contracts from `@weaver/config-types`:
 
 - `DurableConfigCache` for tenant-scoped snapshot/queue persistence.
 - `ConfigSyncTransport` for pull/push/ack network synchronization.
@@ -383,7 +383,7 @@ Behavioral guarantees in this lane:
 - **Retry policy:** retryable transport failures schedule exponential backoff retries with jitter and expose diagnostics (`retryAttempt`, `retryScheduledAt`, `lastError`).
 - **Tenant isolation:** cache queue/snapshot/cursor are keyed by tenant and never mixed.
 
-`@ghost/config-providers` integrates this through a thin adapter (`createSyncableStorageProvider`) that returns a `ConfigurationStorageProvider`-compatible implementation with sync status/diagnostics surface. This keeps sync internals out of `ConfigurationService` consumers.
+`@weaver/config-providers` integrates this through a thin adapter (`createSyncableStorageProvider`) that returns a `ConfigurationStorageProvider`-compatible implementation with sync status/diagnostics surface. This keeps sync internals out of `ConfigurationService` consumers.
 
 ## Reliability Test Matrix (armada-1xg.6)
 
@@ -397,7 +397,7 @@ Behavioral guarantees in this lane:
 
 ## Engine Functions
 
-API reference for `@ghost/config-engine` exports:
+API reference for `@weaver/config-engine` exports:
 
 | Function | Signature | Description |
 |---|---|---|

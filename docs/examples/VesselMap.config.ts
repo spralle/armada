@@ -2,7 +2,7 @@
 // This file demonstrates the defineViewConfig convention.
 // In a real plugin, this would be at: src/VesselMap.config.ts
 
-import { defineViewConfig } from "@ghost/config-types";
+import { defineViewConfig } from "@weaver/config-types";
 
 export default defineViewConfig({
   viewId: "VesselMap",

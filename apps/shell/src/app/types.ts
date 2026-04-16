@@ -42,7 +42,7 @@ import type {
   DndDiagnosticRuntime,
   DndDiagnosticPath,
 } from "./dnd-diagnostics.js";
-import type { ConfigurationService } from "@ghost/config-types";
+import type { ConfigurationService } from "@weaver/config-types";
 import type { PluginConfigSyncConfigurationService } from "../plugin-config-sync-controller.js";
 
 export interface ShellBootstrapState {

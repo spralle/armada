@@ -1,20 +1,23 @@
 /**
  * Shell config service setup — creates the ConfigurationService wired with
- * GodModeSession and runs persistence migrations.
+ * OverrideSession and runs persistence migrations.
  *
  * Extracted from hydratePluginRegistry to keep index.ts focused.
  * Mandatory fallback: if config service creation throws, callers fall back
  * to existing localStorage persistence.
  */
 
-import type { ConfigurationService } from "@ghost/config-types";
+import type { ConfigurationService } from "@weaver/config-types";
 import {
   createConfigurationService,
-  createGodModeSessionProvider,
   StaticJsonStorageProvider,
+} from "@weaver/config-providers";
+import {
+  createOverrideSessionProvider,
+  type OverrideSessionController,
   type AuditEntry,
-  type GodModeSessionController,
-} from "@ghost/config-providers";
+} from "@weaver/config-sessions";
+import { armadaWeaver } from "@ghost/config-plugin-runtime";
 import { createLayoutConfigBridge } from "./persistence/layout-config-bridge.js";
 import { createContextConfigBridge } from "./persistence/context-config-bridge.js";
 import { createKeybindingConfigBridge } from "./persistence/keybinding-config-bridge.js";
@@ -26,7 +29,7 @@ import { getCurrentUserId, getStorage } from "./app/utils.js";
 
 export interface ShellConfigServiceResult {
   configService: ConfigurationService;
-  sessionController: GodModeSessionController;
+  sessionController: OverrideSessionController;
 }
 
 // ---------------------------------------------------------------------------
@@ -34,13 +37,13 @@ export interface ShellConfigServiceResult {
 // ---------------------------------------------------------------------------
 
 /**
- * Create the shell's ConfigurationService with a GodModeSession controller
+ * Create the shell's ConfigurationService with an OverrideSession controller
  * wired as the SESSION layer provider.
  *
  * Throws on failure — callers must catch and fall back.
  */
 export async function createShellConfigService(): Promise<ShellConfigServiceResult> {
-  const sessionController = createGodModeSessionProvider({
+  const sessionController = createOverrideSessionProvider({
     onAudit: (entry: AuditEntry) => {
       console.log("[shell:config:session]", entry.action, entry.sessionId);
     },
@@ -50,6 +53,7 @@ export async function createShellConfigService(): Promise<ShellConfigServiceResu
     providers: [
       new StaticJsonStorageProvider({ id: "core-defaults", layer: "core", data: {} }),
     ],
+    weaverConfig: armadaWeaver,
     session: sessionController,
   });
 
