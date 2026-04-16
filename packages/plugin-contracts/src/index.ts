@@ -147,6 +147,7 @@ export {
   contrastRatio,
   relativeLuminance,
   isValidHex,
+  withAlpha,
 } from "./theme-color-utils.js";
 
 export type { ThemeService, ThemeInfo, BackgroundInfo } from "./theme-service.js";

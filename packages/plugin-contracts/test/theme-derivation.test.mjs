@@ -50,7 +50,7 @@ const OMARCHY_TERMINAL = {
   color15: "#ffffff",
 };
 
-/** All 47 token keys expected in a full palette (24 core + 23 derived). */
+/** All 73 token keys expected in a full palette. */
 const ALL_TOKEN_KEYS = [
   "mode", "background", "surface", "overlay", "primary", "secondary", "accent",
   "muted", "foreground", "error", "warning", "success", "info", "border", "ring",
@@ -62,21 +62,27 @@ const ALL_TOKEN_KEYS = [
   "chart1", "chart2", "chart3", "chart4", "chart5",
   "sidebar", "sidebarForeground", "sidebarPrimary", "sidebarPrimaryForeground",
   "sidebarAccent", "sidebarAccentForeground", "sidebarBorder", "sidebarRing",
+  "surfaceElevated", "surfaceHover", "surfaceInset", "surfaceInsetDeep", "surfaceOverlay",
+  "foregroundBright", "dimForeground", "faintForeground", "codeForeground",
+  "borderMuted", "borderAlt", "borderAccent",
+  "primaryGlowSubtle", "primaryGlow", "primaryBorderSemi", "primaryOverlay",
+  "warningForeground", "warningBackground", "errorForeground", "errorBackground",
+  "errorForegroundMuted", "successBackground", "successForeground", "infoBackground",
+  "infoForeground", "neutralBackground",
 ];
 
 // ---------------------------------------------------------------------------
 // 1. deriveFullPalette from 3 minimal inputs produces all 47 tokens
 // ---------------------------------------------------------------------------
 
-test("deriveFullPalette produces all 47 tokens from 3 minimal inputs", () => {
+test("deriveFullPalette produces all 73 tokens from 3 minimal inputs", () => {
   const result = deriveFullPalette(MINIMAL_INPUT);
 
   for (const key of ALL_TOKEN_KEYS) {
     assert.notEqual(result[key], undefined, `Token "${key}" should be defined`);
   }
 
-  // 24 core + 23 derived = 47 tokens
-  assert.equal(Object.keys(result).length, 47, "Should produce exactly 47 tokens");
+  assert.equal(Object.keys(result).length, 73, "Should produce exactly 73 tokens");
 });
 
 test("deriveFullPalette defaults mode to dark when not provided", () => {
@@ -93,14 +99,14 @@ test("deriveFullPalette respects explicit light mode", () => {
 // 2. deriveFullPalette from Omarchy-style input (6 + terminal 16)
 // ---------------------------------------------------------------------------
 
-test("deriveFullPalette produces all 47 tokens from Omarchy-style input with terminal", () => {
+test("deriveFullPalette produces all 73 tokens from Omarchy-style input with terminal", () => {
   const result = deriveFullPalette(OMARCHY_INPUT, OMARCHY_TERMINAL);
 
   for (const key of ALL_TOKEN_KEYS) {
     assert.notEqual(result[key], undefined, `Token "${key}" should be defined`);
   }
 
-  assert.equal(Object.keys(result).length, 47);
+  assert.equal(Object.keys(result).length, 73);
 });
 
 test("Omarchy terminal colors map to semantic tokens", () => {
@@ -327,8 +333,8 @@ test("schema rejects unrecognized keys (strict mode)", () => {
 // CSS variable map
 // ---------------------------------------------------------------------------
 
-test("GHOST_THEME_CSS_VARS has entries for all 47 tokens", () => {
-  assert.equal(Object.keys(GHOST_THEME_CSS_VARS).length, 47);
+test("GHOST_THEME_CSS_VARS has entries for all 73 tokens", () => {
+  assert.equal(Object.keys(GHOST_THEME_CSS_VARS).length, 73);
   for (const key of ALL_TOKEN_KEYS) {
     assert.ok(
       key in GHOST_THEME_CSS_VARS,
@@ -522,4 +528,59 @@ test("CSS var map has entries for all 5 new window appearance tokens", () => {
 
 test("--ghost-background-opacity CSS var unchanged (backward compat)", () => {
   assert.equal(GHOST_THEME_CSS_VARS.opacity, "--ghost-background-opacity");
+});
+
+// ---------------------------------------------------------------------------
+// ANSI color4/color5 fallback tests
+// ---------------------------------------------------------------------------
+
+test("ANSI color4 maps to primary when primary not explicitly set", () => {
+  const result = deriveFullPalette(
+    { background: "#1a1a2e", foreground: "#e0e0e0", accent: "#e94560" },
+    { color4: "#bd93f9" },
+  );
+  assert.equal(result.primary, "#bd93f9");
+  assert.equal(result.accent, "#e94560");
+});
+
+test("ANSI color5 maps to secondary when secondary not explicitly set", () => {
+  const result = deriveFullPalette(
+    { background: "#1a1a2e", foreground: "#e0e0e0", accent: "#e94560" },
+    { color5: "#ff79c6" },
+  );
+  assert.equal(result.secondary, "#ff79c6");
+});
+
+test("explicit primary overrides terminal color4", () => {
+  const result = deriveFullPalette(
+    { background: "#1a1a2e", foreground: "#e0e0e0", primary: "#3b82f6", accent: "#e94560" },
+    { color4: "#bd93f9" },
+  );
+  assert.equal(result.primary, "#3b82f6");
+});
+
+// ---------------------------------------------------------------------------
+// New unified token tests
+// ---------------------------------------------------------------------------
+
+test("new surface variant tokens are derived and valid hex", () => {
+  const result = deriveFullPalette(MINIMAL_INPUT);
+  for (const key of ["surfaceElevated", "surfaceHover", "surfaceInset", "surfaceInsetDeep", "surfaceOverlay"]) {
+    assert.ok(isValidHex(result[key]), `${key} should be valid hex, got "${result[key]}"`);
+  }
+});
+
+test("primary effect tokens include alpha channel (8-digit hex)", () => {
+  const result = deriveFullPalette(MINIMAL_INPUT);
+  for (const key of ["primaryGlowSubtle", "primaryGlow", "primaryBorderSemi", "primaryOverlay"]) {
+    assert.ok(result[key].length === 9, `${key} should be 9 chars (#RRGGBBAA), got "${result[key]}"`);
+    assert.ok(result[key].startsWith("#"), `${key} should start with #`);
+  }
+});
+
+test("status foreground/background tokens are valid hex", () => {
+  const result = deriveFullPalette(MINIMAL_INPUT);
+  for (const key of ["warningForeground", "warningBackground", "errorForeground", "errorBackground", "errorForegroundMuted", "successForeground", "successBackground", "infoForeground", "infoBackground", "neutralBackground"]) {
+    assert.ok(isValidHex(result[key]), `${key} should be valid hex, got "${result[key]}"`);
+  }
 });

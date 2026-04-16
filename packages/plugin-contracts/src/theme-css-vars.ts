@@ -50,6 +50,38 @@ export const GHOST_THEME_CSS_VARS: Readonly<Record<keyof FullThemePalette, strin
   sidebarAccentForeground: "--ghost-sidebar-accent-foreground",
   sidebarBorder: "--ghost-sidebar-border",
   sidebarRing: "--ghost-sidebar-ring",
+  // Surface variants
+  surfaceElevated: "--ghost-surface-elevated",
+  surfaceHover: "--ghost-surface-hover",
+  surfaceInset: "--ghost-surface-inset",
+  surfaceInsetDeep: "--ghost-surface-inset-deep",
+  surfaceOverlay: "--ghost-surface-overlay",
+  // Foreground variants
+  foregroundBright: "--ghost-foreground-bright",
+  dimForeground: "--ghost-dim-foreground",
+  faintForeground: "--ghost-faint-foreground",
+  codeForeground: "--ghost-code-foreground",
+  // Border variants
+  borderMuted: "--ghost-border-muted",
+  borderAlt: "--ghost-border-alt",
+  borderAccent: "--ghost-border-accent",
+  // Primary effects
+  primaryGlowSubtle: "--ghost-primary-glow-subtle",
+  primaryGlow: "--ghost-primary-glow",
+  primaryBorderSemi: "--ghost-primary-border-semi",
+  primaryOverlay: "--ghost-primary-overlay",
+  // Status foreground/background
+  warningForeground: "--ghost-warning-foreground",
+  warningBackground: "--ghost-warning-background",
+  errorForeground: "--ghost-error-foreground",
+  errorBackground: "--ghost-error-background",
+  errorForegroundMuted: "--ghost-error-foreground-muted",
+  successBackground: "--ghost-success-background",
+  successForeground: "--ghost-success-foreground",
+  infoBackground: "--ghost-info-background",
+  infoForeground: "--ghost-info-foreground",
+  // Neutral
+  neutralBackground: "--ghost-neutral-background",
   // Window appearance tokens (Hyprland-style)
   opacityActive: "--ghost-opacity-active",
   opacityInactive: "--ghost-opacity-inactive",

@@ -9,9 +9,17 @@ import {
   adjustLightness,
   blendWithBackground,
   contrastSafe,
-  desaturate,
   isValidHex,
 } from "./theme-color-utils.js";
+
+import {
+  resolveCoreTokens,
+  deriveSurfaceVariants,
+  deriveForegroundVariants,
+  deriveBorderVariants,
+  derivePrimaryEffects,
+  deriveStatusTokens,
+} from "./theme-derivation-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -71,7 +79,7 @@ export interface PartialThemePalette {
 }
 
 /**
- * Full 47-token theme palette — the output of derivation.
+ * Full 73-token theme palette — the output of derivation.
  * Every field is guaranteed present.
  */
 export interface FullThemePalette {
@@ -125,6 +133,38 @@ export interface FullThemePalette {
   sidebarAccentForeground: string;
   sidebarBorder: string;
   sidebarRing: string;
+  // Surface variants (derived from surface)
+  surfaceElevated: string;
+  surfaceHover: string;
+  surfaceInset: string;
+  surfaceInsetDeep: string;
+  surfaceOverlay: string;
+  // Foreground variants (derived from foreground + background)
+  foregroundBright: string;
+  dimForeground: string;
+  faintForeground: string;
+  codeForeground: string;
+  // Border variants (derived from border)
+  borderMuted: string;
+  borderAlt: string;
+  borderAccent: string;
+  // Primary effect tokens (primary + alpha channel)
+  primaryGlowSubtle: string;
+  primaryGlow: string;
+  primaryBorderSemi: string;
+  primaryOverlay: string;
+  // Semantic status foreground/background pairs
+  warningForeground: string;
+  warningBackground: string;
+  errorForeground: string;
+  errorBackground: string;
+  errorForegroundMuted: string;
+  successBackground: string;
+  successForeground: string;
+  infoBackground: string;
+  infoForeground: string;
+  // Neutral
+  neutralBackground: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -189,138 +229,57 @@ export const partialThemePaletteSchema = z
   });
 
 // ---------------------------------------------------------------------------
-// Fallback constants
-// ---------------------------------------------------------------------------
-
-const FALLBACK_ERROR = "#ef4444";
-const FALLBACK_WARNING = "#f59e0b";
-const FALLBACK_SUCCESS = "#22c55e";
-const FALLBACK_INFO = "#3b82f6";
-const FALLBACK_RADIUS = "0.625rem";
-
-// ---------------------------------------------------------------------------
 // Derivation engine
 // ---------------------------------------------------------------------------
 
 /**
- * Derive a complete 47-token palette from a partial input.
- * Terminal palette (Omarchy compat) maps color1→error, color2→success,
- * color3→warning, color6→info when those tokens are not explicitly set.
- *
- * This is a pure function — no side effects.
+ * Derive a complete 73-token palette from a partial input.
+ * Terminal palette (Omarchy compat) maps ANSI colors to semantic tokens
+ * when those tokens are not explicitly set. Pure function — no side effects.
  */
 export function deriveFullPalette(
   input: PartialThemePalette,
   terminal?: TerminalPalette | undefined,
 ): FullThemePalette {
-  const mode: ThemeMode = input.mode ?? "dark";
-  const isDark = mode === "dark";
-  const sign = isDark ? 1 : -1;
+  const core = resolveCoreTokens(input, terminal);
+  const { sign } = core;
 
-  // Core accent/primary resolution
-  const primary = input.primary ?? input.accent!;
-  const accent = input.accent ?? input.primary!;
+  const surfaceVars = deriveSurfaceVariants(core.surface, sign);
+  const fgVars = deriveForegroundVariants(input.foreground, input.background, core.primary, sign);
+  const borderVars = deriveBorderVariants(core.border, sign);
+  const primaryFx = derivePrimaryEffects(core.primary);
+  const statusVars = deriveStatusTokens(core.error, core.warning, core.success, core.info, input.background, sign);
 
-  // Terminal-derived semantic colors (Omarchy compat)
-  const error = input.error ?? terminal?.color1 ?? FALLBACK_ERROR;
-  const warning = input.warning ?? terminal?.color3 ?? FALLBACK_WARNING;
-  const success = input.success ?? terminal?.color2 ?? FALLBACK_SUCCESS;
-  const info = input.info ?? terminal?.color6 ?? FALLBACK_INFO;
-
-  // Surface derivation
-  const surface = input.surface ?? adjustLightness(input.background, sign * 6);
-  const overlay = input.overlay ?? adjustLightness(input.background, sign * 10);
-  const muted = input.muted ?? adjustLightness(input.background, sign * 3);
-  const border = input.border ?? adjustLightness(input.background, sign * 15);
-  const secondary = input.secondary ?? desaturate(primary, 40);
-  const ring = input.ring ?? primary;
-  const cursor = input.cursor ?? input.foreground;
-  const selectionBackground = input.selectionBackground ?? primary;
-  const radius = input.radius ?? FALLBACK_RADIUS;
-  const opacity = input.opacity ?? 1.0;
-
-  // Window appearance tokens (Hyprland-style split opacity + borders)
-  const opacityActive = input.opacityActive ?? input.opacity ?? 0.97;
-  const opacityInactive =
-    input.opacityInactive ?? (input.opacity != null ? input.opacity * 0.93 : 0.90);
-  const borderActive = input.borderActive ?? accent;
-  const borderInactive = input.borderInactive ?? border;
-  const borderSize = input.borderSize ?? "1px";
-
-  // Derived foreground tokens
-  const primaryForeground = contrastSafe(primary);
-  const secondaryForeground = contrastSafe(secondary);
-  const accentForeground = contrastSafe(accent);
-  const mutedForeground = blendWithBackground(input.foreground, input.background, 0.6);
-
-  // Derived surface tokens
-  const hoverBackground = adjustLightness(surface, sign * 3);
-  const activeBackground = adjustLightness(surface, sign * 6);
-
-  // Chart tokens: spread across primary, secondary, accent, success, warning
-  const chart1 = primary;
-  const chart2 = secondary;
-  const chart3 = accent;
-  const chart4 = success;
-  const chart5 = warning;
-
-  // Sidebar tokens
-  const sidebar = adjustLightness(surface, sign * -3);
-  const sidebarForeground = input.foreground;
-  const sidebarPrimary = primary;
-  const sidebarPrimaryForeground = primaryForeground;
-  const sidebarAccent = accent;
-  const sidebarAccentForeground = accentForeground;
-  const sidebarBorder = border;
-  const sidebarRing = ring;
+  const { foreground, background } = input;
+  const primaryFg = contrastSafe(core.primary);
 
   return {
-    mode,
-    background: input.background,
-    surface,
-    overlay,
-    primary,
-    secondary,
-    accent,
-    muted,
-    foreground: input.foreground,
-    error,
-    warning,
-    success,
-    info,
-    border,
-    ring,
-    cursor,
-    selectionBackground,
-    radius,
-    opacity: opacityActive,
-    opacityActive,
-    opacityInactive,
-    borderActive,
-    borderInactive,
-    borderSize,
-    surfaceForeground: input.foreground,
-    overlayForeground: input.foreground,
-    primaryForeground,
-    secondaryForeground,
-    accentForeground,
-    mutedForeground,
-    input: border,
-    selectionForeground: input.foreground,
-    hoverBackground,
-    activeBackground,
-    chart1,
-    chart2,
-    chart3,
-    chart4,
-    chart5,
-    sidebar,
-    sidebarForeground,
-    sidebarPrimary,
-    sidebarPrimaryForeground,
-    sidebarAccent,
-    sidebarAccentForeground,
-    sidebarBorder,
-    sidebarRing,
+    mode: core.mode, background, foreground,
+    surface: core.surface, overlay: core.overlay,
+    primary: core.primary, secondary: core.secondary,
+    accent: core.accent, muted: core.muted,
+    error: core.error, warning: core.warning, success: core.success, info: core.info,
+    border: core.border, ring: core.ring,
+    cursor: core.cursor, selectionBackground: core.selectionBackground,
+    radius: core.radius, opacity: core.opacityActive,
+    opacityActive: core.opacityActive, opacityInactive: core.opacityInactive,
+    borderActive: core.borderActive, borderInactive: core.borderInactive, borderSize: core.borderSize,
+    surfaceForeground: foreground, overlayForeground: foreground,
+    primaryForeground: primaryFg,
+    secondaryForeground: contrastSafe(core.secondary),
+    accentForeground: contrastSafe(core.accent),
+    mutedForeground: blendWithBackground(foreground, background, 0.6),
+    input: core.border, selectionForeground: foreground,
+    hoverBackground: adjustLightness(core.surface, sign * 3),
+    activeBackground: adjustLightness(core.surface, sign * 6),
+    chart1: core.primary, chart2: core.secondary, chart3: core.accent,
+    chart4: core.success, chart5: core.warning,
+    sidebar: adjustLightness(core.surface, sign * -3),
+    sidebarForeground: foreground, sidebarPrimary: core.primary,
+    sidebarPrimaryForeground: primaryFg, sidebarAccent: core.accent,
+    sidebarAccentForeground: contrastSafe(core.accent),
+    sidebarBorder: core.border, sidebarRing: core.ring,
+    ...surfaceVars, ...fgVars, ...borderVars, ...primaryFx, ...statusVars,
+    neutralBackground: adjustLightness(background, sign * 12),
   };
 }

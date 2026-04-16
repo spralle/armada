@@ -171,3 +171,13 @@ export function blendWithBackground(fgHex: string, bgHex: string, opacity: numbe
 export function isValidHex(value: string): boolean {
   return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value);
 }
+
+/** Append alpha (0–1) to a hex color, producing #RRGGBBAA. */
+export function withAlpha(hex: string, alpha: number): string {
+  const rgb = hexToRgb(hex);
+  const base = rgbToHex(rgb);
+  const alphaHex = Math.round(Math.max(0, Math.min(1, alpha)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return `${base}${alphaHex}`;
+}
