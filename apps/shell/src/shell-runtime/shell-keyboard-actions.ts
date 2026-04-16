@@ -44,6 +44,11 @@ export function handleShellKeyboardAction(
     return unavailable(actionId, "action unavailable in browser shell runtime");
   }
 
+  // Workspace actions — stub handlers until WorkspaceManagerState is wired onto ShellRuntime
+  if (actionId.startsWith("shell.workspace.")) {
+    return unavailable(actionId, "workspace manager not yet wired to runtime");
+  }
+
   if (!isShellKeyboardActionId(actionId)) {
     return { handled: false, executed: false, message: "" };
   }
