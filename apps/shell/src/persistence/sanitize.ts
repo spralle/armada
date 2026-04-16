@@ -2,7 +2,6 @@ import type {
   ClosedTabHistoryEntry,
   ContextGroup,
   ContextLaneValue,
-  ContextTabSlot,
   ContextTab,
   EntityTypeSelection,
   RevisionMeta,
@@ -45,7 +44,7 @@ export function sanitizeContextState(input: unknown, fallback: ShellContextState
     tabOrder,
     activeTabId,
     dockTree,
-    closedTabHistoryBySlot: sanitizeClosedTabHistoryBySlot(input.closedTabHistoryBySlot),
+    closedTabHistory: sanitizeClosedTabHistory(input.closedTabHistory, input.closedTabHistoryBySlot),
     globalLanes: sanitizeLaneMap(input.globalLanes, fallback.globalLanes),
     groupLanes: sanitizeNestedLaneMap(input.groupLanes, fallback.groupLanes),
     subcontextsByTab: sanitizeNestedLaneMap(input.subcontextsByTab, fallback.subcontextsByTab),
@@ -53,20 +52,36 @@ export function sanitizeContextState(input: unknown, fallback: ShellContextState
   };
 }
 
-function sanitizeClosedTabHistoryBySlot(input: unknown): Record<ContextTabSlot, ClosedTabHistoryEntry[]> {
-  const fallback: Record<ContextTabSlot, ClosedTabHistoryEntry[]> = {
-    main: [],
-    secondary: [],
-    side: [],
-  };
-  if (!isRecord(input)) {
-    return fallback;
+/**
+ * Sanitize closed tab history. Supports migration from legacy Record<slot, entries[]> format.
+ * If `legacyBySlot` is a Record with slot keys, merge all slot arrays into a single flat list.
+ */
+function sanitizeClosedTabHistory(flatInput: unknown, legacyBySlot: unknown): ClosedTabHistoryEntry[] {
+  // New flat format takes priority (only if non-empty)
+  if (Array.isArray(flatInput) && flatInput.length > 0) {
+    return sanitizeClosedTabHistoryEntries(flatInput);
   }
-  return {
-    main: sanitizeClosedTabHistoryEntries(input.main),
-    secondary: sanitizeClosedTabHistoryEntries(input.secondary),
-    side: sanitizeClosedTabHistoryEntries(input.side),
-  };
+
+  // Migration: legacy Record<ContextTabSlot, entries[]> format
+  if (isRecord(legacyBySlot)) {
+    const merged: unknown[] = [];
+    for (const slot of ["main", "secondary", "side"] as const) {
+      const slotEntries = legacyBySlot[slot];
+      if (Array.isArray(slotEntries)) {
+        merged.push(...slotEntries);
+      }
+    }
+    if (merged.length > 0) {
+      return sanitizeClosedTabHistoryEntries(merged);
+    }
+  }
+
+  // Empty flat array or no data
+  if (Array.isArray(flatInput)) {
+    return [];
+  }
+
+  return [];
 }
 
 function sanitizeClosedTabHistoryEntries(input: unknown): ClosedTabHistoryEntry[] {

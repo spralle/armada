@@ -400,11 +400,7 @@ function createContextState(tabIds: string[]): ShellRuntime["contextState"] {
         },
       },
     },
-    closedTabHistoryBySlot: {
-      main: [],
-      secondary: [],
-      side: [],
-    },
+    closedTabHistory: [],
     globalLanes: {},
     groupLanes: {},
     subcontextsByTab: {},

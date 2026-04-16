@@ -113,7 +113,7 @@ export interface ShellContextState {
   tabOrder: TabInstanceId[];
   activeTabId: TabInstanceId | null;
   dockTree: DockTreeState;
-  closedTabHistoryBySlot: Record<ContextTabSlot, ClosedTabHistoryEntry[]>;
+  closedTabHistory: ClosedTabHistoryEntry[];
   globalLanes: Record<string, ContextLaneValue>;
   groupLanes: Record<string, Record<string, ContextLaneValue>>;
   subcontextsByTab: Record<string, Record<string, ContextLaneValue>>;

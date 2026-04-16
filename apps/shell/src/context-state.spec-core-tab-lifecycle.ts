@@ -138,10 +138,9 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
     state = registerTab(state, { tabId: "tab-closeable", groupId: "group-main", closePolicy: "closeable" });
     state = {
       ...state,
-      closedTabHistoryBySlot: {
-        ...state.closedTabHistoryBySlot,
-        main: [
-          {
+      closedTabHistory: [
+        ...state.closedTabHistory,
+        {
             tabId: "tab-reopenable",
             partDefinitionId: "tab-reopenable",
             groupId: "group-main",
@@ -151,7 +150,6 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
             orderIndex: 1,
           },
         ],
-      },
     };
 
     const html = renderTabStrip(

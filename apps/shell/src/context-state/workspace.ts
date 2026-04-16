@@ -15,11 +15,7 @@ function createEmptyContextState(): ShellContextState {
     tabOrder: [],
     activeTabId: null,
     dockTree: { root: null },
-    closedTabHistoryBySlot: {
-      main: [],
-      secondary: [],
-      side: [],
-    },
+    closedTabHistory: [],
     globalLanes: {},
     groupLanes: {},
     subcontextsByTab: {},
