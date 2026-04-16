@@ -2,8 +2,8 @@ import {
   CORE_GROUP_CONTEXT_KEY,
   readGroupSelectionContext,
 } from "../context/runtime-state.js";
-import { resolveMenuActions } from "../action-surface.js";
 import { escapeHtml } from "../app/utils.js";
+import { evaluateContributionPredicate } from "@ghost/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
 
@@ -57,9 +57,11 @@ export function renderCommandSurface(
   }
 
   const context = toActionContext(runtime);
-  const menuActions = resolveMenuActions(runtime.actionSurface, "sidePanel", context);
-  const menuActionPluginById = new Map(menuActions.map((item) => [item.id, item.pluginId]));
-  const commandRows = menuActions
+  const availableActions = runtime.actionSurface.actions.filter(
+    (action) => evaluateContributionPredicate(action.predicate, context),
+  );
+  const actionPluginById = new Map(availableActions.map((item) => [item.id, item.pluginId]));
+  const commandRows = availableActions
     .map(
       (item) => `<button
         type="button"
@@ -88,7 +90,7 @@ export function renderCommandSurface(
         return;
       }
 
-      const pluginId = menuActionPluginById.get(actionId);
+      const pluginId = actionPluginById.get(actionId);
       if (pluginId) {
         const activated = await bindings.activatePluginForBoundary({
           pluginId,

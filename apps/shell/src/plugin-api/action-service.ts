@@ -96,6 +96,12 @@ export function createActionService(
         );
       }
 
+      // Re-check runtime actions — plugin may have registered a handler during activate()
+      const postActivationHandler = runtimeActions.get(id);
+      if (postActivationHandler) {
+        return postActivationHandler(...args) as T;
+      }
+
       // Dispatch through the intent runtime
       const context = deps.getActionContext();
       const executed = await dispatchAction(
