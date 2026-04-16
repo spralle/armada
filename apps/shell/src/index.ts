@@ -212,6 +212,11 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
       configurationService: configService,
       enableByDefault: true,
       defaultThemeId: "ghost.theme.tokyo-night",
+      onProgress: (registry) => {
+        if (!isActive()) return;
+        runtime.registry = registry;
+        getShellBootstrapComposition(runtime).renderPanels(root, runtime);
+      },
     });
     if (!isActive()) {
       state.disposePluginConfigSync?.();

@@ -248,6 +248,7 @@ export interface StartupActivationResult {
  */
 export async function activateByStartupEvent(
   registry: ShellPluginRegistry,
+  onProgress?: () => void,
 ): Promise<StartupActivationResult> {
   const snapshot = registry.getSnapshot();
   const result: StartupActivationResult = {
@@ -269,6 +270,7 @@ export async function activateByStartupEvent(
       } catch {
         result.failed.push(plugin.id);
       }
+      onProgress?.();
     });
 
   await Promise.all(activationPromises);
