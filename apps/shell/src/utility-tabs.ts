@@ -1,9 +1,6 @@
 export type UtilityTabId =
-  | "utility.plugins"
   | "utility.sync"
-  | "utility.group-context"
   | "utility.appearance"
-  | "utility.keybindings"
   | "utility.dev-inspector";
 
 export interface UtilityTabDescriptor {
@@ -17,23 +14,9 @@ export interface UtilityTabDescriptor {
 
 const UTILITY_TAB_DESCRIPTORS: UtilityTabDescriptor[] = [
   {
-    id: "utility.plugins",
-    title: "Plugins",
-    panelHostId: "plugin-controls",
-    slot: "main",
-    available: "always",
-  },
-  {
     id: "utility.sync",
     title: "Cross-window sync",
     panelHostId: "sync-status",
-    slot: "main",
-    available: "always",
-  },
-  {
-    id: "utility.group-context",
-    title: "Group context",
-    panelHostId: "context-controls",
     slot: "main",
     available: "always",
   },
@@ -44,13 +27,6 @@ const UTILITY_TAB_DESCRIPTORS: UtilityTabDescriptor[] = [
     slot: "main",
     available: "always",
     pluginId: "ghost.appearance-settings",
-  },
-  {
-    id: "utility.keybindings",
-    title: "Keybindings",
-    panelHostId: "keybinding-settings",
-    slot: "main",
-    available: "always",
   },
   {
     id: "utility.dev-inspector",
