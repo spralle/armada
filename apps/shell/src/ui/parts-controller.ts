@@ -96,7 +96,7 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   updateSelectedStyles(root, runtime.selectedPartId);
   void deps.partHost.syncRenderedParts(
     root,
-    visibleParts.filter((part) => !runtime.poppedOutTabIds.has(part.instanceId) && !isUtilityTabId(part.id)),
+    visibleParts.filter((part) => !runtime.poppedOutTabIds.has(part.instanceId) && !(isUtilityTabId(part.id) && part.pluginId === "shell.utility")),
   );
 }
 
@@ -185,7 +185,7 @@ function renderPopoutPart(
     },
   });
   updateSelectedStyles(root, runtime.selectedPartId);
-  void deps.partHost.syncRenderedParts(root, isUtilityTabId(part.id) ? [] : [part]);
+  void deps.partHost.syncRenderedParts(root, (isUtilityTabId(part.id) && part.pluginId === "shell.utility") ? [] : [part]);
 }
 
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
