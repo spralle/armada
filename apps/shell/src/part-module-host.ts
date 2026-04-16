@@ -6,8 +6,13 @@ import {
 import type { ShellPartHostAdapter } from "./app/contracts.js";
 import type { ComposedShellPart } from "./ui/parts-rendering.js";
 import { isUtilityTabId } from "./utility-tabs.js";
-
-type PartMountCleanup = (() => void) | { unmount?: () => void } | void;
+import {
+  type MountCleanup,
+  normalizeCleanup,
+  safeUnmount,
+  toRecord,
+  ensureRemoteRegistered,
+} from "./federation-mount-utils.js";
 
 type MountPartFn = (
   target: HTMLElement,
@@ -18,7 +23,7 @@ type MountPartFn = (
     args: Record<string, string>;
     runtime: ShellRuntime;
   },
-) => PartMountCleanup | Promise<PartMountCleanup>;
+) => MountCleanup | Promise<MountCleanup>;
 
 interface PartModuleHostEntry {
   target: HTMLElement;
@@ -26,14 +31,13 @@ interface PartModuleHostEntry {
   mountKey: string;
 }
 
-type PartRendererRecord = Record<string, unknown>;
-
 interface PartModuleHostOptions {
   federationRuntime?: ShellFederationRuntime;
 }
 
 export interface PartModuleHostRuntime {
   syncRenderedParts(root: HTMLElement, parts: ComposedShellPart[]): Promise<void>;
+  unmountAll(): void;
 }
 
 export function createPartModuleHostRuntime(
@@ -46,6 +50,13 @@ export function createPartModuleHostRuntime(
   let generation = 0;
 
   return {
+    unmountAll() {
+      for (const [partId, entry] of mounted.entries()) {
+        safeUnmount(entry.cleanup);
+        mounted.delete(partId);
+      }
+      generation += 1;
+    },
     async syncRenderedParts(root, parts) {
       generation += 1;
       const currentGeneration = generation;
@@ -117,6 +128,7 @@ export function createShellPartHostAdapter(
   const hostRuntime = createPartModuleHostRuntime(runtime, options);
   return {
     syncRenderedParts: (root, parts) => hostRuntime.syncRenderedParts(root, parts),
+    unmountAll: () => hostRuntime.unmountAll(),
   };
 }
 
@@ -147,13 +159,12 @@ async function mountPart(options: MountPartOptions): Promise<void> {
     target,
   } = options;
 
-  if (!registeredRemoteIds.has(part.pluginId)) {
-    const descriptor = pluginSnapshot?.descriptor;
-    if (descriptor) {
-      federationRuntime.registerRemote({ id: descriptor.id, entry: descriptor.entry });
-      registeredRemoteIds.add(part.pluginId);
-    }
-  }
+  ensureRemoteRegistered(
+    part.pluginId,
+    registeredRemoteIds,
+    () => pluginSnapshot?.descriptor,
+    (desc) => federationRuntime.registerRemote(desc),
+  );
 
   try {
     const remoteModule = await federationRuntime.loadRemoteModule(part.pluginId, "./pluginParts");
@@ -260,14 +271,6 @@ function resolvePartCandidate(candidate: unknown): MountPartFn | null {
   return null;
 }
 
-function toRecord(value: unknown): PartRendererRecord | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  return value as PartRendererRecord;
-}
-
 function resolvePartInstanceId(part: ComposedShellPart): string {
   return part.instanceId ?? part.id;
 }
@@ -278,35 +281,6 @@ function resolvePartDefinitionId(part: ComposedShellPart): string {
 
 function resolvePartArgs(part: ComposedShellPart): Record<string, string> {
   return part.args ? { ...part.args } : {};
-}
-
-function normalizeCleanup(cleanup: PartMountCleanup): (() => void) | null {
-  if (typeof cleanup === "function") {
-    return cleanup;
-  }
-
-  if (cleanup && typeof cleanup === "object" && "unmount" in cleanup) {
-    const unmount = cleanup.unmount;
-    if (typeof unmount === "function") {
-      return () => {
-        unmount();
-      };
-    }
-  }
-
-  return null;
-}
-
-function safeUnmount(cleanup: (() => void) | null): void {
-  if (!cleanup) {
-    return;
-  }
-
-  try {
-    cleanup();
-  } catch {
-    // Ignore cleanup errors to preserve host resilience.
-  }
 }
 
 function collectTargetsByPart(

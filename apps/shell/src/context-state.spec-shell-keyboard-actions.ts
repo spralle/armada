@@ -303,7 +303,7 @@ function createKeyboardRuntimeFixture(): ShellRuntime {
     lastIntentTrace: null,
     layout: { sideSize: 0.2, secondarySize: 0.3 },
     notice: "",
-    partHost: { syncRenderedParts: async () => {} } as ShellRuntime["partHost"],
+    partHost: { syncRenderedParts: async () => {}, unmountAll: () => {} } as ShellRuntime["partHost"],
     pendingFocusSelector: null,
     pendingIntent: null,
     pendingIntentMatches: [],

@@ -172,6 +172,26 @@ export interface PluginConfigurationContribution {
   properties: Record<string, ConfigurationPropertySchema>;
 }
 
+/** Edge slot position for shell chrome areas */
+export type ShellEdgeSlot = "top" | "bottom" | "left" | "right"
+
+/** Position within an edge slot's flex layout (mirrors Waybar modules-left/center/right) */
+export type ShellEdgeSlotPosition = "start" | "center" | "end"
+
+/** Plugin contribution for edge slot components */
+export interface PluginSlotContribution {
+  /** Unique identifier for this slot contribution */
+  id: string;
+  /** Which edge of the shell to render in */
+  slot: ShellEdgeSlot;
+  /** Position within the slot's flex layout */
+  position: ShellEdgeSlotPosition;
+  /** Sort order within the position group (lower = earlier) */
+  order: number;
+  /** Component ID from capability registry to mount */
+  component: string;
+}
+
 export interface PluginContributions {
   views?: PluginViewContribution[] | undefined;
   parts?: PluginPartContribution[] | undefined;
@@ -186,6 +206,7 @@ export interface PluginContributions {
   themes?: ThemeContribution[] | undefined;
   branding?: BrandingContribution | undefined;
   configuration?: PluginConfigurationContribution | undefined;
+  slots?: PluginSlotContribution[] | undefined;
 }
 
 export interface PluginContract {

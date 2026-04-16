@@ -27,11 +27,7 @@ export function cloneContextState(state: ShellContextState): ShellContextState {
     tabOrder: [...state.tabOrder],
     activeTabId: state.activeTabId,
     dockTree: cloneDockTree(state.dockTree),
-    closedTabHistoryBySlot: {
-      main: [...state.closedTabHistoryBySlot.main],
-      secondary: [...state.closedTabHistoryBySlot.secondary],
-      side: [...state.closedTabHistoryBySlot.side],
-    },
+    closedTabHistory: [...state.closedTabHistory],
     globalLanes: { ...state.globalLanes },
     groupLanes: nextGroupLanes,
     subcontextsByTab: nextSubcontextsByTab,

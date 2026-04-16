@@ -17,7 +17,17 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     html, body, #root { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: transparent; color: var(--ghost-foreground); }
     * { scrollbar-width: thin; scrollbar-color: var(--ghost-muted-foreground) transparent; }
-    .shell { display: grid; grid-template-columns: 1fr; min-height: 100%; height: 100%; overflow: hidden; }
+    .shell { display: grid; grid-template-areas: 'top top top' 'left main right' 'bottom bottom bottom'; grid-template-rows: auto 1fr auto; grid-template-columns: auto 1fr auto; width: 100%; height: 100%; overflow: hidden; }
+    .edge-slot { display: flex; overflow: hidden; }
+    .edge-slot-top { grid-area: top; flex-direction: row; }
+    .edge-slot-bottom { grid-area: bottom; flex-direction: row; }
+    .edge-slot-left { grid-area: left; flex-direction: column; }
+    .edge-slot-right { grid-area: right; flex-direction: column; }
+    .edge-slot-start, .edge-slot-center, .edge-slot-end { display: flex; align-items: center; }
+    .edge-slot-start { justify-content: flex-start; }
+    .edge-slot-center { flex: 1; justify-content: center; }
+    .edge-slot-end { justify-content: flex-end; }
+    .dock-root { grid-area: main; }
     .shell,
     .shell > .dock-root,
     .dock-root > .dock-node,
@@ -117,7 +127,11 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     }
   </style>
   <main class="shell" id="shell-root">
+    <section class="edge-slot edge-slot-top"></section>
+    <section class="edge-slot edge-slot-left"></section>
     <section class="dock-root" id="dock-tree-root" data-slot="main"></section>
+    <section class="edge-slot edge-slot-right"></section>
+    <section class="edge-slot edge-slot-bottom"></section>
   </main>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="quick-pick-host"></div>

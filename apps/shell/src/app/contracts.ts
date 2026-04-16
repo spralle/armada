@@ -77,8 +77,10 @@ export interface ShellRendererAdapter {
   renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void;
   renderParts(root: HTMLElement, runtime: ShellRuntime): void;
   renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void;
+  renderEdgeSlots(root: HTMLElement, runtime: ShellRuntime): void;
 }
 
 export interface ShellPartHostAdapter {
   syncRenderedParts(root: HTMLElement, parts: ComposedShellPart[]): Promise<void>;
+  unmountAll(): void;
 }

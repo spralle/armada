@@ -34,7 +34,7 @@ export function registerContextPersistenceUtilityTabSpecs(harness: SpecHarness):
       assertEqual(Boolean(sanitized.tabs[utility.id]), true, `utility tab '${utility.id}' should be restored`);
       assertEqual(sanitized.tabs[utility.id]?.closePolicy, "fixed", `utility tab '${utility.id}' should stay fixed`);
     }
-    assertEqual(sanitized.closedTabHistoryBySlot.main.length, 0, "utility closed-history entries should be dropped");
+    assertEqual(sanitized.closedTabHistory.length, 0, "utility closed-history entries should be dropped");
   });
 
   test("sanitizeContextState idempotence includes required utility tabs", () => {

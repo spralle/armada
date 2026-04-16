@@ -1,8 +1,7 @@
-export type ShellSlot = "main" | "secondary" | "side";
-
 export interface ShellLayoutState {
   sideSize: number;
   secondarySize: number;
+  edgeSlots?: ShellEdgeSlotsLayout;
 }
 
 export type PartialLayoutState = Partial<ShellLayoutState>;
@@ -68,6 +67,28 @@ export function applyPaneResize(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+/** Per-edge-slot visibility state (auto-sized from content) */
+export interface EdgeSlotState {
+  visible: boolean;
+}
+
+/** Layout state for all 4 edge slots */
+export interface ShellEdgeSlotsLayout {
+  top: EdgeSlotState;
+  bottom: EdgeSlotState;
+  left: EdgeSlotState;
+  right: EdgeSlotState;
+}
+
+export function createDefaultEdgeSlotsLayout(): ShellEdgeSlotsLayout {
+  return {
+    top: { visible: true },
+    bottom: { visible: false },
+    left: { visible: false },
+    right: { visible: false },
+  };
 }
 
 function sanitizeRatio(

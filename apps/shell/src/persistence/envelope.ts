@@ -4,12 +4,15 @@ import type {
   LayoutEnvelopeV1,
   StorageLike,
   UnifiedShellPersistenceEnvelopeV1,
+  WorkspacePersistenceEnvelopeV1,
 } from "./contracts.js";
+import { isRecord } from "./utils.js";
 
 export const SHELL_PERSISTENCE_STORAGE_KEY = "ghost.shell.persistence";
 export const SHELL_PERSISTENCE_SCHEMA_VERSION = 1;
 export const LAYOUT_SECTION_SCHEMA_VERSION = 1;
 export const CONTEXT_STATE_SCHEMA_VERSION = 2;
+export const WORKSPACE_SCHEMA_VERSION = 3;
 export const KEYBINDING_OVERRIDES_SCHEMA_VERSION = 1;
 
 export function getUnifiedStorageKey(userId: string): string {
@@ -223,6 +226,116 @@ export function migrateKeybindingOverridesEnvelope(input: unknown):
   };
 }
 
-function isRecord(input: unknown): input is Record<string, unknown> {
-  return Boolean(input) && typeof input === "object";
+
+/**
+ * Migrate the `context` section of the unified envelope to workspace format.
+ * - version 3: native workspace envelope
+ * - version 1 or 2: legacy single context state → wrap as workspace "1"
+ * - missing/invalid: return failure so caller uses defaults
+ */
+export function migrateWorkspacePersistenceEnvelope(input: unknown):
+  | { ok: true; value: WorkspacePersistenceEnvelopeV1; warning: string | null }
+  | { ok: false; warning: string | null } {
+  if (input === undefined) {
+    return { ok: false, warning: null };
+  }
+
+  if (!isRecord(input) || typeof input.version !== "number") {
+    return {
+      ok: false,
+      warning: "Persisted context/workspace section had invalid schema envelope. Using defaults.",
+    };
+  }
+
+  // Native workspace format
+  if (input.version === WORKSPACE_SCHEMA_VERSION) {
+    return parseWorkspaceEnvelope(input);
+  }
+
+  // Legacy single context state (v1 or v2) → migrate to single-workspace envelope
+  const legacyMigration = migrateContextStateEnvelope(input);
+  if (!legacyMigration.ok) {
+    return legacyMigration;
+  }
+
+  return {
+    ok: true,
+    value: {
+      version: WORKSPACE_SCHEMA_VERSION,
+      workspaces: [
+        {
+          id: "1",
+          name: "1",
+          contextState: legacyMigration.value.contextState,
+        },
+      ],
+      activeWorkspaceId: "1",
+      workspaceOrder: ["1"],
+    },
+    warning: legacyMigration.warning
+      ? `${legacyMigration.warning} Migrated single context state to workspace format.`
+      : "Migrated single context state to workspace format.",
+  };
+}
+
+function parseWorkspaceEnvelope(input: Record<string, unknown>):
+  | { ok: true; value: WorkspacePersistenceEnvelopeV1; warning: string | null }
+  | { ok: false; warning: string } {
+  if (!Array.isArray(input.workspaces)) {
+    return {
+      ok: false,
+      warning: "Persisted workspace envelope had invalid workspaces array. Using defaults.",
+    };
+  }
+
+  const workspaces: WorkspacePersistenceEnvelopeV1["workspaces"] = [];
+  for (const raw of input.workspaces) {
+    if (!isRecord(raw) || typeof raw.id !== "string" || !raw.id || typeof raw.name !== "string") {
+      continue;
+    }
+    workspaces.push({
+      id: raw.id,
+      name: raw.name,
+      contextState: raw.contextState,
+    });
+  }
+
+  if (workspaces.length === 0) {
+    return {
+      ok: false,
+      warning: "Persisted workspace envelope had no valid workspaces. Using defaults.",
+    };
+  }
+
+  const workspaceIds = new Set(workspaces.map((w) => w.id));
+  const activeWorkspaceId = typeof input.activeWorkspaceId === "string" && workspaceIds.has(input.activeWorkspaceId)
+    ? input.activeWorkspaceId
+    : workspaces[0].id;
+
+  let workspaceOrder: string[];
+  if (Array.isArray(input.workspaceOrder)) {
+    const seen = new Set<string>();
+    workspaceOrder = input.workspaceOrder
+      .filter((id): id is string => typeof id === "string" && workspaceIds.has(id) && !seen.has(id))
+      .map((id) => { seen.add(id); return id; });
+    // Append any workspaces missing from order
+    for (const ws of workspaces) {
+      if (!seen.has(ws.id)) {
+        workspaceOrder.push(ws.id);
+      }
+    }
+  } else {
+    workspaceOrder = workspaces.map((w) => w.id);
+  }
+
+  return {
+    ok: true,
+    value: {
+      version: WORKSPACE_SCHEMA_VERSION,
+      workspaces,
+      activeWorkspaceId,
+      workspaceOrder,
+    },
+    warning: null,
+  };
 }

@@ -261,21 +261,21 @@ export function closeTabWithHistory(
   }
 
   const next = closeTab(state, input.tabId);
-  const slotHistory = next.closedTabHistoryBySlot[input.slot].filter((entry) => entry.tabId !== input.tabId);
-  next.closedTabHistoryBySlot[input.slot] = clampClosedTabHistory([
+  const filteredHistory = next.closedTabHistory.filter((entry) => entry.tabId !== input.tabId);
+  next.closedTabHistory = clampClosedTabHistory([
     {
       ...closedEntry,
       ...(Number.isFinite(input.orderIndex) ? { orderIndex: Math.max(0, Math.trunc(input.orderIndex)) } : {}),
     },
-    ...slotHistory,
+    ...filteredHistory,
   ]);
 
   return next;
 }
 
 export function canReopenClosedTab(state: ShellContextState, slot: ContextTabSlot): boolean {
-  return state.closedTabHistoryBySlot[slot].some(
-    (entry) => isClosedTabEntryRestorable(entry) && !isUtilityTabId(entry.tabId),
+  return state.closedTabHistory.some(
+    (entry) => entry.slot === slot && isClosedTabEntryRestorable(entry) && !isUtilityTabId(entry.tabId),
   );
 }
 
@@ -283,7 +283,7 @@ export function reopenMostRecentlyClosedTab(
   state: ShellContextState,
   slot: ContextTabSlot,
 ): ShellContextState {
-  const slotHistory = state.closedTabHistoryBySlot[slot];
+  const slotHistory = state.closedTabHistory.filter((entry) => entry.slot === slot);
   if (slotHistory.length === 0) {
     return state;
   }
@@ -308,7 +308,10 @@ export function reopenMostRecentlyClosedTab(
     }
   }
 
-  next.closedTabHistoryBySlot[slot] = clampClosedTabHistory(retained);
+  next.closedTabHistory = clampClosedTabHistory([
+    ...state.closedTabHistory.filter((entry) => entry.slot !== slot),
+    ...retained,
+  ]);
   if (!reopenedEntry) {
     return next;
   }

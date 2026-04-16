@@ -25,7 +25,7 @@ import type { PartsControllerDeps } from "./parts-controller-types.js";
 export { closeTabFromUi, closeTabThroughRuntime, reopenMostRecentlyClosedTabThroughRuntime, restorePart };
 export type { PartsControllerDeps };
 
-export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
+export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps, options?: { teardownMode?: boolean }): void {
   const visibleParts = getVisibleComposedParts(runtime);
 
   if (runtime.isPopout) {
@@ -40,11 +40,14 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
     // Preserve mounted plugin content across structural re-renders.
     // Without this, innerHTML destroys all mounted content and forces
     // async re-mounting via Module Federation, causing a visible blank flash.
+    // In teardownMode (workspace switch), skip preservation — all content is being destroyed.
     const preserved = new Map<string, HTMLElement>();
-    for (const el of dockHost.querySelectorAll<HTMLElement>("[data-part-content-for]")) {
-      const partId = el.dataset.partContentFor;
-      if (partId && el.childNodes.length > 0) {
-        preserved.set(partId, el);
+    if (!options?.teardownMode) {
+      for (const el of dockHost.querySelectorAll<HTMLElement>("[data-part-content-for]")) {
+        const partId = el.dataset.partContentFor;
+        if (partId && el.childNodes.length > 0) {
+          preserved.set(partId, el);
+        }
       }
     }
 

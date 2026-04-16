@@ -101,7 +101,7 @@ export function writeGlobalSelectionLane(
 
 export function updateContextState(runtime: ShellRuntime, nextState: ShellContextState): void {
   runtime.contextState = nextState;
-  const result = runtime.contextPersistence.save(nextState);
+  const result = runtime.workspacePersistence.save(runtime.workspaceManager, nextState);
   if (result.warning) {
     runtime.notice = result.warning;
   }

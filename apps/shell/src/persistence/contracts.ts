@@ -1,5 +1,6 @@
 import type { ShellContextState } from "../context-state.js";
 import type { ShellLayoutState } from "../layout.js";
+import type { WorkspaceManagerState } from "../context-state/workspace-types.js";
 
 export interface ShellLayoutPersistence {
   load(): ShellLayoutState;
@@ -68,4 +69,31 @@ export interface ShellKeybindingPersistence {
 
 export interface KeybindingPersistenceOptions {
   userId: string;
+}
+
+export interface PersistedWorkspace {
+  id: string;
+  name: string;
+  contextState: unknown;
+}
+
+export interface WorkspacePersistenceEnvelopeV1 {
+  version: 3;
+  workspaces: PersistedWorkspace[];
+  activeWorkspaceId: string;
+  workspaceOrder: string[];
+}
+
+export interface WorkspaceManagerLoadResult {
+  state: WorkspaceManagerState;
+  warning: string | null;
+}
+
+export interface WorkspaceManagerSaveResult {
+  warning: string | null;
+}
+
+export interface ShellWorkspacePersistence {
+  load(fallback: ShellContextState): WorkspaceManagerLoadResult;
+  save(workspaceManager: WorkspaceManagerState, liveContextState: ShellContextState): WorkspaceManagerSaveResult;
 }

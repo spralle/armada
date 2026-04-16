@@ -6,6 +6,7 @@ import {
   createLocalStorageContextStatePersistence,
   createLocalStorageKeybindingPersistence,
   createLocalStorageLayoutPersistence,
+  createLocalStorageWorkspacePersistence,
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
 import { createPluginServicesBridge } from "../plugin-service-bridge.js";
@@ -18,6 +19,7 @@ import {
 import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
+import { createWorkspaceIndicatorContract } from "../ui/workspace-indicator-plugin.js";
 import { createWindowBridge } from "../window-bridge.js";
 import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
 import { createAsyncScompWindowBridge } from "../window-bridge-scomp.js";
@@ -65,6 +67,9 @@ export function createShellRuntime(options?: {
       userId: getCurrentUserId(),
     }),
     keybindingPersistence: createLocalStorageKeybindingPersistence(getStorage(), {
+      userId: getCurrentUserId(),
+    }),
+    workspacePersistence: createLocalStorageWorkspacePersistence(getStorage(), {
       userId: getCurrentUserId(),
     }),
     registry,
@@ -120,6 +125,7 @@ export function createShellRuntime(options?: {
     activeDndPath: crossWindowDnd.path,
     activeDndReason: crossWindowDnd.reason,
     lastDndDiagnostic: null,
+    workspaceManager: null as unknown as ShellRuntime["workspaceManager"],
   };
 
   runtime.partHost = createShellPartHostAdapter(runtime);
@@ -137,11 +143,13 @@ export function createShellRuntime(options?: {
 
   runtime.registry.registerManifestDescriptors("local", []);
   runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
+  runtime.registry.registerBuiltinPlugin(createWorkspaceIndicatorContract());
   runtime.layout = runtime.persistence.load();
-  const contextLoad = runtime.contextPersistence.load(runtime.contextState);
-  runtime.contextState = contextLoad.state;
-  if (contextLoad.warning) {
-    runtime.notice = contextLoad.warning;
+  const workspaceLoad = runtime.workspacePersistence.load(runtime.contextState);
+  runtime.workspaceManager = workspaceLoad.state;
+  runtime.contextState = runtime.workspaceManager.workspaces[runtime.workspaceManager.activeWorkspaceId].contextState;
+  if (workspaceLoad.warning) {
+    runtime.notice = workspaceLoad.warning;
   }
 
   return runtime;

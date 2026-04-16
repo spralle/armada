@@ -291,6 +291,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     persistence: {} as ShellRuntime["persistence"],
     contextPersistence: {} as ShellRuntime["contextPersistence"],
     keybindingPersistence: {} as ShellRuntime["keybindingPersistence"],
+    workspacePersistence: {} as ShellRuntime["workspacePersistence"],
     keybindingOverrideManager: {} as ShellRuntime["keybindingOverrideManager"],
     registry: {} as ShellRuntime["registry"],
     bridge: {} as ShellRuntime["bridge"],
@@ -326,6 +327,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     activeDndReason: "default-same-window-only",
     lastDndDiagnostic: null,
     themeRegistry: null,
+    workspaceManager: {} as ShellRuntime["workspaceManager"],
     ...overrides,
   };
 }
@@ -398,11 +400,7 @@ function createContextState(tabIds: string[]): ShellRuntime["contextState"] {
         },
       },
     },
-    closedTabHistoryBySlot: {
-      main: [],
-      secondary: [],
-      side: [],
-    },
+    closedTabHistory: [],
     globalLanes: {},
     groupLanes: {},
     subcontextsByTab: {},

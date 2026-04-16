@@ -2,12 +2,14 @@ import type {
   ClosedTabHistoryEntry,
   ContextGroup,
   ContextLaneValue,
-  ContextTabSlot,
   ContextTab,
   EntityTypeSelection,
   RevisionMeta,
   ShellContextState,
 } from "../context-state.js";
+import type { WorkspaceManagerState } from "../context-state/workspace-types.js";
+import { isRecord } from "./utils.js";
+import type { WorkspacePersistenceEnvelopeV1 } from "./contracts.js";
 import { sanitizeDockTreeState } from "./sanitize-dock-tree.js";
 import { ensureRequiredUtilityTabs, isNonUtilityClosedHistoryEntry } from "../context-state/utility-tabs-sanitize.js";
 
@@ -43,7 +45,7 @@ export function sanitizeContextState(input: unknown, fallback: ShellContextState
     tabOrder,
     activeTabId,
     dockTree,
-    closedTabHistoryBySlot: sanitizeClosedTabHistoryBySlot(input.closedTabHistoryBySlot),
+    closedTabHistory: sanitizeClosedTabHistory(input.closedTabHistory, input.closedTabHistoryBySlot),
     globalLanes: sanitizeLaneMap(input.globalLanes, fallback.globalLanes),
     groupLanes: sanitizeNestedLaneMap(input.groupLanes, fallback.groupLanes),
     subcontextsByTab: sanitizeNestedLaneMap(input.subcontextsByTab, fallback.subcontextsByTab),
@@ -51,20 +53,36 @@ export function sanitizeContextState(input: unknown, fallback: ShellContextState
   };
 }
 
-function sanitizeClosedTabHistoryBySlot(input: unknown): Record<ContextTabSlot, ClosedTabHistoryEntry[]> {
-  const fallback: Record<ContextTabSlot, ClosedTabHistoryEntry[]> = {
-    main: [],
-    secondary: [],
-    side: [],
-  };
-  if (!isRecord(input)) {
-    return fallback;
+/**
+ * Sanitize closed tab history. Supports migration from legacy Record<slot, entries[]> format.
+ * If `legacyBySlot` is a Record with slot keys, merge all slot arrays into a single flat list.
+ */
+function sanitizeClosedTabHistory(flatInput: unknown, legacyBySlot: unknown): ClosedTabHistoryEntry[] {
+  // New flat format takes priority (only if non-empty)
+  if (Array.isArray(flatInput) && flatInput.length > 0) {
+    return sanitizeClosedTabHistoryEntries(flatInput);
   }
-  return {
-    main: sanitizeClosedTabHistoryEntries(input.main),
-    secondary: sanitizeClosedTabHistoryEntries(input.secondary),
-    side: sanitizeClosedTabHistoryEntries(input.side),
-  };
+
+  // Migration: legacy Record<ContextTabSlot, entries[]> format
+  if (isRecord(legacyBySlot)) {
+    const merged: unknown[] = [];
+    for (const slot of ["main", "secondary", "side"] as const) {
+      const slotEntries = legacyBySlot[slot];
+      if (Array.isArray(slotEntries)) {
+        merged.push(...slotEntries);
+      }
+    }
+    if (merged.length > 0) {
+      return sanitizeClosedTabHistoryEntries(merged);
+    }
+  }
+
+  // Empty flat array or no data
+  if (Array.isArray(flatInput)) {
+    return [];
+  }
+
+  return [];
 }
 
 function sanitizeClosedTabHistoryEntries(input: unknown): ClosedTabHistoryEntry[] {
@@ -360,6 +378,57 @@ function cloneSelectionMap(input: Record<string, EntityTypeSelection>): Record<s
     priorityId: selection.priorityId,
   }]));
 }
-function isRecord(input: unknown): input is Record<string, unknown> {
-  return Boolean(input) && typeof input === "object";
+
+/**
+ * Sanitize a workspace persistence envelope into a valid WorkspaceManagerState.
+ * Each workspace's context state is sanitized individually.
+ */
+export function sanitizeWorkspaceEnvelope(
+  envelope: WorkspacePersistenceEnvelopeV1,
+  fallbackContextState: ShellContextState,
+): WorkspaceManagerState {
+  const workspaces: WorkspaceManagerState["workspaces"] = {};
+
+  for (const persisted of envelope.workspaces) {
+    const sanitizedCtx = sanitizeContextState(persisted.contextState, fallbackContextState);
+    workspaces[persisted.id] = {
+      id: persisted.id,
+      name: persisted.name,
+      contextState: sanitizedCtx,
+    };
+  }
+
+  // Fallback: if all workspaces were somehow empty after filtering, create default
+  if (Object.keys(workspaces).length === 0) {
+    workspaces["1"] = {
+      id: "1",
+      name: "1",
+      contextState: sanitizeContextState(undefined, fallbackContextState),
+    };
+    return {
+      workspaces,
+      activeWorkspaceId: "1",
+      workspaceOrder: ["1"],
+    };
+  }
+
+  const validIds = new Set(Object.keys(workspaces));
+  const activeWorkspaceId = validIds.has(envelope.activeWorkspaceId)
+    ? envelope.activeWorkspaceId
+    : Object.keys(workspaces)[0];
+
+  const workspaceOrder = envelope.workspaceOrder.filter((id) => validIds.has(id));
+  // Append any IDs not in order
+  for (const id of validIds) {
+    if (!workspaceOrder.includes(id)) {
+      workspaceOrder.push(id);
+    }
+  }
+
+  return {
+    workspaces,
+    activeWorkspaceId,
+    workspaceOrder,
+  };
 }
+

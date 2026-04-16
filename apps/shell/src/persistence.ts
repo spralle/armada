@@ -4,10 +4,14 @@ export type {
   ShellContextStatePersistence,
   ShellKeybindingPersistence,
   ShellLayoutPersistence,
+  ShellWorkspacePersistence,
+  WorkspaceManagerLoadResult,
+  WorkspaceManagerSaveResult,
 } from "./persistence/contracts.js";
 
 export {
   createLocalStorageContextStatePersistence,
+  createLocalStorageWorkspacePersistence,
 } from "./persistence/context-persistence.js";
 export {
   createLocalStorageKeybindingPersistence,

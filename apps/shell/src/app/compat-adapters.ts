@@ -23,6 +23,9 @@ import {
   mountMainWindow,
   mountPopout,
 } from "../ui/shell-mount.js";
+import { createEdgeSlotRenderer } from "../ui/edge-slot-renderer.js";
+import { createShellFederationRuntime } from "../federation-runtime.js";
+import { createWorkspaceIndicatorMount } from "../ui/workspace-indicator.js";
 
 interface ShellCompatibilityAdapterDeps {
   activatePluginForBoundary: (options: {
@@ -75,6 +78,10 @@ export function createShellRuntimeCompatibilityAdapters(
 
   const core = createShellCoreApi(runtime, runtimeHandlers);
 
+  const edgeSlotRenderer = createEdgeSlotRenderer({
+    federationRuntime: createShellFederationRuntime(),
+  });
+
   renderer = {
     initialize: (viewRoot, viewRuntime) => {
       initializeReactPanels(viewRoot, viewRuntime, {
@@ -126,11 +133,38 @@ export function createShellRuntimeCompatibilityAdapters(
     renderSyncStatus: (viewRoot, viewRuntime) => {
       renderSyncStatusView(viewRoot, viewRuntime);
     },
+    renderEdgeSlots: (viewRoot, viewRuntime) => {
+      edgeSlotRenderer.renderEdgeSlots(viewRoot, viewRuntime);
+    },
   };
 
   const partHost: ShellPartHostAdapter = {
     syncRenderedParts: (viewRoot, parts) => runtime.partHost.syncRenderedParts(viewRoot, parts),
+    unmountAll: () => runtime.partHost.unmountAll(),
   };
+
+  // Register built-in workspace indicator slot mount.
+  // The closure captures root, runtime, and the effects/core bindings needed
+  // to build PartsControllerDeps for workspace switching.
+  edgeSlotRenderer.registerBuiltInSlotMount(
+    "workspace-indicator",
+    createWorkspaceIndicatorMount({
+      getRoot: () => root,
+      getRuntime: () => runtime,
+      getPartsDeps: () => ({
+        applySelection: (event) => core.applySelection(event),
+        partHost: runtime.partHost,
+        publishWithDegrade: (event) => effects.publishWithDegrade(event),
+        renderContextControls: () => effects.renderContextControlsPanel(),
+        renderParts: () => effects.renderParts(),
+        renderSyncStatus: () => effects.renderSyncStatus(),
+      }),
+      onStateChange: () => {
+        effects.renderParts();
+        effects.renderSyncStatus();
+      },
+    }),
+  );
 
   return {
     core,

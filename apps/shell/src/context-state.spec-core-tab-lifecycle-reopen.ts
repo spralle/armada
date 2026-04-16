@@ -41,8 +41,7 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
   test("utility tabs remain fixed and excluded from reopen eligibility", () => {
     const state = {
       ...createInitialShellContextState({ initialTabId: "utility.plugins", initialGroupId: "group-main" }),
-      closedTabHistoryBySlot: {
-        main: [
+      closedTabHistory: [
           {
             tabId: "utility.plugins",
             groupId: "group-main",
@@ -52,23 +51,19 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
             orderIndex: 0,
           },
         ],
-        secondary: [],
-        side: [],
-      },
     };
 
     assertEqual(isUtilityTabId("utility.plugins"), true, "utility tab id should be recognized");
     assertEqual(canReopenClosedTab(state, "main"), false, "utility tabs should not contribute reopen eligibility");
     const reopened = reopenMostRecentlyClosedTab(state, "main");
     assertEqual(reopened.tabs["utility.plugins"]?.closePolicy, "fixed", "utility tabs should remain fixed after reopen attempt");
-    assertEqual(reopened.closedTabHistoryBySlot.main.length, 0, "utility-only history should be drained without restoring tabs");
+    assertEqual(reopened.closedTabHistory.length, 0, "utility-only history should be drained without restoring tabs");
   });
 
   test("reopen drops invalid payloads from bounded history gracefully", () => {
     const state: ShellContextState = {
       ...createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" }),
-      closedTabHistoryBySlot: {
-        main: [
+      closedTabHistory: [
           {
             tabId: "",
             partDefinitionId: "",
@@ -87,15 +82,12 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
             orderIndex: 1,
           },
         ],
-        secondary: [],
-        side: [],
-      },
       dockTree: createInitialDockTree("tab-a"),
     };
 
     const reopened = reopenMostRecentlyClosedTab(state, "main");
     assertEqual(reopened.tabs["tab-b"]?.label, "Orders", "reopen should skip invalid payloads and restore next safe entry");
-    assertEqual(reopened.closedTabHistoryBySlot.main.length, 0, "history should prune invalid and consumed entries");
+    assertEqual(reopened.closedTabHistory.length, 0, "history should prune invalid and consumed entries");
   });
 
   test("opening same part definition twice yields distinct tab instance ids", () => {

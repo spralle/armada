@@ -236,6 +236,20 @@ export const pluginConfigurationContributionSchema = z
   })
   .strict();
 
+export const shellEdgeSlotSchema = z.enum(["top", "bottom", "left", "right"]);
+
+export const shellEdgeSlotPositionSchema = z.enum(["start", "center", "end"]);
+
+export const pluginSlotContributionSchema = z
+  .object({
+    id: z.string().min(1),
+    slot: shellEdgeSlotSchema,
+    position: shellEdgeSlotPositionSchema,
+    order: z.number().int(),
+    component: z.string().min(1),
+  })
+  .strict();
+
 export const pluginContributionsSchema = z
   .object({
     views: z.array(pluginViewContributionSchema).optional(),
@@ -251,6 +265,7 @@ export const pluginContributionsSchema = z
     themes: z.array(themeContributionSchema).optional(),
     branding: brandingContributionSchema.optional(),
     configuration: pluginConfigurationContributionSchema.optional(),
+    slots: z.array(pluginSlotContributionSchema).optional(),
   })
   .strict();
 

@@ -36,6 +36,19 @@ export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.tab.goto.7",
   "shell.tab.goto.8",
   "shell.tab.goto.9",
+  "shell.workspace.switch.1",
+  "shell.workspace.switch.2",
+  "shell.workspace.switch.3",
+  "shell.workspace.switch.4",
+  "shell.workspace.switch.5",
+  "shell.workspace.switch.6",
+  "shell.workspace.switch.7",
+  "shell.workspace.switch.8",
+  "shell.workspace.switch.9",
+  "shell.workspace.create",
+  "shell.workspace.delete",
+  "shell.workspace.next",
+  "shell.workspace.prev",
 ] as const;
 
 export type ShellKeyboardActionId = typeof SHELL_KEYBOARD_ACTION_IDS[number];
@@ -87,6 +100,19 @@ export const DEFAULT_SHELL_KEYBINDINGS: readonly ShellDefaultKeybinding[] = [
   { action: "shell.tab.goto.7", keybinding: "alt+7" },
   { action: "shell.tab.goto.8", keybinding: "alt+8" },
   { action: "shell.tab.goto.9", keybinding: "alt+9" },
+  { action: "shell.workspace.switch.1", keybinding: "ctrl+1" },
+  { action: "shell.workspace.switch.2", keybinding: "ctrl+2" },
+  { action: "shell.workspace.switch.3", keybinding: "ctrl+3" },
+  { action: "shell.workspace.switch.4", keybinding: "ctrl+4" },
+  { action: "shell.workspace.switch.5", keybinding: "ctrl+5" },
+  { action: "shell.workspace.switch.6", keybinding: "ctrl+6" },
+  { action: "shell.workspace.switch.7", keybinding: "ctrl+7" },
+  { action: "shell.workspace.switch.8", keybinding: "ctrl+8" },
+  { action: "shell.workspace.switch.9", keybinding: "ctrl+9" },
+  { action: "shell.workspace.create", keybinding: "ctrl+shift+n" },
+  { action: "shell.workspace.delete", keybinding: "ctrl+shift+w" },
+  { action: "shell.workspace.next", keybinding: "shift+alt+]" },
+  { action: "shell.workspace.prev", keybinding: "shift+alt+[" },
 ];
 
 export const RESERVED_BROWSER_SHORTCUTS = new Set([
