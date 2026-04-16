@@ -55,7 +55,7 @@ console.log(
 );
 
 const overrideOptions = {
-  selectedLocalPluginIds: backendDevCliOptions.selectedLocalPluginIds,
+  selectedLocalPluginIds: effectiveSelectedPluginIds,
   pluginEntryUrlOverridesById: localPluginEntryOverrides,
 };
 
