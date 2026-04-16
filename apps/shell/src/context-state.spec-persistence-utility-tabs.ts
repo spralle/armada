@@ -18,9 +18,9 @@ export function registerContextPersistenceUtilityTabSpecs(harness: SpecHarness):
       closedTabHistoryBySlot: {
         main: [
           {
-            tabId: "utility.plugins",
+            tabId: "utility.sync",
             groupId: "group-main",
-            label: "Plugins",
+            label: "Cross-window sync",
             closePolicy: "fixed",
             slot: "main",
           },

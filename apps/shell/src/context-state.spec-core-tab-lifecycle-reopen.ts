@@ -40,12 +40,12 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
 
   test("utility tabs remain fixed and excluded from reopen eligibility", () => {
     const state = {
-      ...createInitialShellContextState({ initialTabId: "utility.plugins", initialGroupId: "group-main" }),
+      ...createInitialShellContextState({ initialTabId: "utility.sync", initialGroupId: "group-main" }),
       closedTabHistory: [
           {
-            tabId: "utility.plugins",
+            tabId: "utility.sync",
             groupId: "group-main",
-            label: "Plugins",
+            label: "Cross-window sync",
             closePolicy: "fixed" as const,
             slot: "main" as const,
             orderIndex: 0,
@@ -53,10 +53,10 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
         ],
     };
 
-    assertEqual(isUtilityTabId("utility.plugins"), true, "utility tab id should be recognized");
+    assertEqual(isUtilityTabId("utility.sync"), true, "utility tab id should be recognized");
     assertEqual(canReopenClosedTab(state, "main"), false, "utility tabs should not contribute reopen eligibility");
     const reopened = reopenMostRecentlyClosedTab(state, "main");
-    assertEqual(reopened.tabs["utility.plugins"]?.closePolicy, "fixed", "utility tabs should remain fixed after reopen attempt");
+    assertEqual(reopened.tabs["utility.sync"]?.closePolicy, "fixed", "utility tabs should remain fixed after reopen attempt");
     assertEqual(reopened.closedTabHistory.length, 0, "utility-only history should be drained without restoring tabs");
   });
 
