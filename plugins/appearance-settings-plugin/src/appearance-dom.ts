@@ -2,22 +2,42 @@
 
 import type { ThemeInfo, BackgroundInfo, ThemeBackgroundEntry } from "@ghost/plugin-contracts";
 
+/** Memoized blob URLs to avoid creating duplicates and enable cleanup. */
+const blobUrlCache = new Map<string, string>();
+
 /**
  * Resolve a background URL through the Cache API for thumbnails.
  * Inline version to avoid cross-package dependency on shell.
  */
 async function resolveThumbnailUrl(url: string): Promise<string> {
+  const memo = blobUrlCache.get(url);
+  if (memo) return memo;
+
   if (typeof window === "undefined" || typeof caches === "undefined") return url;
   try {
     const cache = await caches.open("ghost-theme-backgrounds-v1");
-    const cached = await cache.match(url);
-    if (cached) return URL.createObjectURL(await cached.blob());
+    const cachedResponse = await cache.match(url);
+    if (cachedResponse) {
+      const blobUrl = URL.createObjectURL(await cachedResponse.blob());
+      blobUrlCache.set(url, blobUrl);
+      return blobUrl;
+    }
     const response = await fetch(url, { mode: "cors" });
     await cache.put(url, response.clone());
-    return URL.createObjectURL(await response.blob());
+    const blobUrl = URL.createObjectURL(await response.blob());
+    blobUrlCache.set(url, blobUrl);
+    return blobUrl;
   } catch {
     return url;
   }
+}
+
+/** Revoke all tracked blob URLs and clear the memo cache. */
+export function revokeGalleryBlobUrls(): void {
+  for (const blobUrl of blobUrlCache.values()) {
+    URL.revokeObjectURL(blobUrl);
+  }
+  blobUrlCache.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -198,6 +218,7 @@ export function renderBackgroundGallery(
       const isActive = activeBackground?.source === "theme" && activeBackground.index === index;
       const img = document.createElement("img");
       img.className = isActive ? "appearance-bg-thumb is-active" : "appearance-bg-thumb";
+      img.loading = "lazy";
       img.src = bg.url;
       img.alt = `Background ${index + 1}`;
       // Async upgrade: resolve cached blob URL for thumbnail.
@@ -288,4 +309,20 @@ function renderCustomBackgroundInput(
   }
 
   return wrapper;
+}
+
+// ---------------------------------------------------------------------------
+// Incremental update helpers (avoid full DOM rebuild on selection change)
+// ---------------------------------------------------------------------------
+
+/** Toggle `is-active` on background thumbnails without rebuilding the DOM. */
+export function updateBackgroundSelection(
+  container: HTMLElement,
+  activeBackground: BackgroundInfo | null,
+): void {
+  const thumbs = container.querySelectorAll<HTMLElement>(".appearance-bg-thumb");
+  thumbs.forEach((thumb, index) => {
+    const isActive = activeBackground?.source === "theme" && activeBackground.index === index;
+    thumb.classList.toggle("is-active", isActive);
+  });
 }
