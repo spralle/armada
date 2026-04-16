@@ -74,14 +74,26 @@ These are computed by the derivation engine. Plugin authors never need to set th
 | `chart3` | `--ghost-chart-3` | `accent` |
 | `chart4` | `--ghost-chart-4` | `success` |
 | `chart5` | `--ghost-chart-5` | `warning` |
-| `sidebar` | `--ghost-sidebar` | Surface -3% lightness |
-| `sidebarForeground` | `--ghost-sidebar-foreground` | Same as `foreground` |
-| `sidebarPrimary` | `--ghost-sidebar-primary` | Same as `primary` |
-| `sidebarPrimaryForeground` | `--ghost-sidebar-primary-foreground` | Same as `primaryForeground` |
-| `sidebarAccent` | `--ghost-sidebar-accent` | Same as `accent` |
-| `sidebarAccentForeground` | `--ghost-sidebar-accent-foreground` | Same as `accentForeground` |
-| `sidebarBorder` | `--ghost-sidebar-border` | Same as `border` |
-| `sidebarRing` | `--ghost-sidebar-ring` | Same as `ring` |
+| `edgeTop` | `--ghost-edge-top` | Surface -3% lightness |
+| `edgeTopForeground` | `--ghost-edge-top-foreground` | Same as `foreground` |
+| `edgeTopBorder` | `--ghost-edge-top-border` | Same as `border` |
+| `edgeTopAccent` | `--ghost-edge-top-accent` | Same as `accent` |
+| `edgeTopAccentForeground` | `--ghost-edge-top-accent-foreground` | WCAG contrast against `accent` |
+| `edgeBottom` | `--ghost-edge-bottom` | Surface -3% lightness |
+| `edgeBottomForeground` | `--ghost-edge-bottom-foreground` | Same as `foreground` |
+| `edgeBottomBorder` | `--ghost-edge-bottom-border` | Same as `border` |
+| `edgeBottomAccent` | `--ghost-edge-bottom-accent` | Same as `accent` |
+| `edgeBottomAccentForeground` | `--ghost-edge-bottom-accent-foreground` | WCAG contrast against `accent` |
+| `edgeLeft` | `--ghost-edge-left` | Surface -3% lightness |
+| `edgeLeftForeground` | `--ghost-edge-left-foreground` | Same as `foreground` |
+| `edgeLeftBorder` | `--ghost-edge-left-border` | Same as `border` |
+| `edgeLeftAccent` | `--ghost-edge-left-accent` | Same as `accent` |
+| `edgeLeftAccentForeground` | `--ghost-edge-left-accent-foreground` | WCAG contrast against `accent` |
+| `edgeRight` | `--ghost-edge-right` | Surface -3% lightness |
+| `edgeRightForeground` | `--ghost-edge-right-foreground` | Same as `foreground` |
+| `edgeRightBorder` | `--ghost-edge-right-border` | Same as `border` |
+| `edgeRightAccent` | `--ghost-edge-right-accent` | Same as `accent` |
+| `edgeRightAccentForeground` | `--ghost-edge-right-accent-foreground` | WCAG contrast against `accent` |
 
 > **Note on lightness direction**: In dark mode, "+" means brighter and "-" means darker. In light mode, the sign is inverted so "surface" is always slightly elevated relative to the background.
 
@@ -411,14 +423,11 @@ A shadcn bridge plugin maps Ghost tokens to shadcn's CSS variable convention:
   --chart-3: var(--ghost-chart-3);
   --chart-4: var(--ghost-chart-4);
   --chart-5: var(--ghost-chart-5);
-  --sidebar-background: var(--ghost-sidebar);
-  --sidebar-foreground: var(--ghost-sidebar-foreground);
-  --sidebar-primary: var(--ghost-sidebar-primary);
-  --sidebar-primary-foreground: var(--ghost-sidebar-primary-foreground);
-  --sidebar-accent: var(--ghost-sidebar-accent);
-  --sidebar-accent-foreground: var(--ghost-sidebar-accent-foreground);
-  --sidebar-border: var(--ghost-sidebar-border);
-  --sidebar-ring: var(--ghost-sidebar-ring);
+  --sidebar-background: var(--ghost-edge-left);
+  --sidebar-foreground: var(--ghost-edge-left-foreground);
+  --sidebar-accent: var(--ghost-edge-left-accent);
+  --sidebar-accent-foreground: var(--ghost-edge-left-accent-foreground);
+  --sidebar-border: var(--ghost-edge-left-border);
 }
 ```
 

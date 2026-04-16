@@ -49,6 +49,7 @@ export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.workspace.delete",
   "shell.workspace.next",
   "shell.workspace.prev",
+  "shell.topbar.toggle",
 ] as const;
 
 export type ShellKeyboardActionId = typeof SHELL_KEYBOARD_ACTION_IDS[number];
@@ -113,6 +114,7 @@ export const DEFAULT_SHELL_KEYBINDINGS: readonly ShellDefaultKeybinding[] = [
   { action: "shell.workspace.delete", keybinding: "ctrl+alt+w" },
   { action: "shell.workspace.next", keybinding: "ctrl+alt+pagedown" },
   { action: "shell.workspace.prev", keybinding: "ctrl+alt+pageup" },
+  { action: "shell.topbar.toggle", keybinding: "ctrl+alt+t" },
 ];
 
 export const RESERVED_BROWSER_SHORTCUTS = new Set([

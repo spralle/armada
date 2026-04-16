@@ -8,7 +8,7 @@ import { pluginContract } from "../../../plugins/shadcn-theme-bridge-plugin/src/
 import { GHOST_TO_SHADCN_MAP } from "../../../plugins/shadcn-theme-bridge-plugin/src/bridge-mapping.ts";
 
 // ---------------------------------------------------------------------------
-// Expected shadcn variable names (all 32 that shadcn/ui components use)
+// Expected shadcn variable names (all 29 that shadcn/ui components use)
 // ---------------------------------------------------------------------------
 
 const EXPECTED_SHADCN_VARS = [
@@ -37,24 +37,21 @@ const EXPECTED_SHADCN_VARS = [
   "--chart-5",
   "--sidebar",
   "--sidebar-foreground",
-  "--sidebar-primary",
-  "--sidebar-primary-foreground",
   "--sidebar-accent",
   "--sidebar-accent-foreground",
   "--sidebar-border",
-  "--sidebar-ring",
   "--radius",
 ];
 
 // ---------------------------------------------------------------------------
-// 1. Bridge mapping covers all 32 shadcn variables
+// 1. Bridge mapping covers all 29 shadcn variables
 // ---------------------------------------------------------------------------
 
-test("GHOST_TO_SHADCN_MAP covers all 32 expected shadcn variables", () => {
+test("GHOST_TO_SHADCN_MAP covers all 29 expected shadcn variables", () => {
   assert.equal(
     GHOST_TO_SHADCN_MAP.length,
-    32,
-    `Expected 32 mappings, got ${GHOST_TO_SHADCN_MAP.length}`,
+    29,
+    `Expected 29 mappings, got ${GHOST_TO_SHADCN_MAP.length}`,
   );
 
   const shadcnVars = GHOST_TO_SHADCN_MAP.map(([, shadcn]) => shadcn);

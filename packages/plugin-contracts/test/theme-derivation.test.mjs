@@ -50,7 +50,7 @@ const OMARCHY_TERMINAL = {
   color15: "#ffffff",
 };
 
-/** All 73 token keys expected in a full palette. */
+/** All 85 token keys expected in a full palette. */
 const ALL_TOKEN_KEYS = [
   "mode", "background", "surface", "overlay", "primary", "secondary", "accent",
   "muted", "foreground", "error", "warning", "success", "info", "border", "ring",
@@ -60,8 +60,10 @@ const ALL_TOKEN_KEYS = [
   "accentForeground", "mutedForeground", "input", "selectionForeground",
   "hoverBackground", "activeBackground",
   "chart1", "chart2", "chart3", "chart4", "chart5",
-  "sidebar", "sidebarForeground", "sidebarPrimary", "sidebarPrimaryForeground",
-  "sidebarAccent", "sidebarAccentForeground", "sidebarBorder", "sidebarRing",
+  "edgeTop", "edgeTopForeground", "edgeTopBorder", "edgeTopAccent", "edgeTopAccentForeground",
+  "edgeBottom", "edgeBottomForeground", "edgeBottomBorder", "edgeBottomAccent", "edgeBottomAccentForeground",
+  "edgeLeft", "edgeLeftForeground", "edgeLeftBorder", "edgeLeftAccent", "edgeLeftAccentForeground",
+  "edgeRight", "edgeRightForeground", "edgeRightBorder", "edgeRightAccent", "edgeRightAccentForeground",
   "surfaceElevated", "surfaceHover", "surfaceInset", "surfaceInsetDeep", "surfaceOverlay",
   "foregroundBright", "dimForeground", "faintForeground", "codeForeground",
   "borderMuted", "borderAlt", "borderAccent",
@@ -75,14 +77,14 @@ const ALL_TOKEN_KEYS = [
 // 1. deriveFullPalette from 3 minimal inputs produces all 47 tokens
 // ---------------------------------------------------------------------------
 
-test("deriveFullPalette produces all 73 tokens from 3 minimal inputs", () => {
+test("deriveFullPalette produces all 85 tokens from 3 minimal inputs", () => {
   const result = deriveFullPalette(MINIMAL_INPUT);
 
   for (const key of ALL_TOKEN_KEYS) {
     assert.notEqual(result[key], undefined, `Token "${key}" should be defined`);
   }
 
-  assert.equal(Object.keys(result).length, 73, "Should produce exactly 73 tokens");
+  assert.equal(Object.keys(result).length, 85, "Should produce exactly 85 tokens");
 });
 
 test("deriveFullPalette defaults mode to dark when not provided", () => {
@@ -99,14 +101,14 @@ test("deriveFullPalette respects explicit light mode", () => {
 // 2. deriveFullPalette from Omarchy-style input (6 + terminal 16)
 // ---------------------------------------------------------------------------
 
-test("deriveFullPalette produces all 73 tokens from Omarchy-style input with terminal", () => {
+test("deriveFullPalette produces all 85 tokens from Omarchy-style input with terminal", () => {
   const result = deriveFullPalette(OMARCHY_INPUT, OMARCHY_TERMINAL);
 
   for (const key of ALL_TOKEN_KEYS) {
     assert.notEqual(result[key], undefined, `Token "${key}" should be defined`);
   }
 
-  assert.equal(Object.keys(result).length, 73);
+  assert.equal(Object.keys(result).length, 85);
 });
 
 test("Omarchy terminal colors map to semantic tokens", () => {
@@ -333,8 +335,8 @@ test("schema rejects unrecognized keys (strict mode)", () => {
 // CSS variable map
 // ---------------------------------------------------------------------------
 
-test("GHOST_THEME_CSS_VARS has entries for all 73 tokens", () => {
-  assert.equal(Object.keys(GHOST_THEME_CSS_VARS).length, 73);
+test("GHOST_THEME_CSS_VARS has entries for all 85 tokens", () => {
+  assert.equal(Object.keys(GHOST_THEME_CSS_VARS).length, 85);
   for (const key of ALL_TOKEN_KEYS) {
     assert.ok(
       key in GHOST_THEME_CSS_VARS,

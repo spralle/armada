@@ -294,6 +294,7 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): () => 
       publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
     },
     renderContextControls: () => renderContextControlsPanel(root, runtime),
+    renderEdgeSlots: () => getShellBootstrapComposition(runtime).renderEdgeSlots(root, runtime),
     renderParts: () => renderParts(root, runtime),
     renderCommandSurface: () => renderCommandSurface(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
@@ -359,6 +360,7 @@ async function dispatchCommandSurfaceAction(
   if (shellResult.handled) {
     if (shellResult.executed) {
       renderContextControlsPanel(root, runtime);
+      getShellBootstrapComposition(runtime).renderEdgeSlots(root, runtime);
       renderParts(root, runtime);
       renderSyncStatus(root, runtime);
     }
@@ -393,6 +395,7 @@ function buildCommandSurfaceShellBindings(root: HTMLElement, runtime: ShellRunti
     },
     renderCommandSurface: () => renderCommandSurface(root, runtime),
     renderContextControls: () => renderContextControlsPanel(root, runtime),
+    renderEdgeSlots: () => getShellBootstrapComposition(runtime).renderEdgeSlots(root, runtime),
     renderParts: () => renderParts(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
     toActionContext: () => toActionContext(runtime),

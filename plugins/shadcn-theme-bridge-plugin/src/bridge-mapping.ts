@@ -41,15 +41,12 @@ export const GHOST_TO_SHADCN_MAP: ReadonlyArray<
   ["--ghost-chart-4", "--chart-4"],
   ["--ghost-chart-5", "--chart-5"],
 
-  // Sidebar tokens
-  ["--ghost-sidebar", "--sidebar"],
-  ["--ghost-sidebar-foreground", "--sidebar-foreground"],
-  ["--ghost-sidebar-primary", "--sidebar-primary"],
-  ["--ghost-sidebar-primary-foreground", "--sidebar-primary-foreground"],
-  ["--ghost-sidebar-accent", "--sidebar-accent"],
-  ["--ghost-sidebar-accent-foreground", "--sidebar-accent-foreground"],
-  ["--ghost-sidebar-border", "--sidebar-border"],
-  ["--ghost-sidebar-ring", "--sidebar-ring"],
+  // Sidebar tokens (mapped from edge-left)
+  ["--ghost-edge-left", "--sidebar"],
+  ["--ghost-edge-left-foreground", "--sidebar-foreground"],
+  ["--ghost-edge-left-accent", "--sidebar-accent"],
+  ["--ghost-edge-left-accent-foreground", "--sidebar-accent-foreground"],
+  ["--ghost-edge-left-border", "--sidebar-border"],
 
   // Geometry tokens
   ["--ghost-radius", "--radius"],

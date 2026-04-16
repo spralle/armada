@@ -27,6 +27,7 @@ import {
 import { createEdgeSlotRenderer } from "../ui/edge-slot-renderer.js";
 import { createShellFederationRuntime } from "../federation-runtime.js";
 import { createWorkspaceIndicatorMount } from "../ui/workspace-indicator.js";
+import { createTopbarTitleMount, createTopbarClockMount } from "../ui/topbar-widgets.js";
 
 interface ShellCompatibilityAdapterDeps {
   activatePluginForBoundary: (options: {
@@ -166,6 +167,16 @@ export function createShellRuntimeCompatibilityAdapters(
         effects.renderSyncStatus();
       },
     }),
+  );
+
+  edgeSlotRenderer.registerBuiltInSlotMount(
+    "topbar-title",
+    createTopbarTitleMount(),
+  );
+
+  edgeSlotRenderer.registerBuiltInSlotMount(
+    "topbar-clock",
+    createTopbarClockMount(),
   );
 
   return {

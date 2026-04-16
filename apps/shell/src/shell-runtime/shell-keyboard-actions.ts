@@ -12,6 +12,7 @@ import { updateContextState } from "../context/runtime-state.js";
 import { createWorkspace, deleteWorkspace } from "../context-state/workspace.js";
 import { performWorkspaceSwitch } from "../ui/workspace-switch.js";
 import { closeTabThroughRuntime } from "../ui/parts-controller.js";
+import { createDefaultEdgeSlotsLayout } from "../layout.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
 import { isShellKeyboardActionId, SHELL_UNAVAILABLE_ACTION_IDS, type ShellKeyboardActionId } from "./default-shell-keybindings.js";
@@ -44,6 +45,16 @@ export function handleShellKeyboardAction(
 
   if (UNAVAILABLE_ACTION_SET.has(actionId)) {
     return unavailable(actionId, "action unavailable in browser shell runtime");
+  }
+
+  if (actionId === "shell.topbar.toggle") {
+    if (!runtime.layout.edgeSlots) {
+      runtime.layout = { ...runtime.layout, edgeSlots: createDefaultEdgeSlotsLayout() };
+    }
+    const edgeSlots = runtime.layout.edgeSlots!;
+    edgeSlots.top.visible = !edgeSlots.top.visible;
+    runtime.layout = { ...runtime.layout, edgeSlots };
+    return executed(actionId);
   }
 
   if (actionId.startsWith("shell.workspace.")) {
