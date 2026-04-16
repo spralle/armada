@@ -6,7 +6,6 @@ export const USER_KEYBINDING_OVERRIDE_PLUGIN_ID = "com.ghost.shell.keybindings.u
 export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.window.close",
   "shell.window.fullscreen.toggle",
-  "shell.command-palette.toggle",
   "shell.split.equalize",
   "shell.focus.left",
   "shell.focus.down",
@@ -58,7 +57,6 @@ export interface ShellDefaultKeybinding {
 export const DEFAULT_SHELL_KEYBINDINGS: readonly ShellDefaultKeybinding[] = [
   { action: "shell.window.close", keybinding: "shift+alt+q" },
   { action: "shell.window.fullscreen.toggle", keybinding: "shift+alt+f" },
-  { action: "shell.command-palette.toggle", keybinding: "ctrl+shift+p" },
   { action: "shell.split.equalize", keybinding: "shift+alt+e" },
   { action: "shell.focus.left", keybinding: "shift+alt+arrowleft" },
   { action: "shell.focus.down", keybinding: "shift+alt+arrowdown" },

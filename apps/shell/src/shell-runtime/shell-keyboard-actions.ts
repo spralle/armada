@@ -40,28 +40,6 @@ export function handleShellKeyboardAction(
     return executed(actionId);
   }
 
-  if (actionId === "shell.command-palette.toggle") {
-    const commandsTabId = "utility.commands";
-    const currentState = runtime.contextState;
-    if (!currentState.tabs[commandsTabId]) {
-      return unavailable(actionId, "commands tab not registered");
-    }
-
-    if (currentState.activeTabId === commandsTabId) {
-      const previousTab = findPreviousNonUtilityTab(currentState, commandsTabId);
-      if (previousTab) {
-        updateContextState(runtime, { ...currentState, activeTabId: previousTab });
-        runtime.selectedPartId = previousTab;
-        runtime.selectedPartTitle = currentState.tabs[previousTab]?.label ?? previousTab;
-      }
-    } else {
-      updateContextState(runtime, { ...currentState, activeTabId: commandsTabId });
-      runtime.selectedPartId = commandsTabId;
-      runtime.selectedPartTitle = currentState.tabs[commandsTabId]?.label ?? commandsTabId;
-    }
-    return executed(actionId);
-  }
-
   if (UNAVAILABLE_ACTION_SET.has(actionId)) {
     return unavailable(actionId, "action unavailable in browser shell runtime");
   }
@@ -207,14 +185,3 @@ function unavailable(actionId: string, reason: string): ShellKeyboardActionResul
   };
 }
 
-function findPreviousNonUtilityTab(
-  state: ShellRuntime["contextState"],
-  utilityTabId: string,
-): string | null {
-  for (const tabId of state.tabOrder) {
-    if (tabId !== utilityTabId && state.tabs[tabId]) {
-      return tabId;
-    }
-  }
-  return null;
-}
