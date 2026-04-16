@@ -109,7 +109,9 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
     })
     .filter((part) => part !== null);
 
+  const tabOrderSet = new Set(runtime.contextState.tabOrder);
   const utilityParts = listAvailableUtilityTabs({ devMode: DEV_MODE })
+    .filter((tab) => tabOrderSet.has(tab.id))
     .map((tab) => ({
       instanceId: tab.id,
       definitionId: tab.id,
