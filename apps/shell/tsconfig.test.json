@@ -23,6 +23,7 @@
     "src/local-plugin-sources.ts",
     "src/part-module-host.ts",
     "src/theme-registry.ts",
+    "src/theme-background-cache.ts",
     "src/theme-persistence.ts",
     "src/theme-service-registration.ts",
     "src/plugin-config-sync-controller.ts",

@@ -2,6 +2,24 @@
 
 import type { ThemeInfo, BackgroundInfo, ThemeBackgroundEntry } from "@ghost/plugin-contracts";
 
+/**
+ * Resolve a background URL through the Cache API for thumbnails.
+ * Inline version to avoid cross-package dependency on shell.
+ */
+async function resolveThumbnailUrl(url: string): Promise<string> {
+  if (typeof window === "undefined" || typeof caches === "undefined") return url;
+  try {
+    const cache = await caches.open("ghost-theme-backgrounds-v1");
+    const cached = await cache.match(url);
+    if (cached) return URL.createObjectURL(await cached.blob());
+    const response = await fetch(url, { mode: "cors" });
+    await cache.put(url, response.clone());
+    return URL.createObjectURL(await response.blob());
+  } catch {
+    return url;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // CSS styles (all colors via CSS custom properties)
 // ---------------------------------------------------------------------------
@@ -182,6 +200,12 @@ export function renderBackgroundGallery(
       img.className = isActive ? "appearance-bg-thumb is-active" : "appearance-bg-thumb";
       img.src = bg.url;
       img.alt = `Background ${index + 1}`;
+      // Async upgrade: resolve cached blob URL for thumbnail.
+      void resolveThumbnailUrl(bg.url).then((resolved) => {
+        if (resolved !== bg.url) {
+          img.src = resolved;
+        }
+      });
       img.addEventListener("click", () => callbacks.onBackgroundSelect(index));
       grid.appendChild(img);
     });

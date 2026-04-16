@@ -24,6 +24,7 @@ import {
   clearBackgroundPreference,
 } from "./theme-persistence.js";
 import { manageBackgroundImage } from "./theme-background.js";
+import { preloadBackgroundUrls } from "./theme-background-cache.js";
 import { activateAllThemePlugins } from "./theme-activation.js";
 
 // ---------------------------------------------------------------------------
@@ -191,6 +192,9 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
   ): void {
     const pref = readBackgroundPreference(themeId);
     const backgrounds = theme.backgrounds ?? [];
+
+    // Preload all theme backgrounds for instant switching.
+    preloadBackgroundUrls(backgrounds.map((b) => b.url));
 
     if (pref) {
       if (pref.index !== null && pref.index >= 0 && pref.index < backgrounds.length) {
