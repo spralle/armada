@@ -34,6 +34,7 @@ interface PartModuleHostOptions {
 
 export interface PartModuleHostRuntime {
   syncRenderedParts(root: HTMLElement, parts: ComposedShellPart[]): Promise<void>;
+  unmountAll(): void;
 }
 
 export function createPartModuleHostRuntime(
@@ -46,6 +47,13 @@ export function createPartModuleHostRuntime(
   let generation = 0;
 
   return {
+    unmountAll() {
+      for (const [partId, entry] of mounted.entries()) {
+        safeUnmount(entry.cleanup);
+        mounted.delete(partId);
+      }
+      generation += 1;
+    },
     async syncRenderedParts(root, parts) {
       generation += 1;
       const currentGeneration = generation;
@@ -117,6 +125,7 @@ export function createShellPartHostAdapter(
   const hostRuntime = createPartModuleHostRuntime(runtime, options);
   return {
     syncRenderedParts: (root, parts) => hostRuntime.syncRenderedParts(root, parts),
+    unmountAll: () => hostRuntime.unmountAll(),
   };
 }
 

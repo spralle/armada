@@ -18,6 +18,7 @@ import {
 import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
+import { createInitialWorkspaceManagerState } from "../context-state/workspace.js";
 import { createWindowBridge } from "../window-bridge.js";
 import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
 import { createAsyncScompWindowBridge } from "../window-bridge-scomp.js";
@@ -120,6 +121,7 @@ export function createShellRuntime(options?: {
     activeDndPath: crossWindowDnd.path,
     activeDndReason: crossWindowDnd.reason,
     lastDndDiagnostic: null,
+    workspaceManager: null as unknown as ShellRuntime["workspaceManager"],
   };
 
   runtime.partHost = createShellPartHostAdapter(runtime);
@@ -140,6 +142,7 @@ export function createShellRuntime(options?: {
   runtime.layout = runtime.persistence.load();
   const contextLoad = runtime.contextPersistence.load(runtime.contextState);
   runtime.contextState = contextLoad.state;
+  runtime.workspaceManager = createInitialWorkspaceManagerState(runtime.contextState);
   if (contextLoad.warning) {
     runtime.notice = contextLoad.warning;
   }

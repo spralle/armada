@@ -36,6 +36,7 @@ import type {
 import type { ActionSurface } from "../action-surface.js";
 import type { KeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import type { ShellPartHostAdapter } from "./contracts.js";
+import type { WorkspaceManagerState } from "../context-state/workspace-types.js";
 import type { ShellTransportPath } from "./migration-flags.js";
 import type {
   DndDiagnosticEnvelope,
@@ -113,6 +114,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   runtimeActionRegistry: Map<string, (...args: unknown[]) => unknown>;
   commandNotice: string;
   partHost: ShellPartHostAdapter;
+  workspaceManager: WorkspaceManagerState;
   pluginConfigSyncDispose: (() => void) | null;
   activeTransportPath: ShellTransportPath;
   activeTransportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";

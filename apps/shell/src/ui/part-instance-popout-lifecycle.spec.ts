@@ -326,6 +326,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     activeDndReason: "default-same-window-only",
     lastDndDiagnostic: null,
     themeRegistry: null,
+    workspaceManager: {} as ShellRuntime["workspaceManager"],
     ...overrides,
   };
 }

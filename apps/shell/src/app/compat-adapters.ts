@@ -133,6 +133,7 @@ export function createShellRuntimeCompatibilityAdapters(
 
   const partHost: ShellPartHostAdapter = {
     syncRenderedParts: (viewRoot, parts) => runtime.partHost.syncRenderedParts(viewRoot, parts),
+    unmountAll: () => runtime.partHost.unmountAll(),
   };
 
   return {

@@ -82,4 +82,5 @@ export interface ShellRendererAdapter {
 
 export interface ShellPartHostAdapter {
   syncRenderedParts(root: HTMLElement, parts: ComposedShellPart[]): Promise<void>;
+  unmountAll(): void;
 }
