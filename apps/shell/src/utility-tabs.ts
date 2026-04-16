@@ -2,7 +2,6 @@ export type UtilityTabId =
   | "utility.plugins"
   | "utility.sync"
   | "utility.group-context"
-  | "utility.commands"
   | "utility.appearance"
   | "utility.keybindings"
   | "utility.dev-inspector";
@@ -35,13 +34,6 @@ const UTILITY_TAB_DESCRIPTORS: UtilityTabDescriptor[] = [
     id: "utility.group-context",
     title: "Group context",
     panelHostId: "context-controls",
-    slot: "main",
-    available: "always",
-  },
-  {
-    id: "utility.commands",
-    title: "Commands",
-    panelHostId: "command-surface",
     slot: "main",
     available: "always",
   },
