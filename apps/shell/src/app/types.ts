@@ -9,6 +9,7 @@ import type {
   ShellContextStatePersistence,
   ShellKeybindingPersistence,
   ShellLayoutPersistence,
+  ShellWorkspacePersistence,
 } from "../persistence.js";
 import type { ShellPluginRegistry } from "../plugin-registry.js";
 import type { ThemeRegistry } from "../theme-registry.js";
@@ -72,6 +73,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   persistence: ShellLayoutPersistence;
   contextPersistence: ShellContextStatePersistence;
   keybindingPersistence: ShellKeybindingPersistence;
+  workspacePersistence: ShellWorkspacePersistence;
   registry: ShellPluginRegistry;
   bridge: WindowBridge;
   asyncBridge: AsyncWindowBridge;

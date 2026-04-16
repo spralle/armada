@@ -8,6 +8,8 @@ import type {
   RevisionMeta,
   ShellContextState,
 } from "../context-state.js";
+import type { WorkspaceManagerState } from "../context-state/workspace-types.js";
+import type { WorkspacePersistenceEnvelopeV1 } from "./contracts.js";
 import { sanitizeDockTreeState } from "./sanitize-dock-tree.js";
 import { ensureRequiredUtilityTabs, isNonUtilityClosedHistoryEntry } from "../context-state/utility-tabs-sanitize.js";
 
@@ -360,6 +362,60 @@ function cloneSelectionMap(input: Record<string, EntityTypeSelection>): Record<s
     priorityId: selection.priorityId,
   }]));
 }
+
+/**
+ * Sanitize a workspace persistence envelope into a valid WorkspaceManagerState.
+ * Each workspace's context state is sanitized individually.
+ */
+export function sanitizeWorkspaceEnvelope(
+  envelope: WorkspacePersistenceEnvelopeV1,
+  fallbackContextState: ShellContextState,
+): WorkspaceManagerState {
+  const workspaces: WorkspaceManagerState["workspaces"] = {};
+
+  for (const persisted of envelope.workspaces) {
+    const sanitizedCtx = sanitizeContextState(persisted.contextState, fallbackContextState);
+    workspaces[persisted.id] = {
+      id: persisted.id,
+      name: persisted.name,
+      contextState: sanitizedCtx,
+    };
+  }
+
+  // Fallback: if all workspaces were somehow empty after filtering, create default
+  if (Object.keys(workspaces).length === 0) {
+    workspaces["1"] = {
+      id: "1",
+      name: "1",
+      contextState: sanitizeContextState(undefined, fallbackContextState),
+    };
+    return {
+      workspaces,
+      activeWorkspaceId: "1",
+      workspaceOrder: ["1"],
+    };
+  }
+
+  const validIds = new Set(Object.keys(workspaces));
+  const activeWorkspaceId = validIds.has(envelope.activeWorkspaceId)
+    ? envelope.activeWorkspaceId
+    : Object.keys(workspaces)[0];
+
+  const workspaceOrder = envelope.workspaceOrder.filter((id) => validIds.has(id));
+  // Append any IDs not in order
+  for (const id of validIds) {
+    if (!workspaceOrder.includes(id)) {
+      workspaceOrder.push(id);
+    }
+  }
+
+  return {
+    workspaces,
+    activeWorkspaceId,
+    workspaceOrder,
+  };
+}
+
 function isRecord(input: unknown): input is Record<string, unknown> {
   return Boolean(input) && typeof input === "object";
 }

@@ -3,18 +3,22 @@ import type {
   ContextStateEnvelopeV2,
   ContextStatePersistenceOptions,
   ShellContextStatePersistence,
+  ShellWorkspacePersistence,
   StorageLike,
   UnifiedShellPersistenceEnvelopeV1,
+  WorkspacePersistenceEnvelopeV1,
 } from "./contracts.js";
 import {
   CONTEXT_STATE_SCHEMA_VERSION,
   getUnifiedStorageKey,
   loadUnifiedEnvelope,
   migrateContextStateEnvelope,
+  migrateWorkspacePersistenceEnvelope,
   SHELL_PERSISTENCE_SCHEMA_VERSION,
+  WORKSPACE_SCHEMA_VERSION,
 } from "./envelope.js";
 import { sanitizeDockTreeStateWithReport } from "./sanitize-dock-tree.js";
-import { sanitizeContextState } from "./sanitize.js";
+import { sanitizeContextState, sanitizeWorkspaceEnvelope } from "./sanitize.js";
 
 export function createLocalStorageContextStatePersistence(
   storage: StorageLike | undefined,
@@ -125,4 +129,107 @@ function joinWarnings(first: string | null, second: string | null): string | nul
 
 function isRecord(input: unknown): input is Record<string, unknown> {
   return Boolean(input) && typeof input === "object";
+}
+
+export function createLocalStorageWorkspacePersistence(
+  storage: StorageLike | undefined,
+  options: ContextStatePersistenceOptions,
+): ShellWorkspacePersistence {
+  const storageKey = getUnifiedStorageKey(options.userId);
+
+  return {
+    load(fallback) {
+      const safeFallback = sanitizeContextState(fallback, createInitialShellContextState());
+
+      if (!storage) {
+        return {
+          state: {
+            workspaces: { "1": { id: "1", name: "1", contextState: safeFallback } },
+            activeWorkspaceId: "1",
+            workspaceOrder: ["1"],
+          },
+          warning: null,
+        };
+      }
+
+      const persistedEnvelope = loadUnifiedEnvelope(storage, storageKey);
+      if (!persistedEnvelope.ok) {
+        return {
+          state: {
+            workspaces: { "1": { id: "1", name: "1", contextState: safeFallback } },
+            activeWorkspaceId: "1",
+            workspaceOrder: ["1"],
+          },
+          warning: persistedEnvelope.warning,
+        };
+      }
+
+      const migration = migrateWorkspacePersistenceEnvelope(persistedEnvelope.value.context);
+      if (!migration.ok) {
+        return {
+          state: {
+            workspaces: { "1": { id: "1", name: "1", contextState: safeFallback } },
+            activeWorkspaceId: "1",
+            workspaceOrder: ["1"],
+          },
+          warning: migration.warning,
+        };
+      }
+
+      const managerState = sanitizeWorkspaceEnvelope(migration.value, safeFallback);
+      return {
+        state: managerState,
+        warning: migration.warning,
+      };
+    },
+
+    save(workspaceManager, liveContextState) {
+      if (!storage) {
+        return { warning: null };
+      }
+
+      // Snapshot the live context state into the active workspace before serializing
+      const workspaces: WorkspacePersistenceEnvelopeV1["workspaces"] = [];
+      for (const id of workspaceManager.workspaceOrder) {
+        const ws = workspaceManager.workspaces[id];
+        if (!ws) continue;
+        const contextState = id === workspaceManager.activeWorkspaceId
+          ? sanitizeContextState(liveContextState, createInitialShellContextState())
+          : sanitizeContextState(ws.contextState, createInitialShellContextState());
+        workspaces.push({
+          id: ws.id,
+          name: ws.name,
+          contextState,
+        });
+      }
+
+      const workspaceEnvelope: WorkspacePersistenceEnvelopeV1 = {
+        version: WORKSPACE_SCHEMA_VERSION,
+        workspaces,
+        activeWorkspaceId: workspaceManager.activeWorkspaceId,
+        workspaceOrder: workspaceManager.workspaceOrder,
+      };
+
+      const existingEnvelope = loadUnifiedEnvelope(storage, storageKey);
+      const nextEnvelope: UnifiedShellPersistenceEnvelopeV1 = {
+        version: SHELL_PERSISTENCE_SCHEMA_VERSION,
+        ...(existingEnvelope.ok
+          ? {
+              layout: existingEnvelope.value.layout,
+              keybindings: existingEnvelope.value.keybindings,
+            }
+          : {}),
+        context: workspaceEnvelope,
+      };
+
+      try {
+        storage.setItem(storageKey, JSON.stringify(nextEnvelope));
+        return { warning: null };
+      } catch {
+        return {
+          warning: "Unable to persist workspace state locally.",
+        };
+      }
+    },
+  };
 }
