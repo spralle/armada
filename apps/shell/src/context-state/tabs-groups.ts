@@ -12,7 +12,6 @@ import {
   ClosedTabHistoryEntry,
   ShellContextState,
 } from "./types.js";
-import { isUtilityTabId } from "../utility-tabs.js";
 import {
   clampClosedTabHistory,
   cloneTabArgs,
@@ -241,10 +240,6 @@ export function closeTabWithHistory(
     return state;
   }
 
-  if (isUtilityTabId(input.tabId)) {
-    return state;
-  }
-
   const closedEntry: ClosedTabHistoryEntry = {
     tabId: tab.id,
     definitionId: tab.definitionId,
@@ -275,7 +270,7 @@ export function closeTabWithHistory(
 
 export function canReopenClosedTab(state: ShellContextState, slot: ContextTabSlot): boolean {
   return state.closedTabHistory.some(
-    (entry) => entry.slot === slot && isClosedTabEntryRestorable(entry) && !isUtilityTabId(entry.tabId),
+    (entry) => entry.slot === slot && isClosedTabEntryRestorable(entry),
   );
 }
 
@@ -296,14 +291,13 @@ export function reopenMostRecentlyClosedTab(
     if (
       !reopenedEntry
       && isClosedTabEntryRestorable(candidate)
-      && !isUtilityTabId(candidate.tabId)
       && !next.tabs[candidate.tabId]
     ) {
       reopenedEntry = candidate as ClosedTabHistoryEntry & { orderIndex?: number };
       continue;
     }
 
-    if (isClosedTabEntryRestorable(candidate) && !isUtilityTabId(candidate.tabId) && !next.tabs[candidate.tabId]) {
+    if (isClosedTabEntryRestorable(candidate) && !next.tabs[candidate.tabId]) {
       retained.push(candidate);
     }
   }
