@@ -7,6 +7,7 @@ import {
 } from "../context-state/workspace.js";
 import { performWorkspaceSwitch, type WorkspaceSwitchDeps } from "./workspace-switch.js";
 import type { PartsControllerDeps } from "./parts-controller-types.js";
+import type { MountCleanup } from "../federation-mount-utils.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -19,8 +20,6 @@ export interface WorkspaceIndicatorDeps {
   /** Called after workspace state mutations to re-render shell chrome. */
   onStateChange(): void;
 }
-
-type SlotMountCleanup = (() => void) | { unmount?: () => void } | void;
 
 // ---------------------------------------------------------------------------
 // CSS (injected once)
@@ -81,7 +80,7 @@ export function createWorkspaceIndicatorMount(
 ): (
   target: HTMLElement,
   context: { contribution: ComposedPluginSlotContribution; runtime: ShellRuntime },
-) => SlotMountCleanup {
+) => MountCleanup {
   return (target, _context) => {
     injectStyles();
     return mountWorkspaceIndicator(target, deps);

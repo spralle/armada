@@ -6,6 +6,7 @@ import type {
   UnifiedShellPersistenceEnvelopeV1,
   WorkspacePersistenceEnvelopeV1,
 } from "./contracts.js";
+import { isRecord } from "./utils.js";
 
 export const SHELL_PERSISTENCE_STORAGE_KEY = "ghost.shell.persistence";
 export const SHELL_PERSISTENCE_SCHEMA_VERSION = 1;
@@ -225,9 +226,6 @@ export function migrateKeybindingOverridesEnvelope(input: unknown):
   };
 }
 
-function isRecord(input: unknown): input is Record<string, unknown> {
-  return Boolean(input) && typeof input === "object";
-}
 
 /**
  * Migrate the `context` section of the unified envelope to workspace format.

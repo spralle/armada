@@ -23,8 +23,8 @@ import {
   mountMainWindow,
   mountPopout,
 } from "../ui/shell-mount.js";
-import { renderEdgeSlots } from "../ui/edge-slot-renderer.js";
-import { registerBuiltInSlotMount } from "../ui/edge-slot-renderer.js";
+import { createEdgeSlotRenderer } from "../ui/edge-slot-renderer.js";
+import { createShellFederationRuntime } from "../federation-runtime.js";
 import { createWorkspaceIndicatorMount } from "../ui/workspace-indicator.js";
 
 interface ShellCompatibilityAdapterDeps {
@@ -78,6 +78,10 @@ export function createShellRuntimeCompatibilityAdapters(
 
   const core = createShellCoreApi(runtime, runtimeHandlers);
 
+  const edgeSlotRenderer = createEdgeSlotRenderer({
+    federationRuntime: createShellFederationRuntime(),
+  });
+
   renderer = {
     initialize: (viewRoot, viewRuntime) => {
       initializeReactPanels(viewRoot, viewRuntime, {
@@ -130,7 +134,7 @@ export function createShellRuntimeCompatibilityAdapters(
       renderSyncStatusView(viewRoot, viewRuntime);
     },
     renderEdgeSlots: (viewRoot, viewRuntime) => {
-      renderEdgeSlots(viewRoot, viewRuntime);
+      edgeSlotRenderer.renderEdgeSlots(viewRoot, viewRuntime);
     },
   };
 
@@ -142,7 +146,7 @@ export function createShellRuntimeCompatibilityAdapters(
   // Register built-in workspace indicator slot mount.
   // The closure captures root, runtime, and the effects/core bindings needed
   // to build PartsControllerDeps for workspace switching.
-  registerBuiltInSlotMount(
+  edgeSlotRenderer.registerBuiltInSlotMount(
     "workspace-indicator",
     createWorkspaceIndicatorMount({
       getRoot: () => root,

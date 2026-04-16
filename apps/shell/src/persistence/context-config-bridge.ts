@@ -21,6 +21,7 @@ import {
   loadUnifiedEnvelope,
   migrateContextStateEnvelope,
 } from "./envelope.js";
+import { isRecord } from "./utils.js";
 import { sanitizeDockTreeStateWithReport } from "./sanitize-dock-tree.js";
 import { sanitizeContextState } from "./sanitize.js";
 
@@ -278,6 +279,3 @@ function setMigrationFlag(storage: StorageLike | undefined): void {
   }
 }
 
-function isRecord(input: unknown): input is Record<string, unknown> {
-  return Boolean(input) && typeof input === "object";
-}

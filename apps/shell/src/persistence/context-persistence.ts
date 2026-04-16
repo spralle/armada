@@ -1,4 +1,5 @@
 import { createInitialShellContextState } from "../context-state.js";
+import { createInitialWorkspaceManagerState } from "../context-state/workspace.js";
 import type {
   ContextStateEnvelopeV2,
   ContextStatePersistenceOptions,
@@ -19,6 +20,7 @@ import {
 } from "./envelope.js";
 import { sanitizeDockTreeStateWithReport } from "./sanitize-dock-tree.js";
 import { sanitizeContextState, sanitizeWorkspaceEnvelope } from "./sanitize.js";
+import { isRecord } from "./utils.js";
 
 export function createLocalStorageContextStatePersistence(
   storage: StorageLike | undefined,
@@ -127,9 +129,6 @@ function joinWarnings(first: string | null, second: string | null): string | nul
   return first ?? second;
 }
 
-function isRecord(input: unknown): input is Record<string, unknown> {
-  return Boolean(input) && typeof input === "object";
-}
 
 export function createLocalStorageWorkspacePersistence(
   storage: StorageLike | undefined,
@@ -141,13 +140,11 @@ export function createLocalStorageWorkspacePersistence(
     load(fallback) {
       const safeFallback = sanitizeContextState(fallback, createInitialShellContextState());
 
+      const defaultState = createInitialWorkspaceManagerState(safeFallback);
+
       if (!storage) {
         return {
-          state: {
-            workspaces: { "1": { id: "1", name: "1", contextState: safeFallback } },
-            activeWorkspaceId: "1",
-            workspaceOrder: ["1"],
-          },
+          state: defaultState,
           warning: null,
         };
       }
@@ -155,11 +152,7 @@ export function createLocalStorageWorkspacePersistence(
       const persistedEnvelope = loadUnifiedEnvelope(storage, storageKey);
       if (!persistedEnvelope.ok) {
         return {
-          state: {
-            workspaces: { "1": { id: "1", name: "1", contextState: safeFallback } },
-            activeWorkspaceId: "1",
-            workspaceOrder: ["1"],
-          },
+          state: defaultState,
           warning: persistedEnvelope.warning,
         };
       }
@@ -167,11 +160,7 @@ export function createLocalStorageWorkspacePersistence(
       const migration = migrateWorkspacePersistenceEnvelope(persistedEnvelope.value.context);
       if (!migration.ok) {
         return {
-          state: {
-            workspaces: { "1": { id: "1", name: "1", contextState: safeFallback } },
-            activeWorkspaceId: "1",
-            workspaceOrder: ["1"],
-          },
+          state: defaultState,
           warning: migration.warning,
         };
       }

@@ -8,6 +8,7 @@ import type {
   ShellContextState,
 } from "../context-state.js";
 import type { WorkspaceManagerState } from "../context-state/workspace-types.js";
+import { isRecord } from "./utils.js";
 import type { WorkspacePersistenceEnvelopeV1 } from "./contracts.js";
 import { sanitizeDockTreeState } from "./sanitize-dock-tree.js";
 import { ensureRequiredUtilityTabs, isNonUtilityClosedHistoryEntry } from "../context-state/utility-tabs-sanitize.js";
@@ -431,6 +432,3 @@ export function sanitizeWorkspaceEnvelope(
   };
 }
 
-function isRecord(input: unknown): input is Record<string, unknown> {
-  return Boolean(input) && typeof input === "object";
-}

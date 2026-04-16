@@ -9,6 +9,7 @@ import type {
   DockTreeState,
 } from "../context-state/dock-tree-types.js";
 import type { ContextTab } from "../context-state.js";
+import { isRecord } from "./utils.js";
 
 type SanitizedDockNode = DockNode | null;
 
@@ -163,9 +164,6 @@ function sanitizeOrientation(value: unknown): DockOrientation | null {
   return null;
 }
 
-function isRecord(input: unknown): input is Record<string, unknown> {
-  return Boolean(input) && typeof input === "object";
-}
 
 function resolveDockSanitizeWarning(
   input: unknown,
