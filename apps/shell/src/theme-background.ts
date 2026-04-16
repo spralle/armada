@@ -1,6 +1,7 @@
 // theme-background.ts — Fullscreen background image management for themes.
 
 import type { ThemeBackgroundEntry } from "@ghost/plugin-contracts";
+import { resolveBackgroundUrl } from "./theme-background-cache.js";
 
 const THEME_BACKGROUND_ID = "ghost-theme-background";
 
@@ -36,6 +37,13 @@ export function manageBackgroundImage(
   div.style.inset = "0";
   div.style.zIndex = "-1";
   div.style.backgroundImage = `url(${entry.url})`;
+
+  // Async upgrade: resolve cached blob URL without blocking initial render.
+  void resolveBackgroundUrl(entry.url).then((resolved) => {
+    if (resolved !== entry.url) {
+      div.style.backgroundImage = `url(${resolved})`;
+    }
+  });
 
   const mode = entry.mode ?? "cover";
   if (mode === "tile") {
