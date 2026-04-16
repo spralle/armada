@@ -21,6 +21,10 @@ function createTestApiDeps(
     getSelectedPartId: () => null,
     renderQuickPick: () => {},
     dismissQuickPick: () => {},
+    viewServiceDeps: {
+      getPartDefinitions: () => [],
+      openPartInstance: () => "tab-test",
+    },
     ...overrides,
   };
 }

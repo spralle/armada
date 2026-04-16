@@ -42,6 +42,9 @@
     },
     {
       "path": "./plugins/shadcn-theme-bridge-plugin"
+    },
+    {
+      "path": "./plugins/view-picker-plugin"
     }
   ]
 }
