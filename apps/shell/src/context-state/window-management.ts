@@ -8,6 +8,9 @@ import { readDockSplitRatio } from "./dock-tree.js";
 import { setActiveTab } from "./tabs-groups.js";
 import type { DockNode, DockStackNode } from "./dock-tree-types.js";
 import type { ShellContextState } from "./types.js";
+import type { PlacementStrategyRegistry } from "./placement-strategy-registry.js";
+import type { PlacementConfig } from "./placement-strategy-types.js";
+import { findActiveOrFirstStack } from "./dock-tree-helpers.js";
 
 type DockDirection = "left" | "right" | "up" | "down";
 
@@ -242,6 +245,60 @@ export function gotoTabByIndex(
 
   return {
     state: setActiveTab(state, targetTabId),
+    changed: true,
+  };
+}
+
+export function navigateBackInActiveStack(
+  state: ShellContextState,
+  placementRegistry: PlacementStrategyRegistry,
+  placementConfig: PlacementConfig,
+): { state: ShellContextState; changed: boolean } {
+  const strategy = placementRegistry.getActive(placementConfig);
+  if (!strategy.navigateBack) {
+    return { state, changed: false };
+  }
+  const activeStack = state.dockTree.root ? findActiveOrFirstStack(state.dockTree.root) : null;
+  if (!activeStack) {
+    return { state, changed: false };
+  }
+  const result = strategy.navigateBack(activeStack.id, state.dockTree);
+  if (!result) {
+    return { state, changed: false };
+  }
+  return {
+    state: {
+      ...state,
+      dockTree: result.tree,
+      activeTabId: result.activatedTabId ?? state.activeTabId,
+    },
+    changed: true,
+  };
+}
+
+export function navigateForwardInActiveStack(
+  state: ShellContextState,
+  placementRegistry: PlacementStrategyRegistry,
+  placementConfig: PlacementConfig,
+): { state: ShellContextState; changed: boolean } {
+  const strategy = placementRegistry.getActive(placementConfig);
+  if (!strategy.navigateForward) {
+    return { state, changed: false };
+  }
+  const activeStack = state.dockTree.root ? findActiveOrFirstStack(state.dockTree.root) : null;
+  if (!activeStack) {
+    return { state, changed: false };
+  }
+  const result = strategy.navigateForward(activeStack.id, state.dockTree);
+  if (!result) {
+    return { state, changed: false };
+  }
+  return {
+    state: {
+      ...state,
+      dockTree: result.tree,
+      activeTabId: result.activatedTabId ?? state.activeTabId,
+    },
     changed: true,
   };
 }

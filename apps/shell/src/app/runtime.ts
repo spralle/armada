@@ -20,6 +20,11 @@ import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-ove
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { createWorkspaceIndicatorContract } from "../ui/workspace-indicator-plugin.js";
+import { createPlacementStrategyRegistry } from "../context-state/placement-strategy-registry.js";
+import { createTabsPlacementStrategy } from "../context-state/placement-strategy-tabs.js";
+import { createDwindlePlacementStrategy } from "../context-state/placement-strategy-dwindle.js";
+import { createStackPlacementStrategy } from "../context-state/placement-strategy-stack.js";
+import { DEFAULT_PLACEMENT_CONFIG } from "../context-state/placement-strategy-config.js";
 
 import { createWindowBridge } from "../window-bridge.js";
 import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
@@ -60,6 +65,11 @@ export function createShellRuntime(options?: {
     getRegistrySnapshot: () => registry.getSnapshot(),
   });
   const registry = createShellPluginRegistry();
+
+  const placementRegistry = createPlacementStrategyRegistry();
+  placementRegistry.register(createTabsPlacementStrategy());
+  placementRegistry.register(createDwindlePlacementStrategy());
+  placementRegistry.register(createStackPlacementStrategy());
 
   const runtime: ShellRuntime = {
     layout: createDefaultLayoutState(),
@@ -127,6 +137,8 @@ export function createShellRuntime(options?: {
     activeDndReason: crossWindowDnd.reason,
     lastDndDiagnostic: null,
     workspaceManager: null as unknown as ShellRuntime["workspaceManager"],
+    placementRegistry,
+    placementConfig: { ...DEFAULT_PLACEMENT_CONFIG },
   };
 
   runtime.partHost = createShellPartHostAdapter(runtime);

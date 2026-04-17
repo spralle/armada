@@ -6,7 +6,9 @@ import {
   ensureTabRegisteredInDockTree,
   removeTabFromDockTree,
 } from "./dock-tree.js";
+import { findActiveOrFirstStack } from "./dock-tree-helpers.js";
 import type { DockDropZone } from "./dock-tree-types.js";
+import type { TabPlacementStrategy, PlacementConfig } from "./placement-strategy-types.js";
 import {
   ContextTabSlot,
   ClosedTabHistoryEntry,
@@ -33,6 +35,8 @@ export function registerTab(
     groupColor?: string;
     tabLabel?: string;
     closePolicy?: "fixed" | "closeable";
+    placementStrategy?: TabPlacementStrategy;
+    placementConfig?: PlacementConfig;
   },
 ): ShellContextState {
   const next = cloneContextState(state);
@@ -60,7 +64,18 @@ export function registerTab(
   if (!next.tabOrder.includes(input.tabId)) {
     next.tabOrder.push(input.tabId);
   }
-  next.dockTree = ensureTabRegisteredInDockTree(next.dockTree, input.tabId);
+  if (input.placementStrategy) {
+    const activeStack = next.dockTree.root ? findActiveOrFirstStack(next.dockTree.root) : null;
+    const result = input.placementStrategy.place({
+      tabId: input.tabId,
+      tree: next.dockTree,
+      activeStackId: activeStack?.id,
+      dwindleDirection: input.placementConfig?.dwindleDirection,
+    });
+    next.dockTree = result.tree;
+  } else {
+    next.dockTree = ensureTabRegisteredInDockTree(next.dockTree, input.tabId);
+  }
 
   if (!next.activeTabId) {
     next.activeTabId = deriveDeterministicActiveTabId(next.dockTree) ?? input.tabId;
@@ -77,6 +92,8 @@ export function openPartInstance(
     groupColor?: string;
     tabLabel?: string;
     closePolicy?: "fixed" | "closeable";
+    placementStrategy?: TabPlacementStrategy;
+    placementConfig?: PlacementConfig;
   },
 ): { state: ShellContextState; tabId: string } {
   const tabId = createTabInstanceId(state, input.definitionId);
@@ -89,6 +106,8 @@ export function openPartInstance(
     groupColor: input.groupColor,
     tabLabel: input.tabLabel,
     closePolicy: input.closePolicy ?? "closeable",
+    placementStrategy: input.placementStrategy,
+    placementConfig: input.placementConfig,
   });
 
   return {
