@@ -25,6 +25,10 @@ function createTestApiDeps(
       getPartDefinitions: () => [],
       openPartInstance: () => "tab-test",
     },
+    workspaceServiceDeps: {
+      getRuntime: () => { throw new Error("not wired in test"); },
+      getWorkspaceSwitchDeps: () => { throw new Error("not wired in test"); },
+    },
     ...overrides,
   };
 }
