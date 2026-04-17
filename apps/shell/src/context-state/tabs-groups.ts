@@ -8,7 +8,7 @@ import {
 } from "./dock-tree.js";
 import { findActiveOrFirstStack } from "./dock-tree-helpers.js";
 import type { DockDropZone } from "./dock-tree-types.js";
-import type { TabPlacementStrategy, PlacementConfig } from "./placement-strategy-types.js";
+import type { TabPlacementStrategy, PlacementConfig } from "./placement-strategy/types.js";
 import {
   ContextTabSlot,
   ClosedTabHistoryEntry,

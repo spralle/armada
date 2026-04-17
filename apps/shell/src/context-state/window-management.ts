@@ -8,8 +8,8 @@ import { readDockSplitRatio } from "./dock-tree.js";
 import { setActiveTab } from "./tabs-groups.js";
 import type { DockNode, DockStackNode } from "./dock-tree-types.js";
 import type { ShellContextState } from "./types.js";
-import type { PlacementStrategyRegistry } from "./placement-strategy-registry.js";
-import type { PlacementConfig } from "./placement-strategy-types.js";
+import type { PlacementStrategyRegistry } from "./placement-strategy/registry.js";
+import type { PlacementConfig } from "./placement-strategy/types.js";
 import { findActiveOrFirstStack } from "./dock-tree-helpers.js";
 
 type DockDirection = "left" | "right" | "up" | "down";

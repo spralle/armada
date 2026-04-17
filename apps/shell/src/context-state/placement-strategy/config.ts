@@ -1,4 +1,4 @@
-import type { PlacementConfig } from "./placement-strategy-types.js";
+import type { PlacementConfig } from "./types.js";
 
 export const PLACEMENT_STRATEGY_CONFIG_KEY = "ghost.shell.placement.strategy";
 export const DWINDLE_DIRECTION_CONFIG_KEY = "ghost.shell.placement.dwindleDirection";

@@ -3,14 +3,14 @@ import {
   createUniqueNodeId,
   findActiveOrFirstStack,
   hasTabInDockNode,
-} from "./dock-tree-helpers.js";
-import type { DockNode, DockOrientation, DockStackNode } from "./dock-tree-types.js";
+} from "../dock-tree-helpers.js";
+import type { DockNode, DockOrientation, DockStackNode } from "../dock-tree-types.js";
 import type {
   DwindleSplitDirection,
   PlacementContext,
   PlacementResult,
   TabPlacementStrategy,
-} from "./placement-strategy-types.js";
+} from "./types.js";
 
 export function createDwindlePlacementStrategy(): TabPlacementStrategy {
   return {

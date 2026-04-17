@@ -30,7 +30,7 @@ import { registerActionServiceSpecs } from "./plugin-api/action-service.spec.js"
 import { registerWindowServiceSpecs } from "./plugin-api/window-service.spec.js";
 import { registerGhostApiFactorySpecs } from "./plugin-api/ghost-api-factory.spec.js";
 import { registerQuickPickStateSpecs } from "./ui/quick-pick/quick-pick-state.spec.js";
-import { registerPlacementStrategySpecs } from "./context-state/placement-strategy.spec.js";
+import { registerPlacementStrategySpecs } from "./context-state/placement-strategy/placement-strategy.spec.js";
 
 const { harness, runAll } = createSpecHarness();
 

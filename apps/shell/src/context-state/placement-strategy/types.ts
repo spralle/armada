@@ -1,4 +1,4 @@
-import type { DockTreeState } from "./dock-tree-types.js";
+import type { DockTreeState } from "../dock-tree-types.js";
 
 export type PlacementStrategyId = "tabs" | "dwindle" | "stack";
 

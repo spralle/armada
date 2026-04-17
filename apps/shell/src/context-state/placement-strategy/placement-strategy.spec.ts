@@ -1,15 +1,15 @@
-import type { SpecHarness } from "../context-state.spec-harness.js";
-import type { DockNode, DockStackNode, DockSplitNode, DockTreeState } from "./dock-tree-types.js";
-import type { PlacementConfig } from "./placement-strategy-types.js";
-import { createPlacementStrategyRegistry } from "./placement-strategy-registry.js";
-import { createTabsPlacementStrategy } from "./placement-strategy-tabs.js";
-import { createDwindlePlacementStrategy } from "./placement-strategy-dwindle.js";
-import { createStackPlacementStrategy } from "./placement-strategy-stack.js";
+import type { SpecHarness } from "../../context-state.spec-harness.js";
+import type { DockNode, DockStackNode, DockSplitNode, DockTreeState } from "../dock-tree-types.js";
+import type { PlacementConfig } from "./types.js";
+import { createPlacementStrategyRegistry } from "./registry.js";
+import { createTabsPlacementStrategy } from "./tabs.js";
+import { createDwindlePlacementStrategy } from "./dwindle.js";
+import { createStackPlacementStrategy } from "./stack.js";
 import {
   DEFAULT_PLACEMENT_CONFIG,
   PLACEMENT_STRATEGY_CONFIG_KEY,
   DWINDLE_DIRECTION_CONFIG_KEY,
-} from "./placement-strategy-config.js";
+} from "./config.js";
 
 function makeStack(id: string, tabs: string[], activeTabId?: string | null): DockStackNode {
   return {

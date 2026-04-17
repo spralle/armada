@@ -1,6 +1,6 @@
-import { cloneDockNode, findActiveOrFirstStack, hasTabInDockNode } from "./dock-tree-helpers.js";
-import type { DockStackNode } from "./dock-tree-types.js";
-import type { PlacementContext, PlacementResult, TabPlacementStrategy } from "./placement-strategy-types.js";
+import { cloneDockNode, findActiveOrFirstStack, hasTabInDockNode } from "../dock-tree-helpers.js";
+import type { DockStackNode } from "../dock-tree-types.js";
+import type { PlacementContext, PlacementResult, TabPlacementStrategy } from "./types.js";
 
 export function createTabsPlacementStrategy(): TabPlacementStrategy {
   return {

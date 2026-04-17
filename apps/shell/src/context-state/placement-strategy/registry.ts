@@ -2,7 +2,7 @@ import type {
   PlacementConfig,
   PlacementStrategyId,
   TabPlacementStrategy,
-} from "./placement-strategy-types.js";
+} from "./types.js";
 
 export interface PlacementStrategyRegistry {
   register(strategy: TabPlacementStrategy): void;
