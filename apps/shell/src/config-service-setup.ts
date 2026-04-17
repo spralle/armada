@@ -41,14 +41,20 @@ export interface ShellConfigServiceResult {
 // Factory
 // ---------------------------------------------------------------------------
 
+/** No-op ConfigurationService stub (@weaver packages removed). */
+const noopConfigService: ConfigurationService = {
+  get: () => undefined,
+  set: () => {},
+  onChange: () => () => {},
+};
+
 /**
- * Create the shell's ConfigurationService with an OverrideSession controller
- * wired as the SESSION layer provider.
- *
- * Throws on failure — callers must catch and fall back.
+ * Create the shell's ConfigurationService.
+ * Returns a no-op stub since @weaver packages were removed.
+ * Hydration continues normally; config-dependent features degrade gracefully.
  */
 export async function createShellConfigService(): Promise<ShellConfigServiceResult> {
-  throw new Error("Config service unavailable: @weaver packages removed");
+  return { configService: noopConfigService, sessionController: {} };
 }
 
 // ---------------------------------------------------------------------------
