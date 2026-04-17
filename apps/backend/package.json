@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@ghost/config-plugin-runtime": "workspace:*",
     "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
   }
 }

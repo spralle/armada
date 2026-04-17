@@ -2,8 +2,8 @@
 
 import type { Route } from "./router.js";
 import { jsonResponse } from "./router.js";
-import type { OverrideSessionController } from "@weaver/config-sessions";
-import { sessionActivationRequestSchema } from "@weaver/config-types";
+import type { OverrideSessionController } from "./config-stubs.js";
+import { sessionActivationRequestSchema } from "./config-stubs.js";
 
 export function createSessionRoutes(options: {
   sessionController: OverrideSessionController;

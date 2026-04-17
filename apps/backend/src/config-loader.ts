@@ -1,4 +1,4 @@
-import { FileSystemStorageProvider } from "@weaver/config-server";
+import { FileSystemStorageProvider } from "./config-stubs.js";
 import { resolve } from "node:path";
 
 export interface ConfigLoaderOptions {
