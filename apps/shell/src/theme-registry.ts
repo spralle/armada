@@ -364,6 +364,14 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
         const value = full[key as keyof FullThemePalette];
         result[cssVar] = String(value);
       }
+      // Include terminal colors if the theme provides them
+      if (theme.terminal) {
+        for (const [key, value] of Object.entries(theme.terminal)) {
+          if (value) {
+            result[`--ghost-terminal-${key}`] = value;
+          }
+        }
+      }
       return result;
     },
   };

@@ -101,3 +101,56 @@ export const GHOST_THEME_CSS_VARS: Readonly<Record<keyof FullThemePalette, strin
   borderInactive: "--ghost-border-inactive",
   borderSize: "--ghost-border-size",
 } as const;
+
+/** Ordered token groups for UI display (palette preview, settings panels). */
+export const THEME_TOKEN_GROUPS: ReadonlyArray<{
+  readonly id: string;
+  readonly label: string;
+  readonly tokens: ReadonlyArray<keyof FullThemePalette>;
+}> = [
+  {
+    id: "core",
+    label: "Core",
+    tokens: ["background", "foreground", "surface", "overlay", "primary", "secondary", "accent", "muted", "cursor", "selectionBackground"],
+  },
+  {
+    id: "surface",
+    label: "Surface",
+    tokens: ["surfaceElevated", "surfaceHover", "surfaceInset", "surfaceInsetDeep", "surfaceOverlay", "hoverBackground", "activeBackground"],
+  },
+  {
+    id: "foreground",
+    label: "Foreground",
+    tokens: ["surfaceForeground", "overlayForeground", "primaryForeground", "secondaryForeground", "accentForeground", "mutedForeground", "foregroundBright", "dimForeground", "faintForeground", "codeForeground", "selectionForeground"],
+  },
+  {
+    id: "border",
+    label: "Border",
+    tokens: ["border", "borderMuted", "borderAlt", "borderAccent", "ring", "input"],
+  },
+  {
+    id: "primary-effects",
+    label: "Primary Effects",
+    tokens: ["primaryGlowSubtle", "primaryGlow", "primaryBorderSemi", "primaryOverlay"],
+  },
+  {
+    id: "status",
+    label: "Status",
+    tokens: ["error", "errorForeground", "errorBackground", "errorForegroundMuted", "warning", "warningForeground", "warningBackground", "success", "successForeground", "successBackground", "info", "infoForeground", "infoBackground"],
+  },
+  {
+    id: "chart",
+    label: "Chart",
+    tokens: ["chart1", "chart2", "chart3", "chart4", "chart5"],
+  },
+  {
+    id: "edge",
+    label: "Edge Panels",
+    tokens: ["edgeTop", "edgeTopForeground", "edgeTopBorder", "edgeTopAccent", "edgeTopAccentForeground", "edgeBottom", "edgeBottomForeground", "edgeBottomBorder", "edgeBottomAccent", "edgeBottomAccentForeground", "edgeLeft", "edgeLeftForeground", "edgeLeftBorder", "edgeLeftAccent", "edgeLeftAccentForeground", "edgeRight", "edgeRightForeground", "edgeRightBorder", "edgeRightAccent", "edgeRightAccentForeground"],
+  },
+  {
+    id: "window",
+    label: "Window",
+    tokens: ["borderActive", "borderInactive", "neutralBackground"],
+  },
+] as const;
