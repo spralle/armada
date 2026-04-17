@@ -47,6 +47,9 @@ import type {
 import type { ConfigurationService } from "@weaver/config-types";
 import type { PluginConfigSyncConfigurationService } from "../plugin-config-sync-controller.js";
 import type { GhostApiFactoryDependencies } from "../plugin-api/ghost-api-factory.js";
+import type { SyncStatusServiceDeps } from "../sync-status-service-registration.js";
+import type { ContextServiceDeps } from "../context-service-registration.js";
+import type { KeybindingServiceDeps } from "../keybinding-service-registration.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -66,6 +69,12 @@ export interface ShellBootstrapOptions {
   onProgress?: (registry: ShellPluginRegistry) => void;
   /** Dependencies for constructing GhostApi instances during plugin activation. */
   apiDeps?: GhostApiFactoryDependencies | undefined;
+  /** Dependencies for SyncStatusService — registered before plugin activation. */
+  syncStatusDeps?: SyncStatusServiceDeps | undefined;
+  /** Dependencies for ContextService — registered before plugin activation. */
+  contextServiceDeps?: ContextServiceDeps | undefined;
+  /** Dependencies for KeybindingService — registered before plugin activation. */
+  keybindingServiceDeps?: KeybindingServiceDeps | undefined;
 }
 
 export interface ShellRuntime extends DndDiagnosticRuntime {

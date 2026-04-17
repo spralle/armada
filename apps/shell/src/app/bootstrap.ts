@@ -12,6 +12,9 @@ import { registerThemeServiceCapability } from "../theme-service-registration.js
 import { registerPluginRegistryServiceCapability } from "../plugin-registry-service-registration.js";
 import { registerPluginManagementServiceCapability } from "../plugin-management-service-registration.js";
 import { registerConfigurationServiceCapability } from "../config-service-registration.js";
+import { registerSyncStatusServiceCapability } from "../sync-status-service-registration.js";
+import { registerContextServiceCapability } from "../context-service-registration.js";
+import { registerKeybindingServiceCapability } from "../keybinding-service-registration.js";
 import {
   createPluginConfigSyncController,
   deriveNamespace,
@@ -120,7 +123,19 @@ export async function bootstrapShellWithTenantManifest(
   });
   registerPluginManagementServiceCapability(registry);
 
-  // Now activate onStartup plugins — ghost.theme.Service is available.
+  // Register remaining builtin services before plugin activation so that
+  // plugins depending on these services never see null.
+  if (options.syncStatusDeps) {
+    registerSyncStatusServiceCapability(registry, options.syncStatusDeps);
+  }
+  if (options.contextServiceDeps) {
+    registerContextServiceCapability(registry, options.contextServiceDeps);
+  }
+  if (options.keybindingServiceDeps) {
+    registerKeybindingServiceCapability(registry, options.keybindingServiceDeps);
+  }
+
+  // Now activate onStartup plugins — all 7 builtin services are available.
   await activateByStartupEvent(registry, options.onProgress ? () => options.onProgress!(registry) : undefined);
 
   const snapshot = registry.getSnapshot();
