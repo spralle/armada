@@ -39,7 +39,6 @@ export interface RuntimeEventHandlerBindings {
     triggerId: string;
   }) => Promise<boolean>;
   announce: (message: string) => void;
-  renderCommandSurface: () => void;
   renderContextControlsPanel: () => void;
   renderParts: () => void;
   renderSyncStatus: () => void;
@@ -133,7 +132,6 @@ export function createRuntimeEventHandlers(
     }
     bindings.renderContextControlsPanel();
     bindings.renderSyncStatus();
-    bindings.renderCommandSurface();
   }
 
   function resolveIntentFlow(intent: ShellIntent): void {

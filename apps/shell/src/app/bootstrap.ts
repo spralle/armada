@@ -9,6 +9,8 @@ import {
   DEFAULT_THEME_PLUGIN_ID,
 } from "../theme-activation.js";
 import { registerThemeServiceCapability } from "../theme-service-registration.js";
+import { registerPluginRegistryServiceCapability } from "../plugin-registry-service-registration.js";
+import { registerPluginManagementServiceCapability } from "../plugin-management-service-registration.js";
 import { registerConfigurationServiceCapability } from "../config-service-registration.js";
 import {
   createPluginConfigSyncController,
@@ -112,6 +114,11 @@ export async function bootstrapShellWithTenantManifest(
   themeRegistry.discoverThemes();
   themeRegistry.applyInitialTheme();
   registerThemeServiceCapability(registry, themeRegistry);
+  registerPluginRegistryServiceCapability(registry, {
+    registry,
+    getPluginNotice: () => "",
+  });
+  registerPluginManagementServiceCapability(registry);
 
   // Now activate onStartup plugins — ghost.theme.Service is available.
   await activateByStartupEvent(registry, options.onProgress ? () => options.onProgress!(registry) : undefined);

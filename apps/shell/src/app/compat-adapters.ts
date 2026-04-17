@@ -17,10 +17,6 @@ import {
   renderSyncStatus as renderSyncStatusView,
 } from "../shell-runtime/runtime-render.js";
 import {
-  renderCommandSurface as renderCommandSurfaceView,
-} from "../shell-runtime/command-surface-render.js";
-import { dispatchAction } from "../action-surface.js";
-import {
   mountMainWindow,
   mountPopout,
 } from "../ui/shell-mount.js";
@@ -61,7 +57,6 @@ export function createShellRuntimeCompatibilityAdapters(
     activatePluginForBoundary: (options) => deps.activatePluginForBoundary(options),
     announce: (message) => deps.announce(message),
     publishWithDegrade: (event) => deps.publishWithDegrade(event),
-    renderCommandSurface: () => renderer.renderCommandSurface(root, runtime),
     renderContextControlsPanel: () => renderer.renderContextControlsPanel(root, runtime),
     renderParts: () => renderer.renderParts(root, runtime),
     renderSyncStatus: () => renderer.renderSyncStatus(root, runtime),
@@ -71,7 +66,6 @@ export function createShellRuntimeCompatibilityAdapters(
   const runtimeHandlers = createRuntimeEventHandlers(root, runtime, {
     activatePluginForBoundary: (options) => effects.activatePluginForBoundary(options),
     announce: (message) => effects.announce(message),
-    renderCommandSurface: () => effects.renderCommandSurface(),
     renderContextControlsPanel: () => effects.renderContextControlsPanel(),
     renderParts: () => effects.renderParts(),
     renderSyncStatus: () => effects.renderSyncStatus(),
@@ -94,7 +88,6 @@ export function createShellRuntimeCompatibilityAdapters(
         primeEnabledPluginActivations: () => deps.primeEnabledPluginActivations(),
         publishWithDegrade: (event) => effects.publishWithDegrade(event),
         refreshCommandContributions: () => deps.refreshCommandContributions(),
-        renderCommandSurface: () => effects.renderCommandSurface(),
         renderContextControlsPanel: () => effects.renderContextControlsPanel(),
         renderParts: () => effects.renderParts(),
         renderSyncStatus: () => effects.renderSyncStatus(),
@@ -109,12 +102,6 @@ export function createShellRuntimeCompatibilityAdapters(
     renderPanels: (viewRoot, viewRuntime) => {
       renderPanelsView(viewRoot, viewRuntime);
     },
-    renderCommandSurface: (viewRoot, viewRuntime) => {
-      renderCommandSurfaceView(viewRoot, viewRuntime, {
-        activatePluginForBoundary: (options) => effects.activatePluginForBoundary(options),
-        dispatchAction: (actionId, context) => dispatchAction(viewRuntime.actionSurface, viewRuntime.intentRuntime, actionId, context),
-      });
-    },
     renderContextControlsPanel: (viewRoot, viewRuntime) => {
       renderContextControlsPanelView(viewRoot, viewRuntime);
     },
@@ -127,7 +114,6 @@ export function createShellRuntimeCompatibilityAdapters(
         primeEnabledPluginActivations: () => deps.primeEnabledPluginActivations(),
         publishWithDegrade: (event) => effects.publishWithDegrade(event),
         refreshCommandContributions: () => deps.refreshCommandContributions(),
-        renderCommandSurface: () => effects.renderCommandSurface(),
         renderContextControlsPanel: () => effects.renderContextControlsPanel(),
         renderParts: () => effects.renderParts(),
         renderSyncStatus: () => effects.renderSyncStatus(),

@@ -5,8 +5,6 @@ import {
   registerTab,
 } from "./context-state.js";
 import { MemoryStorage, type SpecHarness } from "./context-state.spec-harness.js";
-import { DEV_MODE } from "./app/constants.js";
-import { listAvailableUtilityTabs } from "./utility-tabs.js";
 
 export function registerContextPersistenceDockSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
@@ -54,11 +52,10 @@ export function registerContextPersistenceDockSpecs(harness: SpecHarness): void 
     );
     assertEqual(loaded.state.dockTree.root?.kind, "stack", "legacy slot payload should map to deterministic default stack");
     if (loaded.state.dockTree.root?.kind === "stack") {
-      const availableUtilityIds = listAvailableUtilityTabs({ devMode: DEV_MODE }).map((tab) => tab.id);
       assertEqual(
         loaded.state.dockTree.root.tabIds.join(","),
-        ["tab-b", "tab-a", "tab-c", ...availableUtilityIds].join(","),
-        "legacy slot ordering should map deterministically before required utility tabs",
+        ["tab-b", "tab-a", "tab-c"].join(","),
+        "legacy slot ordering should map deterministically",
       );
       assertEqual(loaded.state.dockTree.root.activeTabId, "tab-a", "active tab should be preserved when valid");
     }
@@ -108,11 +105,10 @@ export function registerContextPersistenceDockSpecs(harness: SpecHarness): void 
     );
     assertEqual(loaded.state.dockTree.root?.kind, "stack", "corrupt dock payload should fall back to deterministic stack");
     if (loaded.state.dockTree.root?.kind === "stack") {
-      const availableUtilityIds = listAvailableUtilityTabs({ devMode: DEV_MODE }).map((tab) => tab.id);
       assertEqual(
         loaded.state.dockTree.root.tabIds.join(","),
-        ["tab-a", "tab-b", ...availableUtilityIds].join(","),
-        "fallback stack should follow normalized tab order with required utility tabs",
+        ["tab-a", "tab-b"].join(","),
+        "fallback stack should follow normalized tab order",
       );
       assertEqual(loaded.state.dockTree.root.activeTabId, "tab-b", "fallback stack should preserve valid active tab");
     }
@@ -134,14 +130,13 @@ export function registerContextPersistenceDockSpecs(harness: SpecHarness): void 
 
     const loaded = persistence.load(createInitialShellContextState({ initialTabId: "fallback-tab" }));
     assertEqual(loaded.warning, null, "valid nested dock layout should load without warning");
-    const availableUtilityIds = listAvailableUtilityTabs({ devMode: DEV_MODE }).map((tab) => tab.id);
     const root = loaded.state.dockTree.root;
     assertTruthy(root?.kind === "split", "nested dock layout split root should be preserved across save/load");
     if (root?.kind === "split" && root.first.kind === "stack") {
       assertEqual(
         root.first.tabIds.join(","),
-        ["tab-a", ...availableUtilityIds].join(","),
-        "utility tabs should be appended deterministically into active stack after load",
+        "tab-a",
+        "first stack should contain tab-a after load",
       );
     }
     if (root?.kind === "split" && root.second.kind === "split") {

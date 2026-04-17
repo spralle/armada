@@ -9,7 +9,7 @@ export const pluginContract: PluginContract = {
   contributes: {
     parts: [
       {
-        id: "utility.appearance",
+        id: "ghost.shell.appearance",
         title: "Appearance",
       },
     ],

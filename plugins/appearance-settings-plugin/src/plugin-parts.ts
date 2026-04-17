@@ -112,7 +112,7 @@ function renderPanel(target: HTMLElement, themeService: ThemeService): void {
 // ---------------------------------------------------------------------------
 
 export const parts: Record<string, { mount: MountPartFn }> = {
-  "utility.appearance": {
+  "ghost.shell.appearance": {
     mount: mountAppearancePart,
   },
 };

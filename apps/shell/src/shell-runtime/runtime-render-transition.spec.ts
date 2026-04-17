@@ -31,21 +31,22 @@ function part(id: string): ComposedShellPart {
   };
 }
 
-test("deriveCloseableTabIds excludes utility tabs", () => {
+test("deriveCloseableTabIds includes all parts", () => {
   const result = deriveCloseableTabIds([
-    part("utility.plugins"),
-    part("tab-orders"),
     part("utility.sync"),
+    part("tab-orders"),
+    part("utility.dev-inspector"),
     part("tab-vessels"),
   ]);
 
-  assertEqual(result.has("utility.plugins"), false, "utility tabs should not be closeable");
+  assertEqual(result.has("utility.sync"), true, "utility tabs should be closeable");
   assertEqual(result.has("tab-orders"), true, "part instance tabs should be closeable");
+  assertEqual(result.has("utility.dev-inspector"), true, "utility tabs should be closeable");
   assertEqual(result.has("tab-vessels"), true, "part instance tabs should remain closeable");
-  assertEqual(result.size, 2, "only non-utility tabs should be included");
+  assertEqual(result.size, 4, "all parts should be closeable");
 });
 
-test("plugin toggle rerender updates parts before panels and command surface", () => {
+test("plugin toggle rerender updates parts before panels", () => {
   const order: string[] = [];
 
   rerenderAfterPluginToggle(
@@ -55,15 +56,11 @@ test("plugin toggle rerender updates parts before panels and command surface", (
     () => {
       order.push("panels");
     },
-    () => {
-      order.push("command-surface");
-    },
   );
 
   assertEqual(order[0], "parts", "parts should rerender before panels");
   assertEqual(order[1], "panels", "panels should rerender immediately after parts");
-  assertEqual(order[2], "command-surface", "command surface should rerender last");
-  assertEqual(order.length, 3, "plugin toggle rerender should include exactly three render steps");
+  assertEqual(order.length, 2, "plugin toggle rerender should include exactly two render steps");
 });
 
 let passed = 0;

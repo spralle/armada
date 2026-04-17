@@ -51,7 +51,7 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
     state = registerTab(state, { tabId: "tab-b", groupId: "group-main" });
 
     assertEqual(state.tabs["tab-b"]?.label, "tab-b", "tab label should default to tab id");
-    assertEqual(state.tabs["tab-b"]?.closePolicy, "fixed", "tab close policy should default to fixed");
+    assertEqual(state.tabs["tab-b"]?.closePolicy, "closeable", "tab close policy should default to closeable");
   });
 
   test("re-registering existing tab updates label but keeps default close policy", () => {
@@ -59,18 +59,18 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
     state = registerTab(state, { tabId: "tab-a", groupId: "group-main", tabLabel: "Orders" });
 
     assertEqual(state.tabs["tab-a"]?.label, "Orders", "tab label should accept explicit updates");
-    assertEqual(state.tabs["tab-a"]?.closePolicy, "fixed", "tab close policy should remain fixed by default");
+    assertEqual(state.tabs["tab-a"]?.closePolicy, "closeable", "tab close policy should remain closeable by default");
   });
 
   test("tab closeability contract is explicit for fixed and closeable tabs", () => {
     let state = createInitialShellContextState({ initialTabId: "tab-a" });
     state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
 
-    assertEqual(getTabCloseability(state, "tab-a").canClose, false, "fixed tabs should never be closeable");
+    assertEqual(getTabCloseability(state, "tab-a").canClose, true, "default tabs should be closeable");
     assertEqual(
       getTabCloseability(state, "tab-a").reason,
-      "fixed-policy",
-      "fixed tabs should report fixed-policy reason",
+      null,
+      "closeable tabs should report no disabled reason",
     );
     assertEqual(getTabCloseability(state, "tab-b").canClose, true, "closeable policy should allow close action");
     assertEqual(
@@ -108,7 +108,7 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
     assertEqual(metadata.map((entry) => entry.tabId).join(","), "tab-a,tab-b,tab-c", "tab metadata should follow tabOrder");
     assertEqual(metadata[1]?.label, "Orders", "metadata should expose registered tab labels");
     assertEqual(metadata[1]?.isActive, true, "active tab metadata should mark selected tab");
-    assertEqual(metadata[0]?.closeability.reason, "fixed-policy", "fixed tabs should stay non-closeable");
+    assertEqual(metadata[0]?.closeability.reason, null, "default tabs should be closeable");
     assertEqual(metadata[2]?.closeability.reason, null, "closeable tabs should have enabled close action");
   });
 
@@ -133,8 +133,8 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
     assertEqual(state.activeTabId, "tab-c", "active close should fall back left when no right tab exists");
   });
 
-  test("tab strip renders close affordance only for closeable tabs", () => {
-    let state = createInitialShellContextState({ initialTabId: "tab-fixed", initialGroupId: "group-main" });
+  test("tab strip renders close affordance for all closeable tabs", () => {
+    let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
     state = registerTab(state, { tabId: "tab-closeable", groupId: "group-main", closePolicy: "closeable" });
     state = {
       ...state,
@@ -156,14 +156,14 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
       "main",
       [
         {
-          instanceId: "tab-fixed",
-          definitionId: "tab-fixed",
-          id: "tab-fixed",
-          partDefinitionId: "tab-fixed",
-          title: "Fixed",
+          instanceId: "tab-a",
+          definitionId: "tab-a",
+          id: "tab-a",
+          partDefinitionId: "tab-a",
+          title: "Tab A",
           args: {},
           slot: "main",
-          component: "c-fixed",
+          component: "c-tab-a",
           pluginId: "plugin-a",
         },
         {
@@ -178,18 +178,18 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
           pluginId: "plugin-a",
         },
       ],
-      "tab-fixed",
+      "tab-a",
       {
         contextState: state,
       } as ShellRuntime,
     );
 
     const closeButtonCount = (html.match(/data-action="close-tab"/g) ?? []).length;
-    assertEqual(closeButtonCount, 1, "only closeable tab should render a close button");
+    assertEqual(closeButtonCount, 2, "all closeable tabs should render a close button");
     assertEqual(
-      html.includes('data-tab-item="tab-fixed" data-tab-can-close="false"'),
+      html.includes('data-tab-item="tab-a" data-tab-can-close="true"'),
       true,
-      "fixed tab metadata should remain non-closeable",
+      "default tab should be closeable",
     );
     assertEqual(
       html.includes('data-tab-item="tab-closeable" data-tab-can-close="true"'),
@@ -207,7 +207,7 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
       "close control should show clearer cross-platform shortcut hint",
     );
     assertEqual(
-      html.includes('title="Fixed tab — drag to rearrange"'),
+      html.includes('title="Tab A tab — drag to rearrange"'),
       true,
       "tab title should include drag rearrange hint",
     );

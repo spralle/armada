@@ -24,24 +24,10 @@ test("intent execution boundary activates plugin with intent trigger", async () 
   );
 });
 
-test("runtime command surface path dispatches through action surface", async () => {
-  const commandSurfacePath = resolve(process.cwd(), "apps/shell/src/shell-runtime/command-surface-render.ts");
+test("keyboard handlers resolve and dispatch through keybinding service", async () => {
   const keyboardPath = resolve(process.cwd(), "apps/shell/src/shell-runtime/keyboard-handlers.ts");
-  const [commandSurfaceSource, keyboardSource] = await Promise.all([
-    readFile(commandSurfacePath, "utf8"),
-    readFile(keyboardPath, "utf8"),
-  ]);
+  const keyboardSource = await readFile(keyboardPath, "utf8");
 
-  assert.match(
-    commandSurfaceSource,
-    /const availableActions = runtime\.actionSurface\.actions\.filter\(/,
-    "panel should filter all actions from runtime action surface",
-  );
-  assert.match(
-    commandSurfaceSource,
-    /await bindings\.dispatchAction\(actionId, toActionContext\(runtime\)\);/,
-    "panel dispatch should route through dispatch binding",
-  );
   assert.match(
     keyboardSource,
     /const resolution = keybindingService\.resolve\(normalizedChord, context\);/,

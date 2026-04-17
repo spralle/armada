@@ -9,7 +9,6 @@ import {
 } from "./context-state.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 import { openPartInstanceWithArgs } from "./part-instance-flow.js";
-import { isUtilityTabId } from "./utility-tabs.js";
 
 export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
@@ -38,26 +37,25 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
     assertEqual(reopened.tabOrder.join(","), "tab-a,tab-b,tab-c", "reopen should restore deterministic order index");
   });
 
-  test("utility tabs remain fixed and excluded from reopen eligibility", () => {
+  test("reopen restores tab from closed history regardless of tab id prefix", () => {
     const state = {
-      ...createInitialShellContextState({ initialTabId: "utility.plugins", initialGroupId: "group-main" }),
+      ...createInitialShellContextState({ initialTabId: "utility.sync", initialGroupId: "group-main" }),
       closedTabHistory: [
           {
-            tabId: "utility.plugins",
+            tabId: "utility.sync",
             groupId: "group-main",
-            label: "Plugins",
-            closePolicy: "fixed" as const,
+            label: "Cross-window sync",
+            closePolicy: "closeable" as const,
             slot: "main" as const,
             orderIndex: 0,
           },
         ],
     };
 
-    assertEqual(isUtilityTabId("utility.plugins"), true, "utility tab id should be recognized");
-    assertEqual(canReopenClosedTab(state, "main"), false, "utility tabs should not contribute reopen eligibility");
+    assertEqual(canReopenClosedTab(state, "main"), true, "any closed tab should contribute reopen eligibility");
     const reopened = reopenMostRecentlyClosedTab(state, "main");
-    assertEqual(reopened.tabs["utility.plugins"]?.closePolicy, "fixed", "utility tabs should remain fixed after reopen attempt");
-    assertEqual(reopened.closedTabHistory.length, 0, "utility-only history should be drained without restoring tabs");
+    assertEqual(reopened.tabs["utility.sync"]?.closePolicy, "closeable", "reopened tab should be closeable");
+    assertEqual(reopened.closedTabHistory.length, 0, "history should be drained after reopen");
   });
 
   test("reopen drops invalid payloads from bounded history gracefully", () => {

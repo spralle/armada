@@ -13,7 +13,7 @@ import { createReactPanelsHost } from "../ui/react/panels-host.js";
 import { getVisibleComposedParts } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
-import { deriveCloseableTabIds, rerenderAfterPluginToggle } from "./runtime-render-transition.js";
+import { deriveCloseableTabIds } from "./runtime-render-transition.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
 
 type ReactPanelsHost = ReturnType<typeof createReactPanelsHost>;
@@ -35,7 +35,6 @@ export interface RuntimeRenderBindings {
   primeEnabledPluginActivations: () => Promise<void>;
   publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => void;
   refreshCommandContributions: () => void;
-  renderCommandSurface: () => void;
   renderContextControlsPanel: () => void;
   renderParts: () => void;
   renderSyncStatus: () => void;
@@ -69,39 +68,6 @@ export function initializeReactPanels(
       }));
       bindings.renderSyncStatus();
     },
-    onTogglePlugin: async (pluginId, enabled) => {
-      try {
-        runtime.pluginNotice = "";
-        await runtime.registry.setEnabled(pluginId, enabled);
-        bindings.refreshCommandContributions();
-      } catch (error) {
-        runtime.pluginNotice = `Unable to toggle plugin '${pluginId}'. See console diagnostics.`;
-        console.error("[shell] failed to toggle plugin", pluginId, error);
-      }
-
-      rerenderAfterPluginToggle(
-        () => bindings.renderParts(),
-        () => renderPanels(root, runtime),
-        () => bindings.renderCommandSurface(),
-      );
-    },
-    onActivatePlugin: async (pluginId) => {
-      try {
-        runtime.pluginNotice = "";
-        await bindings.activatePluginForBoundary({
-          pluginId,
-          triggerType: "view",
-          triggerId: "utility.plugins",
-        });
-        bindings.refreshCommandContributions();
-      } catch (error) {
-        runtime.pluginNotice = `Unable to activate plugin '${pluginId}'. See console diagnostics.`;
-        console.error("[shell] failed to activate plugin", pluginId, error);
-      }
-      renderPanels(root, runtime);
-      bindings.renderParts();
-      bindings.renderCommandSurface();
-    },
     onChooseIntentAction: async (index) => {
       if (!runtime.activeIntentSession) {
         return;
@@ -128,7 +94,6 @@ export function initializeReactPanels(
   panelsByRuntime.set(runtime, host);
   bindings.refreshCommandContributions();
   renderPanels(root, runtime);
-  bindings.renderCommandSurface();
 }
 
 export function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {

@@ -12,13 +12,10 @@ import type { IntentActionMatch } from "../../intent-runtime.js";
 import type { ShellRuntime } from "../../app/types.js";
 import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";
-import { KeybindingsSettingsPanel } from "./keybinding-settings-panel.js";
-import { ContextControlsPanel } from "./context-controls-panel.js";
+
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
-  onTogglePlugin: (pluginId: string, enabled: boolean) => Promise<void>;
-  onActivatePlugin: (pluginId: string) => Promise<void>;
   onChooseIntentAction: (index: number) => void;
   onDismissChooser: () => void;
   onPendingFocusApplied: () => void;
@@ -51,18 +48,6 @@ export function createReactPanelsHost(
 
   const host: PanelsHost = {
     render() {
-      const pluginRoot = ensureRoot("plugin-controls");
-      if (pluginRoot) {
-        pluginRoot.render(
-          <PluginControlsPanel
-            disabled={runtime.syncDegraded}
-            notice={runtime.pluginNotice}
-            snapshot={runtime.registry.getSnapshot()}
-            onToggle={bindings.onTogglePlugin}
-            onActivate={bindings.onActivatePlugin}
-          />,
-        );
-      }
       const syncRoot = ensureRoot("sync-status");
       if (syncRoot) {
         syncRoot.render(
@@ -85,16 +70,6 @@ export function createReactPanelsHost(
           />,
         );
       }
-      const contextRoot = ensureRoot("context-controls");
-      if (contextRoot) {
-        contextRoot.render(
-          <ContextControlsPanel
-            disabled={runtime.syncDegraded}
-            value={readGroupSelectionContext(runtime)}
-            onApply={bindings.onApplyContextValue}
-          />,
-        );
-      }
       const inspectorRoot = ensureRoot("dev-context-inspector");
       if (inspectorRoot) {
         inspectorRoot.render(
@@ -106,16 +81,6 @@ export function createReactPanelsHost(
         );
       }
 
-      const keybindingsRoot = ensureRoot("keybinding-settings");
-      if (keybindingsRoot) {
-        keybindingsRoot.render(
-          <KeybindingsSettingsPanel
-            manager={runtime.keybindingOverrideManager}
-            pluginBindings={runtime.actionSurface.keybindings}
-            onChanged={() => host.render()}
-          />,
-        );
-      }
     },
     unmount() {
       for (const entry of roots.values()) {
@@ -126,75 +91,6 @@ export function createReactPanelsHost(
   };
 
   return host;
-}
-
-function PluginControlsPanel(props: {
-  snapshot: ReturnType<ShellRuntime["registry"]["getSnapshot"]>;
-  notice: string;
-  disabled: boolean;
-  onToggle: (pluginId: string, enabled: boolean) => Promise<void>;
-  onActivate: (pluginId: string) => Promise<void>;
-}) {
-  const loadedContracts = props.snapshot.plugins
-    .filter((plugin) => plugin.contract !== null)
-    .map((plugin) => plugin.contract?.manifest.name ?? plugin.id)
-    .join(", ");
-
-  return (
-    <>
-      <h2>Plugins ({props.snapshot.tenantId})</h2>
-      <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--ghost-muted-foreground)" }}>Loaded: {loadedContracts || "none"}</p>
-      {props.notice ? <p className="plugin-notice">{props.notice}</p> : null}
-      {props.snapshot.plugins.length === 0 ? (
-        <p style={{ margin: 0, color: "var(--ghost-muted-foreground)" }}>No registered plugin descriptors.</p>
-      ) : (
-        props.snapshot.plugins.map((plugin) => (
-          <label className="plugin-row" key={plugin.id}>
-            <input
-              checked={plugin.enabled}
-              data-plugin-toggle={plugin.id}
-              disabled={props.disabled}
-              onChange={(event) => {
-                void props.onToggle(plugin.id, event.currentTarget.checked);
-              }}
-              type="checkbox"
-            />
-            <strong>{plugin.id}</strong> <small>({plugin.loadMode})</small>
-            {" "}
-            <small style={{ color: "var(--ghost-muted-foreground)" }}>[{plugin.lifecycle.state}]</small>
-            {plugin.enabled && plugin.lifecycle.state !== "active" && plugin.lifecycle.state !== "activating" ? (
-              <button
-                className="plugin-activate-btn"
-                disabled={props.disabled}
-                onClick={(event) => {
-                  event.preventDefault();
-                  void props.onActivate(plugin.id);
-                }}
-                type="button"
-              >
-                Activate
-              </button>
-            ) : null}
-            {plugin.failure ? (
-              <p className="plugin-error">{plugin.failure.code}: {plugin.failure.message}</p>
-            ) : null}
-          </label>
-        ))
-      )}
-      {props.snapshot.diagnostics.length > 0 ? (
-        <details>
-          <summary style={{ cursor: "pointer", fontSize: 12, color: "var(--ghost-muted-foreground)" }}>Diagnostics (dev/demo)</summary>
-          <ul className="plugin-diag-list">
-            {props.snapshot.diagnostics.slice(0, 5).map((item) => (
-              <li key={`${item.at}:${item.code}:${item.pluginId}`}>
-                <strong>{item.code}</strong> [{item.level}] {item.message}
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
-    </>
-  );
 }
 
 function SyncStatusPanel(props: {

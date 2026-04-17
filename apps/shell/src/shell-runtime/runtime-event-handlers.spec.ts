@@ -55,7 +55,6 @@ function createBindings() {
   return {
     activatePluginForBoundary: async () => true,
     announce() {},
-    renderCommandSurface() {},
     renderContextControlsPanel() {},
     renderParts() {},
     renderSyncStatus() {},

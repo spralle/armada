@@ -172,3 +172,26 @@ export {
   INTENT_ENTITY_INSPECT,
   INTENT_ENTITY_ASSIGN,
 } from "./domain-intents.js";
+
+export type {
+  PluginRegistryService,
+  PluginRegistryEntry,
+  PluginRegistrySnapshot as PluginRegistryServiceSnapshot,
+} from "./plugin-registry-service.js";
+export { PLUGIN_REGISTRY_SERVICE_ID } from "./plugin-registry-service.js";
+
+export type { PluginManagementService } from "./plugin-management-service.js";
+export { PLUGIN_MANAGEMENT_SERVICE_ID } from "./plugin-management-service.js";
+
+export type { SyncStatusService } from "./sync-status-service.js";
+export { SYNC_STATUS_SERVICE_ID } from "./sync-status-service.js";
+
+export type { ContextService } from "./context-service.js";
+export { CONTEXT_SERVICE_ID } from "./context-service.js";
+
+export type {
+  KeybindingService,
+  KeybindingEntry,
+  KeybindingOverride,
+} from "./keybinding-service.js";
+export { KEYBINDING_SERVICE_ID } from "./keybinding-service.js";

@@ -11,7 +11,7 @@ import type { WorkspaceManagerState } from "../context-state/workspace-types.js"
 import { isRecord } from "./utils.js";
 import type { WorkspacePersistenceEnvelopeV1 } from "./contracts.js";
 import { sanitizeDockTreeState } from "./sanitize-dock-tree.js";
-import { ensureRequiredUtilityTabs, isNonUtilityClosedHistoryEntry } from "../context-state/utility-tabs-sanitize.js";
+
 
 function sanitizeTabArgs(input: unknown): Record<string, string> {
   if (!isRecord(input)) {
@@ -34,7 +34,6 @@ export function sanitizeContextState(input: unknown, fallback: ShellContextState
   }
   const groups = sanitizeGroups(input.groups, fallback.groups);
   const tabs = sanitizeTabs(input.tabs, fallback.tabs);
-  ensureRequiredUtilityTabs(tabs);
   const tabOrder = sanitizeTabOrder(input.tabOrder, tabs, fallback.tabOrder);
   const activeTabId = sanitizeActiveTabId(input.activeTabId, tabs, tabOrder, fallback.activeTabId);
   const dockTree = sanitizeDockTreeState(input.dockTree, tabs, tabOrder, activeTabId);
@@ -90,7 +89,6 @@ function sanitizeClosedTabHistoryEntries(input: unknown): ClosedTabHistoryEntry[
     return [];
   }
   const sanitized = input
-    .filter((entry) => isNonUtilityClosedHistoryEntry(entry))
     .map((entry) => sanitizeClosedTabHistoryEntry(entry))
     .filter((entry): entry is ClosedTabHistoryEntry => entry !== null);
 
@@ -179,7 +177,7 @@ function sanitizeTabs(
     const label = typeof raw.label === "string" && raw.label
       ? raw.label
       : (typeof raw.name === "string" && raw.name ? raw.name : id);
-    const closePolicy = raw.closePolicy === "closeable" ? "closeable" : "fixed";
+    const closePolicy = raw.closePolicy === "fixed" ? "fixed" : "closeable";
     const args = sanitizeTabArgs(raw.args);
     next[id] = { id, definitionId, partDefinitionId, groupId, label, closePolicy, args };
   }

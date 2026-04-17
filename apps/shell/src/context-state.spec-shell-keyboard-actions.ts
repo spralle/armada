@@ -341,7 +341,6 @@ function createKeyboardBindings(
     },
     executeResolvedAction: async () => {},
     publishWithDegrade: () => {},
-    renderCommandSurface: () => {},
     renderContextControls: () => {},
     renderEdgeSlots: () => {},
     renderParts: () => {},

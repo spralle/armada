@@ -1,10 +1,8 @@
 import { composeEnabledPluginContributions } from "@ghost/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
-import { DEV_MODE } from "../app/constants.js";
 import { escapeHtml } from "../app/utils.js";
 import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
-import { listAvailableUtilityTabs } from "../utility-tabs.js";
 import { renderPartBody } from "./parts-rendering-body.js";
 import { renderDockDropOverlay, renderDockPartPanel } from "./parts-rendering-dock-panel.js";
 import { renderDockSplitTrackStyle } from "./parts-rendering-dock-split-style.js";
@@ -109,21 +107,7 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
     })
     .filter((part) => part !== null);
 
-  const tabOrderSet = new Set(runtime.contextState.tabOrder);
-  const utilityParts = listAvailableUtilityTabs({ devMode: DEV_MODE })
-    .filter((tab) => tabOrderSet.has(tab.id))
-    .map((tab) => ({
-      instanceId: tab.id,
-      definitionId: tab.id,
-      id: tab.id,
-      partDefinitionId: tab.id,
-      title: tab.title,
-      args: {},
-      slot: tab.slot,
-      pluginId: tab.pluginId ?? "shell.utility",
-    } satisfies ComposedShellPart));
-
-  return [...utilityParts, ...pluginParts];
+  return pluginParts;
 }
 
 export function renderPartCard(
