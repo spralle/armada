@@ -56,8 +56,9 @@ const PANEL_STYLES = `
 .theme-swatch-container.is-open{display:block}
 .theme-swatch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(28px,1fr));gap:4px}
 .theme-swatch{width:24px;height:24px;border-radius:3px;border:1px solid var(--ghost-border);cursor:default}
-.theme-swatch-groups{display:flex;flex-direction:column;gap:8px}
-.theme-swatch-group-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--ghost-muted-foreground);margin:0 0 2px}
+.theme-swatch-groups{display:flex;flex-direction:column;gap:12px}
+.theme-swatch-group{background:var(--ghost-surface);border:1px solid var(--ghost-border);border-radius:6px;padding:8px 10px}
+.theme-swatch-group-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--ghost-muted-foreground);margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid var(--ghost-border-muted)}
 `;
 /* eslint-enable max-len */
 
@@ -78,14 +79,23 @@ const ANSI_NAMES: Record<string, string> = {
 };
 const isColor = (v: string) => /^#|^rgb|^hsl|^color-mix/.test(v);
 
-function makeSwatch(color: string, tooltip: string): HTMLElement {
+function cssVarToLabel(cssVar: string): string {
+  return cssVar
+    .replace(/^--ghost-/, "")
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function makeSwatch(color: string, label: string, cssVar?: string): HTMLElement {
   const el = document.createElement("div");
-  el.className = "theme-swatch"; el.style.backgroundColor = color; el.title = tooltip;
+  el.className = "theme-swatch"; el.style.backgroundColor = color;
+  el.title = cssVar ? `${label}\n${cssVar}` : label;
   return el;
 }
 
 function makeGroup(label: string, swatches: HTMLElement[]): HTMLElement {
   const wrap = document.createElement("div");
+  wrap.className = "theme-swatch-group";
   const lbl = document.createElement("p");
   lbl.className = "theme-swatch-group-label"; lbl.textContent = label;
   wrap.appendChild(lbl);
@@ -104,7 +114,7 @@ function createSwatchGrid(palette: Record<string, string>): HTMLElement {
     for (const token of group.tokens) {
       const cssVar = GHOST_THEME_CSS_VARS[token as keyof FullThemePalette];
       const color = palette[cssVar];
-      if (color && isColor(color)) { sw.push(makeSwatch(color, cssVar)); used.add(cssVar); }
+      if (color && isColor(color)) { sw.push(makeSwatch(color, cssVarToLabel(cssVar), cssVar)); used.add(cssVar); }
     }
     if (sw.length > 0) container.appendChild(makeGroup(group.label, sw));
   }
@@ -122,7 +132,7 @@ function createSwatchGrid(palette: Record<string, string>): HTMLElement {
   // Safety net for uncategorized keys
   const other: HTMLElement[] = [];
   for (const [key, color] of Object.entries(palette)) {
-    if (!used.has(key) && isColor(color)) other.push(makeSwatch(color, key));
+    if (!used.has(key) && isColor(color)) other.push(makeSwatch(color, cssVarToLabel(key), key));
   }
   if (other.length > 0) container.appendChild(makeGroup("Other", other));
   return container;
