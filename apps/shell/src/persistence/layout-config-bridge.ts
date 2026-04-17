@@ -7,7 +7,14 @@
  * Fallback: if config service is unavailable, falls back to localStorage.
  */
 
-import type { ConfigurationPropertySchema, ConfigurationService } from "@weaver/config-types";
+import type { ConfigurationPropertySchema } from "@ghost/plugin-contracts";
+
+/** Stub for ConfigurationService (@weaver/config-types removed). */
+interface ConfigurationService {
+  get<T = unknown>(key: string): T | undefined;
+  set(key: string, value: unknown, layer?: string): void;
+  [key: string]: unknown;
+}
 import {
   createDefaultLayoutState,
   sanitizeLayoutState,
