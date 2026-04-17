@@ -4,7 +4,10 @@ import {
 } from "../context/runtime-state.js";
 import type { ShellRuntime } from "../app/types.js";
 
-export function toActionContext(runtime: ShellRuntime): Record<string, string> {
+export function toActionContext(
+  runtime: ShellRuntime,
+  bridgeAvailability?: Record<string, string>,
+): Record<string, string> {
   const context: Record<string, string> = {
     [CORE_GROUP_CONTEXT_KEY]: readGroupSelectionContext(runtime),
     "context.domain.selection": readGroupSelectionContext(runtime),
@@ -25,6 +28,12 @@ export function toActionContext(runtime: ShellRuntime): Record<string, string> {
   const vesselPriorityId = runtime.contextState.selectionByEntityType.vessel?.priorityId;
   if (vesselPriorityId) {
     context["selection.vesselId"] = vesselPriorityId;
+  }
+
+  if (bridgeAvailability) {
+    for (const [key, value] of Object.entries(bridgeAvailability)) {
+      context[key] = value;
+    }
   }
 
   return context;

@@ -12,6 +12,9 @@
   "references": [
     {
       "path": "../../packages/plugin-contracts"
+    },
+    {
+      "path": "../../packages/entity-bridge-contracts"
     }
   ],
   "include": [
@@ -48,6 +51,8 @@
     "src/ui/parts-controller-popout-transition.spec.ts",
     "src/ui/parts-controller-selection-transition.spec.ts",
     "src/ui/part-instance-popout-lifecycle.spec.ts",
-    "src/shell-runtime/runtime-render-transition.spec.ts"
+    "src/shell-runtime/runtime-render-transition.spec.ts",
+    "src/entity-bridges.spec.ts",
+    "src/open-part-handler.spec.ts"
   ]
 }
