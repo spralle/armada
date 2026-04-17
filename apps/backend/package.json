@@ -3,13 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@weaver/config-auth": "*",
-    "@weaver/config-engine": "*",
-    "@weaver/config-policy": "*",
-    "@weaver/config-providers": "*",
-    "@weaver/config-server": "*",
-    "@weaver/config-sessions": "*",
-    "@weaver/config-types": "*",
     "@ghost/config-plugin-runtime": "workspace:*",
     "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
   }

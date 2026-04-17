@@ -1,5 +1,19 @@
 import type { PartialThemePalette, TerminalPalette } from "./theme-derivation.js";
-import type { ConfigurationPropertySchema } from "@weaver/config-types";
+/** Configuration property schema (JSON Schema subset with extension fields). */
+export interface ConfigurationPropertySchema {
+  type?: string | readonly string[] | undefined;
+  title?: string | undefined;
+  description?: string | undefined;
+  default?: unknown;
+  enum?: readonly unknown[] | undefined;
+  format?: string | undefined;
+  pattern?: string | undefined;
+  properties?: Readonly<Record<string, ConfigurationPropertySchema>> | undefined;
+  items?: ConfigurationPropertySchema | readonly ConfigurationPropertySchema[] | undefined;
+  oneOf?: readonly ConfigurationPropertySchema[] | undefined;
+  anyOf?: readonly ConfigurationPropertySchema[] | undefined;
+  [key: string]: unknown;
+}
 
 export interface PluginGalleryBanner {
   color?: string | undefined;

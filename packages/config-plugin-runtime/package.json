@@ -18,8 +18,5 @@
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
-  "dependencies": {
-    "@weaver/config-types": "*",
-    "@weaver/config-engine": "*"
-  }
+  "dependencies": {}
 }
