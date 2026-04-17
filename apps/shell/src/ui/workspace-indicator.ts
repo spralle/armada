@@ -107,42 +107,38 @@ function mountWorkspaceIndicator(
     const manager = runtime.workspaceManager;
     const workspaceCount = manager.workspaceOrder.length;
 
-    // Hidden when only 1 workspace
-    if (workspaceCount <= 1) {
-      wrapper.style.display = "none";
-      wrapper.innerHTML = "";
-      return;
-    }
-
     wrapper.style.display = "";
     wrapper.innerHTML = "";
 
-    for (const wsId of manager.workspaceOrder) {
-      const ws = manager.workspaces[wsId];
-      if (!ws) continue;
+    // Only show workspace tab buttons when there are multiple workspaces
+    if (workspaceCount > 1) {
+      for (const wsId of manager.workspaceOrder) {
+        const ws = manager.workspaces[wsId];
+        if (!ws) continue;
 
-      const btn = document.createElement("button");
-      btn.className = "workspace-btn";
-      if (wsId === manager.activeWorkspaceId) {
-        btn.classList.add("active");
+        const btn = document.createElement("button");
+        btn.className = "workspace-btn";
+        if (wsId === manager.activeWorkspaceId) {
+          btn.classList.add("active");
+        }
+        btn.dataset.workspaceId = wsId;
+        btn.textContent = ws.name;
+        btn.title = ws.name;
+
+        btn.addEventListener("click", () => {
+          handleSwitchWorkspace(wsId, deps);
+        });
+
+        btn.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          showContextMenu(e, wsId, deps, render);
+        });
+
+        wrapper.appendChild(btn);
       }
-      btn.dataset.workspaceId = wsId;
-      btn.textContent = ws.name;
-      btn.title = ws.name;
-
-      btn.addEventListener("click", () => {
-        handleSwitchWorkspace(wsId, deps);
-      });
-
-      btn.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        showContextMenu(e, wsId, deps, render);
-      });
-
-      wrapper.appendChild(btn);
     }
 
-    // "+" button
+    // "+" button (always visible so users can create workspaces)
     const addBtn = document.createElement("button");
     addBtn.className = "workspace-btn workspace-add";
     addBtn.textContent = "+";
