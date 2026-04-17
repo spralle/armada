@@ -44,7 +44,12 @@ import type {
   DndDiagnosticRuntime,
   DndDiagnosticPath,
 } from "./dnd-diagnostics.js";
-import type { ConfigurationService } from "@weaver/config-types";
+/** Stub for ConfigurationService (@weaver/config-types removed). */
+interface ConfigurationService {
+  get<T = unknown>(key: string): T | undefined;
+  set(key: string, value: unknown, layer?: string): void;
+  [key: string]: unknown;
+}
 import type { PluginConfigSyncConfigurationService } from "../plugin-config-sync-controller.js";
 import type { GhostApiFactoryDependencies } from "../plugin-api/ghost-api-factory.js";
 import type { SyncStatusServiceDeps } from "../sync-status-service-registration.js";

@@ -1,18 +1,59 @@
 // Plugin schema ingestion bridge — extracts config schemas from plugin contracts
 
-import type { ConfigurationPropertySchema } from "@weaver/config-types";
-import type {
-  ConfigurationSchemaDeclaration,
-  ComposeResult,
-  ConfigurationSchemaRegistry,
-  RegisterSchemaResult,
-  UnregisterSchemaResult,
-} from "@weaver/config-engine";
-import {
-  deriveNamespace,
-  composeConfigurationSchemas,
-  createSchemaRegistry,
-} from "@weaver/config-engine";
+import type { ConfigurationPropertySchema } from "@ghost/plugin-contracts";
+
+// @weaver/config-engine removed — inline stub types and throwing functions
+
+/** Stub for ConfigurationSchemaDeclaration (@weaver/config-engine removed). */
+export interface ConfigurationSchemaDeclaration {
+  ownerId: string;
+  namespace: string;
+  properties: Record<string, ConfigurationPropertySchema>;
+}
+
+/** Stub for ComposeResult (@weaver/config-engine removed). */
+export interface ComposeResult {
+  schemas: Map<string, ConfigurationPropertySchema & { owner: string }>;
+  errors: Array<{ key: string; owners: string[]; message: string }>;
+}
+
+/** Stub for ConfigurationSchemaRegistry (@weaver/config-engine removed). */
+export interface ConfigurationSchemaRegistry {
+  register(declaration: ConfigurationSchemaDeclaration): RegisterSchemaResult;
+  unregister(ownerId: string): UnregisterSchemaResult;
+  getSchema(key: string): (ConfigurationPropertySchema & { owner: string }) | undefined;
+  getSchemas(): Map<string, ConfigurationPropertySchema & { owner: string }>;
+  getSchemasByOwner(ownerId: string): Map<string, ConfigurationPropertySchema>;
+  getCompositionErrors(): ComposeResult["errors"];
+}
+
+/** Stub for RegisterSchemaResult (@weaver/config-engine removed). */
+export interface RegisterSchemaResult {
+  registeredKeys: string[];
+  errors: ComposeResult["errors"];
+}
+
+/** Stub for UnregisterSchemaResult (@weaver/config-engine removed). */
+export interface UnregisterSchemaResult {
+  removedKeys: string[];
+}
+
+// @weaver/config-engine removed — stub throws
+function deriveNamespace(_pluginId: string): string {
+  throw new Error("@weaver/config-engine is not available");
+}
+
+// @weaver/config-engine removed — stub throws
+function composeConfigurationSchemas(
+  _declarations: ConfigurationSchemaDeclaration[],
+): ComposeResult {
+  throw new Error("@weaver/config-engine is not available");
+}
+
+// @weaver/config-engine removed — stub throws
+function createSchemaRegistry(): ConfigurationSchemaRegistry {
+  throw new Error("@weaver/config-engine is not available");
+}
 
 /**
  * Minimal plugin configuration input to avoid circular dependency

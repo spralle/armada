@@ -7,17 +7,22 @@
  * to existing localStorage persistence.
  */
 
-import type { ConfigurationService } from "@weaver/config-types";
-import {
-  createConfigurationService,
-  StaticJsonStorageProvider,
-} from "@weaver/config-providers";
-import {
-  createOverrideSessionProvider,
-  type OverrideSessionController,
-  type AuditEntry,
-} from "@weaver/config-sessions";
-import { armadaWeaver } from "@ghost/config-plugin-runtime";
+// @weaver/config-types, @weaver/config-providers, @weaver/config-sessions removed.
+// Stub types preserve the public API so downstream TypeScript is happy.
+
+/** Stub for ConfigurationService (@weaver/config-types removed). */
+interface ConfigurationService {
+  get<T = unknown>(key: string): T | undefined;
+  set(key: string, value: unknown, layer?: string): void;
+  onChange(key: string, listener: (value: unknown) => void): () => void;
+  [key: string]: unknown;
+}
+
+/** Stub for OverrideSessionController (@weaver/config-sessions removed). */
+interface OverrideSessionController {
+  [key: string]: unknown;
+}
+
 import { createLayoutConfigBridge } from "./persistence/layout-config-bridge.js";
 import { createContextConfigBridge } from "./persistence/context-config-bridge.js";
 import { createKeybindingConfigBridge } from "./persistence/keybinding-config-bridge.js";
@@ -43,21 +48,7 @@ export interface ShellConfigServiceResult {
  * Throws on failure — callers must catch and fall back.
  */
 export async function createShellConfigService(): Promise<ShellConfigServiceResult> {
-  const sessionController = createOverrideSessionProvider({
-    onAudit: (entry: AuditEntry) => {
-      console.log("[shell:config:session]", entry.action, entry.sessionId);
-    },
-  });
-
-  const configService = await createConfigurationService({
-    providers: [
-      new StaticJsonStorageProvider({ id: "core-defaults", layer: "core", data: {} }),
-    ],
-    weaverConfig: armadaWeaver,
-    session: sessionController,
-  });
-
-  return { configService, sessionController };
+  throw new Error("Config service unavailable: @weaver packages removed");
 }
 
 // ---------------------------------------------------------------------------
