@@ -17,14 +17,20 @@ import {
   createViewService,
   type ViewServiceDeps,
 } from "./view-service.js";
+import {
+  createWorkspaceService,
+  type WorkspaceServiceDependencies,
+  type WorkspaceServiceWithEmitter,
+} from "./workspace-service-impl.js";
 
 /**
  * Dependencies needed to create a scoped GhostApi for a plugin.
- * Composed from ActionServiceDependencies + WindowServiceDependencies + ViewServiceDeps.
+ * Composed from ActionServiceDependencies + WindowServiceDependencies + ViewServiceDeps + WorkspaceServiceDependencies.
  */
 export interface GhostApiFactoryDependencies
   extends ActionServiceDependencies, WindowServiceDependencies {
   readonly viewServiceDeps: ViewServiceDeps;
+  readonly workspaceServiceDeps: WorkspaceServiceDependencies;
 }
 
 /** Result of creating a scoped GhostApi, including shell-side handles. */
@@ -32,24 +38,27 @@ export interface GhostApiInstance {
   readonly api: GhostApi;
   readonly actionServiceHandle: ActionServiceWithEmitter;
   readonly windowServiceHandle: WindowServiceWithEmitter;
+  readonly workspaceServiceHandle: WorkspaceServiceWithEmitter;
 }
 
 /**
  * Create a scoped GhostApi instance for a single plugin activation.
- * Assembles ActionService, WindowService, and ViewService from the provided dependencies.
+ * Assembles ActionService, WindowService, ViewService, and WorkspaceService from the provided dependencies.
  */
 export function createGhostApi(deps: GhostApiFactoryDependencies): GhostApiInstance {
   const actionServiceHandle = createActionService(deps);
   const windowServiceHandle = createWindowService(deps);
   const viewService = createViewService(deps.viewServiceDeps);
+  const workspaceServiceHandle = createWorkspaceService(deps.workspaceServiceDeps);
 
   const api: GhostApi = {
     actions: actionServiceHandle.service,
     window: windowServiceHandle.service,
     views: viewService,
+    workspaces: workspaceServiceHandle.service,
   };
 
-  return { api, actionServiceHandle, windowServiceHandle };
+  return { api, actionServiceHandle, windowServiceHandle, workspaceServiceHandle };
 }
 
 /**

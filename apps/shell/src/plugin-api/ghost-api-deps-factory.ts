@@ -1,6 +1,7 @@
 import type { GhostApiFactoryDependencies } from "./ghost-api-factory.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { QuickPickBridge } from "../ui/quick-pick/quick-pick-bridge.js";
+import type { WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
 import { toActionContext } from "../shell-runtime/action-context.js";
 import { getVisiblePartDefinitions } from "../ui/parts-rendering.js";
 import { openPartInstanceWithArgs } from "../part-instance-flow.js";
@@ -15,6 +16,9 @@ import { updateContextState } from "../context/runtime-state.js";
 export function createGhostApiDeps(
   runtime: ShellRuntime,
   quickPickBridge: QuickPickBridge,
+  options?: {
+    getWorkspaceSwitchDeps?: () => WorkspaceSwitchDeps;
+  },
 ): GhostApiFactoryDependencies {
   return {
     getActionSurface: () => runtime.actionSurface,
@@ -41,6 +45,13 @@ export function createGhostApiDeps(
         updateContextState(runtime, result.state);
         return result.tabId;
       },
+    },
+
+    workspaceServiceDeps: {
+      getRuntime: () => runtime,
+      getWorkspaceSwitchDeps: options?.getWorkspaceSwitchDeps ?? (() => {
+        throw new Error("WorkspaceSwitchDeps not configured — workspace switching unavailable");
+      }),
     },
   };
 }
