@@ -166,3 +166,9 @@ export { THEME_SERVICE_ID } from "./theme-service.js";
 export type { PluginServices, PluginMountContext } from "./plugin-services.js";
 
 export { CONFIG_SERVICE_ID } from "./config-service.js";
+
+export {
+  INTENT_ENTITY_OPEN,
+  INTENT_ENTITY_INSPECT,
+  INTENT_ENTITY_ASSIGN,
+} from "./domain-intents.js";

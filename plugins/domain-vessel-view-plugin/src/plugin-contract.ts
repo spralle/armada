@@ -1,4 +1,5 @@
 import type { PluginContract } from "@ghost/plugin-contracts";
+import { INTENT_ENTITY_OPEN, INTENT_ENTITY_INSPECT } from "@ghost/plugin-contracts";
 
 const pluginContract = {
   manifest: {
@@ -15,6 +16,20 @@ const pluginContract = {
           container: "main",
         },
         component: "VesselViewPart",
+      },
+    ],
+    actions: [
+      {
+        id: "domain.vessel-view.open",
+        title: "Open Vessel View",
+        intent: INTENT_ENTITY_OPEN,
+        predicate: { entityType: { $eq: "vessel" } },
+      },
+      {
+        id: "domain.vessel-view.inspect",
+        title: "Inspect Vessel Details",
+        intent: INTENT_ENTITY_INSPECT,
+        predicate: { entityType: { $eq: "vessel" } },
       },
     ],
     selection: [
