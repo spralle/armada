@@ -347,6 +347,7 @@ function createKeyboardBindings(
     publishWithDegrade: () => {},
     renderCommandSurface: () => {},
     renderContextControls: () => {},
+    renderEdgeSlots: () => {},
     renderParts: () => {},
     renderSyncStatus: () => {},
     getDefaultKeybindings: () => DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({

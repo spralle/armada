@@ -265,9 +265,9 @@ test("deriveFullPalette fills all gaps for Tokyo Night minimal palette", () => {
   assert.ok(derived.selectionForeground, "selectionForeground must be derived");
   assert.ok(derived.hoverBackground, "hoverBackground must be derived");
   assert.ok(derived.activeBackground, "activeBackground must be derived");
-  assert.ok(derived.sidebar, "sidebar must be derived");
-  assert.ok(derived.sidebarForeground, "sidebarForeground must be derived");
-  assert.ok(derived.sidebarBorder, "sidebarBorder must be derived");
+  assert.ok(derived.edgeLeft, "edgeLeft must be derived");
+  assert.ok(derived.edgeLeftForeground, "edgeLeftForeground must be derived");
+  assert.ok(derived.edgeLeftBorder, "edgeLeftBorder must be derived");
   assert.ok(derived.radius, "radius must be derived");
 });
 

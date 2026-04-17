@@ -33,6 +33,7 @@ export interface ShellBootstrapComposition {
   renderParts: (root: HTMLElement, runtime: ShellRuntime) => void;
   renderSyncStatus: (root: HTMLElement, runtime: ShellRuntime) => void;
   renderContextControlsPanel: (root: HTMLElement, runtime: ShellRuntime) => void;
+  renderEdgeSlots: (root: HTMLElement, runtime: ShellRuntime) => void;
 }
 
 export interface ShellBootstrapRuntimeDeps {
@@ -114,6 +115,9 @@ export function createShellBootstrapComposition(
       renderContextControlsPanel: (viewRoot, viewRuntime) => {
         adapters.renderer.renderContextControlsPanel(viewRoot, viewRuntime);
       },
+      renderEdgeSlots: (viewRoot, viewRuntime) => {
+        adapters.renderer.renderEdgeSlots(viewRoot, viewRuntime);
+      },
     };
   }
 
@@ -177,6 +181,9 @@ export function createShellBootstrapComposition(
     },
     renderContextControlsPanel: (viewRoot, viewRuntime) => {
       renderContextControlsPanelView(viewRoot, viewRuntime);
+    },
+    renderEdgeSlots: () => {
+      // Edge slots are only rendered in contract composition mode.
     },
   };
 }

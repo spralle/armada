@@ -125,14 +125,26 @@ export interface FullThemePalette {
   chart3: string;
   chart4: string;
   chart5: string;
-  sidebar: string;
-  sidebarForeground: string;
-  sidebarPrimary: string;
-  sidebarPrimaryForeground: string;
-  sidebarAccent: string;
-  sidebarAccentForeground: string;
-  sidebarBorder: string;
-  sidebarRing: string;
+  edgeTop: string;
+  edgeTopForeground: string;
+  edgeTopBorder: string;
+  edgeTopAccent: string;
+  edgeTopAccentForeground: string;
+  edgeBottom: string;
+  edgeBottomForeground: string;
+  edgeBottomBorder: string;
+  edgeBottomAccent: string;
+  edgeBottomAccentForeground: string;
+  edgeLeft: string;
+  edgeLeftForeground: string;
+  edgeLeftBorder: string;
+  edgeLeftAccent: string;
+  edgeLeftAccentForeground: string;
+  edgeRight: string;
+  edgeRightForeground: string;
+  edgeRightBorder: string;
+  edgeRightAccent: string;
+  edgeRightAccentForeground: string;
   // Surface variants (derived from surface)
   surfaceElevated: string;
   surfaceHover: string;
@@ -274,11 +286,27 @@ export function deriveFullPalette(
     activeBackground: adjustLightness(core.surface, sign * 6),
     chart1: core.primary, chart2: core.secondary, chart3: core.accent,
     chart4: core.success, chart5: core.warning,
-    sidebar: adjustLightness(core.surface, sign * -3),
-    sidebarForeground: foreground, sidebarPrimary: core.primary,
-    sidebarPrimaryForeground: primaryFg, sidebarAccent: core.accent,
-    sidebarAccentForeground: contrastSafe(core.accent),
-    sidebarBorder: core.border, sidebarRing: core.ring,
+    // Edge slot tokens (top, bottom, left, right)
+    edgeTop: adjustLightness(core.surface, sign * -3),
+    edgeTopForeground: foreground,
+    edgeTopBorder: core.border,
+    edgeTopAccent: core.accent,
+    edgeTopAccentForeground: contrastSafe(core.accent),
+    edgeBottom: adjustLightness(core.surface, sign * -3),
+    edgeBottomForeground: foreground,
+    edgeBottomBorder: core.border,
+    edgeBottomAccent: core.accent,
+    edgeBottomAccentForeground: contrastSafe(core.accent),
+    edgeLeft: adjustLightness(core.surface, sign * -3),
+    edgeLeftForeground: foreground,
+    edgeLeftBorder: core.border,
+    edgeLeftAccent: core.accent,
+    edgeLeftAccentForeground: contrastSafe(core.accent),
+    edgeRight: adjustLightness(core.surface, sign * -3),
+    edgeRightForeground: foreground,
+    edgeRightBorder: core.border,
+    edgeRightAccent: core.accent,
+    edgeRightAccentForeground: contrastSafe(core.accent),
     ...surfaceVars, ...fgVars, ...borderVars, ...primaryFx, ...statusVars,
     neutralBackground: adjustLightness(background, sign * 12),
   };

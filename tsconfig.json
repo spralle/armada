@@ -45,6 +45,9 @@
     },
     {
       "path": "./plugins/view-picker-plugin"
+    },
+    {
+      "path": "./plugins/topbar-widgets-plugin"
     }
   ]
 }

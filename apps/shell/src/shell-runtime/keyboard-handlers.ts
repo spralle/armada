@@ -30,6 +30,7 @@ export interface KeyboardBindings {
   applySelection: (event: import("../window-bridge.js").SelectionSyncEvent) => void;
   publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => void;
   renderContextControls: () => void;
+  renderEdgeSlots: () => void;
   renderParts: () => void;
   renderCommandSurface: () => void;
   renderSyncStatus: () => void;
@@ -222,6 +223,7 @@ export function bindKeyboardShortcuts(
             : `Keybinding (${normalizedChord.value}): Action '${action.id}' is not executable in current context.`;
         if (shellResult.handled) {
           bindings.renderContextControls();
+          bindings.renderEdgeSlots();
           if (shellResult.executed && needsStructuralRender(action.id)) {
             bindings.renderParts();
           } else if (shellResult.executed) {
@@ -232,6 +234,7 @@ export function bindKeyboardShortcuts(
           // Plugin-registered actions may mutate context state (e.g., openView).
           // Trigger a full structural re-render so new tabs/views appear.
           bindings.renderContextControls();
+          bindings.renderEdgeSlots();
           bindings.renderParts();
           bindings.renderSyncStatus();
         }

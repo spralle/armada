@@ -13,16 +13,16 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
 
   root.innerHTML = `
   <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; --ghost-edge-bottom-min-height: 24px; --ghost-edge-left-min-width: auto; --ghost-edge-right-min-width: auto; }
     html, body, #root { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: transparent; color: var(--ghost-foreground); }
     * { scrollbar-width: thin; scrollbar-color: var(--ghost-muted-foreground) transparent; }
     .shell { display: grid; grid-template-areas: 'top top top' 'left main right' 'bottom bottom bottom'; grid-template-rows: auto 1fr auto; grid-template-columns: auto 1fr auto; width: 100%; height: 100%; overflow: hidden; }
     .edge-slot { display: flex; overflow: hidden; }
-    .edge-slot-top { grid-area: top; flex-direction: row; }
-    .edge-slot-bottom { grid-area: bottom; flex-direction: row; }
-    .edge-slot-left { grid-area: left; flex-direction: column; }
-    .edge-slot-right { grid-area: right; flex-direction: column; }
+    .edge-slot-top { grid-area: top; flex-direction: row; min-height: var(--ghost-edge-top-min-height, 36px); background: var(--ghost-edge-top); color: var(--ghost-edge-top-foreground); border-bottom: 1px solid var(--ghost-edge-top-border); padding: 0 8px; align-items: center; }
+    .edge-slot-bottom { grid-area: bottom; flex-direction: row; min-height: var(--ghost-edge-bottom-min-height, 24px); background: var(--ghost-edge-bottom); color: var(--ghost-edge-bottom-foreground); border-top: 1px solid var(--ghost-edge-bottom-border); padding: 0 8px; align-items: center; }
+    .edge-slot-left { grid-area: left; flex-direction: column; min-width: var(--ghost-edge-left-min-width, auto); background: var(--ghost-edge-left); color: var(--ghost-edge-left-foreground); border-right: 1px solid var(--ghost-edge-left-border); padding: 4px 0; align-items: center; }
+    .edge-slot-right { grid-area: right; flex-direction: column; min-width: var(--ghost-edge-right-min-width, auto); background: var(--ghost-edge-right); color: var(--ghost-edge-right-foreground); border-left: 1px solid var(--ghost-edge-right-border); padding: 4px 0; align-items: center; }
     .edge-slot-start, .edge-slot-center, .edge-slot-end { display: flex; align-items: center; }
     .edge-slot-start { justify-content: flex-start; }
     .edge-slot-center { flex: 1; justify-content: center; }
