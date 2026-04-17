@@ -25,10 +25,7 @@ function createRuntime(): ShellRuntime {
     contextState: state,
     windowId: "window-host",
     notice: "",
-    pendingIntentMatches: [],
-    pendingIntent: null,
-    chooserFocusIndex: 0,
-    chooserReturnFocusSelector: null,
+    activeIntentSession: null,
     pendingFocusSelector: null,
     contextPersistence: {
       save() {

@@ -28,7 +28,7 @@ function createTestRuntime(): ShellRuntime {
     pluginNotice: "",
     intentNotice: "",
     commandNotice: "",
-    pendingIntentMatches: [],
+    activeIntentSession: null,
     lastIntentTrace: null,
     contextState: createInitialShellContextState({
       initialTabId: "tab-main",

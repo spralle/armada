@@ -9,6 +9,7 @@ import type {
 import type {
   IntentActionMatch,
   IntentResolutionTrace,
+  IntentSession,
   ShellIntent,
 } from "../intent-runtime.js";
 import type { DevLaneMetadata, RenderTabMetadata } from "./types.js";
@@ -21,7 +22,7 @@ export interface ShellCoreSnapshot {
   pluginNotice: string;
   intentNotice: string;
   commandNotice: string;
-  pendingIntentMatches: IntentActionMatch[];
+  activeIntentSession: IntentSession | null;
   lastIntentTrace: IntentResolutionTrace | null;
   tabMetadata: RenderTabMetadata[];
   laneMetadata: DevLaneMetadata[];

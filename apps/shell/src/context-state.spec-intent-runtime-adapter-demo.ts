@@ -23,9 +23,8 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
               {
                 id: "orders.custom-matcher",
                 title: "Custom matcher",
-                handler: "customMatcher",
-                intentType: "domain.orders.adapter",
-                when: {
+                intent: "domain.orders.adapter",
+                predicate: {
                   sourceType: "order",
                 },
               },
@@ -82,9 +81,8 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
               {
                 id: "domain.orders.assign-to-vessel",
                 title: "Assign order to selected vessel",
-                handler: "assignOrderToVessel",
-                intentType: "domain.orders.assign-to-vessel",
-                when: {
+                intent: "domain.orders.assign-to-vessel",
+                predicate: {
                   sourceType: "order",
                   targetType: "vessel",
                 },
@@ -126,9 +124,8 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
               {
                 id: "domain.orders.assign-to-vessel",
                 title: "Assign order to selected vessel",
-                handler: "assignOrderToVessel",
-                intentType: "domain.orders.assign-to-vessel",
-                when: {
+                intent: "domain.orders.assign-to-vessel",
+                predicate: {
                   sourceType: "order",
                   targetType: "vessel",
                 },
@@ -152,9 +149,8 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
               {
                 id: "domain.vessel.assign-roro",
                 title: "Assign order to RORO vessel",
-                handler: "assignOrderToRoroVessel",
-                intentType: "domain.orders.assign-to-vessel",
-                when: {
+                intent: "domain.orders.assign-to-vessel",
+                predicate: {
                   sourceType: "order",
                   targetType: "vessel",
                   "target.vesselClass": "RORO",

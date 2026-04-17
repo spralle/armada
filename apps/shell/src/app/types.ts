@@ -32,7 +32,7 @@ import type {
   IntentActionMatch,
   IntentRuntime,
   IntentResolutionTrace,
-  ShellIntent,
+  IntentSession,
 } from "../intent-runtime.js";
 import type { ActionSurface } from "../action-surface.js";
 import type { KeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
@@ -87,9 +87,10 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   notice: string;
   pluginNotice: string;
   intentNotice: string;
-  pendingIntentMatches: IntentActionMatch[];
-  pendingIntent: ShellIntent | null;
+  activeIntentSession: IntentSession | null;
   lastIntentTrace: IntentResolutionTrace | null;
+  /** Resolver for the async chooser promise bridge. Set by showChooser delegate, consumed by UI handlers. */
+  _pendingChooserResolve: ((match: IntentActionMatch | null) => void) | null;
   popoutHandles: Map<string, Window>;
   poppedOutTabIds: Set<string>;
   closeableTabIds: Set<string>;
@@ -104,9 +105,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   syncDegradedReason: AsyncWindowBridgeRejectReason | null;
   pendingProbeId: string | null;
   announcement: string;
-  chooserFocusIndex: number;
   pendingFocusSelector: string | null;
-  chooserReturnFocusSelector: string | null;
   actionSurface: ActionSurface;
   keybindingOverrideManager: KeybindingOverrideManager;
   services: PluginServices;

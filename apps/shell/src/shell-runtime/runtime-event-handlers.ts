@@ -14,9 +14,8 @@ import {
   writeGroupSelectionContext,
 } from "../context/runtime-state.js";
 import {
-  createActionCatalogFromRegistrySnapshot,
-  resolveIntentWithTrace,
   type IntentActionMatch,
+  type IntentResolutionDelegate,
   type ShellIntent,
 } from "../intent-runtime.js";
 import {
@@ -138,34 +137,56 @@ export function createRuntimeEventHandlers(
   }
 
   function resolveIntentFlow(intent: ShellIntent): void {
-    const catalog = createActionCatalogFromRegistrySnapshot(runtime.registry.getSnapshot());
-    const resolved = resolveIntentWithTrace(catalog, intent);
-    const resolution = resolved.resolution;
-    runtime.pendingIntent = intent;
-    runtime.lastIntentTrace = resolved.trace;
+    const delegate: IntentResolutionDelegate = {
+      async showChooser(matches, chooserIntent, trace) {
+        return new Promise<IntentActionMatch | null>((resolve) => {
+          runtime._pendingChooserResolve = resolve;
+          runtime.activeIntentSession = {
+            intent: chooserIntent,
+            matches,
+            trace,
+            chooserFocusIndex: 0,
+            returnFocusSelector: resolveEventTargetSelector(root),
+          };
+          runtime.pendingFocusSelector = "button[data-action='choose-intent-action'][data-intent-index='0']";
+          runtime.intentNotice = `Choose an action for intent '${chooserIntent.type}' (${matches.length} matches).`;
+          bindings.announce(`${runtime.intentNotice} Use arrow keys and Enter to choose an action.`);
+          bindings.renderSyncStatus();
+        });
+      },
+      async activatePlugin(pluginId, trigger) {
+        return bindings.activatePluginForBoundary({
+          pluginId,
+          triggerType: trigger.type as PluginActivationTriggerType,
+          triggerId: trigger.id,
+        });
+      },
+      announce(message) {
+        bindings.announce(message);
+      },
+    };
 
-    if (resolution.kind === "no-match") {
-      runtime.pendingIntentMatches = [];
-      runtime.chooserFocusIndex = 0;
-      runtime.intentNotice = resolution.feedback;
-      bindings.announce(runtime.intentNotice);
-      return;
-    }
-
-    if (resolution.kind === "single-match") {
-      runtime.pendingIntentMatches = [];
-      runtime.chooserFocusIndex = 0;
-      bindings.announce(resolution.feedback);
-      void executeResolvedAction(resolution.matches[0], intent);
-      return;
-    }
-
-    runtime.pendingIntentMatches = resolution.matches;
-    runtime.chooserFocusIndex = 0;
-    runtime.chooserReturnFocusSelector = resolveEventTargetSelector(root);
-    runtime.pendingFocusSelector = "button[data-action='choose-intent-action'][data-intent-index='0']";
-    runtime.intentNotice = resolution.feedback;
-    bindings.announce(`${resolution.feedback} Use arrow keys and Enter to choose an action.`);
+    void runtime.intentRuntime.resolve(intent, delegate).then((outcome) => {
+      runtime.lastIntentTrace = outcome.trace;
+      if (outcome.kind === "executed") {
+        const match = outcome.match;
+        writeGroupSelectionContext(runtime, `intent:${intent.type}`);
+        const restoreSelector = resolveChooserFocusRestoration("execute", runtime.activeIntentSession?.returnFocusSelector ?? null);
+        runtime.activeIntentSession = null;
+        runtime._pendingChooserResolve = null;
+        runtime.pendingFocusSelector = restoreSelector;
+        runtime.intentNotice = `Executed '${match.title}' via ${match.pluginId}.${match.handler}.`;
+        bindings.announce(runtime.intentNotice);
+        updateDockTabVisibility(root, runtime);
+      } else if (outcome.kind === "no-match") {
+        runtime.activeIntentSession = null;
+        runtime._pendingChooserResolve = null;
+        runtime.intentNotice = outcome.feedback;
+        bindings.announce(runtime.intentNotice);
+      }
+      // "cancelled" cleanup is handled by dismissIntentChooser
+      bindings.renderSyncStatus();
+    });
   }
 
   async function executeResolvedAction(
@@ -189,10 +210,8 @@ export function createRuntimeEventHandlers(
     const genericContextValue = intent ? `intent:${intent.type}` : "none";
     writeGroupSelectionContext(runtime, genericContextValue);
 
-    runtime.pendingIntentMatches = [];
-    runtime.chooserFocusIndex = 0;
-    const restoreSelector = resolveChooserFocusRestoration("execute", runtime.chooserReturnFocusSelector);
-    runtime.chooserReturnFocusSelector = null;
+    const restoreSelector = resolveChooserFocusRestoration("execute", runtime.activeIntentSession?.returnFocusSelector ?? null);
+    runtime.activeIntentSession = null;
     runtime.pendingFocusSelector = restoreSelector;
     runtime.intentNotice = `Executed '${match.title}' via ${match.pluginId}.${match.handler}.`;
     bindings.announce(runtime.intentNotice);

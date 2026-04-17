@@ -67,8 +67,8 @@ export function createReactPanelsHost(
       if (syncRoot) {
         syncRoot.render(
           <SyncStatusPanel
-            chooserFocusIndex={runtime.chooserFocusIndex}
-            chooserMatches={runtime.pendingIntentMatches}
+            chooserFocusIndex={runtime.activeIntentSession?.chooserFocusIndex ?? 0}
+            chooserMatches={runtime.activeIntentSession?.matches ?? []}
             globalContext={readGlobalContext(runtime)}
             groupContext={readGroupSelectionContext(runtime)}
             intentNotice={runtime.intentNotice}

@@ -225,8 +225,7 @@ function createRuntimeFixture(): ShellRuntime {
     actionSurface: buildActionSurface([createDefaultShellKeybindingContract()]),
     announcement: "",
     bridge: ({ publish: () => true } as unknown) as ShellRuntime["bridge"],
-    chooserFocusIndex: 0,
-    chooserReturnFocusSelector: null,
+    activeIntentSession: null,
     closeableTabIds: new Set(["tab-a", "tab-b"]),
     commandNotice: "",
     contextPersistence: { save: () => ({ warning: null }) },
@@ -234,8 +233,8 @@ function createRuntimeFixture(): ShellRuntime {
     hostWindowId: null,
     incomingTransferJournal: { bySessionId: {} },
     intentRuntime: {
-      resolveAndExecute() {
-        return { executed: false, intent: "", message: "unused" };
+      async resolve() {
+        return { kind: "no-match", feedback: "unused", trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] } };
       },
     },
     intentNotice: "",
@@ -245,8 +244,6 @@ function createRuntimeFixture(): ShellRuntime {
     notice: "",
     partHost: { syncRenderedParts: async () => {}, unmountAll: () => {} } as ShellRuntime["partHost"],
     pendingFocusSelector: null,
-    pendingIntent: null,
-    pendingIntentMatches: [],
     pendingProbeId: null,
     persistence: { save: () => ({ warning: null }), load: () => ({ sideSize: 0.2, secondarySize: 0.3 }) },
     pluginNotice: "",
@@ -275,8 +272,7 @@ function createBindings(
     announce: () => {},
     applySelection: () => {},
     dismissIntentChooser: () => {
-      runtime.pendingIntentMatches = [];
-      runtime.pendingIntent = null;
+      runtime.activeIntentSession = null;
     },
     executeResolvedAction: async () => {},
     publishWithDegrade: () => {},

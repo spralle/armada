@@ -117,7 +117,7 @@ export function bindKeyboardShortcuts(
         return;
       }
 
-      const degradedInteraction = resolveDegradedKeyboardInteraction(event.key, runtime.pendingIntentMatches.length > 0);
+      const degradedInteraction = resolveDegradedKeyboardInteraction(event.key, runtime.activeIntentSession !== null);
       if (degradedInteraction === "dismiss-chooser") {
         event.preventDefault();
         bindings.dismissIntentChooser();
@@ -338,12 +338,13 @@ export function dismissIntentChooser(
   runtime: ShellRuntime,
   bindings: Pick<KeyboardBindings, "announce" | "renderSyncStatus">,
 ): void {
-  runtime.pendingIntentMatches = [];
-  runtime.pendingIntent = null;
-  runtime.chooserFocusIndex = 0;
+  const restoreSelector = resolveChooserFocusRestoration("dismiss", runtime.activeIntentSession?.returnFocusSelector ?? null);
+  if (runtime._pendingChooserResolve) {
+    runtime._pendingChooserResolve(null);
+    runtime._pendingChooserResolve = null;
+  }
+  runtime.activeIntentSession = null;
   runtime.intentNotice = "Action chooser dismissed.";
-  const restoreSelector = resolveChooserFocusRestoration("dismiss", runtime.chooserReturnFocusSelector);
-  runtime.chooserReturnFocusSelector = null;
   runtime.pendingFocusSelector = restoreSelector;
   bindings.announce(runtime.intentNotice);
   bindings.renderSyncStatus();
@@ -354,14 +355,14 @@ function handleChooserKeyboardEvent(
   event: KeyboardEvent,
   bindings: KeyboardBindings,
 ): boolean {
-  if (!runtime.pendingIntentMatches.length) {
+  if (!runtime.activeIntentSession) {
     return false;
   }
 
   const result = resolveChooserKeyboardAction(
     event.key,
-    runtime.chooserFocusIndex,
-    runtime.pendingIntentMatches.length,
+    runtime.activeIntentSession.chooserFocusIndex,
+    runtime.activeIntentSession.matches.length,
   );
 
   if (result.kind === "none") {
@@ -370,17 +371,21 @@ function handleChooserKeyboardEvent(
 
   event.preventDefault();
   if (result.kind === "focus") {
-    runtime.chooserFocusIndex = result.index;
+    runtime.activeIntentSession.chooserFocusIndex = result.index;
     runtime.pendingFocusSelector = `button[data-action='choose-intent-action'][data-intent-index='${result.index}']`;
     bindings.renderSyncStatus();
     return true;
   }
 
   if (result.kind === "execute") {
-    runtime.chooserFocusIndex = result.index;
-    const selected = runtime.pendingIntentMatches[result.index];
+    runtime.activeIntentSession.chooserFocusIndex = result.index;
+    const selected = runtime.activeIntentSession.matches[result.index];
     if (selected) {
-      void bindings.executeResolvedAction(selected, runtime.pendingIntent);
+      if (runtime._pendingChooserResolve) {
+        runtime._pendingChooserResolve(selected);
+      } else {
+        void bindings.executeResolvedAction(selected, runtime.activeIntentSession.intent);
+      }
     }
     return true;
   }

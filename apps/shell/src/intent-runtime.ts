@@ -29,6 +29,14 @@ export interface IntentActionMatch extends RuntimeActionDescriptor {
   sortKey: string;
 }
 
+export interface IntentSession {
+  readonly intent: ShellIntent;
+  readonly matches: IntentActionMatch[];
+  readonly trace: IntentResolutionTrace;
+  chooserFocusIndex: number;
+  returnFocusSelector: string | null;
+}
+
 export interface IntentActionTrace extends RuntimeActionDescriptor {
   intentTypeMatch: boolean;
   predicateMatched: boolean;
@@ -51,20 +59,23 @@ export interface IntentRuntimeOptions {
   matcher?: IntentWhenMatcher;
 }
 
-export interface IntentResolutionRequest {
-  intent: string;
-  context: Readonly<Record<string, string>>;
-  args?: unknown;
+export interface IntentResolutionDelegate {
+  showChooser(matches: IntentActionMatch[], intent: ShellIntent, trace: IntentResolutionTrace): Promise<IntentActionMatch | null>;
+  activatePlugin(pluginId: string, trigger: { type: string; id: string }): Promise<boolean>;
+  announce(message: string): void;
 }
 
-export interface IntentResolutionResult {
-  executed: boolean;
-  intent: string;
-  message: string;
-}
+export type IntentResolutionOutcome =
+  | { kind: "executed"; match: IntentActionMatch; trace: IntentResolutionTrace }
+  | { kind: "no-match"; feedback: string; trace: IntentResolutionTrace }
+  | { kind: "cancelled"; trace: IntentResolutionTrace };
 
 export interface IntentRuntime {
-  resolveAndExecute(request: IntentResolutionRequest): IntentResolutionResult;
+  resolve(
+    intent: ShellIntent,
+    delegate: IntentResolutionDelegate,
+    options?: { preferredActionId?: string },
+  ): Promise<IntentResolutionOutcome>;
 }
 
 export type IntentResolution =
@@ -222,42 +233,78 @@ function readPluginActions(contract: PluginContract): {
   when: Record<string, unknown>;
 }[] {
   const contributes = contract.contributes as
-    | { actions?: { id: string; title: string; handler: string; intentType: string; when: Record<string, unknown> }[] }
+    | { actions?: { id: string; title: string; intent: string; predicate?: Record<string, unknown> }[] }
     | undefined;
-  return contributes?.actions ?? [];
+  return (contributes?.actions ?? []).map((action) => ({
+    id: action.id,
+    title: action.title,
+    handler: action.id,
+    intentType: action.intent,
+    when: action.predicate ?? {},
+  }));
 }
 
 export interface IntentRuntimeDeps {
-  getRegistrySnapshot?: () => Parameters<typeof createActionCatalogFromRegistrySnapshot>[0];
+  getRegistrySnapshot: () => {
+    plugins: {
+      id: string;
+      enabled: boolean;
+      loadMode: string;
+      contract: PluginContract | null;
+    }[];
+  };
 }
 
-export function createIntentRuntime(deps?: IntentRuntimeDeps): IntentRuntime {
+export function createIntentRuntime(deps: IntentRuntimeDeps): IntentRuntime {
   return {
-    resolveAndExecute(request) {
-      if (deps?.getRegistrySnapshot) {
-        const catalog = createActionCatalogFromRegistrySnapshot(deps.getRegistrySnapshot());
-        const resolution = resolveIntent(catalog, { type: request.intent, facts: request.context });
+    async resolve(intent, delegate, options) {
+      const catalog = createActionCatalogFromRegistrySnapshot(deps.getRegistrySnapshot());
+      const { resolution, trace } = resolveIntentWithTrace(catalog, intent);
 
-        if (resolution.kind === "single-match" || resolution.kind === "multiple-matches") {
-          return {
-            executed: true,
-            intent: request.intent,
-            message: resolution.feedback,
-          };
-        }
-
-        return {
-          executed: false,
-          intent: request.intent,
-          message: resolution.feedback,
-        };
+      if (resolution.kind === "no-match") {
+        delegate.announce(resolution.feedback);
+        return { kind: "no-match", feedback: resolution.feedback, trace };
       }
 
-      return {
-        executed: false,
-        intent: request.intent,
-        message: `No intent runtime deps available for '${request.intent}'.`,
-      };
+      // Determine which match to execute
+      let match: IntentActionMatch;
+
+      if (resolution.kind === "single-match") {
+        match = resolution.matches[0];
+      } else {
+        // multiple-matches
+        if (options?.preferredActionId) {
+          const preferred = resolution.matches.find(m => m.actionId === options.preferredActionId);
+          if (preferred) {
+            match = preferred;
+          } else {
+            const chosen = await delegate.showChooser(resolution.matches, intent, trace);
+            if (!chosen) {
+              return { kind: "cancelled", trace };
+            }
+            match = chosen;
+          }
+        } else {
+          const chosen = await delegate.showChooser(resolution.matches, intent, trace);
+          if (!chosen) {
+            return { kind: "cancelled", trace };
+          }
+          match = chosen;
+        }
+      }
+
+      delegate.announce(resolution.feedback);
+      const activated = await delegate.activatePlugin(match.pluginId, {
+        type: "intent",
+        id: intent.type,
+      });
+
+      if (!activated) {
+        delegate.announce(`Failed to activate plugin '${match.pluginId}'.`);
+        return { kind: "no-match", feedback: `Plugin activation failed.`, trace };
+      }
+
+      return { kind: "executed", match, trace };
     },
   };
 }
