@@ -147,7 +147,7 @@ export {
   deriveFullPalette,
 } from "./theme-derivation.js";
 
-export { GHOST_THEME_CSS_VARS } from "./theme-css-vars.js";
+export { GHOST_THEME_CSS_VARS, THEME_TOKEN_GROUPS } from "./theme-css-vars.js";
 
 export {
   adjustLightness,
