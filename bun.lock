@@ -7,15 +7,13 @@
       "devDependencies": {
         "concurrently": "^9.2.1",
         "typescript": "^5.8.3",
+        "vite": "^5.4.19",
       },
     },
     "apps/backend": {
       "name": "@ghost/backend-app",
       "dependencies": {
-        "@ghost/config-engine": "workspace:*",
-        "@ghost/config-providers": "workspace:*",
-        "@ghost/config-server": "workspace:*",
-        "@ghost/config-types": "workspace:*",
+        "@ghost/config-plugin-runtime": "workspace:*",
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
       },
     },
@@ -32,9 +30,7 @@
     "apps/shell": {
       "name": "@ghost/shell-app",
       "dependencies": {
-        "@ghost/config-engine": "file:../../packages/config-engine",
-        "@ghost/config-providers": "file:../../packages/config-providers",
-        "@ghost/config-types": "file:../../packages/config-types",
+        "@ghost/config-plugin-runtime": "workspace:*",
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
         "@module-federation/enhanced": "^2.3.1",
         "react": "^18.3.1",
@@ -53,61 +49,14 @@
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
       },
     },
-    "packages/config-engine": {
-      "name": "@ghost/config-engine",
-      "version": "0.0.0",
-      "dependencies": {
-        "@ghost/config-types": "workspace:*",
-      },
-    },
     "packages/config-plugin-runtime": {
       "name": "@ghost/config-plugin-runtime",
       "version": "0.0.0",
-      "dependencies": {
-        "@ghost/config-engine": "workspace:*",
-        "@ghost/config-types": "workspace:*",
-      },
-    },
-    "packages/config-providers": {
-      "name": "@ghost/config-providers",
-      "version": "0.0.0",
-      "dependencies": {
-        "@ghost/config-engine": "workspace:*",
-        "@ghost/config-plugin-runtime": "workspace:*",
-        "@ghost/config-sync": "workspace:*",
-        "@ghost/config-types": "workspace:*",
-      },
-    },
-    "packages/config-server": {
-      "name": "@ghost/config-server",
-      "version": "0.0.1",
-      "dependencies": {
-        "@ghost/config-engine": "workspace:*",
-        "@ghost/config-types": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/node": "^22.0.0",
-      },
-    },
-    "packages/config-sync": {
-      "name": "@ghost/config-sync",
-      "version": "0.0.0",
-      "dependencies": {
-        "@ghost/config-types": "workspace:*",
-      },
-    },
-    "packages/config-types": {
-      "name": "@ghost/config-types",
-      "version": "0.0.0",
-      "dependencies": {
-        "zod": "^3.24.2",
-      },
     },
     "packages/plugin-contracts": {
       "name": "@ghost/plugin-contracts",
       "version": "0.0.0",
       "dependencies": {
-        "@ghost/config-types": "workspace:*",
         "zod": "^3.24.2",
       },
     },
@@ -152,8 +101,38 @@
         "vite": "^5.4.19",
       },
     },
+    "plugins/group-context-plugin": {
+      "name": "@ghost/plugin-group-context",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/keybindings-plugin": {
+      "name": "@ghost/plugin-keybindings",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
     "plugins/plugin-starter": {
       "name": "@ghost/plugin-starter",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/plugins-panel-plugin": {
+      "name": "@ghost/plugin-plugins-panel",
       "dependencies": {
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
       },
@@ -194,6 +173,28 @@
     },
     "plugins/theme-default-plugin": {
       "name": "@ghost/theme-default-plugin",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/topbar-widgets-plugin": {
+      "name": "@ghost/topbar-widgets-plugin",
+      "version": "1.0.0",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
+    "plugins/view-picker-plugin": {
+      "name": "@ghost/view-picker-plugin",
+      "version": "1.0.0",
       "dependencies": {
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
       },
@@ -300,17 +301,7 @@
 
     "@ghost/backend-app": ["@ghost/backend-app@workspace:apps/backend"],
 
-    "@ghost/config-engine": ["@ghost/config-engine@workspace:packages/config-engine"],
-
     "@ghost/config-plugin-runtime": ["@ghost/config-plugin-runtime@workspace:packages/config-plugin-runtime"],
-
-    "@ghost/config-providers": ["@ghost/config-providers@workspace:packages/config-providers"],
-
-    "@ghost/config-server": ["@ghost/config-server@workspace:packages/config-server"],
-
-    "@ghost/config-sync": ["@ghost/config-sync@workspace:packages/config-sync"],
-
-    "@ghost/config-types": ["@ghost/config-types@workspace:packages/config-types"],
 
     "@ghost/domain-unplanned-orders-plugin": ["@ghost/domain-unplanned-orders-plugin@workspace:plugins/domain-unplanned-orders-plugin"],
 
@@ -319,6 +310,12 @@
     "@ghost/plugin-contracts": ["@ghost/plugin-contracts@workspace:packages/plugin-contracts"],
 
     "@ghost/plugin-dev-host": ["@ghost/plugin-dev-host@workspace:apps/plugin-dev-host"],
+
+    "@ghost/plugin-group-context": ["@ghost/plugin-group-context@workspace:plugins/group-context-plugin"],
+
+    "@ghost/plugin-keybindings": ["@ghost/plugin-keybindings@workspace:plugins/keybindings-plugin"],
+
+    "@ghost/plugin-plugins-panel": ["@ghost/plugin-plugins-panel@workspace:plugins/plugins-panel-plugin"],
 
     "@ghost/plugin-starter": ["@ghost/plugin-starter@workspace:plugins/plugin-starter"],
 
@@ -332,7 +329,11 @@
 
     "@ghost/theme-default-plugin": ["@ghost/theme-default-plugin@workspace:plugins/theme-default-plugin"],
 
+    "@ghost/topbar-widgets-plugin": ["@ghost/topbar-widgets-plugin@workspace:plugins/topbar-widgets-plugin"],
+
     "@ghost/typecheck-fixture": ["@ghost/typecheck-fixture@workspace:apps/typecheck-fixture"],
+
+    "@ghost/view-picker-plugin": ["@ghost/view-picker-plugin@workspace:plugins/view-picker-plugin"],
 
     "@jridgewell/gen-mapping": ["@jridgewell/gen-mapping@0.3.13", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.0", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA=="],
 
@@ -746,8 +747,6 @@
 
     "@ghost/appearance-settings-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
 
-    "@ghost/backend-app/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
-
     "@ghost/domain-unplanned-orders-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
 
     "@ghost/domain-vessel-view-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
@@ -759,14 +758,6 @@
     "@ghost/shadcn-theme-bridge-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
 
     "@ghost/shared-ui-capability-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
-
-    "@ghost/shell-app/@ghost/config-engine": ["@ghost/config-engine@file:packages/config-engine", { "dependencies": { "@ghost/config-types": "workspace:*" } }],
-
-    "@ghost/shell-app/@ghost/config-providers": ["@ghost/config-providers@file:packages/config-providers", { "dependencies": { "@ghost/config-engine": "workspace:*", "@ghost/config-types": "workspace:*" } }],
-
-    "@ghost/shell-app/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/shell-app/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
 
     "@ghost/theme-default-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
 
@@ -788,8 +779,6 @@
 
     "@ghost/appearance-settings-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/backend-app/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
     "@ghost/domain-unplanned-orders-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost/domain-vessel-view-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
@@ -802,14 +791,6 @@
 
     "@ghost/shared-ui-capability-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/shell-app/@ghost/config-engine/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/shell-app/@ghost/config-providers/@ghost/config-engine": ["@ghost/config-engine@file:packages/config-engine", { "dependencies": { "@ghost/config-types": "workspace:*" } }],
-
-    "@ghost/shell-app/@ghost/config-providers/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/shell-app/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
     "@ghost/theme-default-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost/typecheck-fixture/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
@@ -821,8 +802,6 @@
     "@rspack/core/@module-federation/runtime-tools/@module-federation/runtime": ["@module-federation/runtime@0.22.0", "", { "dependencies": { "@module-federation/error-codes": "0.22.0", "@module-federation/runtime-core": "0.22.0", "@module-federation/sdk": "0.22.0" } }, "sha512-38g5iPju2tPC3KHMPxRKmy4k4onNp6ypFPS1eKGsNLUkXgHsPMBFqAjDw96iEcjri91BrahG4XcdyKi97xZzlA=="],
 
     "@rspack/core/@module-federation/runtime-tools/@module-federation/webpack-bundler-runtime": ["@module-federation/webpack-bundler-runtime@0.22.0", "", { "dependencies": { "@module-federation/runtime": "0.22.0", "@module-federation/sdk": "0.22.0" } }, "sha512-aM8gCqXu+/4wBmJtVeMeeMN5guw3chf+2i6HajKtQv7SJfxV/f4IyNQJUeUQu9HfiAZHjqtMV5Lvq/Lvh8LdyA=="],
-
-    "@ghost/shell-app/@ghost/config-providers/@ghost/config-engine/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@rspack/core/@module-federation/runtime-tools/@module-federation/runtime/@module-federation/error-codes": ["@module-federation/error-codes@0.22.0", "", {}, "sha512-xF9SjnEy7vTdx+xekjPCV5cIHOGCkdn3pIxo9vU7gEZMIw0SvAEdsy6Uh17xaCpm8V0FWvR0SZoK9Ik6jGOaug=="],
 
