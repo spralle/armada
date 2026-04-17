@@ -4,7 +4,8 @@ import type {
   ShellKeybindingPersistence,
 } from "../persistence/contracts.js";
 import type { KeybindingLayer } from "./keybinding-resolver.js";
-import { normalizeConfiguredChord } from "./keybinding-normalizer.js";
+import { normalizeConfiguredSequence } from "./keybinding-normalizer.js";
+import type { NormalizedKeybindingSequence } from "./keybinding-normalizer.js";
 import type { KeybindingExportEnvelope, KeybindingImportResult } from "./keybinding-import-export.js";
 import { exportKeybindingOverrides, validateKeybindingImport } from "./keybinding-import-export.js";
 
@@ -17,6 +18,7 @@ export interface KeybindingConflictInfo {
   keybinding: string;
   layer: KeybindingLayer;
   pluginId: string;
+  conflictType: "exact" | "prefix";
 }
 
 export interface KeybindingOverrideResult {
@@ -55,18 +57,17 @@ export function createKeybindingOverrideManager(
   let overrides: KeybindingOverrideEntryV1[] = persistence.load();
 
   function addOverride(action: string, keybinding: string): KeybindingOverrideResult {
-    const normalized = normalizeConfiguredChord(keybinding);
+    const normalized = normalizeConfiguredSequence(keybinding);
     if (!normalized) {
-      return { success: false, conflicts: [], warning: "Invalid keybinding chord" };
+      return { success: false, conflicts: [], warning: "Invalid keybinding sequence" };
     }
 
-    const normalizedChord = normalized.value;
-    const conflicts = findConflicts(normalizedChord, action);
+    const conflicts = findConflicts(normalized, action);
 
     const existingIndex = overrides.findIndex((entry) => entry.action === action);
     const entry: KeybindingOverrideEntryV1 = {
       action,
-      keybinding: normalizedChord,
+      keybinding: normalized.value,
     };
 
     if (existingIndex >= 0) {
@@ -98,11 +99,11 @@ export function createKeybindingOverrideManager(
   }
 
   function listConflicts(keybinding: string): KeybindingConflictInfo[] {
-    const normalized = normalizeConfiguredChord(keybinding);
+    const normalized = normalizeConfiguredSequence(keybinding);
     if (!normalized) {
       return [];
     }
-    return findConflicts(normalized.value);
+    return findConflicts(normalized);
   }
 
   function getOverrides(): KeybindingOverrideEntryV1[] {
@@ -113,12 +114,12 @@ export function createKeybindingOverrideManager(
   // Internal helpers
   // -------------------------------------------------------------------------
 
-  function findConflicts(normalizedChord: string, excludeAction?: string): KeybindingConflictInfo[] {
+  function findConflicts(sequence: NormalizedKeybindingSequence, excludeAction?: string): KeybindingConflictInfo[] {
     const conflicts: KeybindingConflictInfo[] = [];
 
-    scanBindings(getDefaultBindings(), "defaults", normalizedChord, excludeAction, conflicts);
-    scanBindings(getPluginBindings(), "plugins", normalizedChord, excludeAction, conflicts);
-    scanOverrides(normalizedChord, excludeAction, conflicts);
+    scanBindings(getDefaultBindings(), "defaults", sequence, excludeAction, conflicts);
+    scanBindings(getPluginBindings(), "plugins", sequence, excludeAction, conflicts);
+    scanOverrides(sequence, excludeAction, conflicts);
 
     return conflicts;
   }
@@ -126,7 +127,7 @@ export function createKeybindingOverrideManager(
   function scanBindings(
     bindings: ActionKeybinding[],
     layer: KeybindingLayer,
-    normalizedChord: string,
+    sequence: NormalizedKeybindingSequence,
     excludeAction: string | undefined,
     out: KeybindingConflictInfo[],
   ): void {
@@ -135,20 +136,23 @@ export function createKeybindingOverrideManager(
         continue;
       }
 
-      const bindingNormalized = normalizeConfiguredChord(binding.keybinding);
-      if (bindingNormalized && bindingNormalized.value === normalizedChord) {
+      const bindingNormalized = normalizeConfiguredSequence(binding.keybinding);
+      if (!bindingNormalized) continue;
+      const conflictType = isExactOrPrefixConflict(sequence, bindingNormalized);
+      if (conflictType) {
         out.push({
           action: binding.action,
-          keybinding: normalizedChord,
+          keybinding: bindingNormalized.value,
           layer,
           pluginId: binding.pluginId,
+          conflictType,
         });
       }
     }
   }
 
   function scanOverrides(
-    normalizedChord: string,
+    sequence: NormalizedKeybindingSequence,
     excludeAction: string | undefined,
     out: KeybindingConflictInfo[],
   ): void {
@@ -157,16 +161,33 @@ export function createKeybindingOverrideManager(
         continue;
       }
 
-      const entryNormalized = normalizeConfiguredChord(entry.keybinding);
-      if (entryNormalized && entryNormalized.value === normalizedChord) {
+      const entryNormalized = normalizeConfiguredSequence(entry.keybinding);
+      if (!entryNormalized) continue;
+      const conflictType = isExactOrPrefixConflict(sequence, entryNormalized);
+      if (conflictType) {
         out.push({
           action: entry.action,
-          keybinding: normalizedChord,
+          keybinding: entryNormalized.value,
           layer: "user-overrides",
           pluginId: "user.override",
+          conflictType,
         });
       }
     }
+  }
+
+  function isExactOrPrefixConflict(
+    a: NormalizedKeybindingSequence,
+    b: NormalizedKeybindingSequence,
+  ): "exact" | "prefix" | null {
+    if (a.value === b.value) return "exact";
+    const shorter = a.chords.length <= b.chords.length ? a : b;
+    const longer = a.chords.length <= b.chords.length ? b : a;
+    if (shorter.chords.length >= longer.chords.length) return null;
+    for (let i = 0; i < shorter.chords.length; i++) {
+      if (shorter.chords[i].value !== longer.chords[i].value) return null;
+    }
+    return "prefix";
   }
 
   function buildKnownActions(): Set<string> {

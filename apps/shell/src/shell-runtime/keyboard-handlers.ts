@@ -15,6 +15,7 @@ import { handleShellKeyboardAction } from "./shell-keyboard-actions.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
+import type { NormalizedKeybindingChord } from "./keybinding-normalizer.js";
 import { updateDockTabVisibility, needsStructuralRender } from "../ui/dock-tab-visibility.js";
 import type { WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
 
@@ -43,9 +44,36 @@ const DEBUG_KEYBINDINGS =
   typeof localStorage !== "undefined" &&
   localStorage.getItem("ghost.debug.keybindings") === "true";
 
+const SEQUENCE_TIMEOUT_KEY = "ghost.keybindings.sequenceTimeoutMs";
+const SEQUENCE_TIMEOUT_DEFAULT = 1000;
+const SEQUENCE_TIMEOUT_MIN = 200;
+const SEQUENCE_TIMEOUT_MAX = 5000;
+
+/**
+ * Read sequence timeout from localStorage with validation and clamping.
+ * Returns default (1000ms) if value is missing, non-numeric, or out of range.
+ */
+function readSequenceTimeoutMs(): number {
+  if (typeof localStorage === "undefined") return SEQUENCE_TIMEOUT_DEFAULT;
+  const raw = localStorage.getItem(SEQUENCE_TIMEOUT_KEY);
+  if (raw == null) return SEQUENCE_TIMEOUT_DEFAULT;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return SEQUENCE_TIMEOUT_DEFAULT;
+  return Math.max(SEQUENCE_TIMEOUT_MIN, Math.min(SEQUENCE_TIMEOUT_MAX, Math.round(parsed)));
+}
+
 function computeOverrideFingerprint(overrides: ActionKeybinding[]): string {
   if (overrides.length === 0) return "";
   return overrides.map((o) => `${o.action}:${o.keybinding}`).join("|");
+}
+
+interface ChordSequenceState {
+  /** Chords accumulated so far */
+  pressedChords: NormalizedKeybindingChord[];
+  /** Timer handle for timeout cancellation */
+  timeoutHandle: ReturnType<typeof setTimeout> | null;
+  /** Timestamp of first chord for debugging */
+  startedAt: number;
 }
 
 export function bindKeyboardShortcuts(
@@ -77,8 +105,36 @@ export function bindKeyboardShortcuts(
         (b) => b.pluginId !== DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
       ),
       userOverrideBindings: overrides,
+      sequenceTimeoutMs: readSequenceTimeoutMs(),
     });
     return cachedService;
+  }
+
+  let sequenceState: ChordSequenceState | null = null;
+
+  function clearSequenceState(): void {
+    if (sequenceState?.timeoutHandle != null) {
+      clearTimeout(sequenceState.timeoutHandle);
+    }
+    sequenceState = null;
+  }
+
+  function startSequenceTimeout(): void {
+    if (sequenceState?.timeoutHandle != null) {
+      clearTimeout(sequenceState.timeoutHandle);
+    }
+    if (sequenceState) {
+      sequenceState.timeoutHandle = setTimeout(() => {
+        if (DEBUG_KEYBINDINGS) {
+          console.debug("[shell:keybinding] sequence-timeout", {
+            chords: sequenceState?.pressedChords.map(c => c.value),
+          });
+        }
+        clearSequenceState();
+        runtime.pendingChordState = null;
+        bindings.renderSyncStatus();
+      }, getKeybindingService().sequenceTimeoutMs);
+    }
   }
 
   const onKeyDown = async (event: KeyboardEvent) => {
@@ -142,39 +198,43 @@ export function bindKeyboardShortcuts(
       });
     }
 
-    if (normalizedChord && handleTabLifecycleShortcut(normalizedChord.value, event, runtime, bindings)) {
-      if (DEBUG_KEYBINDINGS) {
-        console.debug("[shell:keybinding] tab-lifecycle-intercepted", { chord: normalizedChord.value });
-      }
-      return;
-    }
-
     if (normalizedChord) {
+      // Tab lifecycle shortcuts only when no sequence is pending
+      if (!sequenceState && handleTabLifecycleShortcut(normalizedChord.value, event, runtime, bindings)) {
+        if (DEBUG_KEYBINDINGS) {
+          console.debug("[shell:keybinding] tab-lifecycle-intercepted", { chord: normalizedChord.value });
+        }
+        return;
+      }
+
+      // Build the chord list: existing pending chords + this new chord
+      const chords = sequenceState
+        ? [...sequenceState.pressedChords, normalizedChord]
+        : [normalizedChord];
+
       const context = bindings.toActionContext();
-      const resolution = keybindingService.resolve(normalizedChord, context);
+      const resolution = keybindingService.resolveSequence(chords, context);
+
       if (DEBUG_KEYBINDINGS) {
-        console.debug("[shell:keybinding] resolve-result", {
-          chord: normalizedChord.value,
-          matched: resolution.match !== null,
+        console.debug("[shell:keybinding] sequence-resolve", {
+          chords: chords.map(c => c.value),
+          kind: resolution.kind,
           actionId: resolution.match?.action.id ?? null,
-          pluginId: resolution.match?.action.pluginId ?? null,
+          prefixCount: resolution.prefixCount ?? 0,
         });
       }
 
-      if (resolution.match) {
-        const action = resolution.match.action;
+      if (resolution.kind === "exact") {
+        clearSequenceState();
+        runtime.pendingChordState = null;
+        event.preventDefault();
+
+        const action = resolution.match!.action;
         const activated = await bindings.activatePluginForBoundary({
           pluginId: action.pluginId,
           triggerType: "command",
           triggerId: action.id,
         });
-        if (DEBUG_KEYBINDINGS) {
-          console.debug("[shell:keybinding] activation-gate", {
-            pluginId: action.pluginId,
-            actionId: action.id,
-            pass: activated,
-          });
-        }
         if (!activated) {
           runtime.commandNotice = `Action '${action.id}' blocked: plugin '${action.pluginId}' is not active.`;
           return;
@@ -183,7 +243,6 @@ export function bindKeyboardShortcuts(
         const shellResult = handleShellKeyboardAction(runtime, bindings, action.id);
         let executed = shellResult.executed;
         if (!shellResult.handled) {
-          event.preventDefault();
           const runtimeHandler = runtime.runtimeActionRegistry.get(action.id);
           if (runtimeHandler) {
             try {
@@ -194,31 +253,18 @@ export function bindKeyboardShortcuts(
               executed = false;
             }
           } else {
-            const result = await keybindingService.dispatch(normalizedChord, context);
+            const result = await keybindingService.dispatchSequence(chords, context);
             executed = result.executed;
           }
-          if (DEBUG_KEYBINDINGS) {
-            console.debug("[shell:keybinding] non-shell-dispatch", {
-              actionId: action.id,
-              executed,
-              source: runtimeHandler ? "runtime-registry" : "intent-dispatch",
-            });
-          }
-        } else if (shellResult.executed) {
-          event.preventDefault();
         }
-        if (DEBUG_KEYBINDINGS) {
-          console.debug("[shell:keybinding] shell-action-dispatch", {
-            handled: shellResult.handled,
-            executed: shellResult.executed,
-            message: shellResult.message,
-          });
-        }
+
+        const chordStr = chords.map(c => c.value).join(" ");
         runtime.commandNotice = shellResult.handled
-          ? `Keybinding (${normalizedChord.value}): ${shellResult.message}`
+          ? `Keybinding (${chordStr}): ${shellResult.message}`
           : executed
-            ? `Keybinding (${normalizedChord.value}): Action '${action.id}' executed.`
-            : `Keybinding (${normalizedChord.value}): Action '${action.id}' is not executable in current context.`;
+            ? `Keybinding (${chordStr}): Action '${action.id}' executed.`
+            : `Keybinding (${chordStr}): Action '${action.id}' is not executable in current context.`;
+
         if (shellResult.handled) {
           bindings.renderContextControls();
           bindings.renderEdgeSlots();
@@ -229,13 +275,48 @@ export function bindKeyboardShortcuts(
           }
           bindings.renderSyncStatus();
         } else if (executed) {
-          // Plugin-registered actions may mutate context state (e.g., openView).
-          // Trigger a full structural re-render so new tabs/views appear.
           bindings.renderContextControls();
           bindings.renderEdgeSlots();
           bindings.renderParts();
           bindings.renderSyncStatus();
         }
+        return;
+      }
+
+      if (resolution.kind === "prefix") {
+        event.preventDefault();
+        sequenceState = {
+          pressedChords: chords,
+          timeoutHandle: null,
+          startedAt: sequenceState?.startedAt ?? Date.now(),
+        };
+        startSequenceTimeout();
+
+        runtime.pendingChordState = {
+          pressedChords: chords.map(c => c.value),
+          candidateCount: resolution.prefixCount ?? 0,
+        };
+        bindings.renderSyncStatus();
+
+        if (DEBUG_KEYBINDINGS) {
+          console.debug("[shell:keybinding] sequence-pending", {
+            chords: chords.map(c => c.value),
+            prefixCount: resolution.prefixCount,
+          });
+        }
+        return;
+      }
+
+      // kind === "none" — no match
+      if (sequenceState) {
+        if (DEBUG_KEYBINDINGS) {
+          console.debug("[shell:keybinding] sequence-broken", {
+            chords: chords.map(c => c.value),
+          });
+        }
+        clearSequenceState();
+        runtime.pendingChordState = null;
+        bindings.renderSyncStatus();
         return;
       }
     }
@@ -286,10 +367,18 @@ export function bindKeyboardShortcuts(
   // Falls back to root in non-browser environments (Node.js tests).
   if (typeof document !== "undefined") {
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    return () => {
+      clearSequenceState();
+      runtime.pendingChordState = null;
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }
   root.addEventListener("keydown", onKeyDown);
-  return () => root.removeEventListener("keydown", onKeyDown);
+  return () => {
+    clearSequenceState();
+    runtime.pendingChordState = null;
+    root.removeEventListener("keydown", onKeyDown);
+  };
 }
 
 function handleTabLifecycleShortcut(
