@@ -115,8 +115,8 @@ export const DEFAULT_SHELL_KEYBINDINGS: readonly ShellDefaultKeybinding[] = [
   { action: "shell.workspace.delete", keybinding: "ctrl+alt+w" },
   { action: "shell.workspace.next", keybinding: "ctrl+alt+pagedown" },
   { action: "shell.workspace.prev", keybinding: "ctrl+alt+pageup" },
-  { action: "shell.stack.navigate.back", keybinding: "alt+arrowleft" },
-  { action: "shell.stack.navigate.forward", keybinding: "alt+arrowright" },
+  { action: "shell.stack.navigate.back", keybinding: "ctrl+alt+bracketleft" },
+  { action: "shell.stack.navigate.forward", keybinding: "ctrl+alt+bracketright" },
 ];
 
 export const RESERVED_BROWSER_SHORTCUTS = new Set([
@@ -127,8 +127,8 @@ export const RESERVED_BROWSER_SHORTCUTS = new Set([
   "ctrl+r",
   "ctrl+tab",
   "ctrl+shift+tab",
-  "alt+left",
-  "alt+right",
+  "alt+arrowleft",
+  "alt+arrowright",
 ]);
 
 export function createDefaultShellKeybindingContract(): PluginContract {

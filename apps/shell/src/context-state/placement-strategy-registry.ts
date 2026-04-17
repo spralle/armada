@@ -16,6 +16,9 @@ export function createPlacementStrategyRegistry(): PlacementStrategyRegistry {
 
   return {
     register(strategy: TabPlacementStrategy): void {
+      if (strategies.has(strategy.id)) {
+        console.warn(`[PlacementStrategyRegistry] Overwriting existing strategy '${strategy.id}'`);
+      }
       strategies.set(strategy.id, strategy);
     },
 

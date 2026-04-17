@@ -115,6 +115,29 @@ export function createStackPlacementStrategy(): TabPlacementStrategy {
 
       return { tree: { root: nextRoot }, activatedTabId: forwardTab };
     },
+
+    onTabClosed(ctx: { tabId: string; stackId: string; tree: DockTreeState }): DockTreeState {
+      if (!ctx.tree.root) {
+        return ctx.tree;
+      }
+
+      const nextRoot = cloneDockNode(ctx.tree.root);
+      if (!nextRoot) {
+        return ctx.tree;
+      }
+
+      const stack = findStackById(nextRoot, ctx.stackId);
+      if (!stack || !stack.navHistory) {
+        return { root: nextRoot };
+      }
+
+      stack.navHistory = {
+        back: stack.navHistory.back.filter((id) => id !== ctx.tabId),
+        forward: stack.navHistory.forward.filter((id) => id !== ctx.tabId),
+      };
+
+      return { root: nextRoot };
+    },
   };
 }
 
