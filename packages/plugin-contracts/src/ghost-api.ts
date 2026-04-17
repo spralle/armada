@@ -1,5 +1,6 @@
 import type { Disposable } from "./disposable.js";
 import type { Event } from "./event.js";
+import type { WorkspaceService } from "./workspace-service.js";
 
 // ─── GhostApi (top-level namespace) ───
 
@@ -11,6 +12,8 @@ export interface GhostApi {
   readonly window: WindowService;
   /** View discovery and opening. */
   readonly views: ViewService;
+  /** Workspace management. */
+  readonly workspaces: WorkspaceService;
 }
 
 // ─── ActionService ───

@@ -189,6 +189,9 @@ export { SYNC_STATUS_SERVICE_ID } from "./sync-status-service.js";
 export type { ContextService } from "./context-service.js";
 export { CONTEXT_SERVICE_ID } from "./context-service.js";
 
+export type { WorkspaceService, WorkspaceInfo } from "./workspace-service.js";
+export { WORKSPACE_SERVICE_ID } from "./workspace-service.js";
+
 export type {
   KeybindingService,
   KeybindingEntry,
