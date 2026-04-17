@@ -13,7 +13,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
 
   root.innerHTML = `
   <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; --ghost-edge-top-min-height: 36px; --ghost-edge-bottom-min-height: 24px; --ghost-edge-left-min-width: auto; --ghost-edge-right-min-width: auto; }
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; --ghost-edge-bottom-min-height: 24px; --ghost-edge-left-min-width: auto; --ghost-edge-right-min-width: auto; }
     html, body, #root { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: transparent; color: var(--ghost-foreground); }
     * { scrollbar-width: thin; scrollbar-color: var(--ghost-muted-foreground) transparent; }
