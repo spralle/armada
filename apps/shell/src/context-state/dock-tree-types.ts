@@ -20,6 +20,10 @@ export interface DockStackNode {
   id: string;
   tabIds: string[];
   activeTabId: string | null;
+  navHistory?: {
+    back: string[];
+    forward: string[];
+  };
 }
 
 export interface DockTreeState {
