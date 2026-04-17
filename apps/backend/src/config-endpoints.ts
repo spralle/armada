@@ -2,10 +2,8 @@ import type { Route } from "./router.js";
 import { jsonResponse } from "./router.js";
 import { createTenantConfigProviders, validateTenantId } from "./config-loader.js";
 import type { ConfigLoaderOptions } from "./config-loader.js";
-import { resolveConfiguration, inspectKey } from "@weaver/config-engine";
-import type { ConfigurationLayerEntry, ConfigurationPropertySchema } from "@weaver/config-types";
-import type { ConfigAuditLog } from "@weaver/config-server";
-import type { OverrideTracker } from "@weaver/config-policy";
+import { resolveConfiguration, inspectKey } from "./config-stubs.js";
+import type { ConfigurationLayerEntry, ConfigurationPropertySchema, ConfigAuditLog, OverrideTracker } from "./config-stubs.js";
 import {
   extractAccessContext,
   checkPolicy,

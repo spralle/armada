@@ -1,15 +1,8 @@
 // Backend config bootstrap — creates a ConfigurationService at startup
 
-import { FileSystemStorageProvider } from "@weaver/config-server";
-import { createServiceConfigurationService } from "@weaver/config-server";
-import { createConfigurationService } from "@weaver/config-providers";
-import type {
-  ConfigurationService,
-  ServiceConfigurationService,
-  ConfigurationPropertySchema,
-} from "@weaver/config-types";
+import { FileSystemStorageProvider, createServiceConfigurationService, createConfigurationService, armadaWeaver } from "./config-stubs.js";
+import type { ConfigurationService, ServiceConfigurationService, ConfigurationPropertySchema } from "./config-stubs.js";
 import { resolve } from "node:path";
-import { armadaWeaver } from "@ghost/config-plugin-runtime";
 
 export interface BackendConfigBootstrapOptions {
   configDir: string;
