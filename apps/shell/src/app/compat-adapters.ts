@@ -22,7 +22,6 @@ import {
 } from "../ui/shell-mount.js";
 import { createEdgeSlotRenderer } from "../ui/edge-slot-renderer.js";
 import { createShellFederationRuntime } from "../federation-runtime.js";
-import { createWorkspaceIndicatorMount } from "../ui/workspace-indicator.js";
 import { createDefaultEdgeSlotsLayout } from "../layout.js";
 
 interface ShellCompatibilityAdapterDeps {
@@ -131,29 +130,6 @@ export function createShellRuntimeCompatibilityAdapters(
     syncRenderedParts: (viewRoot, parts) => runtime.partHost.syncRenderedParts(viewRoot, parts),
     unmountAll: () => runtime.partHost.unmountAll(),
   };
-
-  // Register built-in workspace indicator slot mount.
-  // The closure captures root, runtime, and the effects/core bindings needed
-  // to build PartsControllerDeps for workspace switching.
-  edgeSlotRenderer.registerBuiltInSlotMount(
-    "workspace-indicator",
-    createWorkspaceIndicatorMount({
-      getRoot: () => root,
-      getRuntime: () => runtime,
-      getPartsDeps: () => ({
-        applySelection: (event) => core.applySelection(event),
-        partHost: runtime.partHost,
-        publishWithDegrade: (event) => effects.publishWithDegrade(event),
-        renderContextControls: () => effects.renderContextControlsPanel(),
-        renderParts: () => effects.renderParts(),
-        renderSyncStatus: () => effects.renderSyncStatus(),
-      }),
-      onStateChange: () => {
-        effects.renderParts();
-        effects.renderSyncStatus();
-      },
-    }),
-  );
 
   // Toggle action stays shell-side — it needs runtime.layout access.
   runtime.runtimeActionRegistry.set("shell.topbar.toggle", () => {

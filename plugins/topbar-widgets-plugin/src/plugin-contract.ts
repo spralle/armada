@@ -22,6 +22,13 @@ const pluginContract: PluginContract = {
         order: 0,
         component: "topbar-clock",
       },
+      {
+        id: "workspace-indicator",
+        slot: "top",
+        position: "start",
+        order: 0,
+        component: "workspace-indicator",
+      },
     ],
     actions: [
       {

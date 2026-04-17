@@ -19,7 +19,6 @@ import {
 import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
-import { createWorkspaceIndicatorContract } from "../ui/workspace-indicator-plugin.js";
 import { initPlacementStrategy } from "../context-state/placement-strategy/setup.js";
 
 import { createWindowBridge } from "../window-bridge.js";
@@ -149,7 +148,6 @@ export function createShellRuntime(options?: {
 
   runtime.registry.registerManifestDescriptors("local", []);
   runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
-  runtime.registry.registerBuiltinPlugin(createWorkspaceIndicatorContract());
   // topbar-widgets contract is now provided by the MF plugin (topbar-widgets-plugin)
   runtime.layout = runtime.persistence.load();
   const workspaceLoad = runtime.workspacePersistence.load(runtime.contextState);
