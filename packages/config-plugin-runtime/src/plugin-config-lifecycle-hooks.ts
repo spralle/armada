@@ -1,19 +1,40 @@
-import type {
-  ConfigurationLayer,
-  ConfigurationPropertySchema,
-} from "@weaver/config-types";
+import type { ConfigurationPropertySchema } from "@ghost/plugin-contracts";
 import type {
   ComposeResult,
   ConfigurationSchemaDeclaration,
-  SchemaCompositionError,
-} from "@weaver/config-engine";
-import {
-  composeConfigurationSchemas,
-  deriveNamespace,
-  qualifyKey,
-} from "@weaver/config-engine";
-import type { PluginConfigInput } from "./plugin-schema-bridge.js";
+} from "./plugin-schema-bridge.js";
 import { collectPluginSchemaDeclarations } from "./plugin-schema-bridge.js";
+
+// @weaver/config-types removed — inline stub types
+/** Stub for ConfigurationLayer (@weaver/config-types removed). */
+type ConfigurationLayer = "core" | "app" | "tenant" | "user" | "session" | "module";
+
+/** Stub for SchemaCompositionError (@weaver/config-engine removed). */
+interface SchemaCompositionError {
+  key: string;
+  owners: string[];
+  message: string;
+}
+
+// @weaver/config-engine removed — stub throws
+function composeConfigurationSchemas(
+  _declarations: ConfigurationSchemaDeclaration[],
+): ComposeResult {
+  throw new Error("@weaver/config-engine is not available");
+}
+
+// @weaver/config-engine removed — stub
+function deriveNamespace(pluginId: string): string {
+  // Simple derivation: use pluginId as namespace
+  return pluginId;
+}
+
+// @weaver/config-engine removed — stub
+function qualifyKey(namespace: string, relativeKey: string): string {
+  return `${namespace}.${relativeKey}`;
+}
+
+import type { PluginConfigInput } from "./plugin-schema-bridge.js";
 
 export type PluginConfigLifecycleEvent =
   | "install"
@@ -232,7 +253,7 @@ export function createConfigurationLifecycleHooks(
     enable(pluginId: string): PluginConfigLifecycleResult {
       const state = plugins.get(pluginId);
       if (state === undefined) {
-        throw new Error(`Plugin \"${pluginId}\" is not installed`);
+        throw new Error(`Plugin "${pluginId}" is not installed`);
       }
 
       const registration = registerPluginSchema(state.plugin);
@@ -258,7 +279,7 @@ export function createConfigurationLifecycleHooks(
     disable(pluginId: string): PluginConfigLifecycleResult {
       const state = plugins.get(pluginId);
       if (state === undefined) {
-        throw new Error(`Plugin \"${pluginId}\" is not installed`);
+        throw new Error(`Plugin "${pluginId}" is not installed`);
       }
 
       schemaRegistry.unregister(pluginId);
@@ -280,7 +301,7 @@ export function createConfigurationLifecycleHooks(
 
     promote({ pluginId, fromLayer, toLayer }: PromoteOptions): PluginConfigLifecycleResult {
       if (!plugins.has(pluginId)) {
-        throw new Error(`Plugin \"${pluginId}\" is not installed`);
+        throw new Error(`Plugin "${pluginId}" is not installed`);
       }
 
       const source = options.stateContainer.getLayerEntries(fromLayer);

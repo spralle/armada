@@ -18,5 +18,7 @@
   "include": [
     "src"
   ],
-  "references": []
+  "references": [
+    { "path": "../plugin-contracts" }
+  ]
 }

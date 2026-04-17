@@ -52,6 +52,9 @@
     "packages/config-plugin-runtime": {
       "name": "@ghost/config-plugin-runtime",
       "version": "0.0.0",
+      "dependencies": {
+        "@ghost/plugin-contracts": "workspace:*",
+      },
     },
     "packages/plugin-contracts": {
       "name": "@ghost/plugin-contracts",
@@ -743,25 +746,41 @@
 
     "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
-    "@ghost/action-palette-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
+    "@ghost/action-palette-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/appearance-settings-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
+    "@ghost/appearance-settings-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/domain-unplanned-orders-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
+    "@ghost/backend-app/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/domain-vessel-view-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
+    "@ghost/config-plugin-runtime/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/plugin-starter/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
+    "@ghost/domain-unplanned-orders-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/sample-contract-consumer-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
+    "@ghost/domain-vessel-view-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/shadcn-theme-bridge-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
+    "@ghost/plugin-group-context/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/shared-ui-capability-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
+    "@ghost/plugin-keybindings/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/theme-default-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
+    "@ghost/plugin-plugins-panel/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/typecheck-fixture/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/config-types": "workspace:*", "zod": "^3.24.2" } }],
+    "@ghost/plugin-starter/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost/sample-contract-consumer-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost/shadcn-theme-bridge-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost/shared-ui-capability-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost/shell-app/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost/theme-default-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost/topbar-widgets-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost/typecheck-fixture/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost/view-picker-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@module-federation/bridge-react-webpack-plugin/semver": ["semver@7.6.3", "", { "bin": "bin/semver.js" }, "sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A=="],
 
@@ -774,26 +793,6 @@
     "@rspack/core/@module-federation/runtime-tools": ["@module-federation/runtime-tools@0.22.0", "", { "dependencies": { "@module-federation/runtime": "0.22.0", "@module-federation/webpack-bundler-runtime": "0.22.0" } }, "sha512-4ScUJ/aUfEernb+4PbLdhM/c60VHl698Gn1gY21m9vyC1Ucn69fPCA1y2EwcCB7IItseRMoNhdcWQnzt/OPCNA=="],
 
     "chalk/supports-color": ["supports-color@7.2.0", "", { "dependencies": { "has-flag": "^4.0.0" } }, "sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw=="],
-
-    "@ghost/action-palette-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/appearance-settings-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/domain-unplanned-orders-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/domain-vessel-view-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/plugin-starter/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/sample-contract-consumer-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/shadcn-theme-bridge-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/shared-ui-capability-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/theme-default-plugin/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost/typecheck-fixture/@ghost/plugin-contracts/@ghost/config-types": ["@ghost/config-types@file:packages/config-types", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@module-federation/cli/chalk/supports-color": ["supports-color@7.2.0", "", { "dependencies": { "has-flag": "^4.0.0" } }, "sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw=="],
 
