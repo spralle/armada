@@ -50,6 +50,8 @@ import type { GhostApiFactoryDependencies } from "../plugin-api/ghost-api-factor
 import type { SyncStatusServiceDeps } from "../sync-status-service-registration.js";
 import type { ContextServiceDeps } from "../context-service-registration.js";
 import type { KeybindingServiceDeps } from "../keybinding-service-registration.js";
+import type { PlacementStrategyRegistry } from "../context-state/placement-strategy/registry.js";
+import type { PlacementConfig } from "../context-state/placement-strategy/types.js";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -131,6 +133,8 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   activeDndPath: DndDiagnosticPath;
   activeDndReason: "kill-switch-force-disabled" | "flag-enabled" | "default-same-window-only";
   lastDndDiagnostic: DndDiagnosticEnvelope | null;
+  placementRegistry: PlacementStrategyRegistry;
+  placementConfig: PlacementConfig;
 }
 
 export interface SourceTabTransferPendingState {

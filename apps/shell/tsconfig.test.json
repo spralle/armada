@@ -48,6 +48,7 @@
     "src/ui/parts-controller-popout-transition.spec.ts",
     "src/ui/parts-controller-selection-transition.spec.ts",
     "src/ui/part-instance-popout-lifecycle.spec.ts",
-    "src/shell-runtime/runtime-render-transition.spec.ts"
+    "src/shell-runtime/runtime-render-transition.spec.ts",
+    "src/context-state/placement-strategy/placement-strategy.spec.ts"
   ]
 }

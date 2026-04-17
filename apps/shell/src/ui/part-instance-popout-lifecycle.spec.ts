@@ -326,6 +326,8 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     lastDndDiagnostic: null,
     themeRegistry: null,
     workspaceManager: {} as ShellRuntime["workspaceManager"],
+    placementRegistry: {} as ShellRuntime["placementRegistry"],
+    placementConfig: {} as ShellRuntime["placementConfig"],
     ...overrides,
   };
 }

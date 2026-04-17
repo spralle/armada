@@ -5,6 +5,8 @@ import {
   focusTabInDirection,
   gotoTabByIndex,
   moveTabInDirection,
+  navigateBackInActiveStack,
+  navigateForwardInActiveStack,
   resizeInDirection,
   swapTabInDirection,
 } from "../context-state/window-management.js";
@@ -91,6 +93,12 @@ function dispatchShellKeyboardAction(
   }
   if (actionId === "shell.stack.cycle.next") {
     return applyContextMutation(runtime, cycleTabInActiveStack(runtime.contextState, 1), actionId, "stack cycle unavailable");
+  }
+  if (actionId === "shell.stack.navigate.back") {
+    return applyContextMutation(runtime, navigateBackInActiveStack(runtime.contextState, runtime.placementRegistry, runtime.placementConfig), actionId, "stack navigate back unavailable");
+  }
+  if (actionId === "shell.stack.navigate.forward") {
+    return applyContextMutation(runtime, navigateForwardInActiveStack(runtime.contextState, runtime.placementRegistry, runtime.placementConfig), actionId, "stack navigate forward unavailable");
   }
 
   if (actionId === "shell.split.equalize") {

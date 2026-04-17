@@ -6,12 +6,19 @@ export function cloneDockNode(node: DockNode | null): DockNode | null {
   }
 
   if (node.kind === "stack") {
-    return {
+    const clone: DockStackNode = {
       kind: "stack",
       id: node.id,
       tabIds: [...node.tabIds],
       activeTabId: node.activeTabId,
     };
+    if (node.navHistory) {
+      clone.navHistory = {
+        back: [...node.navHistory.back],
+        forward: [...node.navHistory.forward],
+      };
+    }
+    return clone;
   }
 
   return {

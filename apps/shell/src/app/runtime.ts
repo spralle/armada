@@ -20,6 +20,7 @@ import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-ove
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { createWorkspaceIndicatorContract } from "../ui/workspace-indicator-plugin.js";
+import { initPlacementStrategy } from "../context-state/placement-strategy/setup.js";
 
 import { createWindowBridge } from "../window-bridge.js";
 import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
@@ -60,6 +61,8 @@ export function createShellRuntime(options?: {
     getRegistrySnapshot: () => registry.getSnapshot(),
   });
   const registry = createShellPluginRegistry();
+
+  const { registry: placementRegistry, config: placementConfig } = initPlacementStrategy();
 
   const runtime: ShellRuntime = {
     layout: createDefaultLayoutState(),
@@ -127,6 +130,8 @@ export function createShellRuntime(options?: {
     activeDndReason: crossWindowDnd.reason,
     lastDndDiagnostic: null,
     workspaceManager: null as unknown as ShellRuntime["workspaceManager"],
+    placementRegistry,
+    placementConfig,
   };
 
   runtime.partHost = createShellPartHostAdapter(runtime);
