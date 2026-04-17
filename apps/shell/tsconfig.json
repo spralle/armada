@@ -16,9 +16,6 @@
   "references": [
     {
       "path": "../../packages/plugin-contracts"
-    },
-    {
-      "path": "../../packages/entity-bridge-contracts"
     }
   ],
   "include": [

@@ -1,8 +1,4 @@
 import type {
-  BridgeActivationEvent,
-  BridgeInvalidationWireEvent,
-  BridgeQueryRequestEvent,
-  BridgeQueryResponseEvent,
   ContextSyncEvent,
   DndSessionDeleteEvent,
   DndSessionUpsertEvent,
@@ -165,61 +161,6 @@ export function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
     return null;
   }
 
-  if (event.type === "bridge-activation") {
-    const e = value as Record<string, unknown>;
-    if (
-      typeof e.bridgeId === "string" &&
-      (e.action === "activated" || e.action === "deactivated") &&
-      typeof e.sourceEntityType === "string" &&
-      typeof e.targetEntityType === "string" &&
-      typeof e.sourceWindowId === "string"
-    ) {
-      return e as unknown as BridgeActivationEvent;
-    }
-    return null;
-  }
-
-  if (event.type === "bridge-query-request") {
-    const e = value as Record<string, unknown>;
-    if (
-      typeof e.queryId === "string" &&
-      typeof e.bridgeId === "string" &&
-      isBridgeQueryShape(e.query) &&
-      typeof e.targetWindowId === "string" &&
-      typeof e.sourceWindowId === "string"
-    ) {
-      return e as unknown as BridgeQueryRequestEvent;
-    }
-    return null;
-  }
-
-  if (event.type === "bridge-query-response") {
-    const e = value as Record<string, unknown>;
-    if (
-      typeof e.queryId === "string" &&
-      typeof e.bridgeId === "string" &&
-      isBridgeResultShape(e.result) &&
-      isOptionalString(e.error) &&
-      typeof e.targetWindowId === "string" &&
-      typeof e.sourceWindowId === "string"
-    ) {
-      return e as unknown as BridgeQueryResponseEvent;
-    }
-    return null;
-  }
-
-  if (event.type === "bridge-invalidation") {
-    const e = value as Record<string, unknown>;
-    if (
-      typeof e.bridgeId === "string" &&
-      isBridgeInvalidationReason(e.reason) &&
-      typeof e.sourceWindowId === "string"
-    ) {
-      return e as unknown as BridgeInvalidationWireEvent;
-    }
-    return null;
-  }
-
   return null;
 }
 
@@ -283,37 +224,5 @@ function isOptionalRevision(
 
   const revision = value as { timestamp?: unknown; writer?: unknown };
   return typeof revision.timestamp === "number" && typeof revision.writer === "string";
-}
-
-function isBridgeQueryShape(value: unknown): boolean {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const q = value as { sourceIds?: unknown };
-  return Array.isArray(q.sourceIds) && q.sourceIds.every((id: unknown) => typeof id === "string");
-}
-
-function isBridgeResultShape(value: unknown): boolean {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const r = value as { ids?: unknown; totalCount?: unknown };
-  return (
-    Array.isArray(r.ids) &&
-    r.ids.every((id: unknown) => typeof id === "string") &&
-    typeof r.totalCount === "number"
-  );
-}
-
-function isBridgeInvalidationReason(
-  value: unknown,
-): value is "selection-changed" | "provider-deactivated" | "data-updated" {
-  return (
-    value === "selection-changed" ||
-    value === "provider-deactivated" ||
-    value === "data-updated"
-  );
 }
 

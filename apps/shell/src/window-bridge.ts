@@ -1,4 +1,3 @@
-import type { BridgeQuery, BridgeResult } from "@ghost/entity-bridge-contracts";
 import { parseBridgeEvent } from "./window-bridge-parse.js";
 
 export interface SelectionSyncEvent {
@@ -84,41 +83,6 @@ export interface SyncAckEvent {
   sourceWindowId: string;
 }
 
-export interface BridgeActivationEvent {
-  type: "bridge-activation";
-  bridgeId: string;
-  action: "activated" | "deactivated";
-  sourceEntityType: string;
-  targetEntityType: string;
-  sourceWindowId: string;
-}
-
-export interface BridgeQueryRequestEvent {
-  type: "bridge-query-request";
-  queryId: string;
-  bridgeId: string;
-  query: BridgeQuery;
-  targetWindowId: string;
-  sourceWindowId: string;
-}
-
-export interface BridgeQueryResponseEvent {
-  type: "bridge-query-response";
-  queryId: string;
-  bridgeId: string;
-  result: BridgeResult;
-  error?: string;
-  targetWindowId: string;
-  sourceWindowId: string;
-}
-
-export interface BridgeInvalidationWireEvent {
-  type: "bridge-invalidation";
-  bridgeId: string;
-  reason: "selection-changed" | "provider-deactivated" | "data-updated";
-  sourceWindowId: string;
-}
-
 export interface WindowBridgeHealth {
   degraded: boolean;
   reason: "unavailable" | "channel-error" | "publish-failed" | null;
@@ -132,11 +96,7 @@ export type WindowBridgeEvent =
   | DndSessionUpsertEvent
   | DndSessionDeleteEvent
   | SyncProbeEvent
-  | SyncAckEvent
-  | BridgeActivationEvent
-  | BridgeQueryRequestEvent
-  | BridgeQueryResponseEvent
-  | BridgeInvalidationWireEvent;
+  | SyncAckEvent;
 
 export interface WindowBridge {
   readonly available: boolean;

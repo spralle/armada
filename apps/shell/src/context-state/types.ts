@@ -71,9 +71,40 @@ export interface SelectionWriteInput {
   revision: RevisionMeta;
 }
 
+export interface SelectionPropagationRule {
+  id: string;
+  sourceEntityType: string;
+  propagate: (input: {
+    state: ShellContextState;
+    sourceEntityType: string;
+    sourceSelection: EntityTypeSelection;
+    sourceRevision: RevisionMeta;
+  }) => Omit<SelectionWriteInput, "revision"> | null;
+}
+
+export interface DerivedLaneDefinition {
+  key: string;
+  valueType: string;
+  sourceEntityType: string;
+  scope: "global" | "group";
+  derive: (input: {
+    state: ShellContextState;
+    sourceEntityType: string;
+    sourceSelection: EntityTypeSelection;
+    sourceRevision: RevisionMeta;
+  }) => string;
+}
+
+export interface SelectionUpdateOptions {
+  propagationRules?: SelectionPropagationRule[];
+  derivedLanes?: DerivedLaneDefinition[];
+  derivedGroupId?: string;
+}
+
 export interface SelectionUpdateResult {
   state: ShellContextState;
   changedEntityTypes: string[];
+  derivedLaneFailures: string[];
 }
 
 export interface ShellContextState {

@@ -2,7 +2,7 @@ import { createWindowBridge } from "./window-bridge.js";
 import {
   createAsyncWindowBridgeCompatibilityShim,
 } from "./app/async-bridge.js";
-import type { ContextSyncEvent, SelectionSyncEvent, WindowBridgeEvent, BridgeActivationEvent, BridgeQueryRequestEvent, BridgeQueryResponseEvent, BridgeInvalidationWireEvent } from "./window-bridge.js";
+import type { ContextSyncEvent, SelectionSyncEvent, WindowBridgeEvent } from "./window-bridge.js";
 
 type TestCase = {
   name: string;
@@ -491,126 +491,6 @@ test("async compatibility shim normalizes timeout and closed publish rejections"
     if (closed.status === "rejected") {
       assertEqual(closed.reason, "closed", "closed shim publish should report closed reason");
     }
-  } finally {
-    (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
-  }
-});
-
-test("bridge parses entity bridge protocol events", () => {
-  const previous = (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel;
-  (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel as unknown;
-
-  try {
-    const bridge = createWindowBridge("ghost.test.bridge.entity-bridge");
-    const channel = FakeBroadcastChannel.lastInstance;
-    assertTruthy(channel, "expected fake broadcast channel instance");
-
-    const events: WindowBridgeEvent[] = [];
-    bridge.subscribe((event) => {
-      events.push(event);
-    });
-
-    // Valid bridge-activation
-    channel!.emit("message", {
-      type: "bridge-activation",
-      bridgeId: "sailing-order",
-      action: "activated",
-      sourceEntityType: "sailing",
-      targetEntityType: "order",
-      sourceWindowId: "window-a",
-    });
-
-    // Valid bridge-query-request
-    channel!.emit("message", {
-      type: "bridge-query-request",
-      queryId: "q-1",
-      bridgeId: "sailing-order",
-      query: { sourceIds: ["s1", "s2"] },
-      targetWindowId: "window-b",
-      sourceWindowId: "window-a",
-    });
-
-    // Valid bridge-query-response
-    channel!.emit("message", {
-      type: "bridge-query-response",
-      queryId: "q-1",
-      bridgeId: "sailing-order",
-      result: { ids: ["o1", "o2"], totalCount: 2 },
-      targetWindowId: "window-a",
-      sourceWindowId: "window-b",
-    });
-
-    // Valid bridge-invalidation
-    channel!.emit("message", {
-      type: "bridge-invalidation",
-      bridgeId: "sailing-order",
-      reason: "selection-changed",
-      sourceWindowId: "window-a",
-    });
-
-    // Invalid: bridge-activation missing action
-    channel!.emit("message", {
-      type: "bridge-activation",
-      bridgeId: "sailing-order",
-      sourceEntityType: "sailing",
-      targetEntityType: "order",
-      sourceWindowId: "window-a",
-    });
-
-    // Invalid: bridge-query-request missing query
-    channel!.emit("message", {
-      type: "bridge-query-request",
-      queryId: "q-bad",
-      bridgeId: "sailing-order",
-      targetWindowId: "window-b",
-      sourceWindowId: "window-a",
-    });
-
-    // Invalid: bridge-query-response result missing ids
-    channel!.emit("message", {
-      type: "bridge-query-response",
-      queryId: "q-bad",
-      bridgeId: "sailing-order",
-      result: { totalCount: 0 },
-      targetWindowId: "window-a",
-      sourceWindowId: "window-b",
-    });
-
-    // Invalid: bridge-invalidation bad reason
-    channel!.emit("message", {
-      type: "bridge-invalidation",
-      bridgeId: "sailing-order",
-      reason: "unknown-reason",
-      sourceWindowId: "window-a",
-    });
-
-    assertEqual(events.length, 4, "should parse exactly 4 valid events and reject 4 invalid ones");
-
-    const activation = events[0] as BridgeActivationEvent;
-    assertEqual(activation.type, "bridge-activation", "first event type");
-    assertEqual(activation.bridgeId, "sailing-order", "activation bridge id");
-    assertEqual(activation.action, "activated", "activation action");
-    assertEqual(activation.sourceEntityType, "sailing", "activation source entity type");
-    assertEqual(activation.targetEntityType, "order", "activation target entity type");
-    assertEqual(activation.sourceWindowId, "window-a", "activation source window id");
-
-    const request = events[1] as BridgeQueryRequestEvent;
-    assertEqual(request.type, "bridge-query-request", "second event type");
-    assertEqual(request.queryId, "q-1", "request query id");
-    assertEqual(request.bridgeId, "sailing-order", "request bridge id");
-    assertEqual(request.targetWindowId, "window-b", "request target window id");
-    assertEqual(request.sourceWindowId, "window-a", "request source window id");
-
-    const response = events[2] as BridgeQueryResponseEvent;
-    assertEqual(response.type, "bridge-query-response", "third event type");
-    assertEqual(response.queryId, "q-1", "response query id");
-    assertEqual(response.result.totalCount, 2, "response total count");
-
-    const invalidation = events[3] as BridgeInvalidationWireEvent;
-    assertEqual(invalidation.type, "bridge-invalidation", "fourth event type");
-    assertEqual(invalidation.bridgeId, "sailing-order", "invalidation bridge id");
-    assertEqual(invalidation.reason, "selection-changed", "invalidation reason");
-    assertEqual(invalidation.sourceWindowId, "window-a", "invalidation source window id");
   } finally {
     (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
   }

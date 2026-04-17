@@ -22,8 +22,10 @@ import type {
 } from "./async-bridge.js";
 import type {
   ContextTabCloseability,
+  DerivedLaneDefinition,
   IncomingTransferJournal,
   RevisionMeta,
+  SelectionPropagationRule,
   ShellContextState,
 } from "../context-state.js";
 import type {
@@ -146,8 +148,23 @@ export interface TenantPluginManifestResponse {
   plugins: TenantPluginDescriptor[];
 }
 
+export interface RuntimeDerivedLaneContribution {
+  id: string;
+  key: string;
+  sourceEntityType: string;
+  scope: "global" | "group";
+  valueType: string;
+  strategy: "priority-id" | "joined-selected-ids";
+}
+
+export interface SelectionGraphExtensions {
+  propagationRules: SelectionPropagationRule[];
+  derivedLanes: DerivedLaneDefinition[];
+}
+
 export interface SelectionPropagationResult {
   state: ShellContextState;
+  derivedLaneFailures: string[];
 }
 
 export type SelectionWrite = {
