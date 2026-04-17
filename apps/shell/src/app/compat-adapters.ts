@@ -27,7 +27,7 @@ import {
 import { createEdgeSlotRenderer } from "../ui/edge-slot-renderer.js";
 import { createShellFederationRuntime } from "../federation-runtime.js";
 import { createWorkspaceIndicatorMount } from "../ui/workspace-indicator.js";
-import { registerTopbarWidgetsBuiltIn } from "../ui/topbar-widgets-plugin.js";
+import { createDefaultEdgeSlotsLayout } from "../layout.js";
 
 interface ShellCompatibilityAdapterDeps {
   activatePluginForBoundary: (options: {
@@ -169,7 +169,15 @@ export function createShellRuntimeCompatibilityAdapters(
     }),
   );
 
-  registerTopbarWidgetsBuiltIn({ edgeSlotRenderer, runtime });
+  // Toggle action stays shell-side — it needs runtime.layout access.
+  runtime.runtimeActionRegistry.set("shell.topbar.toggle", () => {
+    if (!runtime.layout.edgeSlots) {
+      runtime.layout = { ...runtime.layout, edgeSlots: createDefaultEdgeSlotsLayout() };
+    }
+    const edgeSlots = runtime.layout.edgeSlots!;
+    edgeSlots.top.visible = !edgeSlots.top.visible;
+    runtime.layout = { ...runtime.layout, edgeSlots };
+  });
 
   return {
     core,

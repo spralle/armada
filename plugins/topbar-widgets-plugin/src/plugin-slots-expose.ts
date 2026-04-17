@@ -1,6 +1,8 @@
-import type { ShellRuntime } from "../app/types.js";
-import type { ComposedPluginSlotContribution } from "@ghost/plugin-contracts";
-import type { MountCleanup } from "../federation-mount-utils.js";
+// ---------------------------------------------------------------------------
+// Topbar widget slot mounts — loaded by the shell via Module Federation
+// as `./pluginSlots`. The edge-slot-renderer resolves mount functions from
+// `slots[componentId]`.
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // CSS (injected once)
@@ -42,6 +44,18 @@ function injectStyles(): void {
 }
 
 // ---------------------------------------------------------------------------
+// Shared types — mirrors the shape the shell passes into slot mounts.
+// We avoid importing shell-internal types; only the shape matters.
+// ---------------------------------------------------------------------------
+
+interface SlotMountContext {
+  readonly contribution: { readonly id: string; readonly component: string };
+  readonly runtime: { readonly selectedPartTitle: string | null };
+}
+
+type CleanupFn = () => void;
+
+// ---------------------------------------------------------------------------
 // Clock mount (top/end)
 // ---------------------------------------------------------------------------
 
@@ -52,7 +66,7 @@ function formatTime(): string {
   return `${h}:${m}`;
 }
 
-function mountClock(container: HTMLElement): MountCleanup {
+function mountClock(container: HTMLElement): CleanupFn {
   const el = document.createElement("div");
   el.className = "topbar-clock";
   el.textContent = formatTime();
@@ -68,24 +82,11 @@ function mountClock(container: HTMLElement): MountCleanup {
   };
 }
 
-export function createTopbarClockMount(): (
-  target: HTMLElement,
-  context: { contribution: ComposedPluginSlotContribution; runtime: ShellRuntime },
-) => MountCleanup {
-  return (target, _context) => {
-    injectStyles();
-    return mountClock(target);
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Title mount (top/center)
 // ---------------------------------------------------------------------------
 
-function mountTitle(
-  container: HTMLElement,
-  runtime: ShellRuntime,
-): MountCleanup {
+function mountTitle(container: HTMLElement, runtime: SlotMountContext["runtime"]): CleanupFn {
   const el = document.createElement("div");
   el.className = "topbar-title";
   container.appendChild(el);
@@ -107,12 +108,18 @@ function mountTitle(
   };
 }
 
-export function createTopbarTitleMount(): (
-  target: HTMLElement,
-  context: { contribution: ComposedPluginSlotContribution; runtime: ShellRuntime },
-) => MountCleanup {
-  return (target, context) => {
+// ---------------------------------------------------------------------------
+// Exported slots record — keyed by component ID as declared in the contract.
+// The shell's resolveSlotMount resolves `slots[contribution.component]`.
+// ---------------------------------------------------------------------------
+
+export const slots: Record<string, (target: HTMLElement, context: SlotMountContext) => CleanupFn> = {
+  "topbar-title": (target, context) => {
     injectStyles();
     return mountTitle(target, context.runtime);
-  };
-}
+  },
+  "topbar-clock": (target, _context) => {
+    injectStyles();
+    return mountClock(target);
+  },
+};
