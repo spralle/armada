@@ -14,5 +14,7 @@
   "ghost.shell.migration.enableAsyncScompAdapter": false,
   "ghost.shell.migration.forceLegacyBridge": false,
   "ghost.shell.migration.enableCrossWindowDnd": true,
-  "ghost.shell.migration.forceDisableCrossWindowDnd": false
+  "ghost.shell.migration.forceDisableCrossWindowDnd": false,
+  "ghost.shell.placement.strategy": "tabs",
+  "ghost.shell.placement.dwindleDirection": "alternate"
 }
