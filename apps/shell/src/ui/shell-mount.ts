@@ -24,9 +24,9 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .edge-slot-left { grid-area: left; flex-direction: column; min-width: var(--ghost-edge-left-min-width, auto); background: var(--ghost-edge-left); color: var(--ghost-edge-left-foreground); border-right: 1px solid var(--ghost-edge-left-border); padding: 4px 0; align-items: center; }
     .edge-slot-right { grid-area: right; flex-direction: column; min-width: var(--ghost-edge-right-min-width, auto); background: var(--ghost-edge-right); color: var(--ghost-edge-right-foreground); border-left: 1px solid var(--ghost-edge-right-border); padding: 4px 0; align-items: center; }
     .edge-slot-start, .edge-slot-center, .edge-slot-end { display: flex; align-items: center; }
-    .edge-slot-start { flex: 1; justify-content: flex-start; }
+    .edge-slot-start { flex: 1; justify-content: flex-start; min-width: 0; overflow: hidden; }
     .edge-slot-center { flex: 1; justify-content: center; }
-    .edge-slot-end { flex: 1; justify-content: flex-end; }
+    .edge-slot-end { flex: 1; justify-content: flex-end; min-width: 0; overflow: hidden; }
     .dock-root { grid-area: main; }
     .shell,
     .shell > .dock-root,
