@@ -26,6 +26,7 @@ export interface SchemaFieldInfo {
   readonly path: string;
   readonly type: SchemaFieldType;
   readonly required: boolean;
+  readonly defaultValue?: unknown;
   readonly metadata?: Readonly<Record<string, unknown>>;
 }
 

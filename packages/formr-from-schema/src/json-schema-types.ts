@@ -26,5 +26,10 @@ export interface JsonSchema {
   readonly minLength?: number;
   readonly maxLength?: number;
   readonly pattern?: string;
+  readonly const?: unknown;
   readonly $schema?: string;
+  readonly $ref?: string;
+  readonly $defs?: Readonly<Record<string, JsonSchema>>;
+  readonly definitions?: Readonly<Record<string, JsonSchema>>;
+  readonly additionalProperties?: boolean | JsonSchema;
 }

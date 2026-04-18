@@ -138,6 +138,17 @@ function executeOperator(
       const exists = resolved !== MISSING;
       return expected ? exists : !exists;
     }
+    case '$regex': {
+      const target = evaluateInner(args[0], scope, depth, maxDepth);
+      const pattern = evaluateInner(args[1], scope, depth, maxDepth);
+      if (typeof target !== 'string' || typeof pattern !== 'string') {
+        throw new PredicateError(
+          'FORMR_EXPR_TYPE_MISMATCH',
+          '$regex requires string operands',
+        );
+      }
+      return new RegExp(pattern).test(target);
+    }
     default:
       throw new PredicateError(
         'PREDICATE_UNKNOWN_OPERATOR',

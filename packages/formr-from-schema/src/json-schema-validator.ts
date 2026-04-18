@@ -1,6 +1,7 @@
 import type { ValidatorAdapter, ValidationIssue } from '@ghost/formr-core';
 import type { CanonicalPath } from '@ghost/formr-core';
 import type { JsonSchema } from './json-schema-types.js';
+import { dereferenceSchema } from './json-schema-deref.js';
 
 /** Detect if an unknown value looks like a JSON Schema object */
 export function isJsonSchema(value: unknown): value is JsonSchema {
@@ -29,8 +30,9 @@ export function isJsonSchema(value: unknown): value is JsonSchema {
 }
 
 export function createJsonSchemaValidator<S extends string = string>(
-  schema: JsonSchema,
+  rawSchema: JsonSchema,
 ): ValidatorAdapter<S> {
+  const schema = dereferenceSchema(rawSchema);
   return {
     id: 'json-schema-adapter',
     supports(s: unknown): boolean {
@@ -77,6 +79,7 @@ function validateNode<S extends string>(
   }
 
   validateType(schema, data, segments, stage, issues);
+  validateConst(schema, data, segments, stage, issues);
   validateEnum(schema, data, segments, stage, issues);
   validateConstraints(schema, data, segments, stage, issues);
   validateConditional(schema, data, segments, stage, issues);
@@ -151,6 +154,34 @@ function validateEnum<S extends string>(
   if (!schema.enum.includes(data)) {
     issues.push(makeIssue('INVALID_ENUM', `Value must be one of: ${schema.enum.join(', ')}`, segments, stage));
   }
+}
+
+function validateConst<S extends string>(
+  schema: JsonSchema,
+  data: unknown,
+  segments: readonly (string | number)[],
+  stage: S,
+  issues: ValidationIssue<S>[],
+): void {
+  if (schema.const === undefined) return;
+  if (!deepEqual(schema.const, data)) {
+    issues.push(makeIssue('INVALID_CONST', `Value must equal: ${JSON.stringify(schema.const)}`, segments, stage));
+  }
+}
+
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== typeof b) return false;
+  if (a === null || b === null) return false;
+  if (typeof a !== 'object') return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+
+  const aObj = a as Record<string, unknown>;
+  const bObj = b as Record<string, unknown>;
+  const aKeys = Object.keys(aObj);
+  const bKeys = Object.keys(bObj);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every((k) => deepEqual(aObj[k], bObj[k]));
 }
 
 function validateConstraints<S extends string>(

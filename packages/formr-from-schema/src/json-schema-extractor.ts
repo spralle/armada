@@ -1,7 +1,9 @@
 import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult } from './types.js';
 import type { JsonSchema } from './json-schema-types.js';
+import { dereferenceSchema } from './json-schema-deref.js';
 
-export function extractFromJsonSchema(schema: JsonSchema): SchemaIngestionResult {
+export function extractFromJsonSchema(rawSchema: JsonSchema): SchemaIngestionResult {
+  const schema = dereferenceSchema(rawSchema);
   const fields: SchemaFieldInfo[] = [];
   const rootMetadata: Record<string, unknown> = {};
 
@@ -54,6 +56,7 @@ function walkJsonSchema(
     path: prefix,
     type: fieldType,
     required: isRequired,
+    ...(schema.const !== undefined ? { defaultValue: schema.const } : {}),
     ...(metadata ? { metadata } : {}),
   });
 }

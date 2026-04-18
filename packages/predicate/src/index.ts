@@ -4,3 +4,4 @@ export { compile, type CompileOptions } from './compiler.js';
 export { OperatorRegistry, type OperatorDefinition } from './operators.js';
 export { evaluate, type EvaluateOptions } from './evaluator.js';
 export { assertSafeSegment, DANGEROUS_KEYS } from './safe-path.js';
+export { compileShorthand, type ShorthandQuery } from './shorthand.js';

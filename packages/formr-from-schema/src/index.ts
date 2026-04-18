@@ -1,6 +1,7 @@
 export { ingestSchema } from './ingest.js';
-export { isStandardSchema, isZodSchema } from './detect.js';
+export { isStandardSchema, isZodSchema, isZodV4Schema } from './detect.js';
 export { extractFromZod } from './zod-extractor.js';
+export { extractFromZodV4 } from './zod4-extractor.js';
 export { extractFromJsonSchema } from './json-schema-extractor.js';
 export { createJsonSchemaValidator, isJsonSchema } from './json-schema-validator.js';
 export { FromSchemaError, type FromSchemaErrorCode } from './errors.js';
