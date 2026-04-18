@@ -51,6 +51,7 @@ export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.workspace.prev",
   "shell.stack.navigate.back",
   "shell.stack.navigate.forward",
+  "shell.elevatedSession.activate",
 ] as const;
 
 export type ShellKeyboardActionId = typeof SHELL_KEYBOARD_ACTION_IDS[number];
@@ -67,6 +68,7 @@ export const SHELL_UNAVAILABLE_ACTION_IDS = [
 export interface ShellDefaultKeybinding {
   action: ShellKeyboardActionId;
   keybinding: string;
+  hidden?: boolean | undefined;
 }
 
 export const DEFAULT_SHELL_KEYBINDINGS: readonly ShellDefaultKeybinding[] = [
@@ -117,6 +119,7 @@ export const DEFAULT_SHELL_KEYBINDINGS: readonly ShellDefaultKeybinding[] = [
   { action: "shell.workspace.prev", keybinding: "ctrl+alt+pageup" },
   { action: "shell.stack.navigate.back", keybinding: "ctrl+alt+bracketleft" },
   { action: "shell.stack.navigate.forward", keybinding: "ctrl+alt+bracketright" },
+  { action: "shell.elevatedSession.activate", keybinding: "ctrl+shift+alt+g o d", hidden: true },
 ];
 
 export const RESERVED_BROWSER_SHORTCUTS = new Set([
@@ -129,6 +132,11 @@ export const RESERVED_BROWSER_SHORTCUTS = new Set([
   "ctrl+shift+tab",
   "alt+arrowleft",
   "alt+arrowright",
+]);
+
+/** Action IDs that are registered but hidden from UI (action palette, keybinding panel). */
+const HIDDEN_ACTION_IDS = new Set<string>([
+  "shell.elevatedSession.activate",
 ]);
 
 export function createDefaultShellKeybindingContract(): PluginContract {
@@ -144,10 +152,12 @@ export function createDefaultShellKeybindingContract(): PluginContract {
         id: actionId,
         title: actionId,
         intent: actionId,
+        ...(HIDDEN_ACTION_IDS.has(actionId) ? { hidden: true } : {}),
       })),
       keybindings: DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
         action: entry.action,
         keybinding: entry.keybinding,
+        ...(entry.hidden ? { hidden: true } : {}),
       })),
     },
   };

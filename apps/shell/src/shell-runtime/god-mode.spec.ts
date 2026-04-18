@@ -1,8 +1,8 @@
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import {
-  createGodModeInterceptor,
   validateGodModeAuth,
   activateElevatedSession,
+  GOD_MODE_ACTION_ID,
 } from "./god-mode.js";
 import type { ShellRuntime } from "../app/types.js";
 import { buildActionSurface } from "../action-surface.js";
@@ -17,62 +17,8 @@ function createMinimalRuntime(): ShellRuntime {
   } as unknown as ShellRuntime;
 }
 
-function syntheticEvent(overrides: {
-  key: string;
-  ctrlKey?: boolean;
-  shiftKey?: boolean;
-  altKey?: boolean;
-}): KeyboardEvent {
-  return {
-    key: overrides.key,
-    ctrlKey: overrides.ctrlKey ?? false,
-    shiftKey: overrides.shiftKey ?? false,
-    altKey: overrides.altKey ?? false,
-    metaKey: false,
-    preventDefault() {},
-  } as unknown as KeyboardEvent;
-}
-
 export function registerGodModeSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
-
-  test("god-mode: sequence triggers — each chord consumed", () => {
-    const runtime = createMinimalRuntime();
-    const interceptor = createGodModeInterceptor(runtime);
-
-    const r1 = interceptor(syntheticEvent({ key: "g", ctrlKey: true, shiftKey: true, altKey: true }));
-    assertEqual(r1, true, "first chord (ctrl+shift+alt+g) should be consumed");
-
-    const r2 = interceptor(syntheticEvent({ key: "o" }));
-    assertEqual(r2, true, "second chord (o) should be consumed");
-
-    const r3 = interceptor(syntheticEvent({ key: "d" }));
-    assertEqual(r3, true, "third chord (d) should be consumed");
-  });
-
-  test("god-mode: not exposed in action list", () => {
-    const runtime = createMinimalRuntime();
-    const actions = runtime.actionSurface.actions;
-    const godModeAction = actions.find(
-      (a: { id: string }) => a.id.toLowerCase().includes("god") || a.id.toLowerCase().includes("elevated"),
-    );
-    assertEqual(godModeAction, undefined, "god-mode should not appear in action surface");
-  });
-
-  test("god-mode: partial sequence consumed, unrelated key resets", () => {
-    const runtime = createMinimalRuntime();
-    const interceptor = createGodModeInterceptor(runtime);
-
-    const r1 = interceptor(syntheticEvent({ key: "g", ctrlKey: true, shiftKey: true, altKey: true }));
-    assertEqual(r1, true, "first chord should be consumed");
-
-    const r2 = interceptor(syntheticEvent({ key: "x" }));
-    assertEqual(r2, false, "unrelated key should not be consumed and should reset");
-
-    // After reset, 'o' alone should not be consumed
-    const r3 = interceptor(syntheticEvent({ key: "o" }));
-    assertEqual(r3, false, "o after reset should not be consumed");
-  });
 
   test("god-mode: validateGodModeAuth accepts correct secret", () => {
     assertEqual(validateGodModeAuth("armada"), true, "correct secret should validate");
@@ -90,25 +36,50 @@ export function registerGodModeSpecs(harness: SpecHarness): void {
     assertTruthy(runtime.notice.length > 0, "notice should be set");
   });
 
-  test("god-mode: first chord must be ctrl+shift+alt+g", () => {
+  test("god-mode: GOD_MODE_ACTION_ID is registered in action surface", () => {
     const runtime = createMinimalRuntime();
-    const interceptor = createGodModeInterceptor(runtime);
-
-    const r1 = interceptor(syntheticEvent({ key: "o" }));
-    assertEqual(r1, false, "o without prior ctrl+shift+alt+g should not be consumed");
+    const action = runtime.actionSurface.actions.find(
+      (a: { id: string }) => a.id === GOD_MODE_ACTION_ID,
+    );
+    assertTruthy(action !== undefined, "god-mode action should exist in action surface");
   });
 
-  test("god-mode: sequence resets after full completion", () => {
+  test("god-mode: action is marked hidden in action surface", () => {
     const runtime = createMinimalRuntime();
-    const interceptor = createGodModeInterceptor(runtime);
+    const action = runtime.actionSurface.actions.find(
+      (a: { id: string }) => a.id === GOD_MODE_ACTION_ID,
+    );
+    assertEqual(action?.hidden, true, "god-mode action should be hidden");
+  });
 
-    // Complete the sequence
-    interceptor(syntheticEvent({ key: "g", ctrlKey: true, shiftKey: true, altKey: true }));
-    interceptor(syntheticEvent({ key: "o" }));
-    interceptor(syntheticEvent({ key: "d" }));
+  test("god-mode: keybinding is marked hidden in action surface", () => {
+    const runtime = createMinimalRuntime();
+    const kb = runtime.actionSurface.keybindings.find(
+      (k: { action: string }) => k.action === GOD_MODE_ACTION_ID,
+    );
+    assertTruthy(kb !== undefined, "god-mode keybinding should exist");
+    assertEqual(kb?.hidden, true, "god-mode keybinding should be hidden");
+  });
 
-    // After completion, a new ctrl+shift+alt+g should start fresh
-    const r = interceptor(syntheticEvent({ key: "g", ctrlKey: true, shiftKey: true, altKey: true }));
-    assertEqual(r, true, "should start new sequence after completion");
+  test("god-mode: hidden actions excluded when filtering visible", () => {
+    const runtime = createMinimalRuntime();
+    const visibleActions = runtime.actionSurface.actions.filter((a) => !a.hidden);
+    const godAction = visibleActions.find((a) => a.id === GOD_MODE_ACTION_ID);
+    assertEqual(godAction, undefined, "hidden action should not appear in visible actions");
+  });
+
+  test("god-mode: hidden keybindings excluded when filtering visible", () => {
+    const runtime = createMinimalRuntime();
+    const visibleKbs = runtime.actionSurface.keybindings.filter((kb) => !kb.hidden);
+    const godKb = visibleKbs.find((kb) => kb.action === GOD_MODE_ACTION_ID);
+    assertEqual(godKb, undefined, "hidden keybinding should not appear in visible keybindings");
+  });
+
+  test("god-mode: keybinding is ctrl+shift+alt+g o d", () => {
+    const runtime = createMinimalRuntime();
+    const kb = runtime.actionSurface.keybindings.find(
+      (k: { action: string }) => k.action === GOD_MODE_ACTION_ID,
+    );
+    assertEqual(kb?.keybinding, "ctrl+shift+alt+g o d", "keybinding should be the 3-chord sequence");
   });
 }

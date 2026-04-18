@@ -1,14 +1,7 @@
-import { normalizeKeyboardEventChord } from "./keybinding-normalizer.js";
 import type { ShellRuntime } from "../app/types.js";
 
-const GOD_MODE_SEQUENCE = ["ctrl+shift+alt+g", "o", "d"] as const;
-const GOD_MODE_TIMEOUT_MS = 1000;
+export const GOD_MODE_ACTION_ID = "shell.elevatedSession.activate";
 const GOD_MODE_SECRET = "armada";
-
-interface GodModeChordState {
-  chords: string[];
-  lastChordTime: number;
-}
 
 export function validateGodModeAuth(secret: string): boolean {
   return secret === GOD_MODE_SECRET;
@@ -109,49 +102,7 @@ export function showGodModePrompt(): Promise<string | undefined> {
   });
 }
 
-export function createGodModeInterceptor(
-  runtime: ShellRuntime,
-): (event: KeyboardEvent) => boolean {
-  let state: GodModeChordState | null = null;
-
-  return (event: KeyboardEvent): boolean => {
-    const chord = normalizeKeyboardEventChord(event);
-    if (!chord) {
-      return false;
-    }
-
-    const now = Date.now();
-
-    if (state && now - state.lastChordTime > GOD_MODE_TIMEOUT_MS) {
-      state = null;
-    }
-
-    if (!state) {
-      if (chord.value === GOD_MODE_SEQUENCE[0]) {
-        state = { chords: [chord.value], lastChordTime: now };
-        return true;
-      }
-      return false;
-    }
-
-    const nextIndex = state.chords.length;
-    if (chord.value === GOD_MODE_SEQUENCE[nextIndex]) {
-      state.chords.push(chord.value);
-      state.lastChordTime = now;
-
-      if (state.chords.length === GOD_MODE_SEQUENCE.length) {
-        state = null;
-        void handleGodModeComplete(runtime);
-      }
-      return true;
-    }
-
-    state = null;
-    return false;
-  };
-}
-
-async function handleGodModeComplete(runtime: ShellRuntime): Promise<void> {
+export async function handleGodModeAction(runtime: ShellRuntime): Promise<void> {
   const secret = await showGodModePrompt();
   if (secret === undefined) {
     return;

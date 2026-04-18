@@ -138,6 +138,7 @@ export function createActionService(
       const descriptors: ActionDescriptor[] = [];
 
       for (const action of surface.actions) {
+        if (action.hidden) continue;
         const enabled = evaluateContributionPredicate(
           action.predicate,
           context,

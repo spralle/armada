@@ -63,12 +63,14 @@ export function registerKeybindingServiceCapability(
   const service: KeybindingService = {
     getKeybindings(): KeybindingEntry[] {
       ensureEventBridgeWired();
-      return deps.getKeybindings().map((kb) => ({
-        id: kb.action,
-        key: kb.keybinding,
-        command: kb.action,
-        when: undefined,
-      }));
+      return deps.getKeybindings()
+        .filter((kb) => !kb.hidden)
+        .map((kb) => ({
+          id: kb.action,
+          key: kb.keybinding,
+          command: kb.action,
+          when: undefined,
+        }));
     },
 
     getOverrides(): KeybindingOverride[] {
