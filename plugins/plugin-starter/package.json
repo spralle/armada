@@ -10,7 +10,8 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+    "@ghost/ui": "file:../../packages/ui"
   },
   "devDependencies": {
     "@module-federation/vite": "^1.8.1",

@@ -8,6 +8,9 @@
       "path": "./packages/config-plugin-runtime"
     },
     {
+      "path": "./packages/ui"
+    },
+    {
       "path": "./apps/shell"
     },
     {

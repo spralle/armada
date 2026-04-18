@@ -20,6 +20,10 @@ export default defineConfig({
           singleton: true,
           requiredVersion: "^0.0.0",
         },
+        "@ghost/ui": {
+          singleton: true,
+          requiredVersion: "^0.0.0",
+        },
       },
     }),
   ],
