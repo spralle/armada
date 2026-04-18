@@ -55,12 +55,33 @@
         "@ghost/plugin-contracts": "workspace:*",
       },
     },
+    "packages/formr-core": {
+      "name": "@ghost/formr-core",
+      "version": "0.0.0",
+    },
+    "packages/formr-from-schema": {
+      "name": "@ghost/formr-from-schema",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost/formr-core": "workspace:*",
+      },
+      "peerDependencies": {
+        "zod": "^3.24.0",
+      },
+      "optionalPeers": [
+        "zod",
+      ],
+    },
     "packages/plugin-contracts": {
       "name": "@ghost/plugin-contracts",
       "version": "0.0.0",
       "dependencies": {
         "zod": "^3.24.2",
       },
+    },
+    "packages/predicate": {
+      "name": "@ghost/predicate",
+      "version": "0.0.0",
     },
     "packages/ui": {
       "name": "@ghost/ui",
@@ -486,9 +507,15 @@
 
     "@ghost/config-plugin-runtime": ["@ghost/config-plugin-runtime@workspace:packages/config-plugin-runtime"],
 
+    "@ghost/formr-core": ["@ghost/formr-core@workspace:packages/formr-core"],
+
+    "@ghost/formr-from-schema": ["@ghost/formr-from-schema@workspace:packages/formr-from-schema"],
+
     "@ghost/plugin-contracts": ["@ghost/plugin-contracts@workspace:packages/plugin-contracts"],
 
     "@ghost/plugin-dev-host": ["@ghost/plugin-dev-host@workspace:apps/plugin-dev-host"],
+
+    "@ghost/predicate": ["@ghost/predicate@workspace:packages/predicate"],
 
     "@ghost/shell-app": ["@ghost/shell-app@workspace:apps/shell"],
 
