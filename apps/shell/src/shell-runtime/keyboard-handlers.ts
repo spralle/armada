@@ -124,14 +124,15 @@ export function bindKeyboardShortcuts(
       clearTimeout(sequenceState.timeoutHandle);
     }
     if (sequenceState) {
+      const timeoutChords = sequenceState.pressedChords.map(c => c.value);
       sequenceState.timeoutHandle = setTimeout(() => {
         if (DEBUG_KEYBINDINGS) {
           console.debug("[shell:keybinding] sequence-timeout", {
-            chords: sequenceState?.pressedChords.map(c => c.value),
+            chords: timeoutChords,
           });
         }
         clearSequenceState();
-        runtime.pendingChordState = null;
+        getKeybindingService().fireKeySequenceCancelled({ chords: timeoutChords, reason: "timeout" });
         bindings.renderSyncStatus();
       }, getKeybindingService().sequenceTimeoutMs);
     }
@@ -159,6 +160,19 @@ export function bindKeyboardShortcuts(
     }
 
     const keybindingService = getKeybindingService();
+
+    // Escape cancels any pending chord sequence immediately
+    if (sequenceState && event.key === "Escape") {
+      event.preventDefault();
+      const cancelledChords = sequenceState.pressedChords.map(c => c.value);
+      clearSequenceState();
+      keybindingService.fireKeySequenceCancelled({ chords: cancelledChords, reason: "escape" });
+      bindings.renderSyncStatus();
+      if (DEBUG_KEYBINDINGS) {
+        console.debug("[shell:keybinding] sequence-cancelled-escape", { chords: cancelledChords });
+      }
+      return;
+    }
 
     if (runtime.syncDegraded) {
       if (DEBUG_KEYBINDINGS) {
@@ -226,7 +240,6 @@ export function bindKeyboardShortcuts(
 
       if (resolution.kind === "exact") {
         clearSequenceState();
-        runtime.pendingChordState = null;
         event.preventDefault();
 
         const action = resolution.match!.action;
@@ -265,6 +278,10 @@ export function bindKeyboardShortcuts(
             ? `Keybinding (${chordStr}): Action '${action.id}' executed.`
             : `Keybinding (${chordStr}): Action '${action.id}' is not executable in current context.`;
 
+        if (chords.length > 1) {
+          keybindingService.fireKeySequenceCompleted({ chords: chords.map(c => c.value), actionId: action.id });
+        }
+
         if (shellResult.handled) {
           bindings.renderContextControls();
           bindings.renderEdgeSlots();
@@ -292,10 +309,10 @@ export function bindKeyboardShortcuts(
         };
         startSequenceTimeout();
 
-        runtime.pendingChordState = {
+        keybindingService.fireKeySequencePending({
           pressedChords: chords.map(c => c.value),
           candidateCount: resolution.prefixCount ?? 0,
-        };
+        });
         bindings.renderSyncStatus();
 
         if (DEBUG_KEYBINDINGS) {
@@ -314,8 +331,9 @@ export function bindKeyboardShortcuts(
             chords: chords.map(c => c.value),
           });
         }
+        const cancelledChords = sequenceState.pressedChords.map(c => c.value);
         clearSequenceState();
-        runtime.pendingChordState = null;
+        keybindingService.fireKeySequenceCancelled({ chords: cancelledChords, reason: "no_match" });
         bindings.renderSyncStatus();
         return;
       }
@@ -369,14 +387,12 @@ export function bindKeyboardShortcuts(
     document.addEventListener("keydown", onKeyDown);
     return () => {
       clearSequenceState();
-      runtime.pendingChordState = null;
       document.removeEventListener("keydown", onKeyDown);
     };
   }
   root.addEventListener("keydown", onKeyDown);
   return () => {
     clearSequenceState();
-    runtime.pendingChordState = null;
     root.removeEventListener("keydown", onKeyDown);
   };
 }
