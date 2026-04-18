@@ -145,19 +145,30 @@ function mountTitle(container: HTMLElement, runtime: SlotMountContext["runtime"]
   dot.style.display = "none";
   el.appendChild(dot);
 
-  // Try to subscribe to ActivityStatusService (graceful if unavailable).
+  // Try to subscribe to ActivityStatusService (deferred if services not yet available).
   let activitySub: { dispose(): void } | undefined;
-  try {
+
+  function trySubscribe(): boolean {
     const service = runtime.services?.getService<ActivityStatusService>(ACTIVITY_STATUS_SERVICE_ID);
-    if (service) {
-      activitySub = service.onDidChange((count: number) => {
-        dot.style.display = count > 0 ? "" : "none";
-      });
-      // Sync initial state
-      dot.style.display = service.activityCount > 0 ? "" : "none";
-    }
-  } catch {
-    // Service unavailable — dot stays hidden.
+    if (!service) return false;
+    activitySub = service.onDidChange((count: number) => {
+      dot.style.display = count > 0 ? "" : "none";
+    });
+    dot.style.display = service.activityCount > 0 ? "" : "none";
+    return true;
+  }
+
+  // Retry until services are hydrated (check every 500ms, give up after 30s).
+  let retryId: ReturnType<typeof setInterval> | undefined;
+  if (!trySubscribe()) {
+    let elapsed = 0;
+    retryId = setInterval(() => {
+      elapsed += 500;
+      if (trySubscribe() || elapsed >= 30_000) {
+        clearInterval(retryId);
+        retryId = undefined;
+      }
+    }, 500);
   }
 
   let disposed = false;
@@ -180,6 +191,7 @@ function mountTitle(container: HTMLElement, runtime: SlotMountContext["runtime"]
   return () => {
     disposed = true;
     activitySub?.dispose();
+    if (retryId !== undefined) clearInterval(retryId);
     window.clearInterval(intervalId);
     el.remove();
   };
