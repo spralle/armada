@@ -93,11 +93,18 @@ export function createWorkspaceService(
 
     deleteWorkspace(workspaceId: string): boolean {
       const runtime = deps.getRuntime();
+      const wasActive = runtime.workspaceManager.activeWorkspaceId;
       const result = deleteWorkspacePure(
         runtime.workspaceManager,
         workspaceId,
       );
       if (result.changed) {
+        // If deleting the active workspace, switch BEFORE applying delete state
+        // so performWorkspaceSwitch can see targetId !== activeWorkspaceId
+        if (workspaceId === wasActive && wasActive !== result.state.activeWorkspaceId) {
+          const switchDeps = deps.getWorkspaceSwitchDeps();
+          performWorkspaceSwitch(result.state.activeWorkspaceId, switchDeps);
+        }
         runtime.workspaceManager = result.state;
         emitter.fire(undefined as never);
         return true;

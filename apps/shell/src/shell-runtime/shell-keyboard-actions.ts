@@ -207,10 +207,11 @@ function dispatchWorkspaceAction(
     if (!result.changed) {
       return unavailable(actionId, "cannot delete last workspace");
     }
-    runtime.workspaceManager = result.state;
+    // Switch BEFORE applying delete state so performWorkspaceSwitch sees the change
     if (wasActive !== result.state.activeWorkspaceId) {
       performWorkspaceSwitch(result.state.activeWorkspaceId, bindings.getWorkspaceSwitchDeps());
     }
+    runtime.workspaceManager = result.state;
     return executed(actionId);
   }
 

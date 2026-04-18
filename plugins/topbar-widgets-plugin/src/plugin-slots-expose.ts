@@ -157,32 +157,37 @@ function mountWorkspaceIndicator(container: HTMLElement): CleanupFn {
     const active = ws.getActiveWorkspace();
 
     wrapper.innerHTML = "";
-    wrapper.style.display = "";
 
-    // Workspace tab buttons (only when > 1)
-    if (workspaces.length > 1) {
-      for (const info of workspaces) {
-        const btn = document.createElement("button");
-        btn.className = "workspace-btn";
-        if (active && info.id === active.id) btn.classList.add("active");
-        btn.textContent = info.name;
-        btn.title = info.name;
-        btn.dataset.workspaceId = info.id;
-
-        btn.addEventListener("click", () => {
-          ws.switchTo(info.id);
-        });
-
-        btn.addEventListener("contextmenu", (e) => {
-          e.preventDefault();
-          showWorkspaceContextMenu(e, info.id, ws, render);
-        });
-
-        wrapper.appendChild(btn);
-      }
+    // Hide entirely when only 1 workspace
+    if (workspaces.length <= 1) {
+      wrapper.style.display = "none";
+      return;
     }
 
-    // "+" button (always visible)
+    wrapper.style.display = "";
+
+    // Workspace tab buttons
+    for (const info of workspaces) {
+      const btn = document.createElement("button");
+      btn.className = "workspace-btn";
+      if (active && info.id === active.id) btn.classList.add("active");
+      btn.textContent = info.name;
+      btn.title = info.name;
+      btn.dataset.workspaceId = info.id;
+
+      btn.addEventListener("click", () => {
+        ws.switchTo(info.id);
+      });
+
+      btn.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        showWorkspaceContextMenu(e, info.id, ws, render);
+      });
+
+      wrapper.appendChild(btn);
+    }
+
+    // "+" button (visible only when indicator is shown, i.e. >1 workspace)
     const addBtn = document.createElement("button");
     addBtn.className = "workspace-btn workspace-add";
     addBtn.textContent = "+";
