@@ -144,6 +144,10 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   lastDndDiagnostic: DndDiagnosticEnvelope | null;
   placementRegistry: PlacementStrategyRegistry;
   placementConfig: PlacementConfig;
+  elevatedSession: {
+    active: boolean;
+    activatedAt: number | null;
+  };
 }
 
 export interface SourceTabTransferPendingState {

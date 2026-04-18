@@ -96,6 +96,7 @@ export interface PluginActionContribution {
   title: string;
   intent: string;
   predicate?: PluginContributionPredicate | undefined;
+  hidden?: boolean | undefined;
 }
 
 export interface PluginMenuContribution {
@@ -110,6 +111,7 @@ export interface PluginKeybindingContribution {
   action: string;
   keybinding: string;
   when?: PluginContributionPredicate | undefined;
+  hidden?: boolean | undefined;
 }
 
 export interface PluginSelectionContribution {

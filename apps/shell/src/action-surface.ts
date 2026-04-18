@@ -22,6 +22,7 @@ export interface InvokableAction {
   intent: string;
   pluginId: string;
   predicate?: PluginContributionPredicate | undefined;
+  hidden?: boolean | undefined;
 }
 
 export interface ActionMenuItem {
@@ -38,6 +39,7 @@ export interface ActionKeybinding {
   keybinding: string;
   when?: PluginContributionPredicate | undefined;
   pluginId: string;
+  hidden?: boolean | undefined;
 }
 
 export interface ActionSurface {
@@ -149,6 +151,7 @@ function mapAction(pluginId: string, contribution: PluginActionContribution): In
     intent: contribution.intent,
     predicate: contribution.predicate,
     pluginId,
+    hidden: contribution.hidden,
   };
 }
 
@@ -169,6 +172,7 @@ function mapKeybinding(pluginId: string, contribution: PluginKeybindingContribut
     keybinding: contribution.keybinding,
     when: contribution.when,
     pluginId,
+    hidden: contribution.hidden,
   };
 }
 

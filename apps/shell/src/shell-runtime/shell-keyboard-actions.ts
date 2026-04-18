@@ -15,6 +15,7 @@ import { closeTabThroughRuntime } from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
 import { isShellKeyboardActionId, SHELL_UNAVAILABLE_ACTION_IDS, type ShellKeyboardActionId } from "./default-shell-keybindings.js";
+import { GOD_MODE_ACTION_ID, handleGodModeAction } from "./god-mode.js";
 
 export interface ShellKeyboardActionResult {
   handled: boolean;
@@ -30,6 +31,11 @@ export function handleShellKeyboardAction(
   bindings: KeyboardBindings,
   actionId: string,
 ): ShellKeyboardActionResult {
+  if (actionId === GOD_MODE_ACTION_ID) {
+    void handleGodModeAction(runtime);
+    return executed(actionId);
+  }
+
   if (actionId === "shell.window.fullscreen.toggle") {
     if (typeof document === "undefined") {
       return unavailable(actionId, "not in browser environment");
