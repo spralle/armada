@@ -1,19 +1,34 @@
 import type { CanonicalPath, CanonicalSegment, Namespace } from './path.js';
 import { FormrError } from './errors.js';
 
-const UI_PREFIX = '$ui.';
+const DEFAULT_NAMESPACES: readonly NamespaceConfig[] = [
+  { prefix: '$ui', namespace: 'ui' },
+];
+
 const NUMERIC_INDEX_RE = /^(?:0|[1-9]\d*)$/;
 const DOT_SAFE_SEGMENT_RE = /^[a-zA-Z0-9_\-]+$/;
 
 const PATH_CACHE_MAX = 1000;
 const pathCache = new Map<string, CanonicalPath>();
 
+export interface NamespaceConfig {
+  /** The prefix string used in paths (e.g. '$ui') */
+  readonly prefix: string;
+  /** The namespace value it maps to */
+  readonly namespace: Namespace;
+}
+
+export interface ParsePathOptions {
+  /** Recognized namespace prefixes. Defaults to [{ prefix: '$ui', namespace: 'ui' }] */
+  readonly namespaces?: readonly NamespaceConfig[];
+}
+
 /**
  * Parse any supported path notation into a CanonicalPath.
- * Accepts dot paths, $ui dot paths, and JSON Pointers (RFC 6901).
+ * Accepts dot paths, namespace dot paths, and JSON Pointers (RFC 6901).
  * Results are cached by input string for repeated lookups.
  */
-export function parsePath(input: string): CanonicalPath {
+export function parsePath(input: string, options?: ParsePathOptions): CanonicalPath {
   const cached = pathCache.get(input);
   if (cached) return cached;
 
@@ -21,18 +36,23 @@ export function parsePath(input: string): CanonicalPath {
     throw new FormrError('FORMR_PATH_EMPTY', 'Path must not be empty');
   }
 
-  if (input.startsWith('$ui/')) {
-    throw new FormrError(
-      'FORMR_PATH_MIXED_NAMESPACE',
-      'Mixed namespace form $ui/... is not allowed; use $ui. dot notation',
-    );
+  const namespaces = options?.namespaces ?? DEFAULT_NAMESPACES;
+
+  // Reject mixed namespace forms like $ui/...
+  for (const ns of namespaces) {
+    if (input.startsWith(`${ns.prefix}/`)) {
+      throw new FormrError(
+        'FORMR_PATH_MIXED_NAMESPACE',
+        `Mixed namespace form ${ns.prefix}/... is not allowed; use ${ns.prefix}. dot notation`,
+      );
+    }
   }
 
   let result: CanonicalPath;
   if (input.startsWith('/')) {
-    result = parsePointer(input);
+    result = parsePointer(input, namespaces);
   } else {
-    result = parseDot(input);
+    result = parseDot(input, namespaces);
   }
 
   if (pathCache.size >= PATH_CACHE_MAX) {
@@ -42,18 +62,27 @@ export function parsePath(input: string): CanonicalPath {
   return result;
 }
 
-function parseDot(input: string): CanonicalPath {
+function findMatchingNamespace(
+  input: string,
+  namespaces: readonly NamespaceConfig[],
+): NamespaceConfig | undefined {
+  return namespaces.find((ns) => input.startsWith(`${ns.prefix}.`) || input === ns.prefix);
+}
+
+function parseDot(input: string, namespaces: readonly NamespaceConfig[]): CanonicalPath {
   let namespace: Namespace = 'data';
   let raw = input;
 
-  if (raw.startsWith('$ui.')) {
-    namespace = 'ui';
-    raw = raw.slice(UI_PREFIX.length);
-  } else if (raw === '$ui') {
-    throw new FormrError(
-      'FORMR_PATH_INVALID_DOT',
-      '$ui alone is not a valid path; at least one segment is required after $ui.',
-    );
+  const matched = findMatchingNamespace(input, namespaces);
+  if (matched) {
+    if (raw === matched.prefix) {
+      throw new FormrError(
+        'FORMR_PATH_INVALID_DOT',
+        `${matched.prefix} alone is not a valid path; at least one segment is required after ${matched.prefix}.`,
+      );
+    }
+    namespace = matched.namespace;
+    raw = raw.slice(matched.prefix.length + 1); // +1 for the dot
   }
 
   validateDotRaw(raw);
@@ -81,16 +110,17 @@ function toDotSegment(seg: string): CanonicalSegment {
   return NUMERIC_INDEX_RE.test(seg) ? Number(seg) : seg;
 }
 
-function parsePointer(input: string): CanonicalPath {
-  // RFC 6901: "" is the whole document, "/foo" splits to ['', 'foo']
+function parsePointer(input: string, namespaces: readonly NamespaceConfig[]): CanonicalPath {
   const parts = input.split('/');
-  // First element is always '' because input starts with '/'
   const rawSegments = parts.slice(1);
 
-  // Detect $ui namespace prefix in pointer form: /$ui/...
-  if (rawSegments.length > 0 && rawSegments[0] === '$ui') {
-    const uiSegments = rawSegments.slice(1).map(decodePointerSegment);
-    return { namespace: 'ui', segments: uiSegments };
+  // Detect namespace prefix in pointer form: /$prefix/...
+  if (rawSegments.length > 0) {
+    const matched = namespaces.find((ns) => rawSegments[0] === ns.prefix);
+    if (matched) {
+      const nsSegments = rawSegments.slice(1).map(decodePointerSegment);
+      return { namespace: matched.namespace, segments: nsSegments };
+    }
   }
 
   const segments: CanonicalSegment[] = rawSegments.map(decodePointerSegment);

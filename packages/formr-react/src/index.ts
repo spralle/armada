@@ -32,5 +32,5 @@ export type {
 
 export { RendererRegistry } from './renderer-registry.js';
 export { renderLayoutTree } from './render-tree.js';
-export type { LayoutRendererProps, NodeRenderer } from './renderer-types.js';
+export type { LayoutRendererProps, NodeRenderer, FieldAriaAttributes } from './renderer-types.js';
 export type { LayoutNode } from '@ghost/formr-from-schema';

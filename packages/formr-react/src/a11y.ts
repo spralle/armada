@@ -1,11 +1,14 @@
 import type { ValidationIssue } from '@ghost/formr-core';
 
+const DEFAULT_FIELD_PREFIX = 'field';
+
 /** ARIA props for a form field */
 export interface FieldA11yProps {
   readonly id: string;
   readonly 'aria-invalid'?: boolean;
   readonly 'aria-describedby'?: string;
   readonly 'aria-required'?: boolean;
+  readonly 'aria-errormessage'?: string;
 }
 
 /** Label props for semantic association */
@@ -20,18 +23,18 @@ export interface DescriptionA11yProps {
 }
 
 /** Generate a deterministic field ID from path */
-export function fieldId(path: string): string {
-  return `field-${path.replace(/[.\[\]\/]/g, '-').replace(/-+/g, '-').replace(/-$/, '')}`;
+export function fieldId(path: string, prefix: string = DEFAULT_FIELD_PREFIX): string {
+  return `${prefix}-${path.replace(/[.\[\]\/]/g, '-').replace(/-+/g, '-').replace(/-$/, '')}`;
 }
 
 /** Generate description element ID */
-export function descriptionId(path: string): string {
-  return `${fieldId(path)}-description`;
+export function descriptionId(path: string, prefix?: string): string {
+  return `${fieldId(path, prefix)}-description`;
 }
 
 /** Generate error element ID */
-export function errorId(path: string): string {
-  return `${fieldId(path)}-error`;
+export function errorId(path: string, prefix?: string): string {
+  return `${fieldId(path, prefix)}-error`;
 }
 
 /** Get ARIA props for a field input element */
@@ -55,6 +58,7 @@ export function getFieldProps(
     ...(hasErrors ? { 'aria-invalid': true as const } : {}),
     ...(describedBy.length > 0 ? { 'aria-describedby': describedBy.join(' ') } : {}),
     ...(options?.required ? { 'aria-required': true as const } : {}),
+    ...(hasErrors ? { 'aria-errormessage': errorId(path) } : {}),
   };
 
   return props;

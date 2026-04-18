@@ -6,6 +6,7 @@ import { extractFromJsonSchema } from './json-schema-extractor.js';
 import { isJsonSchema } from './json-schema-validator.js';
 import { FromSchemaError } from './errors.js';
 import type { JsonSchema } from './json-schema-types.js';
+import { findExtractor, createValidationOnlyResult } from './extractor-registry.js';
 
 export function ingestSchema(schema: unknown): SchemaIngestionResult {
   if (isStandardSchema(schema) && isZodSchema(schema)) {
@@ -13,10 +14,12 @@ export function ingestSchema(schema: unknown): SchemaIngestionResult {
   }
 
   if (isStandardSchema(schema)) {
-    throw new FromSchemaError(
-      'FORMR_SCHEMA_UNSUPPORTED',
-      `Standard Schema vendor "${schema['~standard'].vendor}" ingestion not yet implemented`,
-    );
+    const extractor = findExtractor(schema);
+    if (extractor) {
+      const fields = extractor.extract(schema);
+      return { fields, metadata: { vendor: schema['~standard'].vendor } };
+    }
+    return createValidationOnlyResult(schema);
   }
 
   if (isJsonSchema(schema)) {

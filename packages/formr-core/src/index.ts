@@ -69,6 +69,14 @@ export { buildExpressionScope, evaluateExpressions, applyRuleWrites } from './ex
 // Rule engine (moved from @ghost/predicate)
 export { executeRules, type RuleExecutionConfig, type RuleExecutionResult } from './rule-engine.js';
 
+// Expression dependency graph (ADR §12)
+export {
+  buildDependencyGraph,
+  getAffectedRules,
+  type DependencyGraph,
+  type RuleDependency,
+} from './expression-deps.js';
+
 // Validation envelope (SE4.2)
 export { sortIssues, dedupeIssues, normalizeIssues } from './validation.js';
 

@@ -1,5 +1,6 @@
 import type { ValidationIssue } from '@ghost/formr-core';
 import type { JsonSchema } from './json-schema-types.js';
+import { makeIssue, isObject, checkType } from './utils.js';
 
 /**
  * ADR section 6.4 — Conditional required field resolution.
@@ -15,31 +16,6 @@ interface ConditionalRequiredInput<S extends string> {
   readonly schema: JsonSchema;
   readonly data: Record<string, unknown>;
   readonly stage: S;
-}
-
-function makePath(segments: readonly (string | number)[]) {
-  return { namespace: 'data' as const, segments };
-}
-
-function makeIssue<S extends string>(
-  code: string,
-  message: string,
-  segments: readonly (string | number)[],
-  stage: S,
-  origin: 'json-schema-adapter' | 'rule',
-): ValidationIssue<S> {
-  return {
-    code,
-    message,
-    severity: 'error',
-    stage,
-    path: makePath(segments),
-    source: { origin, validatorId: origin },
-  };
-}
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isEmpty(value: unknown): boolean {
@@ -72,17 +48,6 @@ function evaluateIfSchema(ifSchema: JsonSchema, data: Record<string, unknown>): 
   }
 
   return true;
-}
-
-function checkType(type: string, data: unknown): boolean {
-  switch (type) {
-    case 'string': return typeof data === 'string';
-    case 'number': case 'integer': return typeof data === 'number';
-    case 'boolean': return typeof data === 'boolean';
-    case 'object': return isObject(data);
-    case 'array': return Array.isArray(data);
-    default: return true;
-  }
 }
 
 /**

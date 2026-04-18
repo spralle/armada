@@ -21,6 +21,13 @@ export {
 } from './types.js';
 export { type JsonSchema } from './json-schema-types.js';
 export {
+  type SchemaExtractor,
+  registerExtractor,
+  findExtractor,
+  clearExtractorRegistry,
+  createValidationOnlyResult,
+} from './extractor-registry.js';
+export {
   type LayoutNodeType,
   type BuiltInLayoutNodeType,
   type LayoutNode,

@@ -1,7 +1,18 @@
 import type { ValidatorAdapter, ValidationIssue } from '@ghost/formr-core';
-import type { CanonicalPath } from '@ghost/formr-core';
 import type { JsonSchema } from './json-schema-types.js';
 import { dereferenceSchema } from './json-schema-deref.js';
+import { makeIssue as makeIssueBase, isObject, checkType } from './utils.js';
+
+const ADAPTER_ORIGIN = 'json-schema-adapter' as const;
+
+function makeIssue<S extends string>(
+  code: string,
+  message: string,
+  segments: readonly (string | number)[],
+  stage: S,
+): ValidationIssue<S> {
+  return makeIssueBase(code, message, segments, stage, ADAPTER_ORIGIN);
+}
 
 /** Detect if an unknown value looks like a JSON Schema object */
 export function isJsonSchema(value: unknown): value is JsonSchema {
@@ -11,7 +22,6 @@ export function isJsonSchema(value: unknown): value is JsonSchema {
   const hasSchemaMarker = '$schema' in obj;
   const hasProperties = 'properties' in obj && typeof obj['properties'] === 'object';
   const hasItems = 'items' in obj && typeof obj['items'] === 'object';
-  const hasRequiredArray = 'required' in obj && Array.isArray(obj['required']);
   const hasEnum = 'enum' in obj && Array.isArray(obj['enum']);
   const hasType = 'type' in obj && (typeof obj['type'] === 'string' || Array.isArray(obj['type']));
 
@@ -19,7 +29,6 @@ export function isJsonSchema(value: unknown): value is JsonSchema {
   if (hasProperties) return true;
   if (hasItems) return true;
   if (hasEnum) return true;
-  // type alone is too broad for arbitrary strings — but known JSON Schema types are fine
   if (hasType && typeof obj['type'] === 'string') {
     const knownTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null'];
     if (knownTypes.includes(obj['type'] as string)) return true;
@@ -43,26 +52,6 @@ export function createJsonSchemaValidator<S extends string = string>(
       validateNode(schema, input.data, [], input.stage, issues);
       return issues;
     },
-  };
-}
-
-function makePath(segments: readonly (string | number)[]): CanonicalPath {
-  return { namespace: 'data', segments };
-}
-
-function makeIssue<S extends string>(
-  code: string,
-  message: string,
-  segments: readonly (string | number)[],
-  stage: S,
-): ValidationIssue<S> {
-  return {
-    code,
-    message,
-    severity: 'error',
-    stage,
-    path: makePath(segments),
-    source: { origin: 'json-schema-adapter', validatorId: 'json-schema-adapter' },
   };
 }
 
@@ -130,18 +119,7 @@ function validateArrayType<S extends string>(
   }
 }
 
-function checkType(type: string, data: unknown): boolean {
-  switch (type) {
-    case 'string': return typeof data === 'string';
-    case 'number': return typeof data === 'number';
-    case 'integer': return typeof data === 'number' && Number.isInteger(data);
-    case 'boolean': return typeof data === 'boolean';
-    case 'object': return isObject(data);
-    case 'array': return Array.isArray(data);
-    case 'null': return data === null;
-    default: return true;
-  }
-}
+
 
 function validateEnum<S extends string>(
   schema: JsonSchema,
@@ -322,9 +300,4 @@ function validateFormatDateTime(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) && !isNaN(Date.parse(value));
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-// Re-export for format validation if needed in future
 export { validateFormatDate, validateFormatDateTime };
