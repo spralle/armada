@@ -288,4 +288,36 @@ describe('pipeline — 18-step engine', () => {
     expect(result.message).toBe('Validation failed');
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it('throws FORMR_ASYNC_IN_SYNC_PIPELINE when validator returns Promise in dispatch', () => {
+    const asyncValidator: ValidatorAdapter<'draft' | 'submit' | 'approve'> = {
+      id: 'async-val',
+      supports: () => true,
+      validate: () => Promise.resolve([]),
+    };
+
+    const form = createForm({
+      stagePolicy: createTestPolicy(),
+      validators: [asyncValidator],
+    });
+
+    const result = form.dispatch({ type: 'set-value', path: 'name', value: 'test' });
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('returned a Promise in synchronous pipeline');
+  });
+
+  it('throws FORMR_ASYNC_IN_SYNC_PIPELINE when validator returns Promise in validate()', () => {
+    const asyncValidator: ValidatorAdapter<'draft' | 'submit' | 'approve'> = {
+      id: 'async-val',
+      supports: () => true,
+      validate: () => Promise.resolve([]),
+    };
+
+    const form = createForm({
+      stagePolicy: createTestPolicy(),
+      validators: [asyncValidator],
+    });
+
+    expect(() => form.validate()).toThrow('returned a Promise in synchronous validate');
+  });
 });

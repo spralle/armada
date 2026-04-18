@@ -84,8 +84,9 @@ function mapJsonSchemaType(schema: JsonSchema): SchemaFieldType {
       if (schema.format === 'date-time') return 'datetime';
       return 'string';
     case 'number':
-    case 'integer':
       return 'number';
+    case 'integer':
+      return 'integer';
     case 'boolean':
       return 'boolean';
     case 'object':

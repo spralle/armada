@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect, beforeEach } from 'bun:test';
 import {
   validateExtension,
   isCompatibleVersion,
@@ -7,6 +7,7 @@ import {
   EXPERIMENTAL_CAPABILITIES,
   DEFAULT_RUNTIME_CONSTRAINTS,
   FormrError,
+  clearExtensionRegistry,
 } from '../index.js';
 
 describe('F10: Extensibility constraints conformance', () => {
@@ -15,6 +16,10 @@ describe('F10: Extensibility constraints conformance', () => {
     ['operators.v1', { version: '1.0.0', stability: 'stable' }],
     ['renderer.exp.v1', { version: '0.1.0', stability: 'experimental' }],
   ]);
+
+  beforeEach(() => {
+    clearExtensionRegistry();
+  });
 
   test('F10.01: validateExtension accepts compatible manifest', () => {
     expect(() =>
@@ -100,7 +105,7 @@ describe('F10: Extensibility constraints conformance', () => {
     // Empty capabilities passes (no caps to check)
     expect(() =>
       validateExtension(
-        { id: 'ext', apiVersion: '1.0.0', capabilities: [] },
+        { id: 'ext-empty-caps', apiVersion: '1.0.0', capabilities: [] },
         supportedCaps,
       ),
     ).not.toThrow();

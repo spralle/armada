@@ -110,9 +110,13 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     for (const v of options.validators) {
       const input = { data: state.data, uiState: state.uiState, stage: activeStage };
       const result = v.validate(input);
-      if (Array.isArray(result)) {
-        allIssues.push(...result);
+      if (result instanceof Promise) {
+        throw new FormrError(
+          'FORMR_ASYNC_IN_SYNC_PIPELINE',
+          `Validator "${v.id}" returned a Promise in synchronous validate() — use async submit path`,
+        );
       }
+      allIssues.push(...result);
     }
     return allIssues;
   }
@@ -261,6 +265,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
       getState: () => store.getState() as FormState,
       setValue: dispatchSetValue,
       getIssues: (p) => getIssues(p) as readonly ValidationIssue[],
+      formDefaults: options.fieldDefaults as FieldConfig | undefined,
       config,
     });
 
@@ -279,6 +284,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     dispose: () => {
       const middlewares = (options.middleware ?? []) as readonly Middleware<S>[];
       disposeMiddlewares(middlewares);
+      fieldCache.clear();
       store.dispose();
     },
   };

@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect, beforeEach } from 'bun:test';
 import {
   createForm,
   parsePath,
@@ -13,6 +13,7 @@ import {
   sortIssues,
   createDefaultStagePolicy,
   validateExtension,
+  clearExtensionRegistry,
   isCompatibleVersion,
   STABLE_CAPABILITIES,
   type TransformDefinition,
@@ -244,6 +245,7 @@ describe('F1-F10: Full integration conformance', () => {
       };
 
       // Should not throw
+      clearExtensionRegistry();
       expect(() => validateExtension(manifest, supportedCaps)).not.toThrow();
 
       // Version compatibility
