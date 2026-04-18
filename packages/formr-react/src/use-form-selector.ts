@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useCallback, useSyncExternalStore } from 'react';
 import type { FormApi, FormState } from '@ghost/formr-core';
 
 /** Subscribe to a derived value from form state; only re-render when the selected value changes */
@@ -7,19 +7,30 @@ export function useFormSelector<S extends string, T>(
   selector: (state: FormState<S>) => T,
   equalityFn?: (prev: T, next: T) => boolean,
 ): T {
-  const eq = equalityFn ?? Object.is;
+  const eqRef = useRef(equalityFn ?? Object.is);
+  eqRef.current = equalityFn ?? Object.is;
+
   const selectorRef = useRef(selector);
   selectorRef.current = selector;
 
-  const [value, setValue] = useState(() => selector(form.getState()));
+  const prevRef = useRef<{ readonly value: T; readonly initialized: boolean }>({
+    value: undefined as T,
+    initialized: false,
+  });
 
-  useEffect(() => {
-    const unsubscribe = form.subscribe((state) => {
-      const next = selectorRef.current(state);
-      setValue((prev) => (eq(prev, next) ? prev : next));
-    });
-    return unsubscribe;
-  }, [form, eq]);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => form.subscribe(onStoreChange),
+    [form],
+  );
 
-  return value;
+  const getSnapshot = useCallback((): T => {
+    const next = selectorRef.current(form.getState());
+    if (prevRef.current.initialized && eqRef.current(prevRef.current.value, next)) {
+      return prevRef.current.value;
+    }
+    prevRef.current = { value: next, initialized: true };
+    return next;
+  }, [form]);
+
+  return useSyncExternalStore(subscribe, getSnapshot);
 }

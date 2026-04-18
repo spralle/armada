@@ -44,9 +44,11 @@ describe('F6: Runtime algorithm conformance', () => {
   });
 
   test('F6.02: transaction atomicity — error during mutation rolls back', () => {
+    // Use a veto hook (beforeAction) that throws to trigger rollback,
+    // since notify hooks (beforeEvaluate) now swallow errors for reliability
     const badMiddleware: Middleware<DefaultStages> = {
       id: 'bomb',
-      beforeEvaluate() {
+      beforeAction() {
         throw new Error('boom');
       },
     };

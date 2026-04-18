@@ -6,12 +6,26 @@ import type { JsonSchema } from './json-schema-types.js';
 export function isJsonSchema(value: unknown): value is JsonSchema {
   if (typeof value !== 'object' || value === null) return false;
   const obj = value as Record<string, unknown>;
-  return (
-    ('type' in obj && (typeof obj['type'] === 'string' || Array.isArray(obj['type']))) ||
-    ('properties' in obj && typeof obj['properties'] === 'object') ||
-    ('items' in obj && typeof obj['items'] === 'object') ||
-    ('enum' in obj && Array.isArray(obj['enum']))
-  );
+
+  const hasSchemaMarker = '$schema' in obj;
+  const hasProperties = 'properties' in obj && typeof obj['properties'] === 'object';
+  const hasItems = 'items' in obj && typeof obj['items'] === 'object';
+  const hasRequiredArray = 'required' in obj && Array.isArray(obj['required']);
+  const hasEnum = 'enum' in obj && Array.isArray(obj['enum']);
+  const hasType = 'type' in obj && (typeof obj['type'] === 'string' || Array.isArray(obj['type']));
+
+  if (hasSchemaMarker) return true;
+  if (hasProperties) return true;
+  if (hasItems) return true;
+  if (hasEnum) return true;
+  // type alone is too broad for arbitrary strings — but known JSON Schema types are fine
+  if (hasType && typeof obj['type'] === 'string') {
+    const knownTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null'];
+    if (knownTypes.includes(obj['type'] as string)) return true;
+  }
+  if (hasType && Array.isArray(obj['type'])) return true;
+
+  return false;
 }
 
 export function createJsonSchemaValidator<S extends string = string>(
@@ -64,6 +78,7 @@ function validateNode<S extends string>(
 
   validateType(schema, data, segments, stage, issues);
   validateEnum(schema, data, segments, stage, issues);
+  validateConstraints(schema, data, segments, stage, issues);
   validateConditional(schema, data, segments, stage, issues);
   validateDependentRequired(schema, data, segments, stage, issues);
 
@@ -84,22 +99,43 @@ function validateType<S extends string>(
   stage: S,
   issues: ValidationIssue<S>[],
 ): void {
-  const type = typeof schema.type === 'string' ? schema.type : undefined;
-  if (!type) return;
+  if (!schema.type) return;
 
+  if (Array.isArray(schema.type)) {
+    validateArrayType(schema.type as readonly string[], data, segments, stage, issues);
+    return;
+  }
+
+  const type = schema.type as string;
   const valid = checkType(type, data);
   if (!valid) {
     issues.push(makeIssue('INVALID_TYPE', `Expected type "${type}"`, segments, stage));
   }
 }
 
+function validateArrayType<S extends string>(
+  types: readonly string[],
+  data: unknown,
+  segments: readonly (string | number)[],
+  stage: S,
+  issues: ValidationIssue<S>[],
+): void {
+  if (data === null && types.includes('null')) return;
+  const matched = types.some((t) => checkType(t, data));
+  if (!matched) {
+    issues.push(makeIssue('INVALID_TYPE', `Expected one of types: ${types.join(', ')}`, segments, stage));
+  }
+}
+
 function checkType(type: string, data: unknown): boolean {
   switch (type) {
     case 'string': return typeof data === 'string';
-    case 'number': case 'integer': return typeof data === 'number';
+    case 'number': return typeof data === 'number';
+    case 'integer': return typeof data === 'number' && Number.isInteger(data);
     case 'boolean': return typeof data === 'boolean';
     case 'object': return isObject(data);
     case 'array': return Array.isArray(data);
+    case 'null': return data === null;
     default: return true;
   }
 }
@@ -117,6 +153,61 @@ function validateEnum<S extends string>(
   }
 }
 
+function validateConstraints<S extends string>(
+  schema: JsonSchema,
+  data: unknown,
+  segments: readonly (string | number)[],
+  stage: S,
+  issues: ValidationIssue<S>[],
+): void {
+  if (typeof data === 'number') {
+    validateNumericConstraints(schema, data, segments, stage, issues);
+  }
+  if (typeof data === 'string') {
+    validateStringConstraints(schema, data, segments, stage, issues);
+  }
+}
+
+function validateNumericConstraints<S extends string>(
+  schema: JsonSchema,
+  value: number,
+  segments: readonly (string | number)[],
+  stage: S,
+  issues: ValidationIssue<S>[],
+): void {
+  if (schema.minimum !== undefined && value < schema.minimum) {
+    issues.push(makeIssue('TOO_SMALL', `Value must be >= ${schema.minimum}`, segments, stage));
+  }
+  if (schema.maximum !== undefined && value > schema.maximum) {
+    issues.push(makeIssue('TOO_LARGE', `Value must be <= ${schema.maximum}`, segments, stage));
+  }
+  if (schema.exclusiveMinimum !== undefined && value <= schema.exclusiveMinimum) {
+    issues.push(makeIssue('TOO_SMALL', `Value must be > ${schema.exclusiveMinimum}`, segments, stage));
+  }
+  if (schema.exclusiveMaximum !== undefined && value >= schema.exclusiveMaximum) {
+    issues.push(makeIssue('TOO_LARGE', `Value must be < ${schema.exclusiveMaximum}`, segments, stage));
+  }
+}
+
+function validateStringConstraints<S extends string>(
+  schema: JsonSchema,
+  value: string,
+  segments: readonly (string | number)[],
+  stage: S,
+  issues: ValidationIssue<S>[],
+): void {
+  if (schema.minLength !== undefined && value.length < schema.minLength) {
+    issues.push(makeIssue('TOO_SHORT', `String must be at least ${schema.minLength} characters`, segments, stage));
+  }
+  if (schema.maxLength !== undefined && value.length > schema.maxLength) {
+    issues.push(makeIssue('TOO_LONG', `String must be at most ${schema.maxLength} characters`, segments, stage));
+  }
+  if (schema.pattern !== undefined && !new RegExp(schema.pattern).test(value)) {
+    issues.push(makeIssue('PATTERN_MISMATCH', `String must match pattern: ${schema.pattern}`, segments, stage));
+  }
+}
+
+/** JSON Schema required only checks key presence, not value emptiness */
 function validateRequiredFields<S extends string>(
   schema: JsonSchema,
   data: Record<string, unknown>,
@@ -126,7 +217,7 @@ function validateRequiredFields<S extends string>(
 ): void {
   if (!schema.required) return;
   for (const field of schema.required) {
-    if (data[field] === undefined || data[field] === null || data[field] === '') {
+    if (!(field in data) || data[field] === undefined) {
       issues.push(makeIssue('REQUIRED', `Field "${field}" is required`, [...segments, field], stage));
     }
   }
@@ -177,9 +268,9 @@ function validateDependentRequired<S extends string>(
   if (!schema.dependentRequired || !isObject(data)) return;
 
   for (const [trigger, deps] of Object.entries(schema.dependentRequired)) {
-    if (data[trigger] !== undefined && data[trigger] !== null && data[trigger] !== '') {
+    if (trigger in data && data[trigger] !== undefined) {
       for (const dep of deps) {
-        if (data[dep] === undefined || data[dep] === null || data[dep] === '') {
+        if (!(dep in data) || data[dep] === undefined) {
           issues.push(makeIssue(
             'DEPENDENT_REQUIRED',
             `Field "${dep}" is required when "${trigger}" is present`,

@@ -68,7 +68,11 @@ export class FormStore<S extends string = string> {
   private _notifyListeners(): void {
     const state = this._state;
     for (const listener of this._listeners) {
-      listener(state);
+      try {
+        listener(state);
+      } catch {
+        // Swallow subscriber errors to ensure all listeners are notified
+      }
     }
   }
 }

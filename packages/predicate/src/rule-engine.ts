@@ -2,6 +2,7 @@ import type { RuleDefinition, RuleWrite } from './ast.js';
 import type { EvaluationScope } from './evaluator.js';
 import { evaluate } from './evaluator.js';
 import { PredicateError } from './errors.js';
+import { assertSafeSegment } from './safe-path.js';
 
 export interface RuleWriteIntent {
   readonly path: string;
@@ -87,6 +88,7 @@ function resolvePathValue(path: string, scope: EvaluationScope): unknown {
 
   let current: unknown = segments.root;
   for (const seg of segments.parts) {
+    assertSafeSegment(seg);
     if (current === null || current === undefined || typeof current !== 'object') {
       return undefined;
     }
@@ -154,6 +156,10 @@ function applyWrites(
       segments = w.path.slice(6).split('.');
     } else {
       segments = w.path.split('.');
+    }
+
+    for (const seg of segments) {
+      assertSafeSegment(seg);
     }
 
     const apply = w.mode === 'delete' ? deleteNestedValue : (o: Record<string, unknown>, s: string[]) => setNestedValue(o, s, w.value);

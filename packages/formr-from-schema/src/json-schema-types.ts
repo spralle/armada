@@ -21,7 +21,10 @@ export interface JsonSchema {
   // Numeric constraints
   readonly minimum?: number;
   readonly maximum?: number;
+  readonly exclusiveMinimum?: number;
+  readonly exclusiveMaximum?: number;
   readonly minLength?: number;
   readonly maxLength?: number;
   readonly pattern?: string;
+  readonly $schema?: string;
 }

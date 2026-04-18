@@ -1,10 +1,17 @@
 import type { ExprNode } from './ast.js';
 import { PredicateError } from './errors.js';
+import { assertSafeSegment } from './safe-path.js';
+
+const DEFAULT_MAX_DEPTH = 256;
 
 export interface EvaluationScope {
   readonly data: unknown;
   readonly uiState: unknown;
   readonly meta: unknown;
+}
+
+export interface EvaluateOptions {
+  readonly maxDepth?: number;
 }
 
 const MISSING = Symbol('MISSING');
@@ -26,6 +33,7 @@ function resolvePath(path: string, scope: EvaluationScope): unknown {
 
   let current: unknown = root;
   for (const segment of segments) {
+    assertSafeSegment(segment);
     if (current === null || current === undefined) {
       return undefined;
     }
@@ -37,12 +45,17 @@ function resolvePath(path: string, scope: EvaluationScope): unknown {
   return current;
 }
 
-function resolveArg(node: ExprNode, scope: EvaluationScope): unknown | typeof MISSING {
+function resolveArg(
+  node: ExprNode,
+  scope: EvaluationScope,
+  depth: number,
+  maxDepth: number,
+): unknown | typeof MISSING {
   if (node.kind === 'path') {
     const result = resolvePath(node.path, scope);
     return result === undefined ? MISSING : result;
   }
-  return evaluate(node, scope);
+  return evaluateInner(node, scope, depth, maxDepth);
 }
 
 function assertComparableTypes(a: unknown, b: unknown, op: string): void {
@@ -56,58 +69,63 @@ function assertComparableTypes(a: unknown, b: unknown, op: string): void {
   }
 }
 
-function executeOperator(op: string, args: readonly ExprNode[], scope: EvaluationScope): unknown {
+function executeOperator(
+  op: string,
+  args: readonly ExprNode[],
+  scope: EvaluationScope,
+  depth: number,
+  maxDepth: number,
+): unknown {
   switch (op) {
     case '$eq': {
-      const a = resolveArg(args[0], scope);
-      const b = resolveArg(args[1], scope);
-      // MISSING (undefined path) vs null must be false
+      const a = resolveArg(args[0], scope, depth, maxDepth);
+      const b = resolveArg(args[1], scope, depth, maxDepth);
       if (a === MISSING && b === MISSING) return true;
       if (a === MISSING) return b === undefined;
       if (b === MISSING) return a === undefined;
       return a === b;
     }
     case '$ne': {
-      const a = resolveArg(args[0], scope);
-      const b = resolveArg(args[1], scope);
+      const a = resolveArg(args[0], scope, depth, maxDepth);
+      const b = resolveArg(args[1], scope, depth, maxDepth);
       if (a === MISSING && b === MISSING) return false;
       if (a === MISSING) return b !== undefined;
       if (b === MISSING) return a !== undefined;
       return a !== b;
     }
     case '$gt': {
-      const a = evaluate(args[0], scope);
-      const b = evaluate(args[1], scope);
+      const a = evaluateInner(args[0], scope, depth, maxDepth);
+      const b = evaluateInner(args[1], scope, depth, maxDepth);
       assertComparableTypes(a, b, '$gt');
       return (a as number | string) > (b as number | string);
     }
     case '$gte': {
-      const a = evaluate(args[0], scope);
-      const b = evaluate(args[1], scope);
+      const a = evaluateInner(args[0], scope, depth, maxDepth);
+      const b = evaluateInner(args[1], scope, depth, maxDepth);
       assertComparableTypes(a, b, '$gte');
       return (a as number | string) >= (b as number | string);
     }
     case '$lt': {
-      const a = evaluate(args[0], scope);
-      const b = evaluate(args[1], scope);
+      const a = evaluateInner(args[0], scope, depth, maxDepth);
+      const b = evaluateInner(args[1], scope, depth, maxDepth);
       assertComparableTypes(a, b, '$lt');
       return (a as number | string) < (b as number | string);
     }
     case '$lte': {
-      const a = evaluate(args[0], scope);
-      const b = evaluate(args[1], scope);
+      const a = evaluateInner(args[0], scope, depth, maxDepth);
+      const b = evaluateInner(args[1], scope, depth, maxDepth);
       assertComparableTypes(a, b, '$lte');
       return (a as number | string) <= (b as number | string);
     }
     case '$and':
-      return args.every((arg) => Boolean(evaluate(arg, scope)));
+      return args.every((arg) => Boolean(evaluateInner(arg, scope, depth, maxDepth)));
     case '$or':
-      return args.some((arg) => Boolean(evaluate(arg, scope)));
+      return args.some((arg) => Boolean(evaluateInner(arg, scope, depth, maxDepth)));
     case '$not':
-      return !evaluate(args[0], scope);
+      return !evaluateInner(args[0], scope, depth, maxDepth);
     case '$in': {
-      const value = evaluate(args[0], scope);
-      const list = evaluate(args[1], scope);
+      const value = evaluateInner(args[0], scope, depth, maxDepth);
+      const list = evaluateInner(args[1], scope, depth, maxDepth);
       if (!Array.isArray(list)) {
         throw new PredicateError(
           'FORMR_EXPR_TYPE_MISMATCH',
@@ -117,8 +135,8 @@ function executeOperator(op: string, args: readonly ExprNode[], scope: Evaluatio
       return list.includes(value);
     }
     case '$nin': {
-      const value = evaluate(args[0], scope);
-      const list = evaluate(args[1], scope);
+      const value = evaluateInner(args[0], scope, depth, maxDepth);
+      const list = evaluateInner(args[1], scope, depth, maxDepth);
       if (!Array.isArray(list)) {
         throw new PredicateError(
           'FORMR_EXPR_TYPE_MISMATCH',
@@ -128,8 +146,8 @@ function executeOperator(op: string, args: readonly ExprNode[], scope: Evaluatio
       return !list.includes(value);
     }
     case '$exists': {
-      const resolved = resolveArg(args[0], scope);
-      const expected = evaluate(args[1], scope);
+      const resolved = resolveArg(args[0], scope, depth, maxDepth);
+      const expected = evaluateInner(args[1], scope, depth, maxDepth);
       const exists = resolved !== MISSING;
       return expected ? exists : !exists;
     }
@@ -141,13 +159,33 @@ function executeOperator(op: string, args: readonly ExprNode[], scope: Evaluatio
   }
 }
 
-export function evaluate(node: ExprNode, scope: EvaluationScope): unknown {
+function evaluateInner(
+  node: ExprNode,
+  scope: EvaluationScope,
+  depth: number,
+  maxDepth: number,
+): unknown {
+  if (depth > maxDepth) {
+    throw new PredicateError(
+      'PREDICATE_DEPTH_EXCEEDED',
+      `Expression evaluation exceeded maximum depth of ${String(maxDepth)}`,
+    );
+  }
   switch (node.kind) {
     case 'literal':
       return node.value;
     case 'path':
       return resolvePath(node.path, scope);
     case 'op':
-      return executeOperator(node.op, node.args, scope);
+      return executeOperator(node.op, node.args, scope, depth + 1, maxDepth);
   }
+}
+
+export function evaluate(
+  node: ExprNode,
+  scope: EvaluationScope,
+  options?: EvaluateOptions,
+): unknown {
+  const maxDepth = options?.maxDepth ?? DEFAULT_MAX_DEPTH;
+  return evaluateInner(node, scope, 0, maxDepth);
 }

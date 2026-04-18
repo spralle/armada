@@ -1,15 +1,22 @@
 import type { ExprNode } from './ast.js';
 import { PredicateError } from './errors.js';
 import { OperatorRegistry } from './operators.js';
+import { assertSafeSegment } from './safe-path.js';
 
 const defaultRegistry = new OperatorRegistry();
+const DEFAULT_MAX_DEPTH = 256;
+
+export interface CompileOptions {
+  readonly maxDepth?: number;
+}
 
 /**
  * Compile a Mongo-like predicate object into an ExprNode AST.
  * Pure and deterministic — same input always yields the same output.
  */
-export function compile(input: unknown): ExprNode {
-  return compileNode(input, defaultRegistry);
+export function compile(input: unknown, options?: CompileOptions): ExprNode {
+  const maxDepth = options?.maxDepth ?? DEFAULT_MAX_DEPTH;
+  return compileNode(input, defaultRegistry, 0, maxDepth);
 }
 
 function isUnsupportedPrimitive(input: unknown): boolean {
@@ -19,7 +26,19 @@ function isUnsupportedPrimitive(input: unknown): boolean {
     || typeof input === 'bigint';
 }
 
-function compileNode(input: unknown, registry: OperatorRegistry): ExprNode {
+function compileNode(
+  input: unknown,
+  registry: OperatorRegistry,
+  depth: number,
+  maxDepth: number,
+): ExprNode {
+  if (depth > maxDepth) {
+    throw new PredicateError(
+      'PREDICATE_DEPTH_EXCEEDED',
+      `Compilation exceeded maximum depth of ${String(maxDepth)}`,
+    );
+  }
+
   if (isUnsupportedPrimitive(input)) {
     throw new PredicateError(
       'FORMR_EXPR_COMPILE_UNSUPPORTED_LITERAL',
@@ -49,12 +68,14 @@ function compileNode(input: unknown, registry: OperatorRegistry): ExprNode {
     );
   }
 
-  return compileObject(input as Record<string, unknown>, registry);
+  return compileObject(input as Record<string, unknown>, registry, depth, maxDepth);
 }
 
 function compileObject(
   obj: Record<string, unknown>,
   registry: OperatorRegistry,
+  depth: number,
+  maxDepth: number,
 ): ExprNode {
   const keys = Object.keys(obj);
 
@@ -79,7 +100,7 @@ function compileObject(
   }
 
   if (key.startsWith('$')) {
-    return compileOperator(key, obj[key], registry);
+    return compileOperator(key, obj[key], registry, depth, maxDepth);
   }
 
   throw new PredicateError(
@@ -95,6 +116,10 @@ function compilePath(value: unknown): ExprNode {
       `$path value must be a string, got ${typeof value}`,
     );
   }
+  const segments = value.replace(/^\$(ui|meta)\./, '').split('.');
+  for (const seg of segments) {
+    assertSafeSegment(seg);
+  }
   return { kind: 'path', path: value };
 }
 
@@ -102,6 +127,8 @@ function compileOperator(
   op: string,
   rawArgs: unknown,
   registry: OperatorRegistry,
+  depth: number,
+  maxDepth: number,
 ): ExprNode {
   const definition = registry.get(op);
   if (!definition) {
@@ -120,7 +147,7 @@ function compileOperator(
 
   validateArity(op, rawArgs.length, definition.arity, definition.minArgs);
 
-  const args = rawArgs.map((arg: unknown) => compileNode(arg, registry));
+  const args = rawArgs.map((arg: unknown) => compileNode(arg, registry, depth + 1, maxDepth));
   return { kind: 'op', op, args };
 }
 

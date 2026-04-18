@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useRef, useSyncExternalStore, useEffect } from 'react';
 import { createForm } from '@ghost/formr-core';
 import type { CreateFormOptions, FormApi } from '@ghost/formr-core';
 
@@ -13,17 +13,12 @@ export function useForm<S extends string = 'draft' | 'submit' | 'approve'>(
 
   const form = formRef.current;
 
-  const [, setRenderTrigger] = useState(0);
+  // Adapt form.subscribe (which passes state) to useSyncExternalStore's expected signature
+  const subscribe = useRef((onStoreChange: () => void) => {
+    return form.subscribe(onStoreChange);
+  }).current;
 
-  useEffect(() => {
-    const unsubscribe = form.subscribe(() => {
-      setRenderTrigger(prev => prev + 1);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [form]);
+  useSyncExternalStore(subscribe, () => form.getState());
 
   useEffect(() => {
     return () => {

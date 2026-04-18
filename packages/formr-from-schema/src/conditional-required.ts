@@ -97,20 +97,29 @@ export function resolveIfThenElseRequired<S extends string>(
 
   const conditionMet = evaluateIfSchema(schema.if, data);
   const branch = conditionMet ? schema.then : schema.else;
-  if (!branch?.required) return [];
+  if (!branch) return [];
 
   const issues: ValidationIssue<S>[] = [];
-  for (const field of branch.required) {
-    if (isEmpty(data[field])) {
-      issues.push(makeIssue(
-        'CONDITIONAL_REQUIRED',
-        `Field "${field}" is required (conditional: if/${conditionMet ? 'then' : 'else'})`,
-        [field],
-        stage,
-        'json-schema-adapter',
-      ));
+
+  if (branch.required) {
+    for (const field of branch.required) {
+      if (isEmpty(data[field])) {
+        issues.push(makeIssue(
+          'CONDITIONAL_REQUIRED',
+          `Field "${field}" is required (conditional: if/${conditionMet ? 'then' : 'else'})`,
+          [field],
+          stage,
+          'json-schema-adapter',
+        ));
+      }
     }
   }
+
+  // Recurse into nested if/then/else within the chosen branch
+  if (branch.if) {
+    issues.push(...resolveIfThenElseRequired({ schema: branch, data, stage }));
+  }
+
   return issues;
 }
 
