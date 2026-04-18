@@ -45,7 +45,39 @@ function parseMajor(semver: string): number {
   return match ? parseInt(match[1], 10) : -1;
 }
 
-/** Validate that an extension's capabilities are supported and version-compatible. */
+const SEMVER_BASIC = /^\d+\.\d+\.\d+/;
+
+/** Validate manifest fields before checking capabilities. */
+function validateManifestFields(manifest: ExtensionManifest): void {
+  if (!manifest.id || typeof manifest.id !== 'string' || manifest.id.trim() === '') {
+    throw new FormrError(
+      'FORMR_EXTENSION_INVALID_MANIFEST',
+      'Extension manifest requires a non-empty "id" string',
+    );
+  }
+  if (!manifest.apiVersion || !SEMVER_BASIC.test(manifest.apiVersion)) {
+    throw new FormrError(
+      'FORMR_EXTENSION_INVALID_MANIFEST',
+      `Extension "${manifest.id}" has invalid apiVersion "${manifest.apiVersion}" — expected semver format`,
+    );
+  }
+  if (!Array.isArray(manifest.capabilities)) {
+    throw new FormrError(
+      'FORMR_EXTENSION_INVALID_MANIFEST',
+      `Extension "${manifest.id}" requires a "capabilities" array`,
+    );
+  }
+}
+
+/** Track registered extension IDs to prevent duplicates */
+const registeredExtensions = new Set<string>();
+
+/** Clear the extension registry (for testing) */
+export function clearExtensionRegistry(): void {
+  registeredExtensions.clear();
+}
+
+/** Validate manifest fields, check for duplicates, and verify capability compatibility. */
 export function validateExtension(
   manifest: ExtensionManifest,
   supportedCapabilities: ReadonlyMap<
@@ -53,6 +85,16 @@ export function validateExtension(
     { version: string; stability: 'stable' | 'experimental' }
   >,
 ): void {
+  validateManifestFields(manifest);
+
+  if (registeredExtensions.has(manifest.id)) {
+    throw new FormrError(
+      'FORMR_EXTENSION_DUPLICATE',
+      `Extension "${manifest.id}" is already registered`,
+    );
+  }
+  registeredExtensions.add(manifest.id);
+
   for (const cap of manifest.capabilities) {
     const supported = supportedCapabilities.get(cap);
     if (!supported) {

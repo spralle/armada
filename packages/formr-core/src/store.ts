@@ -64,6 +64,9 @@ export class FormStore<S extends string = string> {
   /** Dispose all subscriptions and clear active transaction */
   dispose(): void {
     this._listeners.clear();
+    if (this._activeTransaction && this._activeTransaction.status === 'active') {
+      this._activeTransaction.rollback();
+    }
     this._activeTransaction = null;
   }
 

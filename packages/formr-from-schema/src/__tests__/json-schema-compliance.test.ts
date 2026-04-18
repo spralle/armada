@@ -182,7 +182,7 @@ describe('nullable type resolution in extractor', () => {
       },
     };
     const result = extractFromJsonSchema(schema);
-    expect(result.fields[0].type).toBe('number');
+    expect(result.fields[0].type).toBe('integer');
   });
 });
 

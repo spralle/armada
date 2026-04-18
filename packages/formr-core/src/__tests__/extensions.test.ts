@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it, beforeEach } from 'bun:test';
 import {
   isCompatibleVersion,
   validateExtension,
+  clearExtensionRegistry,
   withTimeout,
   DEFAULT_RUNTIME_CONSTRAINTS,
   type ExtensionManifest,
@@ -32,6 +33,10 @@ describe('validateExtension', () => {
     ['renderer.exp.v1', { version: '0.1.0', stability: 'experimental' as const }],
   ]);
 
+  beforeEach(() => {
+    clearExtensionRegistry();
+  });
+
   it('accepts extension with supported capabilities', () => {
     const manifest: ExtensionManifest = {
       id: 'test-ext',
@@ -41,9 +46,43 @@ describe('validateExtension', () => {
     expect(() => validateExtension(manifest, supported)).not.toThrow();
   });
 
+  it('rejects empty id with FORMR_EXTENSION_INVALID_MANIFEST', () => {
+    const manifest: ExtensionManifest = { id: '', apiVersion: '1.0.0', capabilities: [] };
+    try {
+      validateExtension(manifest, supported);
+      expect(true).toBe(false);
+    } catch (e) {
+      expect(e).toBeInstanceOf(FormrError);
+      expect((e as FormrError).code).toBe('FORMR_EXTENSION_INVALID_MANIFEST');
+    }
+  });
+
+  it('rejects invalid semver apiVersion', () => {
+    const manifest: ExtensionManifest = { id: 'bad-ver', apiVersion: 'latest', capabilities: [] };
+    try {
+      validateExtension(manifest, supported);
+      expect(true).toBe(false);
+    } catch (e) {
+      expect(e).toBeInstanceOf(FormrError);
+      expect((e as FormrError).code).toBe('FORMR_EXTENSION_INVALID_MANIFEST');
+    }
+  });
+
+  it('rejects duplicate extension IDs with FORMR_EXTENSION_DUPLICATE', () => {
+    const manifest: ExtensionManifest = { id: 'dup-ext', apiVersion: '1.0.0', capabilities: ['transform.v1'] };
+    validateExtension(manifest, supported);
+    try {
+      validateExtension(manifest, supported);
+      expect(true).toBe(false);
+    } catch (e) {
+      expect(e).toBeInstanceOf(FormrError);
+      expect((e as FormrError).code).toBe('FORMR_EXTENSION_DUPLICATE');
+    }
+  });
+
   it('rejects unknown capability with FORMR_EXTENSION_INCOMPATIBLE', () => {
     const manifest: ExtensionManifest = {
-      id: 'test-ext',
+      id: 'test-ext-unknown',
       apiVersion: '1.0.0',
       capabilities: ['unknown.v1'],
     };

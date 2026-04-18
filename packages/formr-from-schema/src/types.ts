@@ -33,6 +33,7 @@ export interface SchemaFieldInfo {
 export type SchemaFieldType =
   | 'string'
   | 'number'
+  | 'integer'
   | 'boolean'
   | 'date'
   | 'datetime'

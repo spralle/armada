@@ -58,7 +58,7 @@ export { deepFreeze } from './utils.js';
 
 // Form factory (SE1.4)
 export { createForm } from './create-form.js';
-export { createFieldApi, type CreateFieldApiParams } from './field-api.js';
+export { createFieldApi, mergeFieldConfig, type CreateFieldApiParams } from './field-api.js';
 
 // Pipeline (SE4.4)
 export { executePipeline, type PipelineContext, type PipelineResult } from './pipeline.js';
@@ -87,6 +87,7 @@ export {
   validateExtension,
   isCompatibleVersion,
   withTimeout,
+  clearExtensionRegistry,
   STABLE_CAPABILITIES,
   EXPERIMENTAL_CAPABILITIES,
   DEFAULT_RUNTIME_CONSTRAINTS,

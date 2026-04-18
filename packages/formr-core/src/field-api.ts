@@ -18,7 +18,32 @@ export interface CreateFieldApiParams {
   readonly getState: () => FormState;
   readonly setValue: (path: string, value: unknown) => FormDispatchResult;
   readonly getIssues: (path: CanonicalPath) => readonly ValidationIssue[];
+  /** Form-level field defaults (tier 2) */
+  readonly formDefaults?: FieldConfig | undefined;
+  /** Field-level overrides (tier 3, highest priority) */
   readonly config?: FieldConfig | undefined;
+}
+
+/**
+ * 3-tier merge: schema defaults (tier 1, future) < form-level defaults (tier 2) < field-level overrides (tier 3).
+ * Later tiers override earlier ones for defined (non-undefined) properties.
+ */
+export function mergeFieldConfig(
+  formDefaults?: FieldConfig,
+  fieldOverrides?: FieldConfig,
+): FieldConfig | undefined {
+  if (!formDefaults && !fieldOverrides) return undefined;
+  if (!formDefaults) return fieldOverrides;
+  if (!fieldOverrides) return formDefaults;
+  return { ...formDefaults, ...stripUndefined(fieldOverrides) };
+}
+
+function stripUndefined(obj: FieldConfig): Partial<FieldConfig> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) result[key] = value;
+  }
+  return result as Partial<FieldConfig>;
 }
 
 /** ADR §9.1 — create a FieldApi that delegates to the parent form */

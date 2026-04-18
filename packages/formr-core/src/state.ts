@@ -88,6 +88,8 @@ export interface CreateFormOptions<
   readonly rules?: readonly RuleDefinition[];
   readonly middleware?: readonly Middleware<S>[];
   readonly transforms?: readonly Transform[];
+  /** Form-level field defaults — merged below field-level overrides (tier 2 of 3) */
+  readonly fieldDefaults?: Readonly<FieldConfig<S>>;
   readonly onSubmit?: (
     ctx: SubmitExecutionContext<S>,
   ) => Promise<SubmitResult<S>>;
@@ -100,6 +102,7 @@ import type {
   RuleDefinition,
   Middleware,
   Transform,
+  FieldConfig,
   SubmitExecutionContext,
   SubmitResult,
 } from './contracts.js';

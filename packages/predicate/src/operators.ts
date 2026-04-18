@@ -4,6 +4,16 @@ export interface OperatorDefinition {
   readonly minArgs?: number;
 }
 
+export type CustomOperatorFn = (
+  args: readonly unknown[],
+  scope: Record<string, unknown>,
+) => unknown;
+
+export interface CustomOperatorEntry {
+  readonly definition: OperatorDefinition;
+  readonly execute: CustomOperatorFn;
+}
+
 const BASELINE_OPERATORS: readonly OperatorDefinition[] = [
   { name: '$eq', arity: 2 },
   { name: '$ne', arity: 2 },
@@ -21,6 +31,7 @@ const BASELINE_OPERATORS: readonly OperatorDefinition[] = [
 
 export class OperatorRegistry {
   private readonly operators = new Map<string, OperatorDefinition>();
+  private readonly customHandlers = new Map<string, CustomOperatorFn>();
 
   constructor() {
     for (const op of BASELINE_OPERATORS) {
@@ -36,7 +47,14 @@ export class OperatorRegistry {
     return this.operators.has(name);
   }
 
-  register(definition: OperatorDefinition): void {
+  register(definition: OperatorDefinition, execute?: CustomOperatorFn): void {
     this.operators.set(definition.name, definition);
+    if (execute) {
+      this.customHandlers.set(definition.name, execute);
+    }
+  }
+
+  getHandler(name: string): CustomOperatorFn | undefined {
+    return this.customHandlers.get(name);
   }
 }

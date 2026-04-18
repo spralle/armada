@@ -16,6 +16,7 @@ import { resolveActiveStage, applySubmitOutcome } from './submit.js';
 import { normalizeIssues } from './validation.js';
 import { runTransforms } from './transforms.js';
 import { runVetoHooksSync, runNotifyHooksSync } from './middleware-runner.js';
+import { FormrError } from './errors.js';
 
 /** Set a value at a dot/bracket path inside a nested object, returning a new root */
 function setAtPath(root: unknown, segments: readonly (string | number)[], value: unknown): unknown {
@@ -27,8 +28,17 @@ function setAtPath(root: unknown, segments: readonly (string | number)[], value:
     (result as unknown as Record<string | number, unknown>)[head] = setAtPath(result[head as number], rest, value);
     return result;
   }
-  const obj = (root ?? {}) as Record<string, unknown>;
-  return { ...obj, [head]: setAtPath(obj[String(head)], rest, value) };
+  const nextSeg = rest[0];
+  const nextIsNumeric = nextSeg !== undefined && (typeof nextSeg === 'number' || /^(?:0|[1-9]\d*)$/.test(String(nextSeg)));
+  const obj = (root ?? (typeof head === 'number' ? [] : {})) as Record<string, unknown>;
+  if (Array.isArray(obj)) {
+    const result = [...obj];
+    (result as unknown as Record<string | number, unknown>)[head] = setAtPath(result[head as number], rest, value);
+    return result;
+  }
+  const child = obj[String(head)];
+  const childDefault = nextIsNumeric ? [] : {};
+  return { ...obj, [head]: setAtPath(child ?? (rest.length > 0 ? childDefault : undefined), rest, value) };
 }
 
 /** Pipeline context — everything the 18-step engine needs */
@@ -60,7 +70,7 @@ function getTransformDefs<S extends string>(options: CreateFormOptions<S>): read
   );
 }
 
-/** Run validators and collect issues */
+/** Run validators synchronously; throws FORMR_ASYNC_IN_SYNC_PIPELINE if any return a Promise */
 function runValidators<S extends string>(
   validators: readonly ValidatorAdapter<S>[],
   state: FormState<S>,
@@ -73,10 +83,13 @@ function runValidators<S extends string>(
       ? { data: state.data, uiState: state.uiState, stage, context: submitContext }
       : { data: state.data, uiState: state.uiState, stage };
     const result = v.validate(input);
-    // Sync-only for now; if Promise returned, skip (SE6.2 adds async)
-    if (Array.isArray(result)) {
-      allIssues.push(...result);
+    if (result instanceof Promise) {
+      throw new FormrError(
+        'FORMR_ASYNC_IN_SYNC_PIPELINE',
+        `Validator "${v.id}" returned a Promise in synchronous pipeline — use async submit path`,
+      );
     }
+    allIssues.push(...result);
   }
   return allIssues;
 }

@@ -5,6 +5,7 @@ const UI_PREFIX = '$ui.';
 const NUMERIC_INDEX_RE = /^(?:0|[1-9]\d*)$/;
 const DOT_SAFE_SEGMENT_RE = /^[a-zA-Z0-9_\-]+$/;
 
+const PATH_CACHE_MAX = 1000;
 const pathCache = new Map<string, CanonicalPath>();
 
 /**
@@ -34,6 +35,9 @@ export function parsePath(input: string): CanonicalPath {
     result = parseDot(input);
   }
 
+  if (pathCache.size >= PATH_CACHE_MAX) {
+    pathCache.clear();
+  }
   pathCache.set(input, result);
   return result;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createForm } from '../create-form.js';
 import { createStagePolicy } from '../stage-policy.js';
+import { mergeFieldConfig } from '../field-api.js';
 
 describe('createForm', () => {
   it('returns FormApi with all methods', () => {
@@ -170,5 +171,36 @@ describe('createForm', () => {
     await form.submit();
     const state = form.getState();
     expect(state.meta.submission?.status).toBe('succeeded');
+  });
+});
+
+describe('mergeFieldConfig — 3-tier precedence', () => {
+  it('returns undefined when both are undefined', () => {
+    expect(mergeFieldConfig(undefined, undefined)).toBeUndefined();
+  });
+
+  it('returns formDefaults when no field overrides', () => {
+    const defaults = { label: 'Default', disabled: true };
+    expect(mergeFieldConfig(defaults, undefined)).toEqual(defaults);
+  });
+
+  it('returns field overrides when no form defaults', () => {
+    const overrides = { label: 'Override', required: true };
+    expect(mergeFieldConfig(undefined, overrides)).toEqual(overrides);
+  });
+
+  it('field overrides take precedence over form defaults', () => {
+    const defaults = { label: 'Default', disabled: true, readOnly: false };
+    const overrides = { label: 'Override', required: true };
+    const merged = mergeFieldConfig(defaults, overrides);
+    expect(merged).toEqual({ label: 'Override', disabled: true, readOnly: false, required: true });
+  });
+
+  it('does not let undefined field values override form defaults', () => {
+    const defaults = { label: 'Default', disabled: true };
+    const overrides = { label: undefined, required: true } as unknown as typeof defaults;
+    const merged = mergeFieldConfig(defaults, overrides);
+    expect(merged?.label).toBe('Default');
+    expect(merged?.disabled).toBe(true);
   });
 });
