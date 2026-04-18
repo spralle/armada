@@ -205,3 +205,6 @@ export type {
   KeySequenceCancelledEvent,
 } from "./keybinding-service.js";
 export { KEYBINDING_SERVICE_ID } from "./keybinding-service.js";
+
+export { MF_SHARED_SINGLETONS } from "./shared-dependencies.js";
+export type { MfSharedSingleton } from "./shared-dependencies.js";

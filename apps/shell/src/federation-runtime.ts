@@ -19,6 +19,14 @@ const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
     },
     strategy: "loaded-first",
   },
+  "@ghost/ui": {
+    shareConfig: {
+      singleton: true,
+      requiredVersion: "^0.0.0",
+      strictVersion: false,
+    },
+    strategy: "loaded-first",
+  },
 };
 
 export interface ShellFederationRuntime {

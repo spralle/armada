@@ -1,19 +1,18 @@
 import { federation } from "@module-federation/vite";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     federation({
-      name: "ghost.plugin-starter",
+      name: "ghost.ui",
       filename: "remoteEntry.js",
       manifest: {
         fileName: "mf-manifest.json",
       },
       exposes: {
         "./pluginContract": "./src/plugin-contract-expose.ts",
-        "./pluginParts": "./src/plugin-parts-expose.ts",
-        "./pluginComponents": "./src/plugin-components-expose.ts",
-        "./pluginServices": "./src/plugin-services-expose.ts",
       },
       shared: {
         "@ghost/plugin-contracts": {
@@ -22,15 +21,16 @@ export default defineConfig({
         },
         "@ghost/ui": {
           singleton: true,
-          import: false,
+          // eager bundles @ghost/ui into the entry chunk so it's always available
+          eager: true,
           requiredVersion: "^0.0.0",
-        },
+        } as Record<string, unknown>,
       },
     }),
   ],
   server: {
     host: "127.0.0.1",
-    port: 4171,
+    port: 4186,
     strictPort: true,
     cors: true,
   },
