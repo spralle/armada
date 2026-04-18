@@ -1,5 +1,6 @@
 import type { Middleware, MiddlewareDecision, MiddlewareInitContext } from './contracts.js';
 import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './extensions.js';
+import { FormrError } from './errors.js';
 
 /** Run veto-capable hooks synchronously (for non-submit pipeline path) */
 export function runVetoHooksSync<S extends string>(
@@ -12,13 +13,19 @@ export function runVetoHooksSync<S extends string>(
     if (!hook) continue;
     try {
       const result = hook(context as never);
+      if (isPromiseLike(result)) {
+        throw new FormrError(
+          'FORMR_ASYNC_IN_SYNC_PIPELINE',
+          `Middleware "${mw.id}" returned a Promise from ${hookName}. Use the async pipeline path for async middleware.`,
+        );
+      }
       if (result && typeof result === 'object' && 'action' in result) {
         if ((result as MiddlewareDecision).action === 'veto') {
           return result as MiddlewareDecision;
         }
       }
-      // If Promise returned in sync path, treat as continue
-    } catch {
+    } catch (err) {
+      if (err instanceof FormrError) throw err;
       return { action: 'veto', reason: `Middleware "${mw.id}" threw in ${hookName}` };
     }
   }

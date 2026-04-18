@@ -121,18 +121,24 @@ describe('FormStore', () => {
 
     store.subscribe(listener);
     const tx = store.beginTransaction();
-    // Mutate returns the same reference — but structuredClone makes a new one,
-    // so we need to explicitly return the store's state to test structural sharing.
-    // Actually, Transaction always clones, so nextState !== prevState.
-    // The structural sharing check is prevState !== nextState on the store level.
-    // Since Transaction always creates a new clone, commit always produces a new ref.
-    // This means listeners will always fire on commit. That's correct behavior —
-    // the optimization is for when the store's state ref is literally the same object.
+    // No mutations — transaction is not dirty, so no notification
     store.commitTransaction(tx);
 
-    // Since structuredClone creates a new object, they won't be === equal,
-    // so listener WILL be called. This is expected behavior.
-    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  test('no-op dispatch does not trigger subscribers', () => {
+    const store = new FormStore<Stages>(makeState({ v: 1 }));
+    const listener = mock(() => {});
+
+    store.subscribe(listener);
+    const tx = store.beginTransaction();
+    // Commit without calling mutate — should not notify
+    store.commitTransaction(tx);
+
+    expect(listener).not.toHaveBeenCalled();
+    // State should remain the original
+    expect((store.getState().data as { v: number }).v).toBe(1);
   });
 
   test('nested transaction rejected', () => {

@@ -126,7 +126,7 @@ export interface BeforeSubmitContext<S extends string = string> {
 export interface AfterSubmitContext<S extends string = string> {
   readonly action: FormAction;
   readonly state: FormState<S>;
-  readonly result: SubmitResult;
+  readonly result: SubmitResult<S>;
 }
 
 /** Context for middleware init */
@@ -163,12 +163,12 @@ export interface SubmitExecutionContext<S extends string = string> {
 }
 
 /** ADR section 9 — SubmitResult */
-export interface SubmitResult {
+export interface SubmitResult<S extends string = string> {
   readonly ok: boolean;
   readonly submitId: string;
   readonly message?: string;
-  readonly fieldIssues?: readonly ValidationIssue[];
-  readonly globalIssues?: readonly ValidationIssue[];
+  readonly fieldIssues?: readonly ValidationIssue<S>[];
+  readonly globalIssues?: readonly ValidationIssue<S>[];
 }
 
 /** ADR section 9 — FormAction */
@@ -185,7 +185,7 @@ export interface FormDispatchResult {
 }
 
 /** ADR section 9.1 — FieldConfig */
-export interface FieldConfig {
+export interface FieldConfig<S extends string = string> {
   readonly label?: string;
   readonly description?: string;
   readonly placeholder?: string;
@@ -193,7 +193,7 @@ export interface FieldConfig {
   readonly readOnly?: boolean;
   readonly required?: boolean;
   readonly hidden?: boolean;
-  readonly validators?: readonly ValidatorAdapter[];
+  readonly validators?: readonly ValidatorAdapter<S>[];
   readonly transforms?: readonly Transform[];
   readonly metadata?: Readonly<Record<string, unknown>>;
 }
@@ -203,7 +203,7 @@ export interface FieldApi {
   readonly path: CanonicalPath;
   get(): unknown;
   set(value: unknown): FormDispatchResult;
-  validate(): ValidationIssue[];
+  validate(): readonly ValidationIssue[];
   issues(): readonly ValidationIssue[];
   ui<T = unknown>(selector: (uiState: unknown) => T): T;
 }
@@ -213,9 +213,9 @@ export interface FormApi<S extends string = string> {
   getState(): FormState<S>;
   dispatch(action: FormAction): FormDispatchResult;
   setValue(path: string, value: unknown): FormDispatchResult;
-  validate(stage?: S): ValidationIssue<S>[];
-  submit(context?: Partial<SubmitContext<S>>): Promise<SubmitResult>;
-  field(path: string, config?: FieldConfig): FieldApi;
+  validate(stage?: S): readonly ValidationIssue<S>[];
+  submit(context?: Partial<SubmitContext<S>>): Promise<SubmitResult<S>>;
+  field(path: string, config?: FieldConfig<S>): FieldApi;
   subscribe(listener: (state: FormState<S>) => void): () => void;
   dispose(): void;
 }

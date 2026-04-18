@@ -36,7 +36,7 @@ export function createFieldApi(params: CreateFieldApiParams): FieldApi {
       return params.setValue(params.rawPath, value);
     },
 
-    validate(): ValidationIssue[] {
+    validate(): readonly ValidationIssue[] {
       // Field-level validators will be wired in SE6; return empty for now
       return [];
     },

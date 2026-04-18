@@ -64,13 +64,21 @@ function evaluatePredicateWithDefaultMatcher(
   };
 }
 
+const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
 function getFactValue(facts: PredicateFactBag, path: string): unknown {
   if (!path.includes(".")) {
+    if (DANGEROUS_KEYS.has(path)) {
+      return undefined;
+    }
     return facts[path];
   }
 
   let current: unknown = facts;
   for (const segment of path.split(".")) {
+    if (DANGEROUS_KEYS.has(segment)) {
+      return undefined;
+    }
     if (!current || typeof current !== "object" || !(segment in current)) {
       return undefined;
     }

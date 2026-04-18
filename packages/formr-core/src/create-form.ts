@@ -17,6 +17,8 @@ import { applySubmitOutcome } from './submit.js';
 import { executePipeline } from './pipeline.js';
 import { initMiddlewares, disposeMiddlewares, runNotifyHooksAsync } from './middleware-runner.js';
 import { FormrError } from './errors.js';
+import { runTransforms } from './transforms.js';
+import type { TransformDefinition } from './transforms.js';
 
 /** Check if two CanonicalPaths are equal */
 function pathEquals(a: CanonicalPath, b: CanonicalPath): boolean {
@@ -34,6 +36,14 @@ function pathStartsWith(path: CanonicalPath, prefix: CanonicalPath): boolean {
 
 function generateSubmitId(): string {
   return `submit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Extract TransformDefinition instances from options.transforms via duck-type check */
+function getEgressTransforms<S extends string>(options: CreateFormOptions<S>): readonly TransformDefinition[] {
+  if (!options.transforms?.length) return [];
+  return options.transforms.filter(
+    (t): t is TransformDefinition => 'transform' in t && typeof (t as TransformDefinition).transform === 'function',
+  );
 }
 
 /** ADR §9 — createForm factory */
@@ -92,12 +102,22 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     return errorMsg2 ? { ok: result.ok, error: errorMsg2 } : { ok: result.ok };
   }
 
-  function validate(stage?: S): ValidationIssue<S>[] {
-    // Validators will be wired in SE6; return empty for now
-    return [];
+  function validate(stage?: S): readonly ValidationIssue<S>[] {
+    const state = store.getState();
+    const activeStage = stage ?? state.meta.stage;
+    if (!options.validators?.length) return [];
+    const allIssues: ValidationIssue<S>[] = [];
+    for (const v of options.validators) {
+      const input = { data: state.data, uiState: state.uiState, stage: activeStage };
+      const result = v.validate(input);
+      if (Array.isArray(result)) {
+        allIssues.push(...result);
+      }
+    }
+    return allIssues;
   }
 
-  async function submit(context?: Partial<SubmitContext<S>>): Promise<SubmitResult> {
+  async function submit(context?: Partial<SubmitContext<S>>): Promise<SubmitResult<S>> {
     const state = store.getState();
 
     // Double-submit guard: reject if a submission is already in progress
@@ -152,7 +172,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
         ok: false,
         submitId,
         message: pipelineResult.vetoReason ?? pipelineResult.error ?? 'Pipeline failed',
-        fieldIssues: pipelineResult.issues as readonly ValidationIssue[],
+        fieldIssues: pipelineResult.issues as readonly ValidationIssue<S>[],
       };
     }
 
@@ -165,16 +185,22 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
         meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
       }));
       store.commitTransaction(txFail);
-      return { ok: false, submitId, message: 'Validation failed', fieldIssues: currentIssues as readonly ValidationIssue[] };
+      return { ok: false, submitId, message: 'Validation failed', fieldIssues: currentIssues as readonly ValidationIssue<S>[] };
     }
 
     // Step 18: If submit action succeeded — execute onSubmit, then afterSubmit
     if (options.onSubmit) {
       try {
+        const rawData = store.getState().data;
+        const transformDefs = getEgressTransforms(options);
+        const payload = transformDefs.length > 0
+          ? runTransforms(transformDefs, 'egress', rawData, { state: store.getState() })
+          : rawData;
+
         const result = await options.onSubmit({
           form: api,
           submitContext,
-          payload: store.getState().data,
+          payload,
           stage: submitContext.requestedStage,
         });
 

@@ -224,4 +224,31 @@ describe("predicate", () => {
       expect(evalPredicate({ x: { $gt: 1, $lt: 10 } }, { x: 15 }).matched).toBe(false);
     });
   });
+
+  describe("prototype pollution guard", () => {
+    it("returns undefined for __proto__ path", () => {
+      const result = evalPredicate({ __proto__: "value" }, {});
+      expect(result.failedPredicates[0]?.actual).toBeUndefined();
+    });
+
+    it("returns undefined for constructor path", () => {
+      const result = evalPredicate({ constructor: "value" }, {});
+      expect(result.failedPredicates[0]?.actual).toBeUndefined();
+    });
+
+    it("returns undefined for prototype path", () => {
+      const result = evalPredicate({ prototype: "value" }, {});
+      expect(result.failedPredicates[0]?.actual).toBeUndefined();
+    });
+
+    it("returns undefined for nested __proto__ segment", () => {
+      const result = evalPredicate({ "a.__proto__.b": "value" }, { a: { nested: true } });
+      expect(result.failedPredicates[0]?.actual).toBeUndefined();
+    });
+
+    it("returns undefined for nested constructor segment", () => {
+      const result = evalPredicate({ "a.constructor.name": "value" }, { a: {} });
+      expect(result.failedPredicates[0]?.actual).toBeUndefined();
+    });
+  });
 });

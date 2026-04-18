@@ -10,7 +10,8 @@ export type PredicateErrorCode =
   | 'FORMR_RULE_NON_CONVERGENT'
   | 'FORMR_RULE_DISALLOWED_TARGET'
   | 'PREDICATE_PROTOTYPE_POLLUTION'
-  | 'PREDICATE_DEPTH_EXCEEDED';
+  | 'PREDICATE_DEPTH_EXCEEDED'
+  | 'PREDICATE_UNKNOWN_OPERATOR';
 
 export class PredicateError extends Error {
   readonly code: PredicateErrorCode;

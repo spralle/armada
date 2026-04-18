@@ -34,12 +34,14 @@ export class FormStore<S extends string = string> {
     }
     const nextState = tx.commit();
     const prevState = this._state;
-    this._state = nextState;
     this._activeTransaction = null;
 
-    if (prevState !== nextState) {
-      this._notifyListeners();
+    if (!tx.dirty) {
+      return;
     }
+
+    this._state = nextState;
+    this._notifyListeners();
   }
 
   /** Rollback the active transaction */
