@@ -1,4 +1,4 @@
-import type { KeyboardExclusiveManager } from "./layer-input-behavior.js";
+import type { KeyboardExclusiveManager } from "./input-behavior.js";
 
 // ---------------------------------------------------------------------------
 // Session lock manager

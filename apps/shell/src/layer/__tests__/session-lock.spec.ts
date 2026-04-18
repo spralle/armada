@@ -1,5 +1,5 @@
-import { createSessionLockManager } from "./layer-session-lock.js";
-import type { KeyboardExclusiveManager } from "./layer-input-behavior.js";
+import { createSessionLockManager } from "../session-lock.js";
+import type { KeyboardExclusiveManager } from "../input-behavior.js";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];

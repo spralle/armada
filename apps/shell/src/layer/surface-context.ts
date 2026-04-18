@@ -1,7 +1,7 @@
 import type { FocusGrabConfig, LayerSurfaceContext } from "@ghost/plugin-contracts";
-import type { LayerRegistry } from "../layer-registry.js";
-import type { FocusGrabManager } from "./layer-focus-grab.js";
-import { setDynamicOpacity } from "./layer-surface-visual-effects.js";
+import type { LayerRegistry } from "./registry.js";
+import type { FocusGrabManager } from "./focus-grab.js";
+import { setDynamicOpacity } from "./visual-effects.js";
 
 /**
  * Options for creating a {@link LayerSurfaceContext}.

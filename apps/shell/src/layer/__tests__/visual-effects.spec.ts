@@ -1,4 +1,4 @@
-import { applyVisualEffects, setDynamicOpacity } from "./layer-surface-visual-effects.js";
+import { applyVisualEffects, setDynamicOpacity } from "../visual-effects.js";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AnchorEdge } from "@ghost/plugin-contracts";
-import type { StackedSurface } from "./layer-auto-stacking.js";
-import { applyAutoStacking } from "./layer-auto-stacking.js";
+import type { StackedSurface } from "../auto-stacking.js";
+import { applyAutoStacking } from "../auto-stacking.js";
 
 function mockElement(width = 300, height = 60): HTMLElement {
   return {

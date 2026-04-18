@@ -3,7 +3,7 @@ import type {
   LayerSurfaceContext,
   FocusGrabConfig,
 } from "@ghost/plugin-contracts";
-import type { LayerRegistry } from "../layer-registry.js";
+import type { LayerRegistry } from "./registry.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";
 import {
@@ -13,7 +13,7 @@ import {
   toRecord,
   ensureRemoteRegistered,
 } from "../federation-mount-utils.js";
-import { applyVisualEffects } from "./layer-surface-visual-effects.js";
+import { applyVisualEffects } from "./visual-effects.js";
 
 // ---------------------------------------------------------------------------
 // Types

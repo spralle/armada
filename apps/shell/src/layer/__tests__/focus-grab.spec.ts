@@ -1,5 +1,5 @@
-import { createFocusGrabManager } from "./layer-focus-grab.js";
-import type { KeyboardExclusiveManager } from "./layer-input-behavior.js";
+import { createFocusGrabManager } from "../focus-grab.js";
+import type { KeyboardExclusiveManager } from "../input-behavior.js";
 import type { FocusGrabConfig } from "@ghost/plugin-contracts";
 
 type TestCase = { name: string; run: () => void };

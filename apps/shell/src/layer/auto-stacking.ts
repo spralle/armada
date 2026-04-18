@@ -1,5 +1,5 @@
 import type { PluginLayerSurfaceContribution } from "@ghost/plugin-contracts";
-import { getAnchorKey } from "./layer-anchor-positioning.js";
+import { getAnchorKey } from "./anchor-positioning.js";
 
 export interface StackedSurface {
   surfaceId: string;

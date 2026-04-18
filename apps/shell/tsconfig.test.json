@@ -50,10 +50,13 @@
     "src/ui/part-instance-popout-lifecycle.spec.ts",
     "src/shell-runtime/runtime-render-transition.spec.ts",
     "src/context-state/placement-strategy/placement-strategy.spec.ts",
-    "src/layer-registry.spec.ts",
-    "src/ui/layer-input-behavior.spec.ts",
-    "src/ui/layer-focus-grab.spec.ts",
-    "src/ui/layer-session-lock.spec.ts",
-    "src/ui/layer-surface-context.spec.ts"
+    "src/layer/__tests__/registry.spec.ts",
+    "src/layer/__tests__/input-behavior.spec.ts",
+    "src/layer/__tests__/focus-grab.spec.ts",
+    "src/layer/__tests__/session-lock.spec.ts",
+    "src/layer/__tests__/surface-context.spec.ts",
+    "src/layer/__tests__/anchor-positioning.spec.ts",
+    "src/layer/__tests__/auto-stacking.spec.ts",
+    "src/layer/__tests__/visual-effects.spec.ts"
   ]
 }

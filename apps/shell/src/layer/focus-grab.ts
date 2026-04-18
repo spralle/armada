@@ -1,5 +1,5 @@
 import type { FocusGrabConfig } from "@ghost/plugin-contracts";
-import type { KeyboardExclusiveManager } from "./layer-input-behavior.js";
+import type { KeyboardExclusiveManager } from "./input-behavior.js";
 
 // ---------------------------------------------------------------------------
 // Focus grab manager

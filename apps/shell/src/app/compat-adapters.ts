@@ -21,7 +21,7 @@ import {
   mountPopout,
 } from "../ui/shell-mount.js";
 import { createEdgeSlotRenderer } from "../ui/edge-slot-renderer.js";
-import { createLayerSurfaceRenderer } from "../ui/layer-surface-renderer.js";
+import { createLayerSurfaceRenderer } from "../layer/surface-renderer.js";
 import { getLayerRegistry } from "../ui/shell-mount.js";
 import { createShellFederationRuntime } from "../federation-runtime.js";
 import { createDefaultEdgeSlotsLayout } from "../layout.js";
@@ -53,7 +53,7 @@ export function createShellRuntimeCompatibilityAdapters(
   deps: ShellCompatibilityAdapterDeps,
 ): ShellRuntimeCompatibilityAdapters {
   let renderer: ShellRendererAdapter;
-  let layerSurfaceRendererInstance: import("../ui/layer-surface-renderer.js").LayerSurfaceRenderer | null = null;
+  let layerSurfaceRendererInstance: import("../layer/surface-renderer.js").LayerSurfaceRenderer | null = null;
 
   const effects: ShellEffectsPort = {
     activatePluginForBoundary: (options) => deps.activatePluginForBoundary(options),

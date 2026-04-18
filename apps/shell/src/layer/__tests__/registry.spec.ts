@@ -1,4 +1,4 @@
-import { LayerRegistry, BUILTIN_LAYERS } from "./layer-registry.js";
+import { LayerRegistry, BUILTIN_LAYERS } from "../registry.js";
 import { KeyboardInteractivity, InputBehavior } from "@ghost/plugin-contracts";
 import type { PluginLayerSurfaceContribution } from "@ghost/plugin-contracts";
 

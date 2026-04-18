@@ -3,7 +3,7 @@ import {
   applyInputBehavior,
   applyKeyboardInteractivity,
   createKeyboardExclusiveManager,
-} from "./layer-input-behavior.js";
+} from "../input-behavior.js";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];

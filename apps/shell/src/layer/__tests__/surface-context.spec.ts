@@ -1,7 +1,7 @@
-import { createLayerSurfaceContext } from "./layer-surface-context.js";
-import type { LayerSurfaceContextOptions } from "./layer-surface-context.js";
-import type { FocusGrabManager, FocusGrabOptions } from "./layer-focus-grab.js";
-import { LayerRegistry } from "../layer-registry.js";
+import { createLayerSurfaceContext } from "../surface-context.js";
+import type { LayerSurfaceContextOptions } from "../surface-context.js";
+import type { FocusGrabManager, FocusGrabOptions } from "../focus-grab.js";
+import { LayerRegistry } from "../registry.js";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];
