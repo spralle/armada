@@ -1,4 +1,5 @@
 import type { PartialThemePalette, TerminalPalette } from "./theme-derivation.js";
+import type { PluginLayerDefinition, PluginLayerSurfaceContribution } from "./layer-types.js";
 /** Configuration property schema (JSON Schema subset with extension fields). */
 export interface ConfigurationPropertySchema {
   type?: string | readonly string[] | undefined;
@@ -223,6 +224,8 @@ export interface PluginContributions {
   branding?: BrandingContribution | undefined;
   configuration?: PluginConfigurationContribution | undefined;
   slots?: PluginSlotContribution[] | undefined;
+  layers?: PluginLayerDefinition[] | undefined;
+  layerSurfaces?: PluginLayerSurfaceContribution[] | undefined;
 }
 
 export interface PluginContract {

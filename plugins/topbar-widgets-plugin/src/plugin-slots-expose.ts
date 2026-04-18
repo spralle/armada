@@ -271,6 +271,22 @@ function mountWorkspaceIndicator(container: HTMLElement): CleanupFn {
 // Context menu helpers
 // ---------------------------------------------------------------------------
 
+let activeCloseHandler: ((e: MouseEvent) => void) | null = null;
+let activeEscapeHandler: ((e: KeyboardEvent) => void) | null = null;
+
+function closeMenu(): void {
+  const existing = document.querySelector(".workspace-ctx-menu");
+  if (existing) existing.remove();
+  if (activeCloseHandler) {
+    document.removeEventListener("click", activeCloseHandler, true);
+    activeCloseHandler = null;
+  }
+  if (activeEscapeHandler) {
+    document.removeEventListener("keydown", activeEscapeHandler, true);
+    activeEscapeHandler = null;
+  }
+}
+
 function showWorkspaceContextMenu(
   event: MouseEvent,
   workspaceId: string,
@@ -278,12 +294,11 @@ function showWorkspaceContextMenu(
   ws: WorkspaceService,
   rerender: () => void,
 ): void {
-  // Remove any existing context menu
-  const existing = document.querySelector(".workspace-ctx-menu");
-  if (existing) existing.remove();
+  closeMenu();
 
   const menu = document.createElement("div");
   menu.className = "workspace-ctx-menu";
+  menu.setAttribute("tabindex", "-1");
   menu.style.cssText = `
     position: fixed;
     left: ${event.clientX}px;
@@ -292,14 +307,13 @@ function showWorkspaceContextMenu(
     border: 1px solid var(--ghost-border-primary, #444);
     border-radius: 4px;
     padding: 4px 0;
-    z-index: 10000;
+    pointer-events: auto;
     min-width: 120px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   `;
 
   const renameItem = createMenuItem("Rename", () => {
-    menu.remove();
-    const active = ws.getActiveWorkspace();
+    closeMenu();
     const target = ws.getWorkspaces().find((w: WorkspaceInfo) => w.id === workspaceId);
     if (!target) return;
     const newName = window.prompt("Rename workspace:", target.name);
@@ -311,7 +325,7 @@ function showWorkspaceContextMenu(
 
   const canDelete = ws.getWorkspaces().length > 1;
   const deleteItem = createMenuItem("Delete", () => {
-    menu.remove();
+    closeMenu();
     const active = ws.getActiveWorkspace();
     if (active.id === workspaceId) {
       void deleteWorkspaceViaActionOrFallback(api, ws, workspaceId);
@@ -325,18 +339,47 @@ function showWorkspaceContextMenu(
   }
   menu.appendChild(deleteItem);
 
-  document.body.appendChild(menu);
+  const floatingLayer = document.querySelector('section.shell-layer[data-layer="floating"]');
+  const mountTarget = floatingLayer ?? document.body;
+  mountTarget.appendChild(menu);
+
+  // Keyboard navigation
+  menu.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeMenu();
+      return;
+    }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const items = menu.querySelectorAll("[data-menu-item]");
+      const current = menu.querySelector("[data-menu-item]:focus");
+      const idx = current ? Array.from(items).indexOf(current) : -1;
+      const next =
+        e.key === "ArrowDown"
+          ? items[idx + 1] ?? items[0]
+          : items[idx - 1] ?? items[items.length - 1];
+      (next as HTMLElement)?.focus();
+    }
+  });
 
   // Close on click outside
-  const closeHandler = (e: MouseEvent): void => {
+  activeCloseHandler = (e: MouseEvent): void => {
     if (!menu.contains(e.target as Node)) {
-      menu.remove();
-      document.removeEventListener("click", closeHandler, true);
+      closeMenu();
     }
   };
+  activeEscapeHandler = (e: KeyboardEvent): void => {
+    if (e.key === "Escape") {
+      closeMenu();
+    }
+  };
+
   // Delay to avoid immediate close from the contextmenu event
   requestAnimationFrame(() => {
-    document.addEventListener("click", closeHandler, true);
+    document.addEventListener("click", activeCloseHandler!, true);
+    document.addEventListener("keydown", activeEscapeHandler!, true);
+    menu.focus();
   });
 }
 
@@ -402,6 +445,8 @@ async function executeActionSafely(
 function createMenuItem(label: string, onClick: () => void): HTMLElement {
   const item = document.createElement("div");
   item.textContent = label;
+  item.dataset.menuItem = "true";
+  item.setAttribute("tabindex", "-1");
   item.style.cssText = `
     padding: 4px 12px;
     cursor: pointer;

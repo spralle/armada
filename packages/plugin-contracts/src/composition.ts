@@ -8,6 +8,7 @@ import type {
   ShellEdgeSlotPosition,
   ThemeContribution,
 } from "./types.js";
+import type { PluginLayerSurfaceContribution } from "./layer-types.js";
 
 export interface ComposedPluginViewContribution {
   pluginId: string;
@@ -33,10 +34,16 @@ export interface ComposedPluginSlotContribution {
   component: string;
 }
 
+export interface ComposedPluginLayerSurfaceContribution {
+  pluginId: string;
+  surface: PluginLayerSurfaceContribution;
+}
+
 export interface ComposedPluginContributions {
   views: ComposedPluginViewContribution[];
   parts: ComposedPluginPartContribution[];
   slots: ComposedPluginSlotContribution[];
+  layerSurfaces: ComposedPluginLayerSurfaceContribution[];
 }
 
 export interface PluginContributionSource {
@@ -51,6 +58,7 @@ export function composeEnabledPluginContributions(
   const views: ComposedPluginViewContribution[] = [];
   const parts: ComposedPluginPartContribution[] = [];
   const slots: ComposedPluginSlotContribution[] = [];
+  const layerSurfaces: ComposedPluginLayerSurfaceContribution[] = [];
 
   for (const plugin of plugins) {
     if (!plugin.enabled || !plugin.contract) {
@@ -61,6 +69,7 @@ export function composeEnabledPluginContributions(
     const pluginViews = contributes?.views ?? [];
     const pluginParts = contributes?.parts ?? [];
     const pluginSlots = contributes?.slots ?? [];
+    const pluginLayerSurfaces = contributes?.layerSurfaces ?? [];
 
     for (const view of pluginViews) {
       views.push(toComposedView(plugin.id, view));
@@ -73,12 +82,17 @@ export function composeEnabledPluginContributions(
     for (const slot of pluginSlots) {
       slots.push(toComposedSlot(plugin.id, slot));
     }
+
+    for (const surface of pluginLayerSurfaces) {
+      layerSurfaces.push({ pluginId: plugin.id, surface });
+    }
   }
 
   return {
     views,
     parts,
     slots,
+    layerSurfaces,
   };
 }
 

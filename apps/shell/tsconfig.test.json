@@ -36,7 +36,6 @@
     "src/persistence/context-config-bridge.ts",
     "src/persistence/keybinding-config-bridge.ts",
     "src/config-service-setup.ts",
-    "src/app/renderer-adapter-registry.spec.ts",
     "src/app/async-bridge.spec.ts",
     "src/app/dnd-diagnostics.spec.ts",
     "src/window-bridge.spec.ts",
@@ -49,6 +48,14 @@
     "src/ui/parts-controller-selection-transition.spec.ts",
     "src/ui/part-instance-popout-lifecycle.spec.ts",
     "src/shell-runtime/runtime-render-transition.spec.ts",
-    "src/context-state/placement-strategy/placement-strategy.spec.ts"
+    "src/context-state/placement-strategy/placement-strategy.spec.ts",
+    "src/layer/__tests__/registry.spec.ts",
+    "src/layer/__tests__/input-behavior.spec.ts",
+    "src/layer/__tests__/focus-grab.spec.ts",
+    "src/layer/__tests__/session-lock.spec.ts",
+    "src/layer/__tests__/surface-context.spec.ts",
+    "src/layer/__tests__/anchor-positioning.spec.ts",
+    "src/layer/__tests__/auto-stacking.spec.ts",
+    "src/layer/__tests__/visual-effects.spec.ts"
   ]
 }

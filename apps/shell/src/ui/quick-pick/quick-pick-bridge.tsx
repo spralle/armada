@@ -15,7 +15,7 @@ export interface QuickPickBridge {
  * Imperative bridge that manages a standalone React root for QuickPickOverlay.
  * Bridges imperative shell code to the React-based overlay component.
  */
-export function createQuickPickBridge(): QuickPickBridge {
+export function createQuickPickBridge(modalContainer?: HTMLElement): QuickPickBridge {
   let container: HTMLDivElement | null = null;
   let root: Root | null = null;
   let activeController: QuickPickController<QuickPickItem> | null = null;
@@ -24,9 +24,11 @@ export function createQuickPickBridge(): QuickPickBridge {
     if (container && root) {
       return { container, root };
     }
+    const mountTarget = modalContainer ?? document.body;
+
     container = document.createElement("div");
     container.dataset.quickPickBridge = "true";
-    document.body.appendChild(container);
+    mountTarget.appendChild(container);
     root = createRoot(container);
     return { container, root };
   }

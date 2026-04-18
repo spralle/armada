@@ -1,5 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
 import { DEFAULT_DARK_PALETTE, injectThemeVariables } from "../theme-tokens.js";
+import { LayerRegistry, BUILTIN_LAYERS } from "../layer/registry.js";
 
 type MountDeps = {
   renderParts: () => void;
@@ -8,8 +9,19 @@ type MountDeps = {
   publishRestoreRequestOnUnload: () => void;
 };
 
+let _layerRegistry: LayerRegistry | undefined;
+
+/** Returns the LayerRegistry created during mountMainWindow, or undefined if not yet mounted. */
+export function getLayerRegistry(): LayerRegistry | undefined {
+  return _layerRegistry;
+}
+
 export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void {
   injectThemeVariables(DEFAULT_DARK_PALETTE);
+
+  const layerRegistry = new LayerRegistry();
+  layerRegistry.registerBuiltinLayers();
+  _layerRegistry = layerRegistry;
 
   root.innerHTML = `
   <style>
@@ -17,6 +29,10 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     html, body, #root { width: 100%; height: 100%; overflow: hidden; }
     body { margin: 0; background: transparent; color: var(--ghost-foreground); }
     * { scrollbar-width: thin; scrollbar-color: var(--ghost-muted-foreground) transparent; }
+    #layer-host { position: relative; width: 100%; height: 100%; }
+    .shell-layer { position: absolute; inset: 0; pointer-events: none; isolation: isolate; }
+    .shell-layer[data-layer="main"] { pointer-events: auto; top: var(--exclusive-top, 0px); right: var(--exclusive-right, 0px); bottom: var(--exclusive-bottom, 0px); left: var(--exclusive-left, 0px); }
+    .shell-layer .layer-surface { pointer-events: auto; transition: opacity 200ms ease, transform 200ms ease; }
     .shell { display: grid; grid-template-areas: 'top top top' 'left main right' 'bottom bottom bottom'; grid-template-rows: auto 1fr auto; grid-template-columns: auto 1fr auto; width: 100%; height: 100%; overflow: hidden; }
     .edge-slot { display: flex; overflow: hidden; }
     .edge-slot-top { grid-area: top; flex-direction: row; min-height: var(--ghost-edge-top-min-height, 36px); background: var(--ghost-edge-top); color: var(--ghost-edge-top-foreground); border-bottom: 1px solid var(--ghost-edge-top-border); padding: 0 8px; align-items: center; }
@@ -127,15 +143,22 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
       .domain-row span { white-space: normal; }
     }
   </style>
-  <main class="shell" id="shell-root">
-    <section class="edge-slot edge-slot-top"></section>
-    <section class="edge-slot edge-slot-left"></section>
-    <section class="dock-root" id="dock-tree-root" data-slot="main"></section>
-    <section class="edge-slot edge-slot-right"></section>
-    <section class="edge-slot edge-slot-bottom"></section>
-  </main>
+  <div id="layer-host">
+    <section class="shell-layer" data-layer="background" data-z="0" style="z-index:0"></section>
+    <section class="shell-layer" data-layer="bottom" data-z="100" style="z-index:100"></section>
+    <main class="shell shell-layer" id="shell-root" data-layer="main" data-z="200" style="z-index:200">
+      <section class="edge-slot edge-slot-top"></section>
+      <section class="edge-slot edge-slot-left"></section>
+      <section class="dock-root" id="dock-tree-root" data-slot="main"></section>
+      <section class="edge-slot edge-slot-right"></section>
+      <section class="edge-slot edge-slot-bottom"></section>
+    </main>
+    <section class="shell-layer" data-layer="floating" data-z="300" style="z-index:300"></section>
+    <section class="shell-layer" data-layer="notification" data-z="400" style="z-index:400"></section>
+    <section class="shell-layer" data-layer="modal" data-z="500" style="z-index:500"></section>
+    <section class="shell-layer" data-layer="overlay" data-z="600" style="z-index:600"></section>
+  </div>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <div id="quick-pick-host"></div>
   `;
 
   deps.renderParts();
