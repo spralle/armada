@@ -68,6 +68,16 @@ export type {
   ShellRendererAdapter,
 } from "./app/contracts.js";
 
+declare global {
+  interface Window {
+    __g?: {
+      runtime: ShellRuntime;
+      services: ShellRuntime['services'];
+      registry: ShellRuntime['registry'];
+    };
+  }
+}
+
 interface ShellMountState {
   windowId: string;
   dispose: () => void;
@@ -100,6 +110,14 @@ export function startShell(root: HTMLElement): ShellRuntime {
   shellRuntime.activeTransportPath = composition.transportPath;
   shellRuntime.activeTransportReason = composition.transportReason;
   registerRuntimeTeardown(shellRuntime);
+
+  window.__g = {
+    runtime: shellRuntime,
+    get services() { return shellRuntime.services; },
+    get registry() { return shellRuntime.registry; },
+  };
+  console.debug("[shell] __g namespace available — try: __g.runtime, __g.services, __g.registry");
+
   composition.initialize(root, shellRuntime);
 
   hmrRegistry.windowIds.add(shellRuntime.windowId);
@@ -123,6 +141,9 @@ export function startShell(root: HTMLElement): ShellRuntime {
         hmrRegistry.byRoot.delete(root);
       }
       console.info("[shell] window unregistered", shellRuntime.windowId, "count", hmrRegistry.windowIds.size);
+      if (window.__g?.runtime === shellRuntime) {
+        delete window.__g;
+      }
     },
   };
 
