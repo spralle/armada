@@ -131,6 +131,7 @@ export function createShellRuntime(options?: {
     workspaceManager: null as unknown as ShellRuntime["workspaceManager"],
     placementRegistry,
     placementConfig,
+    pendingChordState: null,
   };
 
   runtime.partHost = createShellPartHostAdapter(runtime);

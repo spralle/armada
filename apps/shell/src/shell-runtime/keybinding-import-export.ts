@@ -1,5 +1,5 @@
 import type { KeybindingOverrideEntryV1 } from "../persistence/contracts.js";
-import { normalizeConfiguredChord } from "./keybinding-normalizer.js";
+import { normalizeConfiguredSequence } from "./keybinding-normalizer.js";
 
 // ---------------------------------------------------------------------------
 // Export envelope
@@ -92,10 +92,10 @@ export function validateKeybindingImport(
       continue;
     }
 
-    const normalized = normalizeConfiguredChord(entry.keybinding);
+    const normalized = normalizeConfiguredSequence(entry.keybinding);
     if (!normalized) {
       warnings.push(
-        `Entry ${i}: skipped — invalid chord "${entry.keybinding}".`,
+        `Entry ${i}: skipped — invalid keybinding "${entry.keybinding}".`,
       );
       continue;
     }

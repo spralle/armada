@@ -62,6 +62,7 @@ export function registerKeybindingOverrideManagerSpecs(harness: SpecHarness): vo
     assertEqual(result.conflicts[0].action, "shell.focus.left", "conflict action");
     assertEqual(result.conflicts[0].layer, "defaults", "conflict layer");
     assertEqual(result.conflicts[0].pluginId, "com.ghost.shell.defaults", "conflict pluginId");
+    assertEqual(result.conflicts[0].conflictType, "exact", "conflict type should be exact");
   });
 
   test("addOverride that conflicts with a plugin binding returns conflict info", () => {
@@ -78,6 +79,7 @@ export function registerKeybindingOverrideManagerSpecs(harness: SpecHarness): vo
     assertEqual(result.conflicts[0].action, "plugin.action.search", "conflict action");
     assertEqual(result.conflicts[0].layer, "plugins", "conflict layer");
     assertEqual(result.conflicts[0].pluginId, "com.ghost.plugin.search", "conflict pluginId");
+    assertEqual(result.conflicts[0].conflictType, "exact", "conflict type should be exact");
   });
 
   test("addOverride that conflicts with an existing user override returns conflict info", () => {
@@ -228,7 +230,7 @@ export function registerKeybindingOverrideManagerSpecs(harness: SpecHarness): vo
 
     const result = manager.addOverride("action.a", "+++");
     assertEqual(result.success, false, "should fail for invalid chord");
-    assertEqual(result.warning, "Invalid keybinding chord", "should report warning");
+    assertEqual(result.warning, "Invalid keybinding sequence", "should report warning");
     assertEqual(persistence.saved.length, 0, "should not persist invalid override");
   });
 
@@ -330,5 +332,88 @@ export function registerKeybindingOverrideManagerSpecs(harness: SpecHarness): vo
     const pluginConflict = conflicts.find((c) => c.layer === "plugins");
     assertTruthy(defaultConflict, "should have default layer conflict");
     assertTruthy(pluginConflict, "should have plugin layer conflict");
+  });
+
+  // ---------------------------------------------------------------------------
+  // Sequence-aware conflict detection tests
+  // ---------------------------------------------------------------------------
+
+  test("addOverride with sequence string succeeds", () => {
+    const persistence = createMockPersistence();
+    const manager = createKeybindingOverrideManager({
+      persistence,
+      getDefaultBindings: () => [...DEFAULT_BINDINGS],
+      getPluginBindings: () => [...PLUGIN_BINDINGS],
+    });
+
+    const result = manager.addOverride("custom.sequence.action", "ctrl+k c");
+    assertEqual(result.success, true, "should succeed with sequence");
+    assertEqual(result.warning, null, "should have no warning");
+    const overrides = manager.getOverrides();
+    assertEqual(overrides.length, 1, "should have one override");
+    assertEqual(overrides[0].keybinding, "ctrl+k c", "sequence should be stored normalized");
+  });
+
+  test("prefix conflict: adding sequence when single-chord prefix exists", () => {
+    const persistence = createMockPersistence();
+    const manager = createKeybindingOverrideManager({
+      persistence,
+      getDefaultBindings: () => [...DEFAULT_BINDINGS],
+      getPluginBindings: () => [...PLUGIN_BINDINGS],
+    });
+
+    manager.addOverride("first.action", "ctrl+k");
+    const result = manager.addOverride("second.action", "ctrl+k c");
+    assertEqual(result.success, true, "should succeed");
+    assertEqual(result.conflicts.length, 1, "should detect one prefix conflict");
+    assertEqual(result.conflicts[0].action, "first.action", "conflict action");
+    assertEqual(result.conflicts[0].conflictType, "prefix", "should be prefix conflict");
+    assertEqual(result.conflicts[0].layer, "user-overrides", "conflict layer");
+  });
+
+  test("prefix conflict reverse: adding single-chord when sequence with that prefix exists", () => {
+    const persistence = createMockPersistence();
+    const manager = createKeybindingOverrideManager({
+      persistence,
+      getDefaultBindings: () => [...DEFAULT_BINDINGS],
+      getPluginBindings: () => [...PLUGIN_BINDINGS],
+    });
+
+    manager.addOverride("first.action", "ctrl+k c");
+    const result = manager.addOverride("second.action", "ctrl+k");
+    assertEqual(result.success, true, "should succeed");
+    assertEqual(result.conflicts.length, 1, "should detect one prefix conflict");
+    assertEqual(result.conflicts[0].action, "first.action", "conflict action");
+    assertEqual(result.conflicts[0].conflictType, "prefix", "should be prefix conflict");
+  });
+
+  test("listConflicts with sequence returns proper conflictType", () => {
+    const persistence = createMockPersistence();
+    const manager = createKeybindingOverrideManager({
+      persistence,
+      getDefaultBindings: () => [
+        { action: "shell.chord.action", keybinding: "ctrl+k", pluginId: "com.ghost.shell.defaults" },
+      ],
+      getPluginBindings: () => [...PLUGIN_BINDINGS],
+    });
+
+    const conflicts = manager.listConflicts("ctrl+k c");
+    assertEqual(conflicts.length, 1, "should detect one prefix conflict");
+    assertEqual(conflicts[0].conflictType, "prefix", "should be prefix conflict");
+    assertEqual(conflicts[0].action, "shell.chord.action", "conflict action");
+  });
+
+  test("no conflict between unrelated sequences", () => {
+    const persistence = createMockPersistence();
+    const manager = createKeybindingOverrideManager({
+      persistence,
+      getDefaultBindings: () => [...DEFAULT_BINDINGS],
+      getPluginBindings: () => [...PLUGIN_BINDINGS],
+    });
+
+    manager.addOverride("first.action", "ctrl+k c");
+    const result = manager.addOverride("second.action", "ctrl+j d");
+    assertEqual(result.success, true, "should succeed");
+    assertEqual(result.conflicts.length, 0, "should have no conflicts between unrelated sequences");
   });
 }

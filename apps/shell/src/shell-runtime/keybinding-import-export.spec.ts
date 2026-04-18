@@ -148,12 +148,12 @@ export function registerKeybindingImportExportSpecs(harness: SpecHarness): void 
     assertTruthy(result.warnings.length > 0, "should warn about empty keybinding");
   });
 
-  test("validateKeybindingImport skips entry with invalid chord", () => {
+  test("validateKeybindingImport skips entry with invalid keybinding", () => {
     const known = new Set(["a"]);
     const input = { version: 1, overrides: [{ action: "a", keybinding: "+++" }] };
     const result = validateKeybindingImport(input, known);
     assertEqual(result.success, false, "should fail when no valid entries remain");
-    assertTruthy(result.warnings.length > 0, "should warn about invalid chord");
+    assertTruthy(result.warnings.length > 0, "should warn about invalid keybinding");
   });
 
   test("validateKeybindingImport keeps valid entries alongside invalid ones", () => {
@@ -195,5 +195,60 @@ export function registerKeybindingImportExportSpecs(harness: SpecHarness): void 
     assertEqual(result.success, true, "empty overrides is valid");
     assertEqual(result.entries.length, 0, "no entries");
     assertEqual(result.errors.length, 0, "no errors");
+  });
+
+  // -------------------------------------------------------------------------
+  // validateKeybindingImport — sequence keybindings
+  // -------------------------------------------------------------------------
+
+  test("validateKeybindingImport accepts two-chord sequence keybinding", () => {
+    const known = new Set(["editor.comment"]);
+    const input = {
+      version: 1,
+      overrides: [{ action: "editor.comment", keybinding: "ctrl+k c" }],
+    };
+    const result = validateKeybindingImport(input, known);
+    assertEqual(result.success, true, "should succeed");
+    assertEqual(result.entries.length, 1, "should have one entry");
+    assertEqual(result.entries[0].keybinding, "ctrl+k c", "should normalize to canonical form");
+    assertEqual(result.warnings.length, 0, "no warnings");
+  });
+
+  test("validateKeybindingImport accepts three-chord sequence keybinding", () => {
+    const known = new Set(["deep.action"]);
+    const input = {
+      version: 1,
+      overrides: [{ action: "deep.action", keybinding: "ctrl+shift+alt+g o d" }],
+    };
+    const result = validateKeybindingImport(input, known);
+    assertEqual(result.success, true, "should succeed");
+    assertEqual(result.entries.length, 1, "should have one entry");
+    assertEqual(result.entries[0].keybinding, "ctrl+shift+alt+g o d", "three-chord sequence preserved");
+  });
+
+  test("validateKeybindingImport warns for invalid token in sequence", () => {
+    const known = new Set(["a"]);
+    const input = {
+      version: 1,
+      overrides: [{ action: "a", keybinding: "ctrl+k +++" }],
+    };
+    const result = validateKeybindingImport(input, known);
+    assertEqual(result.success, false, "should fail when no valid entries");
+    assertTruthy(result.warnings.length > 0, "should warn about invalid keybinding");
+    assertTruthy(result.warnings[0].includes("invalid keybinding"), "warning mentions invalid keybinding");
+  });
+
+  test("validateKeybindingImport round-trips sequence keybindings through export", () => {
+    const overrides: KeybindingOverrideEntryV1[] = [
+      { action: "editor.comment", keybinding: "ctrl+k c" },
+      { action: "shell.focus.left", keybinding: "ctrl+h" },
+    ];
+    const envelope = exportKeybindingOverrides(overrides);
+    const known = new Set(["editor.comment", "shell.focus.left"]);
+    const result = validateKeybindingImport(envelope, known);
+    assertEqual(result.success, true, "round-trip should succeed");
+    assertEqual(result.entries.length, 2, "should preserve both entries");
+    assertEqual(result.entries[0].keybinding, "ctrl+k c", "sequence preserved through round-trip");
+    assertEqual(result.entries[1].keybinding, "ctrl+h", "single chord preserved through round-trip");
   });
 }

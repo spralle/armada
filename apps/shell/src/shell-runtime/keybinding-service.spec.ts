@@ -163,4 +163,167 @@ export function registerKeybindingServiceSpecs(harness: SpecHarness): void {
     assertEqual(allowed.executed, false, "dispatch should surface non-executable result from intent runtime");
     assertEqual(calls.length, 1, "dispatch should attempt execution for allowed binding");
   });
+
+  test("resolveSequence with single chord works like legacy resolve", () => {
+    const service = createKeybindingService({
+      actionSurface: createActionSurface(),
+      intentRuntime: createIntentRuntime([]),
+    });
+
+    const result = service.resolveSequence([{
+      modifiers: ["ctrl", "shift"],
+      key: "p",
+      value: "ctrl+shift+p",
+    }], {});
+
+    assertEqual(result.kind, "exact", "single-chord sequence should resolve as exact match");
+    assertEqual(result.match?.action.id, "shell.action.plugin", "single-chord sequence should find the right action");
+    assertEqual(result.chords.length, 1, "result should contain the input chords");
+  });
+
+  test("resolveSequence with multi-chord sequence returns exact match", () => {
+    const surface: ActionSurface = {
+      actions: [
+        {
+          id: "shell.action.multi",
+          title: "Multi Action",
+          intent: "shell.intent.multi",
+          pluginId: "shell.defaults",
+        },
+      ],
+      menus: [],
+      keybindings: [
+        {
+          action: "shell.action.multi",
+          keybinding: "ctrl+k ctrl+c",
+          pluginId: "shell.defaults",
+        },
+      ],
+    };
+
+    const service = createKeybindingService({
+      actionSurface: surface,
+      intentRuntime: createIntentRuntime([]),
+    });
+
+    const result = service.resolveSequence([
+      { modifiers: ["ctrl"], key: "k", value: "ctrl+k" },
+      { modifiers: ["ctrl"], key: "c", value: "ctrl+c" },
+    ], {});
+
+    assertEqual(result.kind, "exact", "full multi-chord sequence should resolve as exact");
+    assertEqual(result.match?.action.id, "shell.action.multi", "multi-chord sequence should find the right action");
+  });
+
+  test("resolveSequence with partial sequence returns prefix", () => {
+    const surface: ActionSurface = {
+      actions: [
+        {
+          id: "shell.action.multi",
+          title: "Multi Action",
+          intent: "shell.intent.multi",
+          pluginId: "shell.defaults",
+        },
+      ],
+      menus: [],
+      keybindings: [
+        {
+          action: "shell.action.multi",
+          keybinding: "ctrl+k ctrl+c",
+          pluginId: "shell.defaults",
+        },
+      ],
+    };
+
+    const service = createKeybindingService({
+      actionSurface: surface,
+      intentRuntime: createIntentRuntime([]),
+    });
+
+    const result = service.resolveSequence([
+      { modifiers: ["ctrl"], key: "k", value: "ctrl+k" },
+    ], {});
+
+    assertEqual(result.kind, "prefix", "partial sequence should return prefix");
+    assertTruthy((result.prefixCount ?? 0) > 0, "prefix result should report candidate count");
+  });
+
+  test("hasPrefix returns true for valid prefix, false for non-prefix", () => {
+    const surface: ActionSurface = {
+      actions: [
+        {
+          id: "shell.action.multi",
+          title: "Multi Action",
+          intent: "shell.intent.multi",
+          pluginId: "shell.defaults",
+        },
+      ],
+      menus: [],
+      keybindings: [
+        {
+          action: "shell.action.multi",
+          keybinding: "ctrl+k ctrl+c",
+          pluginId: "shell.defaults",
+        },
+      ],
+    };
+
+    const service = createKeybindingService({
+      actionSurface: surface,
+      intentRuntime: createIntentRuntime([]),
+    });
+
+    const hasValid = service.hasPrefix([
+      { modifiers: ["ctrl"], key: "k", value: "ctrl+k" },
+    ], {});
+    assertEqual(hasValid, true, "should detect valid prefix");
+
+    const hasInvalid = service.hasPrefix([
+      { modifiers: ["ctrl"], key: "z", value: "ctrl+z" },
+    ], {});
+    assertEqual(hasInvalid, false, "should reject non-matching prefix");
+  });
+
+  test("dispatchSequence only dispatches on exact match", async () => {
+    const calls: { intent: string; context: Readonly<Record<string, string>> }[] = [];
+    const surface: ActionSurface = {
+      actions: [
+        {
+          id: "shell.action.multi",
+          title: "Multi Action",
+          intent: "shell.intent.multi",
+          pluginId: "shell.defaults",
+        },
+      ],
+      menus: [],
+      keybindings: [
+        {
+          action: "shell.action.multi",
+          keybinding: "ctrl+k ctrl+c",
+          pluginId: "shell.defaults",
+        },
+      ],
+    };
+
+    const service = createKeybindingService({
+      actionSurface: surface,
+      intentRuntime: createIntentRuntime(calls),
+    });
+
+    // Partial sequence should not dispatch
+    const partial = await service.dispatchSequence([
+      { modifiers: ["ctrl"], key: "k", value: "ctrl+k" },
+    ], {});
+    assertEqual(partial.executed, false, "partial sequence should not dispatch");
+    assertEqual(calls.length, 0, "no intent should be invoked for partial sequence");
+
+    // Full sequence should dispatch
+    const full = await service.dispatchSequence([
+      { modifiers: ["ctrl"], key: "k", value: "ctrl+k" },
+      { modifiers: ["ctrl"], key: "c", value: "ctrl+c" },
+    ], {});
+    assertEqual(full.resolution.match?.action.id, "shell.action.multi", "full sequence should resolve action");
+    assertEqual(full.executed, true, "full sequence should dispatch successfully");
+    assertEqual(calls.length, 1, "intent should be invoked once for full sequence");
+  });
 }

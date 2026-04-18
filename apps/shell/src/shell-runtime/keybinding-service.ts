@@ -8,12 +8,12 @@ import type {
 } from "../action-surface.js";
 import type { IntentRuntime } from "../intent-runtime.js";
 import {
-  normalizeConfiguredChord,
+  normalizeConfiguredSequence,
   normalizeKeyboardEventChord,
   type NormalizedKeybindingChord,
 } from "./keybinding-normalizer.js";
 import {
-  resolveKeybindingMatch,
+  resolveKeybindingSequence,
   type KeybindingLayer,
   type RegisteredKeybindingRecord,
   type ResolvedKeybinding,
@@ -27,8 +27,16 @@ export interface KeybindingLayerInput {
 }
 
 export interface KeybindingResolution {
-  chord: NormalizedKeybindingChord;
+  /** The sequence of chords that were resolved */
+  chords: readonly NormalizedKeybindingChord[];
   match: ResolvedKeybinding | null;
+}
+
+export interface SequenceKeyResolution {
+  kind: "exact" | "prefix" | "none";
+  chords: readonly NormalizedKeybindingChord[];
+  match?: ResolvedKeybinding;
+  prefixCount?: number;
 }
 
 export interface KeybindingDispatchResult {
@@ -38,8 +46,18 @@ export interface KeybindingDispatchResult {
 
 export interface KeybindingService {
   normalizeEvent: (event: KeyboardEvent) => NormalizedKeybindingChord | null;
+  /** Legacy single-chord resolve — still works, delegates internally */
   resolve: (chord: NormalizedKeybindingChord, context: ActionSurfaceContext) => KeybindingResolution;
+  /** Sequence-aware resolve — call with accumulated chords */
+  resolveSequence: (chords: readonly NormalizedKeybindingChord[], context: ActionSurfaceContext) => SequenceKeyResolution;
+  /** Legacy single-chord dispatch */
   dispatch: (chord: NormalizedKeybindingChord, context: ActionSurfaceContext) => Promise<KeybindingDispatchResult>;
+  /** Sequence-aware dispatch — only dispatches on exact match */
+  dispatchSequence: (chords: readonly NormalizedKeybindingChord[], context: ActionSurfaceContext) => Promise<KeybindingDispatchResult>;
+  /** Check if any registered sequence starts with these chords */
+  hasPrefix: (chords: readonly NormalizedKeybindingChord[], context: ActionSurfaceContext) => boolean;
+  /** Timeout in ms for multi-chord sequence completion */
+  readonly sequenceTimeoutMs: number;
 }
 
 export interface KeybindingServiceOptions {
@@ -49,44 +67,69 @@ export interface KeybindingServiceOptions {
   pluginBindings?: readonly ActionKeybinding[];
   userOverrideBindings?: readonly ActionKeybinding[];
   matcher?: ContributionPredicateMatcher;
+  sequenceTimeoutMs?: number;
 }
 
 export function createKeybindingService(options: KeybindingServiceOptions): KeybindingService {
   const matcher = options.matcher;
+  const sequenceTimeoutMs = options.sequenceTimeoutMs ?? 1000;
   const indexedActions = new Map(options.actionSurface.actions.map((action) => [action.id, action]));
   const layers = buildLayerInputs(options);
   const records = buildRegistryRecords(layers, indexedActions, DEFAULT_LAYER_PRECEDENCE);
 
-  const resolve = (chord: NormalizedKeybindingChord, context: ActionSurfaceContext): KeybindingResolution => ({
-    chord,
-    match: resolveKeybindingMatch(records, chord, context, matcher),
-  });
+  const resolveSequence = (chords: readonly NormalizedKeybindingChord[], context: ActionSurfaceContext): SequenceKeyResolution => {
+    const result = resolveKeybindingSequence(records, chords, context, matcher);
+    return {
+      kind: result.kind,
+      chords,
+      match: result.match,
+      prefixCount: result.prefixCount,
+    };
+  };
+
+  const resolve = (chord: NormalizedKeybindingChord, context: ActionSurfaceContext): KeybindingResolution => {
+    const seqResult = resolveSequence([chord], context);
+    return {
+      chords: [chord],
+      match: seqResult.kind === "exact" ? (seqResult.match ?? null) : null,
+    };
+  };
+
+  const dispatchSequence = async (chords: readonly NormalizedKeybindingChord[], context: ActionSurfaceContext): Promise<KeybindingDispatchResult> => {
+    const seqResult = resolveSequence(chords, context);
+    const resolution: KeybindingResolution = {
+      chords,
+      match: seqResult.kind === "exact" ? (seqResult.match ?? null) : null,
+    };
+
+    if (seqResult.kind !== "exact" || !seqResult.match) {
+      return { resolution, executed: false };
+    }
+
+    const executed = await dispatchAction(
+      options.actionSurface,
+      options.intentRuntime,
+      seqResult.match.action.id,
+      context,
+      matcher,
+    );
+
+    return { resolution, executed };
+  };
 
   return {
     normalizeEvent: normalizeKeyboardEventChord,
     resolve,
+    resolveSequence,
     async dispatch(chord, context) {
-      const resolution = resolve(chord, context);
-      if (!resolution.match) {
-        return {
-          resolution,
-          executed: false,
-        };
-      }
-
-      const executed = await dispatchAction(
-        options.actionSurface,
-        options.intentRuntime,
-        resolution.match.action.id,
-        context,
-        matcher,
-      );
-
-      return {
-        resolution,
-        executed,
-      };
+      return dispatchSequence([chord], context);
     },
+    dispatchSequence,
+    hasPrefix(chords, context) {
+      const result = resolveKeybindingSequence(records, chords, context, matcher);
+      return result.kind === "prefix";
+    },
+    sequenceTimeoutMs,
   };
 }
 
@@ -124,14 +167,14 @@ function buildRegistryRecords(
         continue;
       }
 
-      const chord = normalizeConfiguredChord(entry.keybinding);
-      if (!chord) {
+      const sequence = normalizeConfiguredSequence(entry.keybinding);
+      if (!sequence) {
         continue;
       }
 
       records.push({
         action,
-        chord,
+        sequence,
         when: entry.when,
         source: {
           layer: layer.layer,

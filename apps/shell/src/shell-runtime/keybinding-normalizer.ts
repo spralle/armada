@@ -79,3 +79,37 @@ function toNormalizedChord(modifiers: KeybindingModifier[], key: string): Normal
 function isKeybindingModifier(value: string): value is KeybindingModifier {
   return KEYBINDING_MODIFIERS.has(value as KeybindingModifier);
 }
+
+/** A sequence of one or more chords. Single-chord keybindings produce a sequence of length 1. */
+export interface NormalizedKeybindingSequence {
+  chords: NormalizedKeybindingChord[];
+  /** Canonical string: chord values joined by " " (space) */
+  value: string;
+}
+
+/**
+ * Parse a space-separated sequence of chords.
+ * Each space-separated token is parsed via normalizeConfiguredChord().
+ * Returns null if input is empty or any token is invalid.
+ */
+export function normalizeConfiguredSequence(input: string): NormalizedKeybindingSequence | null {
+  const collapsed = input.trim().replace(/\s*\+\s*/g, "+");
+  const tokens = collapsed.split(/\s+/).filter((t) => t.length > 0);
+  if (tokens.length === 0) {
+    return null;
+  }
+
+  const chords: NormalizedKeybindingChord[] = [];
+  for (const token of tokens) {
+    const chord = normalizeConfiguredChord(token);
+    if (chord === null) {
+      return null;
+    }
+    chords.push(chord);
+  }
+
+  return {
+    chords,
+    value: chords.map((c) => c.value).join(" "),
+  };
+}

@@ -124,6 +124,17 @@
         "vite": "^5.4.19",
       },
     },
+    "plugins/pending-chord-indicator-plugin": {
+      "name": "@ghost/pending-chord-indicator-plugin",
+      "version": "1.0.0",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
     "plugins/plugin-starter": {
       "name": "@ghost/plugin-starter",
       "dependencies": {
@@ -309,6 +320,8 @@
     "@ghost/domain-unplanned-orders-plugin": ["@ghost/domain-unplanned-orders-plugin@workspace:plugins/domain-unplanned-orders-plugin"],
 
     "@ghost/domain-vessel-view-plugin": ["@ghost/domain-vessel-view-plugin@workspace:plugins/domain-vessel-view-plugin"],
+
+    "@ghost/pending-chord-indicator-plugin": ["@ghost/pending-chord-indicator-plugin@workspace:plugins/pending-chord-indicator-plugin"],
 
     "@ghost/plugin-contracts": ["@ghost/plugin-contracts@workspace:packages/plugin-contracts"],
 
@@ -752,11 +765,11 @@
 
     "@ghost/backend-app/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost/config-plugin-runtime/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
     "@ghost/domain-unplanned-orders-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost/domain-vessel-view-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost/pending-chord-indicator-plugin/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost/plugin-group-context/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 

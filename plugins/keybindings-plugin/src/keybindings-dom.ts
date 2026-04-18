@@ -227,9 +227,7 @@ function renderOverridesSection(
     tr.appendChild(tdAction);
 
     const tdChord = document.createElement("td");
-    const code = document.createElement("code");
-    code.textContent = override.key;
-    tdChord.appendChild(code);
+    tdChord.appendChild(renderChordDisplay(override.key));
     tr.appendChild(tdChord);
 
     const tdActions = document.createElement("td");
@@ -302,9 +300,7 @@ function renderAllBindingsSection(
     tr.appendChild(tdAction);
 
     const tdChord = document.createElement("td");
-    const code = document.createElement("code");
-    code.textContent = binding.key;
-    tdChord.appendChild(code);
+    tdChord.appendChild(renderChordDisplay(binding.key));
     if (conflictKeys.has(binding.key)) {
       const badge = document.createElement("span");
       badge.className = "keybindings-badge keybindings-badge-conflict";
@@ -336,8 +332,37 @@ function renderAllBindingsSection(
 }
 
 // ---------------------------------------------------------------------------
-// Record button (inline key recording)
+// Chord display helper (renders multi-chord sequences with separators)
 // ---------------------------------------------------------------------------
+
+function renderChordDisplay(keybinding: string): HTMLElement {
+  const parts = keybinding.split(" ");
+  if (parts.length === 1) {
+    const code = document.createElement("code");
+    code.textContent = keybinding;
+    return code;
+  }
+  const container = document.createElement("span");
+  parts.forEach((part, i) => {
+    if (i > 0) {
+      const sep = document.createElement("span");
+      sep.textContent = " → ";
+      sep.style.cssText = "color:var(--ghost-muted-foreground);font-size:10px";
+      container.appendChild(sep);
+    }
+    const code = document.createElement("code");
+    code.textContent = part;
+    code.style.cssText = "font-size:11px";
+    container.appendChild(code);
+  });
+  return container;
+}
+
+// ---------------------------------------------------------------------------
+// Record button (inline key recording with multi-chord support)
+// ---------------------------------------------------------------------------
+
+const RECORD_TIMEOUT_MS = 1500;
 
 function createRecordButton(
   command: string,
@@ -361,10 +386,38 @@ function createRecordButton(
     input.readOnly = true;
     input.setAttribute("aria-label", `Recording keybinding for ${command}`);
 
+    const recordedChords: string[] = [];
+    let recordTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const clearRecordTimeout = () => {
+      if (recordTimeout) {
+        clearTimeout(recordTimeout);
+        recordTimeout = null;
+      }
+    };
+
     const cancel = () => {
+      clearRecordTimeout();
       if (input.parentElement) {
         input.parentElement.replaceChild(btn, input);
       }
+    };
+
+    const confirmRecording = () => {
+      clearRecordTimeout();
+      if (recordedChords.length === 0) {
+        cancel();
+        return;
+      }
+      const sequence = recordedChords.join(" ");
+      if (!isBrowserSafe(recordedChords[0])) {
+        showAlert(`"${recordedChords[0]}" is reserved by the browser and cannot be bound.`);
+        cancel();
+        return;
+      }
+      service.addOverride(command, sequence);
+      clearAlert();
+      rerender();
     };
 
     input.addEventListener("blur", cancel);
@@ -372,18 +425,27 @@ function createRecordButton(
       event.preventDefault();
       event.stopPropagation();
 
-      const chord = normalizeKeyboardEventChord(event);
-      if (!chord) return;
+      // Enter = confirm what we have (if anything)
+      if (event.key === "Enter" && recordedChords.length > 0) {
+        confirmRecording();
+        return;
+      }
 
-      if (!isBrowserSafe(chord)) {
-        showAlert(`"${chord}" is reserved by the browser and cannot be bound.`);
+      // Escape = cancel
+      if (event.key === "Escape") {
         cancel();
         return;
       }
 
-      service.addOverride(command, chord);
-      clearAlert();
-      rerender();
+      const chord = normalizeKeyboardEventChord(event);
+      if (!chord) return; // modifier-only press
+
+      recordedChords.push(chord);
+      input.value = recordedChords.join(" ") + " ...";
+
+      // Reset timeout — auto-confirm after delay
+      clearRecordTimeout();
+      recordTimeout = setTimeout(() => confirmRecording(), RECORD_TIMEOUT_MS);
     });
 
     btn.parentElement!.replaceChild(input, btn);

@@ -58,6 +58,13 @@ import type { KeybindingServiceDeps } from "../keybinding-service-registration.j
 import type { PlacementStrategyRegistry } from "../context-state/placement-strategy/registry.js";
 import type { PlacementConfig } from "../context-state/placement-strategy/types.js";
 
+export interface PendingChordState {
+  /** Chord values pressed so far, e.g. ["ctrl+k"] */
+  pressedChords: string[];
+  /** How many registered sequences still match as prefix */
+  candidateCount: number;
+}
+
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
   loadedPlugins: PluginContract[];
@@ -140,6 +147,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   lastDndDiagnostic: DndDiagnosticEnvelope | null;
   placementRegistry: PlacementStrategyRegistry;
   placementConfig: PlacementConfig;
+  pendingChordState: PendingChordState | null;
 }
 
 export interface SourceTabTransferPendingState {
