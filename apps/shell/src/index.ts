@@ -17,10 +17,11 @@ import {
 import { shellBootstrapState } from "./app/bootstrap.js";
 import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
 import {
-  createShellBootstrapComposition,
-  getShellBootstrapComposition,
-  registerShellBootstrapComposition,
-} from "./app/bootstrap-composition.js";
+  createShellBootstrap,
+  getShellBootstrap,
+  registerShellBootstrap,
+} from "./bootstrap-shell.js";
+import type { ShellBootstrap } from "./bootstrap-shell.js";
 import {
   readShellMigrationFlags,
   selectShellTransportPath,
@@ -63,9 +64,7 @@ import { createGhostApiDeps } from "./plugin-api/ghost-api-deps-factory.js";
 
 export type {
   ShellCoreApi,
-  ShellEffectsPort,
   ShellPartHostAdapter,
-  ShellRendererAdapter,
 } from "./app/contracts.js";
 
 declare global {
@@ -93,7 +92,7 @@ export function startShell(root: HTMLElement): ShellRuntime {
   const shellRuntime = createShellRuntime({
     transportPath: transportDecision.path,
   });
-  const composition = createShellBootstrapComposition(root, shellRuntime, flags, {
+  const bootstrap = createShellBootstrap(root, shellRuntime, flags, {
     activatePluginForBoundary: (options) => activatePluginForBoundary(root, shellRuntime, options),
     announce: (message) => announce(root, shellRuntime, message),
     dismissIntentChooser: () => dismissIntentChooser(root, shellRuntime),
@@ -105,13 +104,13 @@ export function startShell(root: HTMLElement): ShellRuntime {
     renderSyncStatus: () => renderSyncStatus(root, shellRuntime),
     summarizeSelectionPriorities: () => summarizeSelectionPriorities(shellRuntime),
   });
-  registerShellBootstrapComposition(shellRuntime, composition);
+  registerShellBootstrap(shellRuntime, bootstrap);
   registerWorkspaceRuntimeActions(shellRuntime, {
     getWorkspaceSwitchDeps: () => createWorkspaceSwitchDeps(root, shellRuntime),
   });
-  const disposeMount = mountShell(root, shellRuntime, composition);
-  shellRuntime.activeTransportPath = composition.transportPath;
-  shellRuntime.activeTransportReason = composition.transportReason;
+  const disposeMount = mountShell(root, shellRuntime, bootstrap);
+  shellRuntime.activeTransportPath = bootstrap.transportPath;
+  shellRuntime.activeTransportReason = bootstrap.transportReason;
   registerRuntimeTeardown(shellRuntime);
 
   window.__g = {
@@ -121,7 +120,7 @@ export function startShell(root: HTMLElement): ShellRuntime {
   };
   console.debug("[shell] __g namespace available — try: __g.runtime, __g.services, __g.registry");
 
-  composition.initialize(root, shellRuntime);
+  bootstrap.initialize(root, shellRuntime);
 
   hmrRegistry.windowIds.add(shellRuntime.windowId);
 
@@ -158,7 +157,6 @@ export function startShell(root: HTMLElement): ShellRuntime {
 
   console.log("[shell] POC shell stub ready", {
     bootstrapMode: shellBootstrapState.mode,
-    compositionMode: composition.mode,
     transportPath: shellRuntime.activeTransportPath,
     transportReason: shellRuntime.activeTransportReason,
     windowCount: hmrRegistry.windowIds.size,
@@ -181,11 +179,11 @@ function registerRuntimeTeardown(runtime: ShellRuntime): void {
   window.addEventListener("beforeunload", teardown, { once: true });
 }
 
-function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: ReturnType<typeof getShellBootstrapComposition>): () => void {
+function mountShell(root: HTMLElement, runtime: ShellRuntime, bootstrap: ShellBootstrap): () => void {
   const disposers: Array<() => void> = [];
 
   if (runtime.isPopout) {
-    disposers.push(composition.mountPopout(root, runtime, {
+    disposers.push(bootstrap.mountPopout(root, runtime, {
       renderParts: () => renderParts(root, runtime),
       updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
       setupResize: () => setupResize(root, runtime),
@@ -200,7 +198,7 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: Retur
       },
     }));
   } else {
-    disposers.push(composition.mountMainWindow(root, {
+    disposers.push(bootstrap.mountMainWindow(root, {
       renderParts: () => renderParts(root, runtime),
       updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
       setupResize: () => setupResize(root, runtime),
@@ -214,8 +212,8 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: Retur
   }
 
   disposers.push(bindBridgeSync(root, runtime, {
-    applyContext: composition.applyContext,
-    applySelection: composition.applySelection,
+    applyContext: bootstrap.core.applyContext,
+    applySelection: bootstrap.core.applySelection,
   }));
   disposers.push(bindKeyboardShortcuts(root, runtime));
 
@@ -257,7 +255,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
       onProgress: (registry) => {
         if (!isActive()) return;
         runtime.registry = registry;
-        getShellBootstrapComposition(runtime).renderPanels(root, runtime);
+        getShellBootstrap(runtime).renderPanels(root, runtime);
       },
     });
     if (!isActive()) {
@@ -280,10 +278,10 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
     }
     runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
     refreshCommandContributions(runtime);
-    getShellBootstrapComposition(runtime).renderPanels(root, runtime);
+    getShellBootstrap(runtime).renderPanels(root, runtime);
     renderParts(root, runtime);
-    getShellBootstrapComposition(runtime).renderEdgeSlots(root, runtime);
-    getShellBootstrapComposition(runtime).renderLayerSurfaces(root, runtime);
+    getShellBootstrap(runtime).renderEdgeSlots(root, runtime);
+    getShellBootstrap(runtime).renderLayerSurfaces(root, runtime);
   } catch (error) {
     quickPickBridge.dispose();
     console.warn("[shell] plugin registry hydration skipped", error);
@@ -302,7 +300,7 @@ function refreshCommandContributions(runtime: ShellRuntime): void {
 }
 
 function renderParts(root: HTMLElement, runtime: ShellRuntime): void {
-  getShellBootstrapComposition(runtime).renderParts(root, runtime);
+  getShellBootstrap(runtime).renderParts(root, runtime);
 }
 
 function bindBridgeSync(
@@ -329,7 +327,7 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): () => 
       publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
     },
     renderContextControls: () => renderContextControlsPanel(root, runtime),
-    renderEdgeSlots: () => getShellBootstrapComposition(runtime).renderEdgeSlots(root, runtime),
+    renderEdgeSlots: () => getShellBootstrap(runtime).renderEdgeSlots(root, runtime),
     renderParts: () => renderParts(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
     toActionContext: () => toActionContext(runtime),
@@ -377,11 +375,11 @@ function dismissIntentChooser(root: HTMLElement, runtime: ShellRuntime): void {
 }
 
 function renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void {
-  getShellBootstrapComposition(runtime).renderSyncStatus(root, runtime);
+  getShellBootstrap(runtime).renderSyncStatus(root, runtime);
 }
 
 function renderContextControlsPanel(root: HTMLElement, runtime: ShellRuntime): void {
-  getShellBootstrapComposition(runtime).renderContextControlsPanel(root, runtime);
+  getShellBootstrap(runtime).renderContextControlsPanel(root, runtime);
 }
 
 async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
@@ -407,7 +405,7 @@ async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRu
 
   await Promise.all(activations);
   refreshCommandContributions(runtime);
-  getShellBootstrapComposition(runtime).renderPanels(root, runtime);
+  getShellBootstrap(runtime).renderPanels(root, runtime);
   renderParts(root, runtime);
 }
 
@@ -436,7 +434,7 @@ async function activatePluginForBoundary(
 
     runtime.notice = "";
     refreshCommandContributions(runtime);
-    getShellBootstrapComposition(runtime).renderPanels(root, runtime);
+    getShellBootstrap(runtime).renderPanels(root, runtime);
     return true;
   } catch (error) {
     runtime.notice = `Plugin activation failed for '${options.pluginId}' (${options.triggerType}:${options.triggerId}).`;
