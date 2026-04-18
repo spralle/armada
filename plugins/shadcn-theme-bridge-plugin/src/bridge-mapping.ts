@@ -28,7 +28,6 @@ export const GHOST_TO_SHADCN_MAP: ReadonlyArray<
   ["--ghost-accent", "--accent"],
   ["--ghost-accent-foreground", "--accent-foreground"],
   ["--ghost-error", "--destructive"],
-  ["--ghost-error-foreground", "--destructive-foreground"],
 
   // Input / border tokens
   ["--ghost-border", "--border"],
@@ -48,18 +47,7 @@ export const GHOST_TO_SHADCN_MAP: ReadonlyArray<
   ["--ghost-edge-left-accent", "--sidebar-accent"],
   ["--ghost-edge-left-accent-foreground", "--sidebar-accent-foreground"],
   ["--ghost-edge-left-border", "--sidebar-border"],
-  ["--ghost-primary", "--sidebar-primary"],
-  ["--ghost-primary-foreground", "--sidebar-primary-foreground"],
-  ["--ghost-ring", "--sidebar-ring"],
 
   // Geometry tokens
   ["--ghost-radius", "--radius"],
-
-  // Status tokens (warning, success, info)
-  ["--ghost-warning", "--warning"],
-  ["--ghost-warning-foreground", "--warning-foreground"],
-  ["--ghost-success", "--success"],
-  ["--ghost-success-foreground", "--success-foreground"],
-  ["--ghost-info", "--info"],
-  ["--ghost-info-foreground", "--info-foreground"],
 ] as const;
