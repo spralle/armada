@@ -14,6 +14,7 @@ import { evaluateExpressions, applyRuleWrites } from './expression-integration.j
 import { resolveActiveStage, applySubmitOutcome } from './submit.js';
 import { normalizeIssues } from './validation.js';
 import { runTransforms } from './transforms.js';
+import { runVetoHooksSync, runNotifyHooksSync } from './middleware-runner.js';
 
 /** Set a value at a dot/bracket path inside a nested object, returning a new root */
 function setAtPath(root: unknown, segments: readonly (string | number)[], value: unknown): unknown {
@@ -47,38 +48,7 @@ export interface PipelineResult<S extends string = string> {
   readonly issues?: readonly ValidationIssue<S>[];
 }
 
-/** Run all middleware hooks for a veto-capable point (beforeAction, beforeSubmit) */
-function runVetoHooks<S extends string>(
-  middlewares: readonly Middleware<S>[],
-  hookName: 'beforeAction' | 'beforeSubmit',
-  ctx: Record<string, unknown>,
-): MiddlewareDecision {
-  for (const mw of middlewares) {
-    const hook = mw[hookName];
-    if (!hook) continue;
-    const result = hook(ctx as never);
-    // Sync-only for now; if Promise returned, treat as continue (SE6.2 adds async)
-    if (result && typeof result === 'object' && 'action' in result) {
-      if ((result as MiddlewareDecision).action === 'veto') {
-        return result as MiddlewareDecision;
-      }
-    }
-  }
-  return { action: 'continue' };
-}
 
-/** Run all middleware hooks for a notification point (no veto) */
-function runNotifyHooks<S extends string>(
-  middlewares: readonly Middleware<S>[],
-  hookName: 'beforeEvaluate' | 'afterEvaluate' | 'beforeValidate' | 'afterValidate' | 'afterAction' | 'afterSubmit',
-  ctx: Record<string, unknown>,
-): void {
-  for (const mw of middlewares) {
-    const hook = mw[hookName];
-    if (!hook) continue;
-    (hook as (c: unknown) => void)(ctx);
-  }
-}
 
 /** Resolve TransformDefinitions from options.transforms (duck-type check) */
 function getTransformDefs<S extends string>(options: CreateFormOptions<S>): readonly TransformDefinition[] {
@@ -132,7 +102,7 @@ export function executePipeline<S extends string>(ctx: PipelineContext<S>): Pipe
 
   try {
     // Step 3: Middleware beforeAction — MAY veto
-    const beforeActionDecision = runVetoHooks(middlewares, 'beforeAction', { action, state: prevState });
+    const beforeActionDecision = runVetoHooksSync(middlewares, 'beforeAction', { action, state: prevState });
     if (beforeActionDecision.action === 'veto') {
       store.rollbackTransaction(tx);
       return { ok: false, vetoed: true, vetoReason: (beforeActionDecision as { reason: string }).reason };
@@ -162,7 +132,7 @@ export function executePipeline<S extends string>(ctx: PipelineContext<S>): Pipe
     }
 
     // Step 6: Middleware beforeEvaluate
-    runNotifyHooks(middlewares, 'beforeEvaluate', { action, state: tx.draftState });
+    runNotifyHooksSync(middlewares, 'beforeEvaluate', { action, state: tx.draftState });
 
     // Step 7: Evaluate expressions and rules to fixed point
     if (options.expressionEngine && options.rules?.length) {
@@ -173,13 +143,13 @@ export function executePipeline<S extends string>(ctx: PipelineContext<S>): Pipe
     }
 
     // Step 8: Middleware afterEvaluate
-    runNotifyHooks(middlewares, 'afterEvaluate', { action, state: tx.draftState });
+    runNotifyHooksSync(middlewares, 'afterEvaluate', { action, state: tx.draftState });
 
     // Step 9: Resolve active validation stage
     const activeStage = resolveActiveStage(tx.draftState.meta, submitContext);
 
     // Step 10: Middleware beforeValidate
-    runNotifyHooks(middlewares, 'beforeValidate', { action, state: tx.draftState, stage: activeStage });
+    runNotifyHooksSync(middlewares, 'beforeValidate', { action, state: tx.draftState, stage: activeStage });
 
     // Step 11: Run validators and normalize to issue envelope
     let issues: readonly ValidationIssue<S>[] = [];
@@ -189,11 +159,11 @@ export function executePipeline<S extends string>(ctx: PipelineContext<S>): Pipe
     }
 
     // Step 12: Middleware afterValidate
-    runNotifyHooks(middlewares, 'afterValidate', { action, state: tx.draftState, issues });
+    runNotifyHooksSync(middlewares, 'afterValidate', { action, state: tx.draftState, issues });
 
     // Step 13: If submit action — run beforeSubmit; MAY veto
     if (isSubmit && submitContext) {
-      const beforeSubmitDecision = runVetoHooks(middlewares, 'beforeSubmit', {
+      const beforeSubmitDecision = runVetoHooksSync(middlewares, 'beforeSubmit', {
         action, state: tx.draftState, submitContext,
       });
       if (beforeSubmitDecision.action === 'veto') {
@@ -215,7 +185,7 @@ export function executePipeline<S extends string>(ctx: PipelineContext<S>): Pipe
 
     // Step 17: Middleware afterAction
     const nextState = store.getState();
-    runNotifyHooks(middlewares, 'afterAction', { action, prevState, nextState });
+    runNotifyHooksSync(middlewares, 'afterAction', { action, prevState, nextState });
 
     return { ok: true, issues };
   } catch (err) {

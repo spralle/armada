@@ -32,6 +32,9 @@
       "path": "./packages/predicate"
     },
     {
+      "path": "./packages/formr-react"
+    },
+    {
       "path": "./apps/typecheck-fixture"
     },
     {

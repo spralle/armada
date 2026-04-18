@@ -89,3 +89,13 @@ export {
   type ExtensionManifest,
   type RuntimeConstraints,
 } from './extensions.js';
+
+// Middleware runner (SE6.2)
+export {
+  runVetoHooksSync,
+  runNotifyHooksSync,
+  runVetoHooksAsync,
+  runNotifyHooksAsync,
+  initMiddlewares,
+  disposeMiddlewares,
+} from './middleware-runner.js';
