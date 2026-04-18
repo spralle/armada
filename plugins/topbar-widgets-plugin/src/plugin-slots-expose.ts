@@ -4,7 +4,7 @@
 // `slots[componentId]`.
 // ---------------------------------------------------------------------------
 
-import type { WorkspaceService, WorkspaceInfo, ActivityStatusService } from "@ghost/plugin-contracts";
+import type { GhostApi, WorkspaceService, WorkspaceInfo, ActivityStatusService } from "@ghost/plugin-contracts";
 import { ACTIVITY_STATUS_SERVICE_ID } from "@ghost/plugin-contracts";
 import { getGhostApi } from "./plugin-activate.js";
 
@@ -222,12 +222,12 @@ function mountWorkspaceIndicator(container: HTMLElement): CleanupFn {
       btn.dataset.workspaceId = info.id;
 
       btn.addEventListener("click", () => {
-        ws.switchTo(info.id);
+        void switchWorkspaceViaActionOrFallback(api, ws, info.id);
       });
 
       btn.addEventListener("contextmenu", (e) => {
         e.preventDefault();
-        showWorkspaceContextMenu(e, info.id, ws, render);
+        showWorkspaceContextMenu(e, info.id, api, ws, render);
       });
 
       wrapper.appendChild(btn);
@@ -239,8 +239,7 @@ function mountWorkspaceIndicator(container: HTMLElement): CleanupFn {
     addBtn.textContent = "+";
     addBtn.title = "New workspace";
     addBtn.addEventListener("click", () => {
-      const newWs = ws.createWorkspace();
-      if (newWs) ws.switchTo(newWs.id);
+      void createWorkspaceViaActionOrFallback(api, ws);
     });
     wrapper.appendChild(addBtn);
   }
@@ -263,6 +262,7 @@ function mountWorkspaceIndicator(container: HTMLElement): CleanupFn {
 function showWorkspaceContextMenu(
   event: MouseEvent,
   workspaceId: string,
+  api: GhostApi,
   ws: WorkspaceService,
   rerender: () => void,
 ): void {
@@ -300,6 +300,11 @@ function showWorkspaceContextMenu(
   const canDelete = ws.getWorkspaces().length > 1;
   const deleteItem = createMenuItem("Delete", () => {
     menu.remove();
+    const active = ws.getActiveWorkspace();
+    if (active.id === workspaceId) {
+      void deleteWorkspaceViaActionOrFallback(api, ws, workspaceId);
+      return;
+    }
     ws.deleteWorkspace(workspaceId);
   });
   if (!canDelete) {
@@ -321,6 +326,65 @@ function showWorkspaceContextMenu(
   requestAnimationFrame(() => {
     document.addEventListener("click", closeHandler, true);
   });
+}
+
+async function switchWorkspaceViaActionOrFallback(
+  api: GhostApi,
+  ws: WorkspaceService,
+  workspaceId: string,
+): Promise<void> {
+  const workspaces = ws.getWorkspaces();
+  const index = workspaces.findIndex((entry) => entry.id === workspaceId);
+  if (index < 0) {
+    return;
+  }
+
+  const oneBasedIndex = index + 1;
+  if (oneBasedIndex <= 9) {
+    const actionId = `shell.workspace.switch.${oneBasedIndex}`;
+    const executed = await executeActionSafely(api, actionId);
+    if (!executed) {
+      ws.switchTo(workspaceId);
+    }
+    return;
+  }
+
+  ws.switchTo(workspaceId);
+}
+
+async function createWorkspaceViaActionOrFallback(api: GhostApi, ws: WorkspaceService): Promise<void> {
+  const executed = await executeActionSafely(api, "shell.workspace.create");
+  if (executed) {
+    return;
+  }
+
+  const newWorkspace = ws.createWorkspace();
+  if (newWorkspace) {
+    ws.switchTo(newWorkspace.id);
+  }
+}
+
+async function deleteWorkspaceViaActionOrFallback(
+  api: GhostApi,
+  ws: WorkspaceService,
+  workspaceId: string,
+): Promise<void> {
+  const executed = await executeActionSafely(api, "shell.workspace.delete");
+  if (!executed) {
+    ws.deleteWorkspace(workspaceId);
+  }
+}
+
+async function executeActionSafely(
+  api: GhostApi,
+  actionId: string,
+): Promise<boolean> {
+  try {
+    await api.actions.executeAction(actionId);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function createMenuItem(label: string, onClick: () => void): HTMLElement {
@@ -360,4 +424,10 @@ export const slots: Record<string, (target: HTMLElement, context: SlotMountConte
     injectStyles();
     return mountWorkspaceIndicator(target);
   },
+};
+
+export const __test__ = {
+  switchWorkspaceViaActionOrFallback,
+  createWorkspaceViaActionOrFallback,
+  deleteWorkspaceViaActionOrFallback,
 };

@@ -1,6 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import type { PluginServices } from "@ghost/plugin-contracts";
+import { createEventEmitter, type PluginServices } from "@ghost/plugin-contracts";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
 import { openPopout } from "./part-instance-popout-lifecycle.js";
 import { createIncomingTransferJournal } from "../context-state.js";
@@ -276,6 +276,7 @@ export function registerPartInstancePopoutLifecycleSpecs(harness: SpecHarness): 
 }
 
 function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
+  const workspaceEvents = createEventEmitter<void>();
   return {
     windowId: "window-1",
     hostWindowId: null,
@@ -310,6 +311,10 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     actionSurface: {} as ShellRuntime["actionSurface"],
     intentRuntime: {} as ShellRuntime["intentRuntime"],
     runtimeActionRegistry: new Map(),
+    workspaceEvents: {
+      fireDidChangeWorkspaces: () => workspaceEvents.fire(undefined),
+      onDidChangeWorkspaces: workspaceEvents.event,
+    },
     services: createStubPluginServices(),
     commandNotice: "",
     pluginNotice: "",

@@ -1,0 +1,7 @@
+Armada engineering guardrails for LLM agents:
+
+- Keep changes minimal and scoped to the assigned bead.
+- Preserve existing behavior unless acceptance criteria require change.
+- For any mutation with an Action ID, internal shell triggers MUST execute via action path; do not bypass with direct state mutation.
+- Use Beads (bd) for all tracking; link discovered work with discovered-from dependencies.
+- Run required validation gates and report exact command outcomes.

@@ -11,8 +11,6 @@ import {
   swapTabInDirection,
 } from "../context-state/window-management.js";
 import { updateContextState } from "../context/runtime-state.js";
-import { createWorkspace, deleteWorkspace } from "../context-state/workspace.js";
-import { performWorkspaceSwitch } from "../ui/workspace-switch.js";
 import { closeTabThroughRuntime } from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
@@ -48,8 +46,10 @@ export function handleShellKeyboardAction(
     return unavailable(actionId, "action unavailable in browser shell runtime");
   }
 
+  // Workspace actions are action-first: keybindings must flow through
+  // runtime action handlers / dispatchSequence, not direct keyboard mutation.
   if (actionId.startsWith("shell.workspace.")) {
-    return dispatchWorkspaceAction(runtime, bindings, actionId);
+    return { handled: false, executed: false, message: "" };
   }
 
   if (!isShellKeyboardActionId(actionId)) {
@@ -161,87 +161,11 @@ function dispatchShellKeyboardAction(
     return applyContextMutation(runtime, resizeInDirection(runtime.contextState, "up"), actionId, "no resizable split above");
   }
 
-  return applyContextMutation(runtime, resizeInDirection(runtime.contextState, "right"), actionId, "no resizable split to the right");
-}
-
-function dispatchWorkspaceAction(
-  runtime: ShellRuntime,
-  bindings: KeyboardBindings,
-  actionId: string,
-): ShellKeyboardActionResult {
-  const manager = runtime.workspaceManager;
-
-  // --- shell.workspace.switch.N (1-9) ---
-  if (actionId.startsWith("shell.workspace.switch.")) {
-    const index = Number(actionId.slice("shell.workspace.switch.".length));
-    if (index < 1 || index > 9) {
-      return unavailable(actionId, "invalid workspace index");
-    }
-    const targetId = manager.workspaceOrder[index - 1];
-    if (!targetId) {
-      return unavailable(actionId, `no workspace at position ${index}`);
-    }
-    if (targetId === manager.activeWorkspaceId) {
-      return unavailable(actionId, "already on target workspace");
-    }
-    const switched = performWorkspaceSwitch(targetId, bindings.getWorkspaceSwitchDeps());
-    return switched ? executed(actionId) : unavailable(actionId, "workspace switch failed");
+  if (actionId === "shell.resize.right") {
+    return applyContextMutation(runtime, resizeInDirection(runtime.contextState, "right"), actionId, "no resizable split to the right");
   }
 
-  // --- shell.workspace.create ---
-  if (actionId === "shell.workspace.create") {
-    const result = createWorkspace(manager);
-    if (!result.changed) {
-      return unavailable(actionId, "workspace creation failed");
-    }
-    runtime.workspaceManager = result.state;
-    const newId = result.state.workspaceOrder[result.state.workspaceOrder.length - 1];
-    performWorkspaceSwitch(newId, bindings.getWorkspaceSwitchDeps());
-    return executed(actionId);
-  }
-
-  // --- shell.workspace.delete ---
-  if (actionId === "shell.workspace.delete") {
-    const wasActive = manager.activeWorkspaceId;
-    const result = deleteWorkspace(manager, manager.activeWorkspaceId);
-    if (!result.changed) {
-      return unavailable(actionId, "cannot delete last workspace");
-    }
-    // Switch BEFORE applying delete state so performWorkspaceSwitch sees the change
-    if (wasActive !== result.state.activeWorkspaceId) {
-      performWorkspaceSwitch(result.state.activeWorkspaceId, bindings.getWorkspaceSwitchDeps());
-    }
-    runtime.workspaceManager = result.state;
-    return executed(actionId);
-  }
-
-  // --- shell.workspace.next ---
-  if (actionId === "shell.workspace.next") {
-    const order = manager.workspaceOrder;
-    if (order.length <= 1) {
-      return unavailable(actionId, "only one workspace");
-    }
-    const currentIndex = order.indexOf(manager.activeWorkspaceId);
-    const nextIndex = (currentIndex + 1) % order.length;
-    const targetId = order[nextIndex];
-    const switched = performWorkspaceSwitch(targetId, bindings.getWorkspaceSwitchDeps());
-    return switched ? executed(actionId) : unavailable(actionId, "workspace switch failed");
-  }
-
-  // --- shell.workspace.prev ---
-  if (actionId === "shell.workspace.prev") {
-    const order = manager.workspaceOrder;
-    if (order.length <= 1) {
-      return unavailable(actionId, "only one workspace");
-    }
-    const currentIndex = order.indexOf(manager.activeWorkspaceId);
-    const prevIndex = (currentIndex - 1 + order.length) % order.length;
-    const targetId = order[prevIndex];
-    const switched = performWorkspaceSwitch(targetId, bindings.getWorkspaceSwitchDeps());
-    return switched ? executed(actionId) : unavailable(actionId, "workspace switch failed");
-  }
-
-  return unavailable(actionId, "unrecognized workspace action");
+  return unavailable(actionId, "unrecognized shell keyboard action");
 }
 
 function applyContextMutation(

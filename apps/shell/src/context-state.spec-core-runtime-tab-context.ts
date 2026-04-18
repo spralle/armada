@@ -2,15 +2,25 @@ import { createInitialShellContextState, readGroupLaneForTab, registerTab, write
 import type { ShellRuntime } from "./app/types.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 import { readGroupSelectionContext, reconcileActiveTab, resolveActiveTabId, writeGroupSelectionContext } from "./context/runtime-state.js";
+import { createInitialWorkspaceManagerState } from "./context-state/workspace.js";
+import type { WorkspaceManagerState } from "./context-state/workspace-types.js";
 
 function createRuntimeWithState(state: ShellContextState): ShellRuntime {
   const runtime = {
     selectedPartId: null,
     selectedPartTitle: null,
     contextState: state,
+    workspaceManager: createInitialWorkspaceManagerState(state),
     windowId: "window-a",
     contextPersistence: {
       save(nextState: ShellContextState) {
+        runtime.contextState = nextState;
+        return { warning: null };
+      },
+    },
+    workspacePersistence: {
+      save(workspaceManager: WorkspaceManagerState, nextState: ShellContextState) {
+        runtime.workspaceManager = workspaceManager;
         runtime.contextState = nextState;
         return { warning: null };
       },

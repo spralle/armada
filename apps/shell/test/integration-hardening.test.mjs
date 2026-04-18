@@ -13,6 +13,7 @@ import { closeTabThroughRuntime } from "../dist/ui/parts-controller.js";
 import { moveDockTabThroughRuntime } from "../dist/ui/dock-tab-dnd.js";
 import { renderDockTree } from "../dist/ui/parts-rendering.js";
 import { createInitialShellContextState, registerTab } from "../dist/context-state.js";
+import { createInitialWorkspaceManagerState } from "../dist/context-state/workspace.js";
 
 const DOMAIN_UNPLANNED = {
   id: "ghost.domain.unplanned-orders",
@@ -318,6 +319,7 @@ function createCloseRuntimeFixture() {
     windowId: "window-a",
     closeableTabIds: new Set(["tab-a", "tab-b", "tab-c"]),
     contextState,
+    workspaceManager: createInitialWorkspaceManagerState(contextState),
     selectedPartId: "tab-a",
     selectedPartTitle: "tab-a",
     poppedOutTabIds: new Set(),
@@ -350,6 +352,13 @@ function createCloseRuntimeFixture() {
     },
     contextPersistence: {
       save(nextState) {
+        runtime.contextState = nextState;
+        return { warning: null };
+      },
+    },
+    workspacePersistence: {
+      save(workspaceManager, nextState) {
+        runtime.workspaceManager = workspaceManager;
         runtime.contextState = nextState;
         return { warning: null };
       },
@@ -455,10 +464,18 @@ function createDockMoveRuntimeFixture() {
     syncDegraded: false,
     windowId: "window-a",
     contextState,
+    workspaceManager: createInitialWorkspaceManagerState(contextState),
     selectedPartId: "tab-a",
     selectedPartTitle: "tab-a",
     contextPersistence: {
       save(nextState) {
+        runtime.contextState = nextState;
+        return { warning: null };
+      },
+    },
+    workspacePersistence: {
+      save(workspaceManager, nextState) {
+        runtime.workspaceManager = workspaceManager;
         runtime.contextState = nextState;
         return { warning: null };
       },

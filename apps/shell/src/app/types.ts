@@ -129,6 +129,10 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   intentRuntime: IntentRuntime;
   /** Shared registry of runtime action handlers registered by plugins via ActionService. */
   runtimeActionRegistry: Map<string, (...args: unknown[]) => unknown>;
+  workspaceEvents: {
+    fireDidChangeWorkspaces(): void;
+    readonly onDidChangeWorkspaces: import("@ghost/plugin-contracts").Event<void>;
+  };
   commandNotice: string;
   partHost: ShellPartHostAdapter;
   workspaceManager: WorkspaceManagerState;

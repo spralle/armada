@@ -29,8 +29,7 @@ import { createShellRuntime } from "./app/runtime.js";
 import type { ShellRuntime } from "./app/types.js";
 import type { PluginActivationTriggerType } from "./plugin-registry.js";
 import {
-  type ContextSyncEvent,
-  type SelectionSyncEvent,
+  type WindowBridgeEvent,
 } from "./window-bridge.js";
 import {
   startPopoutWatchdog,
@@ -54,6 +53,7 @@ import {
   bindKeyboardShortcuts as bindKeyboardHandlers,
   dismissIntentChooser as dismissIntentChooserState,
 } from "./shell-runtime/keyboard-handlers.js";
+import { registerWorkspaceRuntimeActions } from "./shell-runtime/workspace-runtime-actions.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 import { registerConfigurationServiceCapability } from "./config-service-registration.js";
 import { createShellConfigService, runPersistenceMigrations } from "./config-service-setup.js";
@@ -106,6 +106,9 @@ export function startShell(root: HTMLElement): ShellRuntime {
     summarizeSelectionPriorities: () => summarizeSelectionPriorities(shellRuntime),
   });
   registerShellBootstrapComposition(shellRuntime, composition);
+  registerWorkspaceRuntimeActions(shellRuntime, {
+    getWorkspaceSwitchDeps: () => createWorkspaceSwitchDeps(root, shellRuntime),
+  });
   const disposeMount = mountShell(root, shellRuntime, composition);
   shellRuntime.activeTransportPath = composition.transportPath;
   shellRuntime.activeTransportReason = composition.transportReason;
@@ -227,23 +230,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
   const quickPickBridge = createQuickPickBridge();
   try {
     const apiDeps = createGhostApiDeps(runtime, quickPickBridge, {
-      getWorkspaceSwitchDeps: () => {
-        const bridgeBindings = createBridgeBindings(root, runtime);
-        return {
-          root,
-          runtime,
-          partsDeps: {
-            applySelection: bridgeBindings.applySelection,
-            partHost: runtime.partHost,
-            publishWithDegrade: (event) => {
-              publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
-            },
-            renderContextControls: () => renderContextControlsPanel(root, runtime),
-            renderParts: () => renderParts(root, runtime),
-            renderSyncStatus: () => renderSyncStatus(root, runtime),
-          },
-        };
-      },
+      getWorkspaceSwitchDeps: () => createWorkspaceSwitchDeps(root, runtime),
     });
     const { configService } = await createShellConfigService();
     const state = await bootstrapShellWithTenantManifest({
@@ -355,21 +342,30 @@ function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime): () => 
       keybinding: entry.keybinding,
       pluginId: USER_KEYBINDING_OVERRIDE_PLUGIN_ID,
     })),
-    getWorkspaceSwitchDeps: () => ({
-      root,
-      runtime,
-      partsDeps: {
-        applySelection: handlers.applySelection,
-        partHost: runtime.partHost,
-        publishWithDegrade: (event) => {
-          publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
-        },
-        renderContextControls: () => renderContextControlsPanel(root, runtime),
-        renderParts: () => renderParts(root, runtime),
-        renderSyncStatus: () => renderSyncStatus(root, runtime),
-      },
-    }),
+    getWorkspaceSwitchDeps: () => createWorkspaceSwitchDeps(root, runtime, handlers.applySelection),
   });
+}
+
+function createWorkspaceSwitchDeps(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  applySelectionOverride?: ReturnType<typeof createRuntimeEventHandlers>["applySelection"],
+) {
+  const bridgeBindings = createBridgeBindings(root, runtime);
+  return {
+    root,
+    runtime,
+    partsDeps: {
+      applySelection: applySelectionOverride ?? bridgeBindings.applySelection,
+      partHost: runtime.partHost,
+      publishWithDegrade: (event: WindowBridgeEvent) => {
+        publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
+      },
+      renderContextControls: () => renderContextControlsPanel(root, runtime),
+      renderParts: () => renderParts(root, runtime),
+      renderSyncStatus: () => renderSyncStatus(root, runtime),
+    },
+  };
 }
 
 function dismissIntentChooser(root: HTMLElement, runtime: ShellRuntime): void {

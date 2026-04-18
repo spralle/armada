@@ -117,6 +117,7 @@ bd automatically syncs via Dolt:
 - Do NOT create markdown TODO lists
 - Do NOT use external issue trackers
 - Do NOT duplicate tracking systems
+- For any mutation with an Action ID, internal shell triggers MUST execute via action path; do not bypass with direct state mutation.
 
 For more details, see README.md and docs/QUICKSTART.md.
 

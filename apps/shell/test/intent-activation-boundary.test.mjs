@@ -30,12 +30,12 @@ test("keyboard handlers resolve and dispatch through keybinding service", async 
 
   assert.match(
     keyboardSource,
-    /const resolution = keybindingService\.resolve\(normalizedChord, context\);/,
+    /const resolution = keybindingService\.resolveSequence\(chords, context\);/,
     "keybindings should resolve through keybinding service",
   );
   assert.match(
     keyboardSource,
-    /const result = await keybindingService\.dispatch\(normalizedChord, context\);/,
+    /const result = await keybindingService\.dispatchSequence\(chords, context\);/,
     "keybinding dispatch should route through keybinding service",
   );
 });

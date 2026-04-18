@@ -20,6 +20,7 @@ import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-ove
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { initPlacementStrategy } from "../context-state/placement-strategy/setup.js";
+import { createEventEmitter } from "@ghost/plugin-contracts";
 
 import { createWindowBridge } from "../window-bridge.js";
 import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
@@ -62,6 +63,7 @@ export function createShellRuntime(options?: {
   const registry = createShellPluginRegistry();
 
   const { registry: placementRegistry, config: placementConfig } = initPlacementStrategy();
+  const workspaceChangeEmitter = createEventEmitter<void>();
 
   const runtime: ShellRuntime = {
     layout: createDefaultLayoutState(),
@@ -120,6 +122,12 @@ export function createShellRuntime(options?: {
     themeRegistry: null,
     intentRuntime,
     runtimeActionRegistry: new Map(),
+    workspaceEvents: {
+      fireDidChangeWorkspaces: () => {
+        workspaceChangeEmitter.fire(undefined);
+      },
+      onDidChangeWorkspaces: workspaceChangeEmitter.event,
+    },
     commandNotice: "",
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,
     pluginConfigSyncDispose: null,

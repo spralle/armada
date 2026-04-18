@@ -42,6 +42,14 @@ export interface ActionServiceWithEmitter {
 
 type RuntimeActionHandler = (...args: unknown[]) => unknown;
 
+function readRuntimeHandler(
+  actionId: string,
+  localRuntimeActions: Map<string, RuntimeActionHandler>,
+  sharedRuntimeActions?: Map<string, RuntimeActionHandler>,
+): RuntimeActionHandler | undefined {
+  return localRuntimeActions.get(actionId) ?? sharedRuntimeActions?.get(actionId);
+}
+
 /**
  * Create an ActionService that wraps the shell's ActionSurface with
  * transparent plugin activation and runtime action registration.
@@ -76,7 +84,7 @@ export function createActionService(
       ...args: unknown[]
     ): Promise<T> {
       // Check runtime-registered actions first
-      const runtimeHandler = runtimeActions.get(id);
+      const runtimeHandler = readRuntimeHandler(id, runtimeActions, deps.runtimeActionRegistry);
       if (runtimeHandler) {
         return runtimeHandler(...args) as T;
       }
@@ -97,7 +105,7 @@ export function createActionService(
       }
 
       // Re-check runtime actions — plugin may have registered a handler during activate()
-      const postActivationHandler = runtimeActions.get(id);
+      const postActivationHandler = readRuntimeHandler(id, runtimeActions, deps.runtimeActionRegistry);
       if (postActivationHandler) {
         return postActivationHandler(...args) as T;
       }
