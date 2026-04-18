@@ -85,6 +85,29 @@ test("registerPluginLayers denies name conflicts with other plugins", () => {
   assertEqual(result.denied.length, 1, "should deny duplicate name");
 });
 
+// --- z-order collision detection ---
+
+test("registerPluginLayers denies z-order conflicts with built-ins", () => {
+  const reg = new LayerRegistry();
+  reg.registerBuiltinLayers();
+  const result = reg.registerPluginLayers("plugin-a", [{ name: "custom", zOrder: 200 }]);
+  assertEqual(result.registered.length, 0, "should register 0 layers");
+  assertEqual(result.denied.length, 1, "should deny 1 layer");
+  assertEqual(result.denied[0]!.reason.includes("z-order 200"), true, "reason should mention z-order");
+  assertEqual(result.denied[0]!.reason.includes("main"), true, "reason should mention conflicting layer");
+});
+
+test("registerPluginLayers denies z-order conflicts with other plugins", () => {
+  const reg = new LayerRegistry();
+  reg.registerBuiltinLayers();
+  reg.registerPluginLayers("plugin-a", [{ name: "custom-a", zOrder: 150 }]);
+  const result = reg.registerPluginLayers("plugin-b", [{ name: "custom-b", zOrder: 150 }]);
+  assertEqual(result.registered.length, 0, "should register 0 layers");
+  assertEqual(result.denied.length, 1, "should deny 1 layer");
+  assertEqual(result.denied[0]!.reason.includes("z-order 150"), true, "reason should mention z-order");
+  assertEqual(result.denied[0]!.reason.includes("custom-a"), true, "reason should mention conflicting layer");
+});
+
 // --- getOrderedLayers sorting ---
 
 test("getOrderedLayers includes plugin layers sorted by zOrder", () => {

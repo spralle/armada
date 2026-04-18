@@ -161,6 +161,12 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   `;
 
+  // Wire layer host so plugin-registered layers get DOM containers
+  const layerHostEl = root.querySelector<HTMLElement>("#layer-host");
+  if (layerHostEl) {
+    layerRegistry.setLayerHost(layerHostEl);
+  }
+
   deps.renderParts();
   deps.updateWindowReadOnlyState();
   const disposeResize = deps.setupResize();

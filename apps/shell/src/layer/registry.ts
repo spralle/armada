@@ -4,6 +4,7 @@ import type {
   PluginLayerSurfaceContribution,
 } from "@ghost/plugin-contracts";
 import { KeyboardInteractivity, InputBehavior } from "@ghost/plugin-contracts";
+import { createLayerContainer, removeLayerContainer } from "./layer-dom.js";
 
 /** The 7 built-in layers with generous z-order gaps for plugin insertion. */
 export const BUILTIN_LAYERS: readonly LayerDefinition[] = [
@@ -19,6 +20,11 @@ export const BUILTIN_LAYERS: readonly LayerDefinition[] = [
 export class LayerRegistry {
   private layers: Map<string, LayerDefinition> = new Map();
   private surfaces: Map<string, { surface: PluginLayerSurfaceContribution; pluginId: string }> = new Map();
+  private layerHost: HTMLElement | null = null;
+
+  setLayerHost(el: HTMLElement): void {
+    this.layerHost = el;
+  }
 
   registerBuiltinLayers(): void {
     for (const layer of BUILTIN_LAYERS) {
@@ -41,6 +47,20 @@ export class LayerRegistry {
         continue;
       }
 
+      // Detect z-order collisions with any existing layer
+      let zConflict: LayerDefinition | undefined;
+      for (const layer of this.layers.values()) {
+        if (layer.zOrder === def.zOrder) {
+          zConflict = layer;
+          break;
+        }
+      }
+      if (zConflict) {
+        const owner = zConflict.pluginId ? `plugin '${zConflict.pluginId}'` : "built-in";
+        denied.push({ name: def.name, reason: `z-order ${def.zOrder} conflicts with ${owner} layer '${zConflict.name}'` });
+        continue;
+      }
+
       this.layers.set(def.name, {
         name: def.name,
         zOrder: def.zOrder,
@@ -51,6 +71,10 @@ export class LayerRegistry {
         pluginId,
       });
       registered.push(def.name);
+
+      if (this.layerHost) {
+        createLayerContainer(this.layerHost, { name: def.name, zOrder: def.zOrder });
+      }
     }
 
     return { registered, denied };
@@ -73,6 +97,9 @@ export class LayerRegistry {
         if (entry.surface.layer === layerName) {
           affectedSurfaceIds.push(surfaceId);
         }
+      }
+      if (this.layerHost) {
+        removeLayerContainer(this.layerHost, layerName);
       }
       this.layers.delete(layerName);
     }
