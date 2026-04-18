@@ -1,14 +1,10 @@
-import type { ExprNode } from './ast.js';
+import type { ExprNode, EvaluationScope } from './ast.js';
 import { PredicateError } from './errors.js';
 import { assertSafeSegment } from './safe-path.js';
 
-const DEFAULT_MAX_DEPTH = 256;
+export type { EvaluationScope } from './ast.js';
 
-export interface EvaluationScope {
-  readonly data: unknown;
-  readonly uiState: unknown;
-  readonly meta: unknown;
-}
+const DEFAULT_MAX_DEPTH = 256;
 
 export interface EvaluateOptions {
   readonly maxDepth?: number;
@@ -17,21 +13,8 @@ export interface EvaluateOptions {
 const MISSING = Symbol('MISSING');
 
 function resolvePath(path: string, scope: EvaluationScope): unknown {
-  let root: unknown;
-  let segments: string[];
-
-  if (path.startsWith('$ui.')) {
-    root = scope.uiState;
-    segments = path.slice(4).split('.');
-  } else if (path.startsWith('$meta.')) {
-    root = scope.meta;
-    segments = path.slice(6).split('.');
-  } else {
-    root = scope.data;
-    segments = path.split('.');
-  }
-
-  let current: unknown = root;
+  const segments = path.split('.');
+  let current: unknown = scope;
   for (const segment of segments) {
     assertSafeSegment(segment);
     if (current === null || current === undefined) {

@@ -13,11 +13,13 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
   };
 }
 
-function createMockEngine(handler?: (rule: RuleDefinition, scope: ExpressionScope) => readonly RuleWriteIntent[]): ExpressionEngine {
+function createMockEngine(): ExpressionEngine {
   return {
     id: 'mock-engine',
-    evaluate: () => null,
-    evaluateRule: handler ?? (() => []),
+    evaluate: (node: ExprNode, scope: ExpressionScope) => {
+      if (node.kind === 'literal') return node.value;
+      return null;
+    },
   };
 }
 
@@ -28,30 +30,32 @@ describe('buildExpressionScope', () => {
     const state = makeState({ data: { name: 'Alice' }, uiState: { focused: true } });
     const scope = buildExpressionScope(state);
 
-    expect(scope.data).toEqual({ name: 'Alice' });
-    expect(scope.uiState).toEqual({ focused: true });
-    expect(scope.meta).toEqual(state.meta);
+    expect(scope.name).toBe('Alice');
+    expect(scope.$ui).toEqual({ focused: true });
+    expect(scope.$meta).toEqual(state.meta);
   });
 });
 
 describe('evaluateExpressions', () => {
-  it('returns writes from engine for each rule', () => {
-    const rule: RuleDefinition = { id: 'r1', when: dummyAst, writes: [] };
-    const write: RuleWriteIntent = { path: 'total', value: 42, mode: 'set', ruleId: 'r1' };
-    const engine = createMockEngine(() => [write]);
+  it('returns writes from engine for a rule that fires', () => {
+    const rule: RuleDefinition = {
+      id: 'r1',
+      when: { kind: 'literal', value: true },
+      writes: [{ path: 'total', value: { kind: 'literal', value: 42 }, mode: 'set' }],
+    };
+    const engine = createMockEngine();
 
     const result = evaluateExpressions(engine, makeState(), [rule]);
-    expect(result).toEqual([write]);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ path: 'total', value: 42, mode: 'set', ruleId: 'r1' });
   });
 
   it('aggregates writes from multiple rules', () => {
     const rules: RuleDefinition[] = [
-      { id: 'r1', when: dummyAst, writes: [] },
-      { id: 'r2', when: dummyAst, writes: [] },
+      { id: 'r1', when: dummyAst, writes: [{ path: 'a', value: { kind: 'literal', value: 1 }, mode: 'set' }] },
+      { id: 'r2', when: dummyAst, writes: [{ path: 'b', value: { kind: 'literal', value: 2 }, mode: 'set' }] },
     ];
-    const engine = createMockEngine((rule) => [
-      { path: `${rule.id}.out`, value: 1, mode: 'set' as const, ruleId: rule.id },
-    ]);
+    const engine = createMockEngine();
 
     const result = evaluateExpressions(engine, makeState(), rules);
     expect(result).toHaveLength(2);
@@ -118,16 +122,24 @@ describe('createForm with expressionEngine', () => {
     form.dispose();
   });
 
-  it('setValue triggers expression evaluation with mock engine', () => {
-    const engine = createMockEngine((_rule, scope) => {
-      const data = scope.data as Record<string, unknown>;
-      const price = (data.price as number) ?? 0;
-      const qty = (data.qty as number) ?? 0;
-      return [{ path: 'total', value: price * qty, mode: 'set' as const, ruleId: 'calc' }];
-    });
+  it('setValue triggers expression evaluation with engine', () => {
+    const engine: ExpressionEngine = {
+      id: 'calc-engine',
+      evaluate: (node: ExprNode, scope: ExpressionScope) => {
+        if (node.kind === 'literal') return node.value;
+        if (node.kind === 'path') {
+          return scope[node.path];
+        }
+        return null;
+      },
+    };
 
     const rules: RuleDefinition[] = [
-      { id: 'calc', when: dummyAst, writes: [] },
+      {
+        id: 'calc',
+        when: { kind: 'literal', value: true },
+        writes: [{ path: 'total', value: { kind: 'literal', value: 42 }, mode: 'set' }],
+      },
     ];
 
     const form = createForm({
@@ -137,21 +149,28 @@ describe('createForm with expressionEngine', () => {
     });
 
     form.setValue('qty', 5);
-    expect((form.getState().data as Record<string, unknown>).total).toBe(50);
-
-    form.setValue('price', 20);
-    expect((form.getState().data as Record<string, unknown>).total).toBe(100);
+    expect((form.getState().data as Record<string, unknown>).total).toBe(42);
 
     form.dispose();
   });
 
   it('expression engine writing to $ui path works in dispatch cycle', () => {
-    const engine = createMockEngine((_rule, scope) => {
-      const data = scope.data as Record<string, unknown>;
-      return [{ path: '$ui.showTotal', value: (data.qty as number) > 0, mode: 'set' as const, ruleId: 'vis' }];
-    });
+    const engine: ExpressionEngine = {
+      id: 'vis-engine',
+      evaluate: (node: ExprNode, scope: ExpressionScope) => {
+        if (node.kind === 'literal') return node.value;
+        if (node.kind === 'path') {
+          return scope[node.path];
+        }
+        return null;
+      },
+    };
 
-    const rules: RuleDefinition[] = [{ id: 'vis', when: dummyAst, writes: [] }];
+    const rules: RuleDefinition[] = [{
+      id: 'vis',
+      when: { kind: 'literal', value: true },
+      writes: [{ path: '$ui.showTotal', value: { kind: 'literal', value: true }, mode: 'set' }],
+    }];
 
     const form = createForm({
       initialData: { qty: 0 },

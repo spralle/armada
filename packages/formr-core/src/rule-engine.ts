@@ -1,15 +1,7 @@
-import type { RuleDefinition, RuleWrite } from './ast.js';
-import type { EvaluationScope } from './evaluator.js';
-import { evaluate } from './evaluator.js';
-import { PredicateError } from './errors.js';
-import { assertSafeSegment } from './safe-path.js';
-
-export interface RuleWriteIntent {
-  readonly path: string;
-  readonly value: unknown;
-  readonly mode: 'set' | 'delete';
-  readonly ruleId: string;
-}
+import type { ExpressionEngine, ExprNode, RuleDefinition, RuleWrite, RuleWriteIntent } from './contracts.js';
+import type { EvaluationScope } from '@ghost/predicate';
+import { FormrError } from './errors.js';
+import { assertSafeSegment } from '@ghost/predicate';
 
 export interface RuleExecutionConfig {
   readonly maxIterations?: number;
@@ -23,27 +15,29 @@ export interface RuleExecutionResult {
 }
 
 function evaluateRuleWrites(
+  engine: ExpressionEngine,
   rule: RuleDefinition,
   scope: EvaluationScope,
 ): readonly RuleWriteIntent[] {
-  const condition = evaluate(rule.when, scope);
+  const condition = engine.evaluate(rule.when, scope);
   if (!condition) return [];
 
   return rule.writes.map((w: RuleWrite) => ({
     path: w.path,
-    value: w.mode === 'delete' ? undefined : evaluate(w.value, scope),
+    value: w.mode === 'delete' ? undefined : engine.evaluate(w.value, scope),
     mode: w.mode,
     ruleId: rule.id,
   }));
 }
 
 function evaluateIteration(
+  engine: ExpressionEngine,
   rules: readonly RuleDefinition[],
   scope: EvaluationScope,
 ): readonly RuleWriteIntent[] {
   const writes: RuleWriteIntent[] = [];
   for (const rule of rules) {
-    writes.push(...evaluateRuleWrites(rule, scope));
+    writes.push(...evaluateRuleWrites(engine, rule, scope));
   }
   return writes;
 }
@@ -57,7 +51,7 @@ function checkWriteConflicts(writes: readonly RuleWriteIntent[]): void {
       continue;
     }
     if (existing.mode === w.mode && existing.value === w.value) continue;
-    throw new PredicateError(
+    throw new FormrError(
       'FORMR_RULE_WRITE_CONFLICT',
       `Write conflict on path "${w.path}" between rules "${existing.ruleId}" and "${w.ruleId}"`,
     );
@@ -71,7 +65,7 @@ function checkAllowedTargets(
   for (const w of writes) {
     const ok = allowed.some((prefix) => w.path.startsWith(prefix));
     if (!ok) {
-      throw new PredicateError(
+      throw new FormrError(
         'FORMR_RULE_DISALLOWED_TARGET',
         `Write to path "${w.path}" by rule "${w.ruleId}" is not in allowed targets`,
       );
@@ -80,14 +74,9 @@ function checkAllowedTargets(
 }
 
 function resolvePathValue(path: string, scope: EvaluationScope): unknown {
-  const segments = path.startsWith('$ui.')
-    ? { root: scope.uiState, parts: path.slice(4).split('.') }
-    : path.startsWith('$meta.')
-      ? { root: scope.meta, parts: path.slice(6).split('.') }
-      : { root: scope.data, parts: path.split('.') };
-
-  let current: unknown = segments.root;
-  for (const seg of segments.parts) {
+  const parts = path.split('.');
+  let current: unknown = scope;
+  for (const seg of parts) {
     assertSafeSegment(seg);
     if (current === null || current === undefined || typeof current !== 'object') {
       return undefined;
@@ -109,7 +98,7 @@ function filterNetWrites(
   });
 }
 
-function setNestedValue(
+export function setNestedValue(
   obj: Record<string, unknown>,
   segments: string[],
   value: unknown,
@@ -122,7 +111,7 @@ function setNestedValue(
   return { ...obj, [head]: setNestedValue(child, rest, value) };
 }
 
-function deleteNestedValue(
+export function deleteNestedValue(
   obj: Record<string, unknown>,
   segments: string[],
 ): Record<string, unknown> {
@@ -140,39 +129,24 @@ function applyWrites(
   scope: EvaluationScope,
   writes: readonly RuleWriteIntent[],
 ): EvaluationScope {
-  let data = (scope.data ?? {}) as Record<string, unknown>;
-  let uiState = (scope.uiState ?? {}) as Record<string, unknown>;
-  let meta = (scope.meta ?? {}) as Record<string, unknown>;
+  let current = { ...scope } as Record<string, unknown>;
 
   for (const w of writes) {
-    let target: 'data' | 'ui' | 'meta' = 'data';
-    let segments: string[];
-
-    if (w.path.startsWith('$ui.')) {
-      target = 'ui';
-      segments = w.path.slice(4).split('.');
-    } else if (w.path.startsWith('$meta.')) {
-      target = 'meta';
-      segments = w.path.slice(6).split('.');
-    } else {
-      segments = w.path.split('.');
-    }
+    const segments = w.path.split('.');
 
     for (const seg of segments) {
       assertSafeSegment(seg);
     }
 
     const apply = w.mode === 'delete' ? deleteNestedValue : (o: Record<string, unknown>, s: string[]) => setNestedValue(o, s, w.value);
-
-    if (target === 'ui') uiState = apply(uiState, segments);
-    else if (target === 'meta') meta = apply(meta, segments);
-    else data = apply(data, segments);
+    current = apply(current, segments);
   }
 
-  return { data, uiState, meta };
+  return current;
 }
 
 export function executeRules(
+  engine: ExpressionEngine,
   rules: readonly RuleDefinition[],
   initialScope: EvaluationScope,
   config?: RuleExecutionConfig,
@@ -182,7 +156,7 @@ export function executeRules(
   const allWrites: RuleWriteIntent[] = [];
 
   for (let iter = 0; iter < maxIter; iter++) {
-    const iterWrites = evaluateIteration(rules, scope);
+    const iterWrites = evaluateIteration(engine, rules, scope);
 
     checkWriteConflicts(iterWrites);
 
@@ -201,7 +175,7 @@ export function executeRules(
   }
 
   const ruleIds = [...new Set(allWrites.map((w) => w.ruleId))];
-  throw new PredicateError(
+  throw new FormrError(
     'FORMR_RULE_NON_CONVERGENT',
     `Rules did not converge after ${maxIter} iterations. Participating rules: ${ruleIds.join(', ')}`,
   );

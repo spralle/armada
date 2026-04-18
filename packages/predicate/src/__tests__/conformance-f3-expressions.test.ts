@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'bun:test';
 import type { ExprNode } from '../ast.js';
-import type { RuleDefinition } from '../ast.js';
-import { evaluate, type EvaluationScope } from '../evaluator.js';
+import { evaluate } from '../evaluator.js';
 import { compile } from '../compiler.js';
-import { executeRules } from '../rule-engine.js';
 import { PredicateError } from '../errors.js';
+import { executeRules } from '../../../formr-core/src/rule-engine.js';
+import type { RuleDefinition, ExpressionEngine } from '../../../formr-core/src/contracts.js';
+import { FormrError } from '../../../formr-core/src/errors.js';
 
 /**
  * F3: Expressions/rules conformance fixtures.
@@ -13,8 +14,13 @@ import { PredicateError } from '../errors.js';
  * deterministic traces.
  */
 
-function scope(data: unknown = {}, uiState: unknown = {}, meta: unknown = {}): EvaluationScope {
-  return { data, uiState, meta };
+const engine: ExpressionEngine = {
+  id: 'test',
+  evaluate: (node, scope) => evaluate(node, scope),
+};
+
+function scope(data: Record<string, unknown> = {}, uiState: unknown = {}, meta: unknown = {}): Record<string, unknown> {
+  return { ...data, $ui: uiState, $meta: meta };
 }
 
 function lit(value: string | number | boolean | null): ExprNode {
@@ -151,11 +157,11 @@ describe('F3: Write conflicts detected', () => {
       { id: 'r2', when: lit(true), writes: [{ path: 'x', value: lit(2), mode: 'set' }] },
     ];
     try {
-      executeRules(rules, scope());
+      executeRules(engine, rules, scope());
       expect(true).toBe(false);
     } catch (e) {
-      expect(e).toBeInstanceOf(PredicateError);
-      expect((e as PredicateError).code).toBe('FORMR_RULE_WRITE_CONFLICT');
+      expect(e).toBeInstanceOf(FormrError);
+      expect((e as FormrError).code).toBe('FORMR_RULE_WRITE_CONFLICT');
     }
   });
 
@@ -164,7 +170,7 @@ describe('F3: Write conflicts detected', () => {
       { id: 'r1', when: lit(true), writes: [{ path: 'x', value: lit(5), mode: 'set' }] },
       { id: 'r2', when: lit(true), writes: [{ path: 'x', value: lit(5), mode: 'set' }] },
     ];
-    const result = executeRules(rules, scope());
+    const result = executeRules(engine, rules, scope());
     expect(result.converged).toBe(true);
   });
 });
@@ -184,11 +190,11 @@ describe('F3: Non-convergence guard', () => {
       },
     ];
     try {
-      executeRules(rules, scope({ x: 1 }), { maxIterations: 4 });
+      executeRules(engine, rules, scope({ x: 1 }), { maxIterations: 4 });
       expect(true).toBe(false);
     } catch (e) {
-      expect(e).toBeInstanceOf(PredicateError);
-      expect((e as PredicateError).code).toBe('FORMR_RULE_NON_CONVERGENT');
+      expect(e).toBeInstanceOf(FormrError);
+      expect((e as FormrError).code).toBe('FORMR_RULE_NON_CONVERGENT');
     }
   });
 
@@ -205,7 +211,7 @@ describe('F3: Non-convergence guard', () => {
         writes: [{ path: 'b', value: lit(2), mode: 'set' }],
       },
     ];
-    const result = executeRules(rules, scope({ a: null, b: null }));
+    const result = executeRules(engine, rules, scope({ a: null, b: null }));
     expect(result.converged).toBe(true);
     expect(result.writes).toHaveLength(2);
   });
@@ -218,11 +224,11 @@ describe('F3: Deterministic traces', () => {
       { id: 'r2', when: lit(true), writes: [{ path: 'b', value: lit(2), mode: 'set' }] },
     ];
     const s = scope();
-    const result1 = executeRules(rules, s);
-    const result2 = executeRules(rules, s);
-    const result3 = executeRules(rules, s);
+    const result1 = executeRules(engine, rules, s);
+    const result2 = executeRules(engine, rules, s);
+    const result3 = executeRules(engine, rules, s);
 
-    const writeKey = (w: any) => `${w.ruleId}:${w.path}:${w.value}:${w.mode}`;
+    const writeKey = (w: { ruleId: string; path: string; value: unknown; mode: string }) => `${w.ruleId}:${w.path}:${w.value}:${w.mode}`;
     expect(result1.writes.map(writeKey)).toEqual(result2.writes.map(writeKey));
     expect(result2.writes.map(writeKey)).toEqual(result3.writes.map(writeKey));
     expect(result1.iterations).toBe(result2.iterations);
@@ -235,11 +241,11 @@ describe('F3: Deterministic traces', () => {
       writes: [{ path: 'data.x', value: lit(1), mode: 'set' }],
     }];
     try {
-      executeRules(rules, scope(), { allowedWriteTargets: ['$ui.'] });
+      executeRules(engine, rules, scope(), { allowedWriteTargets: ['$ui.'] });
       expect(true).toBe(false);
     } catch (e) {
-      expect(e).toBeInstanceOf(PredicateError);
-      expect((e as PredicateError).code).toBe('FORMR_RULE_DISALLOWED_TARGET');
+      expect(e).toBeInstanceOf(FormrError);
+      expect((e as FormrError).code).toBe('FORMR_RULE_DISALLOWED_TARGET');
     }
   });
 });

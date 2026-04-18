@@ -9,14 +9,6 @@ export interface ExpressionDefinition {
   readonly ast: ExprNode;
 }
 
-export interface RuleDefinition {
-  readonly id: string;
-  readonly when: ExprNode;
-  readonly writes: readonly RuleWrite[];
-}
-
-export interface RuleWrite {
-  readonly path: string;
-  readonly value: ExprNode;
-  readonly mode: 'set' | 'delete';
-}
+/** Flat scope record for expression evaluation.
+ *  Data fields live at top level; namespaces like $ui/$meta are regular keys. */
+export type EvaluationScope = Readonly<Record<string, unknown>>;

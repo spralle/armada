@@ -18,7 +18,6 @@ import {
   type TransformDefinition,
   type ExpressionEngine,
   type RuleDefinition,
-  type RuleWriteIntent,
   type ExtensionManifest,
 } from '../index.js';
 import {
@@ -28,7 +27,6 @@ import {
 import {
   compile,
   evaluate,
-  executeRules,
 } from '../../../predicate/src/index.js';
 
 describe('F1-F10: Full integration conformance', () => {
@@ -149,12 +147,12 @@ describe('F1-F10: Full integration conformance', () => {
       expect(ast.kind).toBe('op');
 
       // Evaluate against scope where country = 'US'
-      const scopeUS = { data: { country: 'US' }, uiState: {}, meta: {} };
+      const scopeUS = { country: 'US', $ui: {}, $meta: {} };
       const resultUS = evaluate(ast, scopeUS);
       expect(resultUS).toBe(true);
 
       // Evaluate against scope where country != 'US'
-      const scopeUK = { data: { country: 'UK' }, uiState: {}, meta: {} };
+      const scopeUK = { country: 'UK', $ui: {}, $meta: {} };
       const resultUK = evaluate(ast, scopeUK);
       expect(resultUK).toBe(false);
 
@@ -171,16 +169,6 @@ describe('F1-F10: Full integration conformance', () => {
       const engine: ExpressionEngine = {
         id: 'predicate-engine',
         evaluate: (node, scope) => evaluate(node, scope),
-        evaluateRule: (rule, scope) => {
-          const condition = evaluate(rule.when, scope);
-          if (!condition) return [];
-          return rule.writes.map((w) => ({
-            path: w.path,
-            value: evaluate(w.value, scope),
-            mode: w.mode,
-            ruleId: rule.id,
-          }));
-        },
       };
 
       // Create form and apply rules

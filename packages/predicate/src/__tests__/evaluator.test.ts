@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import type { ExprNode } from '../ast.js';
-import { evaluate, type EvaluationScope } from '../evaluator.js';
+import { evaluate } from '../evaluator.js';
 import { PredicateError } from '../errors.js';
 
-function makeScope(data: unknown = {}, uiState: unknown = {}, meta: unknown = {}): EvaluationScope {
-  return { data, uiState, meta };
+function makeScope(data: Record<string, unknown> = {}, uiState: unknown = {}, meta: unknown = {}): Record<string, unknown> {
+  return { ...data, $ui: uiState, $meta: meta };
 }
 
 function lit(value: string | number | boolean | null): ExprNode {

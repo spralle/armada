@@ -10,6 +10,7 @@ import type {
 import type { FormStore } from './store.js';
 import type { TransformDefinition } from './transforms.js';
 import { parsePath } from './path-parser.js';
+import { assertSafeSegment } from '@ghost/predicate';
 import { evaluateExpressions, applyRuleWrites } from './expression-integration.js';
 import { resolveActiveStage, applySubmitOutcome } from './submit.js';
 import { normalizeIssues } from './validation.js';
@@ -20,6 +21,7 @@ import { runVetoHooksSync, runNotifyHooksSync } from './middleware-runner.js';
 function setAtPath(root: unknown, segments: readonly (string | number)[], value: unknown): unknown {
   if (segments.length === 0) return value;
   const [head, ...rest] = segments;
+  assertSafeSegment(String(head));
   if (Array.isArray(root)) {
     const result = [...root];
     (result as unknown as Record<string | number, unknown>)[head] = setAtPath(result[head as number], rest, value);

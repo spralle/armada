@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { applyRuleWrites } from '../expression-integration.js';
 import type { FormState } from '../state.js';
-import { FormrError } from '../errors.js';
 
 function makeState(overrides: Partial<FormState> = {}): FormState {
   return {
@@ -19,7 +18,7 @@ describe('expression-integration prototype pollution', () => {
       applyRuleWrites(state, [
         { path: '__proto__.polluted', value: true, mode: 'set', ruleId: 'r1' },
       ]),
-    ).toThrow(FormrError);
+    ).toThrow('not allowed');
   });
 
   it('rejects constructor in write path', () => {
@@ -28,7 +27,7 @@ describe('expression-integration prototype pollution', () => {
       applyRuleWrites(state, [
         { path: 'constructor.prototype', value: true, mode: 'set', ruleId: 'r1' },
       ]),
-    ).toThrow(FormrError);
+    ).toThrow('not allowed');
   });
 
   it('rejects prototype in $ui write path', () => {
@@ -37,7 +36,7 @@ describe('expression-integration prototype pollution', () => {
       applyRuleWrites(state, [
         { path: '$ui.prototype.x', value: true, mode: 'set', ruleId: 'r1' },
       ]),
-    ).toThrow(FormrError);
+    ).toThrow('not allowed');
   });
 
   it('rejects __proto__ in delete path', () => {
@@ -46,7 +45,7 @@ describe('expression-integration prototype pollution', () => {
       applyRuleWrites(state, [
         { path: '__proto__.polluted', value: undefined, mode: 'delete', ruleId: 'r1' },
       ]),
-    ).toThrow(FormrError);
+    ).toThrow('not allowed');
   });
 
   it('allows normal write paths', () => {

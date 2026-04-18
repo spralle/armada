@@ -120,13 +120,15 @@ describe('pipeline — 18-step engine', () => {
   it('expression evaluation runs in the pipeline', () => {
     const engine = {
       id: 'test-engine',
-      evaluate: () => null,
-      evaluateRule: () => [{ path: 'computed', value: 42, mode: 'set' as const, ruleId: 'r1' }],
+      evaluate: (node: { kind: string; value?: unknown }) => {
+        if (node.kind === 'literal') return node.value;
+        return null;
+      },
     };
     const form = createForm({
       stagePolicy: createTestPolicy(),
       expressionEngine: engine,
-      rules: [{ id: 'r1', when: { kind: 'literal', value: true }, writes: [] }],
+      rules: [{ id: 'r1', when: { kind: 'literal', value: true }, writes: [{ path: 'computed', value: { kind: 'literal', value: 42 }, mode: 'set' as const }] }],
       initialData: { name: '', computed: 0 },
     });
 

@@ -58,6 +58,9 @@
     "packages/formr-core": {
       "name": "@ghost/formr-core",
       "version": "0.0.0",
+      "dependencies": {
+        "@ghost/predicate": "workspace:*",
+      },
     },
     "packages/formr-from-schema": {
       "name": "@ghost/formr-from-schema",
