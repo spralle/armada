@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposed (2026-04-18)**
+**Amended (2026-04-18)** — Added layout model (§13), schema optionality (§9), field extend+override (§9.1)
 
 ## Context
 
@@ -450,7 +450,7 @@ Transactional semantics are all-or-nothing: runtime MUST NOT commit partial inte
 
 ```ts
 export interface CreateFormOptions<S extends string = 'draft' | 'submit' | 'approve'> {
-  schema: unknown; // Standard Schema root
+  schema?: unknown; // Standard Schema root — optional in core
   uiStateSchema?: unknown;
   initialData?: unknown;
   initialUiState?: unknown;
@@ -531,7 +531,47 @@ export interface SubmitResult {
 
 `useForm(...)` in `@ghost/formr-react` MUST preserve conceptual parity with `createForm(...)` from core.
 
+> `schema` is OPTIONAL in `@ghost/formr-core`. Core MUST work without a schema for use cases using only function validators. The declarative schema-driven path is provided by `@ghost/formr-from-schema`. When `schema` is omitted, metadata extraction and layout compilation are unavailable.
+
 `form.field(path, config)` MUST be the single field entrypoint and MUST support deterministic extend+override behavior.
+
+## 9.1) FieldConfig extend+override semantics
+
+```ts
+export interface FieldConfig {
+  readonly label?: string;
+  readonly description?: string;
+  readonly placeholder?: string;
+  readonly disabled?: boolean;
+  readonly readOnly?: boolean;
+  readonly required?: boolean;
+  readonly hidden?: boolean;
+  readonly validators?: readonly ValidatorAdapter[];
+  readonly transforms?: readonly Transform[];
+  readonly metadata?: Readonly<Record<string, unknown>>;
+}
+```
+
+**Precedence (lowest to highest):**
+
+1. Schema-derived config (from `@ghost/formr-from-schema` metadata extraction)
+2. Form-level field defaults (from `CreateFormOptions`)
+3. Call-site config (the `config` argument to `form.field(path, config)`)
+
+**Merge rules (deterministic):**
+
+- `undefined` properties: treated as absent, do not override lower-precedence values
+- `null`: explicit clear — removes the lower-precedence value
+- Scalars (`string`, `number`, `boolean`): replace (highest precedence wins)
+- Objects (`metadata`): deep merge per section 7.1 rules
+- Arrays (`validators`, `transforms`): replace wholesale (no concat) per section 7.1 rules
+
+**`form.field()` behavior:**
+
+- Calling `form.field(path)` with no config returns `FieldApi` using schema-derived + form-level defaults.
+- Calling `form.field(path, config)` returns `FieldApi` with call-site overrides applied on top.
+- The same path with different configs MUST produce distinct `FieldApi` instances (no cross-contamination).
+- Repeated calls to `form.field(path, config)` with identical config SHOULD return cached `FieldApi`.
 
 ## 10) Transform Model
 
@@ -590,7 +630,48 @@ Timeout exceed MUST fail deterministically with typed timeout errors and rollbac
 
 Runtime SHOULD cache path normalization by input string, precompile dependency graph, and limit re-evaluation to affected dependencies.
 
-## 13) Conformance Fixture Matrix and Phase Exit Criteria
+## 13) Layout Model
+
+### 13.1 Abstract LayoutNode tree
+
+```ts
+export type LayoutNodeType = 'group' | 'section' | 'field' | 'array' | string;
+
+export interface LayoutNode {
+  readonly type: LayoutNodeType;
+  readonly id: string;
+  readonly children?: readonly LayoutNode[];
+  readonly path?: string; // canonical path for 'field' and 'array' types
+  readonly props?: Readonly<Record<string, unknown>>;
+}
+```
+
+Built-in node types:
+
+- `group`: logical grouping of related fields with no visual chrome.
+- `section`: visual section with heading, rendered as a distinct region.
+- `field`: maps to a form field via `path`. Every `field` node MUST have a valid `path` property.
+- `array`: maps to an array field via `path`. Every `array` node MUST have a valid `path` property and at least one child defining the item template.
+
+Custom node types MAY be registered via the `layout-node.exp.v1` experimental capability key (section 11.1).
+
+### 13.2 Schema annotation to layout tree compilation
+
+- `@ghost/formr-from-schema` MUST compile schema structure into a `LayoutNode` tree.
+- Compilation SHOULD preserve schema property order.
+- Nested objects MUST produce `group` nodes.
+- Array schemas MUST produce `array` nodes.
+- Leaf properties MUST produce `field` nodes.
+- Consumer-provided layout overrides MAY replace the schema-derived tree entirely.
+- Layout tree is consumed by `@ghost/formr-react` renderer plugins.
+
+### 13.3 Custom node types
+
+- Custom node types registered via `layout-node.exp.v1` MUST declare a renderer.
+- Unknown node types without a registered renderer MUST fail with `FORMR_LAYOUT_UNKNOWN_NODE_TYPE`.
+- Experimental stability: exact version match required per section 11.1.
+
+## 14) Conformance Fixture Matrix and Phase Exit Criteria
 
 Independent implementations MUST pass this fixture matrix.
 
@@ -606,22 +687,23 @@ Independent implementations MUST pass this fixture matrix.
 | F8 Schema adapters | Standard Schema + function validators in core, JSON Schema adapter in from-schema, Zod metadata rules | 100% pass incl rejection fixtures |
 | F9 Transforms | ingress/field/egress + date/date-time canonical model | 100% pass for round-trip fixtures |
 | F10 Extensibility constraints | capability negotiation, stable/experimental enforcement, timeout budgets | 100% pass on compatibility matrix |
+| F11 Layout model | schema-to-layout compilation, built-in node types, custom node registration, unknown node rejection | 100% pass, tree structure deterministic |
 
 Phase exit criteria MUST map to fixture groups:
 
 - **Phase 1 (Foundation)**: F1, F2, F6 pass
 - **Phase 2 (Schema + validation)**: F4, F5, F8 pass
 - **Phase 3 (Expressions + `$ui`)**: F3 and remaining F2/F6 submit-context fixtures pass
-- **Phase 4 (React + extensibility)**: F7, F10 pass
-- **Phase 5 (Migration hardening)**: F1-F10 full green in CI on representative forms
+- **Phase 4 (React + extensibility)**: F7, F10, F11 pass
+- **Phase 5 (Migration hardening)**: F1-F11 full green in CI on representative forms
 
-## 14) Migration and CQRS Boundary
+## 15) Migration and CQRS Boundary
 
 Migration SHOULD proceed in increments: canonical paths -> shadow validation -> expression-driven UI -> `onSubmit` cutover -> legacy retirement.
 
 CQRS MUST remain an `onSubmit` adapter concern. Kernel MUST NOT introduce CQRS primitives.
 
-## 15) Consequences
+## 16) Consequences
 
 ### Positive
 
