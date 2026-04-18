@@ -47,6 +47,9 @@
       "path": "./plugins/shadcn-theme-bridge-plugin"
     },
     {
+      "path": "./plugins/ghost-ui-plugin"
+    },
+    {
       "path": "./plugins/view-picker-plugin"
     },
     {
