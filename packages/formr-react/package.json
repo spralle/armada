@@ -13,7 +13,8 @@
     "react": ">=18.0.0"
   },
   "dependencies": {
-    "@ghost/formr-core": "workspace:*"
+    "@ghost/formr-core": "workspace:*",
+    "@ghost/formr-from-schema": "workspace:*"
   },
   "scripts": {
     "test": "bun test"

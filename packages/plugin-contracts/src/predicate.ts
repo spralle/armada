@@ -1,3 +1,5 @@
+import type { ExprNode, EvaluationScope } from "@ghost/predicate";
+import { evaluate as evaluateExpr, PredicateError } from "@ghost/predicate";
 import type { PluginContributionPredicate } from "./types.js";
 
 export interface PredicateFactBag {
@@ -47,7 +49,7 @@ function evaluatePredicateWithDefaultMatcher(
 
   for (const [path, condition] of Object.entries(predicate)) {
     const actual = getFactValue(facts, path);
-    if (!matchesCondition(actual, condition)) {
+    if (!matchesCondition(actual, path, condition, facts)) {
       failedPredicates.push({
         path,
         actual,
@@ -79,10 +81,15 @@ function getFactValue(facts: PredicateFactBag, path: string): unknown {
   return current;
 }
 
-function matchesCondition(actual: unknown, condition: unknown): boolean {
+/**
+ * Match a fact value against a condition, delegating comparison operators
+ * to @ghost/predicate's evaluator while preserving deep equality semantics
+ * for $eq/$ne/$in/$nin.
+ */
+function matchesCondition(actual: unknown, path: string, condition: unknown, facts: PredicateFactBag): boolean {
   if (isOperatorCondition(condition)) {
     return Object.entries(condition).every(([operator, expected]) =>
-      applyPredicateOperator(operator, actual, expected),
+      applyOperator(operator, actual, expected, path, facts),
     );
   }
 
@@ -97,44 +104,75 @@ function isOperatorCondition(value: unknown): value is Record<string, unknown> {
   return Object.keys(value).some((key) => key.startsWith("$"));
 }
 
-function applyPredicateOperator(operator: string, actual: unknown, expected: unknown): boolean {
+/** Operators that @ghost/predicate handles via its evaluator. */
+const DELEGATED_OPERATORS = new Set(["$gt", "$gte", "$lt", "$lte", "$exists"]);
+
+function applyOperator(
+  operator: string,
+  actual: unknown,
+  expected: unknown,
+  path: string,
+  facts: PredicateFactBag,
+): boolean {
+  if (DELEGATED_OPERATORS.has(operator)) {
+    return evaluateWithPredicateEngine(operator, path, expected, facts);
+  }
+
   switch (operator) {
     case "$eq":
       return isDeepEqual(actual, expected);
     case "$ne":
       return !isDeepEqual(actual, expected);
-    case "$exists": {
-      const shouldExist = Boolean(expected);
-      const exists = actual !== undefined;
-      return shouldExist ? exists : !exists;
-    }
     case "$in":
       return Array.isArray(expected) && expected.some((candidate) => isDeepEqual(actual, candidate));
     case "$nin":
       return Array.isArray(expected) && expected.every((candidate) => !isDeepEqual(actual, candidate));
-    case "$gt":
-      return compareComparable(actual, expected) > 0;
-    case "$gte":
-      return compareComparable(actual, expected) >= 0;
-    case "$lt":
-      return compareComparable(actual, expected) < 0;
-    case "$lte":
-      return compareComparable(actual, expected) <= 0;
     default:
       return false;
   }
 }
 
-function compareComparable(actual: unknown, expected: unknown): number {
-  if (typeof actual === "number" && typeof expected === "number") {
-    return actual - expected;
-  }
+/**
+ * Build an ExprNode AST and delegate evaluation to @ghost/predicate.
+ * Catches PredicateError (e.g. type mismatch) and returns false for
+ * backward compatibility — the old implementation returned NaN comparisons
+ * which always yielded false.
+ */
+function evaluateWithPredicateEngine(
+  operator: string,
+  path: string,
+  expected: unknown,
+  facts: PredicateFactBag,
+): boolean {
+  const pathNode: ExprNode = { kind: "path", path };
+  const literalNode = toLiteralNode(expected);
 
-  if (typeof actual === "string" && typeof expected === "string") {
-    return actual.localeCompare(expected);
-  }
+  const astNode: ExprNode = operator === "$exists"
+    ? { kind: "op", op: "$exists", args: [pathNode, literalNode] }
+    : { kind: "op", op: operator, args: [pathNode, literalNode] };
 
-  return Number.NaN;
+  const scope: EvaluationScope = { data: facts, uiState: {}, meta: {} };
+
+  try {
+    return Boolean(evaluateExpr(astNode, scope));
+  } catch (error: unknown) {
+    if (error instanceof PredicateError) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+function toLiteralNode(value: unknown): ExprNode {
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return { kind: "literal", value };
+  }
+  if (value === null) {
+    return { kind: "literal", value: null };
+  }
+  // For non-primitive values (arrays for $in/$nin handled separately),
+  // fall back to boolean coercion for $exists
+  return { kind: "literal", value: Boolean(value) };
 }
 
 function isDeepEqual(left: unknown, right: unknown): boolean {

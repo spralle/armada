@@ -29,3 +29,8 @@ export type {
   SubmitContext,
   SubmitResult,
 } from '@ghost/formr-core';
+
+export { RendererRegistry } from './renderer-registry.js';
+export { renderLayoutTree } from './render-tree.js';
+export type { LayoutRendererProps, NodeRenderer } from './renderer-types.js';
+export type { LayoutNode } from '@ghost/formr-from-schema';
