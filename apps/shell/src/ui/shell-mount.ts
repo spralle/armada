@@ -159,7 +159,6 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     <section class="shell-layer" data-layer="overlay" data-z="600" style="z-index:600"></section>
   </div>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <div id="quick-pick-host"></div>
   `;
 
   deps.renderParts();

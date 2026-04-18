@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 import type { QuickPickItem } from "@ghost/plugin-contracts";
 import type { QuickPickState } from "./quick-pick-state.js";
 import { getSelectedItem } from "./quick-pick-state.js";
@@ -15,14 +14,14 @@ export interface QuickPickOverlayProps<T extends QuickPickItem> {
 }
 
 const backdropStyle: React.CSSProperties = {
-  position: "fixed",
+  position: "absolute",
   inset: 0,
   background: "rgba(0, 0, 0, 0.5)",
   display: "flex",
   justifyContent: "center",
   alignItems: "flex-start",
   paddingTop: "15vh",
-  zIndex: 9999,
+  pointerEvents: "auto",
 };
 
 const dialogStyle: React.CSSProperties = {
@@ -123,7 +122,7 @@ export function QuickPickOverlay<T extends QuickPickItem>(
     }
   };
 
-  return createPortal(
+  return (
     <div
       style={backdropStyle}
       onClick={onClose}
@@ -161,8 +160,7 @@ export function QuickPickOverlay<T extends QuickPickItem>(
           ))}
         </ul>
       </div>
-    </div>,
-    document.body,
+    </div>
   );
 }
 

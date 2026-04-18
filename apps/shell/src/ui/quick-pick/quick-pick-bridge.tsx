@@ -24,9 +24,13 @@ export function createQuickPickBridge(): QuickPickBridge {
     if (container && root) {
       return { container, root };
     }
+    // Mount into the modal layer section instead of document.body
+    const modalLayer = document.querySelector('section.shell-layer[data-layer="modal"]');
+    const mountTarget = modalLayer ?? document.body;
+
     container = document.createElement("div");
     container.dataset.quickPickBridge = "true";
-    document.body.appendChild(container);
+    mountTarget.appendChild(container);
     root = createRoot(container);
     return { container, root };
   }
