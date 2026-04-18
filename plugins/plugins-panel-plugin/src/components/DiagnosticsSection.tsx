@@ -1,6 +1,5 @@
 import type {
   PluginRegistryDiagnosticEntry,
-  PluginRegistryEntry,
 } from "@ghost/plugin-contracts";
 import {
   Accordion,
@@ -12,12 +11,11 @@ import {
 
 interface DiagnosticsSectionProps {
   diagnostics: PluginRegistryDiagnosticEntry[];
-  allPlugins: PluginRegistryEntry[];
 }
 
 export function DiagnosticsSection({ diagnostics }: DiagnosticsSectionProps) {
   return (
-    <Accordion type="single" collapsible className="border-t" style={{ borderColor: "var(--ghost-border)" }}>
+    <Accordion type="single" collapsible className="border-t border-border">
       <AccordionItem value="diagnostics" className="border-0">
         <AccordionTrigger className="py-2 text-xs hover:no-underline">
           <span className="flex items-center gap-1.5">
@@ -32,8 +30,7 @@ export function DiagnosticsSection({ diagnostics }: DiagnosticsSectionProps) {
             {diagnostics.map((d, i) => (
               <div
                 key={`${d.at}-${d.pluginId}-${i}`}
-                className="flex items-start gap-1.5 py-0.5"
-                style={{ color: "var(--ghost-muted-foreground)" }}
+                className="flex items-start gap-1.5 py-0.5 text-muted-foreground"
               >
                 <Badge
                   variant={d.level === "warn" ? "destructive" : "secondary"}

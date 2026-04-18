@@ -183,9 +183,17 @@ export function registerPluginRegistryServiceCapability(
   registry: ShellPluginRegistry,
   deps: PluginRegistryServiceDeps,
 ): void {
+  let version = 0;
+  let cachedVersion = -1;
+  let cachedSnapshot: PluginRegistryServiceSnapshot | null = null;
+
   const service: PluginRegistryService = {
     getSnapshot(): PluginRegistryServiceSnapshot {
-      return buildSnapshot(deps.registry.getSnapshot());
+      if (version !== cachedVersion) {
+        cachedSnapshot = buildSnapshot(deps.registry.getSnapshot());
+        cachedVersion = version;
+      }
+      return cachedSnapshot!;
     },
 
     getPluginNotice(): string | null {
@@ -194,7 +202,10 @@ export function registerPluginRegistryServiceCapability(
     },
 
     subscribe(callback: () => void): Disposable {
-      return deps.registry.subscribe(callback);
+      return deps.registry.subscribe(() => {
+        version++;
+        callback();
+      });
     },
   };
 

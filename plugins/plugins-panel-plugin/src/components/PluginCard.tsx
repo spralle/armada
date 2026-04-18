@@ -18,7 +18,6 @@ import { PluginDetail } from "./PluginDetail.js";
 
 interface PluginCardProps {
   plugin: PluginRegistryEntry;
-  allPlugins: PluginRegistryEntry[];
   managementService: PluginManagementService;
   disabled: boolean;
 }
@@ -31,7 +30,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
   failed: "destructive",
 };
 
-export function PluginCard({ plugin, allPlugins, managementService, disabled }: PluginCardProps) {
+export function PluginCard({ plugin, managementService, disabled }: PluginCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const handleToggle = useCallback(
@@ -52,11 +51,7 @@ export function PluginCard({ plugin, allPlugins, managementService, disabled }: 
     <Collapsible open={expanded} onOpenChange={setExpanded}>
       <Card
         id={`plugin-card-${plugin.pluginId}`}
-        className="transition-colors"
-        style={{
-          backgroundColor: "var(--ghost-card)",
-          borderColor: "var(--ghost-border)",
-        }}
+        className="transition-colors bg-card border-border"
       >
         <CollapsibleTrigger asChild>
           <button
@@ -66,17 +61,11 @@ export function PluginCard({ plugin, allPlugins, managementService, disabled }: 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium truncate">{plugin.name}</span>
-                <span
-                  className="text-[11px] shrink-0"
-                  style={{ color: "var(--ghost-muted-foreground)" }}
-                >
+                <span className="text-[11px] shrink-0 text-muted-foreground">
                   {plugin.version}
                 </span>
               </div>
-              <div
-                className="text-[11px] truncate"
-                style={{ color: "var(--ghost-muted-foreground)" }}
-              >
+              <div className="text-[11px] truncate text-muted-foreground">
                 {plugin.pluginId}
               </div>
             </div>
@@ -97,7 +86,7 @@ export function PluginCard({ plugin, allPlugins, managementService, disabled }: 
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <Separator style={{ backgroundColor: "var(--ghost-border)" }} />
+          <Separator className="bg-border" />
           <CardContent className="px-3 py-2.5">
             {showActivateButton && (
               <Button
@@ -110,7 +99,7 @@ export function PluginCard({ plugin, allPlugins, managementService, disabled }: 
                 Activate
               </Button>
             )}
-            <PluginDetail plugin={plugin} allPlugins={allPlugins} />
+            <PluginDetail plugin={plugin} onRetry={handleActivate} />
           </CardContent>
         </CollapsibleContent>
       </Card>

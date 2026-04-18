@@ -18,10 +18,7 @@ export function ContributionsList({ contributions }: ContributionsListProps) {
 
   return (
     <div>
-      <h4
-        className="font-semibold mb-1 text-xs"
-        style={{ color: "var(--ghost-foreground)" }}
-      >
+      <h4 className="font-semibold mb-1 text-xs text-foreground">
         Contributions
       </h4>
       <div className="flex flex-col gap-1">
@@ -30,10 +27,7 @@ export function ContributionsList({ contributions }: ContributionsListProps) {
             <Badge variant="secondary" className="text-[9px] px-1 py-0 shrink-0">
               {group.label} ({group.count})
             </Badge>
-            <span
-              className="text-[11px] leading-tight"
-              style={{ color: "var(--ghost-muted-foreground)" }}
-            >
+            <span className="text-[11px] leading-tight text-muted-foreground">
               {group.items.join(", ")}
             </span>
           </div>
