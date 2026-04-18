@@ -333,6 +333,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
     workspaceManager: {} as ShellRuntime["workspaceManager"],
     placementRegistry: {} as ShellRuntime["placementRegistry"],
     placementConfig: {} as ShellRuntime["placementConfig"],
+    elevatedSession: { active: false, activatedAt: null },
     ...overrides,
   };
 }

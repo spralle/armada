@@ -18,6 +18,7 @@ import type { PluginActivationTriggerType } from "../plugin-registry.js";
 import type { NormalizedKeybindingChord } from "./keybinding-normalizer.js";
 import { updateDockTabVisibility, needsStructuralRender } from "../ui/dock-tab-visibility.js";
 import type { WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
+import { createGodModeInterceptor } from "./god-mode.js";
 
 export interface KeyboardBindings {
   activatePluginForBoundary: (options: {
@@ -112,6 +113,8 @@ export function bindKeyboardShortcuts(
 
   let sequenceState: ChordSequenceState | null = null;
 
+  const godModeInterceptor = createGodModeInterceptor(runtime);
+
   function clearSequenceState(): void {
     if (sequenceState?.timeoutHandle != null) {
       clearTimeout(sequenceState.timeoutHandle);
@@ -202,6 +205,11 @@ export function bindKeyboardShortcuts(
           console.debug("[shell:keybinding] degraded-mode-blocked", { reason: "block" });
         }
       }
+      return;
+    }
+
+    if (godModeInterceptor(event)) {
+      event.preventDefault();
       return;
     }
 
