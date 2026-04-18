@@ -29,5 +29,15 @@ export const pluginContract: PluginContract = {
         versionRange: "^1.0.0",
       },
     ],
+    plugins: [
+      {
+        pluginId: "ghost.ui",
+        versionRange: "^1.0.0",
+      },
+      {
+        pluginId: "ghost.shadcn.theme-bridge",
+        versionRange: "^1.0.0",
+      },
+    ],
   },
 };

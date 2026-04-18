@@ -62,6 +62,12 @@ export function createShellPluginRegistry(
     options.apiDeps,
     options.layerRegistry ?? null,
   );
+  const listeners = new Set<() => void>();
+
+  function notifyListeners(): void {
+    for (const fn of listeners) fn();
+  }
+
   let tenantId = "local";
   const builtinContracts: Array<{ contract: PluginContract; serviceInstances?: Record<string, unknown> }> = [];
 
@@ -98,6 +104,7 @@ export function createShellPluginRegistry(
       builtinContracts.push({ contract, serviceInstances });
       seedBuiltinState(contract, serviceInstances);
       capabilityRegistry.registerPlugin(contract.manifest.id, contract);
+      notifyListeners();
     },
     registerManifestDescriptors(nextTenantId, descriptors) {
       tenantId = nextTenantId;
@@ -128,6 +135,7 @@ export function createShellPluginRegistry(
           builtinServiceInstances: null,
         });
       }
+      notifyListeners();
     },
     async setEnabled(pluginId, enabled) {
       const state = states.get(pluginId);
@@ -145,35 +153,33 @@ export function createShellPluginRegistry(
         }
         resetRuntimeState(state);
         transitionLifecycle(state, "disabled", null);
+        notifyListeners();
         return;
       }
 
       resetRuntimeState(state);
       transitionLifecycle(state, "registered", null);
+      notifyListeners();
     },
     async activateByCommand(pluginId, commandId) {
-      return ensureActivated(pluginId, {
-        type: "command",
-        id: commandId,
-      });
+      const result = await ensureActivated(pluginId, { type: "command", id: commandId });
+      notifyListeners();
+      return result;
     },
     async activateByView(pluginId, viewId) {
-      return ensureActivated(pluginId, {
-        type: "view",
-        id: viewId,
-      });
+      const result = await ensureActivated(pluginId, { type: "view", id: viewId });
+      notifyListeners();
+      return result;
     },
     async activateByIntent(pluginId, intentId) {
-      return ensureActivated(pluginId, {
-        type: "intent",
-        id: intentId,
-      });
+      const result = await ensureActivated(pluginId, { type: "intent", id: intentId });
+      notifyListeners();
+      return result;
     },
     async activateByEvent(pluginId, eventName) {
-      return ensureActivated(pluginId, {
-        type: "event",
-        id: eventName,
-      });
+      const result = await ensureActivated(pluginId, { type: "event", id: eventName });
+      notifyListeners();
+      return result;
     },
     async resolveComponentCapability(requesterPluginId, capabilityId) {
       const provider = capabilityRegistry.resolveComponent(capabilityId, {
@@ -323,6 +329,10 @@ export function createShellPluginRegistry(
     },
     hasService(serviceId: string): boolean {
       return this.getService(serviceId) !== null;
+    },
+    subscribe(callback: () => void) {
+      listeners.add(callback);
+      return { dispose: () => listeners.delete(callback) };
     },
     getSnapshot() {
       return {

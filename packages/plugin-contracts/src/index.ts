@@ -193,7 +193,18 @@ export {
 export type {
   PluginRegistryService,
   PluginRegistryEntry,
-  PluginRegistrySnapshot as PluginRegistryServiceSnapshot,
+  PluginRegistryServiceSnapshot,
+  ContributionItem,
+  ThemeContributionItem,
+  KeybindingContributionItem,
+  SlotContributionItem,
+  CapabilityContributionItem,
+  PluginContributionsSummary,
+  PluginFailureInfo,
+  PluginLifecycleInfo,
+  PluginDependencySummary,
+  PluginReverseDependency,
+  PluginRegistryDiagnosticEntry,
 } from "./plugin-registry-service.js";
 export { PLUGIN_REGISTRY_SERVICE_ID } from "./plugin-registry-service.js";
 

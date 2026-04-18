@@ -1,20 +1,16 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
     "strict": true,
-    "noEmit": true,
-    "composite": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "jsx": "react-jsx"
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
   },
-  "references": [
-    {
-      "path": "../../packages/plugin-contracts"
-    }
-  ],
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

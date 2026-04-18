@@ -96,6 +96,7 @@ export interface ShellPluginRegistry {
   getService<T = unknown>(serviceId: string): T | null;
   hasService(serviceId: string): boolean;
   getSnapshot(): PluginRegistrySnapshot;
+  subscribe(callback: () => void): { dispose(): void };
 }
 
 export interface ShellPluginRegistryOptions {
