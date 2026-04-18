@@ -205,7 +205,25 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime, composition: Retur
 async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, isActive: () => boolean): Promise<void> {
   const quickPickBridge = createQuickPickBridge();
   try {
-    const apiDeps = createGhostApiDeps(runtime, quickPickBridge);
+    const apiDeps = createGhostApiDeps(runtime, quickPickBridge, {
+      getWorkspaceSwitchDeps: () => {
+        const bridgeBindings = createBridgeBindings(root, runtime);
+        return {
+          root,
+          runtime,
+          partsDeps: {
+            applySelection: bridgeBindings.applySelection,
+            partHost: runtime.partHost,
+            publishWithDegrade: (event) => {
+              publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime));
+            },
+            renderContextControls: () => renderContextControlsPanel(root, runtime),
+            renderParts: () => renderParts(root, runtime),
+            renderSyncStatus: () => renderSyncStatus(root, runtime),
+          },
+        };
+      },
+    });
     const { configService } = await createShellConfigService();
     const state = await bootstrapShellWithTenantManifest({
       tenantId: "demo",
