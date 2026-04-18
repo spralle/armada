@@ -13,7 +13,6 @@
     "apps/backend": {
       "name": "@ghost/backend-app",
       "dependencies": {
-        "@ghost/config-plugin-runtime": "workspace:*",
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
       },
     },

@@ -4,7 +4,8 @@
 // `slots[componentId]`.
 // ---------------------------------------------------------------------------
 
-import type { WorkspaceService, WorkspaceInfo } from "@ghost/plugin-contracts";
+import type { WorkspaceService, WorkspaceInfo, ActivityStatusService } from "@ghost/plugin-contracts";
+import { ACTIVITY_STATUS_SERVICE_ID } from "@ghost/plugin-contracts";
 import { getGhostApi } from "./plugin-activate.js";
 
 // ---------------------------------------------------------------------------
@@ -64,6 +65,19 @@ const WIDGET_CSS = /* css */ `
 .workspace-btn.workspace-add:hover {
   opacity: 1;
 }
+.topbar-activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ghost-primary, #7c3aed);
+  margin-left: 6px;
+  flex-shrink: 0;
+  animation: topbar-pulse 1.2s ease-in-out infinite;
+}
+@keyframes topbar-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
 `;
 
 function injectStyles(): void {
@@ -81,7 +95,10 @@ function injectStyles(): void {
 
 interface SlotMountContext {
   readonly contribution: { readonly id: string; readonly component: string };
-  readonly runtime: { readonly selectedPartTitle: string | null };
+  readonly runtime: {
+    readonly selectedPartTitle: string | null;
+    readonly services?: { getService<T = unknown>(id: string): T | null } | undefined;
+  };
 }
 
 type CleanupFn = () => void;
@@ -122,11 +139,39 @@ function mountTitle(container: HTMLElement, runtime: SlotMountContext["runtime"]
   el.className = "topbar-title";
   container.appendChild(el);
 
+  // Activity indicator dot — hidden by default, shown when activities are in progress.
+  const dot = document.createElement("span");
+  dot.className = "topbar-activity-dot";
+  dot.style.display = "none";
+  el.appendChild(dot);
+
+  // Try to subscribe to ActivityStatusService (graceful if unavailable).
+  let activitySub: { dispose(): void } | undefined;
+  try {
+    const service = runtime.services?.getService<ActivityStatusService>(ACTIVITY_STATUS_SERVICE_ID);
+    if (service) {
+      activitySub = service.onDidChange((count: number) => {
+        dot.style.display = count > 0 ? "" : "none";
+      });
+      // Sync initial state
+      dot.style.display = service.activityCount > 0 ? "" : "none";
+    }
+  } catch {
+    // Service unavailable — dot stays hidden.
+  }
+
   let disposed = false;
 
   function render(): void {
     if (disposed) return;
-    el.textContent = runtime.selectedPartTitle || "Ghost";
+    // Set text content on the first text node to avoid removing the dot element.
+    const textNode = el.firstChild;
+    const title = runtime.selectedPartTitle || "";
+    if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+      textNode.textContent = title;
+    } else {
+      el.insertBefore(document.createTextNode(title), el.firstChild);
+    }
   }
 
   render();
@@ -134,6 +179,7 @@ function mountTitle(container: HTMLElement, runtime: SlotMountContext["runtime"]
 
   return () => {
     disposed = true;
+    activitySub?.dispose();
     window.clearInterval(intervalId);
     el.remove();
   };

@@ -187,6 +187,9 @@ export { PLUGIN_MANAGEMENT_SERVICE_ID } from "./plugin-management-service.js";
 export type { SyncStatusService } from "./sync-status-service.js";
 export { SYNC_STATUS_SERVICE_ID } from "./sync-status-service.js";
 
+export type { ActivityToken, ActivityStatusService } from "./activity-status-service.js";
+export { ACTIVITY_STATUS_SERVICE_ID } from "./activity-status-service.js";
+
 export type { ContextService } from "./context-service.js";
 export { CONTEXT_SERVICE_ID } from "./context-service.js";
 
