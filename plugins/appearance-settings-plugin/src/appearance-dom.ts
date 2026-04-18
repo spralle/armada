@@ -30,7 +30,7 @@ const PANEL_STYLES = `
 .appearance-panel h3{margin:0 0 8px;font-size:14px;color:var(--ghost-foreground)}
 .appearance-section{margin-bottom:16px}
 .appearance-empty{margin:0;font-size:12px;color:var(--ghost-muted-foreground)}
-.appearance-theme-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:4px;border:1px solid var(--ghost-border);margin-bottom:4px;cursor:pointer;background:var(--ghost-surface)}
+.appearance-theme-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:4px;border:1px solid var(--ghost-border);margin-bottom:4px;cursor:pointer;background:var(--ghost-surface)}
 .appearance-theme-row:focus-visible{outline:2px solid var(--ghost-ring);outline-offset:1px}
 .appearance-theme-row.is-active{border:2px solid var(--ghost-primary);background:var(--ghost-accent);color:var(--ghost-accent-foreground)}
 .appearance-theme-row.is-active .appearance-theme-name{color:inherit}
@@ -38,6 +38,7 @@ const PANEL_STYLES = `
 .appearance-theme-row.is-active .appearance-mode-badge{background:color-mix(in srgb,var(--ghost-accent-foreground) 15%,transparent);color:inherit;border-color:color-mix(in srgb,var(--ghost-accent-foreground) 30%,transparent)}
 .appearance-theme-name{font-size:13px;font-weight:600;color:var(--ghost-foreground)}
 .appearance-theme-author{font-size:11px;color:var(--ghost-muted-foreground);margin-left:6px}
+.appearance-theme-name-group{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .appearance-mode-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:var(--ghost-surface-elevated);color:var(--ghost-muted-foreground);border:1px solid var(--ghost-border)}
 .appearance-bg-grid{display:flex;flex-wrap:wrap;gap:6px}
 .appearance-bg-thumb{width:80px;height:50px;object-fit:cover;border-radius:4px;border:1px solid var(--ghost-border);cursor:pointer}
@@ -161,6 +162,7 @@ export function renderThemePicker(
     row.setAttribute("role", "button"); row.setAttribute("tabindex", "0");
     row.setAttribute("aria-pressed", isActive ? "true" : "false");
     const nameSpan = document.createElement("span");
+    nameSpan.className = "appearance-theme-name-group";
     const nameText = document.createElement("span");
     nameText.className = "appearance-theme-name"; nameText.textContent = theme.name;
     nameSpan.appendChild(nameText);
