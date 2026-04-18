@@ -235,6 +235,22 @@ export function registerActionServiceSpecs(harness: SpecHarness): void {
     assertEqual(handlerCalled, true, "runtime handler should be called");
   });
 
+  test("action-service: executeAction uses shared runtimeActionRegistry handlers", async () => {
+    const sharedRuntimeRegistry = new Map<string, (...args: unknown[]) => unknown>();
+    let called = false;
+    sharedRuntimeRegistry.set("shell.workspace.create", () => {
+      called = true;
+      return true;
+    });
+
+    const { service } = createActionService(createTestDeps({
+      runtimeActionRegistry: sharedRuntimeRegistry,
+    }));
+
+    await service.executeAction("shell.workspace.create");
+    assertEqual(called, true, "shared runtime registry handler should execute");
+  });
+
   // ─── fireChanged() ───
 
   test("action-service: fireChanged notifies onDidChangeActions listeners", () => {

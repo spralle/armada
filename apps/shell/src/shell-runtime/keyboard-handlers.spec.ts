@@ -234,6 +234,32 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
 
     dispose();
   });
+
+  test("keyboard handler routes workspace delete to runtime action registry", async () => {
+    const root = new FakeRoot();
+    const runtime = createRuntimeFixture();
+    let calls = 0;
+    runtime.runtimeActionRegistry.set("shell.workspace.delete", () => {
+      calls += 1;
+      return true;
+    });
+    const bindings = createBindings(runtime);
+    const dispose = bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
+
+    const target = ensureDomElement();
+    const result = await root.dispatch({
+      key: "w",
+      ctrlKey: true,
+      altKey: true,
+      target,
+    });
+
+    assertEqual(result.prevented, true, "workspace keybinding should be consumed");
+    assertEqual(calls, 1, "workspace delete should execute runtime action handler");
+    assertTruthy(runtime.commandNotice.includes("shell.workspace.delete"), "command notice should reference workspace action");
+
+    dispose();
+  });
 }
 
 function createRuntimeFixture(): ShellRuntime {
@@ -280,6 +306,7 @@ function createRuntimeFixture(): ShellRuntime {
     poppedOutTabIds: new Set(),
     popoutTabId: null,
     registry: { getSnapshot: () => ({ plugins: [] }) } as unknown as ShellRuntime["registry"],
+    runtimeActionRegistry: new Map(),
     selectedPartId: "tab-a",
     selectedPartTitle: "tab-a",
     sourceTabTransferPendingBySessionId: new Map(),

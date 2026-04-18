@@ -259,8 +259,8 @@ export function bindKeyboardShortcuts(
           const runtimeHandler = runtime.runtimeActionRegistry.get(action.id);
           if (runtimeHandler) {
             try {
-              await runtimeHandler();
-              executed = true;
+              const runtimeResult = await runtimeHandler();
+              executed = runtimeResult === false ? false : true;
             } catch (runtimeError) {
               console.warn("[shell:keybinding] runtime action failed", action.id, runtimeError);
               executed = false;

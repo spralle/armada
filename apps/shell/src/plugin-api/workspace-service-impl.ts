@@ -1,5 +1,4 @@
 import type { WorkspaceInfo, WorkspaceService } from "@ghost/plugin-contracts";
-import { createEventEmitter } from "@ghost/plugin-contracts";
 import type { ShellRuntime } from "../app/types.js";
 import {
   createWorkspace as createWorkspacePure,
@@ -48,14 +47,21 @@ export interface WorkspaceServiceWithEmitter {
 export function createWorkspaceService(
   deps: WorkspaceServiceDependencies,
 ): WorkspaceServiceWithEmitter {
-  const emitter = createEventEmitter<void>();
+  function persistAndSignal(runtime: ShellRuntime): void {
+    const result = runtime.workspacePersistence.save(runtime.workspaceManager, runtime.contextState);
+    if (result.warning) {
+      runtime.notice = result.warning;
+    }
+    runtime.workspaceEvents.fireDidChangeWorkspaces();
+  }
 
   const service: WorkspaceService = {
     switchTo(workspaceId: string): void {
+      const runtime = deps.getRuntime();
       const switchDeps = deps.getWorkspaceSwitchDeps();
       const changed = performWorkspaceSwitch(workspaceId, switchDeps);
       if (changed) {
-        emitter.fire(undefined as never);
+        persistAndSignal(runtime);
       }
     },
 
@@ -84,7 +90,7 @@ export function createWorkspaceService(
         const newId =
           result.state.workspaceOrder[result.state.workspaceOrder.length - 1];
         const ws = result.state.workspaces[newId];
-        emitter.fire(undefined as never);
+        persistAndSignal(runtime);
         return { id: ws.id, name: ws.name };
       }
       // Shouldn't happen — createWorkspace always succeeds
@@ -106,7 +112,7 @@ export function createWorkspaceService(
           performWorkspaceSwitch(result.state.activeWorkspaceId, switchDeps);
         }
         runtime.workspaceManager = result.state;
-        emitter.fire(undefined as never);
+        persistAndSignal(runtime);
         return true;
       }
       return false;
@@ -121,19 +127,19 @@ export function createWorkspaceService(
       );
       if (result.changed) {
         runtime.workspaceManager = result.state;
-        emitter.fire(undefined as never);
+        persistAndSignal(runtime);
         return true;
       }
       return false;
     },
 
-    onDidChangeWorkspaces: emitter.event,
+    onDidChangeWorkspaces: (listener) => deps.getRuntime().workspaceEvents.onDidChangeWorkspaces(listener),
   };
 
   return {
     service,
     dispose() {
-      emitter.dispose();
+      // no-op: shared runtime emitter lifetime is tied to runtime
     },
   };
 }
