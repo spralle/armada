@@ -21,6 +21,16 @@ export class LayerRegistry {
   private layers: Map<string, LayerDefinition> = new Map();
   private surfaces: Map<string, { surface: PluginLayerSurfaceContribution; pluginId: string }> = new Map();
   private layerHost: HTMLElement | null = null;
+  private sessionLockCheck: ((zOrder: number) => boolean) | null = null;
+  private onSurfacesRemoved: ((entries: Array<{ surfaceId: string; pluginId: string }>) => void) | null = null;
+
+  setSessionLockCheck(check: (zOrder: number) => boolean): void {
+    this.sessionLockCheck = check;
+  }
+
+  setOnSurfacesRemoved(callback: (entries: Array<{ surfaceId: string; pluginId: string }>) => void): void {
+    this.onSurfacesRemoved = callback;
+  }
 
   setLayerHost(el: HTMLElement): void {
     this.layerHost = el;
@@ -92,10 +102,12 @@ export class LayerRegistry {
     }
 
     // Cascade: remove ALL surfaces on those layers (from any plugin)
+    const removedEntries: Array<{ surfaceId: string; pluginId: string }> = [];
     for (const layerName of removedLayers) {
       for (const [surfaceId, entry] of this.surfaces) {
         if (entry.surface.layer === layerName) {
           affectedSurfaceIds.push(surfaceId);
+          removedEntries.push({ surfaceId, pluginId: entry.pluginId });
         }
       }
       if (this.layerHost) {
@@ -106,6 +118,10 @@ export class LayerRegistry {
 
     for (const id of affectedSurfaceIds) {
       this.surfaces.delete(id);
+    }
+
+    if (this.onSurfacesRemoved && removedEntries.length > 0) {
+      this.onSurfacesRemoved(removedEntries);
     }
 
     return { removedLayers, affectedSurfaceIds };
@@ -125,13 +141,18 @@ export class LayerRegistry {
 
   unregisterSurfaces(pluginId: string): string[] {
     const removed: string[] = [];
+    const removedEntries: Array<{ surfaceId: string; pluginId: string }> = [];
     for (const [id, entry] of this.surfaces) {
       if (entry.pluginId === pluginId) {
         removed.push(id);
+        removedEntries.push({ surfaceId: id, pluginId: entry.pluginId });
       }
     }
     for (const id of removed) {
       this.surfaces.delete(id);
+    }
+    if (this.onSurfacesRemoved && removedEntries.length > 0) {
+      this.onSurfacesRemoved(removedEntries);
     }
     return removed;
   }
@@ -148,6 +169,9 @@ export class LayerRegistry {
     }
     if (surface.sessionLock && !layer.supportsSessionLock) {
       return { valid: false, reason: `Layer '${surface.layer}' does not support session lock` };
+    }
+    if (this.sessionLockCheck && !this.sessionLockCheck(layer.zOrder)) {
+      return { valid: false, reason: `Session lock active — cannot add surface to layer '${surface.layer}' at z-order ${layer.zOrder}` };
     }
     return { valid: true };
   }

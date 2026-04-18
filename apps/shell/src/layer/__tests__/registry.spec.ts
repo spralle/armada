@@ -204,6 +204,69 @@ test("getSurfacesForLayer returns matching surfaces", () => {
   assertEqual(surfaces[0]!.surface.id, "s1", "should be s1");
 });
 
+// --- Session lock check integration ---
+
+test("sessionLockCheck rejects surfaces during active lock", () => {
+  const reg = new LayerRegistry();
+  reg.registerBuiltinLayers();
+  reg.setSessionLockCheck((zOrder) => zOrder <= 600);
+  // floating is z=300, should pass
+  const r1 = reg.validateSurfaceContribution(makeSurface({ layer: "floating" }));
+  assertEqual(r1.valid, true, "z=300 should pass when lock allows <=600");
+
+  // Now simulate lock blocking everything above z=0
+  reg.setSessionLockCheck((_zOrder) => false);
+  const r2 = reg.validateSurfaceContribution(makeSurface({ layer: "floating" }));
+  assertEqual(r2.valid, false, "should reject when lock check returns false");
+  assertEqual(r2.reason?.includes("Session lock active"), true, "reason should mention session lock");
+});
+
+test("no sessionLockCheck set — surfaces pass as before", () => {
+  const reg = new LayerRegistry();
+  reg.registerBuiltinLayers();
+  const result = reg.validateSurfaceContribution(makeSurface({ layer: "floating" }));
+  assertEqual(result.valid, true, "should pass without session lock check");
+});
+
+// --- onSurfacesRemoved callback ---
+
+test("onSurfacesRemoved fires on unregisterPluginLayers", () => {
+  const reg = new LayerRegistry();
+  reg.registerBuiltinLayers();
+  reg.registerPluginLayers("plugin-a", [{ name: "custom", zOrder: 150 }]);
+  reg.registerSurface("plugin-a", makeSurface({ id: "s1", layer: "custom" }));
+  reg.registerSurface("plugin-b", makeSurface({ id: "s2", layer: "custom" }));
+
+  const removedEntries: Array<{ surfaceId: string; pluginId: string }> = [];
+  reg.setOnSurfacesRemoved((entries) => { removedEntries.push(...entries); });
+
+  reg.unregisterPluginLayers("plugin-a");
+  assertEqual(removedEntries.length, 2, "should fire callback with 2 entries");
+});
+
+test("onSurfacesRemoved fires on unregisterSurfaces", () => {
+  const reg = new LayerRegistry();
+  reg.registerBuiltinLayers();
+  reg.registerSurface("plugin-a", makeSurface({ id: "s1", layer: "floating" }));
+  reg.registerSurface("plugin-a", makeSurface({ id: "s2", layer: "notification" }));
+
+  const removedEntries: Array<{ surfaceId: string; pluginId: string }> = [];
+  reg.setOnSurfacesRemoved((entries) => { removedEntries.push(...entries); });
+
+  reg.unregisterSurfaces("plugin-a");
+  assertEqual(removedEntries.length, 2, "should fire callback with 2 entries");
+  assertEqual(removedEntries[0]!.pluginId, "plugin-a", "pluginId should match");
+});
+
+test("no onSurfacesRemoved callback set — no error on unregister", () => {
+  const reg = new LayerRegistry();
+  reg.registerBuiltinLayers();
+  reg.registerSurface("plugin-a", makeSurface({ id: "s1", layer: "floating" }));
+  // Should not throw
+  reg.unregisterSurfaces("plugin-a");
+  assertEqual(reg.getAllSurfaces().length, 0, "surfaces should be removed");
+});
+
 // --- Run all tests ---
 
 let passed = 0;

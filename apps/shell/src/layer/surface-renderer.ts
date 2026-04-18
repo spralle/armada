@@ -82,6 +82,20 @@ export function createLayerSurfaceRenderer(
   const focusGrabManager = createFocusGrabManager(keyboardExclusiveManager);
   const sessionLockManager = createSessionLockManager({ layerHost, keyboardExclusiveManager });
 
+  layerRegistry.setSessionLockCheck((z) => sessionLockManager.canAddSurface(z));
+
+  layerRegistry.setOnSurfacesRemoved((entries) => {
+    for (const { surfaceId, pluginId } of entries) {
+      const key = composeSurfaceKey(pluginId, surfaceId);
+      const state = mounted.get(key);
+      if (!state) continue;
+      cleanupSurfaceBehaviors(key);
+      safeUnmount(state.cleanup);
+      state.element.remove();
+      mounted.delete(key);
+    }
+  });
+
   function cleanupSurfaceBehaviors(key: string): void {
     focusGrabManager.releaseFocus(key);
     keyboardExclusiveManager.popExclusive(key);
