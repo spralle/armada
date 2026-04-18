@@ -205,6 +205,35 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
       "new override chord should dispatch the remapped close action",
     );
   });
+
+  test("escape key cancels pending chord sequence", async () => {
+    const root = new FakeRoot();
+    const runtime = createRuntimeFixture();
+    // Set up a multi-chord binding: ctrl+k ctrl+c → shell.view.close
+    const bindings = createBindings(runtime, {
+      getDefaultKeybindings: () => [
+        { action: "shell.view.close", keybinding: "ctrl+k ctrl+c", pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID },
+      ],
+    });
+    const dispose = bindKeyboardShortcuts(root as unknown as HTMLElement, runtime, bindings);
+
+    const target = ensureDomElement();
+
+    // Press first chord of sequence (ctrl+k) — should enter pending state
+    const result1 = await root.dispatch({ key: "k", ctrlKey: true, target });
+    assertEqual(result1.prevented, true, "first chord of sequence should be consumed");
+
+    // Press Escape — should cancel the pending sequence
+    const result2 = await root.dispatch({ key: "Escape", target });
+    assertEqual(result2.prevented, true, "escape should be consumed during pending sequence");
+
+    // Now press ctrl+c — should NOT resolve the multi-chord binding
+    // (sequence was cancelled, so ctrl+c alone shouldn't match ctrl+k ctrl+c)
+    const result3 = await root.dispatch({ key: "c", ctrlKey: true, target });
+    assertEqual(result3.prevented, false, "chord after escape cancellation should not match multi-chord binding");
+
+    dispose();
+  });
 }
 
 function createRuntimeFixture(): ShellRuntime {
@@ -244,7 +273,6 @@ function createRuntimeFixture(): ShellRuntime {
     notice: "",
     partHost: { syncRenderedParts: async () => {}, unmountAll: () => {} } as ShellRuntime["partHost"],
      pendingFocusSelector: null,
-    pendingChordState: null,
     pendingProbeId: null,
     persistence: { save: () => ({ warning: null }), load: () => ({ sideSize: 0.2, secondarySize: 0.3 }) },
     pluginNotice: "",

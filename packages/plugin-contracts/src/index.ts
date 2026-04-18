@@ -197,5 +197,8 @@ export type {
   KeybindingService,
   KeybindingEntry,
   KeybindingOverride,
+  KeySequencePendingEvent,
+  KeySequenceCompletedEvent,
+  KeySequenceCancelledEvent,
 } from "./keybinding-service.js";
 export { KEYBINDING_SERVICE_ID } from "./keybinding-service.js";

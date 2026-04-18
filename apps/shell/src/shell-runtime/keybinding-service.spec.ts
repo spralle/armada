@@ -326,4 +326,40 @@ export function registerKeybindingServiceSpecs(harness: SpecHarness): void {
     assertEqual(full.executed, true, "full sequence should dispatch successfully");
     assertEqual(calls.length, 1, "intent should be invoked once for full sequence");
   });
+
+  test("service exposes sequence lifecycle event emitters", () => {
+    const service = createKeybindingService({
+      actionSurface: createActionSurface(),
+      intentRuntime: createIntentRuntime([]),
+    });
+
+    // onDidKeySequencePending
+    const pendingEvents: Array<{ pressedChords: string[]; candidateCount: number }> = [];
+    const sub1 = service.onDidKeySequencePending((e: { pressedChords: string[]; candidateCount: number }) => pendingEvents.push(e));
+    service.fireKeySequencePending({ pressedChords: ["ctrl+k"], candidateCount: 3 });
+    assertEqual(pendingEvents.length, 1, "pending event should fire once");
+    assertEqual(pendingEvents[0]?.pressedChords[0], "ctrl+k", "pending event should carry pressed chords");
+    assertEqual(pendingEvents[0]?.candidateCount, 3, "pending event should carry candidate count");
+    sub1.dispose();
+
+    // onDidKeySequenceCompleted
+    const completedEvents: Array<{ chords: string[]; actionId: string }> = [];
+    const sub2 = service.onDidKeySequenceCompleted((e: { chords: string[]; actionId: string }) => completedEvents.push(e));
+    service.fireKeySequenceCompleted({ chords: ["ctrl+k", "ctrl+c"], actionId: "test.action" });
+    assertEqual(completedEvents.length, 1, "completed event should fire once");
+    assertEqual(completedEvents[0]?.actionId, "test.action", "completed event should carry action id");
+    sub2.dispose();
+
+    // onDidKeySequenceCancelled
+    const cancelledEvents: Array<{ chords: string[]; reason: string }> = [];
+    const sub3 = service.onDidKeySequenceCancelled((e: { chords: string[]; reason: string }) => cancelledEvents.push(e));
+    service.fireKeySequenceCancelled({ chords: ["ctrl+k"], reason: "timeout" });
+    assertEqual(cancelledEvents.length, 1, "cancelled event should fire once");
+    assertEqual(cancelledEvents[0]?.reason, "timeout", "cancelled event should carry reason");
+    sub3.dispose();
+
+    // After dispose, events should not fire
+    service.fireKeySequencePending({ pressedChords: ["ctrl+x"], candidateCount: 1 });
+    assertEqual(pendingEvents.length, 1, "disposed subscription should not receive events");
+  });
 }

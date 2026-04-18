@@ -1,4 +1,11 @@
 import type { ContributionPredicateMatcher } from "@ghost/plugin-contracts";
+import { createEventEmitter } from "@ghost/plugin-contracts";
+import type {
+  Event,
+  KeySequencePendingEvent,
+  KeySequenceCompletedEvent,
+  KeySequenceCancelledEvent,
+} from "@ghost/plugin-contracts";
 import { dispatchAction } from "../action-surface.js";
 import type {
   ActionKeybinding,
@@ -58,6 +65,18 @@ export interface KeybindingService {
   hasPrefix: (chords: readonly NormalizedKeybindingChord[], context: ActionSurfaceContext) => boolean;
   /** Timeout in ms for multi-chord sequence completion */
   readonly sequenceTimeoutMs: number;
+
+  // --- Sequence lifecycle events ---
+  readonly onDidKeySequencePending: Event<KeySequencePendingEvent>;
+  readonly onDidKeySequenceCompleted: Event<KeySequenceCompletedEvent>;
+  readonly onDidKeySequenceCancelled: Event<KeySequenceCancelledEvent>;
+
+  /** Fire pending event (internal — used by keyboard handler) */
+  fireKeySequencePending(data: KeySequencePendingEvent): void;
+  /** Fire completed event (internal — used by keyboard handler) */
+  fireKeySequenceCompleted(data: KeySequenceCompletedEvent): void;
+  /** Fire cancelled event (internal — used by keyboard handler) */
+  fireKeySequenceCancelled(data: KeySequenceCancelledEvent): void;
 }
 
 export interface KeybindingServiceOptions {
@@ -76,6 +95,10 @@ export function createKeybindingService(options: KeybindingServiceOptions): Keyb
   const indexedActions = new Map(options.actionSurface.actions.map((action) => [action.id, action]));
   const layers = buildLayerInputs(options);
   const records = buildRegistryRecords(layers, indexedActions, DEFAULT_LAYER_PRECEDENCE);
+
+  const pendingEmitter = createEventEmitter<KeySequencePendingEvent>();
+  const completedEmitter = createEventEmitter<KeySequenceCompletedEvent>();
+  const cancelledEmitter = createEventEmitter<KeySequenceCancelledEvent>();
 
   const resolveSequence = (chords: readonly NormalizedKeybindingChord[], context: ActionSurfaceContext): SequenceKeyResolution => {
     const result = resolveKeybindingSequence(records, chords, context, matcher);
@@ -130,6 +153,12 @@ export function createKeybindingService(options: KeybindingServiceOptions): Keyb
       return result.kind === "prefix";
     },
     sequenceTimeoutMs,
+    onDidKeySequencePending: pendingEmitter.event,
+    onDidKeySequenceCompleted: completedEmitter.event,
+    onDidKeySequenceCancelled: cancelledEmitter.event,
+    fireKeySequencePending: (data) => pendingEmitter.fire(data),
+    fireKeySequenceCompleted: (data) => completedEmitter.fire(data),
+    fireKeySequenceCancelled: (data) => cancelledEmitter.fire(data),
   };
 }
 

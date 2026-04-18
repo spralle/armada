@@ -8,14 +8,28 @@
 // types; only the shape matters.
 // ---------------------------------------------------------------------------
 
-interface PendingChordState {
+interface Disposable {
+  dispose(): void;
+}
+
+interface KeySequencePendingEvent {
   readonly pressedChords: readonly string[];
   readonly candidateCount: number;
 }
 
+interface KeybindingServiceLike {
+  readonly onDidKeySequencePending: (listener: (e: KeySequencePendingEvent) => void) => Disposable;
+  readonly onDidKeySequenceCompleted: (listener: (e: unknown) => void) => Disposable;
+  readonly onDidKeySequenceCancelled: (listener: (e: unknown) => void) => Disposable;
+}
+
+interface PluginServicesLike {
+  getService<T = unknown>(id: string): T | null;
+}
+
 interface SlotMountContext {
   readonly contribution: { readonly id: string; readonly component: string };
-  readonly runtime: { readonly pendingChordState: PendingChordState | null };
+  readonly runtime: { readonly services: PluginServicesLike };
 }
 
 type CleanupFn = () => void;
@@ -82,7 +96,7 @@ function injectStyles(): void {
 
 function mountPendingChordIndicator(
   container: HTMLElement,
-  runtime: SlotMountContext["runtime"],
+  services: PluginServicesLike,
 ): CleanupFn {
   const wrapper = document.createElement("div");
   wrapper.className = "pending-chord-indicator";
@@ -92,24 +106,10 @@ function mountPendingChordIndicator(
   container.appendChild(wrapper);
 
   let disposed = false;
-  let lastValue = "";
+  const disposables: Disposable[] = [];
 
-  function render(): void {
+  function renderPending(state: KeySequencePendingEvent): void {
     if (disposed) return;
-
-    const state = runtime.pendingChordState;
-    if (!state || state.pressedChords.length === 0) {
-      if (lastValue !== "") {
-        wrapper.classList.remove("is-active");
-        wrapper.innerHTML = "";
-        lastValue = "";
-      }
-      return;
-    }
-
-    const value = state.pressedChords.join(" ");
-    if (value === lastValue) return;
-    lastValue = value;
 
     wrapper.innerHTML = "";
     wrapper.classList.add("is-active");
@@ -134,13 +134,24 @@ function mountPendingChordIndicator(
     wrapper.appendChild(ellipsis);
   }
 
-  render();
-  // Poll at 100ms — fast enough for responsive feel, low cost (just null check + string compare)
-  const intervalId = window.setInterval(render, 100);
+  function clearIndicator(): void {
+    if (disposed) return;
+    wrapper.classList.remove("is-active");
+    wrapper.innerHTML = "";
+  }
+
+  const keybindingService = services.getService<KeybindingServiceLike>("ghost.keybinding.Service");
+  if (keybindingService) {
+    disposables.push(keybindingService.onDidKeySequencePending(renderPending));
+    disposables.push(keybindingService.onDidKeySequenceCompleted(clearIndicator));
+    disposables.push(keybindingService.onDidKeySequenceCancelled(clearIndicator));
+  }
 
   return () => {
     disposed = true;
-    window.clearInterval(intervalId);
+    for (const d of disposables) {
+      d.dispose();
+    }
     wrapper.remove();
   };
 }
@@ -152,6 +163,6 @@ function mountPendingChordIndicator(
 export const slots: Record<string, (target: HTMLElement, context: SlotMountContext) => CleanupFn> = {
   "pending-chord-indicator": (target, context) => {
     injectStyles();
-    return mountPendingChordIndicator(target, context.runtime);
+    return mountPendingChordIndicator(target, context.runtime.services);
   },
 };

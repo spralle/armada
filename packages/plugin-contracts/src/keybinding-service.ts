@@ -3,9 +3,35 @@
 // Plugins access keybinding management via:
 //   services.getService<KeybindingService>('ghost.keybinding.Service')
 
+import type { Event } from "./event.js";
+
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
+
+/** Payload for onDidKeySequencePending — a multi-chord sequence is in progress. */
+export interface KeySequencePendingEvent {
+  /** Chord values pressed so far, e.g. ["ctrl+k"] */
+  pressedChords: string[];
+  /** How many registered sequences still match as prefix */
+  candidateCount: number;
+}
+
+/** Payload for onDidKeySequenceCompleted — a multi-chord sequence resolved to an action. */
+export interface KeySequenceCompletedEvent {
+  /** The full chord sequence that was matched */
+  chords: string[];
+  /** The action that was dispatched */
+  actionId: string;
+}
+
+/** Payload for onDidKeySequenceCancelled — a multi-chord sequence was cancelled. */
+export interface KeySequenceCancelledEvent {
+  /** The chords that were accumulated before cancellation */
+  chords: string[];
+  /** Why the sequence was cancelled */
+  reason: "timeout" | "no_match" | "escape";
+}
 
 /** A keybinding entry visible to consumers. */
 export interface KeybindingEntry {
@@ -46,6 +72,15 @@ export interface KeybindingService {
 
   /** Import overrides from a JSON string. Returns count of imported entries and any errors. */
   importOverrides(json: string): { imported: number; errors: string[] };
+
+  /** Fired when a multi-chord sequence is pending (waiting for more chords). */
+  readonly onDidKeySequencePending: Event<KeySequencePendingEvent>;
+
+  /** Fired when a multi-chord sequence completed and resolved to an action. */
+  readonly onDidKeySequenceCompleted: Event<KeySequenceCompletedEvent>;
+
+  /** Fired when a multi-chord sequence was cancelled (timeout, no match, or escape). */
+  readonly onDidKeySequenceCancelled: Event<KeySequenceCancelledEvent>;
 }
 
 // ---------------------------------------------------------------------------
