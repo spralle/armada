@@ -30,7 +30,7 @@ export function DiagnosticsSection({ diagnostics }: DiagnosticsSectionProps) {
             {diagnostics.map((d, i) => (
               <div
                 key={`${d.at}-${d.pluginId}-${i}`}
-                className="flex items-start gap-1.5 py-0.5 text-muted-foreground"
+                className="flex items-start gap-1.5 py-0.5 text-muted-foreground @md:items-center"
               >
                 <Badge
                   variant={d.level === "warn" ? "destructive" : "secondary"}
@@ -38,7 +38,7 @@ export function DiagnosticsSection({ diagnostics }: DiagnosticsSectionProps) {
                 >
                   {d.level}
                 </Badge>
-                <span className="font-mono">{d.pluginId}</span>
+                <span className="font-mono @md:min-w-40 @md:shrink-0">{d.pluginId}</span>
                 <span className="flex-1">{d.message}</span>
               </div>
             ))}

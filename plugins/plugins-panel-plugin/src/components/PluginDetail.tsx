@@ -1,7 +1,7 @@
 import type {
   PluginRegistryEntry,
 } from "@ghost/plugin-contracts";
-import { Alert, Button } from "@ghost/ui";
+import { Alert, Button, cn } from "@ghost/ui";
 import { ContributionsList } from "./ContributionsList.js";
 import { DependencyRow } from "./DependencyRow.js";
 
@@ -12,16 +12,16 @@ interface PluginDetailProps {
 
 export function PluginDetail({ plugin, onRetry }: PluginDetailProps) {
   return (
-    <div className="flex flex-col gap-3 text-xs">
+    <div className="flex flex-col gap-3 text-xs @lg:grid @lg:grid-cols-2 @lg:gap-x-4">
       <ContributionsList contributions={plugin.contributions} />
       <DependenciesSection plugin={plugin} />
       {plugin.reverseDependencies.length > 0 && (
         <ReverseDependenciesSection reverseDeps={plugin.reverseDependencies} />
       )}
       {plugin.failure && (
-        <FailureSection failure={plugin.failure} onRetry={onRetry} />
+        <FailureSection failure={plugin.failure} onRetry={onRetry} className="@lg:col-span-2" />
       )}
-      <LifecycleSection plugin={plugin} />
+      <LifecycleSection plugin={plugin} className="@lg:col-span-2" />
     </div>
   );
 }
@@ -74,11 +74,12 @@ function ReverseDependenciesSection({
 interface FailureSectionProps {
   failure: NonNullable<PluginRegistryEntry["failure"]>;
   onRetry?: () => void;
+  className?: string;
 }
 
-function FailureSection({ failure, onRetry }: FailureSectionProps) {
+function FailureSection({ failure, onRetry, className }: FailureSectionProps) {
   return (
-    <Alert variant="destructive" className="text-xs">
+    <Alert variant="destructive" className={cn("text-xs", className)}>
       <div className="font-semibold mb-1">Failed: {failure.code}</div>
       <p className="text-muted-foreground">{failure.message}</p>
       {failure.retryable && onRetry && (
@@ -101,10 +102,10 @@ function formatTransitionTime(value: string): string {
   return date.toLocaleTimeString();
 }
 
-function LifecycleSection({ plugin }: { plugin: PluginRegistryEntry }) {
+function LifecycleSection({ plugin, className }: { plugin: PluginRegistryEntry; className?: string }) {
   const { lifecycle, activationEvents } = plugin;
   return (
-    <div className="text-muted-foreground">
+    <div className={cn("text-muted-foreground", className)}>
       <div>Last transition: {formatTransitionTime(lifecycle.lastTransitionAt)}</div>
       {lifecycle.lastTrigger && (
         <div>

@@ -21,7 +21,7 @@ export function ContributionsList({ contributions }: ContributionsListProps) {
       <h4 className="font-semibold mb-1 text-xs text-foreground">
         Contributions
       </h4>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 @md:flex-row @md:flex-wrap @md:gap-2">
         {nonEmpty.map((group) => (
           <div key={group.label} className="flex items-start gap-1.5">
             <Badge variant="secondary" className="text-[9px] px-1 py-0 shrink-0">

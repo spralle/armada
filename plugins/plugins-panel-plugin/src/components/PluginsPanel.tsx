@@ -94,19 +94,21 @@ function PluginsPanelInner({
   return (
     <PluginsProvider plugins={snapshot.plugins}>
       <div className="flex flex-col h-full gap-3 p-3 text-foreground">
-        <PanelHeader counts={counts} />
+        <div className="flex flex-col gap-3 @md:flex-row @md:items-center @md:gap-2">
+          <PanelHeader counts={counts} />
+          <Input
+            placeholder="Search plugins..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 text-sm @md:flex-1"
+            aria-label="Search plugins"
+          />
+        </div>
         {notice && (
           <div className="text-xs px-2 py-1.5 rounded bg-muted text-muted-foreground">
             {notice}
           </div>
         )}
-        <Input
-          placeholder="Search plugins..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-8 text-sm"
-          aria-label="Search plugins"
-        />
         <Tabs
           value={statusFilter}
           onValueChange={(v) => {
@@ -122,7 +124,7 @@ function PluginsPanelInner({
           </TabsList>
         </Tabs>
         <ScrollArea className="flex-1 -mx-3 px-3">
-          <div className="flex flex-col gap-2 pb-2">
+          <div className="grid grid-cols-1 gap-2 pb-2 @lg:grid-cols-2 @3xl:grid-cols-3">
             {filteredPlugins.length === 0 ? (
               <p className="text-sm py-4 text-center text-muted-foreground">
                 {snapshot.plugins.length === 0 ? "No registered plugins." : "No plugins match the current filter."}

@@ -48,7 +48,7 @@ export function PluginCard({ plugin, managementService, disabled }: PluginCardPr
     plugin.enabled && plugin.status !== "active" && plugin.status !== "activating";
 
   return (
-    <Collapsible open={expanded} onOpenChange={setExpanded}>
+    <Collapsible open={expanded} onOpenChange={setExpanded} className={expanded ? "col-span-full" : ""}>
       <Card
         id={`plugin-card-${plugin.pluginId}`}
         className="transition-colors bg-card border-border"
