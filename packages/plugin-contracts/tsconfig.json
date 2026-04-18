@@ -18,5 +18,8 @@
   "include": [
     "src"
   ],
-  "references": []
+  "exclude": ["src/**/__tests__", "src/**/*.test.ts"],
+  "references": [
+    { "path": "../predicate/tsconfig.json" }
+  ]
 }

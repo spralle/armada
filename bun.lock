@@ -77,6 +77,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@ghost/formr-core": "workspace:*",
+        "@ghost/formr-from-schema": "workspace:*",
       },
       "devDependencies": {
         "@types/react": "^19.0.0",
@@ -90,6 +91,7 @@
       "name": "@ghost/plugin-contracts",
       "version": "0.0.0",
       "dependencies": {
+        "@ghost/predicate": "workspace:*",
         "zod": "^3.24.2",
       },
     },

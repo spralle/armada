@@ -19,6 +19,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@ghost/predicate": "workspace:*",
     "zod": "^3.24.2"
   }
 }
