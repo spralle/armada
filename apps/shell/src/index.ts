@@ -283,6 +283,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
     getShellBootstrapComposition(runtime).renderPanels(root, runtime);
     renderParts(root, runtime);
     getShellBootstrapComposition(runtime).renderEdgeSlots(root, runtime);
+    getShellBootstrapComposition(runtime).renderLayerSurfaces(root, runtime);
   } catch (error) {
     quickPickBridge.dispose();
     console.warn("[shell] plugin registry hydration skipped", error);

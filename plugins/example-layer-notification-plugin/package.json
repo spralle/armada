@@ -1,0 +1,20 @@
+{
+  "name": "@ghost/example-layer-notification-plugin",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "ghost": {
+    "pluginId": "ghost.example-layer-notification",
+    "devPort": 4182
+  },
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
+  },
+  "devDependencies": {
+    "@module-federation/vite": "^1.8.1",
+    "vite": "^5.4.19"
+  }
+}

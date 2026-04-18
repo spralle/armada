@@ -60,6 +60,7 @@ export function createShellPluginRegistry(
     pluginLoader,
     capabilityRegistry,
     options.apiDeps,
+    options.layerRegistry ?? null,
   );
   let tenantId = "local";
   const builtinContracts: Array<{ contract: PluginContract; serviceInstances?: Record<string, unknown> }> = [];
@@ -138,6 +139,10 @@ export function createShellPluginRegistry(
       if (!enabled) {
         disposeActivationSubscriptions(state);
         capabilityRegistry.unregisterPlugin(pluginId);
+        if (options.layerRegistry) {
+          options.layerRegistry.unregisterPluginLayers(pluginId);
+          options.layerRegistry.unregisterSurfaces(pluginId);
+        }
         resetRuntimeState(state);
         transitionLifecycle(state, "disabled", null);
         return;

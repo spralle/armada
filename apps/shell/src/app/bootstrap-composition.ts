@@ -34,6 +34,7 @@ export interface ShellBootstrapComposition {
   renderSyncStatus: (root: HTMLElement, runtime: ShellRuntime) => void;
   renderContextControlsPanel: (root: HTMLElement, runtime: ShellRuntime) => void;
   renderEdgeSlots: (root: HTMLElement, runtime: ShellRuntime) => void;
+  renderLayerSurfaces: (root: HTMLElement, runtime: ShellRuntime) => void;
 }
 
 export interface ShellBootstrapRuntimeDeps {
@@ -117,6 +118,9 @@ export function createShellBootstrapComposition(
       renderEdgeSlots: (viewRoot, viewRuntime) => {
         adapters.renderer.renderEdgeSlots(viewRoot, viewRuntime);
       },
+      renderLayerSurfaces: (viewRoot, viewRuntime) => {
+        adapters.renderer.renderLayerSurfaces(viewRoot, viewRuntime);
+      },
     };
   }
 
@@ -180,6 +184,9 @@ export function createShellBootstrapComposition(
     },
     renderEdgeSlots: () => {
       // Edge slots are only rendered in contract composition mode.
+    },
+    renderLayerSurfaces: () => {
+      // Layer surfaces are only rendered in contract composition mode.
     },
   };
 }

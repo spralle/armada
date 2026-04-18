@@ -5,6 +5,7 @@ import {
   createGhostApi,
   type GhostApiFactoryDependencies,
 } from "./plugin-api/ghost-api-factory.js";
+import type { LayerRegistry } from "./layer-registry.js";
 import type { RuntimeFirstPluginLoader, PluginLoadError } from "./plugin-loader.js";
 import { pushDiagnostic, transitionLifecycle } from "./plugin-registry-diagnostics.js";
 import type {
@@ -23,6 +24,7 @@ export function createActivationController(
   pluginLoader: RuntimeFirstPluginLoader,
   capabilityRegistry: CapabilityRegistry,
   apiDeps?: GhostApiFactoryDependencies,
+  layerRegistry?: LayerRegistry | null,
 ): (pluginId: string, trigger: PluginActivationTrigger) => Promise<boolean> {
   return async (pluginId, trigger) => {
     const state = states.get(pluginId);
@@ -66,6 +68,7 @@ export function createActivationController(
       pluginLoader,
       capabilityRegistry,
       apiDeps,
+      layerRegistry ?? null,
     );
     await state.activationPromise;
     return state.contract !== null && state.lifecycle.state === "active";
@@ -80,6 +83,7 @@ async function activateState(
   pluginLoader: RuntimeFirstPluginLoader,
   capabilityRegistry: CapabilityRegistry,
   apiDeps?: GhostApiFactoryDependencies,
+  layerRegistry?: LayerRegistry | null,
 ): Promise<void> {
   state.contract = null;
   state.failure = null;
@@ -181,6 +185,21 @@ async function activateState(
 
     state.failure = null;
     transitionLifecycle(state, "active", trigger);
+
+    // Register plugin layers and surfaces in the layer registry
+    if (layerRegistry && state.contract) {
+      const contributes = state.contract.contributes;
+      const pluginLayers = contributes?.layers;
+      if (pluginLayers && pluginLayers.length > 0) {
+        layerRegistry.registerPluginLayers(pluginId, pluginLayers);
+      }
+      const pluginSurfaces = contributes?.layerSurfaces;
+      if (pluginSurfaces) {
+        for (const surface of pluginSurfaces) {
+          layerRegistry.registerSurface(pluginId, surface);
+        }
+      }
+    }
   } catch (error) {
     const failure = mapPluginLoadFailure(error);
     capabilityRegistry.unregisterPlugin(pluginId);

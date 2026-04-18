@@ -21,6 +21,8 @@ import {
   mountPopout,
 } from "../ui/shell-mount.js";
 import { createEdgeSlotRenderer } from "../ui/edge-slot-renderer.js";
+import { createLayerSurfaceRenderer } from "../ui/layer-surface-renderer.js";
+import { getLayerRegistry } from "../ui/shell-mount.js";
 import { createShellFederationRuntime } from "../federation-runtime.js";
 import { createDefaultEdgeSlotsLayout } from "../layout.js";
 
@@ -51,6 +53,7 @@ export function createShellRuntimeCompatibilityAdapters(
   deps: ShellCompatibilityAdapterDeps,
 ): ShellRuntimeCompatibilityAdapters {
   let renderer: ShellRendererAdapter;
+  let layerSurfaceRendererInstance: import("../ui/layer-surface-renderer.js").LayerSurfaceRenderer | null = null;
 
   const effects: ShellEffectsPort = {
     activatePluginForBoundary: (options) => deps.activatePluginForBoundary(options),
@@ -73,8 +76,10 @@ export function createShellRuntimeCompatibilityAdapters(
 
   const core = createShellCoreApi(runtime, runtimeHandlers);
 
+  const federationRuntime = createShellFederationRuntime();
+
   const edgeSlotRenderer = createEdgeSlotRenderer({
-    federationRuntime: createShellFederationRuntime(),
+    federationRuntime,
   });
 
   renderer = {
@@ -123,6 +128,21 @@ export function createShellRuntimeCompatibilityAdapters(
     },
     renderEdgeSlots: (viewRoot, viewRuntime) => {
       edgeSlotRenderer.renderEdgeSlots(viewRoot, viewRuntime);
+    },
+    renderLayerSurfaces: (viewRoot, viewRuntime) => {
+      const layerRegistry = getLayerRegistry();
+      if (!layerRegistry) return;
+      const layerHost = viewRoot.querySelector<HTMLElement>("#layer-host");
+      if (!layerHost) return;
+      // Lazily create the renderer on first call, reuse thereafter
+      if (!layerSurfaceRendererInstance) {
+        layerSurfaceRendererInstance = createLayerSurfaceRenderer({
+          federationRuntime,
+          layerRegistry,
+          layerHost,
+        });
+      }
+      layerSurfaceRendererInstance.renderLayerSurfaces(viewRuntime);
     },
   };
 

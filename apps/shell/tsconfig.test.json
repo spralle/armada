@@ -49,6 +49,11 @@
     "src/ui/parts-controller-selection-transition.spec.ts",
     "src/ui/part-instance-popout-lifecycle.spec.ts",
     "src/shell-runtime/runtime-render-transition.spec.ts",
-    "src/context-state/placement-strategy/placement-strategy.spec.ts"
+    "src/context-state/placement-strategy/placement-strategy.spec.ts",
+    "src/layer-registry.spec.ts",
+    "src/ui/layer-input-behavior.spec.ts",
+    "src/ui/layer-focus-grab.spec.ts",
+    "src/ui/layer-session-lock.spec.ts",
+    "src/ui/layer-surface-context.spec.ts"
   ]
 }

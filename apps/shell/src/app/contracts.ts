@@ -77,6 +77,7 @@ export interface ShellRendererAdapter {
   renderParts(root: HTMLElement, runtime: ShellRuntime): void;
   renderSyncStatus(root: HTMLElement, runtime: ShellRuntime): void;
   renderEdgeSlots(root: HTMLElement, runtime: ShellRuntime): void;
+  renderLayerSurfaces(root: HTMLElement, runtime: ShellRuntime): void;
 }
 
 export interface ShellPartHostAdapter {
