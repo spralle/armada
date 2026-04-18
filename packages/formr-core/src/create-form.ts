@@ -7,6 +7,7 @@ import type {
   FieldConfig,
   SubmitResult,
 } from './contracts.js';
+import type { Middleware } from './contracts.js';
 import type { CanonicalPath } from './path.js';
 import { FormStore } from './store.js';
 import { createDefaultStagePolicy } from './stage-policy.js';
@@ -14,6 +15,7 @@ import { parsePath } from './path-parser.js';
 import { createFieldApi } from './field-api.js';
 import { applySubmitOutcome } from './submit.js';
 import { executePipeline } from './pipeline.js';
+import { initMiddlewares, disposeMiddlewares, runNotifyHooksAsync } from './middleware-runner.js';
 
 /** Check if two CanonicalPaths are equal */
 function pathEquals(a: CanonicalPath, b: CanonicalPath): boolean {
@@ -179,13 +181,12 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
         }));
         store.commitTransaction(txResult);
 
-        // afterSubmit middleware hook
-        const middlewares = options.middleware ?? [];
-        for (const mw of middlewares) {
-          if (mw.afterSubmit) {
-            mw.afterSubmit({ action: submitAction, state: store.getState(), result });
-          }
-        }
+        // afterSubmit middleware hook (async-aware)
+        await runNotifyHooksAsync(
+          (options.middleware ?? []) as readonly Middleware<S>[],
+          'afterSubmit',
+          { action: submitAction, state: store.getState(), result },
+        );
 
         return result;
       } catch (err) {
@@ -240,8 +241,16 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     submit,
     field,
     subscribe: (listener) => store.subscribe(listener),
-    dispose: () => store.dispose(),
+    dispose: () => {
+      const middlewares = (options.middleware ?? []) as readonly Middleware<S>[];
+      disposeMiddlewares(middlewares);
+      store.dispose();
+    },
   };
+
+  // Initialize middleware lifecycle
+  const middlewares = (options.middleware ?? []) as readonly Middleware<S>[];
+  initMiddlewares(middlewares, { state: initialState });
 
   return api;
 }

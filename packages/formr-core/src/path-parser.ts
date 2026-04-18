@@ -73,6 +73,12 @@ function parsePointer(input: string): CanonicalPath {
   // First element is always '' because input starts with '/'
   const rawSegments = parts.slice(1);
 
+  // Detect $ui namespace prefix in pointer form: /$ui/...
+  if (rawSegments.length > 0 && rawSegments[0] === '$ui') {
+    const uiSegments = rawSegments.slice(1).map(decodePointerSegment);
+    return { namespace: 'ui', segments: uiSegments };
+  }
+
   const segments: CanonicalSegment[] = rawSegments.map(decodePointerSegment);
   return { namespace: 'data', segments };
 }
