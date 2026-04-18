@@ -124,7 +124,6 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
   async function submit(context?: Partial<SubmitContext<S>>): Promise<SubmitResult<S>> {
     const state = store.getState();
 
-    // Double-submit guard: reject if a submission is already in progress
     if (state.meta.submission?.status === 'running') {
       return Promise.reject(
         new FormrError('FORMR_SUBMIT_CONCURRENT', 'Submit rejected: a submission is already in progress'),
@@ -132,115 +131,23 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     }
 
     const submitId = generateSubmitId();
+    const submitContext = buildSubmitContext(state, context, submitId);
 
-    const submitContext: SubmitContext<S> = {
-      requestedStage: context?.requestedStage ?? state.meta.stage,
-      mode: context?.mode ?? 'persistent',
-      requestId: context?.requestId ?? submitId,
-      at: context?.at ?? new Date().toISOString(),
-      ...(context?.actorId !== undefined ? { actorId: context.actorId } : {}),
-      ...(context?.metadata !== undefined ? { metadata: context.metadata } : {}),
-    };
+    markSubmissionRunning(submitId);
 
-    // Mark submission as running
-    const txStart = store.beginTransaction();
-    txStart.mutate((draft) => ({
-      ...draft,
-      meta: {
-        ...draft.meta,
-        submission: { status: 'running' as const, submitId, lastAttemptAt: new Date().toISOString() },
-      },
-    }));
-    store.commitTransaction(txStart);
+    const pipelineResult = runSubmitPipeline(submitContext);
 
-    // Run pipeline steps 1-15 for submit action (includes validation + middleware)
-    const submitAction: FormAction = { type: 'submit' };
-    const pipelineResult = executePipeline({
-      action: submitAction,
-      store,
-      options,
-      stagePolicy: policy,
-      submitContext,
-      isSubmit: true,
-    });
-
-    // If pipeline vetoed or failed, mark as failed
     if (!pipelineResult.ok) {
-      const txFail = store.beginTransaction();
-      txFail.mutate((draft) => ({
-        ...draft,
-        meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
-      }));
-      store.commitTransaction(txFail);
-      return {
-        ok: false,
-        submitId,
-        message: pipelineResult.vetoReason ?? pipelineResult.error ?? 'Pipeline failed',
-        fieldIssues: pipelineResult.issues as readonly ValidationIssue<S>[],
-      };
+      return handlePipelineFailure(pipelineResult, submitContext, submitId);
     }
 
-    // Check if validation produced blocking errors
     const currentIssues = store.getState().issues;
     if (currentIssues.some((i) => i.severity === 'error')) {
-      const txFail = store.beginTransaction();
-      txFail.mutate((draft) => ({
-        ...draft,
-        meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
-      }));
-      store.commitTransaction(txFail);
-      return { ok: false, submitId, message: 'Validation failed', fieldIssues: currentIssues as readonly ValidationIssue<S>[] };
+      return handleValidationFailure(currentIssues, submitContext, submitId);
     }
 
-    // Step 18: If submit action succeeded — execute onSubmit, then afterSubmit
     if (options.onSubmit) {
-      try {
-        const rawData = store.getState().data;
-        const transformDefs = getEgressTransforms(options);
-        const payload = transformDefs.length > 0
-          ? runTransforms(transformDefs, 'egress', rawData, { state: store.getState() })
-          : rawData;
-
-        const result = await options.onSubmit({
-          form: api,
-          submitContext,
-          payload,
-          stage: submitContext.requestedStage,
-        });
-
-        const txResult = store.beginTransaction();
-        txResult.mutate((draft) => ({
-          ...draft,
-          meta: applySubmitOutcome(draft.meta, submitContext, result.ok, submitId),
-          issues: [
-            ...draft.issues,
-            ...((result.fieldIssues ?? []) as readonly ValidationIssue<S>[]),
-            ...((result.globalIssues ?? []) as readonly ValidationIssue<S>[]),
-          ],
-        }));
-        store.commitTransaction(txResult);
-
-        // afterSubmit middleware hook (async-aware)
-        await runNotifyHooksAsync(
-          (options.middleware ?? []) as readonly Middleware<S>[],
-          'afterSubmit',
-          { action: submitAction, state: store.getState(), result },
-        );
-
-        return result;
-      } catch (err) {
-        const txErr = store.beginTransaction();
-        txErr.mutate((draft) => ({
-          ...draft,
-          meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
-        }));
-        store.commitTransaction(txErr);
-        return {
-          ok: false,
-          submitId,
-          message: err instanceof Error ? err.message : String(err),
-        };
-      }
+      return executeOnSubmit(submitContext, submitId);
     }
 
     // No onSubmit — succeed as no-op
@@ -251,6 +158,131 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     }));
     store.commitTransaction(txDone);
     return { ok: true, submitId };
+  }
+
+  function buildSubmitContext(
+    state: FormState<S>,
+    context: Partial<SubmitContext<S>> | undefined,
+    submitId: string,
+  ): SubmitContext<S> {
+    return {
+      requestedStage: context?.requestedStage ?? state.meta.stage,
+      mode: context?.mode ?? 'persistent',
+      requestId: context?.requestId ?? submitId,
+      at: context?.at ?? new Date().toISOString(),
+      ...(context?.actorId !== undefined ? { actorId: context.actorId } : {}),
+      ...(context?.metadata !== undefined ? { metadata: context.metadata } : {}),
+    };
+  }
+
+  function markSubmissionRunning(submitId: string): void {
+    const txStart = store.beginTransaction();
+    txStart.mutate((draft) => ({
+      ...draft,
+      meta: {
+        ...draft.meta,
+        submission: { status: 'running' as const, submitId, lastAttemptAt: new Date().toISOString() },
+      },
+    }));
+    store.commitTransaction(txStart);
+  }
+
+  function runSubmitPipeline(submitContext: SubmitContext<S>) {
+    const submitAction: FormAction = { type: 'submit' };
+    return executePipeline({
+      action: submitAction,
+      store,
+      options,
+      stagePolicy: policy,
+      submitContext,
+      isSubmit: true,
+    });
+  }
+
+  function handlePipelineFailure(
+    pipelineResult: { readonly ok: boolean; readonly vetoReason?: string; readonly error?: string; readonly issues?: readonly ValidationIssue[] },
+    submitContext: SubmitContext<S>,
+    submitId: string,
+  ): SubmitResult<S> {
+    const txFail = store.beginTransaction();
+    txFail.mutate((draft) => ({
+      ...draft,
+      meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
+    }));
+    store.commitTransaction(txFail);
+    return {
+      ok: false,
+      submitId,
+      message: pipelineResult.vetoReason ?? pipelineResult.error ?? 'Pipeline failed',
+      fieldIssues: pipelineResult.issues as readonly ValidationIssue<S>[],
+    };
+  }
+
+  function handleValidationFailure(
+    currentIssues: readonly ValidationIssue<S>[],
+    submitContext: SubmitContext<S>,
+    submitId: string,
+  ): SubmitResult<S> {
+    const txFail = store.beginTransaction();
+    txFail.mutate((draft) => ({
+      ...draft,
+      meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
+    }));
+    store.commitTransaction(txFail);
+    return { ok: false, submitId, message: 'Validation failed', fieldIssues: currentIssues };
+  }
+
+  async function executeOnSubmit(
+    submitContext: SubmitContext<S>,
+    submitId: string,
+  ): Promise<SubmitResult<S>> {
+    const submitAction: FormAction = { type: 'submit' };
+    try {
+      const rawData = store.getState().data;
+      const transformDefs = getEgressTransforms(options);
+      const payload = transformDefs.length > 0
+        ? runTransforms(transformDefs, 'egress', rawData, { state: store.getState() })
+        : rawData;
+
+      const result = await options.onSubmit!({
+        form: api,
+        submitContext,
+        payload,
+        stage: submitContext.requestedStage,
+      });
+
+      const txResult = store.beginTransaction();
+      txResult.mutate((draft) => ({
+        ...draft,
+        meta: applySubmitOutcome(draft.meta, submitContext, result.ok, submitId),
+        issues: [
+          ...draft.issues,
+          ...((result.fieldIssues ?? []) as readonly ValidationIssue<S>[]),
+          ...((result.globalIssues ?? []) as readonly ValidationIssue<S>[]),
+        ],
+      }));
+      store.commitTransaction(txResult);
+
+      await runNotifyHooksAsync(
+        (options.middleware ?? []) as readonly Middleware<S>[],
+        'afterSubmit',
+        { action: submitAction, state: store.getState(), result },
+      );
+
+      return result;
+    } catch (err) {
+      const txErr = store.beginTransaction();
+      txErr.mutate((draft) => ({
+        ...draft,
+        meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
+      }));
+      store.commitTransaction(txErr);
+      return {
+        ok: false,
+        submitId,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
   }
 
   function field(path: string, config?: FieldConfig): FieldApi {

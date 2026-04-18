@@ -19,8 +19,11 @@ function SectionRenderer({ node, children }: LayoutRendererProps) {
   );
 }
 
-function FieldRenderer({ node }: LayoutRendererProps) {
-  return createElement('div', { 'data-field-path': node.path });
+function FieldRenderer({ node, aria }: LayoutRendererProps) {
+  return createElement('div', {
+    'data-field-path': node.path,
+    ...aria,
+  });
 }
 
 function ArrayRenderer({ children }: LayoutRendererProps) {

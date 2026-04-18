@@ -116,16 +116,12 @@ describe('F8: Unsupported schema rejection', () => {
     expect(() => ingestSchema({ random: true })).toThrow(FromSchemaError);
   });
 
-  test('ingestSchema throws for non-Zod Standard Schema vendor', () => {
+  test('ingestSchema returns validation-only result for non-Zod Standard Schema vendor', () => {
     const mock = {
       '~standard': { version: 1, vendor: 'valibot', validate: () => ({ value: null }) },
     };
-    try {
-      ingestSchema(mock);
-      expect(true).toBe(false);
-    } catch (e) {
-      expect(e).toBeInstanceOf(FromSchemaError);
-      expect((e as FromSchemaError).code).toBe('FORMR_SCHEMA_UNSUPPORTED');
-    }
+    const result = ingestSchema(mock);
+    expect(result.fields).toEqual([]);
+    expect(result.metadata).toEqual({ vendor: 'valibot', validationOnly: true });
   });
 });

@@ -55,6 +55,94 @@ function assertComparableTypes(a: unknown, b: unknown, op: string): void {
   }
 }
 
+function executeComparisonOp(
+  op: string,
+  args: readonly ExprNode[],
+  scope: EvaluationScope,
+  depth: number,
+  maxDepth: number,
+  registry?: OperatorRegistry,
+): unknown {
+  const a = resolveArg(args[0], scope, depth, maxDepth, registry);
+  const b = resolveArg(args[1], scope, depth, maxDepth, registry);
+
+  switch (op) {
+    case '$eq': {
+      if (a === MISSING && b === MISSING) return true;
+      if (a === MISSING) return b === undefined;
+      if (b === MISSING) return a === undefined;
+      return a === b;
+    }
+    case '$ne': {
+      if (a === MISSING && b === MISSING) return false;
+      if (a === MISSING) return b !== undefined;
+      if (b === MISSING) return a !== undefined;
+      return !(a === b);
+    }
+    case '$gt': {
+      if (a === MISSING || b === MISSING) return false;
+      assertComparableTypes(a, b, '$gt');
+      return (a as number | string) > (b as number | string);
+    }
+    case '$gte': {
+      if (a === MISSING || b === MISSING) return false;
+      assertComparableTypes(a, b, '$gte');
+      return (a as number | string) >= (b as number | string);
+    }
+    case '$lt': {
+      if (a === MISSING || b === MISSING) return false;
+      assertComparableTypes(a, b, '$lt');
+      return (a as number | string) < (b as number | string);
+    }
+    case '$lte': {
+      if (a === MISSING || b === MISSING) return false;
+      assertComparableTypes(a, b, '$lte');
+      return (a as number | string) <= (b as number | string);
+    }
+    default:
+      return undefined;
+  }
+}
+
+function executeLogicalOp(
+  op: string,
+  args: readonly ExprNode[],
+  scope: EvaluationScope,
+  depth: number,
+  maxDepth: number,
+  registry?: OperatorRegistry,
+): unknown {
+  switch (op) {
+    case '$and':
+      return args.every((arg) => Boolean(evaluateInner(arg, scope, depth, maxDepth, registry)));
+    case '$or':
+      return args.some((arg) => Boolean(evaluateInner(arg, scope, depth, maxDepth, registry)));
+    case '$not':
+      return !evaluateInner(args[0], scope, depth, maxDepth, registry);
+    default:
+      return undefined;
+  }
+}
+
+function executeCollectionOp(
+  op: string,
+  args: readonly ExprNode[],
+  scope: EvaluationScope,
+  depth: number,
+  maxDepth: number,
+  registry?: OperatorRegistry,
+): unknown {
+  const value = evaluateInner(args[0], scope, depth, maxDepth, registry);
+  const list = evaluateInner(args[1], scope, depth, maxDepth, registry);
+  if (!Array.isArray(list)) {
+    throw new PredicateError(
+      'FORMR_EXPR_TYPE_MISMATCH',
+      `${op} requires second argument to be an array`,
+    );
+  }
+  return op === '$in' ? list.includes(value) : !list.includes(value);
+}
+
 function executeOperator(
   op: string,
   args: readonly ExprNode[],
@@ -63,7 +151,6 @@ function executeOperator(
   maxDepth: number,
   registry?: OperatorRegistry,
 ): unknown {
-  // Check custom operators first
   if (registry) {
     const handler = registry.getHandler(op);
     if (handler) {
@@ -72,79 +159,19 @@ function executeOperator(
     }
   }
 
+  if (op === '$eq' || op === '$ne' || op === '$gt' || op === '$gte' || op === '$lt' || op === '$lte') {
+    return executeComparisonOp(op, args, scope, depth, maxDepth, registry);
+  }
+
+  if (op === '$and' || op === '$or' || op === '$not') {
+    return executeLogicalOp(op, args, scope, depth, maxDepth, registry);
+  }
+
+  if (op === '$in' || op === '$nin') {
+    return executeCollectionOp(op, args, scope, depth, maxDepth, registry);
+  }
+
   switch (op) {
-    case '$eq': {
-      const a = resolveArg(args[0], scope, depth, maxDepth, registry);
-      const b = resolveArg(args[1], scope, depth, maxDepth, registry);
-      if (a === MISSING && b === MISSING) return true;
-      if (a === MISSING) return b === undefined;
-      if (b === MISSING) return a === undefined;
-      return a === b;
-    }
-    case '$ne': {
-      const a = resolveArg(args[0], scope, depth, maxDepth, registry);
-      const b = resolveArg(args[1], scope, depth, maxDepth, registry);
-      if (a === MISSING && b === MISSING) return false;
-      if (a === MISSING) return b !== undefined;
-      if (b === MISSING) return a !== undefined;
-      return !(a === b);
-    }
-    case '$gt': {
-      const a = resolveArg(args[0], scope, depth, maxDepth, registry);
-      const b = resolveArg(args[1], scope, depth, maxDepth, registry);
-      if (a === MISSING || b === MISSING) return false;
-      assertComparableTypes(a, b, '$gt');
-      return (a as number | string) > (b as number | string);
-    }
-    case '$gte': {
-      const a = resolveArg(args[0], scope, depth, maxDepth, registry);
-      const b = resolveArg(args[1], scope, depth, maxDepth, registry);
-      if (a === MISSING || b === MISSING) return false;
-      assertComparableTypes(a, b, '$gte');
-      return (a as number | string) >= (b as number | string);
-    }
-    case '$lt': {
-      const a = resolveArg(args[0], scope, depth, maxDepth, registry);
-      const b = resolveArg(args[1], scope, depth, maxDepth, registry);
-      if (a === MISSING || b === MISSING) return false;
-      assertComparableTypes(a, b, '$lt');
-      return (a as number | string) < (b as number | string);
-    }
-    case '$lte': {
-      const a = resolveArg(args[0], scope, depth, maxDepth, registry);
-      const b = resolveArg(args[1], scope, depth, maxDepth, registry);
-      if (a === MISSING || b === MISSING) return false;
-      assertComparableTypes(a, b, '$lte');
-      return (a as number | string) <= (b as number | string);
-    }
-    case '$and':
-      return args.every((arg) => Boolean(evaluateInner(arg, scope, depth, maxDepth, registry)));
-    case '$or':
-      return args.some((arg) => Boolean(evaluateInner(arg, scope, depth, maxDepth, registry)));
-    case '$not':
-      return !evaluateInner(args[0], scope, depth, maxDepth, registry);
-    case '$in': {
-      const value = evaluateInner(args[0], scope, depth, maxDepth, registry);
-      const list = evaluateInner(args[1], scope, depth, maxDepth, registry);
-      if (!Array.isArray(list)) {
-        throw new PredicateError(
-          'FORMR_EXPR_TYPE_MISMATCH',
-          '$in requires second argument to be an array',
-        );
-      }
-      return list.includes(value);
-    }
-    case '$nin': {
-      const value = evaluateInner(args[0], scope, depth, maxDepth, registry);
-      const list = evaluateInner(args[1], scope, depth, maxDepth, registry);
-      if (!Array.isArray(list)) {
-        throw new PredicateError(
-          'FORMR_EXPR_TYPE_MISMATCH',
-          '$nin requires second argument to be an array',
-        );
-      }
-      return !list.includes(value);
-    }
     case '$exists': {
       const resolved = resolveArg(args[0], scope, depth, maxDepth, registry);
       const expected = evaluateInner(args[1], scope, depth, maxDepth, registry);

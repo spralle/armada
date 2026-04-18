@@ -1,8 +1,15 @@
 import type { CanonicalPath } from './path.js';
 import type { FormState, ValidationIssue, SubmitContext } from './state.js';
 import type { ExprNode, ExpressionDefinition, EvaluationScope } from '@ghost/predicate';
+import type { TransformDefinition } from './transforms.js';
 
 export type { ExprNode, ExpressionDefinition, EvaluationScope };
+
+/**
+ * ADR section 10 — Transform is the config-time type alias.
+ * TransformDefinition (from transforms.ts) is the full runtime type with transform().
+ */
+export type Transform = TransformDefinition;
 
 /** Backward-compat alias — prefer EvaluationScope in new code */
 export type ExpressionScope = EvaluationScope;
@@ -121,11 +128,6 @@ export interface Middleware<S extends string = string> {
   beforeSubmit?(ctx: BeforeSubmitContext<S>): MiddlewareDecision | Promise<MiddlewareDecision>;
   afterSubmit?(ctx: AfterSubmitContext<S>): void;
   onDispose?(): void;
-}
-
-/** ADR section 10 — Transform (stub — full in SE6.1) */
-export interface Transform {
-  readonly id: string;
 }
 
 /** ADR section 9 — SubmitExecutionContext */
