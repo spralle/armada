@@ -52,7 +52,7 @@ export { createDefaultStagePolicy, createStagePolicy, assertKnownStage, type Def
 export { resolveActiveStage, applySubmitOutcome } from './submit.js';
 
 // Transaction model (SE1.3)
-export { Transaction, type TransactionSnapshot } from './transaction.js';
+export { Transaction, defaultStrategy, type TransactionSnapshot, type StateStrategy } from './transaction.js';
 export { FormStore, type StateListener } from './store.js';
 export { deepFreeze } from './utils.js';
 
@@ -85,9 +85,12 @@ export {
   runTransforms,
   createDateTransform,
   createDateEgressTransform,
+  createConfigurableDateEgressTransform,
   type TransformDefinition,
   type TransformPhase,
   type TransformContext,
+  type DateEgressFormat,
+  type DateEgressOptions,
 } from './transforms.js';
 
 // Extensions (SE6.3)

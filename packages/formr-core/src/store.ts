@@ -1,5 +1,5 @@
 import type { FormState } from './state.js';
-import { Transaction } from './transaction.js';
+import { Transaction, type StateStrategy, defaultStrategy } from './transaction.js';
 
 export type StateListener<S extends string = string> = (
   state: FormState<S>,
@@ -9,9 +9,11 @@ export class FormStore<S extends string = string> {
   private _state: FormState<S>;
   private _listeners: Set<StateListener<S>> = new Set();
   private _activeTransaction: Transaction<S> | null = null;
+  private _strategy: StateStrategy;
 
-  constructor(initialState: FormState<S>) {
+  constructor(initialState: FormState<S>, strategy?: StateStrategy) {
     this._state = initialState;
+    this._strategy = strategy ?? defaultStrategy;
   }
 
   getState(): FormState<S> {
@@ -23,7 +25,7 @@ export class FormStore<S extends string = string> {
     if (this._activeTransaction) {
       throw new Error('Cannot begin transaction while another is active');
     }
-    this._activeTransaction = new Transaction(this._state);
+    this._activeTransaction = new Transaction(this._state, this._strategy);
     return this._activeTransaction;
   }
 

@@ -93,6 +93,12 @@ export interface CreateFormOptions<
   readonly onSubmit?: (
     ctx: SubmitExecutionContext<S>,
   ) => Promise<SubmitResult<S>>;
+  readonly timeouts?: {
+    readonly validator?: number;
+    readonly middleware?: number;
+    readonly submit?: number;
+  };
+  readonly stateStrategy?: StateStrategy;
 }
 
 // Imports for CreateFormOptions references
@@ -106,3 +112,4 @@ import type {
   SubmitExecutionContext,
   SubmitResult,
 } from './contracts.js';
+import type { StateStrategy } from './transaction.js';

@@ -1,4 +1,5 @@
 import type { FormState, SubmitContext } from './state.js';
+import { FormrError } from './errors.js';
 
 /** ADR section 2.4 — resolve active stage for validation */
 export function resolveActiveStage<S extends string>(
@@ -18,6 +19,7 @@ export function applySubmitOutcome<S extends string>(
   success: boolean,
   submitId: string,
 ): FormState<S>['meta'] {
+
   const now = new Date().toISOString();
 
   if (submitContext.mode === 'persistent' && success) {
@@ -55,7 +57,24 @@ export function applySubmitOutcome<S extends string>(
     };
   }
 
-  // Transient mode — never mutate meta.stage
+  // Transient mode — never mutate meta.stage (ADR §2.4 immutability guard)
+  const result = applyTransientOutcome(meta, submitContext, success, submitId);
+  if (result.stage !== meta.stage) {
+    throw new FormrError(
+      'FORMR_STAGE_IMMUTABLE',
+      'Transient-mode submission must not mutate meta.stage',
+    );
+  }
+  return result;
+}
+
+function applyTransientOutcome<S extends string>(
+  meta: FormState<S>['meta'],
+  submitContext: SubmitContext<S>,
+  success: boolean,
+  submitId: string,
+): FormState<S>['meta'] {
+  const now = new Date().toISOString();
   return {
     ...meta,
     validation: {

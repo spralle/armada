@@ -1,12 +1,14 @@
 import type { CanonicalPath, CanonicalSegment, Namespace } from './path.js';
 import { FormrError } from './errors.js';
+import { parseDot } from './path-dot.js';
+import { parsePointer } from './path-pointer.js';
+
+const DOT_SAFE_SEGMENT_RE = /^[a-zA-Z0-9_\-]+$/;
+const NUMERIC_INDEX_RE = /^(?:0|[1-9]\d*)$/;
 
 const DEFAULT_NAMESPACES: readonly NamespaceConfig[] = [
   { prefix: '$ui', namespace: 'ui' },
 ];
-
-const NUMERIC_INDEX_RE = /^(?:0|[1-9]\d*)$/;
-const DOT_SAFE_SEGMENT_RE = /^[a-zA-Z0-9_\-]+$/;
 
 const PATH_CACHE_MAX = 1000;
 const pathCache = new Map<string, CanonicalPath>();
@@ -62,91 +64,6 @@ export function parsePath(input: string, options?: ParsePathOptions): CanonicalP
   return result;
 }
 
-function findMatchingNamespace(
-  input: string,
-  namespaces: readonly NamespaceConfig[],
-): NamespaceConfig | undefined {
-  return namespaces.find((ns) => input.startsWith(`${ns.prefix}.`) || input === ns.prefix);
-}
-
-function parseDot(input: string, namespaces: readonly NamespaceConfig[]): CanonicalPath {
-  let namespace: Namespace = 'data';
-  let raw = input;
-
-  const matched = findMatchingNamespace(input, namespaces);
-  if (matched) {
-    if (raw === matched.prefix) {
-      throw new FormrError(
-        'FORMR_PATH_INVALID_DOT',
-        `${matched.prefix} alone is not a valid path; at least one segment is required after ${matched.prefix}.`,
-      );
-    }
-    namespace = matched.namespace;
-    raw = raw.slice(matched.prefix.length + 1); // +1 for the dot
-  }
-
-  validateDotRaw(raw);
-
-  const segments = raw.split('.').map(toDotSegment);
-  return { namespace, segments };
-}
-
-function validateDotRaw(raw: string): void {
-  if (raw === '') {
-    throw new FormrError('FORMR_PATH_INVALID_DOT', 'Path has no segments after prefix');
-  }
-  if (raw.startsWith('.')) {
-    throw new FormrError('FORMR_PATH_INVALID_DOT', 'Path must not start with a dot');
-  }
-  if (raw.endsWith('.')) {
-    throw new FormrError('FORMR_PATH_INVALID_DOT', 'Path must not end with a dot');
-  }
-  if (raw.includes('..')) {
-    throw new FormrError('FORMR_PATH_INVALID_DOT', 'Path must not contain consecutive dots');
-  }
-}
-
-function toDotSegment(seg: string): CanonicalSegment {
-  return NUMERIC_INDEX_RE.test(seg) ? Number(seg) : seg;
-}
-
-function parsePointer(input: string, namespaces: readonly NamespaceConfig[]): CanonicalPath {
-  const parts = input.split('/');
-  const rawSegments = parts.slice(1);
-
-  // Detect namespace prefix in pointer form: /$prefix/...
-  if (rawSegments.length > 0) {
-    const matched = namespaces.find((ns) => rawSegments[0] === ns.prefix);
-    if (matched) {
-      const nsSegments = rawSegments.slice(1).map(decodePointerSegment);
-      return { namespace: matched.namespace, segments: nsSegments };
-    }
-  }
-
-  const segments: CanonicalSegment[] = rawSegments.map(decodePointerSegment);
-  return { namespace: 'data', segments };
-}
-
-function decodePointerSegment(raw: string): CanonicalSegment {
-  validatePointerEscapes(raw);
-  // RFC 6901 order: ~1 → /, then ~0 → ~
-  return raw.replace(/~1/g, '/').replace(/~0/g, '~');
-}
-
-function validatePointerEscapes(raw: string): void {
-  for (let i = 0; i < raw.length; i++) {
-    if (raw[i] === '~') {
-      const next = raw[i + 1];
-      if (next !== '0' && next !== '1') {
-        throw new FormrError(
-          'FORMR_PATH_INVALID_POINTER_ESCAPE',
-          `Invalid JSON Pointer escape sequence ~${next ?? ''} at index ${i}`,
-        );
-      }
-    }
-  }
-}
-
 /**
  * Serialize a canonical data-namespace path to JSON Pointer (RFC 6901).
  */
@@ -162,7 +79,6 @@ export function toPointer(path: CanonicalPath): string {
 
 function encodePointerSegment(seg: CanonicalSegment): string {
   const s = String(seg);
-  // RFC 6901 order: ~ → ~0, / → ~1
   return s.replace(/~/g, '~0').replace(/\//g, '~1');
 }
 
@@ -180,7 +96,6 @@ export function toDot(path: CanonicalPath): string {
         `Segment "${s}" contains characters not representable in dot notation`,
       );
     }
-    // String segments that look numeric are ambiguous in dot notation
     if (typeof seg === 'string' && NUMERIC_INDEX_RE.test(seg)) {
       throw new FormrError(
         'FORMR_PATH_NOT_DOT_SAFE',

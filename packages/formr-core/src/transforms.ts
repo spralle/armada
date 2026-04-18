@@ -55,3 +55,70 @@ export function createDateEgressTransform(): TransformDefinition {
     },
   };
 }
+
+/** Output format for configurable date egress transform */
+export type DateEgressFormat = 'iso' | 'timestamp' | 'custom';
+
+export interface DateEgressOptions {
+  /** Output format: 'iso' (default), 'timestamp' (Unix ms), or 'custom' */
+  readonly format?: DateEgressFormat;
+  /** Custom formatter — required when format is 'custom' */
+  readonly formatter?: (date: Date) => unknown;
+  /** Field paths to transform. If omitted, transforms all Date-like values. */
+  readonly paths?: readonly string[];
+}
+
+/** Configurable date egress transform — converts ISO date strings to desired output format */
+export function createConfigurableDateEgressTransform(
+  options?: DateEgressOptions,
+): TransformDefinition {
+  const format = options?.format ?? 'iso';
+  const targetPaths = options?.paths ? new Set(options.paths) : undefined;
+
+  return {
+    id: 'formr:configurable-date-egress',
+    phase: 'egress',
+    transform(value: unknown, context: TransformContext): unknown {
+      if (targetPaths && context.path && !targetPaths.has(context.path)) {
+        return value;
+      }
+      return transformDateValue(value, format, options?.formatter);
+    },
+  };
+}
+
+function transformDateValue(
+  value: unknown,
+  format: DateEgressFormat,
+  formatter?: (date: Date) => unknown,
+): unknown {
+  if (value instanceof Date) {
+    return applyDateFormat(value, format, formatter);
+  }
+  if (typeof value === 'string' && isIsoDateString(value)) {
+    return applyDateFormat(new Date(value), format, formatter);
+  }
+  return value;
+}
+
+function applyDateFormat(
+  date: Date,
+  format: DateEgressFormat,
+  formatter?: (date: Date) => unknown,
+): unknown {
+  switch (format) {
+    case 'iso':
+      return date.toISOString();
+    case 'timestamp':
+      return date.getTime();
+    case 'custom':
+      if (!formatter) return date.toISOString();
+      return formatter(date);
+  }
+}
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+
+function isIsoDateString(value: string): boolean {
+  return ISO_DATE_RE.test(value);
+}

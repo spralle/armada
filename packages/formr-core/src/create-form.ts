@@ -19,6 +19,7 @@ import { initMiddlewares, disposeMiddlewares, runNotifyHooksAsync } from './midd
 import { FormrError } from './errors.js';
 import { runTransforms } from './transforms.js';
 import type { TransformDefinition } from './transforms.js';
+import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './extensions.js';
 
 /** Check if two CanonicalPaths are equal */
 function pathEquals(a: CanonicalPath, b: CanonicalPath): boolean {
@@ -63,7 +64,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     issues: [],
   };
 
-  const store = new FormStore<S>(initialState);
+  const store = new FormStore<S>(initialState, options.stateStrategy);
 
   // Field cache: keyed by rawPath + serialized config
   const fieldCache = new Map<string, FieldApi>();
@@ -244,12 +245,16 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
         ? runTransforms(transformDefs, 'egress', rawData, { state: store.getState() })
         : rawData;
 
-      const result = await options.onSubmit!({
-        form: api,
-        submitContext,
-        payload,
-        stage: submitContext.requestedStage,
-      });
+      const result = await withTimeout(
+        options.onSubmit!({
+          form: api,
+          submitContext,
+          payload,
+          stage: submitContext.requestedStage,
+        }),
+        options.timeouts?.submit ?? DEFAULT_RUNTIME_CONSTRAINTS.submitTimeout,
+        'onSubmit callback timed out',
+      );
 
       const txResult = store.beginTransaction();
       txResult.mutate((draft) => ({
@@ -267,6 +272,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
         (options.middleware ?? []) as readonly Middleware<S>[],
         'afterSubmit',
         { action: submitAction, state: store.getState(), result },
+        options.timeouts?.middleware ?? DEFAULT_RUNTIME_CONSTRAINTS.middlewareTimeout,
       );
 
       return result;

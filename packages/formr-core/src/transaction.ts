@@ -1,6 +1,16 @@
 import type { FormState } from './state.js';
 import { deepFreeze } from './utils.js';
 
+export interface StateStrategy {
+  readonly clone: <T>(value: T) => T;
+  readonly freeze: <T>(value: T) => T;
+}
+
+export const defaultStrategy: StateStrategy = {
+  clone: structuredClone,
+  freeze: deepFreeze,
+};
+
 export interface TransactionSnapshot<S extends string = string> {
   readonly prevState: FormState<S>;
   readonly draftState: FormState<S>;
@@ -13,9 +23,9 @@ export class Transaction<S extends string = string> {
   private _status: 'active' | 'committed' | 'rolled-back' = 'active';
   private _dirty = false;
 
-  constructor(currentState: FormState<S>) {
-    this._prevState = deepFreeze(structuredClone(currentState));
-    this._draftState = structuredClone(currentState);
+  constructor(currentState: FormState<S>, strategy: StateStrategy = defaultStrategy) {
+    this._prevState = strategy.freeze(strategy.clone(currentState));
+    this._draftState = strategy.clone(currentState);
   }
 
   get prevState(): FormState<S> {
