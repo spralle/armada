@@ -1,0 +1,195 @@
+import { useSyncExternalStore, useState, useCallback, useMemo } from "react";
+import type {
+  PluginMountContext,
+  PluginRegistryService,
+  PluginManagementService,
+  SyncStatusService,
+  PluginRegistryEntry,
+  PluginRegistryServiceSnapshot,
+} from "@ghost/plugin-contracts";
+import {
+  PLUGIN_REGISTRY_SERVICE_ID,
+  PLUGIN_MANAGEMENT_SERVICE_ID,
+  SYNC_STATUS_SERVICE_ID,
+} from "@ghost/plugin-contracts";
+import { Input, Tabs, TabsList, TabsTrigger, ScrollArea, Badge } from "@ghost/ui";
+import { PluginCard } from "./PluginCard.js";
+import { DiagnosticsSection } from "./DiagnosticsSection.js";
+
+type StatusFilter = "all" | "active" | "failed" | "disabled";
+
+interface PluginsPanelProps {
+  context: PluginMountContext;
+}
+
+const EMPTY_SNAPSHOT: PluginRegistryServiceSnapshot = {
+  tenantId: null,
+  plugins: [],
+  diagnostics: [],
+};
+
+export function PluginsPanel({ context }: PluginsPanelProps) {
+  const registryService = context.runtime.services.getService<PluginRegistryService>(PLUGIN_REGISTRY_SERVICE_ID);
+  const managementService = context.runtime.services.getService<PluginManagementService>(PLUGIN_MANAGEMENT_SERVICE_ID);
+  const syncStatusService = context.runtime.services.getService<SyncStatusService>(SYNC_STATUS_SERVICE_ID);
+
+  if (!registryService || !managementService || !syncStatusService) {
+    return (
+      <div className="p-4 text-sm" style={{ color: "var(--ghost-muted-foreground)" }}>
+        Plugin services unavailable. Required services are not registered.
+      </div>
+    );
+  }
+
+  return (
+    <PluginsPanelInner
+      registryService={registryService}
+      managementService={managementService}
+      syncStatusService={syncStatusService}
+    />
+  );
+}
+
+interface PluginsPanelInnerProps {
+  registryService: PluginRegistryService;
+  managementService: PluginManagementService;
+  syncStatusService: SyncStatusService;
+}
+
+function PluginsPanelInner({
+  registryService,
+  managementService,
+  syncStatusService,
+}: PluginsPanelInnerProps) {
+  const subscribe = useCallback(
+    (callback: () => void) => {
+      const sub = registryService.subscribe(callback);
+      return () => sub.dispose();
+    },
+    [registryService],
+  );
+  const getSnapshot = useCallback(() => registryService.getSnapshot(), [registryService]);
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot);
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  const disabled = syncStatusService.isSyncDegraded();
+  const notice = registryService.getPluginNotice();
+
+  const filteredPlugins = useMemo(() => {
+    return filterPlugins(snapshot.plugins, search, statusFilter);
+  }, [snapshot.plugins, search, statusFilter]);
+
+  const counts = useMemo(() => countByStatus(snapshot.plugins), [snapshot.plugins]);
+
+  return (
+    <div className="flex flex-col h-full gap-3 p-3" style={{ color: "var(--ghost-foreground)" }}>
+      <PanelHeader counts={counts} />
+      {notice && (
+        <div
+          className="text-xs px-2 py-1.5 rounded"
+          style={{
+            backgroundColor: "var(--ghost-muted)",
+            color: "var(--ghost-muted-foreground)",
+          }}
+        >
+          {notice}
+        </div>
+      )}
+      <Input
+        placeholder="Search plugins..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="h-8 text-sm"
+      />
+      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+        <TabsList className="w-full">
+          <TabsTrigger value="all" className="flex-1 text-xs">All ({counts.total})</TabsTrigger>
+          <TabsTrigger value="active" className="flex-1 text-xs">Active ({counts.active})</TabsTrigger>
+          <TabsTrigger value="failed" className="flex-1 text-xs">Failed ({counts.failed})</TabsTrigger>
+          <TabsTrigger value="disabled" className="flex-1 text-xs">Disabled ({counts.disabled})</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      <ScrollArea className="flex-1 -mx-3 px-3">
+        <div className="flex flex-col gap-2 pb-2">
+          {filteredPlugins.length === 0 ? (
+            <p className="text-sm py-4 text-center" style={{ color: "var(--ghost-muted-foreground)" }}>
+              {snapshot.plugins.length === 0 ? "No registered plugins." : "No plugins match the current filter."}
+            </p>
+          ) : (
+            filteredPlugins.map((plugin) => (
+              <PluginCard
+                key={plugin.pluginId}
+                plugin={plugin}
+                allPlugins={snapshot.plugins}
+                managementService={managementService}
+                disabled={disabled}
+              />
+            ))
+          )}
+        </div>
+      </ScrollArea>
+      {snapshot.diagnostics.length > 0 && (
+        <DiagnosticsSection
+          diagnostics={snapshot.diagnostics}
+          allPlugins={snapshot.plugins}
+        />
+      )}
+    </div>
+  );
+}
+
+interface StatusCounts {
+  total: number;
+  active: number;
+  failed: number;
+  disabled: number;
+}
+
+function PanelHeader({ counts }: { counts: StatusCounts }) {
+  return (
+    <div className="flex items-center justify-between">
+      <h2 className="text-sm font-semibold">Plugins</h2>
+      <div className="flex items-center gap-1.5">
+        {counts.active > 0 && <Badge variant="default" className="text-[10px] px-1.5 py-0">{counts.active} active</Badge>}
+        {counts.failed > 0 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{counts.failed} failed</Badge>}
+      </div>
+    </div>
+  );
+}
+
+function countByStatus(plugins: PluginRegistryEntry[]): StatusCounts {
+  let active = 0;
+  let failed = 0;
+  let disabled = 0;
+  for (const p of plugins) {
+    if (p.status === "active" || p.status === "activating") active++;
+    else if (p.status === "failed") failed++;
+    else if (p.status === "disabled") disabled++;
+  }
+  return { total: plugins.length, active, failed, disabled };
+}
+
+function filterPlugins(
+  plugins: PluginRegistryEntry[],
+  search: string,
+  statusFilter: StatusFilter,
+): PluginRegistryEntry[] {
+  let result = plugins;
+  if (statusFilter !== "all") {
+    result = result.filter((p) => {
+      if (statusFilter === "active") return p.status === "active" || p.status === "activating";
+      if (statusFilter === "failed") return p.status === "failed";
+      if (statusFilter === "disabled") return p.status === "disabled";
+      return true;
+    });
+  }
+  if (search.trim()) {
+    const q = search.toLowerCase();
+    result = result.filter(
+      (p) => p.pluginId.toLowerCase().includes(q) || p.name.toLowerCase().includes(q),
+    );
+  }
+  return result;
+}

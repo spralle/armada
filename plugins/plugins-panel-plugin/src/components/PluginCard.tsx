@@ -1,0 +1,119 @@
+import { useState, useCallback } from "react";
+import type {
+  PluginRegistryEntry,
+  PluginManagementService,
+} from "@ghost/plugin-contracts";
+import {
+  Card,
+  CardContent,
+  Badge,
+  Switch,
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+  Button,
+  Separator,
+} from "@ghost/ui";
+import { PluginDetail } from "./PluginDetail.js";
+
+interface PluginCardProps {
+  plugin: PluginRegistryEntry;
+  allPlugins: PluginRegistryEntry[];
+  managementService: PluginManagementService;
+  disabled: boolean;
+}
+
+const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  active: "default",
+  activating: "default",
+  registered: "secondary",
+  disabled: "outline",
+  failed: "destructive",
+};
+
+export function PluginCard({ plugin, allPlugins, managementService, disabled }: PluginCardProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  const handleToggle = useCallback(
+    (checked: boolean) => {
+      managementService.togglePlugin(plugin.pluginId, checked);
+    },
+    [managementService, plugin.pluginId],
+  );
+
+  const handleActivate = useCallback(() => {
+    void managementService.activatePlugin(plugin.pluginId);
+  }, [managementService, plugin.pluginId]);
+
+  const showActivateButton =
+    plugin.enabled && plugin.status !== "active" && plugin.status !== "activating";
+
+  return (
+    <Collapsible open={expanded} onOpenChange={setExpanded}>
+      <Card
+        id={`plugin-card-${plugin.pluginId}`}
+        className="transition-colors"
+        style={{
+          backgroundColor: "var(--ghost-card)",
+          borderColor: "var(--ghost-border)",
+        }}
+      >
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="w-full text-left px-3 py-2.5 flex items-center gap-2 cursor-pointer hover:opacity-80"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium truncate">{plugin.name}</span>
+                <span
+                  className="text-[11px] shrink-0"
+                  style={{ color: "var(--ghost-muted-foreground)" }}
+                >
+                  {plugin.version}
+                </span>
+              </div>
+              <div
+                className="text-[11px] truncate"
+                style={{ color: "var(--ghost-muted-foreground)" }}
+              >
+                {plugin.pluginId}
+              </div>
+            </div>
+            <Badge
+              variant={STATUS_VARIANT[plugin.status] ?? "outline"}
+              className="text-[10px] px-1.5 py-0 shrink-0"
+            >
+              {plugin.status}
+            </Badge>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Switch
+                checked={plugin.enabled}
+                onCheckedChange={handleToggle}
+                disabled={disabled}
+                aria-label={`Toggle ${plugin.name}`}
+              />
+            </div>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <Separator style={{ backgroundColor: "var(--ghost-border)" }} />
+          <CardContent className="px-3 py-2.5">
+            {showActivateButton && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleActivate}
+                disabled={disabled}
+                className="mb-2 h-7 text-xs"
+              >
+                Activate
+              </Button>
+            )}
+            <PluginDetail plugin={plugin} allPlugins={allPlugins} />
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+}

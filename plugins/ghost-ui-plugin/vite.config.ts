@@ -34,6 +34,16 @@ export default defineConfig({
           eager: true,
           requiredVersion: "^0.0.0",
         } as Record<string, unknown>,
+        react: {
+          singleton: true,
+          eager: true,
+          requiredVersion: "^18.3.1",
+        } as Record<string, unknown>,
+        "react-dom": {
+          singleton: true,
+          eager: true,
+          requiredVersion: "^18.3.1",
+        } as Record<string, unknown>,
       },
     }),
   ],
