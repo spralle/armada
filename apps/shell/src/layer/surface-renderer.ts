@@ -1,30 +1,20 @@
+import type {
+  PluginLayerSurfaceContribution,
+  LayerSurfaceContext,
+} from "@ghost/plugin-contracts";
 import {
-  type PluginLayerSurfaceContribution,
-  type LayerSurfaceContext,
-  InputBehavior,
-  KeyboardInteractivity,
+  evaluateContributionPredicate,
 } from "@ghost/plugin-contracts";
 import type { LayerRegistry } from "./registry.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";
-import {
-  type MountCleanup,
-  normalizeCleanup,
-  safeUnmount,
-  ensureRemoteRegistered,
-} from "../federation-mount-utils.js";
-import { applyVisualEffects } from "./visual-effects.js";
-import { createLayerSurfaceContext } from "./surface-context.js";
-import {
-  composeSurfaceKey,
-  createSurfaceMountKey,
-  resolveSurfaceMount,
-} from "./surface-mount-utils.js";
-import { computeAnchorStyles, computeExclusiveZones } from "./anchor-positioning.js";
-import { applyInputBehavior, applyKeyboardInteractivity, type KeyboardExclusiveManager, createKeyboardExclusiveManager } from "./input-behavior.js";
-import { applyAutoStacking } from "./auto-stacking.js";
+import { safeUnmount, type MountCleanup } from "../federation-mount-utils.js";
+import { composeSurfaceKey } from "./surface-mount-utils.js";
+import { computeExclusiveZones } from "./anchor-positioning.js";
+import { type KeyboardExclusiveManager, createKeyboardExclusiveManager } from "./input-behavior.js";
 import { type FocusGrabManager, createFocusGrabManager } from "./focus-grab.js";
 import { type SessionLockManager, createSessionLockManager } from "./session-lock.js";
+import { reconcileLayerContainer, type ReconcilerContext } from "./surface-reconciler.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,7 +30,7 @@ export type BuiltInSurfaceMountFn = (
   },
 ) => MountCleanup | Promise<MountCleanup>;
 
-interface SurfaceMountState {
+export interface SurfaceMountState {
   surfaceId: string;
   pluginId: string;
   surface: PluginLayerSurfaceContribution;
@@ -118,14 +108,14 @@ export function createLayerSurfaceRenderer(
           layerContainer: container,
           config: surface.focusGrab,
           onDismiss: () => {
-          const state = mounted.get(key);
-          if (state) {
-            safeUnmount(state.cleanup);
-            cleanupSurfaceBehaviors(key);
-            target.remove();
-            mounted.delete(key);
-          }
-        },
+            const state = mounted.get(key);
+            if (state) {
+              safeUnmount(state.cleanup);
+              cleanupSurfaceBehaviors(key);
+              target.remove();
+              mounted.delete(key);
+            }
+          },
         });
       }
     }
@@ -139,14 +129,31 @@ export function createLayerSurfaceRenderer(
     builtInSurfaceMounts.set(component, mountFn);
   }
 
+  function buildReconcilerContext(): ReconcilerContext {
+    return {
+      mounted,
+      registeredRemoteIds,
+      builtInSurfaceMounts,
+      layerRegistry,
+      federationRuntime,
+      focusGrabManager,
+      get generation() { return generation; },
+      cleanupSurfaceBehaviors,
+      maybeActivateSurfaceBehaviors,
+    };
+  }
+
   function renderLayerSurfaces(runtime: ShellRuntime): void {
     generation += 1;
     const currentGeneration = generation;
 
     const allSurfaces = layerRegistry.getAllSurfaces();
 
+    // Filter out surfaces whose when-condition evaluates to false
+    const visibleSurfaces = filterByWhenCondition(allSurfaces);
+
     // Build the desired set of surface IDs
-    const desiredIds = new Set(allSurfaces.map((s) => composeSurfaceKey(s.pluginId, s.surface.id)));
+    const desiredIds = new Set(visibleSurfaces.map((s) => composeSurfaceKey(s.pluginId, s.surface.id)));
 
     // Unmount surfaces no longer in desired set
     for (const [key, state] of mounted.entries()) {
@@ -159,219 +166,23 @@ export function createLayerSurfaceRenderer(
     }
 
     // Group surfaces by layer
-    const surfacesByLayer = new Map<string, Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }>>();
-    for (const entry of allSurfaces) {
-      let list = surfacesByLayer.get(entry.surface.layer);
-      if (!list) {
-        list = [];
-        surfacesByLayer.set(entry.surface.layer, list);
-      }
-      list.push(entry);
-    }
+    const surfacesByLayer = groupByLayer(visibleSurfaces);
 
     // Compute exclusive zones and set CSS custom properties
-    const zones = computeExclusiveZones(allSurfaces);
+    const zones = computeExclusiveZones(visibleSurfaces);
     layerHost.style.setProperty("--layer-exclusive-top", `${zones.top}px`);
     layerHost.style.setProperty("--layer-exclusive-right", `${zones.right}px`);
     layerHost.style.setProperty("--layer-exclusive-bottom", `${zones.bottom}px`);
     layerHost.style.setProperty("--layer-exclusive-left", `${zones.left}px`);
 
     // Reconcile each layer container
+    const ctx = buildReconcilerContext();
     for (const [layerName, surfaces] of surfacesByLayer) {
       const container = layerHost.querySelector<HTMLElement>(`.shell-layer[data-layer="${layerName}"]`);
-      if (!container) {
-        continue;
-      }
+      if (!container) continue;
 
-      // Sort by order
       const sorted = surfaces.sort((a, b) => (a.surface.order ?? 0) - (b.surface.order ?? 0));
-
-      reconcileLayerContainer(container, sorted, runtime, currentGeneration);
-    }
-  }
-
-  function reconcileLayerContainer(
-    container: HTMLElement,
-    surfaces: Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }>,
-    runtime: ShellRuntime,
-    currentGeneration: number,
-  ): void {
-    const desiredIds = new Set(surfaces.map((s) => composeSurfaceKey(s.pluginId, s.surface.id)));
-
-    // Remove elements for surfaces no longer in this container
-    for (const child of Array.from(container.children) as HTMLElement[]) {
-      const surfaceId = child.dataset.surfaceId;
-      if (surfaceId && !desiredIds.has(surfaceId)) {
-        const state = mounted.get(surfaceId);
-        if (state) {
-          cleanupSurfaceBehaviors(surfaceId);
-          safeUnmount(state.cleanup);
-          mounted.delete(surfaceId);
-        }
-        child.remove();
-      }
-    }
-
-    // Ensure surface elements exist in correct order
-    let previousElement: Element | null = null;
-    for (const { pluginId, surface } of surfaces) {
-      const key = composeSurfaceKey(pluginId, surface.id);
-
-      let target = container.querySelector<HTMLDivElement>(`[data-surface-id="${key}"]`);
-
-      if (!target) {
-        target = document.createElement("div");
-        target.className = "layer-surface";
-        target.dataset.surfaceId = key;
-        target.dataset.plugin = pluginId;
-
-        const anchorStyles = computeAnchorStyles(surface);
-        Object.assign(target.style, anchorStyles);
-
-        const layerDef = layerRegistry.getLayer(surface.layer);
-        applyInputBehavior(target, surface.inputBehavior ?? layerDef?.defaultPointer ?? InputBehavior.Opaque);
-        applyKeyboardInteractivity(target, surface.keyboardInteractivity ?? layerDef?.defaultKeyboard ?? KeyboardInteractivity.None);
-
-        applyVisualEffects(target, surface.opacity, surface.backdropFilter);
-
-        if (previousElement && previousElement.nextSibling) {
-          container.insertBefore(target, previousElement.nextSibling);
-        } else if (!previousElement && container.firstChild) {
-          container.insertBefore(target, container.firstChild);
-        } else {
-          container.appendChild(target);
-        }
-      }
-
-      previousElement = target;
-
-      // Mount if not already mounted with same key
-      const existing = mounted.get(key);
-      const mountKey = createSurfaceMountKey(pluginId, surface, runtime);
-
-      if (existing && existing.element === target && existing.mountKey === mountKey) {
-        continue;
-      }
-
-      if (existing) {
-        safeUnmount(existing.cleanup);
-        mounted.delete(key);
-      }
-
-      // Fire and forget async mount
-      void mountSurfaceComponent(target, pluginId, surface, runtime, key, mountKey, currentGeneration);
-    }
-
-    // Apply auto-stacking for surfaces sharing anchor points
-    const stackedSurfaces = surfaces
-      .map(({ pluginId: pid, surface: s }) => {
-        const k = composeSurfaceKey(pid, s.id);
-        const el = container.querySelector<HTMLElement>(`[data-surface-id="${k}"]`);
-        return el ? { surfaceId: k, surface: s, element: el } : null;
-      })
-      .filter((s): s is NonNullable<typeof s> => s !== null);
-    applyAutoStacking(stackedSurfaces);
-  }
-
-  async function mountSurfaceComponent(
-    target: HTMLDivElement,
-    pluginId: string,
-    surface: PluginLayerSurfaceContribution,
-    runtime: ShellRuntime,
-    key: string,
-    mountKey: string,
-    expectedGeneration: number,
-  ): Promise<void> {
-    const container = target.parentElement as HTMLElement;
-    const surfaceContext = createLayerSurfaceContext({
-      surfaceId: key,
-      element: target,
-      layerName: surface.layer,
-      layerContainer: container,
-      layerRegistry,
-      focusGrabManager,
-      onDismiss: () => {
-        safeUnmount(mounted.get(key)?.cleanup ?? null);
-        cleanupSurfaceBehaviors(key);
-        target.remove();
-        mounted.delete(key);
-      },
-      onLayerChange: () => {
-        // Re-render will reconcile the new position
-      },
-      onExclusiveZoneChange: () => {
-        // Exclusive zone changes are picked up on next render cycle
-      },
-    });
-
-    // --- Built-in fast path ---
-    const builtInMount = builtInSurfaceMounts.get(surface.component);
-    if (builtInMount) {
-      try {
-        const cleanupResult = await builtInMount(target, {
-          surface,
-          pluginId,
-          surfaceContext,
-          runtime,
-        });
-        const cleanup = normalizeCleanup(cleanupResult);
-
-        if (generation !== expectedGeneration) {
-          safeUnmount(cleanup);
-          return;
-        }
-
-        mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
-        maybeActivateSurfaceBehaviors(key, target, surface);
-      } catch {
-        // Built-in mount failed — surface stays empty, no crash.
-      }
-      return;
-    }
-
-    // --- Module Federation path ---
-    const snapshot = runtime.registry.getSnapshot();
-    const pluginSnapshot = snapshot.plugins.find((p) => p.id === pluginId);
-
-    ensureRemoteRegistered(
-      pluginId,
-      registeredRemoteIds,
-      () => pluginSnapshot?.descriptor,
-      (desc) => federationRuntime.registerRemote(desc),
-    );
-
-    try {
-      const remoteModule = await federationRuntime.loadRemoteModule(
-        pluginId,
-        "./pluginLayerSurfaces",
-      );
-
-      if (generation !== expectedGeneration) {
-        return;
-      }
-
-      const mountFn = resolveSurfaceMount(remoteModule, surface);
-      if (!mountFn) {
-        return;
-      }
-
-      const cleanupResult = await mountFn(target, {
-        surface,
-        pluginId,
-        surfaceContext,
-        runtime,
-      });
-      const cleanup = normalizeCleanup(cleanupResult);
-
-      if (generation !== expectedGeneration) {
-        safeUnmount(cleanup);
-        return;
-      }
-
-      mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
-      maybeActivateSurfaceBehaviors(key, target, surface);
-    } catch {
-      // Mount failed — surface stays empty, no crash.
+      reconcileLayerContainer(ctx, container, sorted, runtime, currentGeneration);
     }
   }
 
@@ -397,4 +208,37 @@ export function createLayerSurfaceRenderer(
     sessionLockManager,
     keyboardExclusiveManager,
   };
+}
+
+// ---------------------------------------------------------------------------
+// When-condition evaluation
+// ---------------------------------------------------------------------------
+
+/** Filter surfaces by their `when` predicate. Surfaces without `when` always pass. */
+export function filterByWhenCondition(
+  surfaces: Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }>,
+  facts: Record<string, unknown> = {},
+): Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }> {
+  return surfaces.filter((entry) =>
+    evaluateContributionPredicate(entry.surface.when, facts),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function groupByLayer(
+  surfaces: Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }>,
+): Map<string, Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }>> {
+  const map = new Map<string, Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }>>();
+  for (const entry of surfaces) {
+    let list = map.get(entry.surface.layer);
+    if (!list) {
+      list = [];
+      map.set(entry.surface.layer, list);
+    }
+    list.push(entry);
+  }
+  return map;
 }
