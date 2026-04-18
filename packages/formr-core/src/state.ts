@@ -90,7 +90,7 @@ export interface CreateFormOptions<
   readonly transforms?: readonly Transform[];
   readonly onSubmit?: (
     ctx: SubmitExecutionContext<S>,
-  ) => Promise<SubmitResult>;
+  ) => Promise<SubmitResult<S>>;
 }
 
 // Imports for CreateFormOptions references

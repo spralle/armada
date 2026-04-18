@@ -110,6 +110,38 @@ describe('evaluate', () => {
     it('$gte(5, 5) → true', () => {
       expect(evaluate(op('$gte', lit(5), lit(5)), scope)).toBe(true);
     });
+
+    it('$gt with missing path returns false (not throw)', () => {
+      const s = makeScope({});
+      expect(evaluate(op('$gt', path('missing'), lit(5)), s)).toBe(false);
+    });
+
+    it('$lt with missing path returns false (not throw)', () => {
+      const s = makeScope({});
+      expect(evaluate(op('$lt', path('missing'), lit(5)), s)).toBe(false);
+    });
+
+    it('$gte with missing path returns false', () => {
+      const s = makeScope({});
+      expect(evaluate(op('$gte', path('missing'), lit(5)), s)).toBe(false);
+    });
+
+    it('$lte with missing path returns false', () => {
+      const s = makeScope({});
+      expect(evaluate(op('$lte', path('missing'), lit(5)), s)).toBe(false);
+    });
+  });
+
+  describe('unknown operator', () => {
+    it('throws PREDICATE_UNKNOWN_OPERATOR for unknown op', () => {
+      try {
+        evaluate(op('$bogus', lit(1)), scope);
+        expect(true).toBe(false); // should not reach
+      } catch (e) {
+        expect(e).toBeInstanceOf(PredicateError);
+        expect((e as PredicateError).code).toBe('PREDICATE_UNKNOWN_OPERATOR');
+      }
+    });
   });
 
   describe('logical operators', () => {

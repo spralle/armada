@@ -91,29 +91,33 @@ function executeOperator(
       if (a === MISSING && b === MISSING) return false;
       if (a === MISSING) return b !== undefined;
       if (b === MISSING) return a !== undefined;
-      return a !== b;
+      return !(a === b);
     }
     case '$gt': {
-      const a = evaluateInner(args[0], scope, depth, maxDepth);
-      const b = evaluateInner(args[1], scope, depth, maxDepth);
+      const a = resolveArg(args[0], scope, depth, maxDepth);
+      const b = resolveArg(args[1], scope, depth, maxDepth);
+      if (a === MISSING || b === MISSING) return false;
       assertComparableTypes(a, b, '$gt');
       return (a as number | string) > (b as number | string);
     }
     case '$gte': {
-      const a = evaluateInner(args[0], scope, depth, maxDepth);
-      const b = evaluateInner(args[1], scope, depth, maxDepth);
+      const a = resolveArg(args[0], scope, depth, maxDepth);
+      const b = resolveArg(args[1], scope, depth, maxDepth);
+      if (a === MISSING || b === MISSING) return false;
       assertComparableTypes(a, b, '$gte');
       return (a as number | string) >= (b as number | string);
     }
     case '$lt': {
-      const a = evaluateInner(args[0], scope, depth, maxDepth);
-      const b = evaluateInner(args[1], scope, depth, maxDepth);
+      const a = resolveArg(args[0], scope, depth, maxDepth);
+      const b = resolveArg(args[1], scope, depth, maxDepth);
+      if (a === MISSING || b === MISSING) return false;
       assertComparableTypes(a, b, '$lt');
       return (a as number | string) < (b as number | string);
     }
     case '$lte': {
-      const a = evaluateInner(args[0], scope, depth, maxDepth);
-      const b = evaluateInner(args[1], scope, depth, maxDepth);
+      const a = resolveArg(args[0], scope, depth, maxDepth);
+      const b = resolveArg(args[1], scope, depth, maxDepth);
+      if (a === MISSING || b === MISSING) return false;
       assertComparableTypes(a, b, '$lte');
       return (a as number | string) <= (b as number | string);
     }
@@ -153,7 +157,7 @@ function executeOperator(
     }
     default:
       throw new PredicateError(
-        'FORMR_EXPR_TYPE_MISMATCH',
+        'PREDICATE_UNKNOWN_OPERATOR',
         `Unknown operator: ${op}`,
       );
   }

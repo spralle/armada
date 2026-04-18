@@ -10,7 +10,8 @@ export type FormrErrorCode =
   | 'FORMR_TIMEOUT'
   | 'FORMR_RENDERER_UNKNOWN_TYPE'
   | 'FORMR_PROTOTYPE_POLLUTION'
-  | 'FORMR_SUBMIT_CONCURRENT';
+  | 'FORMR_SUBMIT_CONCURRENT'
+  | 'FORMR_ASYNC_IN_SYNC_PIPELINE';
 
 export class FormrError extends Error {
   readonly code: FormrErrorCode;

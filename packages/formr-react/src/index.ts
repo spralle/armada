@@ -12,7 +12,7 @@ export {
   type LabelA11yProps,
   type DescriptionA11yProps,
 } from './a11y.js';
-export { useForm } from './use-form.js';
+export { useForm, type UseFormOptions } from './use-form.js';
 export { useFormSelector } from './use-form-selector.js';
 export { useField } from './use-field.js';
 

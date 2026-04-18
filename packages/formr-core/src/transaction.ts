@@ -11,6 +11,7 @@ export class Transaction<S extends string = string> {
   private _prevState: FormState<S>;
   private _draftState: FormState<S>;
   private _status: 'active' | 'committed' | 'rolled-back' = 'active';
+  private _dirty = false;
 
   constructor(currentState: FormState<S>) {
     this._prevState = deepFreeze(structuredClone(currentState));
@@ -29,12 +30,17 @@ export class Transaction<S extends string = string> {
     return this._status;
   }
 
+  get dirty(): boolean {
+    return this._dirty;
+  }
+
   /** Apply a mutation to the draft state */
   mutate(mutator: (draft: FormState<S>) => FormState<S>): void {
     if (this._status !== 'active') {
       throw new Error(`Cannot mutate ${this._status} transaction`);
     }
     this._draftState = mutator(this._draftState);
+    this._dirty = true;
   }
 
   /** Commit — returns the final draft state */
