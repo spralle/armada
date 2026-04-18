@@ -84,23 +84,3 @@ export function createSurfaceMountKey(
   const lifecycleState = pluginSnapshot.lifecycle?.state ?? "lifecycle:unknown";
   return [pluginId, surface.id, enabledState, lifecycleState].join("|");
 }
-
-/**
- * Stub LayerSurfaceContext — full implementation in WP-12.
- */
-export function createSurfaceContextStub(surfaceId: string, layerName: string): LayerSurfaceContext {
-  const noop = { dispose: () => {} };
-  return {
-    surfaceId,
-    layerName,
-    onConfigure: () => noop,
-    onClose: () => noop,
-    getExclusiveZones: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
-    setLayer: () => {},
-    setOpacity: () => {},
-    setExclusiveZone: () => {},
-    dismiss: () => {},
-    grabFocus: () => {},
-    releaseFocus: () => {},
-  };
-}

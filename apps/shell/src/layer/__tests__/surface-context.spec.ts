@@ -373,6 +373,64 @@ test("context implements all required interface methods", () => {
   }
 });
 
+test("onConfigure twice disconnects first ResizeObserver", () => {
+  const opts = makeOptions();
+  const ctx = createLayerSurfaceContext(opts);
+  let firstDisconnected = false;
+
+  ctx.onConfigure(() => {});
+  const firstCb = capturedResizeCallback;
+  // Patch disconnect tracking on the first observer instance
+  const origDisconnect = MockResizeObserver.prototype.disconnect;
+  let disconnectCount = 0;
+  MockResizeObserver.prototype.disconnect = function (this: MockResizeObserver) {
+    disconnectCount++;
+    origDisconnect.call(this);
+  };
+
+  ctx.onConfigure(() => {});
+  MockResizeObserver.prototype.disconnect = origDisconnect;
+
+  assert(disconnectCount >= 1, "first observer should be disconnected when second is created");
+  assert(capturedResizeCallback !== firstCb, "second observer should replace the first");
+});
+
+test("setLayer moves element to new layer container", () => {
+  const opts = makeOptions();
+  // Build a minimal DOM tree: layerHost > [overlay container, modal container]
+  const layerHost = {
+    querySelector: (sel: string) => {
+      if (sel === '.shell-layer[data-layer="modal"]') return modalContainer;
+      return null;
+    },
+  };
+  const modalContainer = { appendChild: (_el: unknown) => { appendedTo = modalContainer; } };
+  let appendedTo: unknown = null;
+
+  // Wire layerContainer.parentElement to our mock layerHost
+  const container = { ...opts.layerContainer, parentElement: layerHost } as unknown as HTMLElement;
+  const ctxOpts = { ...opts, layerContainer: container };
+  const ctx = createLayerSurfaceContext(ctxOpts);
+
+  ctx.setLayer("modal");
+  assertEqual(appendedTo, modalContainer, "element should be appended to new layer container");
+});
+
+test("grabFocus onDismiss does not double-fire dismiss", () => {
+  const opts = makeOptions();
+  const ctx = createLayerSurfaceContext(opts);
+  let closeCount = 0;
+  ctx.onClose(() => { closeCount++; });
+
+  // First dismiss via grabFocus path
+  ctx.dismiss();
+  // Second dismiss (simulating grabFocus→onDismiss recursion)
+  ctx.dismiss();
+
+  assertEqual(closeCount, 1, "onClose should fire exactly once");
+  assertEqual(opts._onDismissCalls, 1, "onDismiss should fire exactly once");
+});
+
 // ---------------------------------------------------------------------------
 // Runner
 // ---------------------------------------------------------------------------

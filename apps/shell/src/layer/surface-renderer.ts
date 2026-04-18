@@ -14,9 +14,9 @@ import {
   ensureRemoteRegistered,
 } from "../federation-mount-utils.js";
 import { applyVisualEffects } from "./visual-effects.js";
+import { createLayerSurfaceContext } from "./surface-context.js";
 import {
   composeSurfaceKey,
-  createSurfaceContextStub,
   createSurfaceMountKey,
   resolveSurfaceMount,
 } from "./surface-mount-utils.js";
@@ -103,7 +103,15 @@ export function createLayerSurfaceRenderer(
           surfaceElement: target as HTMLDivElement,
           layerContainer: container,
           config: surface.focusGrab,
-          onDismiss: () => { /* Will be wired in armada-a07g when real context replaces stub */ },
+          onDismiss: () => {
+          const state = mounted.get(key);
+          if (state) {
+            safeUnmount(state.cleanup);
+            cleanupSurfaceBehaviors(key);
+            target.remove();
+            mounted.delete(key);
+          }
+        },
         });
       }
     }
@@ -260,7 +268,27 @@ export function createLayerSurfaceRenderer(
     mountKey: string,
     expectedGeneration: number,
   ): Promise<void> {
-    const surfaceContext = createSurfaceContextStub(key, surface.layer);
+    const container = target.parentElement as HTMLElement;
+    const surfaceContext = createLayerSurfaceContext({
+      surfaceId: key,
+      element: target,
+      layerName: surface.layer,
+      layerContainer: container,
+      layerRegistry,
+      focusGrabManager,
+      onDismiss: () => {
+        safeUnmount(mounted.get(key)?.cleanup ?? null);
+        cleanupSurfaceBehaviors(key);
+        target.remove();
+        mounted.delete(key);
+      },
+      onLayerChange: () => {
+        // Re-render will reconcile the new position
+      },
+      onExclusiveZoneChange: () => {
+        // Exclusive zone changes are picked up on next render cycle
+      },
+    });
 
     // --- Built-in fast path ---
     const builtInMount = builtInSurfaceMounts.get(surface.component);
