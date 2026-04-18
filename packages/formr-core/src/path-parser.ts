@@ -5,11 +5,17 @@ const UI_PREFIX = '$ui.';
 const NUMERIC_INDEX_RE = /^(?:0|[1-9]\d*)$/;
 const DOT_SAFE_SEGMENT_RE = /^[a-zA-Z0-9_\-]+$/;
 
+const pathCache = new Map<string, CanonicalPath>();
+
 /**
  * Parse any supported path notation into a CanonicalPath.
  * Accepts dot paths, $ui dot paths, and JSON Pointers (RFC 6901).
+ * Results are cached by input string for repeated lookups.
  */
 export function parsePath(input: string): CanonicalPath {
+  const cached = pathCache.get(input);
+  if (cached) return cached;
+
   if (input === '') {
     throw new FormrError('FORMR_PATH_EMPTY', 'Path must not be empty');
   }
@@ -21,11 +27,15 @@ export function parsePath(input: string): CanonicalPath {
     );
   }
 
+  let result: CanonicalPath;
   if (input.startsWith('/')) {
-    return parsePointer(input);
+    result = parsePointer(input);
+  } else {
+    result = parseDot(input);
   }
 
-  return parseDot(input);
+  pathCache.set(input, result);
+  return result;
 }
 
 function parseDot(input: string): CanonicalPath {

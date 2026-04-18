@@ -87,6 +87,14 @@ describe('toDot', () => {
   });
 });
 
+describe('parsePath caching', () => {
+  test('returns cached result by reference equality', () => {
+    const a = parsePath('cachedTest.field');
+    const b = parsePath('cachedTest.field');
+    expect(a).toBe(b);
+  });
+});
+
 describe('round-trip invariants', () => {
   test('dot → toDot → parse = same', () => {
     const c = parsePath('customer.email');
