@@ -1,7 +1,11 @@
 import type { CanonicalPath } from './path.js';
 import type { FormState, ValidationIssue, SubmitContext } from './state.js';
+import type { ExprNode, ExpressionDefinition, EvaluationScope } from '@ghost/predicate';
 
-/** ADR section 9 — ValidatorAdapter */
+export type { ExprNode, ExpressionDefinition, EvaluationScope };
+
+/** Backward-compat alias — prefer EvaluationScope in new code */
+export type ExpressionScope = EvaluationScope;
 export interface ValidatorAdapter<S extends string = string> {
   readonly id: string;
   supports(schema: unknown): boolean;
@@ -11,25 +15,6 @@ export interface ValidatorAdapter<S extends string = string> {
     readonly stage: S;
     readonly context?: SubmitContext<S>;
   }): Promise<readonly ValidationIssue<S>[]> | readonly ValidationIssue<S>[];
-}
-
-/** ADR section 5.2 — ExprNode AST discriminated union */
-export type ExprNode =
-  | {
-      readonly kind: 'literal';
-      readonly value: string | number | boolean | null;
-    }
-  | { readonly kind: 'path'; readonly path: string }
-  | {
-      readonly kind: 'op';
-      readonly op: string;
-      readonly args: readonly ExprNode[];
-    };
-
-/** ADR section 5.2 — ExpressionDefinition */
-export interface ExpressionDefinition {
-  readonly id: string;
-  readonly ast: ExprNode;
 }
 
 /** ADR section 5.2 — RuleDefinition */
@@ -54,21 +39,10 @@ export interface RuleWriteIntent {
   readonly ruleId: string;
 }
 
-/** ADR section 9 — ExpressionScope */
-export interface ExpressionScope {
-  readonly data: unknown;
-  readonly uiState: unknown;
-  readonly meta: unknown;
-}
-
 /** ADR section 9 — ExpressionEngine */
 export interface ExpressionEngine {
   readonly id: string;
-  evaluate(node: ExprNode, scope: ExpressionScope): unknown;
-  evaluateRule(
-    rule: RuleDefinition,
-    scope: ExpressionScope,
-  ): readonly RuleWriteIntent[];
+  evaluate(node: ExprNode, scope: EvaluationScope): unknown;
 }
 
 /** ADR section 9 — Middleware decision for veto-capable hooks */

@@ -9,7 +9,6 @@ import {
   type FormState,
   type ExpressionEngine,
   type RuleDefinition,
-  type RuleWriteIntent,
   type ExprNode,
   type ExpressionScope,
 } from '../index.js';
@@ -86,15 +85,6 @@ describe('F6: Runtime algorithm conformance', () => {
       evaluate(node: ExprNode, _scope: ExpressionScope): unknown {
         if (node.kind === 'literal') return node.value;
         return null;
-      },
-      evaluateRule(rule: RuleDefinition, _scope: ExpressionScope): readonly RuleWriteIntent[] {
-        // Always fire: set computed field
-        return rule.writes.map((w) => ({
-          path: w.path,
-          value: 'computed',
-          mode: w.mode,
-          ruleId: rule.id,
-        }));
       },
     };
     const rules: readonly RuleDefinition[] = [{

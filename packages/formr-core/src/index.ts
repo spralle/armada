@@ -20,11 +20,12 @@ export {
   type ValidatorAdapter,
   type ExprNode,
   type ExpressionDefinition,
+  type EvaluationScope,
+  type ExpressionScope,
+  type ExpressionEngine,
   type RuleDefinition,
   type RuleWrite,
   type RuleWriteIntent,
-  type ExpressionScope,
-  type ExpressionEngine,
   type Middleware,
   type MiddlewareDecision,
   type BeforeActionContext,
@@ -64,6 +65,9 @@ export { executePipeline, type PipelineContext, type PipelineResult } from './pi
 
 // Expression integration (SE3.5)
 export { buildExpressionScope, evaluateExpressions, applyRuleWrites } from './expression-integration.js';
+
+// Rule engine (moved from @ghost/predicate)
+export { executeRules, type RuleExecutionConfig, type RuleExecutionResult } from './rule-engine.js';
 
 // Validation envelope (SE4.2)
 export { sortIssues, dedupeIssues, normalizeIssues } from './validation.js';

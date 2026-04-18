@@ -1,6 +1,6 @@
 import { PredicateError } from './errors.js';
 
-const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+export const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 /** Throws PredicateError if a path segment could cause prototype pollution. */
 export function assertSafeSegment(segment: string): void {
