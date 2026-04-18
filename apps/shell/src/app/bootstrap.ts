@@ -13,6 +13,7 @@ import { registerPluginRegistryServiceCapability } from "../plugin-registry-serv
 import { registerPluginManagementServiceCapability } from "../plugin-management-service-registration.js";
 import { registerConfigurationServiceCapability } from "../config-service-registration.js";
 import { registerSyncStatusServiceCapability } from "../sync-status-service-registration.js";
+import { registerActivityStatusServiceCapability } from "../activity-status-service-registration.js";
 import { registerContextServiceCapability } from "../context-service-registration.js";
 import { registerKeybindingServiceCapability } from "../keybinding-service-registration.js";
 import {
@@ -125,6 +126,7 @@ export async function bootstrapShellWithTenantManifest(
 
   // Register remaining builtin services before plugin activation so that
   // plugins depending on these services never see null.
+  registerActivityStatusServiceCapability(registry);
   if (options.syncStatusDeps) {
     registerSyncStatusServiceCapability(registry, options.syncStatusDeps);
   }

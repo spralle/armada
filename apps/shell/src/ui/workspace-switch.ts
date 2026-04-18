@@ -1,4 +1,5 @@
 import type { ShellRuntime } from "../app/types.js";
+import { reconcileActiveTab } from "../context/runtime-state.js";
 import { switchWorkspace } from "../context-state/workspace.js";
 import type { PartsControllerDeps } from "./parts-controller-types.js";
 import { renderParts } from "./parts-controller.js";
@@ -60,6 +61,9 @@ export function performWorkspaceSwitch(
 
   // --- Step 6: Re-render dock tree and mount parts -------------------------
   renderParts(root, runtime, partsDeps, { teardownMode: true });
+
+  // --- Step 7: Reconcile active tab/title from new workspace state ---------
+  reconcileActiveTab(runtime);
 
   return true;
 }

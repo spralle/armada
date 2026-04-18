@@ -1,8 +1,29 @@
 // appearance-dom.ts — Vanilla DOM rendering helpers for the appearance settings UI.
-import type { ThemeInfo, BackgroundInfo, ThemeBackgroundEntry, FullThemePalette } from "@ghost/plugin-contracts";
+import type { ThemeInfo, BackgroundInfo, ThemeBackgroundEntry, FullThemePalette, ActivityStatusService } from "@ghost/plugin-contracts";
 import { GHOST_THEME_CSS_VARS, THEME_TOKEN_GROUPS } from "@ghost/plugin-contracts";
 
 const blobUrlCache = new Map<string, string>();
+let galleryObserver: IntersectionObserver | null = null;
+let galleryActivityToken: { dispose(): void } | null = null;
+
+function createSemaphore(max: number) {
+  let active = 0;
+  const queue: Array<() => void> = [];
+  return {
+    acquire(): Promise<void> {
+      if (active < max) {
+        active++;
+        return Promise.resolve();
+      }
+      return new Promise<void>((resolve) => queue.push(() => { active++; resolve(); }));
+    },
+    release(): void {
+      active--;
+      const next = queue.shift();
+      if (next) next();
+    },
+  };
+}
 
 async function resolveThumbnailUrl(url: string): Promise<string> {
   const memo = blobUrlCache.get(url);
@@ -19,6 +40,8 @@ async function resolveThumbnailUrl(url: string): Promise<string> {
 }
 
 export function revokeGalleryBlobUrls(): void {
+  if (galleryObserver) { galleryObserver.disconnect(); galleryObserver = null; }
+  if (galleryActivityToken) { galleryActivityToken.dispose(); galleryActivityToken = null; }
   for (const u of blobUrlCache.values()) URL.revokeObjectURL(u);
   blobUrlCache.clear();
 }
@@ -60,6 +83,8 @@ const PANEL_STYLES = `
 .theme-swatch-groups{display:flex;flex-direction:column;gap:12px}
 .theme-swatch-group{background:var(--ghost-surface);border:1px solid var(--ghost-border);border-radius:6px;padding:8px 10px}
 .theme-swatch-group-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--ghost-muted-foreground);margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid var(--ghost-border-muted)}
+.appearance-bg-shimmer{width:80px;height:50px;border-radius:4px;border:1px solid var(--ghost-border);background:linear-gradient(90deg,var(--ghost-surface) 25%,var(--ghost-surface-elevated) 50%,var(--ghost-surface) 75%);background-size:200% 100%;animation:shimmer 1.5s ease-in-out infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 `;
 /* eslint-enable max-len */
 
@@ -206,6 +231,7 @@ export interface BackgroundGalleryCallbacks {
   onBackgroundSelect: (index: number) => void;
   onApplyCustom: (url: string, mode: "cover" | "contain" | "tile") => void;
   onClearCustom: () => void;
+  activityService?: ActivityStatusService;
 }
 
 export function renderBackgroundGallery(
@@ -220,15 +246,59 @@ export function renderBackgroundGallery(
     empty.className = "appearance-empty"; empty.textContent = "No backgrounds available for this theme.";
     section.appendChild(empty);
   } else {
+    if (galleryActivityToken) { galleryActivityToken.dispose(); galleryActivityToken = null; }
+    let pendingCount = backgrounds.length;
+    if (callbacks.activityService && pendingCount > 0) {
+      galleryActivityToken = callbacks.activityService.startActivity("Loading backgrounds");
+    }
+    function onImageSettled(): void {
+      pendingCount--;
+      if (pendingCount <= 0 && galleryActivityToken) {
+        galleryActivityToken.dispose();
+        galleryActivityToken = null;
+      }
+    }
     const grid = document.createElement("div"); grid.className = "appearance-bg-grid";
+    const sem = createSemaphore(3);
+    if (galleryObserver) galleryObserver.disconnect();
+    galleryObserver = new IntersectionObserver((entries, obs) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const placeholder = entry.target as HTMLElement;
+        obs.unobserve(placeholder);
+        const bgIndex = Number(placeholder.dataset.bgIndex);
+        const bgUrl = placeholder.dataset.bgUrl!;
+        const isActive = activeBackground?.source === "theme" && activeBackground.index === bgIndex;
+        void (async () => {
+          try {
+            await sem.acquire();
+            const resolved = await resolveThumbnailUrl(bgUrl);
+            const img = document.createElement("img");
+            img.className = isActive ? "appearance-bg-thumb is-active" : "appearance-bg-thumb";
+            img.src = resolved; img.alt = `Background ${bgIndex + 1}`;
+            img.addEventListener("click", () => callbacks.onBackgroundSelect(bgIndex));
+            placeholder.replaceWith(img);
+          } catch {
+            const fallback = document.createElement("div");
+            fallback.className = "appearance-bg-thumb";
+            fallback.style.background = "var(--ghost-surface-elevated)";
+            fallback.addEventListener("click", () => callbacks.onBackgroundSelect(bgIndex));
+            placeholder.replaceWith(fallback);
+          } finally {
+            sem.release();
+            onImageSettled();
+          }
+        })();
+      }
+    }, { rootMargin: "100px" });
     backgrounds.forEach((bg, index) => {
-      const isActive = activeBackground?.source === "theme" && activeBackground.index === index;
-      const img = document.createElement("img");
-      img.className = isActive ? "appearance-bg-thumb is-active" : "appearance-bg-thumb";
-      img.loading = "lazy"; img.src = bg.url; img.alt = `Background ${index + 1}`;
-      void resolveThumbnailUrl(bg.url).then((r) => { if (r !== bg.url) img.src = r; });
-      img.addEventListener("click", () => callbacks.onBackgroundSelect(index));
-      grid.appendChild(img);
+      const placeholder = document.createElement("div");
+      placeholder.className = "appearance-bg-shimmer";
+      placeholder.dataset.bgIndex = String(index);
+      placeholder.dataset.bgUrl = bg.url;
+      placeholder.addEventListener("click", () => callbacks.onBackgroundSelect(index));
+      grid.appendChild(placeholder);
+      galleryObserver!.observe(placeholder);
     });
     section.appendChild(grid);
   }

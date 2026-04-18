@@ -1,7 +1,7 @@
 // plugin-parts.ts — Mount function for the appearance settings plugin.
 
-import type { ThemeService, PluginMountContext } from "@ghost/plugin-contracts";
-import { THEME_SERVICE_ID } from "@ghost/plugin-contracts";
+import type { ThemeService, PluginMountContext, ActivityStatusService } from "@ghost/plugin-contracts";
+import { THEME_SERVICE_ID, ACTIVITY_STATUS_SERVICE_ID } from "@ghost/plugin-contracts";
 import {
   injectAppearanceStyles,
   renderThemePicker,
@@ -23,6 +23,7 @@ type MountPartFn = (
 
 const mountAppearancePart: MountPartFn = async (target, context) => {
   const themeService = context.runtime.services.getService<ThemeService>(THEME_SERVICE_ID);
+  const activityService = context.runtime.services.getService<ActivityStatusService>(ACTIVITY_STATUS_SERVICE_ID) ?? undefined;
 
   if (!themeService) {
     target.innerHTML = "";
@@ -38,11 +39,11 @@ const mountAppearancePart: MountPartFn = async (target, context) => {
   // Kick off lazy loading of all theme plugins for the gallery.
   const loadPromise = themeService.loadAllThemes();
 
-  renderPanel(target, themeService);
+  renderPanel(target, themeService, activityService);
 
   // Re-render after all themes have loaded (may discover additional themes).
   loadPromise.then(() => {
-    renderPanel(target, themeService);
+    renderPanel(target, themeService, activityService);
   }).catch(() => {
     // Silently degrade — gallery shows whatever was already available.
   });
@@ -59,7 +60,7 @@ const mountAppearancePart: MountPartFn = async (target, context) => {
 // Panel composition
 // ---------------------------------------------------------------------------
 
-function renderPanel(target: HTMLElement, themeService: ThemeService): void {
+function renderPanel(target: HTMLElement, themeService: ThemeService, activityService?: ActivityStatusService): void {
   target.innerHTML = "";
 
   const panel = document.createElement("section");
@@ -95,12 +96,13 @@ function renderPanel(target: HTMLElement, themeService: ThemeService): void {
       },
       onApplyCustom(url: string, mode: "cover" | "contain" | "tile") {
         themeService.setCustomBackground(url, mode);
-        renderPanel(target, themeService);
+        renderPanel(target, themeService, activityService);
       },
       onClearCustom() {
         themeService.clearCustomBackground();
-        renderPanel(target, themeService);
+        renderPanel(target, themeService, activityService);
       },
+      activityService,
     }),
   );
 
