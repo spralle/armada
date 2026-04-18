@@ -1,7 +1,8 @@
-import type {
-  PluginLayerSurfaceContribution,
-  LayerSurfaceContext,
-  FocusGrabConfig,
+import {
+  type PluginLayerSurfaceContribution,
+  type LayerSurfaceContext,
+  InputBehavior,
+  KeyboardInteractivity,
 } from "@ghost/plugin-contracts";
 import type { LayerRegistry } from "./registry.js";
 import type { ShellRuntime } from "../app/types.js";
@@ -10,10 +11,20 @@ import {
   type MountCleanup,
   normalizeCleanup,
   safeUnmount,
-  toRecord,
   ensureRemoteRegistered,
 } from "../federation-mount-utils.js";
 import { applyVisualEffects } from "./visual-effects.js";
+import {
+  composeSurfaceKey,
+  createSurfaceContextStub,
+  createSurfaceMountKey,
+  resolveSurfaceMount,
+} from "./surface-mount-utils.js";
+import { computeAnchorStyles, computeExclusiveZones } from "./anchor-positioning.js";
+import { applyInputBehavior, applyKeyboardInteractivity, type KeyboardExclusiveManager, createKeyboardExclusiveManager } from "./input-behavior.js";
+import { applyAutoStacking } from "./auto-stacking.js";
+import { type FocusGrabManager, createFocusGrabManager } from "./focus-grab.js";
+import { type SessionLockManager, createSessionLockManager } from "./session-lock.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,6 +64,9 @@ export interface LayerSurfaceRenderer {
   renderLayerSurfaces(runtime: ShellRuntime): void;
   dispose(): void;
   registerBuiltInSurfaceMount(component: string, mountFn: BuiltInSurfaceMountFn): void;
+  readonly focusGrabManager: FocusGrabManager;
+  readonly sessionLockManager: SessionLockManager;
+  readonly keyboardExclusiveManager: KeyboardExclusiveManager;
 }
 
 export function createLayerSurfaceRenderer(
@@ -63,6 +77,41 @@ export function createLayerSurfaceRenderer(
   const registeredRemoteIds = new Set<string>();
   const builtInSurfaceMounts = new Map<string, BuiltInSurfaceMountFn>();
   let generation = 0;
+
+  const keyboardExclusiveManager = createKeyboardExclusiveManager();
+  const focusGrabManager = createFocusGrabManager(keyboardExclusiveManager);
+  const sessionLockManager = createSessionLockManager({ layerHost, keyboardExclusiveManager });
+
+  function cleanupSurfaceBehaviors(key: string): void {
+    focusGrabManager.releaseFocus(key);
+    keyboardExclusiveManager.popExclusive(key);
+    if (sessionLockManager.getActiveLockSurfaceId() === key) {
+      sessionLockManager.releaseLock(key);
+    }
+  }
+
+  function maybeActivateSurfaceBehaviors(
+    key: string,
+    target: HTMLElement,
+    surface: PluginLayerSurfaceContribution,
+  ): void {
+    if (surface.focusGrab) {
+      const container = target.parentElement;
+      if (container) {
+        focusGrabManager.grabFocus({
+          surfaceId: key,
+          surfaceElement: target as HTMLDivElement,
+          layerContainer: container,
+          config: surface.focusGrab,
+          onDismiss: () => { /* Will be wired in armada-a07g when real context replaces stub */ },
+        });
+      }
+    }
+
+    if (surface.sessionLock) {
+      sessionLockManager.activateLock(key, target as HTMLDivElement, target.parentElement!);
+    }
+  }
 
   function registerBuiltInSurfaceMount(component: string, mountFn: BuiltInSurfaceMountFn): void {
     builtInSurfaceMounts.set(component, mountFn);
@@ -80,6 +129,7 @@ export function createLayerSurfaceRenderer(
     // Unmount surfaces no longer in desired set
     for (const [key, state] of mounted.entries()) {
       if (!desiredIds.has(key)) {
+        cleanupSurfaceBehaviors(key);
         safeUnmount(state.cleanup);
         state.element.remove();
         mounted.delete(key);
@@ -96,6 +146,13 @@ export function createLayerSurfaceRenderer(
       }
       list.push(entry);
     }
+
+    // Compute exclusive zones and set CSS custom properties
+    const zones = computeExclusiveZones(allSurfaces);
+    layerHost.style.setProperty("--layer-exclusive-top", `${zones.top}px`);
+    layerHost.style.setProperty("--layer-exclusive-right", `${zones.right}px`);
+    layerHost.style.setProperty("--layer-exclusive-bottom", `${zones.bottom}px`);
+    layerHost.style.setProperty("--layer-exclusive-left", `${zones.left}px`);
 
     // Reconcile each layer container
     for (const [layerName, surfaces] of surfacesByLayer) {
@@ -125,6 +182,7 @@ export function createLayerSurfaceRenderer(
       if (surfaceId && !desiredIds.has(surfaceId)) {
         const state = mounted.get(surfaceId);
         if (state) {
+          cleanupSurfaceBehaviors(surfaceId);
           safeUnmount(state.cleanup);
           mounted.delete(surfaceId);
         }
@@ -144,8 +202,13 @@ export function createLayerSurfaceRenderer(
         target.className = "layer-surface";
         target.dataset.surfaceId = key;
         target.dataset.plugin = pluginId;
-        target.style.pointerEvents = "auto";
-        target.style.position = "absolute";
+
+        const anchorStyles = computeAnchorStyles(surface);
+        Object.assign(target.style, anchorStyles);
+
+        const layerDef = layerRegistry.getLayer(surface.layer);
+        applyInputBehavior(target, surface.inputBehavior ?? layerDef?.defaultPointer ?? InputBehavior.Opaque);
+        applyKeyboardInteractivity(target, surface.keyboardInteractivity ?? layerDef?.defaultKeyboard ?? KeyboardInteractivity.None);
 
         applyVisualEffects(target, surface.opacity, surface.backdropFilter);
 
@@ -176,6 +239,16 @@ export function createLayerSurfaceRenderer(
       // Fire and forget async mount
       void mountSurfaceComponent(target, pluginId, surface, runtime, key, mountKey, currentGeneration);
     }
+
+    // Apply auto-stacking for surfaces sharing anchor points
+    const stackedSurfaces = surfaces
+      .map(({ pluginId: pid, surface: s }) => {
+        const k = composeSurfaceKey(pid, s.id);
+        const el = container.querySelector<HTMLElement>(`[data-surface-id="${k}"]`);
+        return el ? { surfaceId: k, surface: s, element: el } : null;
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
+    applyAutoStacking(stackedSurfaces);
   }
 
   async function mountSurfaceComponent(
@@ -207,6 +280,7 @@ export function createLayerSurfaceRenderer(
         }
 
         mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
+        maybeActivateSurfaceBehaviors(key, target, surface);
       } catch {
         // Built-in mount failed — surface stays empty, no crash.
       }
@@ -253,115 +327,32 @@ export function createLayerSurfaceRenderer(
       }
 
       mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
+      maybeActivateSurfaceBehaviors(key, target, surface);
     } catch {
       // Mount failed — surface stays empty, no crash.
     }
   }
 
   function dispose(): void {
+    const lockId = sessionLockManager.getActiveLockSurfaceId();
+    if (lockId) sessionLockManager.releaseLock(lockId);
+
     for (const state of mounted.values()) {
+      cleanupSurfaceBehaviors(state.surfaceId);
       safeUnmount(state.cleanup);
       state.element.remove();
     }
     mounted.clear();
+    keyboardExclusiveManager.dispose();
     generation += 1;
   }
 
-  return { renderLayerSurfaces, dispose, registerBuiltInSurfaceMount };
-}
-
-// ---------------------------------------------------------------------------
-// Surface mount resolution
-// ---------------------------------------------------------------------------
-
-type MountSurfaceComponentFn = (
-  target: HTMLElement,
-  context: {
-    surface: PluginLayerSurfaceContribution;
-    pluginId: string;
-    surfaceContext: LayerSurfaceContext;
-    runtime: ShellRuntime;
-  },
-) => MountCleanup | Promise<MountCleanup>;
-
-function resolveSurfaceMount(
-  moduleValue: unknown,
-  surface: PluginLayerSurfaceContribution,
-): MountSurfaceComponentFn | null {
-  const moduleRecord = toRecord(moduleValue);
-  if (!moduleRecord) {
-    return null;
-  }
-
-  // Try: module.mountSurface (generic mount function)
-  if (typeof moduleRecord.mountSurface === "function") {
-    return moduleRecord.mountSurface as MountSurfaceComponentFn;
-  }
-
-  // Try: module.surfaces[component].mount or module.surfaces[component] (function)
-  const surfaces = toRecord(moduleRecord.surfaces);
-  if (surfaces) {
-    const candidate = surfaces[surface.component] ?? surfaces[surface.id];
-    if (typeof candidate === "function") {
-      return candidate as MountSurfaceComponentFn;
-    }
-    const candidateRecord = toRecord(candidate);
-    if (candidateRecord && typeof candidateRecord.mount === "function") {
-      return candidateRecord.mount as MountSurfaceComponentFn;
-    }
-  }
-
-  // Try: module.default
-  if (typeof moduleRecord.default === "function") {
-    return moduleRecord.default as MountSurfaceComponentFn;
-  }
-  const defaultRecord = toRecord(moduleRecord.default);
-  if (defaultRecord && typeof defaultRecord.mount === "function") {
-    return defaultRecord.mount as MountSurfaceComponentFn;
-  }
-
-  return null;
-}
-
-// ---------------------------------------------------------------------------
-// Utilities
-// ---------------------------------------------------------------------------
-
-function composeSurfaceKey(pluginId: string, surfaceId: string): string {
-  return `${pluginId}--${surfaceId}`;
-}
-
-function createSurfaceMountKey(
-  pluginId: string,
-  surface: PluginLayerSurfaceContribution,
-  runtime: ShellRuntime,
-): string {
-  const snapshot = runtime.registry.getSnapshot();
-  const pluginSnapshot = snapshot.plugins.find((p) => p.id === pluginId);
-  if (!pluginSnapshot) {
-    return `${pluginId}|${surface.id}|missing`;
-  }
-  const enabledState = pluginSnapshot.enabled ? "enabled" : "disabled";
-  const lifecycleState = pluginSnapshot.lifecycle?.state ?? "lifecycle:unknown";
-  return [pluginId, surface.id, enabledState, lifecycleState].join("|");
-}
-
-/**
- * Stub LayerSurfaceContext — full implementation in WP-12.
- */
-function createSurfaceContextStub(surfaceId: string, layerName: string): LayerSurfaceContext {
-  const noop = { dispose: () => {} };
   return {
-    surfaceId,
-    layerName,
-    onConfigure: () => noop,
-    onClose: () => noop,
-    getExclusiveZones: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
-    setLayer: () => {},
-    setOpacity: () => {},
-    setExclusiveZone: () => {},
-    dismiss: () => {},
-    grabFocus: () => {},
-    releaseFocus: () => {},
+    renderLayerSurfaces,
+    dispose,
+    registerBuiltInSurfaceMount,
+    focusGrabManager,
+    sessionLockManager,
+    keyboardExclusiveManager,
   };
 }
