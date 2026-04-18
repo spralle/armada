@@ -1,5 +1,17 @@
 import type { ExpressionEngine, ExpressionScope, RuleDefinition, RuleWriteIntent } from './contracts.js';
 import type { FormState } from './state.js';
+import { FormrError } from './errors.js';
+
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function assertSafeSegment(segment: string): void {
+  if (DANGEROUS_KEYS.has(segment)) {
+    throw new FormrError(
+      'FORMR_PROTOTYPE_POLLUTION',
+      `Path segment "${segment}" is not allowed — potential prototype pollution`,
+    );
+  }
+}
 
 /** Build evaluation scope from current form state */
 export function buildExpressionScope<S extends string>(state: FormState<S>): ExpressionScope {
@@ -31,6 +43,9 @@ export function evaluateExpressions<S extends string>(
 /** Set a value at a dot-separated path, returning a new root (immutable) */
 function setAtPath(root: Record<string, unknown>, dotPath: string, value: unknown): Record<string, unknown> {
   const segments = dotPath.split('.');
+  for (const seg of segments) {
+    assertSafeSegment(seg);
+  }
   if (segments.length === 0) return root;
 
   if (segments.length === 1) {
@@ -45,6 +60,9 @@ function setAtPath(root: Record<string, unknown>, dotPath: string, value: unknow
 /** Delete a value at a dot-separated path, returning a new root (immutable) */
 function deleteAtPath(root: Record<string, unknown>, dotPath: string): Record<string, unknown> {
   const segments = dotPath.split('.');
+  for (const seg of segments) {
+    assertSafeSegment(seg);
+  }
   if (segments.length === 0) return root;
 
   if (segments.length === 1) {

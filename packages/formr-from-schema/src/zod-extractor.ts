@@ -43,7 +43,7 @@ function walkZodSchema(
 
   const typeName = def.typeName ?? '';
 
-  if (typeName === 'ZodOptional' || typeName === 'ZodNullable') {
+  if (typeName === 'ZodOptional') {
     const inner = def['innerType'] as ZodLike | undefined;
     if (inner) {
       walkZodSchema(inner, prefix, fields, false);
@@ -51,7 +51,63 @@ function walkZodSchema(
     return;
   }
 
+  if (typeName === 'ZodNullable') {
+    const inner = def['innerType'] as ZodLike | undefined;
+    if (inner) {
+      walkZodSchema(inner, prefix, fields, required);
+    }
+    return;
+  }
+
   if (typeName === 'ZodDefault') {
+    const inner = def['innerType'] as ZodLike | undefined;
+    if (inner) {
+      walkZodSchema(inner, prefix, fields, false);
+    }
+    return;
+  }
+
+  if (typeName === 'ZodEffects') {
+    const inner = def['schema'] as ZodLike | undefined;
+    if (inner) {
+      walkZodSchema(inner, prefix, fields, required);
+    }
+    return;
+  }
+
+  if (typeName === 'ZodPipeline') {
+    const inner = def['in'] as ZodLike | undefined;
+    if (inner) {
+      walkZodSchema(inner, prefix, fields, required);
+    }
+    return;
+  }
+
+  if (typeName === 'ZodLazy') {
+    const getter = def['getter'] as (() => ZodLike) | undefined;
+    if (getter) {
+      walkZodSchema(getter(), prefix, fields, required);
+    }
+    return;
+  }
+
+  if (typeName === 'ZodBranded') {
+    const inner = def['type'] as ZodLike | undefined;
+    if (inner) {
+      walkZodSchema(inner, prefix, fields, required);
+    }
+    return;
+  }
+
+  if (typeName === 'ZodCatch') {
+    const inner = def['innerType'] as ZodLike | undefined;
+    if (inner) {
+      walkZodSchema(inner, prefix, fields, required);
+    }
+    return;
+  }
+
+  if (typeName === 'ZodReadonly') {
     const inner = def['innerType'] as ZodLike | undefined;
     if (inner) {
       walkZodSchema(inner, prefix, fields, required);

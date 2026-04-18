@@ -8,7 +8,9 @@ export type PredicateErrorCode =
   | 'FORMR_EXPR_TYPE_MISMATCH'
   | 'FORMR_RULE_WRITE_CONFLICT'
   | 'FORMR_RULE_NON_CONVERGENT'
-  | 'FORMR_RULE_DISALLOWED_TARGET';
+  | 'FORMR_RULE_DISALLOWED_TARGET'
+  | 'PREDICATE_PROTOTYPE_POLLUTION'
+  | 'PREDICATE_DEPTH_EXCEEDED';
 
 export class PredicateError extends Error {
   readonly code: PredicateErrorCode;

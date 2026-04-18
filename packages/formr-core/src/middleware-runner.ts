@@ -34,7 +34,11 @@ export function runNotifyHooksSync<S extends string>(
   for (const mw of middlewares) {
     const hook = mw[hookName];
     if (!hook) continue;
-    (hook as (c: unknown) => void)(context);
+    try {
+      (hook as (c: unknown) => void)(context);
+    } catch {
+      // Swallow errors in sync notify hooks to match async variant behavior
+    }
   }
 }
 

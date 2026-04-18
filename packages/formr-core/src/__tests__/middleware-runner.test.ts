@@ -65,14 +65,14 @@ describe('middleware-runner', () => {
       expect(order).toEqual(['a', 'b']);
     });
 
-    it('propagates errors (pipeline catch handles rollback)', () => {
-      expect(() => {
-        runNotifyHooksSync(
-          [makeMw('a', { afterAction: () => { throw new Error('fail'); } })],
-          'afterAction',
-          {},
-        );
-      }).toThrow('fail');
+    it('swallows errors from throwing hooks and continues', () => {
+      const order: string[] = [];
+      const mws = [
+        makeMw('a', { afterAction: () => { throw new Error('fail'); } }),
+        makeMw('b', { afterAction: () => { order.push('b'); } }),
+      ];
+      runNotifyHooksSync(mws, 'afterAction', {});
+      expect(order).toEqual(['b']);
     });
   });
 

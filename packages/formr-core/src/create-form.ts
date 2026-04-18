@@ -16,6 +16,7 @@ import { createFieldApi } from './field-api.js';
 import { applySubmitOutcome } from './submit.js';
 import { executePipeline } from './pipeline.js';
 import { initMiddlewares, disposeMiddlewares, runNotifyHooksAsync } from './middleware-runner.js';
+import { FormrError } from './errors.js';
 
 /** Check if two CanonicalPaths are equal */
 function pathEquals(a: CanonicalPath, b: CanonicalPath): boolean {
@@ -97,8 +98,16 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
   }
 
   async function submit(context?: Partial<SubmitContext<S>>): Promise<SubmitResult> {
-    const submitId = generateSubmitId();
     const state = store.getState();
+
+    // Double-submit guard: reject if a submission is already in progress
+    if (state.meta.submission?.status === 'running') {
+      return Promise.reject(
+        new FormrError('FORMR_SUBMIT_CONCURRENT', 'Submit rejected: a submission is already in progress'),
+      );
+    }
+
+    const submitId = generateSubmitId();
 
     const submitContext: SubmitContext<S> = {
       requestedStage: context?.requestedStage ?? state.meta.stage,

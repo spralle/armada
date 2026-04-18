@@ -205,9 +205,11 @@ describe('pipeline — 18-step engine', () => {
   });
 
   it('all-or-nothing: error during pipeline rolls back', () => {
+    // Use a veto hook (beforeAction) that throws to trigger rollback,
+    // since notify hooks (beforeEvaluate) now swallow errors for reliability
     const badMw: Middleware<'draft' | 'submit' | 'approve'> = {
       id: 'crasher',
-      beforeEvaluate: () => { throw new Error('boom'); },
+      beforeAction: () => { throw new Error('boom'); },
     };
     const form = createForm({
       stagePolicy: createTestPolicy(),
@@ -218,8 +220,7 @@ describe('pipeline — 18-step engine', () => {
     const result = form.setValue('x', 'danger');
 
     expect(result.ok).toBe(false);
-    expect(result.error).toBe('boom');
-    // State unchanged — rolled back
+    // Throwing veto hook is treated as veto
     expect((form.getState().data as Record<string, unknown>).x).toBe('safe');
   });
 

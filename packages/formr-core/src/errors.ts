@@ -8,7 +8,9 @@ export type FormrErrorCode =
   | 'FORMR_STAGE_UNKNOWN'
   | 'FORMR_EXTENSION_INCOMPATIBLE'
   | 'FORMR_TIMEOUT'
-  | 'FORMR_RENDERER_UNKNOWN_TYPE';
+  | 'FORMR_RENDERER_UNKNOWN_TYPE'
+  | 'FORMR_PROTOTYPE_POLLUTION'
+  | 'FORMR_SUBMIT_CONCURRENT';
 
 export class FormrError extends Error {
   readonly code: FormrErrorCode;

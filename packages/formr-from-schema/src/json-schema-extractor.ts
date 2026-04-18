@@ -60,7 +60,10 @@ function walkJsonSchema(
 
 function resolveType(schema: JsonSchema): string | undefined {
   if (typeof schema.type === 'string') return schema.type;
-  if (Array.isArray(schema.type) && schema.type.length > 0) return schema.type[0] as string;
+  if (Array.isArray(schema.type) && schema.type.length > 0) {
+    const nonNull = schema.type.filter((t) => t !== 'null');
+    return (nonNull.length > 0 ? nonNull[0] : schema.type[0]) as string;
+  }
   if (schema.properties) return 'object';
   if (schema.items) return 'array';
   if (schema.enum) return 'enum';

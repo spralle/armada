@@ -173,10 +173,8 @@ export function executePipeline<S extends string>(ctx: PipelineContext<S>): Pipe
     }
 
     // Step 14: Abort gate — if any fatal runtime error, rollback (handled by catch)
-    // Write issues into draft
-    if (issues.length > 0) {
-      tx.mutate((draft) => ({ ...draft, issues }));
-    }
+    // Write issues into draft (always update to clear stale issues from previous dispatches)
+    tx.mutate((draft) => ({ ...draft, issues }));
 
     // Step 15: Commit atomically
     store.commitTransaction(tx);
