@@ -71,9 +71,82 @@ export interface ExpressionEngine {
   ): readonly RuleWriteIntent[];
 }
 
-/** ADR section 9 — Middleware (stub — full hooks in SE6.2) */
+/** ADR section 9 — Middleware decision for veto-capable hooks */
+export type MiddlewareDecision =
+  | { readonly action: 'continue' }
+  | { readonly action: 'veto'; readonly reason: string };
+
+/** Context for beforeAction hook */
+export interface BeforeActionContext<S extends string = string> {
+  readonly action: FormAction;
+  readonly state: FormState<S>;
+}
+
+/** Context for afterAction hook */
+export interface AfterActionContext<S extends string = string> {
+  readonly action: FormAction;
+  readonly prevState: FormState<S>;
+  readonly nextState: FormState<S>;
+}
+
+/** Context for beforeEvaluate hook */
+export interface BeforeEvaluateContext<S extends string = string> {
+  readonly action: FormAction;
+  readonly state: FormState<S>;
+}
+
+/** Context for afterEvaluate hook */
+export interface AfterEvaluateContext<S extends string = string> {
+  readonly action: FormAction;
+  readonly state: FormState<S>;
+}
+
+/** Context for beforeValidate hook */
+export interface BeforeValidateContext<S extends string = string> {
+  readonly action: FormAction;
+  readonly state: FormState<S>;
+  readonly stage: S;
+}
+
+/** Context for afterValidate hook */
+export interface AfterValidateContext<S extends string = string> {
+  readonly action: FormAction;
+  readonly state: FormState<S>;
+  readonly issues: readonly ValidationIssue<S>[];
+}
+
+/** Context for beforeSubmit hook */
+export interface BeforeSubmitContext<S extends string = string> {
+  readonly action: FormAction;
+  readonly state: FormState<S>;
+  readonly submitContext: SubmitContext<S>;
+}
+
+/** Context for afterSubmit hook */
+export interface AfterSubmitContext<S extends string = string> {
+  readonly action: FormAction;
+  readonly state: FormState<S>;
+  readonly result: SubmitResult;
+}
+
+/** Context for middleware init */
+export interface MiddlewareInitContext<S extends string = string> {
+  readonly state: FormState<S>;
+}
+
+/** ADR section 9 — Middleware with full lifecycle hooks */
 export interface Middleware<S extends string = string> {
   readonly id: string;
+  onInit?(ctx: MiddlewareInitContext<S>): void;
+  beforeAction?(ctx: BeforeActionContext<S>): MiddlewareDecision | Promise<MiddlewareDecision>;
+  afterAction?(ctx: AfterActionContext<S>): void;
+  beforeEvaluate?(ctx: BeforeEvaluateContext<S>): void;
+  afterEvaluate?(ctx: AfterEvaluateContext<S>): void;
+  beforeValidate?(ctx: BeforeValidateContext<S>): void;
+  afterValidate?(ctx: AfterValidateContext<S>): void;
+  beforeSubmit?(ctx: BeforeSubmitContext<S>): MiddlewareDecision | Promise<MiddlewareDecision>;
+  afterSubmit?(ctx: AfterSubmitContext<S>): void;
+  onDispose?(): void;
 }
 
 /** ADR section 10 — Transform (stub — full in SE6.1) */
