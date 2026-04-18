@@ -13,21 +13,7 @@ import { createDefaultStagePolicy } from './stage-policy.js';
 import { parsePath } from './path-parser.js';
 import { createFieldApi } from './field-api.js';
 import { applySubmitOutcome } from './submit.js';
-import { evaluateExpressions, applyRuleWrites } from './expression-integration.js';
-
-/** Set a value at a dot/bracket path inside a nested object, returning a new root */
-function setAtPath(root: unknown, segments: readonly (string | number)[], value: unknown): unknown {
-  if (segments.length === 0) return value;
-
-  const [head, ...rest] = segments;
-  if (Array.isArray(root)) {
-    const result = [...root];
-    (result as unknown as Record<string | number, unknown>)[head] = setAtPath(result[head as number], rest, value);
-    return result;
-  }
-  const obj = (root ?? {}) as Record<string, unknown>;
-  return { ...obj, [head]: setAtPath(obj[String(head)], rest, value) };
-}
+import { executePipeline } from './pipeline.js';
 
 /** Check if two CanonicalPaths are equal */
 function pathEquals(a: CanonicalPath, b: CanonicalPath): boolean {
@@ -76,33 +62,15 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
   }
 
   function dispatchSetValue(rawPath: string, value: unknown): FormDispatchResult {
-    const canonical = parsePath(rawPath);
-    const tx = store.beginTransaction();
-    try {
-      tx.mutate((draft) => {
-        if (canonical.namespace === 'ui') {
-          return { ...draft, uiState: setAtPath(draft.uiState, canonical.segments, value) };
-        }
-        return { ...draft, data: setAtPath(draft.data, canonical.segments, value) };
-      });
-
-      // Step 7 of ADR §8: evaluate expressions/rules
-      if (options.expressionEngine && options.rules?.length) {
-        tx.mutate((draft) => {
-          const writes = evaluateExpressions(options.expressionEngine!, draft, options.rules!);
-          if (writes.length > 0) {
-            return applyRuleWrites(draft, writes);
-          }
-          return draft;
-        });
-      }
-
-      store.commitTransaction(tx);
-      return { ok: true };
-    } catch (err) {
-      store.rollbackTransaction(tx);
-      return { ok: false, error: err instanceof Error ? err.message : String(err) };
-    }
+    const result = executePipeline({
+      action: { type: 'set-value', path: rawPath, value },
+      store,
+      options,
+      stagePolicy: policy,
+      isSubmit: false,
+    });
+    const errorMsg = result.error ?? result.vetoReason;
+    return errorMsg ? { ok: result.ok, error: errorMsg } : { ok: result.ok };
   }
 
   function dispatch(action: FormAction): FormDispatchResult {
@@ -110,15 +78,15 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
       return dispatchSetValue(action.path, action.value);
     }
 
-    // Generic action: begin tx, commit (no-op mutation for unknown types)
-    const tx = store.beginTransaction();
-    try {
-      store.commitTransaction(tx);
-      return { ok: true };
-    } catch (err) {
-      store.rollbackTransaction(tx);
-      return { ok: false, error: err instanceof Error ? err.message : String(err) };
-    }
+    const result = executePipeline({
+      action,
+      store,
+      options,
+      stagePolicy: policy,
+      isSubmit: false,
+    });
+    const errorMsg2 = result.error ?? result.vetoReason;
+    return errorMsg2 ? { ok: result.ok, error: errorMsg2 } : { ok: result.ok };
   }
 
   function validate(stage?: S): ValidationIssue<S>[] {
@@ -150,20 +118,46 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     }));
     store.commitTransaction(txStart);
 
-    // Validate
-    const issues = validate(submitContext.requestedStage);
-    if (issues.some((i) => i.severity === 'error')) {
+    // Run pipeline steps 1-15 for submit action (includes validation + middleware)
+    const submitAction: FormAction = { type: 'submit' };
+    const pipelineResult = executePipeline({
+      action: submitAction,
+      store,
+      options,
+      stagePolicy: policy,
+      submitContext,
+      isSubmit: true,
+    });
+
+    // If pipeline vetoed or failed, mark as failed
+    if (!pipelineResult.ok) {
       const txFail = store.beginTransaction();
       txFail.mutate((draft) => ({
         ...draft,
-        issues,
         meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
       }));
       store.commitTransaction(txFail);
-      return { ok: false, submitId, message: 'Validation failed', fieldIssues: issues };
+      return {
+        ok: false,
+        submitId,
+        message: pipelineResult.vetoReason ?? pipelineResult.error ?? 'Pipeline failed',
+        fieldIssues: pipelineResult.issues as readonly ValidationIssue[],
+      };
     }
 
-    // Call onSubmit if provided
+    // Check if validation produced blocking errors
+    const currentIssues = store.getState().issues;
+    if (currentIssues.some((i) => i.severity === 'error')) {
+      const txFail = store.beginTransaction();
+      txFail.mutate((draft) => ({
+        ...draft,
+        meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
+      }));
+      store.commitTransaction(txFail);
+      return { ok: false, submitId, message: 'Validation failed', fieldIssues: currentIssues as readonly ValidationIssue[] };
+    }
+
+    // Step 18: If submit action succeeded — execute onSubmit, then afterSubmit
     if (options.onSubmit) {
       try {
         const result = await options.onSubmit({
@@ -184,6 +178,15 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
           ],
         }));
         store.commitTransaction(txResult);
+
+        // afterSubmit middleware hook
+        const middlewares = options.middleware ?? [];
+        for (const mw of middlewares) {
+          if (mw.afterSubmit) {
+            mw.afterSubmit({ action: submitAction, state: store.getState(), result });
+          }
+        }
+
         return result;
       } catch (err) {
         const txErr = store.beginTransaction();

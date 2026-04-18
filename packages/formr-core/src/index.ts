@@ -26,6 +26,16 @@ export {
   type ExpressionScope,
   type ExpressionEngine,
   type Middleware,
+  type MiddlewareDecision,
+  type BeforeActionContext,
+  type AfterActionContext,
+  type BeforeEvaluateContext,
+  type AfterEvaluateContext,
+  type BeforeValidateContext,
+  type AfterValidateContext,
+  type BeforeSubmitContext,
+  type AfterSubmitContext,
+  type MiddlewareInitContext,
   type Transform,
   type SubmitExecutionContext,
   type SubmitResult,
@@ -48,6 +58,9 @@ export { deepFreeze } from './utils.js';
 // Form factory (SE1.4)
 export { createForm } from './create-form.js';
 export { createFieldApi, type CreateFieldApiParams } from './field-api.js';
+
+// Pipeline (SE4.4)
+export { executePipeline, type PipelineContext, type PipelineResult } from './pipeline.js';
 
 // Expression integration (SE3.5)
 export { buildExpressionScope, evaluateExpressions, applyRuleWrites } from './expression-integration.js';
