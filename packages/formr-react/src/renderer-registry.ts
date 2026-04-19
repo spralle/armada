@@ -1,34 +1,12 @@
-import { createElement } from 'react';
 import type { ComponentType } from 'react';
 import { FormrError } from '@ghost/formr-core';
 import type { NodeRenderer, LayoutRendererProps } from './renderer-types.js';
+import { GroupRenderer } from './renderers/group-renderer.js';
+import { SectionRenderer } from './renderers/section-renderer.js';
+import { FieldRenderer } from './renderers/field-renderer.js';
+import { ArrayRenderer } from './renderers/array-renderer.js';
 
 const CAPABILITY_KEY = 'renderer.exp.v1';
-
-function GroupRenderer({ children }: LayoutRendererProps) {
-  return createElement('div', null, children);
-}
-
-function SectionRenderer({ node, children }: LayoutRendererProps) {
-  const title = node.props?.['title'] as string | undefined;
-  return createElement(
-    'section',
-    null,
-    title ? createElement('h2', null, title) : null,
-    children,
-  );
-}
-
-function FieldRenderer({ node, aria }: LayoutRendererProps) {
-  return createElement('div', {
-    'data-field-path': node.path,
-    ...aria,
-  });
-}
-
-function ArrayRenderer({ children }: LayoutRendererProps) {
-  return createElement('div', null, children);
-}
 
 export class RendererRegistry {
   private readonly renderers = new Map<string, ComponentType<LayoutRendererProps>>();

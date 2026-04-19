@@ -31,6 +31,12 @@ export type {
 } from '@ghost/formr-core';
 
 export { RendererRegistry } from './renderer-registry.js';
+export {
+  GroupRenderer,
+  SectionRenderer,
+  FieldRenderer,
+  ArrayRenderer,
+} from './renderers/index.js';
 export { renderLayoutTree } from './render-tree.js';
 export type { LayoutRendererProps, NodeRenderer, FieldAriaAttributes } from './renderer-types.js';
 export type { LayoutNode } from '@ghost/formr-from-schema';
