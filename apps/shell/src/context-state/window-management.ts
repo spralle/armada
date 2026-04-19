@@ -1,7 +1,11 @@
 import {
+  absorbNeighborStackInDirection,
+  detachActiveTabInDirection,
+  explodeStack,
   focusDockStackInDirection,
   moveActiveTabInDirection,
   swapActiveTabInDirection,
+  reorderTabInStack,
 } from "./dock-tree-window-actions.js";
 import { resizeNearestSplitInDirection } from "./dock-tree-commands.js";
 import { readDockSplitRatio } from "./dock-tree.js";
@@ -44,16 +48,26 @@ export function moveTabInDirection(
   }
 
   const moved = moveActiveTabInDirection(state.dockTree, activeTabId, direction);
-  if (!moved.changed) {
+  if (moved.changed) {
+    return {
+      state: { ...state, dockTree: moved.tree, activeTabId },
+      changed: true,
+    };
+  }
+
+  // No neighbor in this direction — detach tab into new pane if multi-tab stack
+  const sourceStack = findStackByTabId(state.dockTree.root, activeTabId);
+  if (!sourceStack || sourceStack.tabIds.length <= 1) {
+    return { state, changed: false };
+  }
+
+  const detached = detachActiveTabInDirection(state.dockTree, activeTabId, direction);
+  if (!detached.changed) {
     return { state, changed: false };
   }
 
   return {
-    state: {
-      ...state,
-      dockTree: moved.tree,
-      activeTabId,
-    },
+    state: { ...state, dockTree: detached.tree, activeTabId },
     changed: true,
   };
 }
@@ -76,6 +90,77 @@ export function swapTabInDirection(
     state: {
       ...state,
       dockTree: swapped.tree,
+      activeTabId,
+    },
+    changed: true,
+  };
+}
+
+export function detachTabInDirection(
+  state: ShellContextState,
+  direction: DockDirection,
+): { state: ShellContextState; changed: boolean } {
+  const activeTabId = state.activeTabId;
+  if (!activeTabId) {
+    return { state, changed: false };
+  }
+
+  const detached = detachActiveTabInDirection(state.dockTree, activeTabId, direction);
+  if (!detached.changed) {
+    return { state, changed: false };
+  }
+
+  return {
+    state: {
+      ...state,
+      dockTree: detached.tree,
+      activeTabId,
+    },
+    changed: true,
+  };
+}
+
+export function absorbStackInDirection(
+  state: ShellContextState,
+  direction: DockDirection,
+): { state: ShellContextState; changed: boolean } {
+  const activeTabId = state.activeTabId;
+  if (!activeTabId) {
+    return { state, changed: false };
+  }
+
+  const absorbed = absorbNeighborStackInDirection(state.dockTree, activeTabId, direction);
+  if (!absorbed.changed) {
+    return { state, changed: false };
+  }
+
+  return {
+    state: {
+      ...state,
+      dockTree: absorbed.tree,
+      activeTabId,
+    },
+    changed: true,
+  };
+}
+
+export function explodeActiveStack(
+  state: ShellContextState,
+): { state: ShellContextState; changed: boolean } {
+  const activeTabId = state.activeTabId;
+  if (!activeTabId) {
+    return { state, changed: false };
+  }
+
+  const exploded = explodeStack(state.dockTree, activeTabId);
+  if (!exploded.changed) {
+    return { state, changed: false };
+  }
+
+  return {
+    state: {
+      ...state,
+      dockTree: exploded.tree,
       activeTabId,
     },
     changed: true,
@@ -245,6 +330,29 @@ export function gotoTabByIndex(
 
   return {
     state: setActiveTab(state, targetTabId),
+    changed: true,
+  };
+}
+
+export function reorderActiveTabInStack(
+  state: ShellContextState,
+  direction: "next" | "previous",
+): { state: ShellContextState; changed: boolean } {
+  const activeTabId = state.activeTabId;
+  if (!activeTabId) {
+    return { state, changed: false };
+  }
+
+  const result = reorderTabInStack(state.dockTree, activeTabId, direction);
+  if (!result.changed) {
+    return { state, changed: false };
+  }
+
+  return {
+    state: {
+      ...state,
+      dockTree: result.tree,
+    },
     changed: true,
   };
 }

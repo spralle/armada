@@ -119,6 +119,35 @@ function collectStacks(node: DockNode): DockStackNode[] {
   return [...collectStacks(node.first), ...collectStacks(node.second)];
 }
 
+export type DockPathSegment = "first" | "second";
+
+export function replaceNodeAtPath(root: DockNode | null, path: readonly DockPathSegment[], replacement: DockNode): DockNode | null {
+  if (!root) {
+    return replacement;
+  }
+
+  if (path.length === 0) {
+    return replacement;
+  }
+
+  if (root.kind === "stack") {
+    return root;
+  }
+
+  const [segment, ...rest] = path;
+  if (segment === "first") {
+    return {
+      ...root,
+      first: replaceNodeAtPath(root.first, rest, replacement) ?? root.first,
+    };
+  }
+
+  return {
+    ...root,
+    second: replaceNodeAtPath(root.second, rest, replacement) ?? root.second,
+  };
+}
+
 function collectNodeIds(node: DockNode): Set<string> {
   if (node.kind === "stack") {
     return new Set([node.id]);

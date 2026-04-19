@@ -1,6 +1,8 @@
 import {
+  absorbStackInDirection,
   cycleTabGroup,
   cycleTabInActiveStack,
+  detachTabInDirection,
   equalizeSplits,
   focusTabInDirection,
   gotoTabByIndex,
@@ -8,6 +10,8 @@ import {
   navigateBackInActiveStack,
   navigateForwardInActiveStack,
   resizeInDirection,
+  reorderActiveTabInStack,
+  explodeActiveStack,
   swapTabInDirection,
 } from "../context-state/window-management.js";
 import { updateContextState } from "../context/runtime-state.js";
@@ -127,6 +131,13 @@ function dispatchShellKeyboardAction(
     return applyContextMutation(runtime, navigateForwardInActiveStack(runtime.contextState, runtime.placementRegistry, runtime.placementConfig), actionId, "stack navigate forward unavailable");
   }
 
+  if (actionId === "shell.tab.reorder.prev") {
+    return applyContextMutation(runtime, reorderActiveTabInStack(runtime.contextState, "previous"), actionId, "tab reorder unavailable");
+  }
+  if (actionId === "shell.tab.reorder.next") {
+    return applyContextMutation(runtime, reorderActiveTabInStack(runtime.contextState, "next"), actionId, "tab reorder unavailable");
+  }
+
   if (actionId === "shell.split.equalize") {
     return applyContextMutation(runtime, equalizeSplits(runtime.contextState), actionId, "no splits to equalize");
   }
@@ -175,6 +186,36 @@ function dispatchShellKeyboardAction(
   }
   if (actionId === "shell.swap.right") {
     return applyContextMutation(runtime, swapTabInDirection(runtime.contextState, "right"), actionId, "no swap target to the right");
+  }
+
+  if (actionId === "shell.tab.detach.left") {
+    return applyContextMutation(runtime, detachTabInDirection(runtime.contextState, "left"), actionId, "cannot detach tab to the left");
+  }
+  if (actionId === "shell.tab.detach.down") {
+    return applyContextMutation(runtime, detachTabInDirection(runtime.contextState, "down"), actionId, "cannot detach tab below");
+  }
+  if (actionId === "shell.tab.detach.up") {
+    return applyContextMutation(runtime, detachTabInDirection(runtime.contextState, "up"), actionId, "cannot detach tab above");
+  }
+  if (actionId === "shell.tab.detach.right") {
+    return applyContextMutation(runtime, detachTabInDirection(runtime.contextState, "right"), actionId, "cannot detach tab to the right");
+  }
+
+  if (actionId === "shell.stack.absorb.left") {
+    return applyContextMutation(runtime, absorbStackInDirection(runtime.contextState, "left"), actionId, "no neighbor stack to absorb from the left");
+  }
+  if (actionId === "shell.stack.absorb.down") {
+    return applyContextMutation(runtime, absorbStackInDirection(runtime.contextState, "down"), actionId, "no neighbor stack to absorb below");
+  }
+  if (actionId === "shell.stack.absorb.up") {
+    return applyContextMutation(runtime, absorbStackInDirection(runtime.contextState, "up"), actionId, "no neighbor stack to absorb above");
+  }
+  if (actionId === "shell.stack.absorb.right") {
+    return applyContextMutation(runtime, absorbStackInDirection(runtime.contextState, "right"), actionId, "no neighbor stack to absorb from the right");
+  }
+
+  if (actionId === "shell.stack.explode") {
+    return applyContextMutation(runtime, explodeActiveStack(runtime.contextState), actionId, "cannot explode stack");
   }
 
   if (actionId === "shell.resize.left") {
