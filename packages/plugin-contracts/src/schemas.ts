@@ -265,6 +265,16 @@ export const pluginSlotContributionSchema = z
   })
   .strict();
 
+export const pluginSectionContributionSchema = z
+  .object({
+    id: z.string().min(1),
+    title: z.string().min(1),
+    target: z.string().min(1),
+    order: z.number().int(),
+    component: z.string().min(1),
+  })
+  .strict();
+
 const focusGrabConfigSchema = z
   .object({
     backdrop: z.union([z.boolean(), z.string()]).optional(),
@@ -340,6 +350,7 @@ export const pluginContributionsSchema = z
     branding: brandingContributionSchema.optional(),
     configuration: pluginConfigurationContributionSchema.optional(),
     slots: z.array(pluginSlotContributionSchema).optional(),
+    sections: z.array(pluginSectionContributionSchema).optional(),
     layers: z.array(pluginLayerDefinitionSchema).optional(),
     layerSurfaces: z.array(pluginLayerSurfaceContributionSchema).optional(),
   })

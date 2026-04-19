@@ -18,6 +18,11 @@
         {
           "id": "ghost.theme.Service",
           "versionRange": "^1.0.0"
+        },
+        {
+          "id": "ghost.pluginRegistry.Service",
+          "versionRange": "^1.0.0",
+          "optional": true
         }
       ]
     }

@@ -209,6 +209,20 @@ export interface PluginSlotContribution {
   component: string;
 }
 
+/** Plugin contribution for section panels aggregated by a host plugin. */
+export interface PluginSectionContribution {
+  /** Unique identifier for this section contribution. */
+  id: string;
+  /** Display title for the section. */
+  title: string;
+  /** Target container identifier (e.g. "config.appearance"). */
+  target: string;
+  /** Sort order within the target (lower = earlier). */
+  order: number;
+  /** Component key — resolved via the contributing plugin's parts record. */
+  component: string;
+}
+
 export interface PluginContributions {
   views?: PluginViewContribution[] | undefined;
   parts?: PluginPartContribution[] | undefined;
@@ -224,6 +238,7 @@ export interface PluginContributions {
   branding?: BrandingContribution | undefined;
   configuration?: PluginConfigurationContribution | undefined;
   slots?: PluginSlotContribution[] | undefined;
+  sections?: PluginSectionContribution[] | undefined;
   layers?: PluginLayerDefinition[] | undefined;
   layerSurfaces?: PluginLayerSurfaceContribution[] | undefined;
 }
