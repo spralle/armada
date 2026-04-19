@@ -96,7 +96,7 @@ export interface PluginActionContribution {
   id: string;
   title: string;
   intent: string;
-  predicate?: PluginContributionPredicate | undefined;
+  when?: PluginContributionPredicate | undefined;
   hidden?: boolean | undefined;
 }
 

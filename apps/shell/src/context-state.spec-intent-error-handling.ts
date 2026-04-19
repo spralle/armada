@@ -45,7 +45,7 @@ function createSingleMatchPlugin() {
         manifest: { id: "plugin-single", name: "Single", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "single.action", title: "Single Action", intent: "error.test.action", predicate: { scope: "test" } },
+            { id: "single.action", title: "Single Action", intent: "error.test.action", when: { scope: "test" } },
           ],
         },
       }),
@@ -63,7 +63,7 @@ function createMultiMatchPlugins() {
         manifest: { id: "plugin-err-a", name: "Err A", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "err-a.action", title: "Err A Action", intent: "error.multi.action", predicate: { scope: "shared" } },
+            { id: "err-a.action", title: "Err A Action", intent: "error.multi.action", when: { scope: "shared" } },
           ],
         },
       }),
@@ -76,7 +76,7 @@ function createMultiMatchPlugins() {
         manifest: { id: "plugin-err-b", name: "Err B", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "err-b.action", title: "Err B Action", intent: "error.multi.action", predicate: { scope: "shared" } },
+            { id: "err-b.action", title: "Err B Action", intent: "error.multi.action", when: { scope: "shared" } },
           ],
         },
       }),

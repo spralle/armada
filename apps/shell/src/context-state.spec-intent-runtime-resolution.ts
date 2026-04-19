@@ -23,7 +23,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
                 id: "orders.assign",
                 title: "Assign",
                 intent: "domain.orders.assign-to-vessel",
-                predicate: {
+                when: {
                   sourceType: "order",
                   targetType: "vessel",
                   "target.vesselClass": "RORO",
@@ -70,7 +70,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
                 id: "z-handler",
                 title: "Action Z",
                 intent: "domain.orders.assign-to-vessel",
-                predicate: { sourceType: "order" },
+                when: { sourceType: "order" },
               },
             ],
           },
@@ -92,7 +92,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
                 id: "a-handler",
                 title: "Action A",
                 intent: "domain.orders.assign-to-vessel",
-                predicate: { sourceType: "order" },
+                when: { sourceType: "order" },
               },
             ],
           },
@@ -132,7 +132,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
                 id: "orders.assign",
                 title: "Assign",
                 intent: "domain.orders.assign-to-vessel",
-                predicate: {
+                when: {
                   sourceType: "order",
                 },
               },
@@ -177,7 +177,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
                 id: "orders.assign-roro",
                 title: "Assign RORO",
                 intent: "domain.orders.assign-to-vessel",
-                predicate: {
+                when: {
                   sourceType: "order",
                   "target.vesselClass": "RORO",
                 },
@@ -186,7 +186,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
                 id: "orders.assign-tanker",
                 title: "Assign tanker",
                 intent: "domain.orders.assign-to-vessel",
-                predicate: {
+                when: {
                   sourceType: "order",
                   "target.vesselClass": "TANKER",
                 },

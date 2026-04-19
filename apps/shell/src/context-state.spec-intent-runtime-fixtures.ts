@@ -19,7 +19,7 @@ type RuntimeActionContract = {
       id: string;
       title: string;
       intent: string;
-      predicate?: Record<string, unknown>;
+      when?: Record<string, unknown>;
     }[];
     parts?: {
       id: string;

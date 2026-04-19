@@ -45,7 +45,7 @@ function createMultiMatchPlugins() {
         manifest: { id: "plugin-alpha", name: "Alpha", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "alpha.open", title: "Alpha Open", intent: "chooser.test.action", predicate: { scope: "shared" } },
+            { id: "alpha.open", title: "Alpha Open", intent: "chooser.test.action", when: { scope: "shared" } },
           ],
         },
       }),
@@ -58,7 +58,7 @@ function createMultiMatchPlugins() {
         manifest: { id: "plugin-beta", name: "Beta", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "beta.open", title: "Beta Open", intent: "chooser.test.action", predicate: { scope: "shared" } },
+            { id: "beta.open", title: "Beta Open", intent: "chooser.test.action", when: { scope: "shared" } },
           ],
         },
       }),

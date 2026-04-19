@@ -71,7 +71,7 @@ export function resolveKeybindingSequence(
       if (!firstExact) {
         if (
           evaluatePredicate(record.when, context, matcher) &&
-          evaluatePredicate(record.action.predicate, context, matcher)
+          evaluatePredicate(record.action.when, context, matcher)
         ) {
           firstExact = {
             action: record.action,

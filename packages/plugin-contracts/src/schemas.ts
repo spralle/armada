@@ -130,7 +130,7 @@ export const pluginActionContributionSchema = z
     id: nonEmptyString,
     title: nonEmptyString,
     intent: nonEmptyString,
-    predicate: pluginContributionPredicateSchema.optional(),
+    when: pluginContributionPredicateSchema.optional(),
   })
   .strict();
 

@@ -1,0 +1,29 @@
+{
+  "name": "@ghost/formr-from-schema",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": null
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@ghost/formr-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "zod": "^3.24.0"
+  },
+  "peerDependenciesMeta": {
+    "zod": { "optional": true }
+  }
+}

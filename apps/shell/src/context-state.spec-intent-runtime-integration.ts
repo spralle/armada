@@ -82,7 +82,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
                 id: "orders.assign",
                 title: "Assign Order",
                 intent: "domain.orders.assign",
-                predicate: { sourceType: "order" },
+                when: { sourceType: "order" },
               },
             ],
           },
@@ -122,7 +122,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
                 id: "orders.assign",
                 title: "Assign",
                 intent: "domain.orders.assign",
-                predicate: { sourceType: "order" },
+                when: { sourceType: "order" },
               },
             ],
           },
@@ -156,7 +156,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
           manifest: { id: "plugin-a", name: "Plugin A", version: "0.1.0" },
           contributes: {
             actions: [
-              { id: "a-handler", title: "Action A", intent: "domain.shared.action", predicate: { sourceType: "order" } },
+              { id: "a-handler", title: "Action A", intent: "domain.shared.action", when: { sourceType: "order" } },
             ],
           },
         }),
@@ -169,7 +169,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
           manifest: { id: "plugin-b", name: "Plugin B", version: "0.1.0" },
           contributes: {
             actions: [
-              { id: "b-handler", title: "Action B", intent: "domain.shared.action", predicate: { sourceType: "order" } },
+              { id: "b-handler", title: "Action B", intent: "domain.shared.action", when: { sourceType: "order" } },
             ],
           },
         }),
@@ -206,7 +206,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
           manifest: { id: "plugin-a", name: "Plugin A", version: "0.1.0" },
           contributes: {
             actions: [
-              { id: "a-handler", title: "Action A", intent: "domain.shared.action", predicate: { sourceType: "order" } },
+              { id: "a-handler", title: "Action A", intent: "domain.shared.action", when: { sourceType: "order" } },
             ],
           },
         }),
@@ -219,7 +219,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
           manifest: { id: "plugin-b", name: "Plugin B", version: "0.1.0" },
           contributes: {
             actions: [
-              { id: "b-handler", title: "Action B", intent: "domain.shared.action", predicate: { sourceType: "order" } },
+              { id: "b-handler", title: "Action B", intent: "domain.shared.action", when: { sourceType: "order" } },
             ],
           },
         }),
@@ -252,7 +252,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
           manifest: { id: "plugin-a", name: "Plugin A", version: "0.1.0" },
           contributes: {
             actions: [
-              { id: "a-handler", title: "Action A", intent: "domain.shared.action", predicate: { sourceType: "order" } },
+              { id: "a-handler", title: "Action A", intent: "domain.shared.action", when: { sourceType: "order" } },
             ],
           },
         }),
@@ -265,7 +265,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
           manifest: { id: "plugin-b", name: "Plugin B", version: "0.1.0" },
           contributes: {
             actions: [
-              { id: "b-handler", title: "Action B", intent: "domain.shared.action", predicate: { sourceType: "order" } },
+              { id: "b-handler", title: "Action B", intent: "domain.shared.action", when: { sourceType: "order" } },
             ],
           },
         }),
@@ -303,13 +303,13 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
                 id: "orders.assign-roro",
                 title: "Assign RORO",
                 intent: "domain.orders.assign",
-                predicate: { sourceType: "order", "target.vesselClass": "RORO" },
+                when: { sourceType: "order", "target.vesselClass": "RORO" },
               },
               {
                 id: "orders.assign-tanker",
                 title: "Assign Tanker",
                 intent: "domain.orders.assign",
-                predicate: { sourceType: "order", "target.vesselClass": "TANKER" },
+                when: { sourceType: "order", "target.vesselClass": "TANKER" },
               },
             ],
           },

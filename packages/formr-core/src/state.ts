@@ -1,0 +1,89 @@
+import type { CanonicalPath } from './path.js';
+
+/** ADR section 6.2 */
+export type IssueSeverity = 'error' | 'warning' | 'info';
+
+/** ADR section 6.2 — ValidationIssue */
+export interface ValidationIssue {
+  readonly code: string;
+  readonly message: string;
+  readonly severity: IssueSeverity;
+  readonly stage?: string;
+  readonly path: CanonicalPath;
+  readonly source: {
+    readonly origin:
+      | 'standard-schema'
+      | 'function-validator'
+      | 'json-schema-adapter'
+      | 'rule'
+      | 'middleware';
+    readonly validatorId: string;
+    readonly adapterId?: string;
+    readonly ruleId?: string;
+  };
+  readonly details?: Readonly<Record<string, unknown>>;
+}
+
+/** ADR section 2.1 — SubmitContext */
+export interface SubmitContext {
+  readonly actorId?: string;
+  readonly requestId: string;
+  readonly at: string; // ISO-8601 UTC
+  readonly metadata?: Readonly<Record<string, unknown>>;
+}
+
+/** ADR section 1.1 — FormState */
+export interface FormState {
+  readonly data: unknown;
+  readonly uiState: unknown;
+  readonly meta: {
+    readonly stage?: string;
+    readonly validation: {
+      readonly lastValidatedAt?: string; // ISO-8601 UTC
+    };
+    readonly submission?: {
+      readonly status: 'idle' | 'running' | 'succeeded' | 'failed';
+      readonly submitId?: string;
+      readonly lastAttemptAt?: string; // ISO-8601 UTC
+      readonly lastResultAt?: string; // ISO-8601 UTC
+      readonly lastErrorCode?: string;
+    };
+  };
+  readonly issues: readonly ValidationIssue[];
+}
+
+/** ADR section 9 — CreateFormOptions */
+export interface CreateFormOptions {
+  readonly schema?: unknown;
+  readonly uiStateSchema?: unknown;
+  readonly initialData?: unknown;
+  readonly initialUiState?: unknown;
+  readonly validators?: readonly ValidatorAdapter[];
+  readonly middleware?: readonly Middleware[];
+  readonly transforms?: readonly Transform[];
+  readonly arbiterRules?: readonly ProductionRule[] | undefined;
+  readonly arbiterSession?: RuleSession | undefined;
+  /** Form-level field defaults — merged below field-level overrides (tier 2 of 3) */
+  readonly fieldDefaults?: Readonly<FieldConfig>;
+  readonly onSubmit?: (
+    ctx: SubmitExecutionContext,
+  ) => Promise<SubmitResult>;
+  readonly timeouts?: {
+    readonly validator?: number;
+    readonly middleware?: number;
+    readonly submit?: number;
+  };
+  readonly stateStrategy?: StateStrategy;
+}
+
+// Imports for CreateFormOptions references
+import type {
+  ValidatorAdapter,
+  Middleware,
+  Transform,
+  FieldConfig,
+  SubmitExecutionContext,
+  SubmitResult,
+} from './contracts.js';
+import type { StateStrategy } from './transaction.js';
+import type { ProductionRule, RuleSession } from '@ghost/arbiter';

@@ -8,6 +8,8 @@
     "packages/*"
   ],
   "scripts": {
+    "test:formr": "bun test packages/formr-core/src packages/predicate/src packages/formr-from-schema/src packages/formr-react/src",
+    "test:conformance": "bun test --test-name-pattern F[0-9] packages/formr-core/src packages/predicate/src packages/formr-from-schema/src",
     "lint": "npm run check:architecture-guardrails --silent && npm run check:code-principles --silent && npm run check:config-schema --silent && npm run check:change-policies --silent && tsc --pretty false -p tsconfig.json --noEmit",
     "typecheck": "tsc --pretty false -p tsconfig.json --noEmit",
     "test": "npm run build --silent && tsc --pretty false -p apps/shell/tsconfig.test.json && tsc --pretty false -p apps/backend/tsconfig.test.json && node --test packages/*/test/*.test.mjs apps/shell/test/*.test.mjs apps/shell/src/*.integration.test.mjs apps/shell/dist-test/src/context-state.spec.js apps/shell/dist-test/src/window-bridge.spec.js apps/backend/test/*.test.mjs scripts/test/*.test.mjs && node --test --import ./apps/backend/test/register-ts-hooks.mjs apps/backend/test/*.test-hooked.mjs",

@@ -24,7 +24,7 @@ function createActionSurface(): ActionSurface {
         title: "Hidden Action",
         intent: "shell.intent.hidden",
         pluginId: "plugin.b",
-        predicate: {
+        when: {
           mode: "enabled",
         },
       },

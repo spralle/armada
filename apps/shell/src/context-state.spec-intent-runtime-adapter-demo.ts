@@ -24,7 +24,7 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
                 id: "orders.custom-matcher",
                 title: "Custom matcher",
                 intent: "domain.orders.adapter",
-                predicate: {
+                when: {
                   sourceType: "order",
                 },
               },
@@ -82,7 +82,7 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
                 id: "domain.orders.assign-to-vessel",
                 title: "Assign order to selected vessel",
                 intent: "domain.orders.assign-to-vessel",
-                predicate: {
+                when: {
                   sourceType: "order",
                   targetType: "vessel",
                 },
@@ -125,7 +125,7 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
                 id: "domain.orders.assign-to-vessel",
                 title: "Assign order to selected vessel",
                 intent: "domain.orders.assign-to-vessel",
-                predicate: {
+                when: {
                   sourceType: "order",
                   targetType: "vessel",
                 },
@@ -150,7 +150,7 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
                 id: "domain.vessel.assign-roro",
                 title: "Assign order to RORO vessel",
                 intent: "domain.orders.assign-to-vessel",
-                predicate: {
+                when: {
                   sourceType: "order",
                   targetType: "vessel",
                   "target.vesselClass": "RORO",

@@ -48,8 +48,8 @@ const domainOrdersPlugin = {
     manifest: { id: "ghost.domain.unplanned-orders", name: "Unplanned Orders", version: "0.1.0" },
     contributes: {
       actions: [
-        { id: "domain.unplanned-orders.open", title: "Open Unplanned Orders", intent: "domain.entity.open", predicate: { entityType: "order" } },
-        { id: "domain.unplanned-orders.inspect", title: "Inspect Order Details", intent: "domain.entity.inspect", predicate: { entityType: "order" } },
+        { id: "domain.unplanned-orders.open", title: "Open Unplanned Orders", intent: "domain.entity.open", when: { entityType: "order" } },
+        { id: "domain.unplanned-orders.inspect", title: "Inspect Order Details", intent: "domain.entity.inspect", when: { entityType: "order" } },
       ],
     },
   }),
@@ -63,8 +63,8 @@ const domainVesselPlugin = {
     manifest: { id: "ghost.domain.vessel-view", name: "Vessel View", version: "0.1.0" },
     contributes: {
       actions: [
-        { id: "domain.vessel-view.open", title: "Open Vessel View", intent: "domain.entity.open", predicate: { entityType: "vessel" } },
-        { id: "domain.vessel-view.inspect", title: "Inspect Vessel Details", intent: "domain.entity.inspect", predicate: { entityType: "vessel" } },
+        { id: "domain.vessel-view.open", title: "Open Vessel View", intent: "domain.entity.open", when: { entityType: "vessel" } },
+        { id: "domain.vessel-view.inspect", title: "Inspect Vessel Details", intent: "domain.entity.inspect", when: { entityType: "vessel" } },
       ],
     },
   }),
@@ -130,7 +130,7 @@ export function registerDomainIntentResolutionSpecs(harness: SpecHarness): void 
         manifest: { id: "ghost.domain.alternate-orders", name: "Alternate Orders", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "domain.alternate-orders.open", title: "Open Alternate Orders", intent: "domain.entity.open", predicate: { entityType: "order" } },
+            { id: "domain.alternate-orders.open", title: "Open Alternate Orders", intent: "domain.entity.open", when: { entityType: "order" } },
           ],
         },
       }),
