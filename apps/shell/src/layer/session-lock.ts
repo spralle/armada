@@ -56,8 +56,8 @@ export function createSessionLockManager(
 
       const savedStyles: LockState["savedStyles"] = [];
 
-      // Find all section.shell-layer children of layerHost
-      const sections = layerHost.querySelectorAll<HTMLElement>("section.shell-layer, main.shell-layer");
+      // Find all .shell-layer children of layerHost
+      const sections = layerHost.querySelectorAll<HTMLElement>(".shell-layer");
 
       for (const section of sections) {
         const saved = {

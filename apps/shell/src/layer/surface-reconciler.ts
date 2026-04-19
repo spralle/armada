@@ -44,6 +44,8 @@ export interface ReconcilerContext {
   pluginSnapshotMap: Map<string, PluginSnapshotEntry>;
   cleanupSurfaceBehaviors(key: string): void;
   maybeActivateSurfaceBehaviors(key: string, target: HTMLElement, surface: PluginLayerSurfaceContribution): void;
+  onSurfaceMounted?: (surfaceId: string, pluginId: string) => void;
+  onSurfaceMountError?: (surfaceId: string, pluginId: string, error: unknown) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -229,8 +231,10 @@ async function mountBuiltIn(
 
     ctx.mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
     ctx.maybeActivateSurfaceBehaviors(key, target, surface);
+    ctx.onSurfaceMounted?.(key, pluginId);
   } catch (err) {
     console.warn(`[shell] Built-in surface mount failed for "${key}":`, err);
+    ctx.onSurfaceMountError?.(key, pluginId, err);
   }
 }
 
@@ -276,7 +280,9 @@ async function mountViaFederation(
 
     ctx.mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
     ctx.maybeActivateSurfaceBehaviors(key, target, surface);
+    ctx.onSurfaceMounted?.(key, pluginId);
   } catch (err) {
     console.warn(`[shell] Federation surface mount failed for "${key}" (plugin: ${pluginId}):`, err);
+    ctx.onSurfaceMountError?.(key, pluginId, err);
   }
 }

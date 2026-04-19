@@ -5,7 +5,8 @@ export function createLayerContainer(
   layerHost: HTMLElement,
   layer: { name: string; zOrder: number },
 ): HTMLElement {
-  const el = document.createElement("section");
+  const el = document.createElement("div");
+  el.setAttribute("role", "presentation");
   el.className = "shell-layer";
   el.dataset.layer = layer.name;
   el.dataset.z = String(layer.zOrder);

@@ -24,11 +24,13 @@ interface MockEl {
   style: Record<string, string>;
   children: MockEl[];
   parentNode: MockEl | null;
+  attributes: Record<string, string>;
   querySelector(sel: string): MockEl | null;
   querySelectorAll(sel: string): MockEl[];
   appendChild(child: MockEl): void;
   insertBefore(child: MockEl, ref: MockEl): void;
   remove(): void;
+  setAttribute(name: string, value: string): void;
 }
 
 function makeMockEl(tag: string): MockEl {
@@ -39,6 +41,10 @@ function makeMockEl(tag: string): MockEl {
     style: {},
     children: [],
     parentNode: null,
+    attributes: {},
+    setAttribute(name: string, value: string) {
+      el.attributes[name] = value;
+    },
     querySelector(sel: string): MockEl | null {
       return matchSelector(el.children, sel, false)[0] ?? null;
     },
@@ -137,7 +143,7 @@ test("createLayerContainer sets correct attributes and style", () => {
   const mock = el as unknown as MockEl;
   assertEqual(mock.className, "shell-layer", "should have shell-layer class");
   assertEqual(mock.style.zIndex, "42", "should set z-index style");
-  assertEqual(mock.tagName, "SECTION", "should be a section element");
+  assertEqual(mock.tagName, "DIV", "should be a div element");
 });
 
 // --- removeLayerContainer ---

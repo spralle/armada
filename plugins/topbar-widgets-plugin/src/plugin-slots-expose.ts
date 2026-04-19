@@ -339,7 +339,7 @@ function showWorkspaceContextMenu(
   }
   menu.appendChild(deleteItem);
 
-  const floatingLayer = document.querySelector('section.shell-layer[data-layer="floating"]');
+  const floatingLayer = document.querySelector('.shell-layer[data-layer="floating"]');
   const mountTarget = floatingLayer ?? document.body;
   mountTarget.appendChild(menu);
 

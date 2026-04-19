@@ -48,6 +48,8 @@ export interface LayerSurfaceRendererOptions {
   federationRuntime: ShellFederationRuntime;
   layerRegistry: LayerRegistry;
   layerHost: HTMLElement;
+  onSurfaceMounted?: (surfaceId: string, pluginId: string) => void;
+  onSurfaceMountError?: (surfaceId: string, pluginId: string, error: unknown) => void;
 }
 
 export interface LayerSurfaceRenderer {
@@ -63,6 +65,8 @@ export function createLayerSurfaceRenderer(
   options: LayerSurfaceRendererOptions,
 ): LayerSurfaceRenderer {
   const { federationRuntime, layerRegistry, layerHost } = options;
+  const onSurfaceMounted = options.onSurfaceMounted;
+  const onSurfaceMountError = options.onSurfaceMountError;
   const mounted = new Map<string, SurfaceMountState>();
   const registeredRemoteIds = new Set<string>();
   const builtInSurfaceMounts = new Map<string, BuiltInSurfaceMountFn>();
@@ -143,6 +147,8 @@ export function createLayerSurfaceRenderer(
       get generation() { return generation; },
       cleanupSurfaceBehaviors,
       maybeActivateSurfaceBehaviors,
+      onSurfaceMounted,
+      onSurfaceMountError,
     };
   }
 
