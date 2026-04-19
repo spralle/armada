@@ -10,7 +10,8 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./globals.css": "./src/styles/globals.css"
+    "./globals.css": "./src/styles/globals.css",
+    "./theme.css": "./src/styles/theme.css"
   },
   "files": ["src"],
   "dependencies": {
