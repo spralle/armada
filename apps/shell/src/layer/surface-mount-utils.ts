@@ -74,9 +74,11 @@ export function createSurfaceMountKey(
   pluginId: string,
   surface: PluginLayerSurfaceContribution,
   runtime: ShellRuntime,
+  pluginSnapshotMap?: Map<string, { enabled: boolean; lifecycle?: { state: string } }>,
 ): string {
-  const snapshot = runtime.registry.getSnapshot();
-  const pluginSnapshot = snapshot.plugins.find((p) => p.id === pluginId);
+  const pluginSnapshot = pluginSnapshotMap
+    ? pluginSnapshotMap.get(pluginId)
+    : runtime.registry.getSnapshot().plugins.find((p) => p.id === pluginId);
   if (!pluginSnapshot) {
     return `${pluginId}|${surface.id}|missing`;
   }

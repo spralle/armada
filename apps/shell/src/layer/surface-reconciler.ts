@@ -30,6 +30,9 @@ import type { FocusGrabManager } from "./focus-grab.js";
 // Dependencies context passed from the renderer
 // ---------------------------------------------------------------------------
 
+/** Single plugin entry from the registry snapshot. */
+type PluginSnapshotEntry = ReturnType<ShellRuntime["registry"]["getSnapshot"]>["plugins"][number];
+
 export interface ReconcilerContext {
   mounted: Map<string, SurfaceMountState>;
   registeredRemoteIds: Set<string>;
@@ -38,6 +41,7 @@ export interface ReconcilerContext {
   federationRuntime: ShellFederationRuntime;
   focusGrabManager: FocusGrabManager;
   generation: number;
+  pluginSnapshotMap: Map<string, PluginSnapshotEntry>;
   cleanupSurfaceBehaviors(key: string): void;
   maybeActivateSurfaceBehaviors(key: string, target: HTMLElement, surface: PluginLayerSurfaceContribution): void;
 }
@@ -70,7 +74,7 @@ export function reconcileLayerContainer(
     previousElement = target;
 
     const existing = ctx.mounted.get(key);
-    const mountKey = createSurfaceMountKey(pluginId, surface, runtime);
+    const mountKey = createSurfaceMountKey(pluginId, surface, runtime, ctx.pluginSnapshotMap);
 
     if (existing && existing.element === target && existing.mountKey === mountKey) {
       continue;
@@ -225,8 +229,8 @@ async function mountBuiltIn(
 
     ctx.mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
     ctx.maybeActivateSurfaceBehaviors(key, target, surface);
-  } catch {
-    // Built-in mount failed — surface stays empty, no crash.
+  } catch (err) {
+    console.warn(`[shell] Built-in surface mount failed for "${key}":`, err);
   }
 }
 
@@ -241,8 +245,7 @@ async function mountViaFederation(
   expectedGeneration: number,
   surfaceContext: ReturnType<typeof createLayerSurfaceContext>,
 ): Promise<void> {
-  const snapshot = runtime.registry.getSnapshot();
-  const pluginSnapshot = snapshot.plugins.find((p) => p.id === pluginId);
+  const pluginSnapshot = ctx.pluginSnapshotMap.get(pluginId);
 
   ensureRemoteRegistered(
     pluginId,
@@ -273,7 +276,7 @@ async function mountViaFederation(
 
     ctx.mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
     ctx.maybeActivateSurfaceBehaviors(key, target, surface);
-  } catch {
-    // Mount failed — surface stays empty, no crash.
+  } catch (err) {
+    console.warn(`[shell] Federation surface mount failed for "${key}" (plugin: ${pluginId}):`, err);
   }
 }

@@ -129,7 +129,9 @@ export function createLayerSurfaceRenderer(
     builtInSurfaceMounts.set(component, mountFn);
   }
 
-  function buildReconcilerContext(): ReconcilerContext {
+  function buildReconcilerContext(runtime: ShellRuntime): ReconcilerContext {
+    const snapshot = runtime.registry.getSnapshot();
+    const pluginSnapshotMap = new Map(snapshot.plugins.map((p) => [p.id, p]));
     return {
       mounted,
       registeredRemoteIds,
@@ -137,6 +139,7 @@ export function createLayerSurfaceRenderer(
       layerRegistry,
       federationRuntime,
       focusGrabManager,
+      pluginSnapshotMap,
       get generation() { return generation; },
       cleanupSurfaceBehaviors,
       maybeActivateSurfaceBehaviors,
@@ -176,12 +179,12 @@ export function createLayerSurfaceRenderer(
     layerHost.style.setProperty("--layer-exclusive-left", `${zones.left}px`);
 
     // Reconcile each layer container
-    const ctx = buildReconcilerContext();
+    const ctx = buildReconcilerContext(runtime);
     for (const [layerName, surfaces] of surfacesByLayer) {
       const container = layerHost.querySelector<HTMLElement>(`.shell-layer[data-layer="${layerName}"]`);
       if (!container) continue;
 
-      const sorted = surfaces.sort((a, b) => (a.surface.order ?? 0) - (b.surface.order ?? 0));
+      const sorted = [...surfaces].sort((a, b) => (a.surface.order ?? 0) - (b.surface.order ?? 0));
       reconcileLayerContainer(ctx, container, sorted, runtime, currentGeneration);
     }
   }
@@ -196,6 +199,7 @@ export function createLayerSurfaceRenderer(
       state.element.remove();
     }
     mounted.clear();
+    registeredRemoteIds.clear();
     keyboardExclusiveManager.dispose();
     generation += 1;
   }
