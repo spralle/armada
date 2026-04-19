@@ -2,6 +2,7 @@ import {
   openPartInstance,
   type ShellContextState,
 } from "./context-state.js";
+import type { TabPlacementStrategy, PlacementConfig } from "./context-state/placement-strategy/types.js";
 
 function normalizeArgs(input: Record<string, string> | undefined): Record<string, string> {
   return input ? { ...input } : {};
@@ -13,6 +14,8 @@ export function openPartInstanceWithArgs(
     definitionId: string;
     args?: Record<string, string>;
     tabLabel?: string;
+    placementStrategy?: TabPlacementStrategy;
+    placementConfig?: PlacementConfig;
   },
 ): { state: ShellContextState; tabId: string } {
   return openPartInstance(state, {
@@ -20,5 +23,7 @@ export function openPartInstanceWithArgs(
     args: normalizeArgs(input.args),
     tabLabel: input.tabLabel,
     closePolicy: "closeable",
+    placementStrategy: input.placementStrategy,
+    placementConfig: input.placementConfig,
   });
 }
