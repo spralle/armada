@@ -1,22 +1,40 @@
+import { Kbd, KbdGroup } from "@ghost/ui";
+
 interface ChordDisplayProps {
   keybinding: string;
 }
 
-export function ChordDisplay({ keybinding }: ChordDisplayProps) {
-  const parts = keybinding.split(" ");
+function capitalizeKey(key: string): string {
+  if (key.length === 1) return key.toUpperCase();
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
 
-  if (parts.length === 1) {
-    return <code className="text-[11px]">{keybinding}</code>;
+function SingleChord({ chord }: { chord: string }) {
+  const keys = chord.split("+");
+  return (
+    <KbdGroup>
+      {keys.map((key, i) => (
+        <Kbd key={i}>{capitalizeKey(key)}</Kbd>
+      ))}
+    </KbdGroup>
+  );
+}
+
+export function ChordDisplay({ keybinding }: ChordDisplayProps) {
+  const chords = keybinding.split(" ");
+
+  if (chords.length === 1) {
+    return <SingleChord chord={chords[0]} />;
   }
 
   return (
-    <span>
-      {parts.map((part, i) => (
-        <span key={i}>
+    <span className="inline-flex items-center gap-1">
+      {chords.map((chord, i) => (
+        <span key={i} className="inline-flex items-center gap-1">
           {i > 0 && (
-            <span className="text-muted-foreground text-[10px]"> → </span>
+            <span className="text-muted-foreground text-[10px]">→</span>
           )}
-          <code className="text-[11px]">{part}</code>
+          <SingleChord chord={chord} />
         </span>
       ))}
     </span>
