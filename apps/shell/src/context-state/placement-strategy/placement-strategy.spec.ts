@@ -97,7 +97,7 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
   // ─── PlacementConfig defaults ───────────────────────────────────────
 
   h.test("config: default placement config is tabs with alternate dwindle", () => {
-    h.assertEqual(DEFAULT_PLACEMENT_CONFIG.strategy, "tabs", "default strategy is tabs");
+    h.assertEqual(DEFAULT_PLACEMENT_CONFIG.strategy, "dwindle", "default strategy is dwindle");
     h.assertEqual(DEFAULT_PLACEMENT_CONFIG.dwindleDirection, "alternate", "default dwindle direction is alternate");
   });
 

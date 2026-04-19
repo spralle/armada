@@ -41,7 +41,12 @@ export function createGhostApiDeps(
         return getVisiblePartDefinitions(runtime);
       },
       openPartInstance: (input) => {
-        const result = openPartInstanceWithArgs(runtime.contextState, input);
+        const strategy = runtime.placementRegistry.getActive(runtime.placementConfig);
+        const result = openPartInstanceWithArgs(runtime.contextState, {
+          ...input,
+          placementStrategy: strategy,
+          placementConfig: runtime.placementConfig,
+        });
         updateContextState(runtime, result.state);
         return result.tabId;
       },
