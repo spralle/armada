@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
-import { createJsonSchemaValidator } from '../json-schema-validator.js';
-import type { JsonSchema } from '../json-schema-types.js';
+import { createJsonSchemaValidator } from '../adapters/json-schema-validator.js';
+import type { JsonSchema } from '../adapters/json-schema-types.js';
 
 /**
  * F4: Validation envelope conformance fixtures.

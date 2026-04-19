@@ -1,4 +1,4 @@
-import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult } from './types.js';
+import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult } from '../types.js';
 import type { JsonSchema } from './json-schema-types.js';
 import { dereferenceSchema } from './json-schema-deref.js';
 

@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'bun:test';
-import { extractFromJsonSchema } from '../json-schema-extractor.js';
-import { createJsonSchemaValidator, isJsonSchema } from '../json-schema-validator.js';
+import { extractFromJsonSchema } from '../adapters/json-schema-extractor.js';
+import { createJsonSchemaValidator, isJsonSchema } from '../adapters/json-schema-validator.js';
 import { ingestSchema } from '../ingest.js';
-import type { JsonSchema } from '../json-schema-types.js';
+import type { JsonSchema } from '../adapters/json-schema-types.js';
 
 const simpleSchema: JsonSchema = {
   type: 'object',

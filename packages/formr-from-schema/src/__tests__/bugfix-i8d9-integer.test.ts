@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
-import { extractFromJsonSchema } from '../json-schema-extractor.js';
-import type { JsonSchema } from '../json-schema-types.js';
+import { extractFromJsonSchema } from '../adapters/json-schema-extractor.js';
+import type { JsonSchema } from '../adapters/json-schema-types.js';
 
 describe('i8d9: integer type mapping', () => {
   test('maps JSON Schema integer to integer field type', () => {

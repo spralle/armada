@@ -6,7 +6,7 @@ import {
   resolveExpressionRequired,
   resolveAllConditionalRequired,
 } from '../conditional-required.js';
-import type { JsonSchema } from '../json-schema-types.js';
+import type { JsonSchema } from '../adapters/json-schema-types.js';
 
 describe('resolveIfThenElseRequired', () => {
   test('field becomes required when if-condition matches (then branch)', () => {

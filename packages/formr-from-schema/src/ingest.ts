@@ -1,11 +1,11 @@
 import type { SchemaIngestionResult } from './types.js';
 import { isStandardSchema, isZodSchema, isZodV4Schema } from './detect.js';
-import { extractFromZod } from './zod-extractor.js';
-import { extractFromZodV4 } from './zod4-extractor.js';
-import { extractFromJsonSchema } from './json-schema-extractor.js';
-import { isJsonSchema } from './json-schema-validator.js';
+import { extractFromZod } from './adapters/zod-extractor.js';
+import { extractFromZodV4 } from './adapters/zod4-extractor.js';
+import { extractFromJsonSchema } from './adapters/json-schema-extractor.js';
+import { isJsonSchema } from './adapters/json-schema-validator.js';
 import { FromSchemaError } from './errors.js';
-import type { JsonSchema } from './json-schema-types.js';
+import type { JsonSchema } from './adapters/json-schema-types.js';
 import { findExtractor, createValidationOnlyResult } from './extractor-registry.js';
 
 export function ingestSchema(schema: unknown): SchemaIngestionResult {

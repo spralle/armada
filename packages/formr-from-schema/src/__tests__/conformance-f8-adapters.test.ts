@@ -1,10 +1,10 @@
 import { describe, test, expect } from 'bun:test';
-import { createJsonSchemaValidator, isJsonSchema } from '../json-schema-validator.js';
+import { createJsonSchemaValidator, isJsonSchema } from '../adapters/json-schema-validator.js';
 import { ingestSchema } from '../ingest.js';
-import { extractFromZod } from '../zod-extractor.js';
+import { extractFromZod } from '../adapters/zod-extractor.js';
 import { isStandardSchema } from '../detect.js';
 import { FromSchemaError } from '../errors.js';
-import type { JsonSchema } from '../json-schema-types.js';
+import type { JsonSchema } from '../adapters/json-schema-types.js';
 
 /**
  * F8: Schema adapters conformance fixtures.

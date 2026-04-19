@@ -1,7 +1,7 @@
 import type { ValidatorAdapter, ValidationIssue } from '@ghost/formr-core';
 import type { JsonSchema } from './json-schema-types.js';
 import { dereferenceSchema } from './json-schema-deref.js';
-import { makeIssue as makeIssueBase, isObject, checkType } from './utils.js';
+import { makeIssue as makeIssueBase, isObject, checkType } from '../utils.js';
 
 const ADAPTER_ORIGIN = 'json-schema-adapter' as const;
 

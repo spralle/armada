@@ -1,4 +1,4 @@
-import { FromSchemaError } from './errors.js';
+import { FromSchemaError } from '../errors.js';
 import { type LayoutNode, isBuiltInNodeType } from './layout-types.js';
 
 export interface LayoutNodeDefinition {

@@ -1,9 +1,9 @@
 export { ingestSchema } from './ingest.js';
 export { isStandardSchema, isZodSchema, isZodV4Schema } from './detect.js';
-export { extractFromZod } from './zod-extractor.js';
-export { extractFromZodV4 } from './zod4-extractor.js';
-export { extractFromJsonSchema } from './json-schema-extractor.js';
-export { createJsonSchemaValidator, isJsonSchema } from './json-schema-validator.js';
+export { extractFromZod } from './adapters/zod-extractor.js';
+export { extractFromZodV4 } from './adapters/zod4-extractor.js';
+export { extractFromJsonSchema } from './adapters/json-schema-extractor.js';
+export { createJsonSchemaValidator, isJsonSchema } from './adapters/json-schema-validator.js';
 export { FromSchemaError, type FromSchemaErrorCode } from './errors.js';
 export {
   mergeMetadata,
@@ -19,7 +19,7 @@ export {
   type SchemaFieldType,
   type SchemaIngestionResult,
 } from './types.js';
-export { type JsonSchema } from './json-schema-types.js';
+export { type JsonSchema } from './adapters/json-schema-types.js';
 export {
   type SchemaExtractor,
   registerExtractor,
@@ -36,9 +36,9 @@ export {
   isArrayNode,
   isGroupNode,
   isSectionNode,
-} from './layout-types.js';
-export { LayoutNodeRegistry, type LayoutNodeDefinition } from './layout-registry.js';
-export { compileLayout, type LayoutCompileOptions } from './layout-compiler.js';
+} from './layout/layout-types.js';
+export { LayoutNodeRegistry, type LayoutNodeDefinition } from './layout/layout-registry.js';
+export { compileLayout, type LayoutCompileOptions } from './layout/layout-compiler.js';
 export {
   resolveIfThenElseRequired,
   resolveDependentRequired,

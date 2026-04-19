@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'bun:test';
-import { dereferenceSchema } from '../json-schema-deref.js';
-import { extractFromJsonSchema } from '../json-schema-extractor.js';
-import { createJsonSchemaValidator } from '../json-schema-validator.js';
-import type { JsonSchema } from '../json-schema-types.js';
+import { dereferenceSchema } from '../adapters/json-schema-deref.js';
+import { extractFromJsonSchema } from '../adapters/json-schema-extractor.js';
+import { createJsonSchemaValidator } from '../adapters/json-schema-validator.js';
+import type { JsonSchema } from '../adapters/json-schema-types.js';
 
 describe('dereferenceSchema', () => {
   test('resolves $defs with $ref', () => {

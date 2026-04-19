@@ -5,9 +5,9 @@ import {
   isGroupNode,
   isSectionNode,
   type LayoutNode,
-} from '../layout-types.js';
-import { LayoutNodeRegistry } from '../layout-registry.js';
-import { compileLayout } from '../layout-compiler.js';
+} from '../layout/layout-types.js';
+import { LayoutNodeRegistry } from '../layout/layout-registry.js';
+import { compileLayout } from '../layout/layout-compiler.js';
 import { FromSchemaError } from '../errors.js';
 import type { SchemaIngestionResult } from '../types.js';
 

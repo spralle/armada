@@ -1,5 +1,5 @@
-import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult } from './types.js';
-import { FromSchemaError } from './errors.js';
+import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult } from '../types.js';
+import { FromSchemaError } from '../errors.js';
 
 /**
  * Zod v4 introspection interfaces. v4 replaces `_def` with a `_zod` property

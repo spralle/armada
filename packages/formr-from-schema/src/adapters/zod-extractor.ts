@@ -1,5 +1,5 @@
-import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult } from './types.js';
-import { FromSchemaError } from './errors.js';
+import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult } from '../types.js';
+import { FromSchemaError } from '../errors.js';
 
 // Zod internal types for duck-typed traversal (Zod has no formal traversal API)
 interface ZodTypeDef {

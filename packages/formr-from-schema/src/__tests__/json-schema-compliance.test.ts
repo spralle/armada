@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'bun:test';
-import { createJsonSchemaValidator, isJsonSchema } from '../json-schema-validator.js';
-import { extractFromJsonSchema } from '../json-schema-extractor.js';
+import { createJsonSchemaValidator, isJsonSchema } from '../adapters/json-schema-validator.js';
+import { extractFromJsonSchema } from '../adapters/json-schema-extractor.js';
 import { resolveIfThenElseRequired } from '../conditional-required.js';
-import type { JsonSchema } from '../json-schema-types.js';
+import type { JsonSchema } from '../adapters/json-schema-types.js';
 
 function validate(schema: JsonSchema, data: unknown) {
   return createJsonSchemaValidator(schema).validate({ data, uiState: {}, stage: 'submit' });
