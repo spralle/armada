@@ -2,17 +2,14 @@ import { describe, test, expect } from 'bun:test';
 import {
   createForm,
   normalizeIssues,
-  createDefaultStagePolicy,
   type Middleware,
   type ValidatorAdapter,
   type ValidationIssue,
   type FormState,
 } from '../index.js';
 
-type DefaultStages = 'draft' | 'submit' | 'approve';
-
 /** Trace middleware that records hook invocations in order */
-function createTraceMiddleware(): Middleware<DefaultStages> & { trace: string[] } {
+function createTraceMiddleware(): Middleware & { trace: string[] } {
   const trace: string[] = [];
   return {
     id: 'trace',
@@ -41,7 +38,7 @@ describe('F6: Runtime algorithm conformance', () => {
   test('F6.02: transaction atomicity — error during mutation rolls back', () => {
     // Use a veto hook (beforeAction) that throws to trigger rollback,
     // since notify hooks (beforeEvaluate) now swallow errors for reliability
-    const badMiddleware: Middleware<DefaultStages> = {
+    const badMiddleware: Middleware = {
       id: 'bomb',
       beforeAction() {
         throw new Error('boom');
@@ -59,7 +56,7 @@ describe('F6: Runtime algorithm conformance', () => {
   });
 
   test('F6.03: middleware beforeAction veto rolls back, state unchanged', () => {
-    const vetoMiddleware: Middleware<DefaultStages> = {
+    const vetoMiddleware: Middleware = {
       id: 'veto',
       beforeAction() {
         return { action: 'veto' as const, reason: 'denied' };
@@ -90,15 +87,14 @@ describe('F6: Runtime algorithm conformance', () => {
   });
 
   test('F6.05: validator issues collected and normalized', () => {
-    const policy = createDefaultStagePolicy();
-    const validator: ValidatorAdapter<DefaultStages> = {
+    const validator: ValidatorAdapter = {
       id: 'test-validator',
       supports: () => true,
       validate: ({ stage }) => [{
         code: 'REQUIRED',
         message: 'Name is required',
         severity: 'error' as const,
-        stage,
+        ...(stage !== undefined ? { stage } : {}),
         path: { namespace: 'data' as const, segments: ['name'] },
         source: { origin: 'function-validator' as const, validatorId: 'test-validator' },
       }],
@@ -115,37 +111,26 @@ describe('F6: Runtime algorithm conformance', () => {
     form.dispose();
   });
 
-  test('F6.06: submit with persistent mode advances stage on success', async () => {
+  test('F6.06: submit succeeds on valid form', async () => {
     const form = createForm({
       initialData: { name: 'Alice' },
       onSubmit: async () => ({ ok: true, submitId: 'test-submit' }),
     });
-    const result = await form.submit({ requestedStage: 'submit', mode: 'persistent' });
+    const result = await form.submit();
     expect(result.ok).toBe(true);
-    expect(form.getState().meta.stage).toBe('submit');
-    form.dispose();
-  });
-
-  test('F6.07: submit with transient mode does NOT advance stage', async () => {
-    const form = createForm({
-      initialData: { name: 'Alice' },
-      onSubmit: async () => ({ ok: true, submitId: 'test-submit' }),
-    });
-    const result = await form.submit({ requestedStage: 'submit', mode: 'transient' });
-    expect(result.ok).toBe(true);
-    expect(form.getState().meta.stage).toBe('draft');
+    expect(form.getState().meta.submission?.status).toBe('succeeded');
     form.dispose();
   });
 
   test('F6.08: submit failure retains validation issues', async () => {
-    const validator: ValidatorAdapter<DefaultStages> = {
+    const validator: ValidatorAdapter = {
       id: 'blocker',
       supports: () => true,
       validate: () => [{
         code: 'BLOCKED',
         message: 'Blocked',
         severity: 'error' as const,
-        stage: 'draft' as const,
+        stage: 'draft',
         path: { namespace: 'data' as const, segments: ['x'] },
         source: { origin: 'function-validator' as const, validatorId: 'blocker' },
       }],
@@ -155,7 +140,7 @@ describe('F6: Runtime algorithm conformance', () => {
       validators: [validator],
       onSubmit: async () => ({ ok: true, submitId: 's1' }),
     });
-    const result = await form.submit({ requestedStage: 'submit', mode: 'persistent' });
+    const result = await form.submit();
     expect(result.ok).toBe(false);
     const issues = form.getState().issues;
     expect(issues.some((i) => i.code === 'BLOCKED')).toBe(true);
@@ -164,7 +149,7 @@ describe('F6: Runtime algorithm conformance', () => {
 
   test('F6.09: subscriber notification fires after commit', () => {
     const form = createForm({ initialData: { x: 0 } });
-    const notifications: FormState<DefaultStages>[] = [];
+    const notifications: FormState[] = [];
     form.subscribe((state) => { notifications.push(state); });
     form.setValue('x', 42);
     expect(notifications.length).toBeGreaterThan(0);

@@ -1,31 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createForm } from '../create-form.js';
-import { createStagePolicy } from '../stage-policy.js';
 import type { Middleware, MiddlewareDecision, ValidatorAdapter } from '../contracts.js';
 import type { ValidationIssue } from '../state.js';
 import type { TransformDefinition } from '../transforms.js';
 
-function createTestPolicy() {
-  return createStagePolicy({
-    orderedStages: ['draft', 'submit', 'approve'] as const,
-    defaultStage: 'draft',
-    transitions: [
-      { from: 'draft', to: 'submit' },
-      { from: 'submit', to: 'approve' },
-    ],
-  });
-}
-
-function createTracingMiddleware(log: string[]): Middleware<'draft' | 'submit' | 'approve'> {
+function createTracingMiddleware(log: string[]): Middleware {
   return {
     id: 'tracer',
     beforeAction: (ctx) => { log.push(`beforeAction:${ctx.action.type}`); return { action: 'continue' }; },
     afterAction: (ctx) => { log.push(`afterAction:${ctx.action.type}`); },
     beforeEvaluate: (ctx) => { log.push(`beforeEvaluate:${ctx.action.type}`); },
     afterEvaluate: (ctx) => { log.push(`afterEvaluate:${ctx.action.type}`); },
-    beforeValidate: (ctx) => { log.push(`beforeValidate:${ctx.stage}`); },
+    beforeValidate: (ctx) => { log.push(`beforeValidate:${ctx.stage ?? 'none'}`); },
     afterValidate: (ctx) => { log.push(`afterValidate:issues=${ctx.issues.length}`); },
-    beforeSubmit: (ctx) => { log.push(`beforeSubmit:${ctx.submitContext.mode}`); return { action: 'continue' }; },
+    beforeSubmit: (ctx) => { log.push(`beforeSubmit:${ctx.submitContext.requestId}`); return { action: 'continue' }; },
     afterSubmit: (ctx) => { log.push(`afterSubmit:ok=${ctx.result.ok}`); },
   };
 }
@@ -35,7 +23,6 @@ describe('pipeline — 18-step engine', () => {
     const log: string[] = [];
     const mw = createTracingMiddleware(log);
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       middleware: [mw],
       initialData: { name: '' },
     });
@@ -46,7 +33,7 @@ describe('pipeline — 18-step engine', () => {
       'beforeAction:set-value',
       'beforeEvaluate:set-value',
       'afterEvaluate:set-value',
-      'beforeValidate:draft',
+      'beforeValidate:none',
       'afterValidate:issues=0',
       'afterAction:set-value',
     ]);
@@ -54,12 +41,11 @@ describe('pipeline — 18-step engine', () => {
   });
 
   it('middleware beforeAction veto rolls back transaction', () => {
-    const vetoMw: Middleware<'draft' | 'submit' | 'approve'> = {
+    const vetoMw: Middleware = {
       id: 'veto',
       beforeAction: () => ({ action: 'veto', reason: 'blocked' }),
     };
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       middleware: [vetoMw],
       initialData: { name: 'original' },
     });
@@ -73,13 +59,12 @@ describe('pipeline — 18-step engine', () => {
   });
 
   it('middleware beforeSubmit veto rolls back', async () => {
-    const vetoMw: Middleware<'draft' | 'submit' | 'approve'> = {
+    const vetoMw: Middleware = {
       id: 'submit-veto',
       beforeSubmit: () => ({ action: 'veto', reason: 'not ready' }),
     };
     const onSubmit = vi.fn().mockResolvedValue({ ok: true, submitId: 'x' });
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       middleware: [vetoMw],
       onSubmit,
     });
@@ -92,20 +77,19 @@ describe('pipeline — 18-step engine', () => {
   });
 
   it('validators produce issues that are normalized and stored', () => {
-    const validator: ValidatorAdapter<'draft' | 'submit' | 'approve'> = {
+    const validator: ValidatorAdapter = {
       id: 'test-validator',
       supports: () => true,
       validate: ({ stage }) => [{
         code: 'required',
         message: 'Name is required',
         severity: 'error',
-        stage,
+        ...(stage !== undefined ? { stage } : {}),
         path: { namespace: 'data', segments: ['name'] },
         source: { origin: 'function-validator', validatorId: 'test-validator' },
       }],
     };
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       validators: [validator],
       initialData: { name: '' },
     });
@@ -119,7 +103,6 @@ describe('pipeline — 18-step engine', () => {
 
   it('expression evaluation runs in the pipeline', () => {
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       arbiterRules: [{
         name: 'r1',
         when: {},
@@ -147,7 +130,6 @@ describe('pipeline — 18-step engine', () => {
       },
     ];
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       transforms,
       initialData: { name: '' },
     });
@@ -157,26 +139,15 @@ describe('pipeline — 18-step engine', () => {
     expect((form.getState().data as Record<string, unknown>).name).toBe('HELLO');
   });
 
-  it('submit with persistent mode updates meta.stage on success', async () => {
+  it('submit succeeds and updates meta on success', async () => {
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       onSubmit: async () => ({ ok: true, submitId: 'test' }),
     });
 
-    await form.submit({ requestedStage: 'submit', mode: 'persistent' });
+    const result = await form.submit();
 
-    expect(form.getState().meta.stage).toBe('submit');
-  });
-
-  it('submit with transient mode does NOT update meta.stage', async () => {
-    const form = createForm({
-      stagePolicy: createTestPolicy(),
-      onSubmit: async () => ({ ok: true, submitId: 'test' }),
-    });
-
-    await form.submit({ requestedStage: 'submit', mode: 'transient' });
-
-    expect(form.getState().meta.stage).toBe('draft');
+    expect(result.ok).toBe(true);
+    expect(form.getState().meta.submission?.status).toBe('succeeded');
   });
 
   it('full action→commit cycle integration', () => {
@@ -184,7 +155,6 @@ describe('pipeline — 18-step engine', () => {
     const mw = createTracingMiddleware(log);
     const listener = vi.fn();
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       middleware: [mw],
       initialData: { x: 0 },
     });
@@ -205,12 +175,11 @@ describe('pipeline — 18-step engine', () => {
   it('all-or-nothing: error during pipeline rolls back', () => {
     // Use a veto hook (beforeAction) that throws to trigger rollback,
     // since notify hooks (beforeEvaluate) now swallow errors for reliability
-    const badMw: Middleware<'draft' | 'submit' | 'approve'> = {
+    const badMw: Middleware = {
       id: 'crasher',
       beforeAction: () => { throw new Error('boom'); },
     };
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       middleware: [badMw],
       initialData: { x: 'safe' },
     });
@@ -224,16 +193,15 @@ describe('pipeline — 18-step engine', () => {
 
   it('multiple middleware run in registration order', () => {
     const log: string[] = [];
-    const mw1: Middleware<'draft' | 'submit' | 'approve'> = {
+    const mw1: Middleware = {
       id: 'first',
       beforeAction: () => { log.push('first'); return { action: 'continue' }; },
     };
-    const mw2: Middleware<'draft' | 'submit' | 'approve'> = {
+    const mw2: Middleware = {
       id: 'second',
       beforeAction: () => { log.push('second'); return { action: 'continue' }; },
     };
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       middleware: [mw1, mw2],
       initialData: { x: 0 },
     });
@@ -247,33 +215,31 @@ describe('pipeline — 18-step engine', () => {
     const log: string[] = [];
     const mw = createTracingMiddleware(log);
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       middleware: [mw],
       onSubmit: async () => ({ ok: true, submitId: 'test' }),
     });
 
     await form.submit();
 
-    expect(log).toContain('beforeSubmit:persistent');
+    expect(log.some(l => l.startsWith('beforeSubmit:'))).toBe(true);
     expect(log).toContain('afterSubmit:ok=true');
   });
 
   it('validator issues block submit', async () => {
-    const validator: ValidatorAdapter<'draft' | 'submit' | 'approve'> = {
+    const validator: ValidatorAdapter = {
       id: 'blocker',
       supports: () => true,
       validate: () => [{
         code: 'required',
         message: 'Required',
         severity: 'error',
-        stage: 'draft' as const,
+        stage: 'draft',
         path: { namespace: 'data' as const, segments: ['x'] },
         source: { origin: 'function-validator' as const, validatorId: 'blocker' },
       }],
     };
     const onSubmit = vi.fn().mockResolvedValue({ ok: true, submitId: 'x' });
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       validators: [validator],
       onSubmit,
     });
@@ -286,14 +252,13 @@ describe('pipeline — 18-step engine', () => {
   });
 
   it('throws FORMR_ASYNC_IN_SYNC_PIPELINE when validator returns Promise in dispatch', () => {
-    const asyncValidator: ValidatorAdapter<'draft' | 'submit' | 'approve'> = {
+    const asyncValidator: ValidatorAdapter = {
       id: 'async-val',
       supports: () => true,
       validate: () => Promise.resolve([]),
     };
 
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       validators: [asyncValidator],
     });
 
@@ -303,14 +268,13 @@ describe('pipeline — 18-step engine', () => {
   });
 
   it('throws FORMR_ASYNC_IN_SYNC_PIPELINE when validator returns Promise in validate()', () => {
-    const asyncValidator: ValidatorAdapter<'draft' | 'submit' | 'approve'> = {
+    const asyncValidator: ValidatorAdapter = {
       id: 'async-val',
       supports: () => true,
       validate: () => Promise.resolve([]),
     };
 
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       validators: [asyncValidator],
     });
 

@@ -5,7 +5,7 @@ import type { RuleWriteIntent } from './contracts.js';
 
 export interface ArbiterFormAdapter {
   readonly session: RuleSession;
-  readonly syncAndFire: <S extends string>(state: FormState<S>) => readonly RuleWriteIntent[];
+  readonly syncAndFire: (state: FormState) => readonly RuleWriteIntent[];
   readonly dispose: () => void;
 }
 
@@ -13,9 +13,9 @@ export interface ArbiterFormAdapter {
  * Sync FormState into arbiter session scope, fire, and return writes.
  * Form data fields go to root namespace. $ui fields go to $ui namespace.
  */
-function syncAndFireImpl<S extends string>(
+function syncAndFireImpl(
   session: RuleSession,
-  state: FormState<S>,
+  state: FormState,
 ): readonly RuleWriteIntent[] {
   const data = (state.data ?? {}) as Readonly<Record<string, unknown>>;
   const uiState = (state.uiState ?? {}) as Readonly<Record<string, unknown>>;
@@ -53,7 +53,7 @@ export function createArbiterAdapter(
 
   return {
     session,
-    syncAndFire: <S extends string>(state: FormState<S>) => syncAndFireImpl(session, state),
+    syncAndFire: (state: FormState) => syncAndFireImpl(session, state),
     dispose: () => session.dispose(),
   };
 }
@@ -64,7 +64,7 @@ export function createArbiterAdapterFromSession(
 ): ArbiterFormAdapter {
   return {
     session,
-    syncAndFire: <S extends string>(state: FormState<S>) => syncAndFireImpl(session, state),
+    syncAndFire: (state: FormState) => syncAndFireImpl(session, state),
     dispose: () => session.dispose(),
   };
 }

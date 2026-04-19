@@ -4,16 +4,16 @@ import type { CreateFormOptions, FormApi, SubmitResult } from '@ghost/formr-core
 import { focusFirstError } from './a11y.js';
 
 /** Options for useForm, extending core CreateFormOptions with React-specific behavior */
-export interface UseFormOptions<S extends string = string> extends CreateFormOptions<S> {
+export interface UseFormOptions extends CreateFormOptions {
   /** Auto-focus the first error field on submit failure (default: true) */
   readonly autoFocusOnError?: boolean;
 }
 
-export function useForm<S extends string = 'draft' | 'submit' | 'approve'>(
-  options?: UseFormOptions<S>,
-): FormApi<S> {
+export function useForm(
+  options?: UseFormOptions,
+): FormApi {
   const autoFocus = options?.autoFocusOnError ?? true;
-  const formRef = useRef<FormApi<S> | null>(null);
+  const formRef = useRef<FormApi | null>(null);
 
   if (formRef.current === null) {
     formRef.current = createForm(options);
@@ -35,12 +35,12 @@ export function useForm<S extends string = 'draft' | 'submit' | 'approve'>(
   }, [form]);
 
   // Wrap the form API to auto-focus on submit errors (ADR §12)
-  const wrappedApi = useMemo((): FormApi<S> => {
+  const wrappedApi = useMemo((): FormApi => {
     if (!autoFocus) return form;
 
     return {
       ...form,
-      submit: async (...args: Parameters<FormApi<S>['submit']>): Promise<SubmitResult> => {
+      submit: async (...args: Parameters<FormApi['submit']>): Promise<SubmitResult> => {
         const result = await form.submit(...args);
         if (!result.ok && result.fieldIssues?.length) {
           focusFirstError(result.fieldIssues);

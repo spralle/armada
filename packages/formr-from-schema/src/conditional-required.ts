@@ -12,10 +12,10 @@ import { makeIssue, isObject, checkType } from './utils.js';
  * 4. Expression-based (stub — wired later)
  */
 
-interface ConditionalRequiredInput<S extends string> {
+interface ConditionalRequiredInput {
   readonly schema: JsonSchema;
   readonly data: Record<string, unknown>;
-  readonly stage: S;
+  readonly stage: string | undefined;
 }
 
 function isEmpty(value: unknown): boolean {
@@ -54,9 +54,9 @@ function evaluateIfSchema(ifSchema: JsonSchema, data: Record<string, unknown>): 
  * Resolve conditional required fields from if/then/else.
  * Evaluates the `if` schema; applies `then` or `else` required fields.
  */
-export function resolveIfThenElseRequired<S extends string>(
-  input: ConditionalRequiredInput<S>,
-): readonly ValidationIssue<S>[] {
+export function resolveIfThenElseRequired(
+  input: ConditionalRequiredInput,
+): readonly ValidationIssue[] {
   const { schema, data, stage } = input;
   if (!schema.if) return [];
 
@@ -64,7 +64,7 @@ export function resolveIfThenElseRequired<S extends string>(
   const branch = conditionMet ? schema.then : schema.else;
   if (!branch) return [];
 
-  const issues: ValidationIssue<S>[] = [];
+  const issues: ValidationIssue[] = [];
 
   if (branch.required) {
     for (const field of branch.required) {
@@ -92,13 +92,13 @@ export function resolveIfThenElseRequired<S extends string>(
  * Resolve conditional required fields from dependentRequired.
  * If field X has a value, fields Y,Z become required.
  */
-export function resolveDependentRequired<S extends string>(
-  input: ConditionalRequiredInput<S>,
-): readonly ValidationIssue<S>[] {
+export function resolveDependentRequired(
+  input: ConditionalRequiredInput,
+): readonly ValidationIssue[] {
   const { schema, data, stage } = input;
   if (!schema.dependentRequired) return [];
 
-  const issues: ValidationIssue<S>[] = [];
+  const issues: ValidationIssue[] = [];
   for (const [trigger, deps] of Object.entries(schema.dependentRequired)) {
     if (!isEmpty(data[trigger])) {
       for (const dep of deps) {
@@ -139,16 +139,16 @@ function matchesOneOfBranch(branch: JsonSchema, data: Record<string, unknown>): 
  * Resolve required fields from oneOf (discriminated unions).
  * Finds the matching branch and applies its required fields.
  */
-export function resolveOneOfRequired<S extends string>(
-  input: ConditionalRequiredInput<S>,
-): readonly ValidationIssue<S>[] {
+export function resolveOneOfRequired(
+  input: ConditionalRequiredInput,
+): readonly ValidationIssue[] {
   const { schema, data, stage } = input;
   if (!schema.oneOf || schema.oneOf.length === 0) return [];
 
   const matchingBranch = schema.oneOf.find((branch) => matchesOneOfBranch(branch, data));
   if (!matchingBranch?.required) return [];
 
-  const issues: ValidationIssue<S>[] = [];
+  const issues: ValidationIssue[] = [];
   for (const field of matchingBranch.required) {
     if (isEmpty(data[field])) {
       issues.push(makeIssue(
@@ -167,18 +167,18 @@ export function resolveOneOfRequired<S extends string>(
  * Stub for expression-based conditional requiredness.
  * Returns empty — actual integration happens when expression engine is wired.
  */
-export function resolveExpressionRequired<S extends string>(
-  _input: ConditionalRequiredInput<S>,
-): readonly ValidationIssue<S>[] {
+export function resolveExpressionRequired(
+  _input: ConditionalRequiredInput,
+): readonly ValidationIssue[] {
   return [];
 }
 
 /**
  * Resolve all conditional required fields from a schema and data.
  */
-export function resolveAllConditionalRequired<S extends string>(
-  input: ConditionalRequiredInput<S>,
-): readonly ValidationIssue<S>[] {
+export function resolveAllConditionalRequired(
+  input: ConditionalRequiredInput,
+): readonly ValidationIssue[] {
   return [
     ...resolveIfThenElseRequired(input),
     ...resolveDependentRequired(input),

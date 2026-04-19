@@ -8,18 +8,18 @@ export function makePath(segments: readonly (string | number)[]): CanonicalPath 
 }
 
 /** Create a ValidationIssue with standard structure */
-export function makeIssue<S extends string>(
+export function makeIssue(
   code: string,
   message: string,
   segments: readonly (string | number)[],
-  stage: S,
+  stage: string | undefined,
   origin: IssueOrigin,
-): ValidationIssue<S> {
+): ValidationIssue {
   return {
     code,
     message,
     severity: 'error',
-    stage,
+    ...(stage !== undefined ? { stage } : {}),
     path: makePath(segments),
     source: { origin, validatorId: origin },
   };

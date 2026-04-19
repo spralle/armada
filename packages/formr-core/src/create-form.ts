@@ -10,7 +10,6 @@ import type {
 import type { Middleware } from './contracts.js';
 import type { CanonicalPath } from './path.js';
 import { FormStore } from './store.js';
-import { createDefaultStagePolicy } from './stage-policy.js';
 import { parsePath } from './path-parser.js';
 import { createFieldApi } from './field-api.js';
 import { applySubmitOutcome } from './submit.js';
@@ -42,7 +41,7 @@ function generateSubmitId(): string {
 }
 
 /** Extract TransformDefinition instances from options.transforms via duck-type check */
-function getEgressTransforms<S extends string>(options: CreateFormOptions<S>): readonly TransformDefinition[] {
+function getEgressTransforms(options: CreateFormOptions): readonly TransformDefinition[] {
   if (!options.transforms?.length) return [];
   return options.transforms.filter(
     (t): t is TransformDefinition => 'transform' in t && typeof (t as TransformDefinition).transform === 'function',
@@ -50,23 +49,19 @@ function getEgressTransforms<S extends string>(options: CreateFormOptions<S>): r
 }
 
 /** ADR §9 — createForm factory */
-export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
-  options: CreateFormOptions<S> = {} as CreateFormOptions<S>,
-): FormApi<S> {
-  const stagePolicy = options.stagePolicy ?? createDefaultStagePolicy() as unknown as typeof options.stagePolicy;
-  const policy = stagePolicy!;
-
-  const initialState: FormState<S> = {
+export function createForm(
+  options: CreateFormOptions = {},
+): FormApi {
+  const initialState: FormState = {
     data: options.initialData ?? {},
     uiState: options.initialUiState ?? {},
     meta: {
-      stage: policy.defaultStage,
       validation: {},
     },
     issues: [],
   };
 
-  const store = new FormStore<S>(initialState, options.stateStrategy);
+  const store = new FormStore(initialState, options.stateStrategy);
 
   // Create arbiter adapter if arbiter rules or session provided
   let arbiterAdapter: ArbiterFormAdapter | undefined;
@@ -80,7 +75,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
   // Field cache: keyed by rawPath + serialized config
   const fieldCache = new Map<string, FieldApi>();
 
-  function getIssues(path: CanonicalPath): readonly ValidationIssue<S>[] {
+  function getIssues(path: CanonicalPath): readonly ValidationIssue[] {
     return store.getState().issues.filter(
       (issue) => pathEquals(issue.path, path) || pathStartsWith(issue.path, path),
     );
@@ -91,7 +86,6 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
       action: { type: 'set-value', path: rawPath, value },
       store,
       options,
-      stagePolicy: policy,
       isSubmit: false,
       arbiterAdapter,
     });
@@ -108,7 +102,6 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
       action,
       store,
       options,
-      stagePolicy: policy,
       isSubmit: false,
       arbiterAdapter,
     });
@@ -116,13 +109,14 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     return errorMsg2 ? { ok: result.ok, error: errorMsg2 } : { ok: result.ok };
   }
 
-  function validate(stage?: S): readonly ValidationIssue<S>[] {
+  function validate(stage?: string): readonly ValidationIssue[] {
     const state = store.getState();
     const activeStage = stage ?? state.meta.stage;
     if (!options.validators?.length) return [];
-    const allIssues: ValidationIssue<S>[] = [];
+    const allIssues: ValidationIssue[] = [];
     for (const v of options.validators) {
-      const input = { data: state.data, uiState: state.uiState, stage: activeStage };
+      const base = { data: state.data, uiState: state.uiState };
+      const input = activeStage !== undefined ? { ...base, stage: activeStage } : base;
       const result = v.validate(input);
       if (result instanceof Promise) {
         throw new FormrError(
@@ -135,7 +129,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     return allIssues;
   }
 
-  async function submit(context?: Partial<SubmitContext<S>>): Promise<SubmitResult<S>> {
+  async function submit(context?: Partial<SubmitContext>): Promise<SubmitResult> {
     const state = store.getState();
 
     if (state.meta.submission?.status === 'running') {
@@ -145,19 +139,19 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     }
 
     const submitId = generateSubmitId();
-    const submitContext = buildSubmitContext(state, context, submitId);
+    const submitContext = buildSubmitContext(context, submitId);
 
     markSubmissionRunning(submitId);
 
     const pipelineResult = runSubmitPipeline(submitContext);
 
     if (!pipelineResult.ok) {
-      return handlePipelineFailure(pipelineResult, submitContext, submitId);
+      return handlePipelineFailure(pipelineResult, submitId);
     }
 
     const currentIssues = store.getState().issues;
     if (currentIssues.some((i) => i.severity === 'error')) {
-      return handleValidationFailure(currentIssues, submitContext, submitId);
+      return handleValidationFailure(currentIssues, submitId);
     }
 
     if (options.onSubmit) {
@@ -168,20 +162,17 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     const txDone = store.beginTransaction();
     txDone.mutate((draft) => ({
       ...draft,
-      meta: applySubmitOutcome(draft.meta, submitContext, true, submitId),
+      meta: applySubmitOutcome(draft.meta, true, submitId),
     }));
     store.commitTransaction(txDone);
     return { ok: true, submitId };
   }
 
   function buildSubmitContext(
-    state: FormState<S>,
-    context: Partial<SubmitContext<S>> | undefined,
+    context: Partial<SubmitContext> | undefined,
     submitId: string,
-  ): SubmitContext<S> {
+  ): SubmitContext {
     return {
-      requestedStage: context?.requestedStage ?? state.meta.stage,
-      mode: context?.mode ?? 'persistent',
       requestId: context?.requestId ?? submitId,
       at: context?.at ?? new Date().toISOString(),
       ...(context?.actorId !== undefined ? { actorId: context.actorId } : {}),
@@ -201,13 +192,12 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     store.commitTransaction(txStart);
   }
 
-  function runSubmitPipeline(submitContext: SubmitContext<S>) {
+  function runSubmitPipeline(submitContext: SubmitContext) {
     const submitAction: FormAction = { type: 'submit' };
     return executePipeline({
       action: submitAction,
       store,
       options,
-      stagePolicy: policy,
       submitContext,
       isSubmit: true,
       arbiterAdapter,
@@ -216,41 +206,39 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
 
   function handlePipelineFailure(
     pipelineResult: { readonly ok: boolean; readonly vetoReason?: string; readonly error?: string; readonly issues?: readonly ValidationIssue[] },
-    submitContext: SubmitContext<S>,
     submitId: string,
-  ): SubmitResult<S> {
+  ): SubmitResult {
     const txFail = store.beginTransaction();
     txFail.mutate((draft) => ({
       ...draft,
-      meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
+      meta: applySubmitOutcome(draft.meta, false, submitId),
     }));
     store.commitTransaction(txFail);
     return {
       ok: false,
       submitId,
       message: pipelineResult.vetoReason ?? pipelineResult.error ?? 'Pipeline failed',
-      fieldIssues: pipelineResult.issues as readonly ValidationIssue<S>[],
+      ...(pipelineResult.issues !== undefined ? { fieldIssues: pipelineResult.issues } : {}),
     };
   }
 
   function handleValidationFailure(
-    currentIssues: readonly ValidationIssue<S>[],
-    submitContext: SubmitContext<S>,
+    currentIssues: readonly ValidationIssue[],
     submitId: string,
-  ): SubmitResult<S> {
+  ): SubmitResult {
     const txFail = store.beginTransaction();
     txFail.mutate((draft) => ({
       ...draft,
-      meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
+      meta: applySubmitOutcome(draft.meta, false, submitId),
     }));
     store.commitTransaction(txFail);
     return { ok: false, submitId, message: 'Validation failed', fieldIssues: currentIssues };
   }
 
   async function executeOnSubmit(
-    submitContext: SubmitContext<S>,
+    submitContext: SubmitContext,
     submitId: string,
-  ): Promise<SubmitResult<S>> {
+  ): Promise<SubmitResult> {
     const submitAction: FormAction = { type: 'submit' };
     try {
       const rawData = store.getState().data;
@@ -264,7 +252,6 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
           form: api,
           submitContext,
           payload,
-          stage: submitContext.requestedStage,
         }),
         options.timeouts?.submit ?? DEFAULT_RUNTIME_CONSTRAINTS.submitTimeout,
         'onSubmit callback timed out',
@@ -273,17 +260,17 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
       const txResult = store.beginTransaction();
       txResult.mutate((draft) => ({
         ...draft,
-        meta: applySubmitOutcome(draft.meta, submitContext, result.ok, submitId),
+        meta: applySubmitOutcome(draft.meta, result.ok, submitId),
         issues: [
           ...draft.issues,
-          ...((result.fieldIssues ?? []) as readonly ValidationIssue<S>[]),
-          ...((result.globalIssues ?? []) as readonly ValidationIssue<S>[]),
+          ...(result.fieldIssues ?? []),
+          ...(result.globalIssues ?? []),
         ],
       }));
       store.commitTransaction(txResult);
 
       await runNotifyHooksAsync(
-        (options.middleware ?? []) as readonly Middleware<S>[],
+        (options.middleware ?? []) as readonly Middleware[],
         'afterSubmit',
         { action: submitAction, state: store.getState(), result },
         options.timeouts?.middleware ?? DEFAULT_RUNTIME_CONSTRAINTS.middlewareTimeout,
@@ -294,7 +281,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
       const txErr = store.beginTransaction();
       txErr.mutate((draft) => ({
         ...draft,
-        meta: applySubmitOutcome(draft.meta, submitContext, false, submitId),
+        meta: applySubmitOutcome(draft.meta, false, submitId),
       }));
       store.commitTransaction(txErr);
       return {
@@ -314,10 +301,10 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     const fieldApi = createFieldApi({
       path: canonical,
       rawPath: path,
-      getState: () => store.getState() as FormState,
+      getState: () => store.getState(),
       setValue: dispatchSetValue,
-      getIssues: (p) => getIssues(p) as readonly ValidationIssue[],
-      formDefaults: options.fieldDefaults as FieldConfig | undefined,
+      getIssues: (p) => getIssues(p),
+      formDefaults: options.fieldDefaults,
       config,
     });
 
@@ -325,7 +312,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     return fieldApi;
   }
 
-  const api: FormApi<S> = {
+  const api: FormApi = {
     getState: () => store.getState(),
     dispatch,
     setValue: dispatchSetValue,
@@ -335,7 +322,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     subscribe: (listener) => store.subscribe(listener),
     dispose: () => {
       arbiterAdapter?.dispose();
-      const middlewares = (options.middleware ?? []) as readonly Middleware<S>[];
+      const middlewares = (options.middleware ?? []) as readonly Middleware[];
       disposeMiddlewares(middlewares);
       fieldCache.clear();
       store.dispose();
@@ -343,7 +330,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
   };
 
   // Initialize middleware lifecycle
-  const middlewares = (options.middleware ?? []) as readonly Middleware<S>[];
+  const middlewares = (options.middleware ?? []) as readonly Middleware[];
   initMiddlewares(middlewares, { state: initialState });
 
   return api;

@@ -9,7 +9,6 @@ import {
   createDateEgressTransform,
   applyRuleWrites,
   sortIssues,
-  createDefaultStagePolicy,
   validateExtension,
   clearExtensionRegistry,
   isCompatibleVersion,
@@ -28,8 +27,8 @@ import {
 } from '../../../predicate/src/index.js';
 
 describe('F1-F10: Full integration conformance', () => {
-  // --- (a) Simple contact form: F1, F2, F6, F7 ---
-  describe('(a) Simple contact form — F1 paths, F2 stages, F6 runtime, F7 API', () => {
+  // --- (a) Simple contact form: F1, F6, F7 ---
+  describe('(a) Simple contact form — F1 paths, F6 runtime, F7 API', () => {
     test('create form, set values via field API, read state', () => {
       const form = createForm({ initialData: {} });
 
@@ -70,10 +69,6 @@ describe('F1-F10: Full integration conformance', () => {
       const result = await form.submit();
       expect(result.ok).toBe(true);
       expect((submittedPayload as Record<string, unknown>).name).toBe('Bob');
-
-      // F2: stage is tracked in meta
-      const state = form.getState();
-      expect(state.meta.stage).toBeDefined();
 
       form.dispose();
     });
@@ -129,8 +124,7 @@ describe('F1-F10: Full integration conformance', () => {
         { path: parsePath('c'), severity: 'info' as const, message: 'info', code: 'I1', stage: 'draft', source },
       ];
 
-      const policy = createDefaultStagePolicy();
-      const sorted = sortIssues(issues, policy);
+      const sorted = sortIssues(issues, ['draft', 'submit', 'approve']);
       expect(sorted[0]!.severity).toBe('error');
       expect(sorted[1]!.severity).toBe('warning');
       expect(sorted[2]!.severity).toBe('info');

@@ -4,36 +4,35 @@ import type {
   ValidationIssue,
   SubmitContext,
   CreateFormOptions,
+} from '../index.js';
+import type {
   FormApi,
   FieldApi,
   FieldConfig,
   SubmitResult,
   ExprNode,
-  StagePolicy,
 } from '../index.js';
 
 describe('FormState shape', () => {
-  test('default generic parameter is draft|submit|approve', () => {
+  test('default state has optional stage', () => {
     const state: FormState = {
       data: {},
       uiState: {},
       meta: {
-        stage: 'draft',
         validation: {},
       },
       issues: [],
     };
-    expect(state.meta.stage).toBe('draft');
+    expect(state.meta.stage).toBeUndefined();
   });
 
-  test('custom stage generic works', () => {
-    type MyStages = 'new' | 'review' | 'done';
-    const state: FormState<MyStages> = {
+  test('state with stage set', () => {
+    const state: FormState = {
       data: null,
       uiState: null,
       meta: {
         stage: 'new',
-        validation: { lastEvaluatedStage: 'review' },
+        validation: {},
       },
       issues: [],
     };
@@ -57,7 +56,7 @@ describe('FormState shape', () => {
   });
 
   test('issues array contains ValidationIssue', () => {
-    const issue: ValidationIssue<'draft' | 'submit' | 'approve'> = {
+    const issue: ValidationIssue = {
       code: 'REQUIRED',
       message: 'Field is required',
       severity: 'error',

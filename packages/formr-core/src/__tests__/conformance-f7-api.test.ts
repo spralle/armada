@@ -58,7 +58,7 @@ describe('F7: API parity conformance', () => {
     form.dispose();
   });
 
-  test('F7.07: submit with mode and requestedStage and onSubmit callback', async () => {
+  test('F7.07: submit with onSubmit callback', async () => {
     let callbackInvoked = false;
     const form = createForm({
       onSubmit: async ({ submitContext, payload }) => {
@@ -66,7 +66,7 @@ describe('F7: API parity conformance', () => {
         return { ok: true, submitId: submitContext.requestId };
       },
     });
-    const result = await form.submit({ mode: 'persistent', requestedStage: 'submit' });
+    const result = await form.submit();
     expect(callbackInvoked).toBe(true);
     expect(result.ok).toBe(true);
     form.dispose();

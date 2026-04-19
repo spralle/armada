@@ -6,12 +6,9 @@ export { FormrError, type FormrErrorCode } from './errors.js';
 // State types (SE1.2)
 export {
   type IssueSeverity,
-  type SubmitMode,
   type ValidationIssue,
   type SubmitContext,
   type FormState,
-  type StagePolicy,
-  type StageTransitionRule,
   type CreateFormOptions,
 } from './state.js';
 
@@ -47,9 +44,8 @@ export {
   type ArbiterSessionConfig,
 } from './contracts.js';
 
-// Stage policy (SE4.1)
-export { createDefaultStagePolicy, createStagePolicy, assertKnownStage, type DefaultStages } from './stage-policy.js';
-export { resolveActiveStage, applySubmitOutcome } from './submit.js';
+// Submit helpers
+export { applySubmitOutcome } from './submit.js';
 
 // Transaction model (SE1.3)
 export { Transaction, defaultStrategy, type TransactionSnapshot, type StateStrategy } from './transaction.js';

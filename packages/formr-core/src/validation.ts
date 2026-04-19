@@ -1,5 +1,5 @@
 import type { CanonicalSegment } from './path.js';
-import type { ValidationIssue, StagePolicy } from './state.js';
+import type { ValidationIssue } from './state.js';
 
 function comparePaths(
   a: readonly CanonicalSegment[],
@@ -16,18 +16,22 @@ function comparePaths(
 }
 
 /** ADR 6.3 — deterministic 7-key sort for validation issues. */
-export function sortIssues<S extends string>(
-  issues: readonly ValidationIssue<S>[],
-  policy: StagePolicy<S>,
-): readonly ValidationIssue<S>[] {
-  const stageOrder = new Map(policy.orderedStages.map((s, i) => [s, i]));
+export function sortIssues(
+  issues: readonly ValidationIssue[],
+  orderedStages?: readonly string[],
+): readonly ValidationIssue[] {
+  const stageOrder = orderedStages
+    ? new Map(orderedStages.map((s, i) => [s, i]))
+    : undefined;
   const severityOrder: Record<string, number> = { error: 0, warning: 1, info: 2 };
   const nsOrder: Record<string, number> = { data: 0, ui: 1 };
 
   return [...issues].sort((a, b) => {
-    const sa = stageOrder.get(a.stage) ?? Infinity;
-    const sb = stageOrder.get(b.stage) ?? Infinity;
-    if (sa !== sb) return sa - sb;
+    if (stageOrder) {
+      const sa = stageOrder.get(a.stage ?? '') ?? Infinity;
+      const sb = stageOrder.get(b.stage ?? '') ?? Infinity;
+      if (sa !== sb) return sa - sb;
+    }
 
     const sevA = severityOrder[a.severity] ?? 3;
     const sevB = severityOrder[b.severity] ?? 3;
@@ -55,13 +59,13 @@ export function sortIssues<S extends string>(
 
 function buildDedupeKey(issue: ValidationIssue): string {
   const pathStr = `${issue.path.namespace}:${issue.path.segments.join('.')}`;
-  return `${issue.stage}|${issue.severity}|${pathStr}|${issue.code}|${issue.source.origin}|${issue.source.validatorId}|${issue.message}`;
+  return `${issue.stage ?? ''}|${issue.severity}|${pathStr}|${issue.code}|${issue.source.origin}|${issue.source.validatorId}|${issue.message}`;
 }
 
 /** ADR 6.3 — deduplicate validation issues by composite key. */
-export function dedupeIssues<S extends string>(
-  issues: readonly ValidationIssue<S>[],
-): readonly ValidationIssue<S>[] {
+export function dedupeIssues(
+  issues: readonly ValidationIssue[],
+): readonly ValidationIssue[] {
   const seen = new Set<string>();
   return issues.filter(issue => {
     const key = buildDedupeKey(issue);
@@ -72,9 +76,9 @@ export function dedupeIssues<S extends string>(
 }
 
 /** ADR 6.3 — deduplicate then sort issues into deterministic order. */
-export function normalizeIssues<S extends string>(
-  issues: readonly ValidationIssue<S>[],
-  policy: StagePolicy<S>,
-): readonly ValidationIssue<S>[] {
-  return sortIssues(dedupeIssues(issues), policy);
+export function normalizeIssues(
+  issues: readonly ValidationIssue[],
+  orderedStages?: readonly string[],
+): readonly ValidationIssue[] {
+  return sortIssues(dedupeIssues(issues), orderedStages);
 }

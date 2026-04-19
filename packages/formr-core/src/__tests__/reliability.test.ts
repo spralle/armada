@@ -1,36 +1,22 @@
 import { describe, it, expect, mock } from 'bun:test';
 import { FormStore } from '../store.js';
 import { createForm } from '../create-form.js';
-import { createStagePolicy } from '../stage-policy.js';
 import { runNotifyHooksSync } from '../middleware-runner.js';
 import type { FormState, ValidationIssue } from '../state.js';
 import type { Middleware, ValidatorAdapter } from '../contracts.js';
 
-type Stages = 'draft' | 'submit' | 'approve';
-
-function makeState(data: unknown = {}): FormState<Stages> {
+function makeState(data: unknown = {}): FormState {
   return {
     data,
     uiState: {},
-    meta: { stage: 'draft', validation: {} },
+    meta: { validation: {} },
     issues: [],
   };
 }
 
-function createTestPolicy() {
-  return createStagePolicy({
-    orderedStages: ['draft', 'submit', 'approve'] as const,
-    defaultStage: 'draft',
-    transitions: [
-      { from: 'draft', to: 'submit' },
-      { from: 'submit', to: 'approve' },
-    ],
-  });
-}
-
 describe('reliability — subscriber error isolation', () => {
   it('throwing subscriber does not prevent other subscribers from being notified', () => {
-    const store = new FormStore<Stages>(makeState({ x: 0 }));
+    const store = new FormStore(makeState({ x: 0 }));
     const calls: string[] = [];
 
     store.subscribe(() => { calls.push('first'); });
@@ -48,7 +34,7 @@ describe('reliability — subscriber error isolation', () => {
 describe('reliability — validation issues cleared between dispatches', () => {
   it('issues do not accumulate across dispatches', () => {
     let shouldFail = true;
-    const validator: ValidatorAdapter<Stages> = {
+    const validator: ValidatorAdapter = {
       id: 'conditional',
       supports: () => true,
       validate: ({ data }) => {
@@ -57,14 +43,13 @@ describe('reliability — validation issues cleared between dispatches', () => {
           code: 'required',
           message: 'Required',
           severity: 'error' as const,
-          stage: 'draft' as const,
+          stage: 'draft',
           path: { namespace: 'data' as const, segments: ['name'] },
           source: { origin: 'function-validator' as const, validatorId: 'conditional' },
         }];
       },
     };
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       validators: [validator],
       initialData: { name: '' },
     });
@@ -82,12 +67,11 @@ describe('reliability — validation issues cleared between dispatches', () => {
 
 describe('reliability — sync notify hook error isolation', () => {
   it('throwing sync notify hook does not crash the pipeline', () => {
-    const crashMw: Middleware<Stages> = {
+    const crashMw: Middleware = {
       id: 'crasher',
       beforeEvaluate: () => { throw new Error('notify boom'); },
     };
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       middleware: [crashMw],
       initialData: { x: 0 },
     });
@@ -101,16 +85,15 @@ describe('reliability — sync notify hook error isolation', () => {
 
   it('throwing sync notify hook does not skip remaining hooks', () => {
     const calls: string[] = [];
-    const crashMw: Middleware<Stages> = {
+    const crashMw: Middleware = {
       id: 'crasher',
       afterAction: () => { throw new Error('boom'); },
     };
-    const trackerMw: Middleware<Stages> = {
+    const trackerMw: Middleware = {
       id: 'tracker',
       afterAction: () => { calls.push('tracker'); },
     };
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       middleware: [crashMw, trackerMw],
       initialData: { x: 0 },
     });

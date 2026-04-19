@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createForm } from '../create-form.js';
-import { createStagePolicy } from '../stage-policy.js';
 import { mergeFieldConfig } from '../field-api.js';
 
 describe('createForm', () => {
@@ -21,7 +20,7 @@ describe('createForm', () => {
     const state = form.getState();
     expect(state.data).toEqual({});
     expect(state.uiState).toEqual({});
-    expect(state.meta.stage).toBe('draft');
+    expect(state.meta.stage).toBeUndefined();
     expect(state.issues).toEqual([]);
     expect(state.meta.validation).toEqual({});
   });
@@ -123,19 +122,9 @@ describe('createForm', () => {
     expect(issues).toEqual([]);
   });
 
-  it('custom stage policy used when provided', () => {
-    const policy = createStagePolicy({
-      orderedStages: ['open', 'closed'] as const,
-      defaultStage: 'open',
-      transitions: [{ from: 'open', to: 'closed' }],
-    });
-    const form = createForm({ stagePolicy: policy });
-    expect(form.getState().meta.stage).toBe('open');
-  });
-
-  it('default stage policy used when not provided', () => {
+  it('default initial state has no stage', () => {
     const form = createForm();
-    expect(form.getState().meta.stage).toBe('draft');
+    expect(form.getState().meta.stage).toBeUndefined();
   });
 
   it('dispatch with set-value action works', () => {

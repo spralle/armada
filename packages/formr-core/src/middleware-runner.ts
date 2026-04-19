@@ -3,8 +3,8 @@ import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './extensions.js';
 import { FormrError } from './errors.js';
 
 /** Run veto-capable hooks synchronously (for non-submit pipeline path) */
-export function runVetoHooksSync<S extends string>(
-  middlewares: readonly Middleware<S>[],
+export function runVetoHooksSync(
+  middlewares: readonly Middleware[],
   hookName: 'beforeAction' | 'beforeSubmit',
   context: unknown,
 ): MiddlewareDecision {
@@ -33,8 +33,8 @@ export function runVetoHooksSync<S extends string>(
 }
 
 /** Run notification hooks synchronously (for non-submit pipeline path) */
-export function runNotifyHooksSync<S extends string>(
-  middlewares: readonly Middleware<S>[],
+export function runNotifyHooksSync(
+  middlewares: readonly Middleware[],
   hookName: 'beforeEvaluate' | 'afterEvaluate' | 'beforeValidate' | 'afterValidate' | 'afterAction' | 'afterSubmit',
   context: unknown,
 ): void {
@@ -50,8 +50,8 @@ export function runNotifyHooksSync<S extends string>(
 }
 
 /** Run veto-capable hooks with async support and timeout */
-export async function runVetoHooksAsync<S extends string>(
-  middlewares: readonly Middleware<S>[],
+export async function runVetoHooksAsync(
+  middlewares: readonly Middleware[],
   hookName: 'beforeAction' | 'beforeSubmit',
   context: unknown,
   timeoutMs: number = DEFAULT_RUNTIME_CONSTRAINTS.middlewareTimeout,
@@ -78,8 +78,8 @@ export async function runVetoHooksAsync<S extends string>(
 }
 
 /** Run notification hooks with async support and timeout */
-export async function runNotifyHooksAsync<S extends string>(
-  middlewares: readonly Middleware<S>[],
+export async function runNotifyHooksAsync(
+  middlewares: readonly Middleware[],
   hookName: 'beforeEvaluate' | 'afterEvaluate' | 'beforeValidate' | 'afterValidate' | 'afterAction' | 'afterSubmit',
   context: unknown,
   timeoutMs: number = DEFAULT_RUNTIME_CONSTRAINTS.middlewareTimeout,
@@ -103,9 +103,9 @@ export async function runNotifyHooksAsync<S extends string>(
 }
 
 /** Run onInit on all middlewares in registration order */
-export function initMiddlewares<S extends string>(
-  middlewares: readonly Middleware<S>[],
-  context: MiddlewareInitContext<S>,
+export function initMiddlewares(
+  middlewares: readonly Middleware[],
+  context: MiddlewareInitContext,
 ): void {
   for (const mw of middlewares) {
     if (mw.onInit) {
@@ -119,8 +119,8 @@ export function initMiddlewares<S extends string>(
 }
 
 /** Run onDispose on all middlewares in registration order */
-export function disposeMiddlewares<S extends string>(
-  middlewares: readonly Middleware<S>[],
+export function disposeMiddlewares(
+  middlewares: readonly Middleware[],
 ): void {
   for (const mw of middlewares) {
     if (mw.onDispose) {

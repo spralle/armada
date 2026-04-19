@@ -5,12 +5,12 @@ import { makeIssue as makeIssueBase, isObject, checkType } from './utils.js';
 
 const ADAPTER_ORIGIN = 'json-schema-adapter' as const;
 
-function makeIssue<S extends string>(
+function makeIssue(
   code: string,
   message: string,
   segments: readonly (string | number)[],
-  stage: S,
-): ValidationIssue<S> {
+  stage: string | undefined,
+): ValidationIssue {
   return makeIssueBase(code, message, segments, stage, ADAPTER_ORIGIN);
 }
 
@@ -38,9 +38,9 @@ export function isJsonSchema(value: unknown): value is JsonSchema {
   return false;
 }
 
-export function createJsonSchemaValidator<S extends string = string>(
+export function createJsonSchemaValidator(
   rawSchema: JsonSchema,
-): ValidatorAdapter<S> {
+): ValidatorAdapter {
   const schema = dereferenceSchema(rawSchema);
   return {
     id: 'json-schema-adapter',
@@ -48,19 +48,19 @@ export function createJsonSchemaValidator<S extends string = string>(
       return isJsonSchema(s);
     },
     validate(input) {
-      const issues: ValidationIssue<S>[] = [];
+      const issues: ValidationIssue[] = [];
       validateNode(schema, input.data, [], input.stage, issues);
       return issues;
     },
   };
 }
 
-function validateNode<S extends string>(
+function validateNode(
   schema: JsonSchema,
   data: unknown,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (data === undefined || data === null) {
     // Required checks happen at parent level
@@ -84,12 +84,12 @@ function validateNode<S extends string>(
   }
 }
 
-function validateType<S extends string>(
+function validateType(
   schema: JsonSchema,
   data: unknown,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (!schema.type) return;
 
@@ -105,12 +105,12 @@ function validateType<S extends string>(
   }
 }
 
-function validateArrayType<S extends string>(
+function validateArrayType(
   types: readonly string[],
   data: unknown,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (data === null && types.includes('null')) return;
   const matched = types.some((t) => checkType(t, data));
@@ -121,12 +121,12 @@ function validateArrayType<S extends string>(
 
 
 
-function validateEnum<S extends string>(
+function validateEnum(
   schema: JsonSchema,
   data: unknown,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (!schema.enum) return;
   if (!schema.enum.includes(data)) {
@@ -134,12 +134,12 @@ function validateEnum<S extends string>(
   }
 }
 
-function validateConst<S extends string>(
+function validateConst(
   schema: JsonSchema,
   data: unknown,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (schema.const === undefined) return;
   if (!deepEqual(schema.const, data)) {
@@ -162,12 +162,12 @@ function deepEqual(a: unknown, b: unknown): boolean {
   return aKeys.every((k) => deepEqual(aObj[k], bObj[k]));
 }
 
-function validateConstraints<S extends string>(
+function validateConstraints(
   schema: JsonSchema,
   data: unknown,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (typeof data === 'number') {
     validateNumericConstraints(schema, data, segments, stage, issues);
@@ -177,12 +177,12 @@ function validateConstraints<S extends string>(
   }
 }
 
-function validateNumericConstraints<S extends string>(
+function validateNumericConstraints(
   schema: JsonSchema,
   value: number,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (schema.minimum !== undefined && value < schema.minimum) {
     issues.push(makeIssue('TOO_SMALL', `Value must be >= ${schema.minimum}`, segments, stage));
@@ -198,12 +198,12 @@ function validateNumericConstraints<S extends string>(
   }
 }
 
-function validateStringConstraints<S extends string>(
+function validateStringConstraints(
   schema: JsonSchema,
   value: string,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (schema.minLength !== undefined && value.length < schema.minLength) {
     issues.push(makeIssue('TOO_SHORT', `String must be at least ${schema.minLength} characters`, segments, stage));
@@ -217,12 +217,12 @@ function validateStringConstraints<S extends string>(
 }
 
 /** JSON Schema required only checks key presence, not value emptiness */
-function validateRequiredFields<S extends string>(
+function validateRequiredFields(
   schema: JsonSchema,
   data: Record<string, unknown>,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (!schema.required) return;
   for (const field of schema.required) {
@@ -232,12 +232,12 @@ function validateRequiredFields<S extends string>(
   }
 }
 
-function validateObjectProperties<S extends string>(
+function validateObjectProperties(
   schema: JsonSchema,
   data: Record<string, unknown>,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (!schema.properties) return;
   for (const [key, childSchema] of Object.entries(schema.properties)) {
@@ -247,16 +247,16 @@ function validateObjectProperties<S extends string>(
   }
 }
 
-function validateConditional<S extends string>(
+function validateConditional(
   schema: JsonSchema,
   data: unknown,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (!schema.if) return;
 
-  const testIssues: ValidationIssue<S>[] = [];
+  const testIssues: ValidationIssue[] = [];
   validateNode(schema.if, data, segments, stage, testIssues);
   const conditionMet = testIssues.length === 0;
 
@@ -267,12 +267,12 @@ function validateConditional<S extends string>(
   }
 }
 
-function validateDependentRequired<S extends string>(
+function validateDependentRequired(
   schema: JsonSchema,
   data: unknown,
   segments: readonly (string | number)[],
-  stage: S,
-  issues: ValidationIssue<S>[],
+  stage: string | undefined,
+  issues: ValidationIssue[],
 ): void {
   if (!schema.dependentRequired || !isObject(data)) return;
 

@@ -3,15 +3,12 @@ import type { CanonicalPath } from './path.js';
 /** ADR section 6.2 */
 export type IssueSeverity = 'error' | 'warning' | 'info';
 
-/** ADR section 2.1 */
-export type SubmitMode = 'persistent' | 'transient';
-
 /** ADR section 6.2 — ValidationIssue */
-export interface ValidationIssue<S extends string = string> {
+export interface ValidationIssue {
   readonly code: string;
   readonly message: string;
   readonly severity: IssueSeverity;
-  readonly stage: S;
+  readonly stage?: string;
   readonly path: CanonicalPath;
   readonly source: {
     readonly origin:
@@ -28,9 +25,7 @@ export interface ValidationIssue<S extends string = string> {
 }
 
 /** ADR section 2.1 — SubmitContext */
-export interface SubmitContext<S extends string = string> {
-  readonly requestedStage: S;
-  readonly mode: SubmitMode;
+export interface SubmitContext {
   readonly actorId?: string;
   readonly requestId: string;
   readonly at: string; // ISO-8601 UTC
@@ -38,13 +33,12 @@ export interface SubmitContext<S extends string = string> {
 }
 
 /** ADR section 1.1 — FormState */
-export interface FormState<S extends string = 'draft' | 'submit' | 'approve'> {
+export interface FormState {
   readonly data: unknown;
   readonly uiState: unknown;
   readonly meta: {
-    readonly stage: S;
+    readonly stage?: string;
     readonly validation: {
-      readonly lastEvaluatedStage?: S;
       readonly lastValidatedAt?: string; // ISO-8601 UTC
     };
     readonly submission?: {
@@ -55,44 +49,25 @@ export interface FormState<S extends string = 'draft' | 'submit' | 'approve'> {
       readonly lastErrorCode?: string;
     };
   };
-  readonly issues: readonly ValidationIssue<S>[];
-}
-
-/** ADR section 9 — StageTransitionRule */
-export interface StageTransitionRule<S extends string> {
-  readonly from: S;
-  readonly to: S;
-  readonly reason?: string;
-}
-
-/** ADR section 9 — StagePolicy */
-export interface StagePolicy<S extends string> {
-  readonly orderedStages: readonly S[];
-  readonly defaultStage: S;
-  isKnownStage(stage: string): stage is S;
-  canTransition(from: S, to: S): boolean;
-  describeTransition(from: S, to: S): StageTransitionRule<S> | null;
+  readonly issues: readonly ValidationIssue[];
 }
 
 /** ADR section 9 — CreateFormOptions */
-export interface CreateFormOptions<
-  S extends string = 'draft' | 'submit' | 'approve',
-> {
+export interface CreateFormOptions {
   readonly schema?: unknown;
   readonly uiStateSchema?: unknown;
   readonly initialData?: unknown;
   readonly initialUiState?: unknown;
-  readonly stagePolicy?: StagePolicy<S>;
-  readonly validators?: readonly ValidatorAdapter<S>[];
-  readonly middleware?: readonly Middleware<S>[];
+  readonly validators?: readonly ValidatorAdapter[];
+  readonly middleware?: readonly Middleware[];
   readonly transforms?: readonly Transform[];
   readonly arbiterRules?: readonly ProductionRule[] | undefined;
   readonly arbiterSession?: RuleSession | undefined;
   /** Form-level field defaults — merged below field-level overrides (tier 2 of 3) */
-  readonly fieldDefaults?: Readonly<FieldConfig<S>>;
+  readonly fieldDefaults?: Readonly<FieldConfig>;
   readonly onSubmit?: (
-    ctx: SubmitExecutionContext<S>,
-  ) => Promise<SubmitResult<S>>;
+    ctx: SubmitExecutionContext,
+  ) => Promise<SubmitResult>;
   readonly timeouts?: {
     readonly validator?: number;
     readonly middleware?: number;

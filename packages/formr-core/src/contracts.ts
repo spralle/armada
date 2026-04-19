@@ -16,15 +16,15 @@ export type Transform = TransformDefinition;
 
 /** Backward-compat alias — prefer EvaluationScope in new code */
 export type ExpressionScope = EvaluationScope;
-export interface ValidatorAdapter<S extends string = string> {
+export interface ValidatorAdapter {
   readonly id: string;
   supports(schema: unknown): boolean;
   validate(input: {
     readonly data: unknown;
     readonly uiState: unknown;
-    readonly stage: S;
-    readonly context?: SubmitContext<S>;
-  }): Promise<readonly ValidationIssue<S>[]> | readonly ValidationIssue<S>[];
+    readonly stage?: string;
+    readonly context?: SubmitContext;
+  }): Promise<readonly ValidationIssue[]> | readonly ValidationIssue[];
 }
 
 /** ADR section 5.2 — RuleWriteIntent */
@@ -41,93 +41,92 @@ export type MiddlewareDecision =
   | { readonly action: 'veto'; readonly reason: string };
 
 /** Context for beforeAction hook */
-export interface BeforeActionContext<S extends string = string> {
+export interface BeforeActionContext {
   readonly action: FormAction;
-  readonly state: FormState<S>;
+  readonly state: FormState;
 }
 
 /** Context for afterAction hook */
-export interface AfterActionContext<S extends string = string> {
+export interface AfterActionContext {
   readonly action: FormAction;
-  readonly prevState: FormState<S>;
-  readonly nextState: FormState<S>;
+  readonly prevState: FormState;
+  readonly nextState: FormState;
 }
 
 /** Context for beforeEvaluate hook */
-export interface BeforeEvaluateContext<S extends string = string> {
+export interface BeforeEvaluateContext {
   readonly action: FormAction;
-  readonly state: FormState<S>;
+  readonly state: FormState;
 }
 
 /** Context for afterEvaluate hook */
-export interface AfterEvaluateContext<S extends string = string> {
+export interface AfterEvaluateContext {
   readonly action: FormAction;
-  readonly state: FormState<S>;
+  readonly state: FormState;
 }
 
 /** Context for beforeValidate hook */
-export interface BeforeValidateContext<S extends string = string> {
+export interface BeforeValidateContext {
   readonly action: FormAction;
-  readonly state: FormState<S>;
-  readonly stage: S;
+  readonly state: FormState;
+  readonly stage?: string;
 }
 
 /** Context for afterValidate hook */
-export interface AfterValidateContext<S extends string = string> {
+export interface AfterValidateContext {
   readonly action: FormAction;
-  readonly state: FormState<S>;
-  readonly issues: readonly ValidationIssue<S>[];
+  readonly state: FormState;
+  readonly issues: readonly ValidationIssue[];
 }
 
 /** Context for beforeSubmit hook */
-export interface BeforeSubmitContext<S extends string = string> {
+export interface BeforeSubmitContext {
   readonly action: FormAction;
-  readonly state: FormState<S>;
-  readonly submitContext: SubmitContext<S>;
+  readonly state: FormState;
+  readonly submitContext: SubmitContext;
 }
 
 /** Context for afterSubmit hook */
-export interface AfterSubmitContext<S extends string = string> {
+export interface AfterSubmitContext {
   readonly action: FormAction;
-  readonly state: FormState<S>;
-  readonly result: SubmitResult<S>;
+  readonly state: FormState;
+  readonly result: SubmitResult;
 }
 
 /** Context for middleware init */
-export interface MiddlewareInitContext<S extends string = string> {
-  readonly state: FormState<S>;
+export interface MiddlewareInitContext {
+  readonly state: FormState;
 }
 
 /** ADR section 9 — Middleware with full lifecycle hooks */
-export interface Middleware<S extends string = string> {
+export interface Middleware {
   readonly id: string;
-  onInit?(ctx: MiddlewareInitContext<S>): void;
-  beforeAction?(ctx: BeforeActionContext<S>): MiddlewareDecision | Promise<MiddlewareDecision>;
-  afterAction?(ctx: AfterActionContext<S>): void;
-  beforeEvaluate?(ctx: BeforeEvaluateContext<S>): void;
-  afterEvaluate?(ctx: AfterEvaluateContext<S>): void;
-  beforeValidate?(ctx: BeforeValidateContext<S>): void;
-  afterValidate?(ctx: AfterValidateContext<S>): void;
-  beforeSubmit?(ctx: BeforeSubmitContext<S>): MiddlewareDecision | Promise<MiddlewareDecision>;
-  afterSubmit?(ctx: AfterSubmitContext<S>): void;
+  onInit?(ctx: MiddlewareInitContext): void;
+  beforeAction?(ctx: BeforeActionContext): MiddlewareDecision | Promise<MiddlewareDecision>;
+  afterAction?(ctx: AfterActionContext): void;
+  beforeEvaluate?(ctx: BeforeEvaluateContext): void;
+  afterEvaluate?(ctx: AfterEvaluateContext): void;
+  beforeValidate?(ctx: BeforeValidateContext): void;
+  afterValidate?(ctx: AfterValidateContext): void;
+  beforeSubmit?(ctx: BeforeSubmitContext): MiddlewareDecision | Promise<MiddlewareDecision>;
+  afterSubmit?(ctx: AfterSubmitContext): void;
   onDispose?(): void;
 }
 
 /** ADR section 9 — SubmitExecutionContext */
-export interface SubmitExecutionContext<S extends string = string> {
-  readonly form: FormApi<S>;
-  readonly submitContext: SubmitContext<S>;
+export interface SubmitExecutionContext {
+  readonly form: FormApi;
+  readonly submitContext: SubmitContext;
   readonly payload: unknown;
-  readonly stage: S;
 }
 
 /** ADR section 9 — SubmitResult */
-export interface SubmitResult<S extends string = string> {
+export interface SubmitResult {
   readonly ok: boolean;
   readonly submitId: string;
   readonly message?: string;
-  readonly fieldIssues?: readonly ValidationIssue<S>[];
-  readonly globalIssues?: readonly ValidationIssue<S>[];
+  readonly fieldIssues?: readonly ValidationIssue[];
+  readonly globalIssues?: readonly ValidationIssue[];
 }
 
 /** ADR section 9 — FormAction */
@@ -144,7 +143,7 @@ export interface FormDispatchResult {
 }
 
 /** ADR section 9.1 — FieldConfig */
-export interface FieldConfig<S extends string = string> {
+export interface FieldConfig {
   readonly label?: string;
   readonly description?: string;
   readonly placeholder?: string;
@@ -152,7 +151,7 @@ export interface FieldConfig<S extends string = string> {
   readonly readOnly?: boolean;
   readonly required?: boolean;
   readonly hidden?: boolean;
-  readonly validators?: readonly ValidatorAdapter<S>[];
+  readonly validators?: readonly ValidatorAdapter[];
   readonly transforms?: readonly Transform[];
   readonly metadata?: Readonly<Record<string, unknown>>;
 }
@@ -168,13 +167,13 @@ export interface FieldApi {
 }
 
 /** ADR section 9 — FormApi */
-export interface FormApi<S extends string = string> {
-  getState(): FormState<S>;
+export interface FormApi {
+  getState(): FormState;
   dispatch(action: FormAction): FormDispatchResult;
   setValue(path: string, value: unknown): FormDispatchResult;
-  validate(stage?: S): readonly ValidationIssue<S>[];
-  submit(context?: Partial<SubmitContext<S>>): Promise<SubmitResult<S>>;
-  field(path: string, config?: FieldConfig<S>): FieldApi;
-  subscribe(listener: (state: FormState<S>) => void): () => void;
+  validate(stage?: string): readonly ValidationIssue[];
+  submit(context?: Partial<SubmitContext>): Promise<SubmitResult>;
+  field(path: string, config?: FieldConfig): FieldApi;
+  subscribe(listener: (state: FormState) => void): () => void;
   dispose(): void;
 }

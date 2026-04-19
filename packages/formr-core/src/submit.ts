@@ -1,85 +1,16 @@
-import type { FormState, SubmitContext } from './state.js';
-import { FormrError } from './errors.js';
+import type { FormState } from './state.js';
 
-/** ADR section 2.4 — resolve active stage for validation */
-export function resolveActiveStage<S extends string>(
-  currentMeta: FormState<S>['meta'],
-  submitContext: SubmitContext<S> | undefined,
-): S {
-  if (submitContext && submitContext.mode === 'transient') {
-    return submitContext.requestedStage;
-  }
-  return currentMeta.stage;
-}
-
-/** ADR section 2.4 — apply submit outcome to meta */
-export function applySubmitOutcome<S extends string>(
-  meta: FormState<S>['meta'],
-  submitContext: SubmitContext<S>,
+/** Apply submit outcome to meta — tracks submission status only */
+export function applySubmitOutcome(
+  meta: FormState['meta'],
   success: boolean,
   submitId: string,
-): FormState<S>['meta'] {
-
-  const now = new Date().toISOString();
-
-  if (submitContext.mode === 'persistent' && success) {
-    return {
-      ...meta,
-      stage: submitContext.requestedStage,
-      validation: {
-        ...meta.validation,
-        lastEvaluatedStage: submitContext.requestedStage,
-        lastValidatedAt: now,
-      },
-      submission: {
-        status: 'succeeded',
-        submitId,
-        lastAttemptAt: now,
-        lastResultAt: now,
-      },
-    };
-  }
-
-  if (submitContext.mode === 'persistent' && !success) {
-    return {
-      ...meta,
-      validation: {
-        ...meta.validation,
-        lastEvaluatedStage: submitContext.requestedStage,
-        lastValidatedAt: now,
-      },
-      submission: {
-        status: 'failed',
-        submitId,
-        lastAttemptAt: now,
-        lastResultAt: now,
-      },
-    };
-  }
-
-  // Transient mode — never mutate meta.stage (ADR §2.4 immutability guard)
-  const result = applyTransientOutcome(meta, submitContext, success, submitId);
-  if (result.stage !== meta.stage) {
-    throw new FormrError(
-      'FORMR_STAGE_IMMUTABLE',
-      'Transient-mode submission must not mutate meta.stage',
-    );
-  }
-  return result;
-}
-
-function applyTransientOutcome<S extends string>(
-  meta: FormState<S>['meta'],
-  submitContext: SubmitContext<S>,
-  success: boolean,
-  submitId: string,
-): FormState<S>['meta'] {
+): FormState['meta'] {
   const now = new Date().toISOString();
   return {
     ...meta,
     validation: {
       ...meta.validation,
-      lastEvaluatedStage: submitContext.requestedStage,
       lastValidatedAt: now,
     },
     submission: {

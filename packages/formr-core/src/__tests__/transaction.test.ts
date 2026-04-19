@@ -4,14 +4,11 @@ import { FormStore } from '../store.js';
 import { deepFreeze } from '../utils.js';
 import type { FormState } from '../state.js';
 
-type Stages = 'draft' | 'submit' | 'approve';
-
-function makeState(data: unknown = {}): FormState<Stages> {
+function makeState(data: unknown = {}): FormState {
   return {
     data,
     uiState: {},
     meta: {
-      stage: 'draft' as const,
       validation: {},
     },
     issues: [],
@@ -21,7 +18,7 @@ function makeState(data: unknown = {}): FormState<Stages> {
 describe('Transaction', () => {
   test('lifecycle: begin, mutate, commit produces new state', () => {
     const initial = makeState({ name: 'Alice' });
-    const tx = new Transaction<Stages>(initial);
+    const tx = new Transaction(initial);
 
     tx.mutate((draft) => ({ ...draft, data: { name: 'Bob' } }));
     const result = tx.commit();
@@ -32,7 +29,7 @@ describe('Transaction', () => {
 
   test('rollback restores original state', () => {
     const initial = makeState({ name: 'Alice' });
-    const tx = new Transaction<Stages>(initial);
+    const tx = new Transaction(initial);
 
     tx.mutate((draft) => ({ ...draft, data: { name: 'Bob' } }));
     const result = tx.rollback();
@@ -42,7 +39,7 @@ describe('Transaction', () => {
   });
 
   test('prevState is frozen and cannot be mutated', () => {
-    const tx = new Transaction<Stages>(makeState({ x: 1 }));
+    const tx = new Transaction(makeState({ x: 1 }));
 
     expect(() => {
       (tx.prevState as { data: unknown }).data = 'changed';
@@ -50,26 +47,26 @@ describe('Transaction', () => {
   });
 
   test('committed transaction cannot be committed again', () => {
-    const tx = new Transaction<Stages>(makeState());
+    const tx = new Transaction(makeState());
     tx.commit();
     expect(() => tx.commit()).toThrow(/committed/);
   });
 
   test('rolled-back transaction cannot be rolled back again', () => {
-    const tx = new Transaction<Stages>(makeState());
+    const tx = new Transaction(makeState());
     tx.rollback();
     expect(() => tx.rollback()).toThrow(/rolled-back/);
   });
 
   test('committed transaction cannot be mutated', () => {
-    const tx = new Transaction<Stages>(makeState());
+    const tx = new Transaction(makeState());
     tx.commit();
     expect(() => tx.mutate((d) => d)).toThrow(/committed/);
   });
 
   test('mutations do not affect prevState (isolation)', () => {
     const initial = makeState({ count: 0 });
-    const tx = new Transaction<Stages>(initial);
+    const tx = new Transaction(initial);
 
     tx.mutate((draft) => ({ ...draft, data: { count: 1 } }));
     tx.mutate((draft) => ({ ...draft, data: { count: 2 } }));
@@ -79,7 +76,7 @@ describe('Transaction', () => {
   });
 
   test('multiple mutations accumulate', () => {
-    const tx = new Transaction<Stages>(makeState({ a: 1 }));
+    const tx = new Transaction(makeState({ a: 1 }));
 
     tx.mutate((draft) => ({ ...draft, data: { ...(draft.data as object), b: 2 } }));
     tx.mutate((draft) => ({ ...draft, data: { ...(draft.data as object), c: 3 } }));
@@ -91,7 +88,7 @@ describe('Transaction', () => {
 
 describe('FormStore', () => {
   test('commit notifies listeners', () => {
-    const store = new FormStore<Stages>(makeState());
+    const store = new FormStore(makeState());
     const listener = mock(() => {});
 
     store.subscribe(listener);
@@ -103,7 +100,7 @@ describe('FormStore', () => {
   });
 
   test('rollback does not notify listeners', () => {
-    const store = new FormStore<Stages>(makeState());
+    const store = new FormStore(makeState());
     const listener = mock(() => {});
 
     store.subscribe(listener);
@@ -116,7 +113,7 @@ describe('FormStore', () => {
 
   test('structural sharing: no notification if state unchanged', () => {
     const initial = makeState();
-    const store = new FormStore<Stages>(initial);
+    const store = new FormStore(initial);
     const listener = mock(() => {});
 
     store.subscribe(listener);
@@ -128,7 +125,7 @@ describe('FormStore', () => {
   });
 
   test('no-op dispatch does not trigger subscribers', () => {
-    const store = new FormStore<Stages>(makeState({ v: 1 }));
+    const store = new FormStore(makeState({ v: 1 }));
     const listener = mock(() => {});
 
     store.subscribe(listener);
@@ -142,30 +139,30 @@ describe('FormStore', () => {
   });
 
   test('nested transaction rejected', () => {
-    const store = new FormStore<Stages>(makeState());
+    const store = new FormStore(makeState());
     store.beginTransaction();
 
     expect(() => store.beginTransaction()).toThrow(/another is active/);
   });
 
   test('foreign transaction rejected on commit', () => {
-    const store = new FormStore<Stages>(makeState());
-    const foreignTx = new Transaction<Stages>(makeState());
+    const store = new FormStore(makeState());
+    const foreignTx = new Transaction(makeState());
 
     store.beginTransaction();
     expect(() => store.commitTransaction(foreignTx)).toThrow(/does not belong/);
   });
 
   test('foreign transaction rejected on rollback', () => {
-    const store = new FormStore<Stages>(makeState());
-    const foreignTx = new Transaction<Stages>(makeState());
+    const store = new FormStore(makeState());
+    const foreignTx = new Transaction(makeState());
 
     store.beginTransaction();
     expect(() => store.rollbackTransaction(foreignTx)).toThrow(/does not belong/);
   });
 
   test('dispose clears all listeners', () => {
-    const store = new FormStore<Stages>(makeState());
+    const store = new FormStore(makeState());
     const listener = mock(() => {});
 
     store.subscribe(listener);
@@ -179,7 +176,7 @@ describe('FormStore', () => {
   });
 
   test('unsubscribe removes specific listener', () => {
-    const store = new FormStore<Stages>(makeState());
+    const store = new FormStore(makeState());
     const listener1 = mock(() => {});
     const listener2 = mock(() => {});
 
@@ -196,7 +193,7 @@ describe('FormStore', () => {
   });
 
   test('getState returns current state after commit', () => {
-    const store = new FormStore<Stages>(makeState({ v: 1 }));
+    const store = new FormStore(makeState({ v: 1 }));
     const tx = store.beginTransaction();
     tx.mutate((draft) => ({ ...draft, data: { v: 2 } }));
     store.commitTransaction(tx);
@@ -205,7 +202,7 @@ describe('FormStore', () => {
   });
 
   test('getState unchanged after rollback', () => {
-    const store = new FormStore<Stages>(makeState({ v: 1 }));
+    const store = new FormStore(makeState({ v: 1 }));
     const tx = store.beginTransaction();
     tx.mutate((draft) => ({ ...draft, data: { v: 2 } }));
     store.rollbackTransaction(tx);

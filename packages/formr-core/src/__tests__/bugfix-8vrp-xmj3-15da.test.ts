@@ -1,22 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createForm } from '../create-form.js';
-import { createStagePolicy } from '../stage-policy.js';
 import { FormrError } from '../errors.js';
 import { runVetoHooksSync } from '../middleware-runner.js';
 import type { Middleware, ValidatorAdapter } from '../contracts.js';
 import type { ValidationIssue } from '../state.js';
 import type { TransformDefinition } from '../transforms.js';
-
-function createTestPolicy() {
-  return createStagePolicy({
-    orderedStages: ['draft', 'submit', 'approve'] as const,
-    defaultStage: 'draft',
-    transitions: [
-      { from: 'draft', to: 'submit' },
-      { from: 'submit', to: 'approve' },
-    ],
-  });
-}
 
 describe('armada-8vrp: async middleware in sync pipeline throws', () => {
   it('runVetoHooksSync throws FORMR_ASYNC_IN_SYNC_PIPELINE when hook returns a Promise', () => {
@@ -35,12 +23,11 @@ describe('armada-8vrp: async middleware in sync pipeline throws', () => {
   });
 
   it('pipeline dispatch fails when async middleware used in sync path', () => {
-    const asyncMw: Middleware<'draft' | 'submit' | 'approve'> = {
+    const asyncMw: Middleware = {
       id: 'async-veto',
       beforeAction: () => Promise.resolve({ action: 'continue' as const }),
     };
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       middleware: [asyncMw],
       initialData: { x: 1 },
     });
@@ -53,19 +40,19 @@ describe('armada-8vrp: async middleware in sync pipeline throws', () => {
 });
 
 describe('armada-xmj3: form.validate() returns actual issues', () => {
-  function createRequiredValidator(): ValidatorAdapter<'draft' | 'submit' | 'approve'> {
+  function createRequiredValidator(): ValidatorAdapter {
     return {
       id: 'required-name',
       supports: () => true,
       validate: (input) => {
         const data = input.data as Record<string, unknown>;
-        const issues: ValidationIssue<'draft' | 'submit' | 'approve'>[] = [];
+        const issues: ValidationIssue[] = [];
         if (!data.name) {
           issues.push({
             code: 'required',
             message: 'Name is required',
             severity: 'error',
-            stage: input.stage,
+            ...(input.stage !== undefined ? { stage: input.stage } : {}),
             path: { namespace: 'data', segments: ['name'] },
             source: { origin: 'function-validator', validatorId: 'required-name' },
           });
@@ -77,7 +64,6 @@ describe('armada-xmj3: form.validate() returns actual issues', () => {
 
   it('validate() returns issues from registered validators', () => {
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       validators: [createRequiredValidator()],
       initialData: { name: '' },
     });
@@ -90,7 +76,6 @@ describe('armada-xmj3: form.validate() returns actual issues', () => {
 
   it('validate() returns empty when data is valid', () => {
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       validators: [createRequiredValidator()],
       initialData: { name: 'Alice' },
     });
@@ -100,7 +85,7 @@ describe('armada-xmj3: form.validate() returns actual issues', () => {
   });
 
   it('validate(stage) scopes validation to given stage', () => {
-    const stageValidator: ValidatorAdapter<'draft' | 'submit' | 'approve'> = {
+    const stageValidator: ValidatorAdapter = {
       id: 'stage-check',
       supports: () => true,
       validate: (input) => {
@@ -119,7 +104,6 @@ describe('armada-xmj3: form.validate() returns actual issues', () => {
     };
 
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       validators: [stageValidator],
       initialData: {},
     });
@@ -149,7 +133,6 @@ describe('armada-15da: submit applies egress transforms', () => {
     const onSubmit = vi.fn().mockResolvedValue({ ok: true, submitId: 'test-1' });
 
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       transforms: [egressTransform],
       initialData: { name: 'alice' },
       onSubmit,
@@ -166,7 +149,6 @@ describe('armada-15da: submit applies egress transforms', () => {
     const onSubmit = vi.fn().mockResolvedValue({ ok: true, submitId: 'test-2' });
 
     const form = createForm({
-      stagePolicy: createTestPolicy(),
       initialData: { name: 'bob' },
       onSubmit,
     });

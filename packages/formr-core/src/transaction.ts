@@ -11,28 +11,28 @@ export const defaultStrategy: StateStrategy = {
   freeze: deepFreeze,
 };
 
-export interface TransactionSnapshot<S extends string = string> {
-  readonly prevState: FormState<S>;
-  readonly draftState: FormState<S>;
+export interface TransactionSnapshot {
+  readonly prevState: FormState;
+  readonly draftState: FormState;
   readonly status: 'active' | 'committed' | 'rolled-back';
 }
 
-export class Transaction<S extends string = string> {
-  private _prevState: FormState<S>;
-  private _draftState: FormState<S>;
+export class Transaction {
+  private _prevState: FormState;
+  private _draftState: FormState;
   private _status: 'active' | 'committed' | 'rolled-back' = 'active';
   private _dirty = false;
 
-  constructor(currentState: FormState<S>, strategy: StateStrategy = defaultStrategy) {
+  constructor(currentState: FormState, strategy: StateStrategy = defaultStrategy) {
     this._prevState = strategy.freeze(strategy.clone(currentState));
     this._draftState = strategy.clone(currentState);
   }
 
-  get prevState(): FormState<S> {
+  get prevState(): FormState {
     return this._prevState;
   }
 
-  get draftState(): FormState<S> {
+  get draftState(): FormState {
     return this._draftState;
   }
 
@@ -45,7 +45,7 @@ export class Transaction<S extends string = string> {
   }
 
   /** Apply a mutation to the draft state */
-  mutate(mutator: (draft: FormState<S>) => FormState<S>): void {
+  mutate(mutator: (draft: FormState) => FormState): void {
     if (this._status !== 'active') {
       throw new Error(`Cannot mutate ${this._status} transaction`);
     }
@@ -54,7 +54,7 @@ export class Transaction<S extends string = string> {
   }
 
   /** Commit — returns the final draft state */
-  commit(): FormState<S> {
+  commit(): FormState {
     if (this._status !== 'active') {
       throw new Error(`Cannot commit ${this._status} transaction`);
     }
@@ -63,7 +63,7 @@ export class Transaction<S extends string = string> {
   }
 
   /** Rollback — discard all draft mutations, return original state */
-  rollback(): FormState<S> {
+  rollback(): FormState {
     if (this._status !== 'active') {
       throw new Error(`Cannot rollback ${this._status} transaction`);
     }

@@ -1,20 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import type { ValidationIssue, StagePolicy } from '../state.js';
+import type { ValidationIssue } from '../state.js';
 import { sortIssues, dedupeIssues, normalizeIssues } from '../validation.js';
 
-type Stages = 'draft' | 'submit' | 'approve';
+const orderedStages = ['draft', 'submit', 'approve'] as const;
 
-const policy: StagePolicy<Stages> = {
-  orderedStages: ['draft', 'submit', 'approve'] as const,
-  defaultStage: 'draft',
-  isKnownStage(s: string): s is Stages {
-    return ['draft', 'submit', 'approve'].includes(s);
-  },
-  canTransition() { return true; },
-  describeTransition() { return null; },
-};
-
-function issue(overrides: Partial<ValidationIssue<Stages>> & { code: string }): ValidationIssue<Stages> {
+function issue(overrides: Partial<ValidationIssue> & { code: string }): ValidationIssue {
   return {
     stage: 'draft',
     severity: 'error',
@@ -32,7 +22,7 @@ describe('sortIssues', () => {
       issue({ code: 'E1', stage: 'draft' }),
       issue({ code: 'E1', stage: 'submit' }),
     ];
-    const sorted = sortIssues(issues, policy);
+    const sorted = sortIssues(issues, orderedStages);
     expect(sorted.map(i => i.stage)).toEqual(['draft', 'submit', 'approve']);
   });
 
@@ -42,7 +32,7 @@ describe('sortIssues', () => {
       issue({ code: 'E1', severity: 'error' }),
       issue({ code: 'E1', severity: 'warning' }),
     ];
-    const sorted = sortIssues(issues, policy);
+    const sorted = sortIssues(issues, orderedStages);
     expect(sorted.map(i => i.severity)).toEqual(['error', 'warning', 'info']);
   });
 
@@ -51,7 +41,7 @@ describe('sortIssues', () => {
       issue({ code: 'E1', path: { namespace: 'ui', segments: ['a'] } }),
       issue({ code: 'E1', path: { namespace: 'data', segments: ['a'] } }),
     ];
-    const sorted = sortIssues(issues, policy);
+    const sorted = sortIssues(issues, orderedStages);
     expect(sorted.map(i => i.path.namespace)).toEqual(['data', 'ui']);
   });
 
@@ -61,7 +51,7 @@ describe('sortIssues', () => {
       issue({ code: 'E1', path: { namespace: 'data', segments: ['a', 'z'] } }),
       issue({ code: 'E1', path: { namespace: 'data', segments: ['b', 'a'] } }),
     ];
-    const sorted = sortIssues(issues, policy);
+    const sorted = sortIssues(issues, orderedStages);
     expect(sorted.map(i => i.path.segments)).toEqual([['a', 'z'], ['b', 'a'], ['b', 'c']]);
   });
 
@@ -70,7 +60,7 @@ describe('sortIssues', () => {
       issue({ code: 'Z1' }),
       issue({ code: 'A1' }),
     ];
-    const sorted = sortIssues(issues, policy);
+    const sorted = sortIssues(issues, orderedStages);
     expect(sorted.map(i => i.code)).toEqual(['A1', 'Z1']);
   });
 
@@ -79,7 +69,7 @@ describe('sortIssues', () => {
       issue({ code: 'E1', source: { origin: 'standard-schema', validatorId: 'v2' } }),
       issue({ code: 'E1', source: { origin: 'standard-schema', validatorId: 'v1' } }),
     ];
-    const sorted = sortIssues(issues, policy);
+    const sorted = sortIssues(issues, orderedStages);
     expect(sorted.map(i => i.source.validatorId)).toEqual(['v1', 'v2']);
   });
 
@@ -88,18 +78,18 @@ describe('sortIssues', () => {
       issue({ code: 'E1', message: 'beta' }),
       issue({ code: 'E1', message: 'alpha' }),
     ];
-    const sorted = sortIssues(issues, policy);
+    const sorted = sortIssues(issues, orderedStages);
     expect(sorted.map(i => i.message)).toEqual(['alpha', 'beta']);
   });
 
   test('empty issues returns empty', () => {
-    expect(sortIssues([], policy)).toEqual([]);
+    expect(sortIssues([], orderedStages)).toEqual([]);
   });
 
   test('stable sort preserves insertion order for equal items', () => {
     const a = issue({ code: 'E1', details: { id: 1 } });
     const b = issue({ code: 'E1', details: { id: 2 } });
-    const sorted = sortIssues([a, b], policy);
+    const sorted = sortIssues([a, b], orderedStages);
     expect(sorted[0].details).toEqual({ id: 1 });
     expect(sorted[1].details).toEqual({ id: 2 });
   });
@@ -127,7 +117,7 @@ describe('normalizeIssues', () => {
       issue({ code: 'E1', stage: 'draft' }),
       issue({ code: 'E1', stage: 'draft' }), // duplicate
     ];
-    const result = normalizeIssues(issues, policy);
+    const result = normalizeIssues(issues, orderedStages);
     expect(result).toHaveLength(2);
     expect(result[0].stage).toBe('draft');
     expect(result[1].stage).toBe('submit');

@@ -1,8 +1,6 @@
-import type { FormState, CreateFormOptions, ValidationIssue, SubmitContext, StagePolicy } from './state.js';
+import type { FormState, CreateFormOptions, ValidationIssue, SubmitContext } from './state.js';
 import type {
   FormAction,
-  FormDispatchResult,
-  SubmitResult,
   Middleware,
   MiddlewareDecision,
   ValidatorAdapter,
@@ -13,7 +11,6 @@ import { parsePath } from './path-parser.js';
 import { assertSafeSegment } from '@ghost/predicate';
 import { applyRuleWrites } from './expression-integration.js';
 import type { ArbiterFormAdapter } from './arbiter-integration.js';
-import { resolveActiveStage, applySubmitOutcome } from './submit.js';
 import { normalizeIssues } from './validation.js';
 import { runTransforms } from './transforms.js';
 import { runVetoHooksSync, runNotifyHooksSync } from './middleware-runner.js';
@@ -43,29 +40,28 @@ function setAtPath(root: unknown, segments: readonly (string | number)[], value:
 }
 
 /** Pipeline context — everything the 18-step engine needs */
-export interface PipelineContext<S extends string = string> {
+export interface PipelineContext {
   readonly action: FormAction;
-  readonly store: FormStore<S>;
-  readonly options: CreateFormOptions<S>;
-  readonly stagePolicy: StagePolicy<S>;
-  readonly submitContext?: SubmitContext<S>;
+  readonly store: FormStore;
+  readonly options: CreateFormOptions;
+  readonly submitContext?: SubmitContext;
   readonly isSubmit: boolean;
   readonly arbiterAdapter?: ArbiterFormAdapter | undefined;
 }
 
 /** Pipeline result — outcome of the 18-step execution */
-export interface PipelineResult<S extends string = string> {
+export interface PipelineResult {
   readonly ok: boolean;
   readonly error?: string;
   readonly vetoed?: boolean;
   readonly vetoReason?: string;
-  readonly issues?: readonly ValidationIssue<S>[];
+  readonly issues?: readonly ValidationIssue[];
 }
 
 
 
 /** Resolve TransformDefinitions from options.transforms (duck-type check) */
-function getTransformDefs<S extends string>(options: CreateFormOptions<S>): readonly TransformDefinition[] {
+function getTransformDefs(options: CreateFormOptions): readonly TransformDefinition[] {
   if (!options.transforms?.length) return [];
   return options.transforms.filter(
     (t): t is TransformDefinition => 'transform' in t && typeof (t as TransformDefinition).transform === 'function',
@@ -73,17 +69,19 @@ function getTransformDefs<S extends string>(options: CreateFormOptions<S>): read
 }
 
 /** Run validators synchronously; throws FORMR_ASYNC_IN_SYNC_PIPELINE if any return a Promise */
-function runValidators<S extends string>(
-  validators: readonly ValidatorAdapter<S>[],
-  state: FormState<S>,
-  stage: S,
-  submitContext?: SubmitContext<S>,
-): readonly ValidationIssue<S>[] {
-  const allIssues: ValidationIssue<S>[] = [];
+function runValidators(
+  validators: readonly ValidatorAdapter[],
+  state: FormState,
+  stage: string | undefined,
+  submitContext?: SubmitContext,
+): readonly ValidationIssue[] {
+  const allIssues: ValidationIssue[] = [];
   for (const v of validators) {
+    const base = { data: state.data, uiState: state.uiState };
+    const withStage = stage !== undefined ? { ...base, stage } : base;
     const input = submitContext
-      ? { data: state.data, uiState: state.uiState, stage, context: submitContext }
-      : { data: state.data, uiState: state.uiState, stage };
+      ? { ...withStage, context: submitContext }
+      : withStage;
     const result = v.validate(input);
     if (result instanceof Promise) {
       throw new FormrError(
@@ -100,9 +98,9 @@ function runValidators<S extends string>(
  * ADR §8 — Execute the full 18-step action-to-commit pipeline.
  * All-or-nothing transactional semantics: no partial commits.
  */
-export function executePipeline<S extends string>(ctx: PipelineContext<S>): PipelineResult<S> {
-  const { action, store, options, stagePolicy, submitContext, isSubmit } = ctx;
-  const middlewares = (options.middleware ?? []) as readonly Middleware<S>[];
+export function executePipeline(ctx: PipelineContext): PipelineResult {
+  const { action, store, options, submitContext, isSubmit } = ctx;
+  const middlewares = (options.middleware ?? []) as readonly Middleware[];
 
   // Step 1: Normalize input — parse/validate path
   if (action.path !== undefined) {
@@ -162,17 +160,17 @@ export function executePipeline<S extends string>(ctx: PipelineContext<S>): Pipe
     // Step 8: Middleware afterEvaluate
     runNotifyHooksSync(middlewares, 'afterEvaluate', { action, state: tx.draftState });
 
-    // Step 9: Resolve active validation stage
-    const activeStage = resolveActiveStage(tx.draftState.meta, submitContext);
+    // Step 9: Resolve active validation stage (optional — from meta.stage)
+    const activeStage = tx.draftState.meta.stage;
 
     // Step 10: Middleware beforeValidate
-    runNotifyHooksSync(middlewares, 'beforeValidate', { action, state: tx.draftState, stage: activeStage });
+    runNotifyHooksSync(middlewares, 'beforeValidate', { action, state: tx.draftState, ...(activeStage !== undefined ? { stage: activeStage } : {}) });
 
     // Step 11: Run validators and normalize to issue envelope
-    let issues: readonly ValidationIssue<S>[] = [];
+    let issues: readonly ValidationIssue[] = [];
     if (options.validators?.length) {
       const rawIssues = runValidators(options.validators, tx.draftState, activeStage, submitContext);
-      issues = normalizeIssues(rawIssues, stagePolicy);
+      issues = normalizeIssues(rawIssues);
     }
 
     // Step 12: Middleware afterValidate

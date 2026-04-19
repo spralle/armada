@@ -9,10 +9,10 @@ import {
   disposeMiddlewares,
 } from '../middleware-runner.js';
 
-function makeMw<S extends string = string>(
+function makeMw(
   id: string,
-  overrides: Partial<Middleware<S>> = {},
-): Middleware<S> {
+  overrides: Partial<Middleware> = {},
+): Middleware {
   return { id, ...overrides };
 }
 

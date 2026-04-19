@@ -4,10 +4,10 @@ import { setNestedValue, deleteNestedValue } from './nested-utils.js';
 import { assertSafeSegment } from '@ghost/predicate';
 
 /** Apply rule writes to form state (immutable) */
-export function applyRuleWrites<S extends string>(
-  state: FormState<S>,
+export function applyRuleWrites(
+  state: FormState,
   writes: readonly RuleWriteIntent[],
-): FormState<S> {
+): FormState {
   let data = (state.data ?? {}) as Record<string, unknown>;
   let uiState = (state.uiState ?? {}) as Record<string, unknown>;
 
