@@ -184,6 +184,13 @@ export { THEME_SERVICE_ID } from "./theme-service.js";
 
 export type { PluginServices, PluginMountContext } from "./plugin-services.js";
 
+export type {
+  JsonFormSchema,
+  JsonFormOptions,
+  JsonFormController,
+  JsonFormCapability,
+} from './jsonform-capability.js';
+
 export { CONFIG_SERVICE_ID } from "./config-service.js";
 
 export {

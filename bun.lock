@@ -400,7 +400,12 @@
       "name": "ghost.shared.ui-capabilities",
       "version": "0.1.0",
       "dependencies": {
+        "@ghost/formr-core": "workspace:*",
+        "@ghost/formr-from-schema": "workspace:*",
+        "@ghost/formr-react": "workspace:*",
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
       },
       "devDependencies": {
         "@module-federation/vite": "^1.8.1",
@@ -1234,15 +1239,15 @@
 
     "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
-    "@ghost/backend-app/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "@ghost/backend-app/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "@ghost/shell-app/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "@ghost/shell-app/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
     "@ghost/shell-app/@types/react": ["@types/react@18.3.28", "", { "dependencies": { "@types/prop-types": "*", "csstype": "^3.2.2" } }, "sha512-z9VXpC7MWrhfWipitjNdgCauoMLRdIILQsAEV+ZesIzBq/oUlxk0m3ApZuMFCXdnS4U7KrI+l3WRUEGQ8K1QKw=="],
 
     "@ghost/shell-app/react": ["react@18.3.1", "", { "dependencies": { "loose-envify": "^1.1.0" } }, "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ=="],
 
-    "@ghost/typecheck-fixture/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "@ghost/typecheck-fixture/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
     "@ghost/ui/@types/react": ["@types/react@18.3.28", "", { "dependencies": { "@types/prop-types": "*", "csstype": "^3.2.2" } }, "sha512-z9VXpC7MWrhfWipitjNdgCauoMLRdIILQsAEV+ZesIzBq/oUlxk0m3ApZuMFCXdnS4U7KrI+l3WRUEGQ8K1QKw=="],
 
@@ -1330,31 +1335,31 @@
 
     "cmdk/@radix-ui/react-primitive": ["@radix-ui/react-primitive@2.1.4", "", { "dependencies": { "@radix-ui/react-slot": "1.2.4" }, "peerDependencies": { "@types/react": "*", "@types/react-dom": "*", "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react", "@types/react-dom"] }, "sha512-9hQc4+GNVtJAIEPEqlYqW5RiYdrr8ea5XQ0ZOnD6fgru+83kqT15mq2OCcbe8KnjRZl5vF3ks69AKz3kh1jrhg=="],
 
-    "ghost.action-palette/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.action-palette/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.appearance-settings/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.appearance-settings/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.domain.unplanned-orders/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.domain.unplanned-orders/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.domain.vessel-view/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.domain.vessel-view/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.example-layer-anchor-showcase/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.example-layer-anchor-showcase/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.example-layer-background/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.example-layer-background/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.example-layer-custom/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.example-layer-custom/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.example-layer-modal/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.example-layer-modal/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.example-layer-notification/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.example-layer-notification/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.example-layer-overlay/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.example-layer-overlay/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.example-layer-panel/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.example-layer-panel/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.group-context/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.group-context/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.keybindings/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.keybindings/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
     "ghost.keybindings/@ghost/ui": ["@ghost/ui@file:packages/ui", { "dependencies": { "@hookform/resolvers": "5.2.2", "@radix-ui/react-accordion": "1.2.12", "@radix-ui/react-alert-dialog": "1.1.15", "@radix-ui/react-avatar": "1.1.11", "@radix-ui/react-checkbox": "1.3.3", "@radix-ui/react-collapsible": "1.1.12", "@radix-ui/react-context-menu": "2.2.16", "@radix-ui/react-dialog": "1.1.15", "@radix-ui/react-dropdown-menu": "2.1.16", "@radix-ui/react-hover-card": "1.1.15", "@radix-ui/react-label": "2.1.8", "@radix-ui/react-popover": "1.1.15", "@radix-ui/react-progress": "1.1.8", "@radix-ui/react-radio-group": "1.3.8", "@radix-ui/react-scroll-area": "1.2.10", "@radix-ui/react-select": "2.2.6", "@radix-ui/react-separator": "1.1.8", "@radix-ui/react-slider": "1.3.6", "@radix-ui/react-slot": "1.2.4", "@radix-ui/react-switch": "1.2.6", "@radix-ui/react-tabs": "1.1.13", "@radix-ui/react-toggle": "1.1.10", "@radix-ui/react-toggle-group": "1.1.11", "@radix-ui/react-tooltip": "1.2.8", "class-variance-authority": "^0.7.1", "clsx": "^2.1.1", "cmdk": "1.1.1", "lucide-react": "^0.475.0", "next-themes": "0.4.6", "react-hook-form": "7.72.1", "react-resizable-panels": "4.10.0", "sonner": "2.0.7", "tailwind-merge": "^3.0.2", "vaul": "1.1.2", "zod": "4.3.6" }, "devDependencies": { "@tailwindcss/vite": "^4.0.0", "@types/react": "^18.3.12", "@types/react-dom": "^18.3.1", "tailwindcss": "^4.0.0" }, "peerDependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" } }],
 
@@ -1362,13 +1367,13 @@
 
     "ghost.keybindings/react": ["react@18.3.1", "", { "dependencies": { "loose-envify": "^1.1.0" } }, "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ=="],
 
-    "ghost.pending-chord-indicator/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.pending-chord-indicator/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.plugin-starter/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.plugin-starter/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
     "ghost.plugin-starter/@ghost/ui": ["@ghost/ui@file:packages/ui", { "dependencies": { "@hookform/resolvers": "5.2.2", "@radix-ui/react-accordion": "1.2.12", "@radix-ui/react-alert-dialog": "1.1.15", "@radix-ui/react-avatar": "1.1.11", "@radix-ui/react-checkbox": "1.3.3", "@radix-ui/react-collapsible": "1.1.12", "@radix-ui/react-context-menu": "2.2.16", "@radix-ui/react-dialog": "1.1.15", "@radix-ui/react-dropdown-menu": "2.1.16", "@radix-ui/react-hover-card": "1.1.15", "@radix-ui/react-label": "2.1.8", "@radix-ui/react-popover": "1.1.15", "@radix-ui/react-progress": "1.1.8", "@radix-ui/react-radio-group": "1.3.8", "@radix-ui/react-scroll-area": "1.2.10", "@radix-ui/react-select": "2.2.6", "@radix-ui/react-separator": "1.1.8", "@radix-ui/react-slider": "1.3.6", "@radix-ui/react-slot": "1.2.4", "@radix-ui/react-switch": "1.2.6", "@radix-ui/react-tabs": "1.1.13", "@radix-ui/react-toggle": "1.1.10", "@radix-ui/react-toggle-group": "1.1.11", "@radix-ui/react-tooltip": "1.2.8", "class-variance-authority": "^0.7.1", "clsx": "^2.1.1", "cmdk": "1.1.1", "lucide-react": "^0.475.0", "next-themes": "0.4.6", "react-hook-form": "7.72.1", "react-resizable-panels": "4.10.0", "sonner": "2.0.7", "tailwind-merge": "^3.0.2", "vaul": "1.1.2", "zod": "4.3.6" }, "devDependencies": { "@tailwindcss/vite": "^4.0.0", "@types/react": "^18.3.12", "@types/react-dom": "^18.3.1", "tailwindcss": "^4.0.0" }, "peerDependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" } }],
 
-    "ghost.plugins-panel/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.plugins-panel/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
     "ghost.plugins-panel/@ghost/ui": ["@ghost/ui@file:packages/ui", { "dependencies": { "@hookform/resolvers": "5.2.2", "@radix-ui/react-accordion": "1.2.12", "@radix-ui/react-alert-dialog": "1.1.15", "@radix-ui/react-avatar": "1.1.11", "@radix-ui/react-checkbox": "1.3.3", "@radix-ui/react-collapsible": "1.1.12", "@radix-ui/react-context-menu": "2.2.16", "@radix-ui/react-dialog": "1.1.15", "@radix-ui/react-dropdown-menu": "2.1.16", "@radix-ui/react-hover-card": "1.1.15", "@radix-ui/react-label": "2.1.8", "@radix-ui/react-popover": "1.1.15", "@radix-ui/react-progress": "1.1.8", "@radix-ui/react-radio-group": "1.3.8", "@radix-ui/react-scroll-area": "1.2.10", "@radix-ui/react-select": "2.2.6", "@radix-ui/react-separator": "1.1.8", "@radix-ui/react-slider": "1.3.6", "@radix-ui/react-slot": "1.2.4", "@radix-ui/react-switch": "1.2.6", "@radix-ui/react-tabs": "1.1.13", "@radix-ui/react-toggle": "1.1.10", "@radix-ui/react-toggle-group": "1.1.11", "@radix-ui/react-tooltip": "1.2.8", "class-variance-authority": "^0.7.1", "clsx": "^2.1.1", "cmdk": "1.1.1", "lucide-react": "^0.475.0", "next-themes": "0.4.6", "react-hook-form": "7.72.1", "react-resizable-panels": "4.10.0", "sonner": "2.0.7", "tailwind-merge": "^3.0.2", "vaul": "1.1.2", "zod": "4.3.6" }, "devDependencies": { "@tailwindcss/vite": "^4.0.0", "@types/react": "^18.3.12", "@types/react-dom": "^18.3.1", "tailwindcss": "^4.0.0" }, "peerDependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" } }],
 
@@ -1376,17 +1381,19 @@
 
     "ghost.plugins-panel/react": ["react@18.3.1", "", { "dependencies": { "loose-envify": "^1.1.0" } }, "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ=="],
 
-    "ghost.sample.contract-consumer/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.sample.contract-consumer/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.shadcn.theme-bridge/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.shadcn.theme-bridge/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.shared.ui-capabilities/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.shared.ui-capabilities/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.theme.default/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.shared.ui-capabilities/react-dom": ["react-dom@19.2.5", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.5" } }, "sha512-J5bAZz+DXMMwW/wV3xzKke59Af6CHY7G4uYLN1OvBcKEsWOs4pQExj86BBKamxl/Ik5bx9whOrvBlSDfWzgSag=="],
 
-    "ghost.topbar-widgets/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.theme.default/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
-    "ghost.ui/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.topbar-widgets/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
+
+    "ghost.ui/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
     "ghost.ui/@ghost/ui": ["@ghost/ui@file:packages/ui", { "dependencies": { "@hookform/resolvers": "5.2.2", "@radix-ui/react-accordion": "1.2.12", "@radix-ui/react-alert-dialog": "1.1.15", "@radix-ui/react-avatar": "1.1.11", "@radix-ui/react-checkbox": "1.3.3", "@radix-ui/react-collapsible": "1.1.12", "@radix-ui/react-context-menu": "2.2.16", "@radix-ui/react-dialog": "1.1.15", "@radix-ui/react-dropdown-menu": "2.1.16", "@radix-ui/react-hover-card": "1.1.15", "@radix-ui/react-label": "2.1.8", "@radix-ui/react-popover": "1.1.15", "@radix-ui/react-progress": "1.1.8", "@radix-ui/react-radio-group": "1.3.8", "@radix-ui/react-scroll-area": "1.2.10", "@radix-ui/react-select": "2.2.6", "@radix-ui/react-separator": "1.1.8", "@radix-ui/react-slider": "1.3.6", "@radix-ui/react-slot": "1.2.4", "@radix-ui/react-switch": "1.2.6", "@radix-ui/react-tabs": "1.1.13", "@radix-ui/react-toggle": "1.1.10", "@radix-ui/react-toggle-group": "1.1.11", "@radix-ui/react-tooltip": "1.2.8", "class-variance-authority": "^0.7.1", "clsx": "^2.1.1", "cmdk": "1.1.1", "lucide-react": "^0.475.0", "next-themes": "0.4.6", "react-hook-form": "7.72.1", "react-resizable-panels": "4.10.0", "sonner": "2.0.7", "tailwind-merge": "^3.0.2", "vaul": "1.1.2", "zod": "4.3.6" }, "devDependencies": { "@tailwindcss/vite": "^4.0.0", "@types/react": "^18.3.12", "@types/react-dom": "^18.3.1", "tailwindcss": "^4.0.0" }, "peerDependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" } }],
 
@@ -1394,7 +1401,7 @@
 
     "ghost.ui/react": ["react@18.3.1", "", { "dependencies": { "loose-envify": "^1.1.0" } }, "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ=="],
 
-    "ghost.view-picker/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "ghost.view-picker/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
     "react-dom/react": ["react@18.3.1", "", { "dependencies": { "loose-envify": "^1.1.0" } }, "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ=="],
 
@@ -1437,6 +1444,8 @@
     "ghost.plugin-starter/@ghost/ui/zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
 
     "ghost.plugins-panel/@ghost/ui/zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
+
+    "ghost.shared.ui-capabilities/react-dom/scheduler": ["scheduler@0.27.0", "", {}, "sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q=="],
 
     "ghost.ui/@ghost/ui/zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
 

@@ -6,11 +6,22 @@
     "strict": true,
     "noEmit": true,
     "composite": true,
-    "skipLibCheck": true,`n    "resolveJsonModule": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx"
   },
   "references": [
     {
       "path": "../../packages/plugin-contracts"
+    },
+    {
+      "path": "../../packages/formr-core"
+    },
+    {
+      "path": "../../packages/formr-from-schema"
+    },
+    {
+      "path": "../../packages/formr-react"
     }
   ],
   "include": [

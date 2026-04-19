@@ -24,7 +24,12 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+    "@ghost/formr-core": "workspace:*",
+    "@ghost/formr-from-schema": "workspace:*",
+    "@ghost/formr-react": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@module-federation/vite": "^1.8.1",
