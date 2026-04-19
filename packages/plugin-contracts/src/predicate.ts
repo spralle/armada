@@ -159,7 +159,7 @@ function evaluateWithPredicateEngine(
     ? { kind: "op", op: "$exists", args: [pathNode, literalNode] }
     : { kind: "op", op: operator, args: [pathNode, literalNode] };
 
-  const scope: EvaluationScope = { data: facts, uiState: {}, meta: {} };
+  const scope: EvaluationScope = facts as EvaluationScope;
 
   try {
     return Boolean(evaluateExpr(astNode, scope));
