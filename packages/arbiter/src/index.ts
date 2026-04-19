@@ -29,3 +29,6 @@ export type { FiringResult, StateChange, ArbiterWarning, WriteRecord } from './c
 
 // Error types
 export { ArbiterError, ArbiterErrorCode } from './errors.js';
+
+// Session factory
+export { createSession } from './session.js';
