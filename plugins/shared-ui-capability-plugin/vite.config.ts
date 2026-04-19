@@ -22,11 +22,15 @@ export default defineConfig({
         },
         "react": {
           singleton: true,
-          requiredVersion: "^19.0.0",
+          requiredVersion: "^18.3.1",
         },
         "react-dom": {
           singleton: true,
-          requiredVersion: "^19.0.0",
+          requiredVersion: "^18.3.1",
+        },
+        "react-dom/client": {
+          singleton: true,
+          requiredVersion: "^18.3.1",
         },
       },
     }),
