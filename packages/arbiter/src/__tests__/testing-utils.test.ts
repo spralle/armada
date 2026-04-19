@@ -11,13 +11,13 @@ import type { ProductionRule } from '../contracts.js';
 const setVisibleRule: ProductionRule = {
   name: 'set-visible',
   when: { type: 'hazmat' },
-  then: [{ type: 'set', path: '$ui.warning', value: true }],
+  then: [{ $set: { '$ui.warning': true } }],
 };
 
 const noopRule: ProductionRule = {
   name: 'noop-rule',
   when: { type: 'nope' },
-  then: [{ type: 'set', path: '$ui.other', value: true }],
+  then: [{ $set: { '$ui.other': true } }],
 };
 
 describe('createTestSession', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { extractConditionDeps, extractActionDeps } from '../dependency-extract.js';
-import type { CompiledAction } from '../contracts.js';
+import type { CompiledStage } from '../contracts.js';
 
 describe('extractConditionDeps', () => {
   test('extracts field path from simple path node', () => {
@@ -88,34 +88,34 @@ describe('extractConditionDeps', () => {
 });
 
 describe('extractActionDeps', () => {
-  test('extracts paths from set actions', () => {
-    const actions: readonly CompiledAction[] = [
-      { type: 'set', path: 'total', compiledValue: 100 },
+  test('extracts paths from $set stages', () => {
+    const stages: readonly CompiledStage[] = [
+      { operator: '$set', entries: new Map([['total', 100]]) },
     ];
-    expect(extractActionDeps(actions)).toEqual(['total']);
+    expect(extractActionDeps(stages)).toEqual(['total']);
   });
 
-  test('extracts paths from multiple action types', () => {
-    const actions: readonly CompiledAction[] = [
-      { type: 'set', path: 'a' },
-      { type: 'inc', path: 'b' },
-      { type: 'push', path: 'c' },
-      { type: 'unset', path: 'd' },
+  test('extracts paths from multiple stage types', () => {
+    const stages: readonly CompiledStage[] = [
+      { operator: '$set', entries: new Map([['a', true]]) },
+      { operator: '$inc', entries: new Map([['b', 1]]) },
+      { operator: '$push', entries: new Map([['c', 'x']]) },
+      { operator: '$unset', entries: new Map([['d', '']]) },
     ];
-    const deps = extractActionDeps(actions);
+    const deps = extractActionDeps(stages);
     expect(deps).toHaveLength(4);
     expect(deps).toContain('a');
     expect(deps).toContain('d');
   });
 
-  test('skips actions without path (focus)', () => {
-    const actions: readonly CompiledAction[] = [
-      { type: 'focus', group: 'myGroup' },
+  test('skips stages without paths ($focus)', () => {
+    const stages: readonly CompiledStage[] = [
+      { operator: '$focus', entries: new Map([['group', 'myGroup']]) },
     ];
-    expect(extractActionDeps(actions)).toEqual([]);
+    expect(extractActionDeps(stages)).toEqual([]);
   });
 
-  test('returns empty for empty actions', () => {
+  test('returns empty for empty stages', () => {
     expect(extractActionDeps([])).toEqual([]);
   });
 });

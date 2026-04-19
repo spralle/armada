@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { createAlphaNetwork } from '../alpha-network.js';
-import type { CompiledRule, ProductionRule } from '../contracts.js';
+import type { CompiledRule, CompiledStage, ProductionRule } from '../contracts.js';
 
 function makeRule(name: string, conditionPaths: string[], actionPaths: string[] = []): CompiledRule {
   // Build a condition ExprNode that references the given paths
@@ -17,9 +17,11 @@ function makeRule(name: string, conditionPaths: string[], actionPaths: string[] 
         ? pathNodes[0]
         : { kind: 'op' as const, op: '$and', args: pathNodes };
 
-  const actions = actionPaths.map((p) => ({ type: 'set' as const, path: p }));
+  const actions: readonly CompiledStage[] = actionPaths.length > 0
+    ? [{ operator: '$set', entries: new Map(actionPaths.map((p) => [p, true])) }]
+    : [];
 
-  const source: ProductionRule = { name, when: {}, then: [{ type: 'set', path: 'x', value: 1 }] };
+  const source: ProductionRule = { name, when: {}, then: [{ $set: { x: 1 } }] };
 
   return {
     name,

@@ -55,10 +55,14 @@ export function createSession(config?: SessionConfig): RuleSession {
   }
 
   function buildContext(): FireContext {
-    return {
+    const ctx: FireContext = {
       scope, network, agenda, tms,
       compiledRules, operators, limits, ruleConditionState,
     };
+    if (config?.thenOperators) {
+      return { ...ctx, thenOperators: config.thenOperators };
+    }
+    return ctx;
   }
 
   function registerRuleInternal(rule: ProductionRule): void {

@@ -106,7 +106,7 @@ describe('pipeline — 18-step engine', () => {
       arbiterRules: [{
         name: 'r1',
         when: {},
-        then: [{ type: 'set', path: 'computed', value: 42 }],
+        then: [{ $set: { computed: 42 } }],
       }],
       initialData: { name: '', computed: 0 },
     });

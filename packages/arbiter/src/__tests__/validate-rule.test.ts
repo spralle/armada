@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'bun:test';
 import { validateRule } from '../validate-rule.js';
-import type { ProductionRule, ThenAction } from '../contracts.js';
+import type { ProductionRule, ThenStage } from '../contracts.js';
 
 function makeRule(overrides: Partial<ProductionRule> = {}): ProductionRule {
   return {
     name: 'test-rule',
     when: { 'user.age': { $gt: 18 } },
-    then: [{ type: 'set', path: 'user.eligible', value: true }] as readonly ThenAction[],
+    then: [{ $set: { 'user.eligible': true } }] as readonly ThenStage[],
     ...overrides,
   };
 }
@@ -28,7 +28,7 @@ describe('validateRule — syntax level', () => {
 
   it('rejects rule with __proto__ in action path', () => {
     const rule = makeRule({
-      then: [{ type: 'set', path: '__proto__.polluted', value: true }],
+      then: [{ $set: { '__proto__.polluted': true } }],
     });
     expect(() => validateRule(rule, 'syntax')).toThrow('dangerous path');
   });
@@ -53,7 +53,7 @@ describe('validateRule — strict level', () => {
 
   it('rejects prototype in else action path', () => {
     const rule = makeRule({
-      else: [{ type: 'set', path: 'a.prototype.b', value: 1 }],
+      else: [{ $set: { 'a.prototype.b': 1 } }],
     });
     expect(() => validateRule(rule)).toThrow('dangerous path');
   });
@@ -91,7 +91,7 @@ describe('validateRule — strict level', () => {
 
   it('rejects dangerous expression values', () => {
     const rule = makeRule({
-      then: [{ type: 'set', path: 'x', value: { $__proto__: 'bad' } }],
+      then: [{ $set: { x: { $__proto__: 'bad' } } }],
     });
     expect(() => validateRule(rule)).toThrow('dangerous global');
   });
@@ -105,7 +105,7 @@ describe('validateRule — none level', () => {
   it('accepts rule with dangerous paths (no validation)', () => {
     const rule = makeRule({
       when: { '__proto__.x': 1 },
-      then: [{ type: 'set', path: '__proto__.y', value: true }],
+      then: [{ $set: { '__proto__.y': true } }],
     });
     expect(() => validateRule(rule, 'none')).not.toThrow();
   });
@@ -121,7 +121,7 @@ describe('validateRule — integration', () => {
 
   it('catches dangerous expression values in nested objects', () => {
     const rule = makeRule({
-      then: [{ type: 'set', path: 'x', value: { nested: { $__proto__: 'bad' } } }],
+      then: [{ $set: { x: { nested: { $__proto__: 'bad' } } } }],
     });
     expect(() => validateRule(rule)).toThrow('dangerous global');
   });

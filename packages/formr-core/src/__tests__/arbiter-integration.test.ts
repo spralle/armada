@@ -20,7 +20,7 @@ describe('createArbiterAdapter', () => {
     const rules: readonly ProductionRule[] = [{
       name: 'setTotal',
       when: { qty: { $gt: 0 } },
-      then: [{ type: 'set', path: '$ui.showTotal', value: true }],
+      then: [{ $set: { '$ui.showTotal': true } }],
     }];
     const adapter = createArbiterAdapter(rules);
     expect(adapter.session).toBeDefined();
@@ -32,7 +32,7 @@ describe('createArbiterAdapter', () => {
     const rules: readonly ProductionRule[] = [{
       name: 'showDiscount',
       when: { qty: { $gte: 10 } },
-      then: [{ type: 'set', path: '$ui.showDiscount', value: true }],
+      then: [{ $set: { '$ui.showDiscount': true } }],
     }];
     const adapter = createArbiterAdapter(rules);
     const state = makeState({ data: { qty: 15 } });
@@ -46,7 +46,7 @@ describe('createArbiterAdapter', () => {
     const rules: readonly ProductionRule[] = [{
       name: 'showDiscount',
       when: { qty: { $gte: 10 } },
-      then: [{ type: 'set', path: '$ui.showDiscount', value: true }],
+      then: [{ $set: { '$ui.showDiscount': true } }],
     }];
     const adapter = createArbiterAdapter(rules);
     const state = makeState({ data: { qty: 3 } });
@@ -59,7 +59,7 @@ describe('createArbiterAdapter', () => {
 describe('createArbiterAdapterFromSession', () => {
   test('wraps a pre-configured session', () => {
     const session = createSession({
-      rules: [{ name: 'r1', when: { x: 1 }, then: [{ type: 'set', path: '$ui.y', value: 2 }] }],
+      rules: [{ name: 'r1', when: { x: 1 }, then: [{ $set: { '$ui.y': 2 } }] }],
     });
     const adapter = createArbiterAdapterFromSession(session);
     expect(adapter.session).toBe(session);
@@ -71,11 +71,11 @@ describe('createArbiterAdapterFromSession', () => {
       name: 'internalWrite',
       when: {},
       then: [
-        { type: 'set', path: '$state.counter', value: 1 },
-        { type: 'set', path: '$ui.visible', value: true },
-        { type: 'set', path: '$meta.timestamp', value: 999 },
-        { type: 'set', path: '$contributions.source', value: 'test' },
-        { type: 'set', path: 'name', value: 'kept' },
+        { $set: { '$state.counter': 1 } },
+        { $set: { '$ui.visible': true } },
+        { $set: { '$meta.timestamp': 999 } },
+        { $set: { '$contributions.source': 'test' } },
+        { $set: { name: 'kept' } },
       ],
     }];
     const adapter = createArbiterAdapter(rules);
@@ -98,7 +98,7 @@ describe('createForm with arbiterRules', () => {
     const rules: readonly ProductionRule[] = [{
       name: 'calcTotal',
       when: {},
-      then: [{ type: 'set', path: '$ui.evaluated', value: true }],
+      then: [{ $set: { '$ui.evaluated': true } }],
     }];
     const form = createForm({
       initialData: { qty: 0 },
@@ -122,7 +122,7 @@ describe('createForm with arbiterRules', () => {
     const rules: readonly ProductionRule[] = [{
       name: 'setLabel',
       when: {},
-      then: [{ type: 'set', path: 'label', value: 'computed' }],
+      then: [{ $set: { label: 'computed' } }],
     }];
     const form = createForm({
       initialData: { name: 'test', label: '' },
@@ -135,7 +135,7 @@ describe('createForm with arbiterRules', () => {
 
   test('form with arbiterSession accepts pre-configured session', () => {
     const session = createSession({
-      rules: [{ name: 'r1', when: {}, then: [{ type: 'set', path: '$ui.ready', value: true }] }],
+      rules: [{ name: 'r1', when: {}, then: [{ $set: { '$ui.ready': true } }] }],
     });
     const form = createForm({
       initialData: { x: 0 },

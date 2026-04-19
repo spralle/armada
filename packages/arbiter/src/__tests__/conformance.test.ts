@@ -18,16 +18,14 @@ describe('Conformance: B2B logistics scenarios', () => {
           name: 'hazmat-warning',
           when: { shipmentType: 'hazmat' },
           then: [
-            { type: 'set', path: '$ui.hazmatWarning.visible', value: true },
-            { type: 'set', path: '$ui.hazmatForm.required', value: true },
+            { $set: { '$ui.hazmatWarning.visible': true, '$ui.hazmatForm.required': true } },
           ],
         },
         {
           name: 'standard-no-warning',
           when: { shipmentType: { $ne: 'hazmat' } },
           then: [
-            { type: 'set', path: '$ui.hazmatWarning.visible', value: false },
-            { type: 'set', path: '$ui.hazmatForm.required', value: false },
+            { $set: { '$ui.hazmatWarning.visible': false, '$ui.hazmatForm.required': false } },
           ],
         },
       ],
@@ -47,14 +45,14 @@ describe('Conformance: B2B logistics scenarios', () => {
           name: 'heavy-surcharge',
           when: { weight: { $gt: 100 } },
           then: [
-            { type: 'set', path: '$state.surcharge', value: { $multiply: ['$weight', 0.5] } },
+            { $set: { '$state.surcharge': { $multiply: ['$weight', 0.5] } } },
           ],
         },
         {
           name: 'light-no-surcharge',
           when: { weight: { $lte: 100 } },
           then: [
-            { type: 'set', path: '$state.surcharge', value: 0 },
+            { $set: { '$state.surcharge': 0 } },
           ],
         },
       ],
@@ -70,12 +68,10 @@ describe('Conformance: B2B logistics scenarios', () => {
         name: 'container-fields',
         when: { mode: 'sea' },
         then: [
-          { type: 'set', path: '$ui.containerSize.visible', value: true },
-          { type: 'set', path: '$ui.vesselName.visible', value: true },
+          { $set: { '$ui.containerSize.visible': true, '$ui.vesselName.visible': true } },
         ],
         else: [
-          { type: 'set', path: '$ui.containerSize.visible', value: false },
-          { type: 'set', path: '$ui.vesselName.visible', value: false },
+          { $set: { '$ui.containerSize.visible': false, '$ui.vesselName.visible': false } },
         ],
       }],
     });
@@ -97,19 +93,19 @@ describe('Conformance: B2B logistics scenarios', () => {
         {
           name: 'calc-subtotal',
           when: { quantity: { $gt: 0 }, unitPrice: { $gt: 0 } },
-          then: [{ type: 'set', path: '$state.subtotal', value: { $multiply: ['$quantity', '$unitPrice'] } }],
+          then: [{ $set: { '$state.subtotal': { $multiply: ['$quantity', '$unitPrice'] } } }],
           salience: 10,
         },
         {
           name: 'calc-tax',
           when: { '$state.subtotal': { $gt: 0 } },
-          then: [{ type: 'set', path: '$state.tax', value: { $multiply: ['$state.subtotal', '$taxRate'] } }],
+          then: [{ $set: { '$state.tax': { $multiply: ['$state.subtotal', '$taxRate'] } } }],
           salience: 5,
         },
         {
           name: 'calc-total',
           when: { '$state.subtotal': { $gt: 0 }, '$state.tax': { $exists: true } },
-          then: [{ type: 'set', path: '$state.total', value: { $sum: ['$state.subtotal', '$state.tax'] } }],
+          then: [{ $set: { '$state.total': { $sum: ['$state.subtotal', '$state.tax'] } } }],
           salience: 1,
         },
       ],
@@ -128,8 +124,7 @@ describe('Conformance: B2B logistics scenarios', () => {
         name: 'approval-section',
         when: { requiresApproval: true },
         then: [
-          { type: 'set', path: '$ui.approvalSection.visible', value: true },
-          { type: 'set', path: '$ui.approverField.required', value: true },
+          { $set: { '$ui.approvalSection.visible': true, '$ui.approverField.required': true } },
         ],
       }],
     });
@@ -148,13 +143,13 @@ describe('Conformance: B2B logistics scenarios', () => {
         {
           name: 'low-priority',
           when: { active: true },
-          then: [{ type: 'set', path: '$state.order', value: 'low' }],
+          then: [{ $set: { '$state.order': 'low' } }],
           salience: 1,
         },
         {
           name: 'high-priority',
           when: { active: true },
-          then: [{ type: 'set', path: '$state.order', value: 'high' }],
+          then: [{ $set: { '$state.order': 'high' } }],
           salience: 10,
         },
       ],
@@ -169,7 +164,7 @@ describe('Conformance: B2B logistics scenarios', () => {
       rules: [{
         name: 'count-check',
         when: { count: { $gt: 5 } },
-        then: [{ type: 'set', path: '$ui.warning.visible', value: true }],
+        then: [{ $set: { '$ui.warning.visible': true } }],
       }],
     });
     session.fire();
@@ -187,7 +182,7 @@ describe('Conformance: B2B logistics scenarios', () => {
       rules: [{
         name: 'trigger-rule',
         when: { trigger: true },
-        then: [{ type: 'set', path: '$state.result', value: 'fired' }],
+        then: [{ $set: { '$state.result': 'fired' } }],
       }],
     });
 
@@ -205,7 +200,7 @@ describe('Conformance: B2B logistics scenarios', () => {
       rules: [{
         name: 'removable-rule',
         when: { flag: true },
-        then: [{ type: 'set', path: '$ui.panel.visible', value: true }],
+        then: [{ $set: { '$ui.panel.visible': true } }],
       }],
     });
     session.fire();

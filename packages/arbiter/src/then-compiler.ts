@@ -1,72 +1,54 @@
-import type { ThenAction, CompiledAction } from './contracts.js';
+import type { ThenStage, CompiledStage } from './contracts.js';
 import { compileShorthand } from '@ghost/predicate';
-import { validatePath, isExpression } from './path-utils.js';
+import { validatePath } from './path-utils.js';
+import { ArbiterError, ArbiterErrorCode } from './errors.js';
 
 /**
- * Compiles a single ThenAction into a CompiledAction.
+ * Extracts the single $-prefixed operator key and body from a pipeline stage.
  */
-function compileAction(action: ThenAction): CompiledAction {
-  switch (action.type) {
-    case 'set': {
-      validatePath(action.path);
-      return {
-        type: 'set',
-        path: action.path,
-        compiledValue: action.value,
-      };
-    }
-    case 'unset': {
-      validatePath(action.path);
-      return {
-        type: 'unset',
-        path: action.path,
-      };
-    }
-    case 'push': {
-      validatePath(action.path);
-      return {
-        type: 'push',
-        path: action.path,
-        compiledValue: action.value,
-      };
-    }
-    case 'pull': {
-      validatePath(action.path);
-      const compiledMatch = compileShorthand(action.match);
-      return {
-        type: 'pull',
-        path: action.path,
-        compiledMatch,
-      };
-    }
-    case 'inc': {
-      validatePath(action.path);
-      return {
-        type: 'inc',
-        path: action.path,
-        compiledValue: action.value,
-      };
-    }
-    case 'merge': {
-      validatePath(action.path);
-      return {
-        type: 'merge',
-        path: action.path,
-        compiledValue: action.value,
-      };
-    }
-    case 'focus': {
-      return {
-        type: 'focus',
-        group: action.group,
-      };
-    }
+function extractOperator(stage: ThenStage): { readonly operator: string; readonly body: unknown } {
+  const keys = Object.keys(stage);
+  const opKeys = keys.filter((k) => k.startsWith('$'));
+  if (opKeys.length !== 1) {
+    throw new ArbiterError(
+      ArbiterErrorCode.RULE_COMPILATION_FAILED,
+      `Then stage must have exactly one $-prefixed operator, got: ${opKeys.join(', ') || 'none'}`,
+    );
   }
+  return { operator: opKeys[0], body: stage[opKeys[0]] };
 }
 
 /**
- * Compiles an array of ThenAction into CompiledAction[].
+ * Compiles a single ThenStage into a CompiledStage.
  */
-export function compileThenActions(actions: readonly ThenAction[]): readonly CompiledAction[] {
-  return actions.map(compileAction);
+function compileStage(stage: ThenStage): CompiledStage {
+  const { operator, body } = extractOperator(stage);
+
+  if (operator === '$focus') {
+    const focusBody = body as Record<string, unknown>;
+    const entries = new Map<string, unknown>();
+    entries.set('group', focusBody['group']);
+    return { operator, entries };
+  }
+
+  const fieldMap = body as Record<string, unknown>;
+  const entries = new Map<string, unknown>();
+
+  for (const [path, value] of Object.entries(fieldMap)) {
+    validatePath(path);
+    if (operator === '$pull') {
+      entries.set(path, compileShorthand(value as Record<string, unknown>));
+    } else {
+      entries.set(path, value);
+    }
+  }
+
+  return { operator, entries };
+}
+
+/**
+ * Compiles an array of ThenStage into CompiledStage[].
+ */
+export function compileThenActions(stages: readonly ThenStage[]): readonly CompiledStage[] {
+  return stages.map(compileStage);
 }

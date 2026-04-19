@@ -1,15 +1,10 @@
 // Public types — rule definitions
 export type {
   ProductionRule,
-  ThenAction,
-  ThenSetAction,
-  ThenUnsetAction,
-  ThenPushAction,
-  ThenPullAction,
-  ThenIncAction,
-  ThenMergeAction,
-  ThenFocusAction,
+  ThenStage,
   ThenValue,
+  ThenOperatorHandler,
+  ThenOperatorRegistry,
 } from './contracts.js';
 
 // Public types — session configuration

@@ -6,14 +6,14 @@ describe('compileRule', () => {
   const baseRule: ProductionRule = {
     name: 'test-rule',
     when: { score: { $gt: 10 } },
-    then: [{ type: 'set', path: 'result', value: 'pass' }],
+    then: [{ $set: { result: 'pass' } }],
   };
 
   it('compiles a simple rule with equality condition', () => {
     const rule: ProductionRule = {
       name: 'eq-rule',
       when: { status: 'active' },
-      then: [{ type: 'set', path: 'visible', value: true }],
+      then: [{ $set: { visible: true } }],
     };
     const compiled = compileRule(rule);
     expect(compiled.name).toBe('eq-rule');
@@ -25,7 +25,7 @@ describe('compileRule', () => {
     const rule: ProductionRule = {
       name: 'ops-rule',
       when: { age: { $gt: 18, $lt: 65 }, role: { $in: ['admin', 'mod'] } },
-      then: [{ type: 'set', path: 'access', value: 'granted' }],
+      then: [{ $set: { access: 'granted' } }],
     };
     const compiled = compileRule(rule);
     expect(compiled.condition).toBeDefined();
@@ -35,7 +35,7 @@ describe('compileRule', () => {
     const rule: ProductionRule = {
       name: 'nested-rule',
       when: { $or: [{ status: 'vip' }, { $and: [{ age: { $gte: 21 } }, { verified: true }] }] },
-      then: [{ type: 'set', path: 'tier', value: 'premium' }],
+      then: [{ $set: { tier: 'premium' } }],
     };
     const compiled = compileRule(rule);
     expect(compiled.condition).toBeDefined();
@@ -56,7 +56,7 @@ describe('compileRule', () => {
   it('hasTms is false for rules with else', () => {
     const rule: ProductionRule = {
       ...baseRule,
-      else: [{ type: 'set', path: 'result', value: 'fail' }],
+      else: [{ $set: { result: 'fail' } }],
     };
     const compiled = compileRule(rule);
     expect(compiled.hasTms).toBe(false);
@@ -65,7 +65,7 @@ describe('compileRule', () => {
   it('compiles else actions when present', () => {
     const rule: ProductionRule = {
       ...baseRule,
-      else: [{ type: 'set', path: 'result', value: 'fail' }],
+      else: [{ $set: { result: 'fail' } }],
     };
     const compiled = compileRule(rule);
     expect(compiled.elseActions).toHaveLength(1);
@@ -90,12 +90,12 @@ describe('compileRule', () => {
   });
 
   it('throws on missing name', () => {
-    const rule = { name: '', when: { a: 1 }, then: [{ type: 'set' as const, path: 'x', value: 1 }] };
+    const rule = { name: '', when: { a: 1 }, then: [{ $set: { x: 1 } }] };
     expect(() => compileRule(rule)).toThrow('must have a name');
   });
 
   it('throws on missing when', () => {
-    const rule = { name: 'bad', when: null, then: [{ type: 'set' as const, path: 'x', value: 1 }] } as unknown as ProductionRule;
+    const rule = { name: 'bad', when: null, then: [{ $set: { x: 1 } }] } as unknown as ProductionRule;
     expect(() => compileRule(rule)).toThrow('must have a "when" condition');
   });
 

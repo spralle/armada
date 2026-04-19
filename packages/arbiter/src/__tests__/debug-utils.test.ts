@@ -6,7 +6,7 @@ import type { FiringResult, ProductionRule } from '../contracts.js';
 const rule: ProductionRule = {
   name: 'calc-total',
   when: { ready: true },
-  then: [{ type: 'set', path: '$state.total', value: 110 }],
+  then: [{ $set: { '$state.total': 110 } }],
 };
 
 describe('explainResult', () => {

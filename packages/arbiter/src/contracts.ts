@@ -1,62 +1,27 @@
 // ---------------------------------------------------------------------------
-// ThenAction — discriminated union of mutation operations (ADR §2.2)
+// ThenStage — MongoDB pipeline-style update operations (ADR §2.2)
+// Each stage is a single-key object with a $-prefixed operator.
+// Array ordering determines execution sequence.
 // ---------------------------------------------------------------------------
 
-export interface ThenSetAction {
-  readonly type: 'set';
-  readonly path: string;
-  readonly value: ThenValue;
+/** Operator handler: receives field entries and scope, applies mutations. */
+export type ThenOperatorHandler = (
+  entries: ReadonlyMap<string, unknown>,
+  scope: Readonly<Record<string, unknown>>,
+  write: (path: string, value: unknown) => void,
+) => void;
+
+/** Registry for pluggable then operators. */
+export interface ThenOperatorRegistry {
+  readonly register: (name: string, handler: ThenOperatorHandler) => void;
+  readonly get: (name: string) => ThenOperatorHandler | undefined;
+  readonly has: (name: string) => boolean;
 }
 
-export interface ThenUnsetAction {
-  readonly type: 'unset';
-  readonly path: string;
-}
+/** A single pipeline stage — one $-prefixed operator key. */
+export type ThenStage = Readonly<Record<string, unknown>>;
 
-export interface ThenPushAction {
-  readonly type: 'push';
-  readonly path: string;
-  readonly value: ThenValue;
-}
-
-export interface ThenPullAction {
-  readonly type: 'pull';
-  readonly path: string;
-  readonly match: Record<string, unknown>;
-}
-
-export interface ThenIncAction {
-  readonly type: 'inc';
-  readonly path: string;
-  readonly value: ThenValue;
-}
-
-export interface ThenMergeAction {
-  readonly type: 'merge';
-  readonly path: string;
-  readonly value: ThenValue;
-}
-
-export interface ThenFocusAction {
-  readonly type: 'focus';
-  readonly group: string;
-}
-
-export type ThenAction =
-  | ThenSetAction
-  | ThenUnsetAction
-  | ThenPushAction
-  | ThenPullAction
-  | ThenIncAction
-  | ThenMergeAction
-  | ThenFocusAction;
-
-// ---------------------------------------------------------------------------
-// ThenValue (ADR §2.3)
-// Plain values are literals; objects with $ keys are aggregation expressions.
-// Intentionally `unknown` — validated at compile time, not type level.
-// ---------------------------------------------------------------------------
-
+/** Expression or literal value — validated at compile time, not type level. */
 export type ThenValue = unknown;
 
 // ---------------------------------------------------------------------------
@@ -66,8 +31,8 @@ export type ThenValue = unknown;
 export interface ProductionRule {
   readonly name: string;
   readonly when: Record<string, unknown>;
-  readonly then: readonly ThenAction[];
-  readonly else?: readonly ThenAction[] | undefined;
+  readonly then: readonly ThenStage[];
+  readonly else?: readonly ThenStage[] | undefined;
   readonly salience?: number | undefined;
   readonly activationGroup?: string | undefined;
   readonly onConflict?: 'override' | 'warn' | 'error' | undefined;
@@ -107,6 +72,7 @@ export interface SessionConfig {
   readonly tms?: TmsConfig | undefined;
   readonly validation?: 'strict' | 'syntax' | 'none' | undefined;
   readonly errorHandling?: 'strict' | 'lenient' | undefined;
+  readonly thenOperators?: ThenOperatorRegistry | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -178,8 +144,8 @@ export interface WriteRecord {
 export interface CompiledRule {
   readonly name: string;
   readonly condition: unknown;
-  readonly actions: readonly CompiledAction[];
-  readonly elseActions?: readonly CompiledAction[] | undefined;
+  readonly actions: readonly CompiledStage[];
+  readonly elseActions?: readonly CompiledStage[] | undefined;
   readonly salience: number;
   readonly activationGroup?: string | undefined;
   readonly onConflict: 'override' | 'warn' | 'error';
@@ -188,10 +154,7 @@ export interface CompiledRule {
   readonly source: ProductionRule;
 }
 
-export interface CompiledAction {
-  readonly type: ThenAction['type'];
-  readonly path?: string | undefined;
-  readonly group?: string | undefined;
-  readonly compiledValue?: unknown;
-  readonly compiledMatch?: unknown;
+export interface CompiledStage {
+  readonly operator: string;
+  readonly entries: ReadonlyMap<string, unknown>;
 }

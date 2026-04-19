@@ -1,4 +1,4 @@
-import type { ProductionRule, ThenAction } from './contracts.js';
+import type { ProductionRule, ThenStage } from './contracts.js';
 import { ArbiterError, ArbiterErrorCode } from './errors.js';
 import { validatePath } from './path-utils.js';
 
@@ -54,15 +54,15 @@ function validateSyntax(rule: ProductionRule): void {
     );
   }
 
-  validateActionPaths(rule.then, rule.name, 'then');
+  validateStagePaths(rule.then, rule.name, 'then');
 }
 
 function validateStrict(rule: ProductionRule): void {
   walkWhenClause(rule.when, rule.name);
-  validateActionPaths(rule.then, rule.name, 'then');
+  validateStagePaths(rule.then, rule.name, 'then');
 
   if (rule.else) {
-    validateActionPaths(rule.else, rule.name, 'else');
+    validateStagePaths(rule.else, rule.name, 'else');
   }
 
   if (rule.salience !== undefined && !Number.isFinite(rule.salience)) {
@@ -94,25 +94,53 @@ function validateStrict(rule: ProductionRule): void {
     }
   }
 
-  validateExpressionValues(rule.then, rule.name, 'then');
+  validateStageValues(rule.then, rule.name, 'then');
   if (rule.else) {
-    validateExpressionValues(rule.else, rule.name, 'else');
+    validateStageValues(rule.else, rule.name, 'else');
   }
 }
 
-function validateActionPaths(
-  actions: readonly ThenAction[],
+/**
+ * Validates that each stage is a single-key $-prefixed object with safe paths.
+ */
+function validateStagePaths(
+  stages: readonly ThenStage[],
   ruleName: string,
   clause: string,
 ): void {
-  for (const action of actions) {
-    if ('path' in action && action.path !== undefined) {
+  for (const stage of stages) {
+    if (!stage || typeof stage !== 'object' || Array.isArray(stage)) {
+      throw new ArbiterError(
+        ArbiterErrorCode.RULE_COMPILATION_FAILED,
+        `Rule "${ruleName}" ${clause} stage must be an object`,
+        { ruleName },
+      );
+    }
+
+    const keys = Object.keys(stage);
+    const opKeys = keys.filter((k) => k.startsWith('$'));
+    if (opKeys.length !== 1) {
+      throw new ArbiterError(
+        ArbiterErrorCode.RULE_COMPILATION_FAILED,
+        `Rule "${ruleName}" ${clause} stage must have exactly one $-prefixed operator, got: ${opKeys.join(', ') || 'none'}`,
+        { ruleName },
+      );
+    }
+
+    const operator = opKeys[0];
+    if (operator === '$focus') continue;
+
+    const body = stage[operator];
+    if (!body || typeof body !== 'object' || Array.isArray(body)) continue;
+
+    const fieldMap = body as Record<string, unknown>;
+    for (const path of Object.keys(fieldMap)) {
       try {
-        validatePath(action.path);
+        validatePath(path);
       } catch (err) {
         throw new ArbiterError(
           ArbiterErrorCode.PROTOTYPE_POLLUTION,
-          `Rule "${ruleName}" ${clause} action has dangerous path: "${action.path}"`,
+          `Rule "${ruleName}" ${clause} stage has dangerous path: "${path}"`,
           err instanceof Error ? { ruleName, cause: err } : { ruleName },
         );
       }
@@ -138,7 +166,6 @@ function walkWhenClause(obj: Record<string, unknown>, ruleName: string): void {
       continue;
     }
 
-    // Non-operator key is a field path
     if (!key.startsWith('$')) {
       try {
         validatePath(key);
@@ -151,7 +178,6 @@ function walkWhenClause(obj: Record<string, unknown>, ruleName: string): void {
       }
     }
 
-    // Recurse into nested objects (operator expressions)
     const val = obj[key];
     if (val && typeof val === 'object' && !Array.isArray(val)) {
       walkWhenClause(val as Record<string, unknown>, ruleName);
@@ -159,14 +185,29 @@ function walkWhenClause(obj: Record<string, unknown>, ruleName: string): void {
   }
 }
 
-function validateExpressionValues(
-  actions: readonly ThenAction[],
+/**
+ * Validates expression values within stages for dangerous references.
+ */
+function validateStageValues(
+  stages: readonly ThenStage[],
   ruleName: string,
   clause: string,
 ): void {
-  for (const action of actions) {
-    if ('value' in action && action.value !== undefined) {
-      checkValueForDangerousRefs(action.value, ruleName, clause);
+  for (const stage of stages) {
+    const keys = Object.keys(stage);
+    const opKey = keys.find((k) => k.startsWith('$'));
+    if (!opKey) continue;
+
+    const body = stage[opKey];
+    if (!body || typeof body !== 'object' || Array.isArray(body)) continue;
+
+    if (opKey === '$focus') continue;
+
+    const fieldMap = body as Record<string, unknown>;
+    for (const value of Object.values(fieldMap)) {
+      if (value !== undefined) {
+        checkValueForDangerousRefs(value, ruleName, clause);
+      }
     }
   }
 }

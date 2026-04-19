@@ -22,7 +22,7 @@ const rules: ProductionRule[] = [
   {
     name: 'show-discount',
     when: { 'cart.total': { $gte: 100 } },
-    then: [{ type: 'set', path: '$ui.discount.visible', value: true }],
+    then: [{ $set: { '$ui.discount.visible': true } }],
     salience: 10,
   },
   {
@@ -30,9 +30,9 @@ const rules: ProductionRule[] = [
     when: { 'cart.total': { $exists: true } },
     then: [
       {
-        type: 'set',
-        path: '$state.tax',
-        value: { $multiply: ['$cart.total', 0.08] },
+        $set: {
+          '$state.tax': { $multiply: ['$cart.total', 0.08] },
+        },
       },
     ],
   },
@@ -51,6 +51,12 @@ console.log(result.rulesFired);                        // ['show-discount', 'cal
 // Reactive shorthand: assert + fire in one call
 session.update('cart.total', 50);
 console.log(session.getPath('$ui.discount.visible')); // auto-retracted by TMS
+
+// Custom operators
+const customSession = createSession({
+  rules: [...],
+  thenOperators: myRegistry,  // for custom $action, $notify, etc.
+});
 
 // Subscribe to changes
 const unsub = session.subscribe('$state.tax', (value) => {
@@ -171,8 +177,8 @@ interface RuleSession {
 interface ProductionRule {
   readonly name: string;
   readonly when: Record<string, unknown>;        // MongoDB query syntax
-  readonly then: readonly ThenAction[];           // Mutations to apply
-  readonly else?: readonly ThenAction[];          // Disables TMS for this rule
+  readonly then: readonly ThenStage[];            // Pipeline-style mutations
+  readonly else?: readonly ThenStage[];           // Disables TMS for this rule
   readonly salience?: number;                     // Priority (default: 0)
   readonly activationGroup?: string;              // Agenda group name
   readonly onConflict?: 'override' | 'warn' | 'error';
@@ -181,21 +187,25 @@ interface ProductionRule {
 }
 ```
 
-### Action Types
+### Action Types (Pipeline Syntax)
 
-| Action | Description | Example |
+Actions use MongoDB pipeline-style update operators:
+
+| Operator | Description | Example |
 |---|---|---|
-| `set` | Set a path to a value (literal or expression) | `{ type: 'set', path: '$ui.visible', value: true }` |
-| `unset` | Remove a path | `{ type: 'unset', path: '$ui.visible' }` |
-| `push` | Push a value onto an array | `{ type: 'push', path: 'items', value: 'new' }` |
-| `pull` | Remove matching items from an array | `{ type: 'pull', path: 'items', match: { id: 'old' } }` |
-| `inc` | Increment a numeric value | `{ type: 'inc', path: 'count', value: 1 }` |
-| `merge` | Shallow merge an object into a path | `{ type: 'merge', path: 'config', value: { a: 1 } }` |
-| `focus` | Set the active agenda group | `{ type: 'focus', group: 'validation' }` |
+| `$set` | Set one or more paths | `{ $set: { '$ui.visible': true, count: 5 } }` |
+| `$unset` | Remove paths | `{ $unset: { '$ui.visible': '' } }` |
+| `$push` | Push a value onto an array | `{ $push: { items: 'new' } }` |
+| `$pull` | Remove matching items from an array | `{ $pull: { items: { id: 'old' } } }` |
+| `$inc` | Increment a numeric value | `{ $inc: { count: 1 } }` |
+| `$merge` | Shallow merge an object into a path | `{ $merge: { config: { a: 1 } } }` |
+| `$focus` | Set the active agenda group | `{ $focus: { group: 'validation' } }` |
+
+Multiple paths can be set in a single stage: `{ $set: { a: 1, b: 2, '$ui.visible': true } }`
 
 ### Expression Operators
 
-Values in `set`, `push`, `inc`, and `merge` actions can use MongoDB aggregation expressions:
+Values in `$set`, `$push`, `$inc`, and `$merge` actions can use MongoDB aggregation expressions:
 
 **Arithmetic**: `$sum`, `$multiply`, `$divide`, `$subtract`, `$round`, `$ceil`, `$floor`
 **Aggregation**: `$avg`, `$min`, `$max`
@@ -207,9 +217,9 @@ Values in `set`, `push`, `inc`, and `merge` actions can use MongoDB aggregation 
 ```typescript
 // Computed value example
 {
-  type: 'set',
-  path: '$state.total',
-  value: { $sum: ['$lineItems.price', '$lineItems.tax'] },
+  $set: {
+    '$state.total': { $sum: ['$lineItems.price', '$lineItems.tax'] },
+  },
 }
 ```
 

@@ -78,7 +78,7 @@ describe('F6: Runtime algorithm conformance', () => {
       arbiterRules: [{
         name: 'r1',
         when: {},
-        then: [{ type: 'set', path: 'derived', value: 'computed' }],
+        then: [{ $set: { derived: 'computed' } }],
       }],
     });
     form.setValue('name', 'test');

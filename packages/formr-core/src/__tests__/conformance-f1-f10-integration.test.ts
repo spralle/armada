@@ -154,7 +154,7 @@ describe('F1-F10: Full integration conformance', () => {
         arbiterRules: [{
           name: 'show-state',
           when: { country: { $eq: 'US' } },
-          then: [{ type: 'set', path: '$ui.stateVisible', value: true }],
+          then: [{ $set: { '$ui.stateVisible': true } }],
         }],
       });
 

@@ -30,7 +30,7 @@ describe('registerRule / removeRule', () => {
     session.registerRule({
       name: 'hazmat-warning',
       when: { shipmentType: 'hazmat' },
-      then: [{ type: 'set', path: '$ui.hazmatWarning.visible', value: true }],
+      then: [{ $set: { '$ui.hazmatWarning.visible': true } }],
     });
     const result = session.fire();
     expect(result.rulesFired).toBe(1);
@@ -43,7 +43,7 @@ describe('registerRule / removeRule', () => {
       rules: [{
         name: 'hazmat-warning',
         when: { shipmentType: 'hazmat' },
-        then: [{ type: 'set', path: '$ui.hazmatWarning.visible', value: true }],
+        then: [{ $set: { '$ui.hazmatWarning.visible': true } }],
       }],
     });
     session.fire();
@@ -65,7 +65,7 @@ describe('fire cycle', () => {
       rules: [{
         name: 'hazmat-warning',
         when: { shipmentType: 'hazmat' },
-        then: [{ type: 'set', path: '$ui.hazmatWarning.visible', value: true }],
+        then: [{ $set: { '$ui.hazmatWarning.visible': true } }],
       }],
     });
     const result = session.fire();
@@ -79,7 +79,7 @@ describe('fire cycle', () => {
       rules: [{
         name: 'hazmat-warning',
         when: { shipmentType: 'hazmat' },
-        then: [{ type: 'set', path: '$ui.hazmatWarning.visible', value: true }],
+        then: [{ $set: { '$ui.hazmatWarning.visible': true } }],
       }],
     });
     const result = session.fire();
@@ -94,12 +94,12 @@ describe('fire cycle', () => {
         {
           name: 'calc-tax',
           when: { price: { $gt: 0 } },
-          then: [{ type: 'set', path: '$state.tax', value: { $multiply: ['$price', '$taxRate'] } }],
+          then: [{ $set: { '$state.tax': { $multiply: ['$price', '$taxRate'] } } }],
         },
         {
           name: 'calc-total',
           when: { '$state.tax': { $exists: true } },
-          then: [{ type: 'set', path: '$state.total', value: { $sum: ['$price', '$state.tax'] } }],
+          then: [{ $set: { '$state.total': { $sum: ['$price', '$state.tax'] } } }],
         },
       ],
     });
@@ -120,7 +120,7 @@ describe('TMS retraction', () => {
       rules: [{
         name: 'hazmat-warning',
         when: { shipmentType: 'hazmat' },
-        then: [{ type: 'set', path: '$ui.warning.visible', value: true }],
+        then: [{ $set: { '$ui.warning.visible': true } }],
       }],
     });
     session.fire();
@@ -142,7 +142,7 @@ describe('reactive API', () => {
       rules: [{
         name: 'hazmat-warning',
         when: { shipmentType: 'hazmat' },
-        then: [{ type: 'set', path: '$ui.warning.visible', value: true }],
+        then: [{ $set: { '$ui.warning.visible': true } }],
       }],
     });
 
@@ -162,7 +162,7 @@ describe('reactive API', () => {
       rules: [{
         name: 'hazmat-warning',
         when: { shipmentType: 'hazmat' },
-        then: [{ type: 'set', path: '$ui.warning.visible', value: true }],
+        then: [{ $set: { '$ui.warning.visible': true } }],
       }],
     });
 
@@ -181,7 +181,7 @@ describe('reactive API', () => {
       rules: [{
         name: 'show-name',
         when: { name: { $exists: true } },
-        then: [{ type: 'set', path: '$ui.nameVisible', value: true }],
+        then: [{ $set: { '$ui.nameVisible': true } }],
       }],
     });
 
@@ -205,13 +205,13 @@ describe('conflict resolution', () => {
           name: 'low',
           salience: 1,
           when: { active: true },
-          then: [{ type: 'set', path: '$state.low', value: true }],
+          then: [{ $set: { '$state.low': true } }],
         },
         {
           name: 'high',
           salience: 10,
           when: { active: true },
-          then: [{ type: 'set', path: '$state.high', value: true }],
+          then: [{ $set: { '$state.high': true } }],
         },
       ],
     });
@@ -237,12 +237,12 @@ describe('cycle limit', () => {
         {
           name: 'toggle-a',
           when: { '$state.b': { $exists: true } },
-          then: [{ type: 'set', path: '$state.a', value: true }],
+          then: [{ $set: { '$state.a': true } }],
         },
         {
           name: 'toggle-b',
           when: { '$state.a': { $exists: true } },
-          then: [{ type: 'set', path: '$state.b', value: true }],
+          then: [{ $set: { '$state.b': true } }],
         },
       ],
     });
@@ -256,7 +256,7 @@ describe('cycle limit', () => {
         {
           name: 'inc-counter',
           when: { counter: { $gte: 0 } },
-          then: [{ type: 'inc', path: 'counter', value: 1 }],
+          then: [{ $inc: { counter: 1 } }],
         },
       ],
     });
@@ -291,8 +291,8 @@ describe('else branch', () => {
       rules: [{
         name: 'hazmat-check',
         when: { shipmentType: 'hazmat' },
-        then: [{ type: 'set', path: '$ui.hazmatForm.visible', value: true }],
-        else: [{ type: 'set', path: '$ui.hazmatForm.visible', value: false }],
+        then: [{ $set: { '$ui.hazmatForm.visible': true } }],
+        else: [{ $set: { '$ui.hazmatForm.visible': false } }],
       }],
     });
     session.fire();
@@ -305,8 +305,8 @@ describe('else branch', () => {
       rules: [{
         name: 'hazmat-check',
         when: { shipmentType: 'hazmat' },
-        then: [{ type: 'set', path: '$ui.hazmatForm.visible', value: true }],
-        else: [{ type: 'set', path: '$ui.hazmatForm.visible', value: false }],
+        then: [{ $set: { '$ui.hazmatForm.visible': true } }],
+        else: [{ $set: { '$ui.hazmatForm.visible': false } }],
       }],
     });
     session.fire();
@@ -319,8 +319,8 @@ describe('else branch', () => {
       rules: [{
         name: 'hazmat-check',
         when: { shipmentType: 'hazmat' },
-        then: [{ type: 'set', path: '$ui.hazmatForm.visible', value: true }],
-        else: [{ type: 'set', path: '$ui.hazmatForm.visible', value: false }],
+        then: [{ $set: { '$ui.hazmatForm.visible': true } }],
+        else: [{ $set: { '$ui.hazmatForm.visible': false } }],
       }],
     });
     session.fire();
@@ -343,7 +343,7 @@ describe('assert / retract', () => {
       rules: [{
         name: 'check',
         when: { x: { $exists: true } },
-        then: [{ type: 'set', path: '$state.found', value: true }],
+        then: [{ $set: { '$state.found': true } }],
       }],
     });
     session.assert('x', 42);

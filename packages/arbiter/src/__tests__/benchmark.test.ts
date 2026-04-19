@@ -13,7 +13,7 @@ describe('Benchmarks', () => {
     const rules: ProductionRule[] = Array.from({ length: 50 }, (_, i) => ({
       name: `field-${i}-visibility`,
       when: { [`field${i}`]: { $exists: true } },
-      then: [{ type: 'set' as const, path: `$ui.field${i}.visible`, value: true }],
+      then: [{ $set: { [`$ui.field${i}.visible`]: true } }],
     }));
 
     const initialState: Record<string, unknown> = {};
@@ -36,7 +36,7 @@ describe('Benchmarks', () => {
     const rules: ProductionRule[] = Array.from({ length: 200 }, (_, i) => ({
       name: `contribution-${i}`,
       when: { context: 'active' },
-      then: [{ type: 'set' as const, path: `$contributions.action${i}.visible`, value: true }],
+      then: [{ $set: { [`$contributions.action${i}.visible`]: true } }],
     }));
 
     const session = createSession({
@@ -60,7 +60,7 @@ describe('Benchmarks', () => {
       rules: [{
         name: 'counter-display',
         when: { counter: { $exists: true } },
-        then: [{ type: 'set', path: '$ui.counterDisplay.value', value: '$counter' }],
+        then: [{ $set: { '$ui.counterDisplay.value': '$counter' } }],
       }],
     });
     session.fire();

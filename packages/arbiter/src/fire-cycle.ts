@@ -1,10 +1,11 @@
 import type {
   CompiledRule,
-  CompiledAction,
+  CompiledStage,
   StateChange,
   ArbiterWarning,
   FiringResult,
   OperatorFunction,
+  ThenOperatorRegistry,
 } from './contracts.js';
 import type { ScopeManager } from './scope.js';
 import type { AlphaNetwork } from './alpha-network.js';
@@ -13,7 +14,7 @@ import type { TruthMaintenanceSystem } from './tms.js';
 import { evaluate } from '@ghost/predicate';
 import type { ExprNode } from '@ghost/predicate';
 import { ArbiterError, ArbiterErrorCode } from './errors.js';
-import { isExpression } from './path-utils.js';
+import { executeStages } from './stage-executor.js';
 
 // ---------------------------------------------------------------------------
 // Limits config
@@ -39,71 +40,7 @@ export interface FireContext {
   readonly operators: Readonly<Record<string, OperatorFunction>>;
   readonly limits: FireLimits;
   readonly ruleConditionState: Map<string, boolean>;
-}
-
-// ---------------------------------------------------------------------------
-// Expression value resolution
-// ---------------------------------------------------------------------------
-
-const NAMESPACE_PREFIXES = ['$ui', '$state', '$meta', '$contributions'];
-
-function isNamespacedRef(ref: string): boolean {
-  for (const ns of NAMESPACE_PREFIXES) {
-    if (ref === ns || ref.startsWith(ns + '.')) return true;
-  }
-  return false;
-}
-
-function resolveValue(value: unknown, scope: ScopeManager): unknown {
-  if (typeof value === 'string' && value.startsWith('$')) {
-    const ref = value.slice(1);
-    // Namespaced paths keep the $ prefix (e.g. $state.tax → scope.get('$state.tax'))
-    const path = isNamespacedRef('$' + ref) ? '$' + ref : ref;
-    return scope.get(path);
-  }
-  if (isExpression(value)) {
-    return evaluateExpression(value as Record<string, unknown>, scope);
-  }
-  return value;
-}
-
-function evaluateExpression(
-  expr: Record<string, unknown>,
-  scope: ScopeManager,
-): unknown {
-  const keys = Object.keys(expr);
-  const opKey = keys.find((k) => k.startsWith('$'));
-  if (!opKey) return expr;
-
-  const rawArgs = expr[opKey];
-  const args = Array.isArray(rawArgs)
-    ? (rawArgs as unknown[]).map((a) => resolveValue(a, scope))
-    : [resolveValue(rawArgs, scope)];
-
-  // Delegate to simple inline evaluation for known operators
-  return evaluateOperatorInline(opKey, args);
-}
-
-function evaluateOperatorInline(op: string, args: unknown[]): unknown {
-  switch (op) {
-    case '$sum': {
-      let total = 0;
-      for (const v of args) {
-        if (typeof v === 'number') total += v;
-      }
-      return total;
-    }
-    case '$multiply': {
-      let result = 1;
-      for (const v of args) {
-        if (typeof v !== 'number') return null;
-        result *= v;
-      }
-      return result;
-    }
-    default:
-      return null;
-  }
+  readonly thenOperators?: ThenOperatorRegistry | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +73,6 @@ export function reevaluateRule(
     ctx.agenda.addActivation(rule);
     ctx.tms.ruleActivated(rule);
   } else if (isActive && wasActive) {
-    // Still true after state change — re-add to agenda for another firing
     ctx.agenda.addActivation(rule);
   } else if (!isActive && wasActive) {
     ctx.agenda.removeActivation(rule.name);
@@ -177,73 +113,9 @@ export function executeElseBranches(
     if (!rule.enabled || !rule.elseActions) continue;
     const isActive = ctx.ruleConditionState.get(rule.name) ?? false;
     if (!isActive) {
-      const elseChanges = executeActions(rule.elseActions, rule.name, ctx);
+      const elseChanges = executeStages(rule.elseActions, rule.name, ctx);
       changes.push(...elseChanges);
     }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Execute a rule's actions
-// ---------------------------------------------------------------------------
-
-export function executeActions(
-  actions: readonly CompiledAction[],
-  ruleName: string,
-  ctx: FireContext,
-): StateChange[] {
-  const changes: StateChange[] = [];
-  for (const action of actions) {
-    const change = executeSingleAction(action, ruleName, ctx);
-    if (change) changes.push(change);
-  }
-  return changes;
-}
-
-function executeSingleAction(
-  action: CompiledAction,
-  ruleName: string,
-  ctx: FireContext,
-): StateChange | undefined {
-  switch (action.type) {
-    case 'set': {
-      const value = resolveValue(action.compiledValue, ctx.scope);
-      const prev = ctx.scope.get(action.path!);
-      ctx.scope.set(action.path!, value, ruleName);
-      return { path: action.path!, previousValue: prev, newValue: value, ruleName };
-    }
-    case 'unset': {
-      const prev = ctx.scope.get(action.path!);
-      ctx.scope.unset(action.path!, ruleName);
-      return { path: action.path!, previousValue: prev, newValue: undefined, ruleName };
-    }
-    case 'push': {
-      const value = resolveValue(action.compiledValue, ctx.scope);
-      const prev = ctx.scope.get(action.path!);
-      ctx.scope.push(action.path!, value, ruleName);
-      const newVal = ctx.scope.get(action.path!);
-      return { path: action.path!, previousValue: prev, newValue: newVal, ruleName };
-    }
-    case 'inc': {
-      const value = resolveValue(action.compiledValue, ctx.scope);
-      const prev = ctx.scope.get(action.path!);
-      ctx.scope.inc(action.path!, value, ruleName);
-      const newVal = ctx.scope.get(action.path!);
-      return { path: action.path!, previousValue: prev, newValue: newVal, ruleName };
-    }
-    case 'merge': {
-      const value = resolveValue(action.compiledValue, ctx.scope);
-      const prev = ctx.scope.get(action.path!);
-      ctx.scope.merge(action.path!, value, ruleName);
-      const newVal = ctx.scope.get(action.path!);
-      return { path: action.path!, previousValue: prev, newValue: newVal, ruleName };
-    }
-    case 'focus': {
-      ctx.agenda.setFocus(action.group!);
-      return undefined;
-    }
-    default:
-      return undefined;
   }
 }
 
@@ -299,7 +171,7 @@ export function fireCycle(ctx: FireContext): FiringResult {
     const rule = ctx.agenda.selectNext();
     if (!rule) break;
 
-    const ruleChanges = executeActions(rule.actions, rule.name, ctx);
+    const ruleChanges = executeStages(rule.actions, rule.name, ctx);
     changes.push(...ruleChanges);
     rulesFired++;
 

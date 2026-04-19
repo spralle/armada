@@ -1,4 +1,4 @@
-import type { CompiledAction } from './contracts.js';
+import type { CompiledStage } from './contracts.js';
 
 interface PathNode {
   readonly kind: 'path';
@@ -55,13 +55,14 @@ export function extractConditionDeps(condition: unknown): readonly string[] {
 }
 
 /**
- * Extract all field paths that a rule's actions write to.
+ * Extract all field paths that a rule's stages write to.
  */
-export function extractActionDeps(actions: readonly CompiledAction[]): readonly string[] {
+export function extractActionDeps(stages: readonly CompiledStage[]): readonly string[] {
   const paths = new Set<string>();
-  for (const action of actions) {
-    if (action.path !== undefined) {
-      paths.add(action.path);
+  for (const stage of stages) {
+    if (stage.operator === '$focus') continue;
+    for (const path of stage.entries.keys()) {
+      paths.add(path);
     }
   }
   return [...paths];
