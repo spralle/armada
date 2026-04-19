@@ -1,5 +1,13 @@
+import { fileURLToPath } from "node:url";
 import { federation } from "@module-federation/vite";
 import { defineConfig } from "vite";
+
+const UI_SOURCE = fileURLToPath(
+  new URL("../../packages/ui/src/index.ts", import.meta.url),
+);
+const UI_SRC_ROOT = fileURLToPath(
+  new URL("../../packages/ui/src", import.meta.url),
+);
 
 export default defineConfig({
   plugins: [
@@ -32,9 +40,19 @@ export default defineConfig({
           singleton: true,
           requiredVersion: "^18.3.1",
         },
+        "@ghost/ui": {
+          singleton: true,
+          requiredVersion: "^0.0.0",
+        },
       },
     }),
   ],
+  resolve: {
+    alias: {
+      "@ghost/ui": UI_SOURCE,
+      "@/": `${UI_SRC_ROOT}/`,
+    },
+  },
   server: {
     host: "127.0.0.1",
     port: 4175,

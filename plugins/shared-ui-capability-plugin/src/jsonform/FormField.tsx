@@ -1,7 +1,17 @@
-import { createElement, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { FormApi } from '@ghost/formr-core';
 import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
 import { useField } from '@ghost/formr-react';
+import {
+  Input,
+  Switch,
+  NativeSelect,
+  NativeSelectOption,
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldContent,
+} from '@ghost/ui';
 
 interface FormFieldProps {
   readonly form: FormApi;
@@ -12,6 +22,7 @@ interface FormFieldProps {
 export function FormField({ form, field, onChange }: FormFieldProps) {
   const fieldApi = useField(form, field.path);
   const value = fieldApi.get();
+  const id = `field-${field.path}`;
 
   const handleChange = useCallback(
     (newValue: unknown) => {
@@ -22,59 +33,58 @@ export function FormField({ form, field, onChange }: FormFieldProps) {
   );
 
   return (
-    <div className="jsonform-field" data-field-path={field.path}>
-      <label className="jsonform-label" htmlFor={`field-${field.path}`}>
+    <Field orientation="vertical">
+      <FieldLabel htmlFor={id}>
         {(field.metadata?.title as string) ?? field.path}
-      </label>
-      {renderControl(field, value, handleChange)}
-      {field.metadata?.description
-        ? <p className="jsonform-description">{field.metadata.description as string}</p>
-        : null}
-    </div>
+      </FieldLabel>
+      <FieldContent>
+        {renderControl(field, id, value, handleChange)}
+        {field.metadata?.description ? (
+          <FieldDescription>{field.metadata.description as string}</FieldDescription>
+        ) : null}
+      </FieldContent>
+    </Field>
   );
 }
 
 function renderControl(
   field: SchemaFieldInfo,
+  id: string,
   value: unknown,
   onChange: (value: unknown) => void,
 ) {
-  const id = `field-${field.path}`;
-
   if (field.type === 'enum' && field.metadata?.enum) {
     const options = field.metadata.enum as readonly unknown[];
     return (
-      <select
+      <NativeSelect
         id={id}
-        className="jsonform-select"
         value={String(value ?? '')}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="">— Select —</option>
+        <NativeSelectOption value="">— Select —</NativeSelectOption>
         {options.map((opt) => (
-          <option key={String(opt)} value={String(opt)}>{String(opt)}</option>
+          <NativeSelectOption key={String(opt)} value={String(opt)}>
+            {String(opt)}
+          </NativeSelectOption>
         ))}
-      </select>
+      </NativeSelect>
     );
   }
 
   if (field.type === 'boolean') {
     return (
-      <input
+      <Switch
         id={id}
-        className="jsonform-checkbox"
-        type="checkbox"
         checked={Boolean(value)}
-        onChange={(e) => onChange(e.target.checked)}
+        onCheckedChange={(checked) => onChange(checked)}
       />
     );
   }
 
   if (field.type === 'number' || field.type === 'integer') {
     return (
-      <input
+      <Input
         id={id}
-        className="jsonform-input"
         type="number"
         step={field.type === 'integer' ? 1 : 'any'}
         value={value != null ? String(value) : ''}
@@ -89,9 +99,8 @@ function renderControl(
   }
 
   return (
-    <input
+    <Input
       id={id}
-      className="jsonform-input"
       type="text"
       value={String(value ?? '')}
       onChange={(e) => onChange(e.target.value)}

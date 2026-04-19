@@ -36,12 +36,21 @@ function walkJsonSchema(
 
   if (resolvedType === 'array') {
     const isRequired = fieldName !== undefined && parentRequired?.includes(fieldName) === true;
-    const metadata = schema['x-formr'];
+    const arrayFormrMeta = schema['x-formr'] as Record<string, unknown> | undefined;
+    const arrayStandardMeta: Record<string, unknown> = {};
+    if (schema.title !== undefined) arrayStandardMeta.title = schema.title;
+    if (schema.description !== undefined) arrayStandardMeta.description = schema.description;
+    if (schema.default !== undefined) arrayStandardMeta.default = schema.default;
+
+    const arrayHasMeta = arrayFormrMeta || Object.keys(arrayStandardMeta).length > 0;
+    const arrayMetadata = arrayHasMeta
+      ? { ...arrayStandardMeta, ...arrayFormrMeta }
+      : undefined;
     fields.push({
       path: prefix,
       type: 'array',
       required: isRequired,
-      ...(metadata ? { metadata } : {}),
+      ...(arrayMetadata ? { metadata: arrayMetadata } : {}),
     });
     return;
   }
@@ -50,7 +59,18 @@ function walkJsonSchema(
 
   const isRequired = fieldName !== undefined && parentRequired?.includes(fieldName) === true;
   const fieldType = mapJsonSchemaType(schema);
-  const metadata = schema['x-formr'];
+
+  const formrMeta = schema['x-formr'] as Record<string, unknown> | undefined;
+  const standardMeta: Record<string, unknown> = {};
+  if (schema.title !== undefined) standardMeta.title = schema.title;
+  if (schema.description !== undefined) standardMeta.description = schema.description;
+  if (schema.enum !== undefined) standardMeta.enum = schema.enum;
+  if (schema.default !== undefined) standardMeta.default = schema.default;
+
+  const hasMeta = formrMeta || Object.keys(standardMeta).length > 0;
+  const metadata = hasMeta
+    ? { ...standardMeta, ...formrMeta }
+    : undefined;
 
   fields.push({
     path: prefix,

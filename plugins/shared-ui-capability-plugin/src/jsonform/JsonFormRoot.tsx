@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useForm } from '@ghost/formr-react';
 import { ingestSchema } from '@ghost/formr-from-schema';
 import type { JsonFormSchema } from '@ghost/plugin-contracts';
+import { FieldGroup } from '@ghost/ui';
 import { FormField } from './FormField.js';
 
 interface JsonFormRootProps {
@@ -18,9 +19,7 @@ export function JsonFormRoot({ schema, data, onChange }: JsonFormRootProps) {
   });
 
   return (
-    <div className="jsonform-root">
-      {schema.title ? <h2 className="jsonform-title">{schema.title}</h2> : null}
-      {schema.description ? <p className="jsonform-desc">{schema.description}</p> : null}
+    <FieldGroup>
       {ingestion.fields.map((field) => (
         <FormField
           key={field.path}
@@ -29,6 +28,6 @@ export function JsonFormRoot({ schema, data, onChange }: JsonFormRootProps) {
           onChange={onChange}
         />
       ))}
-    </div>
+    </FieldGroup>
   );
 }

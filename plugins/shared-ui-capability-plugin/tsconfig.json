@@ -22,6 +22,9 @@
     },
     {
       "path": "../../packages/formr-react"
+    },
+    {
+      "path": "../../packages/ui"
     }
   ],
   "include": [
