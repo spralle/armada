@@ -48,6 +48,8 @@ export function createGhostApiDeps(
           placementConfig: runtime.placementConfig,
         });
         updateContextState(runtime, result.state);
+        runtime.selectedPartId = result.tabId;
+        runtime.selectedPartTitle = input.tabLabel ?? input.definitionId;
         return result.tabId;
       },
     },

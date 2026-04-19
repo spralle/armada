@@ -232,6 +232,25 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
     h.assertEqual(preserved.activeTabId, "t2", "active tab preserved");
   });
 
+  h.test("dwindle: splits around activeStackId, not leftmost stack", () => {
+    const strategy = createDwindlePlacementStrategy();
+    // Tree: split(horizontal, s1[t1], s2[t2])  — s2 is the "active" stack
+    const s1 = makeStack("s1", ["t1"], "t1");
+    const s2 = makeStack("s2", ["t2"], "t2");
+    const tree = treeWith(makeSplit("sp1", "horizontal", s1, s2));
+    // Place t3 with activeStackId=s2 — should split s2, not s1
+    const result = strategy.place({ tabId: "t3", tree, activeStackId: "s2", dwindleDirection: "horizontal" });
+    const root = result.tree.root as DockSplitNode;
+    // s1 should be untouched in first position
+    h.assertEqual(root.first.kind, "stack", "first branch should still be a stack (s1 untouched)");
+    h.assertEqual((root.first as DockStackNode).id, "s1", "first branch is s1");
+    // s2's position should now be a split containing s2 and the new stack
+    h.assertEqual(root.second.kind, "split", "second branch should now be a split");
+    const innerSplit = root.second as DockSplitNode;
+    h.assertEqual((innerSplit.first as DockStackNode).tabIds[0], "t2", "inner first has t2 (original s2)");
+    h.assertEqual((innerSplit.second as DockStackNode).tabIds[0], "t3", "inner second has t3 (new stack)");
+  });
+
   h.test("dwindle: duplicate tab is no-op", () => {
     const strategy = createDwindlePlacementStrategy();
     const tree = treeWith(makeStack("s1", ["t1"], "t1"));
