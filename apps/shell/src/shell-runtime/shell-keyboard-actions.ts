@@ -12,6 +12,7 @@ import {
 } from "../context-state/window-management.js";
 import { updateContextState } from "../context/runtime-state.js";
 import { closeTabThroughRuntime } from "../ui/parts-controller.js";
+import { openPopout, requestPopoutFromHostShim } from "../ui/part-instance-popout-lifecycle.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
 import { isShellKeyboardActionId, SHELL_UNAVAILABLE_ACTION_IDS, type ShellKeyboardActionId } from "./default-shell-keybindings.js";
@@ -86,6 +87,25 @@ function dispatchShellKeyboardAction(
     return closed
       ? executed(actionId)
       : unavailable(actionId, "active tab is not closeable");
+  }
+
+  if (actionId === "shell.popout") {
+    const activeTabId = runtime.contextState.activeTabId;
+    if (!activeTabId) {
+      return unavailable(actionId, "no active tab");
+    }
+
+    if (runtime.isPopout) {
+      requestPopoutFromHostShim(activeTabId, runtime, {
+        renderSyncStatus: bindings.renderSyncStatus,
+      });
+    } else {
+      openPopout(activeTabId, runtime, {
+        renderParts: bindings.renderParts,
+        renderSyncStatus: bindings.renderSyncStatus,
+      });
+    }
+    return executed(actionId);
   }
 
   if (actionId === "shell.group.cycle.prev") {
