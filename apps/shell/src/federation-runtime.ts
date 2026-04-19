@@ -6,6 +6,7 @@ import * as pluginContracts from "@ghost/plugin-contracts";
 import * as ghostUi from "@ghost/ui";
 import * as react from "react";
 import * as reactDom from "react-dom";
+import * as reactDomClient from "react-dom/client";
 
 type RuntimeCreateOptions = Parameters<typeof createInstance>[0];
 
@@ -49,6 +50,16 @@ const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
   "react-dom": {
     version: "18.3.1",
     lib: () => reactDom,
+    shareConfig: {
+      singleton: true,
+      requiredVersion: "^18.3.1",
+      strictVersion: false,
+    },
+    strategy: "loaded-first",
+  },
+  "react-dom/client": {
+    version: "18.3.1",
+    lib: () => reactDomClient,
     shareConfig: {
       singleton: true,
       requiredVersion: "^18.3.1",
