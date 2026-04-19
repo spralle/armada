@@ -38,7 +38,7 @@ export function createDwindlePlacementStrategy(): TabPlacementStrategy {
       }
 
       // Find active stack and its depth + path
-      const located = locateActiveStack(nextRoot);
+      const located = locateActiveStack(nextRoot, ctx.activeStackId);
       if (!located) {
         const stack: DockStackNode = { kind: "stack", id: tabId, tabIds: [tabId], activeTabId: tabId };
         return { tree: { root: stack }, targetStackId: stack.id };
@@ -92,23 +92,29 @@ interface LocateResult {
   path: ("first" | "second")[];
 }
 
-function locateActiveStack(node: DockNode, depth = 0): LocateResult | null {
+function locateActiveStack(node: DockNode, targetStackId?: string, depth = 0): LocateResult | null {
   if (node.kind === "stack") {
     return { stack: node, depth, path: [] };
   }
 
-  // Prefer active stack (one with an activeTabId)
   const allResults: LocateResult[] = [];
-  const inFirst = locateActiveStack(node.first, depth + 1);
+  const inFirst = locateActiveStack(node.first, targetStackId, depth + 1);
   if (inFirst) {
     allResults.push({ ...inFirst, path: ["first", ...inFirst.path] });
   }
-  const inSecond = locateActiveStack(node.second, depth + 1);
+  const inSecond = locateActiveStack(node.second, targetStackId, depth + 1);
   if (inSecond) {
     allResults.push({ ...inSecond, path: ["second", ...inSecond.path] });
   }
 
-  // Pick the one with an active tab, otherwise first found
+  // Prefer the explicitly targeted stack, then any with an active tab, then first found
+  if (targetStackId) {
+    const targeted = allResults.find((r) => r.stack.id === targetStackId);
+    if (targeted) {
+      return targeted;
+    }
+  }
+
   const active = allResults.find((r) => r.stack.activeTabId && r.stack.tabIds.includes(r.stack.activeTabId));
   return active ?? allResults[0] ?? null;
 }

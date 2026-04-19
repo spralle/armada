@@ -1,9 +1,9 @@
 /**
  * Filesystem-based plugin discovery for the dev host.
  *
- * Scans plugins / * /package.json for a ghost.pluginId field to build the
+ * Scans plugins / * /package.json for a name field to build the
  * plugin list dynamically. Directories without a valid package.json or
- * without a ghost.pluginId are skipped with a warning.
+ * without a name are skipped with a warning.
  *
  * Port assignment: each plugin's ghost.devPort from package.json is
  * used if present; otherwise a port is assigned dynamically starting from
@@ -21,16 +21,16 @@ export interface DiscoveredPluginDefinition {
 
 const BASE_DEV_PORT = 4170;
 
-interface GhostPackageJsonFields {
+interface PluginPackageJson {
+  name?: string;
   ghost?: {
-    pluginId?: string;
     devPort?: number;
   };
 }
 
 /**
  * Discovers plugins by scanning a directory for subdirectories containing
- * a package.json with a ghost.pluginId field.
+ * a package.json with a name field.
  *
  * Results are sorted by folder name for deterministic port assignment and
  * consistent ordering.
@@ -72,17 +72,17 @@ export function discoverPlugins(pluginsDir: string): DiscoveredPluginDefinition[
       continue;
     }
 
-    let parsed: GhostPackageJsonFields;
+    let parsed: PluginPackageJson;
     try {
-      parsed = JSON.parse(raw) as GhostPackageJsonFields;
+      parsed = JSON.parse(raw) as PluginPackageJson;
     } catch {
       console.warn(`[plugin-discovery] skipping ${folderName}: invalid package.json`);
       continue;
     }
 
-    const pluginId = parsed.ghost?.pluginId;
+    const pluginId = typeof parsed.name === "string" ? parsed.name.trim() : "";
     if (!pluginId) {
-      console.warn(`[plugin-discovery] skipping ${folderName}: no ghost.pluginId in package.json`);
+      console.warn(`[plugin-discovery] skipping ${folderName}: no name in package.json`);
       continue;
     }
 

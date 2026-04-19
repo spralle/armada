@@ -54,24 +54,31 @@ export function PluginCard({ plugin, managementService, disabled }: PluginCardPr
         className="transition-colors bg-card border-border"
       >
         <CollapsibleTrigger asChild>
-          <button
-            type="button"
+          <div
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setExpanded((prev) => !prev);
+              }
+            }}
             className="w-full text-left px-3 py-2.5 flex items-center gap-2 cursor-pointer hover:opacity-80"
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium truncate">{plugin.name}</span>
-                <span className="text-[11px] shrink-0 text-muted-foreground">
+                <span className="text-xs shrink-0 text-muted-foreground">
                   {plugin.version}
                 </span>
               </div>
-              <div className="text-[11px] truncate text-muted-foreground">
+              <div className="text-xs truncate text-muted-foreground">
                 {plugin.pluginId}
               </div>
             </div>
             <Badge
               variant={STATUS_VARIANT[plugin.status] ?? "outline"}
-              className="text-[10px] px-1.5 py-0 shrink-0"
+              className="text-[11px] px-1.5 py-0 shrink-0"
             >
               {plugin.status}
             </Badge>
@@ -83,7 +90,7 @@ export function PluginCard({ plugin, managementService, disabled }: PluginCardPr
                 aria-label={`Toggle ${plugin.name}`}
               />
             </div>
-          </button>
+          </div>
         </CollapsibleTrigger>
         <CollapsibleContent>
           <Separator className="bg-border" />

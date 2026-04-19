@@ -21,7 +21,7 @@ export default defineConfig({
         fileName: "mf-manifest.json",
       },
       exposes: {
-        "./pluginContract": "./src/plugin-contract-expose.ts",
+        "./pluginContract": "./src/index.ts",
       },
       shared: {
         "@ghost/plugin-contracts": {

@@ -67,6 +67,11 @@ export function createLayerSurfaceContext(options: LayerSurfaceContextOptions): 
     onConfigure(callback: (rect: { width: number; height: number }) => void): { dispose(): void } {
       assertNotDismissed("onConfigure");
 
+      // Disconnect previous observer to prevent orphaned watchers
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+
       const observer = new ResizeObserver((entries) => {
         for (const entry of entries) {
           const { width, height } = entry.contentRect;
@@ -119,6 +124,15 @@ export function createLayerSurfaceContext(options: LayerSurfaceContextOptions): 
         return;
       }
 
+      // Move the surface element to the new layer's DOM container
+      const layerHost = layerContainer.parentElement;
+      if (layerHost) {
+        const newContainer = layerHost.querySelector<HTMLElement>(`.shell-layer[data-layer="${name}"]`);
+        if (newContainer) {
+          newContainer.appendChild(element);
+        }
+      }
+
       currentLayerName = name;
       onLayerChange?.(name);
     },
@@ -165,6 +179,7 @@ export function createLayerSurfaceContext(options: LayerSurfaceContextOptions): 
         surfaceElement: element,
         layerContainer,
         config: grabOptions ?? {},
+        // Safe from grabFocus→onDismiss→dismiss recursion: the `dismissed` flag above is checked first
         onDismiss: () => context.dismiss(),
       });
     },

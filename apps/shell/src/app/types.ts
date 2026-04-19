@@ -167,6 +167,7 @@ export interface TenantPluginDescriptor {
     shell: string;
     pluginContract: string;
   };
+  pluginDependencies?: string[];
 }
 
 export interface TenantPluginManifestResponse {

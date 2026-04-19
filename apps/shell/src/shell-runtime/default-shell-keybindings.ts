@@ -19,6 +19,14 @@ export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.swap.down",
   "shell.swap.up",
   "shell.swap.right",
+  "shell.tab.detach.left",
+  "shell.tab.detach.down",
+  "shell.tab.detach.up",
+  "shell.tab.detach.right",
+  "shell.stack.absorb.left",
+  "shell.stack.absorb.down",
+  "shell.stack.absorb.up",
+  "shell.stack.absorb.right",
   "shell.resize.left",
   "shell.resize.down",
   "shell.resize.up",
@@ -49,9 +57,13 @@ export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.workspace.delete",
   "shell.workspace.next",
   "shell.workspace.prev",
+  "shell.tab.reorder.prev",
+  "shell.tab.reorder.next",
   "shell.stack.navigate.back",
   "shell.stack.navigate.forward",
+  "shell.stack.explode",
   "shell.elevatedSession.activate",
+  "shell.popout",
 ] as const;
 
 export type ShellKeyboardActionId = typeof SHELL_KEYBOARD_ACTION_IDS[number];
@@ -74,6 +86,7 @@ export interface ShellDefaultKeybinding {
 export const DEFAULT_SHELL_KEYBINDINGS: readonly ShellDefaultKeybinding[] = [
   { action: "shell.view.close", keybinding: "shift+alt+q" },
   { action: "shell.window.fullscreen.toggle", keybinding: "shift+alt+f" },
+  { action: "shell.popout", keybinding: "ctrl+shift+o" },
   { action: "shell.split.equalize", keybinding: "shift+alt+e" },
   { action: "shell.focus.left", keybinding: "shift+alt+arrowleft" },
   { action: "shell.focus.down", keybinding: "shift+alt+arrowdown" },

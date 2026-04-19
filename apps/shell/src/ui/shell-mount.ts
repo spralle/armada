@@ -55,6 +55,8 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .dock-root > .dock-node { flex: 1 1 auto; }
     .dock-node { min-width: 0; min-height: 0; }
     .dock-node-stack { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; border: 1px solid var(--ghost-border-muted); border-radius: var(--dock-panel-radius, 6px); background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-opacity-inactive, 0.9) * 100%), transparent); overflow: hidden; }
+    .dock-node-stack[data-single-tab="true"] .part-tab-strip { display: none; }
+    .dock-node-stack[data-single-tab="true"] { grid-template-rows: minmax(0, 1fr); }
     .dock-node-stack:focus-within { background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-opacity-active, 1) * 100%), transparent); border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow-subtle); }
     .dock-node-stack.is-active-stack { background: color-mix(in srgb, var(--ghost-surface) calc(var(--ghost-opacity-active, 1) * 100%), transparent); border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow-subtle); }
     .dock-stack-panels { min-height: 0; overflow: hidden; padding: 0; position: relative; display: flex; flex-direction: column; }
@@ -144,8 +146,8 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     }
   </style>
   <div id="layer-host">
-    <section class="shell-layer" data-layer="background" data-z="0" style="z-index:0"></section>
-    <section class="shell-layer" data-layer="bottom" data-z="100" style="z-index:100"></section>
+    <div class="shell-layer" data-layer="background" data-z="0" style="z-index:0" role="presentation"></div>
+    <div class="shell-layer" data-layer="bottom" data-z="100" style="z-index:100" role="presentation"></div>
     <main class="shell shell-layer" id="shell-root" data-layer="main" data-z="200" style="z-index:200">
       <section class="edge-slot edge-slot-top"></section>
       <section class="edge-slot edge-slot-left"></section>
@@ -153,13 +155,19 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
       <section class="edge-slot edge-slot-right"></section>
       <section class="edge-slot edge-slot-bottom"></section>
     </main>
-    <section class="shell-layer" data-layer="floating" data-z="300" style="z-index:300"></section>
-    <section class="shell-layer" data-layer="notification" data-z="400" style="z-index:400"></section>
-    <section class="shell-layer" data-layer="modal" data-z="500" style="z-index:500"></section>
-    <section class="shell-layer" data-layer="overlay" data-z="600" style="z-index:600"></section>
+    <div class="shell-layer" data-layer="floating" data-z="300" style="z-index:300" role="presentation"></div>
+    <div class="shell-layer" data-layer="notification" data-z="400" style="z-index:400" role="presentation"></div>
+    <div class="shell-layer" data-layer="modal" data-z="500" style="z-index:500" role="dialog"></div>
+    <div class="shell-layer" data-layer="overlay" data-z="600" style="z-index:600" role="presentation"></div>
   </div>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   `;
+
+  // Wire layer host so plugin-registered layers get DOM containers
+  const layerHostEl = root.querySelector<HTMLElement>("#layer-host");
+  if (layerHostEl) {
+    layerRegistry.setLayerHost(layerHostEl);
+  }
 
   deps.renderParts();
   deps.updateWindowReadOnlyState();
