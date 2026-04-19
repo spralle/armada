@@ -1,10 +1,43 @@
 {
-  "name": "@ghost/domain-unplanned-orders-plugin",
+  "name": "ghost.domain.unplanned-orders",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.domain.unplanned-orders",
-    "devPort": 4173
+    "displayName": "Unplanned Orders",
+    "contributes": {
+      "parts": [
+        {
+          "id": "domain.unplanned-orders.part",
+          "title": "Unplanned Orders",
+          "dock": {
+            "container": "main"
+          },
+          "component": "UnplannedOrdersPart"
+        }
+      ],
+      "actions": [
+        {
+          "id": "domain.unplanned-orders.open",
+          "title": "Open Unplanned Orders",
+          "intent": "domain.entity.open",
+          "predicate": { "entityType": { "$eq": "order" } }
+        },
+        {
+          "id": "domain.unplanned-orders.inspect",
+          "title": "Inspect Order Details",
+          "intent": "domain.entity.inspect",
+          "predicate": { "entityType": { "$eq": "order" } }
+        }
+      ],
+      "selection": [
+        {
+          "id": "domain.unplanned-orders.selection",
+          "receiverEntityType": "vessel",
+          "interests": []
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "vite"

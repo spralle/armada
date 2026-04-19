@@ -1,11 +1,25 @@
 {
-  "name": "@ghost/view-picker-plugin",
+  "name": "ghost.view-picker",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.view-picker",
-    "devPort": 4180
+    "displayName": "View Picker",
+    "contributes": {
+      "actions": [
+        {
+          "id": "shell.view.open",
+          "title": "View Picker: Open View",
+          "intent": "shell.view.open"
+        }
+      ],
+      "keybindings": [
+        {
+          "action": "shell.view.open",
+          "keybinding": "ctrl+alt+o"
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "vite"

@@ -6,7 +6,7 @@
     "strict": true,
     "noEmit": true,
     "composite": true,
-    "skipLibCheck": true,
+    "skipLibCheck": true,`n    "resolveJsonModule": true,
     "jsx": "react-jsx"
   },
   "references": [

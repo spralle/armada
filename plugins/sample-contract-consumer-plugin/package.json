@@ -1,10 +1,22 @@
 {
-  "name": "@ghost/sample-contract-consumer-plugin",
+  "name": "ghost.sample.contract-consumer",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.sample.contract-consumer",
-    "devPort": 4172
+    "displayName": "Sample Contract Consumer",
+    "contributes": {
+      "parts": [
+        {
+          "id": "sample.part",
+          "title": "Sample View",
+          "dock": {
+            "container": "main"
+          },
+          "component": "SampleView"
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "vite"

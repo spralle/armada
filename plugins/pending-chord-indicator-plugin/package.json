@@ -1,11 +1,21 @@
 {
-  "name": "@ghost/pending-chord-indicator-plugin",
+  "name": "ghost.pending-chord-indicator",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.pending-chord-indicator",
-    "devPort": 4185
+    "displayName": "Pending Chord Indicator",
+    "contributes": {
+      "slots": [
+        {
+          "id": "pending-chord-indicator",
+          "slot": "top",
+          "position": "end",
+          "order": -10,
+          "component": "pending-chord-indicator"
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "vite"

@@ -2,16 +2,21 @@ import {
   createInstance,
   type ModuleFederation,
 } from "@module-federation/enhanced/runtime";
+import * as pluginContracts from "@ghost/plugin-contracts";
+import * as ghostUi from "@ghost/ui";
 
 type RuntimeCreateOptions = Parameters<typeof createInstance>[0];
 
 /**
  * Keep shell/plugin contracts singleton-safe by preferring the already loaded
- * host instance across remotes. This is a lightweight runtime-only strategy
- * for POC work; no bundler plugin wiring is required here.
+ * host instance across remotes. We provide each shared module via `lib` so the
+ * runtime host can seed the MF shared scope — without a bundler plugin the
+ * scope would otherwise be empty and remotes would resolve `undefined`.
  */
 const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
   "@ghost/plugin-contracts": {
+    version: "0.0.0",
+    lib: () => pluginContracts,
     shareConfig: {
       singleton: true,
       requiredVersion: "^0.0.0",
@@ -20,6 +25,8 @@ const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
     strategy: "loaded-first",
   },
   "@ghost/ui": {
+    version: "0.0.0",
+    lib: () => ghostUi,
     shareConfig: {
       singleton: true,
       requiredVersion: "^0.0.0",

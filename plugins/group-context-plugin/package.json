@@ -1,10 +1,30 @@
 {
-  "name": "@ghost/plugin-group-context",
+  "name": "ghost.group-context",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.group-context",
-    "devPort": 4181
+    "displayName": "Group Context",
+    "contributes": {
+      "parts": [
+        {
+          "id": "ghost.shell.group-context",
+          "title": "Group context"
+        }
+      ]
+    },
+    "dependsOn": {
+      "services": [
+        {
+          "id": "ghost.context.Service",
+          "versionRange": "^1.0.0"
+        },
+        {
+          "id": "ghost.syncStatus.Service",
+          "versionRange": "^1.0.0"
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "vite"

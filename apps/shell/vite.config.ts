@@ -10,6 +10,9 @@ const PLUGIN_CONTRACTS_SOURCE = fileURLToPath(
 const UI_SOURCE = fileURLToPath(
   new URL("../../packages/ui/src/index.ts", import.meta.url),
 );
+const UI_SRC_ROOT = fileURLToPath(
+  new URL("../../packages/ui/src", import.meta.url),
+);
 
 export default defineConfig({
   plugins: [react()],
@@ -17,6 +20,9 @@ export default defineConfig({
     alias: {
       "@ghost/plugin-contracts": PLUGIN_CONTRACTS_SOURCE,
       "@ghost/ui": UI_SOURCE,
+      // Mirror the UI package's tsconfig path mapping so that its internal
+      // `@/lib/utils` imports resolve when the shell consumes raw source.
+      "@/": `${UI_SRC_ROOT}/`,
     },
   },
   server: {

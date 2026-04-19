@@ -7,6 +7,7 @@ export interface CanonicalLocalUiPluginDefinition {
   devPort: number;
   version: string;
   entryPath: string;
+  pluginDependencies?: string[];
 }
 
 export interface DiscoveredLocalUiPlugin {
@@ -15,6 +16,7 @@ export interface DiscoveredLocalUiPlugin {
   folderPath: string;
   version: string;
   entry: string;
+  pluginDependencies?: string[];
 }
 
 export interface DiscoverLocalUiPluginsOptions {
@@ -26,14 +28,14 @@ export interface DiscoverLocalUiPluginsOptions {
 }
 
 const VALID_LOCAL_PLUGIN_ID_PATTERN =
-  /^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?)*$/;
+  /^(?:@[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/)?[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/;
 
 /**
  * Scans a plugins directory and returns canonical definitions by reading
- * each plugin's `package.json` for `ghost.pluginId`, `ghost.devPort`, and
- * `version` fields.
+ * each plugin's `package.json` for `name` (as plugin ID), `ghost.dependsOn`,
+ * and `version` fields.
  *
- * Plugins without a valid `package.json` or without `ghost.pluginId` are
+ * Plugins without a valid `package.json` or without a `name` field are
  * skipped with a warning. Results are sorted by folder name.
  */
 export function discoverPluginDefinitions(
@@ -85,17 +87,23 @@ export function discoverPluginDefinitions(
       continue;
     }
 
-    const ghost = parsed.ghost as { pluginId?: string; devPort?: number } | undefined;
-    const pluginId = ghost?.pluginId;
+    const pluginId = typeof parsed.name === "string" ? parsed.name.trim() : "";
     if (!pluginId) {
-      console.warn(`[plugin-discovery] skipping ${folderName}: no ghost.pluginId in package.json`);
+      console.warn(`[plugin-discovery] skipping ${folderName}: no name in package.json`);
       continue;
     }
 
-    const devPort = ghost.devPort ?? nextAutoPort;
-    if (!ghost.devPort) {
-      nextAutoPort += 1;
-    }
+    const ghost = parsed.ghost as {
+      displayName?: string;
+      dependsOn?: { plugins?: { pluginId: string }[] };
+      pluginDependencies?: string[]; // TODO: remove after migration
+    } | undefined;
+
+    const pluginDependencies = ghost?.dependsOn?.plugins?.map(p => p.pluginId)
+      ?? ghost?.pluginDependencies; // TODO: remove fallback after migration
+
+    const devPort = nextAutoPort;
+    nextAutoPort += 1;
 
     const version = typeof parsed.version === "string" ? parsed.version : "0.1.0";
 
@@ -105,6 +113,7 @@ export function discoverPluginDefinitions(
       devPort,
       version,
       entryPath: "/mf-manifest.json",
+      pluginDependencies,
     });
   }
 
@@ -149,7 +158,7 @@ export function discoverLocalUiPlugins(
       definition.folderName,
     );
     const entry = options.gatewayPort
-      ? `${protocol}://${host}:${options.gatewayPort}/${definition.normalizedId}/mf-manifest.json`
+      ? `${protocol}://${host}:${options.gatewayPort}/${encodeURIComponent(definition.normalizedId)}/mf-manifest.json`
       : `${protocol}://${host}:${definition.devPort}${definition.entryPath}`;
 
     assertValidLocalPluginEntryUrl(
@@ -171,6 +180,7 @@ export function discoverLocalUiPlugins(
       folderPath,
       version: definition.version,
       entry,
+      pluginDependencies: definition.pluginDependencies,
     });
   }
 
@@ -194,7 +204,7 @@ export function normalizeAndAssertValidLocalPluginId(
 
   if (!VALID_LOCAL_PLUGIN_ID_PATTERN.test(normalizedId)) {
     throw new Error(
-      `Invalid local plugin id '${id}' ${context}. Expected dot-separated lowercase segments (letters, numbers, hyphens).`,
+      `Invalid local plugin id '${id}' ${context}. Expected a valid npm package name (lowercase, optional @scope/).`,
     );
   }
 

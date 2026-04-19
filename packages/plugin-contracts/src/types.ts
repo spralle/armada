@@ -245,6 +245,7 @@ export interface TenantPluginDescriptor {
   version: string;
   entry: string;
   compatibility: PluginCompatibilityMetadata;
+  pluginDependencies?: string[];
 }
 
 export interface TenantPluginManifestResponse {

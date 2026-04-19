@@ -1,10 +1,19 @@
 {
-  "name": "@ghost/ghost-ui-plugin",
+  "name": "ghost.ui",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.ui",
-    "devPort": 4186
+    "displayName": "Ghost UI Components",
+    "activationEvents": ["onStartup"],
+    "dependsOn": {
+      "plugins": [
+        {
+          "pluginId": "ghost.shadcn.theme-bridge",
+          "versionRange": "^1.0.0"
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "vite"
