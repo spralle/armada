@@ -62,8 +62,24 @@ export function createFieldApi(params: CreateFieldApiParams): FieldApi {
     },
 
     validate(): readonly ValidationIssue[] {
-      // Field-level validators will be wired in SE6; return empty for now
-      return [];
+      const mergedConfig = mergeFieldConfig(params.formDefaults, params.config);
+      if (!mergedConfig?.validators?.length) {
+        return [];
+      }
+      const state = params.getState();
+      const allIssues: ValidationIssue[] = [];
+      for (const validator of mergedConfig.validators) {
+        const input = {
+          data: state.data,
+          uiState: state.uiState,
+          ...(state.meta.stage !== undefined ? { stage: state.meta.stage } : {}),
+        };
+        const result = validator.validate(input);
+        if (Array.isArray(result)) {
+          allIssues.push(...result);
+        }
+      }
+      return allIssues;
     },
 
     issues(): readonly ValidationIssue[] {
