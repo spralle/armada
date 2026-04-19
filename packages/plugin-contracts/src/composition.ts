@@ -35,12 +35,19 @@ export interface ComposedPluginSlotContribution {
   component: string;
 }
 
+/** Composed section contribution with source plugin identity. */
 export interface ComposedPluginSectionContribution {
+  /** ID of the plugin contributing this section. */
   pluginId: string;
+  /** Unique identifier for this section contribution. */
   id: string;
+  /** Display title rendered as the section heading. */
   title: string;
+  /** Target container identifier (e.g. "config.appearance"). */
   target: string;
+  /** Sort order within the target — lower values render first. */
   order: number;
+  /** Key used to resolve the mount function from the contributing plugin's components. */
   component: string;
 }
 

@@ -1,7 +1,17 @@
 // plugin-parts.ts — Mount function for the appearance settings plugin.
 
-import type { ThemeService, PluginMountContext, ActivityStatusService } from "@ghost/plugin-contracts";
-import { THEME_SERVICE_ID, ACTIVITY_STATUS_SERVICE_ID } from "@ghost/plugin-contracts";
+import type {
+  ThemeService,
+  PluginMountContext,
+  PluginContract,
+  ActivityStatusService,
+  ComposedPluginSectionContribution,
+} from "@ghost/plugin-contracts";
+import {
+  THEME_SERVICE_ID,
+  ACTIVITY_STATUS_SERVICE_ID,
+  composeEnabledPluginContributions,
+} from "@ghost/plugin-contracts";
 import {
   injectAppearanceStyles,
   renderThemePicker,
@@ -10,6 +20,7 @@ import {
   revokeGalleryBlobUrls,
   renderSectionContainer,
 } from "./appearance-dom.js";
+import { pluginContract, APPEARANCE_SECTION_TARGET } from "./plugin-contract-expose.js";
 
 type PartMountCleanup = { unmount: () => void };
 
@@ -18,16 +29,7 @@ type MountPartFn = (
   context: PluginMountContext,
 ) => Promise<PartMountCleanup>;
 
-const APPEARANCE_PLUGIN_ID = "ghost.appearance-settings";
-const SECTION_TARGET = "config.appearance";
-
-type SectionEntry = {
-  id: string;
-  title: string;
-  target: string;
-  order: number;
-  component: string;
-};
+const APPEARANCE_PLUGIN_ID = pluginContract.manifest.id;
 
 type AppearanceRuntime = {
   services: { getService<T = unknown>(id: string): T | null };
@@ -36,11 +38,7 @@ type AppearanceRuntime = {
       plugins: ReadonlyArray<{
         id: string;
         enabled: boolean;
-        contract: {
-          contributes?: {
-            sections?: ReadonlyArray<SectionEntry>;
-          };
-        } | null;
+        contract: PluginContract | null;
       }>;
     };
     subscribe(callback: () => void): { dispose(): void };
@@ -57,19 +55,15 @@ type AppearanceRuntime = {
 
 const mountedSections = new Map<string, () => void>();
 
-function discoverSections(runtime: AppearanceRuntime): SectionEntry[] {
+function discoverSections(runtime: AppearanceRuntime): ComposedPluginSectionContribution[] {
   if (!runtime.registry) return [];
   const snapshot = runtime.registry.getSnapshot();
-  const sections: SectionEntry[] = [];
-  for (const plugin of snapshot.plugins) {
-    if (!plugin.enabled || !plugin.contract) continue;
-    const contributed = plugin.contract.contributes?.sections;
-    if (!contributed) continue;
-    for (const section of contributed) {
-      if (section.target === SECTION_TARGET) sections.push(section);
-    }
-  }
-  return sections.sort((a, b) => a.order - b.order);
+  const composed = composeEnabledPluginContributions(
+    snapshot.plugins.map((p) => ({ id: p.id, enabled: p.enabled, contract: p.contract })),
+  );
+  return composed.sections
+    .filter((s) => s.target === APPEARANCE_SECTION_TARGET)
+    .sort((a, b) => a.order - b.order);
 }
 
 async function mountDiscoveredSections(
@@ -110,7 +104,7 @@ async function mountDiscoveredSections(
 
 async function mountSingleSection(
   container: HTMLElement,
-  section: SectionEntry,
+  section: ComposedPluginSectionContribution,
   runtime: AppearanceRuntime,
 ): Promise<void> {
   const wrapper = document.createElement("div");
