@@ -61,4 +61,44 @@ describe('applyRuleWrites', () => {
     expect(state.data).toEqual({ x: 1 });
     expect(result.data).toEqual({ x: 99 });
   });
+
+  it('skips $state writes (arbiter-internal namespace)', () => {
+    const state = makeState({ data: { x: 1 } });
+    const writes: RuleWriteIntent[] = [{ path: '$state.foo', value: 'bar', mode: 'set', ruleId: 'r1' }];
+
+    const result = applyRuleWrites(state, writes);
+    expect(result.data).toEqual({ x: 1 });
+    expect(result.uiState).toEqual({});
+  });
+
+  it('skips $meta writes (arbiter-internal namespace)', () => {
+    const state = makeState({ data: { x: 1 } });
+    const writes: RuleWriteIntent[] = [{ path: '$meta.bar', value: 42, mode: 'set', ruleId: 'r1' }];
+
+    const result = applyRuleWrites(state, writes);
+    expect(result.data).toEqual({ x: 1 });
+    expect(result.uiState).toEqual({});
+  });
+
+  it('skips $contributions writes (arbiter-internal namespace)', () => {
+    const state = makeState({ data: { x: 1 } });
+    const writes: RuleWriteIntent[] = [{ path: '$contributions.baz', value: true, mode: 'set', ruleId: 'r1' }];
+
+    const result = applyRuleWrites(state, writes);
+    expect(result.data).toEqual({ x: 1 });
+    expect(result.uiState).toEqual({});
+  });
+
+  it('still routes $ui writes to uiState after filtering', () => {
+    const state = makeState();
+    const writes: RuleWriteIntent[] = [
+      { path: '$state.internal', value: 'skip', mode: 'set', ruleId: 'r1' },
+      { path: '$ui.visible', value: true, mode: 'set', ruleId: 'r2' },
+      { path: 'name', value: 'kept', mode: 'set', ruleId: 'r3' },
+    ];
+
+    const result = applyRuleWrites(state, writes);
+    expect(result.uiState).toEqual({ visible: true });
+    expect(result.data).toEqual({ name: 'kept' });
+  });
 });

@@ -65,6 +65,32 @@ describe('createArbiterAdapterFromSession', () => {
     expect(adapter.session).toBe(session);
     adapter.dispose();
   });
+
+  test('syncAndFire filters out arbiter-internal namespace changes', () => {
+    const rules: readonly ProductionRule[] = [{
+      name: 'internalWrite',
+      when: {},
+      then: [
+        { type: 'set', path: '$state.counter', value: 1 },
+        { type: 'set', path: '$ui.visible', value: true },
+        { type: 'set', path: '$meta.timestamp', value: 999 },
+        { type: 'set', path: '$contributions.source', value: 'test' },
+        { type: 'set', path: 'name', value: 'kept' },
+      ],
+    }];
+    const adapter = createArbiterAdapter(rules);
+    const state = makeState({ data: { trigger: true } });
+    const writes = adapter.syncAndFire(state);
+
+    const paths = writes.map(w => w.path);
+    expect(paths).not.toContain('$state.counter');
+    expect(paths).not.toContain('$meta.timestamp');
+    expect(paths).not.toContain('$contributions.source');
+    // $ui and root paths should pass through
+    expect(paths).toContain('$ui.visible');
+    expect(paths).toContain('name');
+    adapter.dispose();
+  });
 });
 
 describe('createForm with arbiterRules', () => {

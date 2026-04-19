@@ -2,6 +2,7 @@ import type { ProductionRule, RuleSession, FiringResult } from '@ghost/arbiter';
 import { createSession } from '@ghost/arbiter';
 import type { FormState } from './state.js';
 import type { RuleWriteIntent } from './contracts.js';
+import { isArbiterInternalPath } from './expression-integration.js';
 
 export interface ArbiterFormAdapter {
   readonly session: RuleSession;
@@ -32,8 +33,10 @@ function syncAndFireImpl(
 
   const result: FiringResult = session.fire();
 
-  // Convert FiringResult.changes → RuleWriteIntent[]
-  return result.changes.map((change) => ({
+  // Convert FiringResult.changes → RuleWriteIntent[], filtering arbiter-internal paths
+  return result.changes
+    .filter((change) => !isArbiterInternalPath(change.path))
+    .map((change) => ({
     path: change.path,
     value: change.newValue,
     mode: (change.newValue === undefined ? 'delete' : 'set') as 'set' | 'delete',
