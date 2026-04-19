@@ -1,4 +1,5 @@
-import type { PluginContract } from "@ghost/plugin-contracts";
+import type { PluginContract, GhostApi, ActivationContext } from "@ghost/plugin-contracts";
+import { injectShadcnBridge, removeShadcnBridge } from "./plugin-services-expose.js";
 import pkg from "../package.json" with { type: "json" };
 
 const ghost = pkg.ghost as {
@@ -18,3 +19,8 @@ export const pluginContract: PluginContract = {
   dependsOn: ghost.dependsOn as PluginContract["dependsOn"],
   activationEvents: ghost.activationEvents as PluginContract["activationEvents"],
 };
+
+export function activate(_api: GhostApi, context: ActivationContext): void {
+  injectShadcnBridge();
+  context.subscriptions.push({ dispose: removeShadcnBridge });
+}
