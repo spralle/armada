@@ -88,7 +88,7 @@ export function parseTenantManifestFallback(input: unknown): TenantPluginManifes
       throw new Error(`Invalid tenant manifest response: plugins[${index}] has invalid descriptor shape`);
     }
 
-    return {
+    const result: TenantPluginDescriptor = {
       id: descriptor.id,
       version: descriptor.version,
       entry: descriptor.entry,
@@ -97,6 +97,15 @@ export function parseTenantManifestFallback(input: unknown): TenantPluginManifes
         pluginContract: descriptor.compatibility.pluginContract,
       },
     };
+
+    if (
+      Array.isArray(descriptor.pluginDependencies) &&
+      descriptor.pluginDependencies.every((d): d is string => typeof d === "string")
+    ) {
+      result.pluginDependencies = descriptor.pluginDependencies;
+    }
+
+    return result;
   });
 
   return {

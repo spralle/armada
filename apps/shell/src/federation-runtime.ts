@@ -4,6 +4,8 @@ import {
 } from "@module-federation/enhanced/runtime";
 import * as pluginContracts from "@ghost/plugin-contracts";
 import * as ghostUi from "@ghost/ui";
+import * as react from "react";
+import * as reactDom from "react-dom";
 
 type RuntimeCreateOptions = Parameters<typeof createInstance>[0];
 
@@ -30,6 +32,26 @@ const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
     shareConfig: {
       singleton: true,
       requiredVersion: "^0.0.0",
+      strictVersion: false,
+    },
+    strategy: "loaded-first",
+  },
+  react: {
+    version: "18.3.1",
+    lib: () => react,
+    shareConfig: {
+      singleton: true,
+      requiredVersion: "^18.3.1",
+      strictVersion: false,
+    },
+    strategy: "loaded-first",
+  },
+  "react-dom": {
+    version: "18.3.1",
+    lib: () => reactDom,
+    shareConfig: {
+      singleton: true,
+      requiredVersion: "^18.3.1",
       strictVersion: false,
     },
     strategy: "loaded-first",
