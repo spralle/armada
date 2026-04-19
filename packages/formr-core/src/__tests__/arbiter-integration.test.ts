@@ -119,28 +119,4 @@ describe('createForm with arbiterRules', () => {
     expect((form.getState().uiState as Record<string, unknown>).ready).toBe(true);
     form.dispose();
   });
-
-  test('old expressionEngine path still works (backward compat)', () => {
-    const engine = {
-      id: 'mock',
-      evaluate: (node: unknown) => {
-        const n = node as { kind: string; value: unknown };
-        if (n.kind === 'literal') return n.value;
-        return null;
-      },
-    };
-    const rules = [{
-      id: 'r1',
-      when: { kind: 'literal' as const, value: true },
-      writes: [{ path: 'computed', value: { kind: 'literal' as const, value: 42 }, mode: 'set' as const }],
-    }];
-    const form = createForm({
-      initialData: { x: 0, computed: 0 },
-      expressionEngine: engine,
-      rules,
-    });
-    form.setValue('x', 1);
-    expect((form.getState().data as Record<string, unknown>).computed).toBe(42);
-    form.dispose();
-  });
 });

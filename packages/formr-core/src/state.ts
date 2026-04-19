@@ -84,8 +84,6 @@ export interface CreateFormOptions<
   readonly initialUiState?: unknown;
   readonly stagePolicy?: StagePolicy<S>;
   readonly validators?: readonly ValidatorAdapter<S>[];
-  readonly expressionEngine?: ExpressionEngine;
-  readonly rules?: readonly RuleDefinition[];
   readonly middleware?: readonly Middleware<S>[];
   readonly transforms?: readonly Transform[];
   readonly arbiterRules?: readonly ProductionRule[] | undefined;
@@ -106,8 +104,6 @@ export interface CreateFormOptions<
 // Imports for CreateFormOptions references
 import type {
   ValidatorAdapter,
-  ExpressionEngine,
-  RuleDefinition,
   Middleware,
   Transform,
   FieldConfig,

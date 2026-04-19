@@ -27,32 +27,12 @@ export interface ValidatorAdapter<S extends string = string> {
   }): Promise<readonly ValidationIssue<S>[]> | readonly ValidationIssue<S>[];
 }
 
-/** ADR section 5.2 — RuleDefinition */
-export interface RuleDefinition {
-  readonly id: string;
-  readonly when: ExprNode;
-  readonly writes: readonly RuleWrite[];
-}
-
-/** ADR section 5.2 — RuleWrite */
-export interface RuleWrite {
-  readonly path: string;
-  readonly value: ExprNode;
-  readonly mode: 'set' | 'delete';
-}
-
 /** ADR section 5.2 — RuleWriteIntent */
 export interface RuleWriteIntent {
   readonly path: string;
   readonly value: unknown;
   readonly mode: 'set' | 'delete';
   readonly ruleId: string;
-}
-
-/** ADR section 9 — ExpressionEngine */
-export interface ExpressionEngine {
-  readonly id: string;
-  evaluate(node: ExprNode, scope: EvaluationScope): unknown;
 }
 
 /** ADR section 9 — Middleware decision for veto-capable hooks */

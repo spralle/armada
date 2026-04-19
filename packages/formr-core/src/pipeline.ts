@@ -11,7 +11,7 @@ import type { FormStore } from './store.js';
 import type { TransformDefinition } from './transforms.js';
 import { parsePath } from './path-parser.js';
 import { assertSafeSegment } from '@ghost/predicate';
-import { evaluateExpressions, applyRuleWrites } from './expression-integration.js';
+import { applyRuleWrites } from './expression-integration.js';
 import type { ArbiterFormAdapter } from './arbiter-integration.js';
 import { resolveActiveStage, applySubmitOutcome } from './submit.js';
 import { normalizeIssues } from './validation.js';
@@ -155,11 +155,6 @@ export function executePipeline<S extends string>(ctx: PipelineContext<S>): Pipe
     if (ctx.arbiterAdapter) {
       tx.mutate((draft) => {
         const writes = ctx.arbiterAdapter!.syncAndFire(draft);
-        return writes.length > 0 ? applyRuleWrites(draft, writes) : draft;
-      });
-    } else if (options.expressionEngine && options.rules?.length) {
-      tx.mutate((draft) => {
-        const writes = evaluateExpressions(options.expressionEngine!, draft, options.rules!);
         return writes.length > 0 ? applyRuleWrites(draft, writes) : draft;
       });
     }

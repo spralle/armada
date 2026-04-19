@@ -3,21 +3,12 @@ import type { ExprNode } from '../ast.js';
 import { evaluate } from '../evaluator.js';
 import { compile } from '../compiler.js';
 import { PredicateError } from '../errors.js';
-import { executeRules } from '../../../formr-core/src/rule-engine.js';
-import type { RuleDefinition, ExpressionEngine } from '../../../formr-core/src/contracts.js';
-import { FormrError } from '../../../formr-core/src/errors.js';
 
 /**
  * F3: Expressions/rules conformance fixtures.
  * Verifies: AST execution correct, operator typing enforced,
- * no coercion, write conflicts detected, non-convergence guard,
- * deterministic traces.
+ * no coercion, compiler correctness.
  */
-
-const engine: ExpressionEngine = {
-  id: 'test',
-  evaluate: (node, scope) => evaluate(node, scope),
-};
 
 function scope(data: Record<string, unknown> = {}, uiState: unknown = {}, meta: unknown = {}): Record<string, unknown> {
   return { ...data, $ui: uiState, $meta: meta };
@@ -147,105 +138,5 @@ describe('F3: Compiler correctness', () => {
 
   it('rejects empty objects', () => {
     expect(() => compile({})).toThrow(PredicateError);
-  });
-});
-
-describe('F3: Write conflicts detected', () => {
-  it('two rules writing different values to same path → FORMR_RULE_WRITE_CONFLICT', () => {
-    const rules: RuleDefinition[] = [
-      { id: 'r1', when: lit(true), writes: [{ path: 'x', value: lit(1), mode: 'set' }] },
-      { id: 'r2', when: lit(true), writes: [{ path: 'x', value: lit(2), mode: 'set' }] },
-    ];
-    try {
-      executeRules(engine, rules, scope());
-      expect(true).toBe(false);
-    } catch (e) {
-      expect(e).toBeInstanceOf(FormrError);
-      expect((e as FormrError).code).toBe('FORMR_RULE_WRITE_CONFLICT');
-    }
-  });
-
-  it('same value to same path is NOT a conflict', () => {
-    const rules: RuleDefinition[] = [
-      { id: 'r1', when: lit(true), writes: [{ path: 'x', value: lit(5), mode: 'set' }] },
-      { id: 'r2', when: lit(true), writes: [{ path: 'x', value: lit(5), mode: 'set' }] },
-    ];
-    const result = executeRules(engine, rules, scope());
-    expect(result.converged).toBe(true);
-  });
-});
-
-describe('F3: Non-convergence guard', () => {
-  it('oscillating rules throw FORMR_RULE_NON_CONVERGENT', () => {
-    const rules: RuleDefinition[] = [
-      {
-        id: 'r1',
-        when: op('$eq', path('x'), lit(1)),
-        writes: [{ path: 'x', value: lit(2), mode: 'set' }],
-      },
-      {
-        id: 'r2',
-        when: op('$eq', path('x'), lit(2)),
-        writes: [{ path: 'x', value: lit(1), mode: 'set' }],
-      },
-    ];
-    try {
-      executeRules(engine, rules, scope({ x: 1 }), { maxIterations: 4 });
-      expect(true).toBe(false);
-    } catch (e) {
-      expect(e).toBeInstanceOf(FormrError);
-      expect((e as FormrError).code).toBe('FORMR_RULE_NON_CONVERGENT');
-    }
-  });
-
-  it('convergent cascading rules complete within iteration budget', () => {
-    const rules: RuleDefinition[] = [
-      {
-        id: 'r1',
-        when: op('$eq', path('a'), lit(null)),
-        writes: [{ path: 'a', value: lit(1), mode: 'set' }],
-      },
-      {
-        id: 'r2',
-        when: op('$and', op('$eq', path('a'), lit(1)), op('$eq', path('b'), lit(null))),
-        writes: [{ path: 'b', value: lit(2), mode: 'set' }],
-      },
-    ];
-    const result = executeRules(engine, rules, scope({ a: null, b: null }));
-    expect(result.converged).toBe(true);
-    expect(result.writes).toHaveLength(2);
-  });
-});
-
-describe('F3: Deterministic traces', () => {
-  it('same rules + same scope produce identical write sequences', () => {
-    const rules: RuleDefinition[] = [
-      { id: 'r1', when: lit(true), writes: [{ path: 'a', value: lit(1), mode: 'set' }] },
-      { id: 'r2', when: lit(true), writes: [{ path: 'b', value: lit(2), mode: 'set' }] },
-    ];
-    const s = scope();
-    const result1 = executeRules(engine, rules, s);
-    const result2 = executeRules(engine, rules, s);
-    const result3 = executeRules(engine, rules, s);
-
-    const writeKey = (w: { ruleId: string; path: string; value: unknown; mode: string }) => `${w.ruleId}:${w.path}:${w.value}:${w.mode}`;
-    expect(result1.writes.map(writeKey)).toEqual(result2.writes.map(writeKey));
-    expect(result2.writes.map(writeKey)).toEqual(result3.writes.map(writeKey));
-    expect(result1.iterations).toBe(result2.iterations);
-  });
-
-  it('disallowed write target throws FORMR_RULE_DISALLOWED_TARGET', () => {
-    const rules: RuleDefinition[] = [{
-      id: 'r1',
-      when: lit(true),
-      writes: [{ path: 'data.x', value: lit(1), mode: 'set' }],
-    }];
-    try {
-      executeRules(engine, rules, scope(), { allowedWriteTargets: ['$ui.'] });
-      expect(true).toBe(false);
-    } catch (e) {
-      expect(e).toBeInstanceOf(FormrError);
-      expect((e as FormrError).code).toBe('FORMR_RULE_DISALLOWED_TARGET');
-    }
   });
 });

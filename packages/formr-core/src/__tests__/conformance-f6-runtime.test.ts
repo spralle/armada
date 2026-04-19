@@ -7,10 +7,6 @@ import {
   type ValidatorAdapter,
   type ValidationIssue,
   type FormState,
-  type ExpressionEngine,
-  type RuleDefinition,
-  type ExprNode,
-  type ExpressionScope,
 } from '../index.js';
 
 type DefaultStages = 'draft' | 'submit' | 'approve';
@@ -79,23 +75,14 @@ describe('F6: Runtime algorithm conformance', () => {
     form.dispose();
   });
 
-  test('F6.04: expression evaluation — rule writes are applied', () => {
-    const engine: ExpressionEngine = {
-      id: 'test-engine',
-      evaluate(node: ExprNode, _scope: ExpressionScope): unknown {
-        if (node.kind === 'literal') return node.value;
-        return null;
-      },
-    };
-    const rules: readonly RuleDefinition[] = [{
-      id: 'r1',
-      when: { kind: 'literal', value: true },
-      writes: [{ path: 'derived', value: { kind: 'literal', value: 'computed' }, mode: 'set' }],
-    }];
+  test('F6.04: expression evaluation — arbiter rule writes are applied', () => {
     const form = createForm({
       initialData: { name: '', derived: '' },
-      expressionEngine: engine,
-      rules,
+      arbiterRules: [{
+        name: 'r1',
+        when: {},
+        then: [{ type: 'set', path: 'derived', value: 'computed' }],
+      }],
     });
     form.setValue('name', 'test');
     expect((form.getState().data as Record<string, unknown>).derived).toBe('computed');

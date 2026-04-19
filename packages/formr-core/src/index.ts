@@ -22,9 +22,6 @@ export {
   type ExpressionDefinition,
   type EvaluationScope,
   type ExpressionScope,
-  type ExpressionEngine,
-  type RuleDefinition,
-  type RuleWrite,
   type RuleWriteIntent,
   type Middleware,
   type MiddlewareDecision,
@@ -67,21 +64,13 @@ export { createFieldApi, mergeFieldConfig, type CreateFieldApiParams } from './f
 export { executePipeline, type PipelineContext, type PipelineResult } from './pipeline.js';
 
 // Expression integration (SE3.5)
-export { buildExpressionScope, evaluateExpressions, applyRuleWrites } from './expression-integration.js';
+export { applyRuleWrites } from './expression-integration.js';
 
 // Arbiter integration (ADR arbiter §9)
 export { createArbiterAdapter, createArbiterAdapterFromSession, type ArbiterFormAdapter } from './arbiter-integration.js';
 
-// Rule engine (moved from @ghost/predicate)
-export { executeRules, type RuleExecutionConfig, type RuleExecutionResult } from './rule-engine.js';
-
-// Expression dependency graph (ADR §12)
-export {
-  buildDependencyGraph,
-  getAffectedRules,
-  type DependencyGraph,
-  type RuleDependency,
-} from './expression-deps.js';
+// Nested utilities (extracted from old rule engine)
+export { setNestedValue, deleteNestedValue } from './nested-utils.js';
 
 // Validation envelope (SE4.2)
 export { sortIssues, dedupeIssues, normalizeIssues } from './validation.js';

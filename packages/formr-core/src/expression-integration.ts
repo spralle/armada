@@ -1,31 +1,7 @@
-import type { ExpressionEngine, RuleDefinition, RuleWriteIntent } from './contracts.js';
-import type { EvaluationScope } from '@ghost/predicate';
+import type { RuleWriteIntent } from './contracts.js';
 import type { FormState } from './state.js';
-import { executeRules, setNestedValue, deleteNestedValue } from './rule-engine.js';
+import { setNestedValue, deleteNestedValue } from './nested-utils.js';
 import { assertSafeSegment } from '@ghost/predicate';
-
-/** Build evaluation scope from current form state.
- *  Data fields are spread at top level; $ui and $meta are namespace keys. */
-export function buildExpressionScope<S extends string>(state: FormState<S>): EvaluationScope {
-  const data = (state.data ?? {}) as Record<string, unknown>;
-  return {
-    ...data,
-    $ui: state.uiState,
-    $meta: state.meta,
-  };
-}
-
-/** Run expression evaluation on the current state (step 7 of ADR §8).
- *  Delegates to the rule engine's fixed-point loop and returns all writes. */
-export function evaluateExpressions<S extends string>(
-  engine: ExpressionEngine,
-  state: FormState<S>,
-  rules: readonly RuleDefinition[],
-): readonly RuleWriteIntent[] {
-  const scope = buildExpressionScope(state);
-  const result = executeRules(engine, rules, scope);
-  return result.writes;
-}
 
 /** Apply rule writes to form state (immutable) */
 export function applyRuleWrites<S extends string>(

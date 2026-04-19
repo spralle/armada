@@ -7,8 +7,6 @@ import {
   runTransforms,
   createDateTransform,
   createDateEgressTransform,
-  buildExpressionScope,
-  evaluateExpressions,
   applyRuleWrites,
   sortIssues,
   createDefaultStagePolicy,
@@ -17,8 +15,7 @@ import {
   isCompatibleVersion,
   STABLE_CAPABILITIES,
   type TransformDefinition,
-  type ExpressionEngine,
-  type RuleDefinition,
+  type ProductionRule,
   type ExtensionManifest,
 } from '../index.js';
 import {
@@ -140,9 +137,9 @@ describe('F1-F10: Full integration conformance', () => {
     });
   });
 
-  // --- (c) Expression-driven visibility: F3 ---
-  describe('(c) Expression-driven visibility — F3 predicate + rules', () => {
-    test('compile predicate, evaluate rule, apply writes to form state', () => {
+  // --- (c) Expression-driven visibility: F3 predicate + arbiter rules ---
+  describe('(c) Expression-driven visibility — F3 predicate + arbiter rules', () => {
+    test('compile predicate, arbiter rule applies writes to form state', () => {
       // F3: compile a predicate AST
       const ast = compile({ $eq: [{ $path: 'country' }, 'US'] });
       expect(ast.kind).toBe('op');
@@ -157,32 +154,19 @@ describe('F1-F10: Full integration conformance', () => {
       const resultUK = evaluate(ast, scopeUK);
       expect(resultUK).toBe(false);
 
-      // Execute rules: when country=US, show state field
-      const rules: RuleDefinition[] = [
-        {
-          id: 'show-state',
-          when: { kind: 'op', op: '$eq', args: [{ kind: 'path', path: 'country' }, { kind: 'literal', value: 'US' }] },
-          writes: [{ path: '$ui.stateVisible', value: { kind: 'literal', value: true }, mode: 'set' }],
-        },
-      ];
+      // Execute via arbiter: when country=US, show state field
+      const form = createForm({
+        initialData: { country: 'US' },
+        arbiterRules: [{
+          name: 'show-state',
+          when: { country: { $eq: 'US' } },
+          then: [{ type: 'set', path: '$ui.stateVisible', value: true }],
+        }],
+      });
 
-      // Build expression engine adapter for formr-core integration
-      const engine: ExpressionEngine = {
-        id: 'predicate-engine',
-        evaluate: (node, scope) => evaluate(node, scope),
-      };
-
-      // Create form and apply rules
-      const form = createForm({ initialData: { country: 'US' } });
-      const state = form.getState();
-      const writes = evaluateExpressions(engine, state, rules);
-      expect(writes.length).toBe(1);
-      expect(writes[0]!.path).toBe('$ui.stateVisible');
-      expect(writes[0]!.value).toBe(true);
-
-      // Apply writes to state
-      const newState = applyRuleWrites(state, writes);
-      expect((newState.uiState as Record<string, unknown>).stateVisible).toBe(true);
+      // Trigger pipeline
+      form.setValue('country', 'US');
+      expect((form.getState().uiState as Record<string, unknown>).stateVisible).toBe(true);
 
       form.dispose();
     });
