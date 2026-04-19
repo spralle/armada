@@ -9,6 +9,7 @@ import {
   reopenMostRecentlyClosedTabThroughRuntime,
 } from "./part-instance-tab-lifecycle.js";
 import { restorePart } from "./part-instance-popout-lifecycle.js";
+import { showPartContextMenu, type PartContextMenuDeps } from "./part-context-menu.js";
 import { wireTabStripDragDrop } from "./tab-drag-drop.js";
 import {
   getVisibleComposedParts,
@@ -233,18 +234,6 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
     });
   }
 
-  for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='popout']")) {
-    button.addEventListener("click", () => {
-      if (runtime.syncDegraded) {
-        return;
-      }
-      dispatchLocalLifecycleAction(runtime, {
-        actionId: "part-instance.popout",
-        tabInstanceId: button.dataset.partId,
-      }, deps as PartLifecycleDeps);
-    });
-  }
-
   for (const button of root.querySelectorAll<HTMLButtonElement>("button[data-action='restore']")) {
     button.addEventListener("click", () => {
       if (runtime.syncDegraded) {
@@ -254,6 +243,17 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
         actionId: "part-instance.restore",
         tabInstanceId: button.dataset.partId,
       }, deps as PartLifecycleDeps);
+    });
+  }
+
+  // Wire context menu on part panels
+  for (const panel of root.querySelectorAll<HTMLElement>(".dock-tabpanel-content")) {
+    panel.addEventListener("contextmenu", (e) => {
+      if (runtime.syncDegraded) return;
+      const partId = panel.dataset.partId;
+      if (!partId) return;
+      e.preventDefault();
+      showPartContextMenu(e, partId, runtime, deps as PartContextMenuDeps);
     });
   }
 

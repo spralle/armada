@@ -309,8 +309,9 @@ function renderDockNode(
   const panelSlot = tabs[0]?.slot ?? "main";
   const tabScope = `stack:${node.id}`;
   const panelLabel = `${tabs[0]?.title ?? panelSlot} panel tabs`;
-  return `<section class="dock-node dock-node-stack" data-dock-node-id="${node.id}" data-dock-stack-id="${node.id}" data-slot="${panelSlot}">
-      ${renderTabStrip(panelSlot, tabs, activeTabId, runtime, { tabScope, label: panelLabel })}
+  const isSingleTab = tabs.length === 1;
+  return `<section class="dock-node dock-node-stack" data-dock-node-id="${node.id}" data-dock-stack-id="${node.id}" data-slot="${panelSlot}"${isSingleTab ? ' data-single-tab="true"' : ''}>
+      ${isSingleTab ? '' : renderTabStrip(panelSlot, tabs, activeTabId, runtime, { tabScope, label: panelLabel })}
       <section class="dock-stack-panels" data-dock-stack-panels="${node.id}">
         ${tabs.map((part) => renderDockPartPanel(part, part.id === activeTabId)).join("")}
         ${renderDockDropOverlay(activeTabId)}

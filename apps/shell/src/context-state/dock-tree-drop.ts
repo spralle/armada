@@ -2,6 +2,8 @@ import {
   cloneDockNode,
   collapseDockNode,
   createUniqueNodeId,
+  replaceNodeAtPath,
+  type DockPathSegment,
 } from "./dock-tree-helpers.js";
 import { ensureTabRegisteredInDockTree, removeTabFromDockTree } from "./dock-tree-register-remove.js";
 import type {
@@ -12,8 +14,6 @@ import type {
   DockTabDropInput,
   DockTreeState,
 } from "./dock-tree-types.js";
-
-type DockPathSegment = "first" | "second";
 
 interface DockLocateResult {
   stack: DockStackNode;
@@ -166,31 +166,4 @@ function insertTabInStack(
     activeTabId: tabId,
   };
   return replaceNodeAtPath(root, target.path, nextStack);
-}
-
-function replaceNodeAtPath(root: DockNode | null, path: DockPathSegment[], replacement: DockNode): DockNode | null {
-  if (!root) {
-    return replacement;
-  }
-
-  if (path.length === 0) {
-    return replacement;
-  }
-
-  if (root.kind === "stack") {
-    return root;
-  }
-
-  const [segment, ...rest] = path;
-  if (segment === "first") {
-    return {
-      ...root,
-      first: replaceNodeAtPath(root.first, rest, replacement) ?? root.first,
-    };
-  }
-
-  return {
-    ...root,
-    second: replaceNodeAtPath(root.second, rest, replacement) ?? root.second,
-  };
 }
