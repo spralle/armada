@@ -215,7 +215,7 @@ function mountShell(root: HTMLElement, runtime: ShellRuntime, bootstrap: ShellBo
 }
 
 async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, isActive: () => boolean): Promise<void> {
-  const modalLayer = root.querySelector<HTMLElement>('section.shell-layer[data-layer="modal"]');
+  const modalLayer = root.querySelector<HTMLElement>('.shell-layer[data-layer="modal"]');
   const quickPickBridge = createQuickPickBridge(modalLayer ?? undefined);
   try {
     const apiDeps = createGhostApiDeps(runtime, quickPickBridge, {

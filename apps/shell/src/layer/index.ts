@@ -1,5 +1,7 @@
 export { BUILTIN_LAYERS, LayerRegistry } from "./registry.js";
 
+export { createLayerContainer, removeLayerContainer } from "./layer-dom.js";
+
 export { computeAnchorStyles, computeExclusiveZones, getAnchorKey } from "./anchor-positioning.js";
 
 export type { StackedSurface } from "./auto-stacking.js";

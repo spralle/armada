@@ -1,3 +1,5 @@
+import type { PluginContributionPredicate } from "./types.js";
+
 /** Anchor edges — bitfield for combining (top|bottom|left|right). */
 export enum AnchorEdge {
   None = 0,
@@ -78,8 +80,8 @@ export interface PluginLayerSurfaceContribution {
   sessionLock?: boolean | undefined;
   /** Sort order within same anchor point. */
   order?: number | undefined;
-  /** Conditional expression for visibility. */
-  when?: string | undefined;
+  /** Conditional predicate for visibility — uses the same predicate system as menus/keybindings. */
+  when?: PluginContributionPredicate | undefined;
 }
 
 /** Plugin layer definition (plugin can register custom layers). */

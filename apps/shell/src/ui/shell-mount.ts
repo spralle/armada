@@ -144,8 +144,8 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     }
   </style>
   <div id="layer-host">
-    <section class="shell-layer" data-layer="background" data-z="0" style="z-index:0"></section>
-    <section class="shell-layer" data-layer="bottom" data-z="100" style="z-index:100"></section>
+    <div class="shell-layer" data-layer="background" data-z="0" style="z-index:0" role="presentation"></div>
+    <div class="shell-layer" data-layer="bottom" data-z="100" style="z-index:100" role="presentation"></div>
     <main class="shell shell-layer" id="shell-root" data-layer="main" data-z="200" style="z-index:200">
       <section class="edge-slot edge-slot-top"></section>
       <section class="edge-slot edge-slot-left"></section>
@@ -153,13 +153,19 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
       <section class="edge-slot edge-slot-right"></section>
       <section class="edge-slot edge-slot-bottom"></section>
     </main>
-    <section class="shell-layer" data-layer="floating" data-z="300" style="z-index:300"></section>
-    <section class="shell-layer" data-layer="notification" data-z="400" style="z-index:400"></section>
-    <section class="shell-layer" data-layer="modal" data-z="500" style="z-index:500"></section>
-    <section class="shell-layer" data-layer="overlay" data-z="600" style="z-index:600"></section>
+    <div class="shell-layer" data-layer="floating" data-z="300" style="z-index:300" role="presentation"></div>
+    <div class="shell-layer" data-layer="notification" data-z="400" style="z-index:400" role="presentation"></div>
+    <div class="shell-layer" data-layer="modal" data-z="500" style="z-index:500" role="dialog"></div>
+    <div class="shell-layer" data-layer="overlay" data-z="600" style="z-index:600" role="presentation"></div>
   </div>
   <div id="live-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   `;
+
+  // Wire layer host so plugin-registered layers get DOM containers
+  const layerHostEl = root.querySelector<HTMLElement>("#layer-host");
+  if (layerHostEl) {
+    layerRegistry.setLayerHost(layerHostEl);
+  }
 
   deps.renderParts();
   deps.updateWindowReadOnlyState();
