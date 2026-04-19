@@ -1,6 +1,7 @@
 import type { FormState } from './state.js';
 import { deepFreeze } from './utils.js';
 
+/** Pluggable clone/freeze strategy for state isolation. */
 export interface StateStrategy {
   readonly clone: <T>(value: T) => T;
   readonly freeze: <T>(value: T) => T;
@@ -11,12 +12,14 @@ export const defaultStrategy: StateStrategy = {
   freeze: deepFreeze,
 };
 
+/** Read-only view of a transaction's state at a point in time. */
 export interface TransactionSnapshot {
   readonly prevState: FormState;
   readonly draftState: FormState;
   readonly status: 'active' | 'committed' | 'rolled-back';
 }
 
+/** Mutable draft context that tracks mutations against a frozen baseline. */
 export class Transaction {
   private _prevState: FormState;
   private _draftState: FormState;

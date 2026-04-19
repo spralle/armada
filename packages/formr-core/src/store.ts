@@ -5,6 +5,7 @@ export type StateListener = (
   state: FormState,
 ) => void;
 
+/** Synchronous reactive store with transactional semantics — only one transaction active at a time. */
 export class FormStore {
   private _state: FormState;
   private _listeners: Set<StateListener> = new Set();
@@ -16,11 +17,12 @@ export class FormStore {
     this._strategy = strategy ?? defaultStrategy;
   }
 
+  /** Return the current frozen state snapshot. */
   getState(): FormState {
     return this._state;
   }
 
-  /** Begin a new transaction */
+  /** Clone current state into a mutable draft context. Only one transaction may be active at a time. */
   beginTransaction(): Transaction {
     if (this._activeTransaction) {
       throw new Error('Cannot begin transaction while another is active');
@@ -29,7 +31,7 @@ export class FormStore {
     return this._activeTransaction;
   }
 
-  /** Commit the active transaction and notify subscribers */
+  /** Apply draft state and notify subscribers if state was mutated. */
   commitTransaction(tx: Transaction): void {
     if (tx !== this._activeTransaction) {
       throw new Error('Transaction does not belong to this store');
@@ -45,7 +47,7 @@ export class FormStore {
     this._notifyListeners();
   }
 
-  /** Rollback the active transaction */
+  /** Discard draft state without notifying subscribers. */
   rollbackTransaction(tx: Transaction): void {
     if (tx !== this._activeTransaction) {
       throw new Error('Transaction does not belong to this store');
@@ -54,7 +56,7 @@ export class FormStore {
     this._activeTransaction = null;
   }
 
-  /** Subscribe to state changes; returns unsubscribe function */
+  /** Register a listener called on each commit. Returns an unsubscribe function. */
   subscribe(listener: StateListener): () => void {
     this._listeners.add(listener);
     return () => {
@@ -62,7 +64,7 @@ export class FormStore {
     };
   }
 
-  /** Dispose all subscriptions and clear active transaction */
+  /** Clear all subscriptions and roll back any active transaction. */
   dispose(): void {
     this._listeners.clear();
     if (this._activeTransaction && this._activeTransaction.status === 'active') {
