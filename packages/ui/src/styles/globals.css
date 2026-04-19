@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../components";
 @import "./theme.css";
 
 /* Base layer defaults that shadcn components expect */
