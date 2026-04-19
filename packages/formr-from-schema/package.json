@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/plugin-contracts",
+  "name": "@ghost/formr-from-schema",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,14 +12,18 @@
     },
     "./*": null
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "test": "bun test"
   },
   "dependencies": {
-    "@ghost/predicate": "workspace:*",
-    "zod": "^3.24.2"
+    "@ghost/formr-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "zod": "^3.24.0"
+  },
+  "peerDependenciesMeta": {
+    "zod": { "optional": true }
   }
 }

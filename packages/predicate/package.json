@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/plugin-contracts",
+  "name": "@ghost/predicate",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,16 +10,17 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./collection": {
+      "types": "./dist/collection/index.d.ts",
+      "default": "./dist/collection/index.js"
+    },
     "./*": null
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
-  },
-  "dependencies": {
-    "@ghost/predicate": "workspace:*",
-    "zod": "^3.24.2"
+    "build": "tsc -p tsconfig.json",
+    "test": "bun test"
   }
 }

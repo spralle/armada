@@ -23,6 +23,18 @@
       "path": "./plugins/plugin-starter"
     },
     {
+      "path": "./packages/formr-core"
+    },
+    {
+      "path": "./packages/formr-from-schema"
+    },
+    {
+      "path": "./packages/predicate"
+    },
+    {
+      "path": "./packages/formr-react"
+    },
+    {
       "path": "./apps/typecheck-fixture"
     },
     {

@@ -1,0 +1,213 @@
+import type { FormState, CreateFormOptions, ValidationIssue, SubmitContext, StagePolicy } from './state.js';
+import type {
+  FormAction,
+  FormDispatchResult,
+  SubmitResult,
+  Middleware,
+  MiddlewareDecision,
+  ValidatorAdapter,
+} from './contracts.js';
+import type { FormStore } from './store.js';
+import type { TransformDefinition } from './transforms.js';
+import { parsePath } from './path-parser.js';
+import { assertSafeSegment } from '@ghost/predicate';
+import { evaluateExpressions, applyRuleWrites } from './expression-integration.js';
+import { resolveActiveStage, applySubmitOutcome } from './submit.js';
+import { normalizeIssues } from './validation.js';
+import { runTransforms } from './transforms.js';
+import { runVetoHooksSync, runNotifyHooksSync } from './middleware-runner.js';
+import { FormrError } from './errors.js';
+
+/** Set a value at a dot/bracket path inside a nested object, returning a new root */
+function setAtPath(root: unknown, segments: readonly (string | number)[], value: unknown): unknown {
+  if (segments.length === 0) return value;
+  const [head, ...rest] = segments;
+  assertSafeSegment(String(head));
+  if (Array.isArray(root)) {
+    const result = [...root];
+    (result as unknown as Record<string | number, unknown>)[head] = setAtPath(result[head as number], rest, value);
+    return result;
+  }
+  const nextSeg = rest[0];
+  const nextIsNumeric = nextSeg !== undefined && (typeof nextSeg === 'number' || /^(?:0|[1-9]\d*)$/.test(String(nextSeg)));
+  const obj = (root ?? (typeof head === 'number' ? [] : {})) as Record<string, unknown>;
+  if (Array.isArray(obj)) {
+    const result = [...obj];
+    (result as unknown as Record<string | number, unknown>)[head] = setAtPath(result[head as number], rest, value);
+    return result;
+  }
+  const child = obj[String(head)];
+  const childDefault = nextIsNumeric ? [] : {};
+  return { ...obj, [head]: setAtPath(child ?? (rest.length > 0 ? childDefault : undefined), rest, value) };
+}
+
+/** Pipeline context — everything the 18-step engine needs */
+export interface PipelineContext<S extends string = string> {
+  readonly action: FormAction;
+  readonly store: FormStore<S>;
+  readonly options: CreateFormOptions<S>;
+  readonly stagePolicy: StagePolicy<S>;
+  readonly submitContext?: SubmitContext<S>;
+  readonly isSubmit: boolean;
+}
+
+/** Pipeline result — outcome of the 18-step execution */
+export interface PipelineResult<S extends string = string> {
+  readonly ok: boolean;
+  readonly error?: string;
+  readonly vetoed?: boolean;
+  readonly vetoReason?: string;
+  readonly issues?: readonly ValidationIssue<S>[];
+}
+
+
+
+/** Resolve TransformDefinitions from options.transforms (duck-type check) */
+function getTransformDefs<S extends string>(options: CreateFormOptions<S>): readonly TransformDefinition[] {
+  if (!options.transforms?.length) return [];
+  return options.transforms.filter(
+    (t): t is TransformDefinition => 'transform' in t && typeof (t as TransformDefinition).transform === 'function',
+  );
+}
+
+/** Run validators synchronously; throws FORMR_ASYNC_IN_SYNC_PIPELINE if any return a Promise */
+function runValidators<S extends string>(
+  validators: readonly ValidatorAdapter<S>[],
+  state: FormState<S>,
+  stage: S,
+  submitContext?: SubmitContext<S>,
+): readonly ValidationIssue<S>[] {
+  const allIssues: ValidationIssue<S>[] = [];
+  for (const v of validators) {
+    const input = submitContext
+      ? { data: state.data, uiState: state.uiState, stage, context: submitContext }
+      : { data: state.data, uiState: state.uiState, stage };
+    const result = v.validate(input);
+    if (result instanceof Promise) {
+      throw new FormrError(
+        'FORMR_ASYNC_IN_SYNC_PIPELINE',
+        `Validator "${v.id}" returned a Promise in synchronous pipeline — use async submit path`,
+      );
+    }
+    allIssues.push(...result);
+  }
+  return allIssues;
+}
+
+/**
+ * ADR §8 — Execute the full 18-step action-to-commit pipeline.
+ * All-or-nothing transactional semantics: no partial commits.
+ */
+export function executePipeline<S extends string>(ctx: PipelineContext<S>): PipelineResult<S> {
+  const { action, store, options, stagePolicy, submitContext, isSubmit } = ctx;
+  const middlewares = (options.middleware ?? []) as readonly Middleware<S>[];
+
+  // Step 1: Normalize input — parse/validate path
+  if (action.path !== undefined) {
+    try {
+      parsePath(action.path);
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  // Step 2: Begin transaction — capture immutable prevState snapshot
+  const tx = store.beginTransaction();
+  const prevState = tx.prevState;
+
+  try {
+    // Step 3: Middleware beforeAction — MAY veto
+    const beforeActionDecision = runVetoHooksSync(middlewares, 'beforeAction', { action, state: prevState });
+    if (beforeActionDecision.action === 'veto') {
+      store.rollbackTransaction(tx);
+      return { ok: false, vetoed: true, vetoReason: (beforeActionDecision as { reason: string }).reason };
+    }
+
+    // Step 4: Apply ingress/field transforms
+    let transformedValue = action.value;
+    if (action.path !== undefined && transformedValue !== undefined) {
+      const transformDefs = getTransformDefs(options);
+      if (transformDefs.length > 0) {
+        const canonical = parsePath(action.path);
+        const pathStr = canonical.segments.join('.');
+        transformedValue = runTransforms(transformDefs, 'ingress', transformedValue, { path: pathStr, state: tx.draftState });
+        transformedValue = runTransforms(transformDefs, 'field', transformedValue, { path: pathStr, state: tx.draftState });
+      }
+    }
+
+    // Step 5: Apply base mutation
+    if (action.type === 'set-value' && action.path !== undefined) {
+      const canonical = parsePath(action.path);
+      tx.mutate((draft) => {
+        if (canonical.namespace === 'ui') {
+          return { ...draft, uiState: setAtPath(draft.uiState, canonical.segments, transformedValue) };
+        }
+        return { ...draft, data: setAtPath(draft.data, canonical.segments, transformedValue) };
+      });
+    }
+
+    // Step 6: Middleware beforeEvaluate
+    runNotifyHooksSync(middlewares, 'beforeEvaluate', { action, state: tx.draftState });
+
+    // Step 7: Evaluate expressions and rules to fixed point
+    if (options.expressionEngine && options.rules?.length) {
+      tx.mutate((draft) => {
+        const writes = evaluateExpressions(options.expressionEngine!, draft, options.rules!);
+        return writes.length > 0 ? applyRuleWrites(draft, writes) : draft;
+      });
+    }
+
+    // Step 8: Middleware afterEvaluate
+    runNotifyHooksSync(middlewares, 'afterEvaluate', { action, state: tx.draftState });
+
+    // Step 9: Resolve active validation stage
+    const activeStage = resolveActiveStage(tx.draftState.meta, submitContext);
+
+    // Step 10: Middleware beforeValidate
+    runNotifyHooksSync(middlewares, 'beforeValidate', { action, state: tx.draftState, stage: activeStage });
+
+    // Step 11: Run validators and normalize to issue envelope
+    let issues: readonly ValidationIssue<S>[] = [];
+    if (options.validators?.length) {
+      const rawIssues = runValidators(options.validators, tx.draftState, activeStage, submitContext);
+      issues = normalizeIssues(rawIssues, stagePolicy);
+    }
+
+    // Step 12: Middleware afterValidate
+    runNotifyHooksSync(middlewares, 'afterValidate', { action, state: tx.draftState, issues });
+
+    // Step 13: If submit action — run beforeSubmit; MAY veto
+    if (isSubmit && submitContext) {
+      const beforeSubmitDecision = runVetoHooksSync(middlewares, 'beforeSubmit', {
+        action, state: tx.draftState, submitContext,
+      });
+      if (beforeSubmitDecision.action === 'veto') {
+        store.rollbackTransaction(tx);
+        return { ok: false, vetoed: true, vetoReason: (beforeSubmitDecision as { reason: string }).reason };
+      }
+    }
+
+    // Step 14: Abort gate — if any fatal runtime error, rollback (handled by catch)
+    // Write issues into draft (always update to clear stale issues from previous dispatches)
+    tx.mutate((draft) => ({ ...draft, issues }));
+
+    // Step 15: Commit atomically
+    store.commitTransaction(tx);
+
+    // Step 16: Notify subscribers/selectors (handled by store.commitTransaction)
+
+    // Step 17: Middleware afterAction
+    const nextState = store.getState();
+    runNotifyHooksSync(middlewares, 'afterAction', { action, prevState, nextState });
+
+    return { ok: true, issues };
+  } catch (err) {
+    // Step 14: Abort gate — rollback full transaction on fatal error
+    try {
+      store.rollbackTransaction(tx);
+    } catch {
+      // Transaction may already be rolled back
+    }
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}

@@ -1,5 +1,5 @@
 import type { PluginContract } from "@ghost/plugin-contracts";
-import { createDefaultIntentWhenMatcher } from "./intents/matcher/default-when-matcher.js";
+import { createPredicateWhenMatcher } from "./intents/matcher/predicate-when-matcher.js";
 import type {
   IntentFactBag,
   IntentWhenMatcher,
@@ -140,7 +140,7 @@ export function resolveIntentWithTrace(
   intent: ShellIntent,
   options: IntentRuntimeOptions = {},
 ): IntentResolutionWithTrace {
-  const matcher = options.matcher ?? createDefaultIntentWhenMatcher();
+  const matcher = options.matcher ?? createPredicateWhenMatcher();
   const traces: IntentActionTrace[] = [];
   const matches: IntentActionMatch[] = [];
 

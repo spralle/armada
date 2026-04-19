@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/plugin-contracts",
+  "name": "@ghost/formr-core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -15,11 +15,11 @@
   "files": [
     "dist"
   ],
-  "scripts": {
-    "build": "tsc -p tsconfig.json"
-  },
   "dependencies": {
-    "@ghost/predicate": "workspace:*",
-    "zod": "^3.24.2"
+    "@ghost/predicate": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "bun test"
   }
 }
