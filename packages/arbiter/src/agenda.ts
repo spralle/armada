@@ -49,8 +49,18 @@ export function createAgenda(): Agenda {
       timestamp: ++counter,
       specificity: computeSpecificity(rule),
     };
-    activations.push(activation);
-    activations.sort(compareActivations);
+    // Binary search for sorted insertion position
+    let lo = 0;
+    let hi = activations.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (compareActivations(activations[mid]!, activation) <= 0) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    activations.splice(lo, 0, activation);
   };
 
   const removeActivation = (ruleName: string): void => {

@@ -33,6 +33,7 @@ export interface ScopeManager {
   readonly revertRule: (ruleName: string) => readonly string[];
   readonly clearWriteRecords: (ruleName: string) => void;
   readonly getState: () => Readonly<Record<string, unknown>>;
+  readonly getReadView: () => Readonly<Record<string, unknown>>;
   readonly snapshot: () => unknown;
   readonly resolveNamespace: (path: string) => { namespace: Namespace; localPath: string };
 }
@@ -290,6 +291,16 @@ export function createScopeManager(
     return structuredClone(stores);
   }
 
+  function getReadView(): Readonly<Record<string, unknown>> {
+    const result: Record<string, unknown> = { ...stores.root };
+    for (const ns of ['$ui', '$state', '$meta', '$contributions'] as const) {
+      if (Object.keys(stores[ns]).length > 0) {
+        result[ns] = stores[ns];
+      }
+    }
+    return result;
+  }
+
   return {
     get: readPath,
     set: writePath,
@@ -301,6 +312,7 @@ export function createScopeManager(
     revertRule,
     clearWriteRecords,
     getState,
+    getReadView,
     snapshot: snapshotState,
     resolveNamespace,
   };

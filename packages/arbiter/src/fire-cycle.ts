@@ -114,7 +114,7 @@ export function evaluateCondition(
   rule: CompiledRule,
   scope: ScopeManager,
 ): boolean {
-  const state = scope.getState();
+  const state = scope.getReadView();
   const result = evaluate(rule.condition as ExprNode, state);
   return Boolean(result);
 }

@@ -222,4 +222,28 @@ describe('ScopeManager', () => {
       expect(state['y']).toBe(2);
     });
   });
+
+  describe('getReadView', () => {
+    it('returns same data as getState', () => {
+      const scope = createScopeManager({ x: 1, nested: { a: 2 } });
+      scope.set('$ui.visible', true, 'test');
+
+      const view = scope.getReadView();
+      const state = scope.getState();
+
+      expect(view.x).toBe(state.x);
+      expect(view.nested).toEqual(state.nested);
+      expect((view.$ui as Record<string, unknown>).visible).toBe(true);
+    });
+
+    it('reflects current state without cloning', () => {
+      const scope = createScopeManager({ x: 1 });
+      const view1 = scope.getReadView();
+      expect(view1.x).toBe(1);
+
+      scope.set('x', 2, 'test');
+      const view2 = scope.getReadView();
+      expect(view2.x).toBe(2);
+    });
+  });
 });
