@@ -28,11 +28,11 @@ function action(id: string): InvokableAction {
 function record(
   seqInputs: string[],
   layer: KeybindingLayer = "defaults",
-  opts?: { when?: { role: string }; predicate?: { mode: string } },
+  opts?: { when?: { role: string }; actionWhen?: { mode: string } },
 ): RegisteredKeybindingRecord {
   const act = action(seqInputs.join("-"));
-  if (opts?.predicate) {
-    (act as any).predicate = opts.predicate;
+  if (opts?.actionWhen) {
+    (act as any).when = opts.actionWhen;
   }
   return {
     action: act,

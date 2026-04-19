@@ -222,8 +222,8 @@ function toRegisteredCommand(
     title: contribution.title,
     intent: contribution.intent,
     pluginId,
-    when: contribution.predicate,
-    enablement: contribution.predicate,
+    when: contribution.when,
+    enablement: contribution.when,
   };
 }
 

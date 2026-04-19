@@ -21,7 +21,7 @@ export interface InvokableAction {
   title: string;
   intent: string;
   pluginId: string;
-  predicate?: PluginContributionPredicate | undefined;
+  when?: PluginContributionPredicate | undefined;
   hidden?: boolean | undefined;
 }
 
@@ -108,7 +108,7 @@ export function resolveMenuActions(
     .sort(compareMenuItems)
     .map((item) => findAction(surface.actions, item.action))
     .filter((action): action is InvokableAction => action !== null)
-    .filter((action) => evaluatePredicate(action.predicate, context, matcher));
+    .filter((action) => evaluatePredicate(action.when, context, matcher));
 }
 
 /** Default delegate for action-by-ID dispatch: never shows chooser, assumes plugin already activated. */
@@ -131,7 +131,7 @@ export async function dispatchAction(
     return false;
   }
 
-  if (!evaluatePredicate(action.predicate, context, matcher)) {
+  if (!evaluatePredicate(action.when, context, matcher)) {
     return false;
   }
 
@@ -149,7 +149,7 @@ function mapAction(pluginId: string, contribution: PluginActionContribution): In
     id: contribution.id,
     title: contribution.title,
     intent: contribution.intent,
-    predicate: contribution.predicate,
+    when: contribution.when,
     pluginId,
     hidden: contribution.hidden,
   };

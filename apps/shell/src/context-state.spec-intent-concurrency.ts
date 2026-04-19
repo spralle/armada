@@ -45,7 +45,7 @@ function createPlugins() {
         manifest: { id: "plugin-conc-orders", name: "Conc Orders", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "conc-orders.open", title: "Open Orders", intent: "conc.orders.open", predicate: { entity: "order" } },
+            { id: "conc-orders.open", title: "Open Orders", intent: "conc.orders.open", when: { entity: "order" } },
           ],
         },
       }),
@@ -58,7 +58,7 @@ function createPlugins() {
         manifest: { id: "plugin-conc-vessels", name: "Conc Vessels", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "conc-vessels.open", title: "Open Vessels", intent: "conc.vessels.open", predicate: { entity: "vessel" } },
+            { id: "conc-vessels.open", title: "Open Vessels", intent: "conc.vessels.open", when: { entity: "vessel" } },
           ],
         },
       }),
@@ -76,7 +76,7 @@ function createMultiMatchPlugins() {
         manifest: { id: "plugin-conc-a", name: "Conc A", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "conc-a.action", title: "Conc A Action", intent: "conc.shared.action", predicate: { scope: "shared" } },
+            { id: "conc-a.action", title: "Conc A Action", intent: "conc.shared.action", when: { scope: "shared" } },
           ],
         },
       }),
@@ -89,7 +89,7 @@ function createMultiMatchPlugins() {
         manifest: { id: "plugin-conc-b", name: "Conc B", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "conc-b.action", title: "Conc B Action", intent: "conc.shared.action", predicate: { scope: "shared" } },
+            { id: "conc-b.action", title: "Conc B Action", intent: "conc.shared.action", when: { scope: "shared" } },
           ],
         },
       }),

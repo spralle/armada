@@ -233,14 +233,14 @@ function readPluginActions(contract: PluginContract): {
   when: Record<string, unknown>;
 }[] {
   const contributes = contract.contributes as
-    | { actions?: { id: string; title: string; intent: string; predicate?: Record<string, unknown> }[] }
+    | { actions?: { id: string; title: string; intent: string; when?: Record<string, unknown> }[] }
     | undefined;
   return (contributes?.actions ?? []).map((action) => ({
     id: action.id,
     title: action.title,
     handler: action.id,
     intentType: action.intent,
-    when: action.predicate ?? {},
+    when: action.when ?? {},
   }));
 }
 

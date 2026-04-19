@@ -23,7 +23,7 @@ export function registerIntentRuntimeTraceOperatorsSpecs(harness: SpecHarness): 
                 id: "orders.operator-match",
                 title: "Operator match",
                 intent: "domain.orders.filter",
-                predicate: {
+                when: {
                   mode: { $eq: "strict", $ne: "legacy" },
                   status: { $in: ["open", "pending"] },
                   rank: { $gt: 1, $gte: 2, $lt: 4, $lte: 3 },
@@ -70,7 +70,7 @@ export function registerIntentRuntimeTraceOperatorsSpecs(harness: SpecHarness): 
                 id: "orders.operator-failure",
                 title: "Operator failure",
                 intent: "domain.orders.filter",
-                predicate: {
+                when: {
                   rank: { $gt: 10 },
                 },
               },

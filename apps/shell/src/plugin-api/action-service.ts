@@ -140,7 +140,7 @@ export function createActionService(
       for (const action of surface.actions) {
         if (action.hidden) continue;
         const enabled = evaluateContributionPredicate(
-          action.predicate,
+          action.when,
           context,
         );
         const keybinding = keybindingsByAction.get(action.id);
