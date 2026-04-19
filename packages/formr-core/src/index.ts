@@ -45,6 +45,9 @@ export {
   type FieldConfig,
   type FieldApi,
   type FormApi,
+  type ProductionRule,
+  type RuleSession,
+  type ArbiterSessionConfig,
 } from './contracts.js';
 
 // Stage policy (SE4.1)
@@ -65,6 +68,9 @@ export { executePipeline, type PipelineContext, type PipelineResult } from './pi
 
 // Expression integration (SE3.5)
 export { buildExpressionScope, evaluateExpressions, applyRuleWrites } from './expression-integration.js';
+
+// Arbiter integration (ADR arbiter §9)
+export { createArbiterAdapter, createArbiterAdapterFromSession, type ArbiterFormAdapter } from './arbiter-integration.js';
 
 // Rule engine (moved from @ghost/predicate)
 export { executeRules, type RuleExecutionConfig, type RuleExecutionResult } from './rule-engine.js';

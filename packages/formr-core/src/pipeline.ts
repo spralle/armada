@@ -12,6 +12,7 @@ import type { TransformDefinition } from './transforms.js';
 import { parsePath } from './path-parser.js';
 import { assertSafeSegment } from '@ghost/predicate';
 import { evaluateExpressions, applyRuleWrites } from './expression-integration.js';
+import type { ArbiterFormAdapter } from './arbiter-integration.js';
 import { resolveActiveStage, applySubmitOutcome } from './submit.js';
 import { normalizeIssues } from './validation.js';
 import { runTransforms } from './transforms.js';
@@ -49,6 +50,7 @@ export interface PipelineContext<S extends string = string> {
   readonly stagePolicy: StagePolicy<S>;
   readonly submitContext?: SubmitContext<S>;
   readonly isSubmit: boolean;
+  readonly arbiterAdapter?: ArbiterFormAdapter | undefined;
 }
 
 /** Pipeline result — outcome of the 18-step execution */
@@ -149,8 +151,13 @@ export function executePipeline<S extends string>(ctx: PipelineContext<S>): Pipe
     // Step 6: Middleware beforeEvaluate
     runNotifyHooksSync(middlewares, 'beforeEvaluate', { action, state: tx.draftState });
 
-    // Step 7: Evaluate expressions and rules to fixed point
-    if (options.expressionEngine && options.rules?.length) {
+    // Step 7: Evaluate expressions and rules
+    if (ctx.arbiterAdapter) {
+      tx.mutate((draft) => {
+        const writes = ctx.arbiterAdapter!.syncAndFire(draft);
+        return writes.length > 0 ? applyRuleWrites(draft, writes) : draft;
+      });
+    } else if (options.expressionEngine && options.rules?.length) {
       tx.mutate((draft) => {
         const writes = evaluateExpressions(options.expressionEngine!, draft, options.rules!);
         return writes.length > 0 ? applyRuleWrites(draft, writes) : draft;

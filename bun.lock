@@ -66,6 +66,7 @@
       "name": "@ghost/formr-core",
       "version": "0.0.0",
       "dependencies": {
+        "@ghost/arbiter": "workspace:*",
         "@ghost/predicate": "workspace:*",
       },
     },

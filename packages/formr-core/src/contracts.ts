@@ -5,6 +5,9 @@ import type { TransformDefinition } from './transforms.js';
 
 export type { ExprNode, ExpressionDefinition, EvaluationScope };
 
+// Re-export arbiter types for consumers
+export type { ProductionRule, RuleSession, SessionConfig as ArbiterSessionConfig } from '@ghost/arbiter';
+
 /**
  * ADR section 10 — Transform is the config-time type alias.
  * TransformDefinition (from transforms.ts) is the full runtime type with transform().

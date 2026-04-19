@@ -19,6 +19,8 @@ import { initMiddlewares, disposeMiddlewares, runNotifyHooksAsync } from './midd
 import { FormrError } from './errors.js';
 import { runTransforms } from './transforms.js';
 import type { TransformDefinition } from './transforms.js';
+import { createArbiterAdapter, createArbiterAdapterFromSession } from './arbiter-integration.js';
+import type { ArbiterFormAdapter } from './arbiter-integration.js';
 import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './extensions.js';
 
 /** Check if two CanonicalPaths are equal */
@@ -66,6 +68,15 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
 
   const store = new FormStore<S>(initialState, options.stateStrategy);
 
+  // Create arbiter adapter if arbiter rules or session provided
+  let arbiterAdapter: ArbiterFormAdapter | undefined;
+  if (options.arbiterSession) {
+    arbiterAdapter = createArbiterAdapterFromSession(options.arbiterSession);
+  } else if (options.arbiterRules?.length) {
+    const initialDataObj = (options.initialData ?? {}) as Readonly<Record<string, unknown>>;
+    arbiterAdapter = createArbiterAdapter(options.arbiterRules, initialDataObj);
+  }
+
   // Field cache: keyed by rawPath + serialized config
   const fieldCache = new Map<string, FieldApi>();
 
@@ -82,6 +93,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
       options,
       stagePolicy: policy,
       isSubmit: false,
+      arbiterAdapter,
     });
     const errorMsg = result.error ?? result.vetoReason;
     return errorMsg ? { ok: result.ok, error: errorMsg } : { ok: result.ok };
@@ -98,6 +110,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
       options,
       stagePolicy: policy,
       isSubmit: false,
+      arbiterAdapter,
     });
     const errorMsg2 = result.error ?? result.vetoReason;
     return errorMsg2 ? { ok: result.ok, error: errorMsg2 } : { ok: result.ok };
@@ -197,6 +210,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
       stagePolicy: policy,
       submitContext,
       isSubmit: true,
+      arbiterAdapter,
     });
   }
 
@@ -320,6 +334,7 @@ export function createForm<S extends string = 'draft' | 'submit' | 'approve'>(
     field,
     subscribe: (listener) => store.subscribe(listener),
     dispose: () => {
+      arbiterAdapter?.dispose();
       const middlewares = (options.middleware ?? []) as readonly Middleware<S>[];
       disposeMiddlewares(middlewares);
       fieldCache.clear();

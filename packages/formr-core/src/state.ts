@@ -88,6 +88,8 @@ export interface CreateFormOptions<
   readonly rules?: readonly RuleDefinition[];
   readonly middleware?: readonly Middleware<S>[];
   readonly transforms?: readonly Transform[];
+  readonly arbiterRules?: readonly ProductionRule[] | undefined;
+  readonly arbiterSession?: RuleSession | undefined;
   /** Form-level field defaults — merged below field-level overrides (tier 2 of 3) */
   readonly fieldDefaults?: Readonly<FieldConfig<S>>;
   readonly onSubmit?: (
@@ -113,3 +115,4 @@ import type {
   SubmitResult,
 } from './contracts.js';
 import type { StateStrategy } from './transaction.js';
+import type { ProductionRule, RuleSession } from '@ghost/arbiter';

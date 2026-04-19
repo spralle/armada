@@ -1,0 +1,146 @@
+import { describe, test, expect } from 'bun:test';
+import { createForm } from '../create-form.js';
+import type { ProductionRule } from '@ghost/arbiter';
+import { createSession } from '@ghost/arbiter';
+import { createArbiterAdapter, createArbiterAdapterFromSession } from '../arbiter-integration.js';
+import type { FormState } from '../state.js';
+
+// Helper to make a minimal FormState
+function makeState(overrides: Partial<FormState> = {}): FormState {
+  return {
+    data: overrides.data ?? {},
+    uiState: overrides.uiState ?? {},
+    meta: overrides.meta ?? { stage: 'draft', validation: {} },
+    issues: overrides.issues ?? [],
+  };
+}
+
+describe('createArbiterAdapter', () => {
+  test('creates adapter from rules', () => {
+    const rules: readonly ProductionRule[] = [{
+      name: 'setTotal',
+      when: { qty: { $gt: 0 } },
+      then: [{ type: 'set', path: '$ui.showTotal', value: true }],
+    }];
+    const adapter = createArbiterAdapter(rules);
+    expect(adapter.session).toBeDefined();
+    expect(adapter.syncAndFire).toBeInstanceOf(Function);
+    adapter.dispose();
+  });
+
+  test('syncAndFire returns writes when rules fire', () => {
+    const rules: readonly ProductionRule[] = [{
+      name: 'showDiscount',
+      when: { qty: { $gte: 10 } },
+      then: [{ type: 'set', path: '$ui.showDiscount', value: true }],
+    }];
+    const adapter = createArbiterAdapter(rules);
+    const state = makeState({ data: { qty: 15 } });
+    const writes = adapter.syncAndFire(state);
+    expect(writes.length).toBeGreaterThan(0);
+    expect(writes.some(w => w.path === '$ui.showDiscount')).toBe(true);
+    adapter.dispose();
+  });
+
+  test('syncAndFire returns empty when no rules fire', () => {
+    const rules: readonly ProductionRule[] = [{
+      name: 'showDiscount',
+      when: { qty: { $gte: 10 } },
+      then: [{ type: 'set', path: '$ui.showDiscount', value: true }],
+    }];
+    const adapter = createArbiterAdapter(rules);
+    const state = makeState({ data: { qty: 3 } });
+    const writes = adapter.syncAndFire(state);
+    expect(Array.isArray(writes)).toBe(true);
+    adapter.dispose();
+  });
+});
+
+describe('createArbiterAdapterFromSession', () => {
+  test('wraps a pre-configured session', () => {
+    const session = createSession({
+      rules: [{ name: 'r1', when: { x: 1 }, then: [{ type: 'set', path: '$ui.y', value: 2 }] }],
+    });
+    const adapter = createArbiterAdapterFromSession(session);
+    expect(adapter.session).toBe(session);
+    adapter.dispose();
+  });
+});
+
+describe('createForm with arbiterRules', () => {
+  test('form with arbiter rules evaluates on setValue', () => {
+    const rules: readonly ProductionRule[] = [{
+      name: 'calcTotal',
+      when: {},
+      then: [{ type: 'set', path: '$ui.evaluated', value: true }],
+    }];
+    const form = createForm({
+      initialData: { qty: 0 },
+      arbiterRules: rules,
+    });
+    form.setValue('qty', 5);
+    const state = form.getState();
+    expect((state.uiState as Record<string, unknown>).evaluated).toBe(true);
+    form.dispose();
+  });
+
+  test('form without arbiter or expression engine skips step 7', () => {
+    const form = createForm({ initialData: { x: 1 } });
+    const result = form.setValue('x', 2);
+    expect(result.ok).toBe(true);
+    expect(form.getState().data).toEqual({ x: 2 });
+    form.dispose();
+  });
+
+  test('arbiter rules can write to data namespace', () => {
+    const rules: readonly ProductionRule[] = [{
+      name: 'setLabel',
+      when: {},
+      then: [{ type: 'set', path: 'label', value: 'computed' }],
+    }];
+    const form = createForm({
+      initialData: { name: 'test', label: '' },
+      arbiterRules: rules,
+    });
+    form.setValue('name', 'hello');
+    expect((form.getState().data as Record<string, unknown>).label).toBe('computed');
+    form.dispose();
+  });
+
+  test('form with arbiterSession accepts pre-configured session', () => {
+    const session = createSession({
+      rules: [{ name: 'r1', when: {}, then: [{ type: 'set', path: '$ui.ready', value: true }] }],
+    });
+    const form = createForm({
+      initialData: { x: 0 },
+      arbiterSession: session,
+    });
+    form.setValue('x', 1);
+    expect((form.getState().uiState as Record<string, unknown>).ready).toBe(true);
+    form.dispose();
+  });
+
+  test('old expressionEngine path still works (backward compat)', () => {
+    const engine = {
+      id: 'mock',
+      evaluate: (node: unknown) => {
+        const n = node as { kind: string; value: unknown };
+        if (n.kind === 'literal') return n.value;
+        return null;
+      },
+    };
+    const rules = [{
+      id: 'r1',
+      when: { kind: 'literal' as const, value: true },
+      writes: [{ path: 'computed', value: { kind: 'literal' as const, value: 42 }, mode: 'set' as const }],
+    }];
+    const form = createForm({
+      initialData: { x: 0, computed: 0 },
+      expressionEngine: engine,
+      rules,
+    });
+    form.setValue('x', 1);
+    expect((form.getState().data as Record<string, unknown>).computed).toBe(42);
+    form.dispose();
+  });
+});
