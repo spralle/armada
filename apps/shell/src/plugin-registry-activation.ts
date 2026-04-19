@@ -7,6 +7,7 @@ import {
 } from "./plugin-api/ghost-api-factory.js";
 import type { LayerRegistry } from "./layer/registry.js";
 import type { RuntimeFirstPluginLoader, PluginLoadError } from "./plugin-loader.js";
+import { buildActivationPlan } from "./plugin-activation-plan.js";
 import { pushDiagnostic, transitionLifecycle } from "./plugin-registry-diagnostics.js";
 import type {
   PluginActivationTrigger,
@@ -85,9 +86,7 @@ async function activateState(
   apiDeps?: GhostApiFactoryDependencies,
   layerRegistry?: LayerRegistry | null,
 ): Promise<void> {
-  state.contract = null;
   state.failure = null;
-  state.activate = null;
   transitionLifecycle(state, "activating", trigger);
 
   const compatibility = evaluateShellPluginCompatibility(
@@ -95,6 +94,8 @@ async function activateState(
     state.descriptor.compatibility.pluginContract,
   );
   if (!compatibility.compatible) {
+    state.contract = null;
+    state.activate = null;
     state.failure = {
       code: compatibility.code,
       message: `${compatibility.message} (shell='${SHELL_CONTRACT_DECLARATION}', plugin='${state.descriptor.compatibility.pluginContract}')`,
@@ -113,9 +114,12 @@ async function activateState(
   }
 
   try {
-    const loadResult = await pluginLoader.loadPluginContract(state.descriptor);
-    state.contract = loadResult.contract;
-    state.activate = loadResult.activate;
+    // Reuse contract if already preloaded; otherwise load via federation.
+    if (!state.contract) {
+      const loadResult = await pluginLoader.loadPluginContract(state.descriptor);
+      state.contract = loadResult.contract;
+      state.activate = loadResult.activate;
+    }
 
     const dependencyFailures = capabilityRegistry.validateDependencies({
       pluginId,
@@ -256,14 +260,15 @@ export interface StartupActivationResult {
 }
 
 /**
- * Eagerly activate all enabled plugins that declare `activationEvents`
- * including `"onStartup"`.
+ * Eagerly activate all enabled plugins using dependency-aware ordering.
  *
- * Because contracts are loaded lazily, this function activates every enabled
- * plugin via the registry, then inspects the loaded contract for the
- * `onStartup` event. Plugins whose contracts do not include `onStartup`
- * are still activated as a side effect — this is intentional during bootstrap
- * to front-load contract loading for theme discovery.
+ * 1. **Plan**: a dependency DAG is built from `pluginDependencies` in each
+ *    plugin's descriptor (provided by the backend), then topologically
+ *    sorted into layers via Kahn's algorithm.
+ * 2. **Activate**: each layer is activated concurrently — a plugin only
+ *    starts once every plugin it depends on is already active.
+ *
+ * Plugins that form circular dependencies are rejected upfront.
  */
 export async function activateByStartupEvent(
   registry: ShellPluginRegistry,
@@ -276,22 +281,38 @@ export async function activateByStartupEvent(
     failed: [],
   };
 
-  const activationPromises = snapshot.plugins
-    .filter((plugin) => plugin.enabled)
-    .map(async (plugin) => {
+  const enabled = snapshot.plugins.filter((p) => p.enabled);
+  if (enabled.length === 0) return result;
+
+  // Phase 1 — build dependency-aware activation plan from descriptor metadata.
+  const planEntries = enabled.map((plugin) => ({
+    id: plugin.id,
+    pluginDependencies: plugin.descriptor.pluginDependencies ?? [],
+  }));
+  const plan = buildActivationPlan(planEntries);
+
+  for (const rejection of plan.rejected) {
+    result.failed.push(rejection.pluginId);
+  }
+
+  // Phase 2 — activate layer by layer; within a layer, concurrently.
+  for (const layer of plan.layers) {
+    const layerPromises = layer.map(async (pluginId) => {
       try {
-        const success = await registry.activateByEvent(plugin.id, "onStartup");
+        const success = await registry.activateByEvent(pluginId, "onStartup");
         if (success) {
-          result.activated.push(plugin.id);
+          result.activated.push(pluginId);
         } else {
-          result.failed.push(plugin.id);
+          result.failed.push(pluginId);
         }
       } catch {
-        result.failed.push(plugin.id);
+        result.failed.push(pluginId);
       }
       onProgress?.();
     });
 
-  await Promise.all(activationPromises);
+    await Promise.all(layerPromises);
+  }
+
   return result;
 }

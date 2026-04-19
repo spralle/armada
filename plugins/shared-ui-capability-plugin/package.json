@@ -1,10 +1,24 @@
 {
-  "name": "@ghost/shared-ui-capability-plugin",
+  "name": "ghost.shared.ui-capabilities",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.shared.ui-capabilities",
-    "devPort": 4175
+    "displayName": "Shared UI Capabilities",
+    "contributes": {
+      "capabilities": {
+        "components": [
+          {
+            "id": "ghost.component.jsonform.control",
+            "version": "0.1.0"
+          },
+          {
+            "id": "ghost.component.entity-list.seed",
+            "version": "0.1.0"
+          }
+        ]
+      }
+    }
   },
   "scripts": {
     "dev": "vite"

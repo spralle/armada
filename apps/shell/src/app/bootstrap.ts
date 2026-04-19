@@ -138,7 +138,21 @@ export async function bootstrapShellWithTenantManifest(
   }
 
   // Now activate onStartup plugins — all 7 builtin services are available.
-  await activateByStartupEvent(registry, options.onProgress ? () => options.onProgress!(registry) : undefined);
+  const activationResult = await activateByStartupEvent(registry, options.onProgress ? () => options.onProgress!(registry) : undefined);
+
+  if (activationResult.failed.length > 0) {
+    console.warn(
+      "[shell] plugin activation summary —",
+      `activated: ${activationResult.activated.length},`,
+      `failed: ${activationResult.failed.length}`,
+      activationResult.failed,
+    );
+  } else {
+    console.info(
+      "[shell] plugin activation summary —",
+      `activated: ${activationResult.activated.length}, all OK`,
+    );
+  }
 
   const snapshot = registry.getSnapshot();
 

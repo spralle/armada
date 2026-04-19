@@ -1,11 +1,31 @@
 {
-  "name": "@ghost/example-layer-custom-plugin",
+  "name": "ghost.example-layer-custom",
   "version": "0.0.1",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.example-layer-custom",
-    "devPort": 4185
+    "displayName": "Example: Custom Layer",
+    "contributes": {
+      "layers": [
+        {
+          "name": "widgets",
+          "zOrder": 150,
+          "defaultKeyboard": "on_demand",
+          "defaultPointer": "opaque"
+        }
+      ],
+      "layerSurfaces": [
+        {
+          "id": "example-custom-clock",
+          "component": "ClockWidgetSurface",
+          "layer": "widgets",
+          "anchor": 10,
+          "size": { "width": 200, "height": 200 },
+          "inputBehavior": "opaque",
+          "keyboardInteractivity": "on_demand"
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "vite"

@@ -1,1 +1,1 @@
-export { pluginContract } from "./plugin-contract.js";
+export { pluginContract } from "./plugin-contract-expose.js";

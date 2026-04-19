@@ -1,10 +1,26 @@
 {
-  "name": "@ghost/plugin-keybindings",
+  "name": "ghost.keybindings",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.keybindings",
-    "devPort": 4179
+    "displayName": "Keybindings",
+    "contributes": {
+      "parts": [
+        {
+          "id": "ghost.shell.keybindings",
+          "title": "Keybindings"
+        }
+      ]
+    },
+    "dependsOn": {
+      "services": [
+        {
+          "id": "ghost.keybinding.Service",
+          "versionRange": "^1.0.0"
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "vite"

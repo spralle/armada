@@ -82,6 +82,8 @@ export {
   shellEdgeSlotSchema,
   shellEdgeSlotPositionSchema,
   pluginSlotContributionSchema,
+  pluginLayerSurfaceContributionSchema,
+  pluginLayerDefinitionSchema,
   pluginContributionsSchema,
   pluginConfigurationContributionSchema,
   pluginContractSchema,

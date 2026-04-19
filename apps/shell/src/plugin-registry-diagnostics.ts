@@ -15,6 +15,14 @@ export function pushDiagnostic(
   if (diagnostics.length > MAX_DIAGNOSTICS) {
     diagnostics.length = MAX_DIAGNOSTICS;
   }
+
+  // Surface diagnostics to the console so plugin failures are visible
+  const tag = `[plugin:${diagnostic.pluginId}]`;
+  if (diagnostic.level === "warn") {
+    console.warn(tag, diagnostic.code, diagnostic.message);
+  } else {
+    console.info(tag, diagnostic.code, diagnostic.message);
+  }
 }
 
 export function mapLoaderDiagnostic(diagnostic: PluginLoadDiagnostic): PluginRegistryDiagnostic {

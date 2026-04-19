@@ -8,6 +8,7 @@ export interface TenantPluginDescriptor {
     shell: string;
     pluginContract: string;
   };
+  pluginDependencies?: string[];
 }
 
 export interface TenantPluginManifestResponse {
@@ -49,6 +50,7 @@ export function createCanonicalLocalTenantDescriptors(): TenantPluginDescriptor[
       shell: "^1.0.0",
       pluginContract: "^1.0.0",
     },
+    pluginDependencies: plugin.pluginDependencies,
   }));
 }
 

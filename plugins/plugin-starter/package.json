@@ -1,10 +1,22 @@
 {
-  "name": "@ghost/plugin-starter",
+  "name": "ghost.plugin-starter",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.plugin-starter",
-    "devPort": 4171
+    "displayName": "Plugin Starter",
+    "contributes": {
+      "parts": [
+        {
+          "id": "starter.part",
+          "title": "Starter View",
+          "dock": {
+            "container": "main"
+          },
+          "component": "StarterView"
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "vite"

@@ -91,6 +91,8 @@ export interface ShellPluginRegistry {
   activateByView(pluginId: string, viewId: string): Promise<boolean>;
   activateByIntent(pluginId: string, intentId: string): Promise<boolean>;
   activateByEvent(pluginId: string, eventName: string): Promise<boolean>;
+  /** Load a plugin's contract without activating — used by the activation planner. */
+  preloadContract(pluginId: string): Promise<PluginContract | null>;
   resolveComponentCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
   resolveServiceCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
   getService<T = unknown>(serviceId: string): T | null;

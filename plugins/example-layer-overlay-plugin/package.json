@@ -1,11 +1,23 @@
 {
-  "name": "@ghost/example-layer-overlay-plugin",
+  "name": "ghost.example-layer-overlay",
   "version": "0.0.1",
   "private": true,
   "type": "module",
   "ghost": {
-    "pluginId": "ghost.example-layer-overlay",
-    "devPort": 4184
+    "displayName": "Example: Overlay Layer",
+    "contributes": {
+      "layerSurfaces": [
+        {
+          "id": "example-overlay-lock",
+          "component": "OverlayLockSurface",
+          "layer": "overlay",
+          "anchor": 15,
+          "inputBehavior": "opaque",
+          "keyboardInteractivity": "exclusive",
+          "sessionLock": true
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "vite"

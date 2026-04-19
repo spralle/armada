@@ -181,6 +181,22 @@ export function createShellPluginRegistry(
       notifyListeners();
       return result;
     },
+    async preloadContract(pluginId) {
+      const state = states.get(pluginId);
+      if (!state || !state.enabled) return null;
+      // Already loaded (builtin or previously preloaded)
+      if (state.contract) return state.contract;
+
+      try {
+        const loadResult = await pluginLoader.loadPluginContract(state.descriptor);
+        // Cache the loaded contract + activate fn so activateState can reuse it.
+        state.contract = loadResult.contract;
+        state.activate = loadResult.activate;
+        return loadResult.contract;
+      } catch {
+        return null;
+      }
+    },
     async resolveComponentCapability(requesterPluginId, capabilityId) {
       const provider = capabilityRegistry.resolveComponent(capabilityId, {
         requesterPluginId,

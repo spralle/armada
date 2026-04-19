@@ -265,6 +265,65 @@ export const pluginSlotContributionSchema = z
   })
   .strict();
 
+const focusGrabConfigSchema = z
+  .object({
+    backdrop: z.union([z.boolean(), z.string()]).optional(),
+    dismissOnOutsideClick: z.boolean().optional(),
+  })
+  .strict();
+
+const autoStackConfigSchema = z
+  .object({
+    direction: z.enum(["up", "down", "left", "right"]),
+    gap: z.number().finite(),
+  })
+  .strict();
+
+export const pluginLayerSurfaceContributionSchema = z
+  .object({
+    id: nonEmptyString,
+    component: nonEmptyString,
+    layer: nonEmptyString,
+    anchor: z.number().int(),
+    size: z
+      .object({
+        width: z.union([z.number(), z.string()]).optional(),
+        height: z.union([z.number(), z.string()]).optional(),
+      })
+      .strict()
+      .optional(),
+    margin: z
+      .object({
+        top: z.number().optional(),
+        right: z.number().optional(),
+        bottom: z.number().optional(),
+        left: z.number().optional(),
+      })
+      .strict()
+      .optional(),
+    exclusiveZone: z.number().optional(),
+    keyboardInteractivity: z.enum(["none", "on_demand", "exclusive"]).optional(),
+    inputBehavior: z.enum(["opaque", "passthrough", "content_aware"]).optional(),
+    focusGrab: focusGrabConfigSchema.optional(),
+    opacity: z.number().min(0).max(1).optional(),
+    backdropFilter: z.string().optional(),
+    autoStack: autoStackConfigSchema.optional(),
+    sessionLock: z.boolean().optional(),
+    order: z.number().optional(),
+    when: z.string().optional(),
+  })
+  .strict();
+
+export const pluginLayerDefinitionSchema = z
+  .object({
+    name: nonEmptyString,
+    zOrder: z.number().int(),
+    defaultKeyboard: z.enum(["none", "on_demand", "exclusive"]).optional(),
+    defaultPointer: z.enum(["opaque", "passthrough", "content_aware"]).optional(),
+    supportsSessionLock: z.boolean().optional(),
+  })
+  .strict();
+
 export const pluginContributionsSchema = z
   .object({
     views: z.array(pluginViewContributionSchema).optional(),
@@ -281,6 +340,8 @@ export const pluginContributionsSchema = z
     branding: brandingContributionSchema.optional(),
     configuration: pluginConfigurationContributionSchema.optional(),
     slots: z.array(pluginSlotContributionSchema).optional(),
+    layers: z.array(pluginLayerDefinitionSchema).optional(),
+    layerSurfaces: z.array(pluginLayerSurfaceContributionSchema).optional(),
   })
   .strict();
 
@@ -306,6 +367,7 @@ export const tenantPluginDescriptorSchema = z
     version: nonEmptyString,
     entry: nonEmptyString,
     compatibility: pluginCompatibilityMetadataSchema,
+    pluginDependencies: z.array(nonEmptyString).optional(),
   })
   .strict();
 
