@@ -33,9 +33,9 @@ export interface SubmitContext {
 }
 
 /** ADR section 1.1 — FormState */
-export interface FormState {
-  readonly data: unknown;
-  readonly uiState: unknown;
+export interface FormState<TData = unknown, TUi = unknown> {
+  readonly data: TData;
+  readonly uiState: TUi;
   readonly meta: {
     readonly stage?: string;
     readonly validation: {
@@ -53,11 +53,11 @@ export interface FormState {
 }
 
 /** ADR section 9 — CreateFormOptions */
-export interface CreateFormOptions {
+export interface CreateFormOptions<TData = unknown, TUi = unknown> {
   readonly schema?: unknown;
   readonly uiStateSchema?: unknown;
-  readonly initialData?: unknown;
-  readonly initialUiState?: unknown;
+  readonly initialData?: TData;
+  readonly initialUiState?: TUi;
   readonly validators?: readonly ValidatorAdapter[];
   readonly middleware?: readonly Middleware[];
   readonly transforms?: readonly Transform[];
@@ -66,7 +66,7 @@ export interface CreateFormOptions {
   /** Form-level field defaults — merged below field-level overrides (tier 2 of 3) */
   readonly fieldDefaults?: Readonly<FieldConfig>;
   readonly onSubmit?: (
-    ctx: SubmitExecutionContext,
+    ctx: SubmitExecutionContext<TData, TUi>,
   ) => Promise<SubmitResult>;
   readonly timeouts?: {
     readonly validator?: number;

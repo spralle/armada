@@ -2,6 +2,7 @@ import type { CanonicalPath } from './path.js';
 import type { FormState, ValidationIssue, SubmitContext } from './state.js';
 import type { ExprNode, ExpressionDefinition, EvaluationScope } from '@ghost/predicate';
 import type { TransformDefinition } from './transforms.js';
+import type { DeepKeys, DeepValue } from './type-utils.js';
 
 export type { ExprNode, ExpressionDefinition, EvaluationScope };
 
@@ -114,10 +115,10 @@ export interface Middleware {
 }
 
 /** ADR section 9 — SubmitExecutionContext */
-export interface SubmitExecutionContext {
-  readonly form: FormApi;
+export interface SubmitExecutionContext<TData = unknown, TUi = unknown> {
+  readonly form: FormApi<TData, TUi>;
   readonly submitContext: SubmitContext;
-  readonly payload: unknown;
+  readonly payload: TData;
 }
 
 /** ADR section 9 — SubmitResult */
@@ -157,23 +158,25 @@ export interface FieldConfig {
 }
 
 /** ADR section 9 — FieldApi */
-export interface FieldApi {
+export interface FieldApi<TData = unknown, TUi = unknown, TPath extends string = string> {
   readonly path: CanonicalPath;
-  get(): unknown;
-  set(value: unknown): FormDispatchResult;
+  get(): DeepValue<TData, TPath>;
+  set(value: DeepValue<TData, TPath>): FormDispatchResult;
   validate(): readonly ValidationIssue[];
   issues(): readonly ValidationIssue[];
-  ui<T = unknown>(selector: (uiState: unknown) => T): T;
+  ui<T = unknown>(selector: (uiState: TUi) => T): T;
 }
 
 /** ADR section 9 — FormApi */
-export interface FormApi {
-  getState(): FormState;
+export interface FormApi<TData = unknown, TUi = unknown> {
+  getState(): FormState<TData, TUi>;
   dispatch(action: FormAction): FormDispatchResult;
+  setValue<P extends string & DeepKeys<TData>>(path: P, value: DeepValue<TData, P>): FormDispatchResult;
   setValue(path: string, value: unknown): FormDispatchResult;
   validate(stage?: string): readonly ValidationIssue[];
   submit(context?: Partial<SubmitContext>): Promise<SubmitResult>;
+  field<P extends string & DeepKeys<TData>>(path: P, config?: FieldConfig): FieldApi<TData, TUi, P>;
   field(path: string, config?: FieldConfig): FieldApi;
-  subscribe(listener: (state: FormState) => void): () => void;
+  subscribe(listener: (state: FormState<TData, TUi>) => void): () => void;
   dispose(): void;
 }
