@@ -5,12 +5,12 @@ import { useForm } from './use-form.js';
 import type { UseFormOptions } from './use-form.js';
 import type { FormApi, ValidatorAdapter } from '@ghost/formr-core';
 
-export interface UseSchemaFormOptions<TData = unknown, TUi = unknown> extends Omit<UseFormOptions<TData, TUi>, 'validators'> {
+export interface UseSchemaFormOptions<TData, TUi> extends Omit<UseFormOptions<TData, TUi>, 'validators'> {
   readonly validators?: readonly ValidatorAdapter[];
   readonly layoutOverride?: LayoutNode;
 }
 
-export interface UseSchemaFormResult<TData = unknown, TUi = unknown> {
+export interface UseSchemaFormResult<TData, TUi> {
   readonly form: FormApi<TData, TUi>;
   readonly fields: readonly SchemaFieldInfo[];
   readonly layout: LayoutNode;
@@ -21,7 +21,7 @@ export interface UseSchemaFormResult<TData = unknown, TUi = unknown> {
  * React lifecycle wrapper over createSchemaForm.
  * Memoizes schema preparation; wires validators into useForm.
  */
-export function useSchemaForm<TData = unknown, TUi = unknown>(
+export function useSchemaForm<TData, TUi>(
   schema: unknown,
   options?: UseSchemaFormOptions<TData, TUi>,
 ): UseSchemaFormResult<TData, TUi> {

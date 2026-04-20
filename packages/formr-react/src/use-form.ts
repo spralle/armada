@@ -4,12 +4,12 @@ import type { CreateFormOptions, FormApi, SubmitResult } from '@ghost/formr-core
 import { focusFirstError } from './a11y.js';
 
 /** Options for useForm, extending core CreateFormOptions with React-specific behavior */
-export interface UseFormOptions<TData = unknown, TUi = unknown> extends CreateFormOptions<TData, TUi> {
+export interface UseFormOptions<TData, TUi> extends CreateFormOptions<TData, TUi> {
   /** Auto-focus the first error field on submit failure (default: true) */
   readonly autoFocusOnError?: boolean;
 }
 
-export function useForm<TData = unknown, TUi = unknown>(
+export function useForm<TData, TUi>(
   options?: UseFormOptions<TData, TUi>,
 ): FormApi<TData, TUi> {
   const autoFocus = options?.autoFocusOnError ?? true;

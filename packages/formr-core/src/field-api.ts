@@ -1,6 +1,7 @@
 import type { CanonicalPath } from './path.js';
 import type { FormState, ValidationIssue } from './state.js';
 import type { FieldApi, FieldConfig, FormDispatchResult } from './contracts.js';
+import type { DeepValue } from './type-utils.js';
 
 /** Resolve a value from a nested object by walking canonical path segments */
 function resolveValue(root: unknown, segments: readonly (string | number)[]): unknown {
@@ -12,7 +13,7 @@ function resolveValue(root: unknown, segments: readonly (string | number)[]): un
   return current;
 }
 
-export interface CreateFieldApiParams<TData = unknown, TUi = unknown> {
+export interface CreateFieldApiParams<TData, TUi> {
   readonly path: CanonicalPath;
   readonly rawPath: string;
   readonly getState: () => FormState<TData, TUi>;
@@ -47,17 +48,18 @@ function stripUndefined(obj: FieldConfig): Partial<FieldConfig> {
 }
 
 /** ADR §9.1 — create a FieldApi that delegates to the parent form */
-export function createFieldApi<TData = unknown, TUi = unknown>(params: CreateFieldApiParams<TData, TUi>): FieldApi<TData, TUi, string> {
+export function createFieldApi<TData, TUi>(params: CreateFieldApiParams<TData, TUi>): FieldApi<TData, TUi, string> {
   return {
     path: params.path,
 
-    get(): unknown {
+    // Justified: resolveValue walks the actual data structure; cast bridges runtime to static type
+    get(): DeepValue<TData, string> {
       const state = params.getState();
       const root = params.path.namespace === 'ui' ? state.uiState : state.data;
-      return resolveValue(root, params.path.segments);
+      return resolveValue(root, params.path.segments) as DeepValue<TData, string>;
     },
 
-    set(value: unknown): FormDispatchResult {
+    set(value: DeepValue<TData, string>): FormDispatchResult {
       return params.setValue(params.rawPath, value);
     },
 

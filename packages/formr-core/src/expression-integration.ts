@@ -13,9 +13,9 @@ export function isArbiterInternalPath(path: string): boolean {
 
 /** Apply rule writes to form state (immutable) */
 export function applyRuleWrites(
-  state: FormState,
+  state: FormState<unknown, unknown>,
   writes: readonly RuleWriteIntent[],
-): FormState {
+): FormState<unknown, unknown> {
   let data = (state.data ?? {}) as Record<string, unknown>;
   let uiState = (state.uiState ?? {}) as Record<string, unknown>;
 

@@ -43,8 +43,8 @@ function setAtPath(root: unknown, segments: readonly (string | number)[], value:
 /** Pipeline context — everything the 18-step engine needs */
 export interface PipelineContext {
   readonly action: FormAction;
-  readonly store: FormStore;
-  readonly options: CreateFormOptions;
+  readonly store: FormStore<unknown, unknown>;
+  readonly options: CreateFormOptions<unknown, unknown>;
   readonly submitContext?: SubmitContext;
   readonly isSubmit: boolean;
   readonly arbiterAdapter?: ArbiterFormAdapter | undefined;
@@ -62,7 +62,7 @@ export interface PipelineResult {
 
 
 /** Resolve TransformDefinitions from options.transforms (duck-type check) */
-function getTransformDefs(options: CreateFormOptions): readonly TransformDefinition[] {
+function getTransformDefs(options: CreateFormOptions<unknown, unknown>): readonly TransformDefinition[] {
   if (!options.transforms?.length) return [];
   return options.transforms.filter(
     (t): t is TransformDefinition => 'transform' in t && typeof (t as TransformDefinition).transform === 'function',
@@ -72,7 +72,7 @@ function getTransformDefs(options: CreateFormOptions): readonly TransformDefinit
 /** Run validators synchronously; throws FORMR_ASYNC_IN_SYNC_PIPELINE if any return a Promise */
 function runValidators(
   validators: readonly ValidatorAdapter[],
-  state: FormState,
+  state: { readonly data: unknown; readonly uiState: unknown; readonly meta: { readonly stage?: string } },
   stage: string | undefined,
   submitContext?: SubmitContext,
 ): readonly ValidationIssue[] {
@@ -113,7 +113,7 @@ export function executePipeline(ctx: PipelineContext): PipelineResult {
   }
 
   // Step 2: Begin transaction — capture immutable prevState snapshot
-  let tx: Transaction | undefined;
+  let tx: Transaction<unknown, unknown> | undefined;
   try {
     tx = store.beginTransaction();
     const prevState = tx.prevState;

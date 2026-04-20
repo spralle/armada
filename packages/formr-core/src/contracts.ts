@@ -44,59 +44,59 @@ export type MiddlewareDecision =
 /** Context for beforeAction hook */
 export interface BeforeActionContext {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<unknown, unknown>;
 }
 
 /** Context for afterAction hook */
 export interface AfterActionContext {
   readonly action: FormAction;
-  readonly prevState: FormState;
-  readonly nextState: FormState;
+  readonly prevState: FormState<unknown, unknown>;
+  readonly nextState: FormState<unknown, unknown>;
 }
 
 /** Context for beforeEvaluate hook */
 export interface BeforeEvaluateContext {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<unknown, unknown>;
 }
 
 /** Context for afterEvaluate hook */
 export interface AfterEvaluateContext {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<unknown, unknown>;
 }
 
 /** Context for beforeValidate hook */
 export interface BeforeValidateContext {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<unknown, unknown>;
   readonly stage?: string;
 }
 
 /** Context for afterValidate hook */
 export interface AfterValidateContext {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<unknown, unknown>;
   readonly issues: readonly ValidationIssue[];
 }
 
 /** Context for beforeSubmit hook */
 export interface BeforeSubmitContext {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<unknown, unknown>;
   readonly submitContext: SubmitContext;
 }
 
 /** Context for afterSubmit hook */
 export interface AfterSubmitContext {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<unknown, unknown>;
   readonly result: SubmitResult;
 }
 
 /** Context for middleware init */
 export interface MiddlewareInitContext {
-  readonly state: FormState;
+  readonly state: FormState<unknown, unknown>;
 }
 
 /** ADR section 9 — Middleware with full lifecycle hooks */
@@ -115,7 +115,7 @@ export interface Middleware {
 }
 
 /** ADR section 9 — SubmitExecutionContext */
-export interface SubmitExecutionContext<TData = unknown, TUi = unknown> {
+export interface SubmitExecutionContext<TData, TUi> {
   readonly form: FormApi<TData, TUi>;
   readonly submitContext: SubmitContext;
   readonly payload: TData;
@@ -158,7 +158,7 @@ export interface FieldConfig {
 }
 
 /** ADR section 9 — FieldApi */
-export interface FieldApi<TData = unknown, TUi = unknown, TPath extends string = string> {
+export interface FieldApi<TData, TUi, TPath extends string> {
   readonly path: CanonicalPath;
   get(): DeepValue<TData, TPath>;
   set(value: DeepValue<TData, TPath>): FormDispatchResult;
@@ -168,15 +168,13 @@ export interface FieldApi<TData = unknown, TUi = unknown, TPath extends string =
 }
 
 /** ADR section 9 — FormApi */
-export interface FormApi<TData = unknown, TUi = unknown> {
+export interface FormApi<TData, TUi> {
   getState(): FormState<TData, TUi>;
   dispatch(action: FormAction): FormDispatchResult;
   setValue<P extends string & DeepKeys<TData>>(path: P, value: DeepValue<TData, P>): FormDispatchResult;
-  setValue(path: string, value: unknown): FormDispatchResult;
   validate(stage?: string): readonly ValidationIssue[];
   submit(context?: Partial<SubmitContext>): Promise<SubmitResult>;
   field<P extends string & DeepKeys<TData>>(path: P, config?: FieldConfig): FieldApi<TData, TUi, P>;
-  field(path: string, config?: FieldConfig): FieldApi;
   subscribe(listener: (state: FormState<TData, TUi>) => void): () => void;
   dispose(): void;
 }

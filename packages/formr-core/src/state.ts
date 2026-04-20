@@ -33,7 +33,7 @@ export interface SubmitContext {
 }
 
 /** ADR section 1.1 — FormState */
-export interface FormState<TData = unknown, TUi = unknown> {
+export interface FormState<TData, TUi> {
   readonly data: TData;
   readonly uiState: TUi;
   readonly meta: {
@@ -53,7 +53,7 @@ export interface FormState<TData = unknown, TUi = unknown> {
 }
 
 /** ADR section 9 — CreateFormOptions */
-export interface CreateFormOptions<TData = unknown, TUi = unknown> {
+export interface CreateFormOptions<TData, TUi> {
   readonly schema?: unknown;
   readonly uiStateSchema?: unknown;
   readonly initialData?: TData;

@@ -1,12 +1,12 @@
 import type { FormState } from './state.js';
 import { Transaction, type StateStrategy, defaultStrategy } from './transaction.js';
 
-export type StateListener<TData = unknown, TUi = unknown> = (
+export type StateListener<TData, TUi> = (
   state: FormState<TData, TUi>,
 ) => void;
 
 /** Synchronous reactive store with transactional semantics — only one transaction active at a time. */
-export class FormStore<TData = unknown, TUi = unknown> {
+export class FormStore<TData, TUi> {
   private _state: FormState<TData, TUi>;
   private _listeners: Set<StateListener<TData, TUi>> = new Set();
   private _activeTransaction: Transaction<TData, TUi> | null = null;

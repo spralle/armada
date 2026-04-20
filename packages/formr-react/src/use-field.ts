@@ -3,7 +3,7 @@ import type { FormApi, FieldApi, FieldConfig } from '@ghost/formr-core';
 import { useFormSelector } from './use-form-selector.js';
 
 /** Get a FieldApi for a specific path, with fine-grained re-rendering */
-export function useField<TData = unknown, TUi = unknown, P extends string = string>(
+export function useField<TData, TUi, P extends string>(
   form: FormApi<TData, TUi>,
   path: P,
   config?: FieldConfig,

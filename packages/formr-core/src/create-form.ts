@@ -41,7 +41,7 @@ function generateSubmitId(): string {
 }
 
 /** Extract TransformDefinition instances from options.transforms via duck-type check */
-function getEgressTransforms(options: CreateFormOptions): readonly TransformDefinition[] {
+function getEgressTransforms(options: CreateFormOptions<unknown, unknown>): readonly TransformDefinition[] {
   if (!options.transforms?.length) return [];
   return options.transforms.filter(
     (t): t is TransformDefinition => 'transform' in t && typeof (t as TransformDefinition).transform === 'function',
@@ -49,7 +49,7 @@ function getEgressTransforms(options: CreateFormOptions): readonly TransformDefi
 }
 
 /** ADR §9 — createForm factory */
-export function createForm<TData = unknown, TUi = unknown>(
+export function createForm<TData, TUi>(
   options: CreateFormOptions<TData, TUi> = {} as CreateFormOptions<TData, TUi>,
 ): FormApi<TData, TUi> {
   // Justified: runtime data matches TData/TUi, narrowing for consumer DX
@@ -82,11 +82,15 @@ export function createForm<TData = unknown, TUi = unknown>(
     );
   }
 
+  // Justified: pipeline treats data as opaque; variance cast is safe at this internal boundary
+  const pipelineStore = store as unknown as import('./store.js').FormStore<unknown, unknown>;
+  const pipelineOptions = options as unknown as CreateFormOptions<unknown, unknown>;
+
   function dispatchSetValue(rawPath: string, value: unknown): FormDispatchResult {
     const result = executePipeline({
       action: { type: 'set-value', path: rawPath, value },
-      store,
-      options,
+      store: pipelineStore,
+      options: pipelineOptions,
       isSubmit: false,
       arbiterAdapter,
     });
@@ -101,8 +105,8 @@ export function createForm<TData = unknown, TUi = unknown>(
 
     const result = executePipeline({
       action,
-      store,
-      options,
+      store: pipelineStore,
+      options: pipelineOptions,
       isSubmit: false,
       arbiterAdapter,
     });
@@ -197,8 +201,8 @@ export function createForm<TData = unknown, TUi = unknown>(
     const submitAction: FormAction = { type: 'submit' };
     return executePipeline({
       action: submitAction,
-      store,
-      options,
+      store: pipelineStore,
+      options: pipelineOptions,
       submitContext,
       isSubmit: true,
       arbiterAdapter,
@@ -243,10 +247,10 @@ export function createForm<TData = unknown, TUi = unknown>(
     const submitAction: FormAction = { type: 'submit' };
     try {
       const rawData = store.getState().data;
-      const transformDefs = getEgressTransforms(options);
-      const payload = transformDefs.length > 0
+      const transformDefs = getEgressTransforms(pipelineOptions);
+      const payload = (transformDefs.length > 0
         ? runTransforms(transformDefs, 'egress', rawData, { state: store.getState() })
-        : rawData;
+        : rawData) as TData;
 
       const result = await withTimeout(
         options.onSubmit!({
@@ -303,7 +307,8 @@ export function createForm<TData = unknown, TUi = unknown>(
       path: canonical,
       rawPath: path,
       getState: () => store.getState(),
-      setValue: dispatchSetValue,
+    // Justified: runtime path parsing validates path; cast bridges generic method signature
+    setValue: dispatchSetValue as FormApi<TData, TUi>['setValue'],
       getIssues: (p) => getIssues(p),
       formDefaults: options.fieldDefaults,
       config,
@@ -319,7 +324,8 @@ export function createForm<TData = unknown, TUi = unknown>(
     setValue: dispatchSetValue,
     validate,
     submit,
-    field,
+    // Justified: runtime path validation ensures P constraint; cast bridges generic method signature
+    field: field as FormApi<TData, TUi>['field'],
     subscribe: (listener) => store.subscribe(listener),
     dispose: () => {
       arbiterAdapter?.dispose();

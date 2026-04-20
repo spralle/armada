@@ -13,14 +13,14 @@ export const defaultStrategy: StateStrategy = {
 };
 
 /** Read-only view of a transaction's state at a point in time. */
-export interface TransactionSnapshot<TData = unknown, TUi = unknown> {
+export interface TransactionSnapshot<TData, TUi> {
   readonly prevState: FormState<TData, TUi>;
   readonly draftState: FormState<TData, TUi>;
   readonly status: 'active' | 'committed' | 'rolled-back';
 }
 
 /** Mutable draft context that tracks mutations against a frozen baseline. */
-export class Transaction<TData = unknown, TUi = unknown> {
+export class Transaction<TData, TUi> {
   private _prevState: FormState<TData, TUi>;
   private _draftState: FormState<TData, TUi>;
   private _status: 'active' | 'committed' | 'rolled-back' = 'active';
