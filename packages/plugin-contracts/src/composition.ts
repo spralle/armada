@@ -2,6 +2,7 @@ import type {
   PluginDockableTabMetadata,
   PluginContract,
   PluginPartContribution,
+  PluginSectionContribution,
   PluginSlotContribution,
   PluginViewContribution,
   ShellEdgeSlot,
@@ -34,6 +35,22 @@ export interface ComposedPluginSlotContribution {
   component: string;
 }
 
+/** Composed section contribution with source plugin identity. */
+export interface ComposedPluginSectionContribution {
+  /** ID of the plugin contributing this section. */
+  pluginId: string;
+  /** Unique identifier for this section contribution. */
+  id: string;
+  /** Display title rendered as the section heading. */
+  title: string;
+  /** Target container identifier (e.g. "config.appearance"). */
+  target: string;
+  /** Sort order within the target — lower values render first. */
+  order: number;
+  /** Key used to resolve the mount function from the contributing plugin's components. */
+  component: string;
+}
+
 export interface ComposedPluginLayerSurfaceContribution {
   pluginId: string;
   surface: PluginLayerSurfaceContribution;
@@ -43,6 +60,7 @@ export interface ComposedPluginContributions {
   views: ComposedPluginViewContribution[];
   parts: ComposedPluginPartContribution[];
   slots: ComposedPluginSlotContribution[];
+  sections: ComposedPluginSectionContribution[];
   layerSurfaces: ComposedPluginLayerSurfaceContribution[];
 }
 
@@ -58,6 +76,7 @@ export function composeEnabledPluginContributions(
   const views: ComposedPluginViewContribution[] = [];
   const parts: ComposedPluginPartContribution[] = [];
   const slots: ComposedPluginSlotContribution[] = [];
+  const sections: ComposedPluginSectionContribution[] = [];
   const layerSurfaces: ComposedPluginLayerSurfaceContribution[] = [];
 
   for (const plugin of plugins) {
@@ -69,6 +88,7 @@ export function composeEnabledPluginContributions(
     const pluginViews = contributes?.views ?? [];
     const pluginParts = contributes?.parts ?? [];
     const pluginSlots = contributes?.slots ?? [];
+    const pluginSections = contributes?.sections ?? [];
     const pluginLayerSurfaces = contributes?.layerSurfaces ?? [];
 
     for (const view of pluginViews) {
@@ -83,6 +103,10 @@ export function composeEnabledPluginContributions(
       slots.push(toComposedSlot(plugin.id, slot));
     }
 
+    for (const section of pluginSections) {
+      sections.push(toComposedSection(plugin.id, section));
+    }
+
     for (const surface of pluginLayerSurfaces) {
       layerSurfaces.push({ pluginId: plugin.id, surface });
     }
@@ -92,6 +116,7 @@ export function composeEnabledPluginContributions(
     views,
     parts,
     slots,
+    sections,
     layerSurfaces,
   };
 }
@@ -132,6 +157,20 @@ function toComposedSlot(
     position: slot.position,
     order: slot.order,
     component: slot.component,
+  };
+}
+
+function toComposedSection(
+  pluginId: string,
+  section: PluginSectionContribution,
+): ComposedPluginSectionContribution {
+  return {
+    pluginId,
+    id: section.id,
+    title: section.title,
+    target: section.target,
+    order: section.order,
+    component: section.component,
   };
 }
 

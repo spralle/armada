@@ -18,3 +18,6 @@ export const pluginContract: PluginContract = {
   dependsOn: ghost.dependsOn as PluginContract["dependsOn"],
   activationEvents: ghost.activationEvents as PluginContract["activationEvents"],
 };
+
+/** Well-known section target for the appearance settings panel. */
+export const APPEARANCE_SECTION_TARGET = "config.appearance";

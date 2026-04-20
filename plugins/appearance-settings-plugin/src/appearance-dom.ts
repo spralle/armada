@@ -85,6 +85,9 @@ const PANEL_STYLES = `
 .theme-swatch-group-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--ghost-muted-foreground);margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid var(--ghost-border-muted)}
 .appearance-bg-shimmer{width:80px;height:50px;border-radius:4px;border:1px solid var(--ghost-border);background:linear-gradient(90deg,var(--ghost-surface) 25%,var(--ghost-surface-elevated) 50%,var(--ghost-surface) 75%);background-size:200% 100%;animation:shimmer 1.5s ease-in-out infinite}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.appearance-discovered-sections{margin-top:16px;border-top:1px solid var(--ghost-border);padding-top:12px}
+.appearance-discovered-sections .appearance-section{margin-bottom:12px}
+.appearance-discovered-sections .appearance-section h3{font-size:.85rem;font-weight:600;color:var(--ghost-text-secondary);margin:0 0 8px 0;text-transform:uppercase;letter-spacing:.03em}
 `;
 /* eslint-enable max-len */
 
@@ -342,6 +345,12 @@ function renderCustomBackgroundInput(
     wrapper.appendChild(clearBtn);
   }
   return wrapper;
+}
+
+export function renderSectionContainer(): HTMLElement {
+  const container = document.createElement("div");
+  container.className = "appearance-discovered-sections";
+  return container;
 }
 
 export function updateBackgroundSelection(
