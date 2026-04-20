@@ -18,6 +18,7 @@ export {
   type SchemaFieldInfo,
   type SchemaFieldType,
   type SchemaIngestionResult,
+  type SchemaFieldMetadata,
 } from './types.js';
 export { type JsonSchema } from './adapters/json-schema-types.js';
 export {

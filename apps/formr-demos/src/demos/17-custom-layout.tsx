@@ -2,12 +2,13 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useForm } from '@ghost/formr-react';
 import { ingestSchema } from '@ghost/formr-from-schema';
 import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
+import type { LayoutNode } from '@ghost/formr-from-schema';
 import type { FormApi } from '@ghost/formr-core';
 import {
   Card, CardContent, CardHeader, CardTitle,
   Tabs, TabsContent, TabsList, TabsTrigger,
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
-  Button, cn,
+  Button,
 } from '@ghost/ui';
 import { DemoShell } from '../renderers/DemoShell';
 import { DemoFormField } from '../renderers/DemoFormField';
@@ -33,90 +34,115 @@ const schema = {
   },
 };
 
-interface Section {
-  readonly id: string;
-  readonly title: string;
-  readonly paths: readonly string[];
-}
-
-const SECTIONS: readonly Section[] = [
-  { id: 'general', title: 'General Information', paths: ['vesselName', 'inspectorName', 'inspectionDate'] },
-  { id: 'hull', title: 'Hull Inspection', paths: ['hullCondition', 'hullNotes'] },
-  { id: 'engine', title: 'Engine & Fuel', paths: ['engineStatus', 'engineHours', 'fuelLevel'] },
-  { id: 'safety', title: 'Safety Equipment', paths: ['safetyEquipment', 'fireExtinguishers', 'lifeboats'] },
-  { id: 'summary', title: 'Summary', paths: ['overallScore', 'recommendation', 'comments'] },
-];
-
 type LayoutMode = 'sections' | 'tabs' | 'accordion';
 
-function SectionFields({ section, form, fieldMap, onChange }: {
-  section: Section; form: FormApi; fieldMap: Map<string, SchemaFieldInfo>;
-  onChange: (path: string, value: unknown) => void;
-}) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {section.paths.map((path) => {
-        const field = fieldMap.get(path);
-        if (!field) return null;
-        return <DemoFormField key={path} form={form} field={field} onChange={onChange} />;
-      })}
-    </div>
-  );
+// Shared field definitions per section to avoid repetition across layouts
+const sectionDefs = [
+  { id: 'general', title: 'General Information', tabTitle: 'General', paths: ['vesselName', 'inspectorName', 'inspectionDate'] },
+  { id: 'hull', title: 'Hull Inspection', tabTitle: 'Hull', paths: ['hullCondition', 'hullNotes'] },
+  { id: 'engine', title: 'Engine & Fuel', tabTitle: 'Engine', paths: ['engineStatus', 'engineHours', 'fuelLevel'] },
+  { id: 'safety', title: 'Safety Equipment', tabTitle: 'Safety', paths: ['safetyEquipment', 'fireExtinguishers', 'lifeboats'] },
+  { id: 'summary', title: 'Summary', tabTitle: 'Summary', paths: ['overallScore', 'recommendation', 'comments'] },
+] as const;
+
+function buildFieldChildren(paths: readonly string[]): LayoutNode[] {
+  return paths.map((p) => ({ type: 'field' as const, id: `f-${p}`, path: p }));
 }
 
-function SectionsLayout({ form, fieldMap, onChange }: {
-  form: FormApi; fieldMap: Map<string, SchemaFieldInfo>;
-  onChange: (path: string, value: unknown) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-6">
-      {SECTIONS.map((section) => (
-        <div key={section.id} className="flex flex-col gap-3">
-          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">
-            {section.title}
-          </h3>
-          <SectionFields section={section} form={form} fieldMap={fieldMap} onChange={onChange} />
+function buildSections(titleKey: 'title' | 'tabTitle'): LayoutNode[] {
+  return sectionDefs.map((s) => ({
+    type: 'section' as const,
+    id: s.id,
+    props: { title: s[titleKey] },
+    children: buildFieldChildren(s.paths),
+  }));
+}
+
+const sectionsLayout: LayoutNode = {
+  type: 'group',
+  id: 'root',
+  children: buildSections('title'),
+};
+
+const tabsLayout: LayoutNode = {
+  type: 'tabs',
+  id: 'root',
+  children: buildSections('tabTitle'),
+};
+
+const accordionLayout: LayoutNode = {
+  type: 'accordion',
+  id: 'root',
+  children: buildSections('title'),
+};
+
+const layouts: Record<LayoutMode, LayoutNode> = {
+  sections: sectionsLayout,
+  tabs: tabsLayout,
+  accordion: accordionLayout,
+};
+
+function renderCustomNode(
+  node: LayoutNode,
+  form: FormApi,
+  fieldMap: Map<string, SchemaFieldInfo>,
+  onChange: (path: string, value: unknown) => void,
+): React.ReactNode {
+  if (node.type === 'field' && node.path) {
+    const field = fieldMap.get(node.path);
+    if (!field) return null;
+    return <DemoFormField key={node.id} form={form} field={field} onChange={onChange} />;
+  }
+
+  if (node.type === 'section') {
+    const title = node.props?.title as string | undefined;
+    return (
+      <div key={node.id} className="flex flex-col gap-3">
+        {title && <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">{title}</h3>}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {node.children?.map((child) => renderCustomNode(child, form, fieldMap, onChange))}
         </div>
-      ))}
-    </div>
-  );
-}
+      </div>
+    );
+  }
 
-function TabsLayout({ form, fieldMap, onChange }: {
-  form: FormApi; fieldMap: Map<string, SchemaFieldInfo>;
-  onChange: (path: string, value: unknown) => void;
-}) {
-  return (
-    <Tabs defaultValue="general">
-      <TabsList>
-        {SECTIONS.map((s) => (
-          <TabsTrigger key={s.id} value={s.id}>{s.title.split(' ')[0]}</TabsTrigger>
+  if (node.type === 'tabs') {
+    return (
+      <Tabs defaultValue={node.children?.[0]?.id}>
+        <TabsList>
+          {node.children?.map((s) => (
+            <TabsTrigger key={s.id} value={s.id}>{(s.props?.title as string) ?? s.id}</TabsTrigger>
+          ))}
+        </TabsList>
+        {node.children?.map((child) => (
+          <TabsContent key={child.id} value={child.id} className="pt-4">
+            {renderCustomNode(child, form, fieldMap, onChange)}
+          </TabsContent>
         ))}
-      </TabsList>
-      {SECTIONS.map((section) => (
-        <TabsContent key={section.id} value={section.id} className="pt-4">
-          <SectionFields section={section} form={form} fieldMap={fieldMap} onChange={onChange} />
-        </TabsContent>
-      ))}
-    </Tabs>
-  );
-}
+      </Tabs>
+    );
+  }
 
-function AccordionLayout({ form, fieldMap, onChange }: {
-  form: FormApi; fieldMap: Map<string, SchemaFieldInfo>;
-  onChange: (path: string, value: unknown) => void;
-}) {
+  if (node.type === 'accordion') {
+    return (
+      <Accordion type="multiple" defaultValue={[node.children?.[0]?.id ?? '']}>
+        {node.children?.map((child) => (
+          <AccordionItem key={child.id} value={child.id}>
+            <AccordionTrigger>{(child.props?.title as string) ?? child.id}</AccordionTrigger>
+            <AccordionContent>
+              {renderCustomNode(child, form, fieldMap, onChange)}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    );
+  }
+
+  // Fallback for group or unknown types
   return (
-    <Accordion type="multiple" defaultValue={['general']}>
-      {SECTIONS.map((section) => (
-        <AccordionItem key={section.id} value={section.id}>
-          <AccordionTrigger>{section.title}</AccordionTrigger>
-          <AccordionContent>
-            <SectionFields section={section} form={form} fieldMap={fieldMap} onChange={onChange} />
-          </AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
+    <div key={node.id} className="flex flex-col gap-4">
+      {node.children?.map((child) => renderCustomNode(child, form, fieldMap, onChange))}
+    </div>
   );
 }
 
@@ -132,6 +158,8 @@ export function CustomLayoutTypesDemo() {
     return map;
   }, []);
 
+  const activeLayout = layouts[mode];
+
   useEffect(() => {
     return form.subscribe(() => {
       setFormData({ ...(form.getState().data as Record<string, unknown>) });
@@ -145,10 +173,11 @@ export function CustomLayoutTypesDemo() {
   return (
     <DemoShell
       title="Custom Layout Types"
-      description="The same vessel inspection schema rendered in three different layout modes: standard sections, tabbed interface, and accordion. Demonstrates that formr's layout system is extensible beyond simple groups."
-      motivation="Demonstrates custom layout containers: tabs, accordion, and section grouping. Shows that the layout system is extensible beyond simple rows/columns — teams can build domain-specific form chrome."
-      features={['Custom Layout Types', 'Tabs Layout', 'Accordion Layout', 'Layout Switching', 'Same Schema, Different UX']}
+      description="The same vessel inspection schema rendered via three different LayoutNode JSON trees: sections (group), tabs, and accordion. The layout JSON drives the rendering — swap the tree, change the UX."
+      motivation="Demonstrates that formr's layout system is extensible via custom node types. Define layout as JSON data, then interpret it with a custom renderer. Teams can build domain-specific form chrome without modifying the core."
+      features={['LayoutNode JSON Trees', 'Custom Node Types (tabs, accordion)', 'Layout-Driven Rendering', 'Mode Switching', 'Same Schema, Different UX']}
       schema={schema}
+      layout={activeLayout}
     >
       <div className="flex flex-col gap-4">
         <Card className="border-border">
@@ -170,9 +199,7 @@ export function CustomLayoutTypesDemo() {
             </div>
           </CardHeader>
           <CardContent>
-            {mode === 'sections' && <SectionsLayout form={form} fieldMap={fieldMap} onChange={handleChange} />}
-            {mode === 'tabs' && <TabsLayout form={form} fieldMap={fieldMap} onChange={handleChange} />}
-            {mode === 'accordion' && <AccordionLayout form={form} fieldMap={fieldMap} onChange={handleChange} />}
+            {renderCustomNode(activeLayout, form, fieldMap, handleChange)}
           </CardContent>
         </Card>
         <Card className="border-border">

@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useForm } from '@ghost/formr-react';
-import { ingestSchema } from '@ghost/formr-from-schema';
+import { useSchemaForm } from '../hooks/use-schema-form';
 import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
 import type { FormApi } from '@ghost/formr-core';
 import {
@@ -121,20 +120,11 @@ function ProgressField({ value, onChange }: { value: number; onChange: (v: numbe
   );
 }
 
-function getXFormr(field: SchemaFieldInfo): Record<string, unknown> | undefined {
-  const meta = field.metadata ?? {};
-  const xf = meta['x-formr'];
-  return typeof xf === 'object' && xf !== null && !Array.isArray(xf)
-    ? xf as Record<string, unknown>
-    : undefined;
-}
-
 function CustomField({ form, field, onChange }: {
   form: FormApi; field: SchemaFieldInfo; onChange: (path: string, value: unknown) => void;
 }) {
-  const xFormr = getXFormr(field);
-  const widget = xFormr?.['widget'] as string | undefined;
-  const options = xFormr?.['options'] as string[] | undefined;
+  const widget = field.metadata?.widget;
+  const options = field.metadata?.options as string[] | undefined;
 
   const getData = useCallback(() => form.getState().data as Record<string, unknown>, [form]);
   const [value, setValue] = useState<unknown>(getData()[field.path]);
@@ -150,8 +140,8 @@ function CustomField({ form, field, onChange }: {
     onChange(field.path, v);
   }, [form, field.path, onChange]);
 
-  const title = (field.metadata?.['title'] as string) ?? field.path;
-  const description = field.metadata?.['description'] as string | undefined;
+  const title = field.metadata?.title ?? field.path;
+  const description = field.metadata?.description;
 
   if (!widget || widget === 'textarea') {
     return <DemoFormField form={form} field={field} onChange={onChange} />;
@@ -178,10 +168,10 @@ function CustomField({ form, field, onChange }: {
 }
 
 export function CustomRenderersDemo() {
-  const form = useForm({ initialData: { qualityRating: 0, userSatisfaction: 0, brandColor: '', accentColor: '', completionRate: 0, tags: '', notes: '', productName: '' } as Record<string, unknown> });
+  const { form, fields } = useSchemaForm(schema, {
+    initialData: { qualityRating: 0, userSatisfaction: 0, brandColor: '', accentColor: '', completionRate: 0, tags: '', notes: '', productName: '' } as Record<string, unknown>,
+  });
   const [formData, setFormData] = useState<Record<string, unknown>>({});
-
-  const fields = useMemo(() => ingestSchema(schema).fields, []);
 
   useEffect(() => {
     return form.subscribe(() => {

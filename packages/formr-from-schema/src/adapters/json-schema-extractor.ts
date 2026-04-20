@@ -44,7 +44,7 @@ function walkJsonSchema(
 
     const arrayHasMeta = arrayFormrMeta || Object.keys(arrayStandardMeta).length > 0;
     const arrayMetadata = arrayHasMeta
-      ? { ...arrayStandardMeta, ...(arrayFormrMeta ? { 'x-formr': arrayFormrMeta } : {}) }
+      ? { ...arrayStandardMeta, ...arrayFormrMeta }
       : undefined;
     fields.push({
       path: prefix,
@@ -52,6 +52,19 @@ function walkJsonSchema(
       required: isRequired,
       ...(arrayMetadata ? { metadata: arrayMetadata } : {}),
     });
+
+    // Walk items properties so array-of-objects get proper child fields
+    const itemSchema = schema.items;
+    if (itemSchema && typeof itemSchema === 'object' && !Array.isArray(itemSchema)) {
+      const items = itemSchema as JsonSchema;
+      if (items.properties) {
+        for (const [key, childSchema] of Object.entries(items.properties)) {
+          const childPath = prefix ? `${prefix}.${key}` : key;
+          walkJsonSchema(childSchema, childPath, fields, items.required, key);
+        }
+      }
+    }
+
     return;
   }
 
@@ -77,7 +90,7 @@ function walkJsonSchema(
 
   const hasMeta = formrMeta || Object.keys(standardMeta).length > 0;
   const metadata = hasMeta
-    ? { ...standardMeta, ...(formrMeta ? { 'x-formr': formrMeta } : {}) }
+    ? { ...standardMeta, ...formrMeta }
     : undefined;
 
   fields.push({

@@ -31,32 +31,19 @@ interface FieldMeta {
   readonly description: string | undefined;
 }
 
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
-}
-
-function asString(v: unknown): string | undefined {
-  return typeof v === 'string' ? v : undefined;
-}
-
-function asNumber(v: unknown): number | undefined {
-  return typeof v === 'number' ? v : undefined;
-}
-
 function extractFieldMeta(field: SchemaFieldInfo): FieldMeta {
   const meta = field.metadata ?? {};
-  const formr = meta['x-formr'];
   return {
-    widget: isRecord(formr) ? asString(formr['widget']) : undefined,
-    enumValues: Array.isArray(meta['enum']) ? meta['enum'].map(String) : undefined,
-    format: asString(meta['format']),
-    min: asNumber(meta['minimum']),
-    max: asNumber(meta['maximum']),
-    minLength: asNumber(meta['minLength']),
-    maxLength: asNumber(meta['maxLength']),
-    pattern: asString(meta['pattern']),
-    title: asString(meta['title']) ?? field.path,
-    description: asString(meta['description']),
+    widget: meta.widget,
+    enumValues: Array.isArray(meta.enum) ? meta.enum.map(String) : undefined,
+    format: meta.format,
+    min: meta.minimum,
+    max: meta.maximum,
+    minLength: meta.minLength,
+    maxLength: meta.maxLength,
+    pattern: meta.pattern,
+    title: meta.title ?? field.path,
+    description: meta.description,
   };
 }
 

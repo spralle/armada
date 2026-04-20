@@ -1,16 +1,29 @@
 import { useMemo, useCallback, useState } from 'react';
-import { useForm } from '@ghost/formr-react';
-import { ingestSchema, compileLayout } from '@ghost/formr-from-schema';
+import { useSchemaForm } from '../hooks/use-schema-form';
 import type { LayoutNode, SchemaFieldInfo } from '@ghost/formr-from-schema';
 import type { FormApi } from '@ghost/formr-core';
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Label, Badge } from '@ghost/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@ghost/ui';
 import { DemoFormField } from './DemoFormField';
+import { ArrayRenderer } from './ArrayRenderer';
 
 const COLUMN_CLASSES: Record<number, string> = {
   1: 'grid grid-cols-1 gap-4',
   2: 'grid grid-cols-1 sm:grid-cols-2 gap-4',
   3: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4',
 };
+
+/** Extract items schemas for array fields from the raw JSON Schema */
+function buildArrayItemsMap(rawSchema: object): ReadonlyMap<string, Record<string, unknown>> {
+  const map = new Map<string, Record<string, unknown>>();
+  const props = (rawSchema as Record<string, unknown>).properties as Record<string, Record<string, unknown>> | undefined;
+  if (!props) return map;
+  for (const [key, fieldSchema] of Object.entries(props)) {
+    if (fieldSchema.type === 'array' && fieldSchema.items && typeof fieldSchema.items === 'object') {
+      map.set(key, fieldSchema.items as Record<string, unknown>);
+    }
+  }
+  return map;
+}
 
 interface DemoFormRootProps {
   readonly schema: object;
@@ -21,22 +34,19 @@ interface DemoFormRootProps {
 }
 
 export function DemoFormRoot({ schema, data, layout: layoutOverride, onChange, responsive }: DemoFormRootProps) {
-  const form = useForm({ initialData: data });
+  const { form, fields, layout } = useSchemaForm(schema, {
+    initialData: data,
+    layoutOverride: layoutOverride as LayoutNode | undefined,
+  });
   const [formData, setFormData] = useState<Record<string, unknown>>(data);
-
-  const { fields, compiledLayout } = useMemo(() => {
-    const result = ingestSchema(schema);
-    const compiled = layoutOverride
-      ? (layoutOverride as LayoutNode)
-      : compileLayout(result);
-    return { fields: result.fields, compiledLayout: compiled };
-  }, [schema, layoutOverride]);
 
   const fieldMap = useMemo(() => {
     const map = new Map<string, SchemaFieldInfo>();
     for (const f of fields) map.set(f.path, f);
     return map;
   }, [fields]);
+
+  const arrayItemsMap = useMemo(() => buildArrayItemsMap(schema), [schema]);
 
   const handleChange = useCallback(
     (path: string, value: unknown) => {
@@ -54,7 +64,7 @@ export function DemoFormRoot({ schema, data, layout: layoutOverride, onChange, r
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4">
-            {renderNode(compiledLayout, form, fieldMap, handleChange)}
+            {renderNode(layout, form, fieldMap, handleChange, arrayItemsMap)}
           </div>
         </CardContent>
       </Card>
@@ -77,6 +87,7 @@ function renderNode(
   form: FormApi,
   fieldMap: Map<string, SchemaFieldInfo>,
   onChange: (path: string, value: unknown) => void,
+  arrayItemsMap: ReadonlyMap<string, Record<string, unknown>>,
 ): React.ReactNode {
   if (node.type === 'field' && node.path) {
     const field = fieldMap.get(node.path);
@@ -92,7 +103,7 @@ function renderNode(
       <div key={node.id} className="flex flex-col gap-3">
         {title && <h3 className="text-sm font-semibold text-foreground">{title}</h3>}
         <div className={gridClass}>
-          {node.children?.map((child) => renderNode(child, form, fieldMap, onChange))}
+          {node.children?.map((child) => renderNode(child, form, fieldMap, onChange, arrayItemsMap))}
         </div>
       </div>
     );
@@ -106,131 +117,14 @@ function renderNode(
         form={form}
         fieldMap={fieldMap}
         onChange={onChange}
+        itemSchema={arrayItemsMap.get(node.path)}
       />
     );
   }
 
   return (
     <div key={node.id} className="flex flex-col gap-4">
-      {node.children?.map((child) => renderNode(child, form, fieldMap, onChange))}
-    </div>
-  );
-}
-
-interface ArrayRendererProps {
-  readonly node: LayoutNode;
-  readonly form: FormApi;
-  readonly fieldMap: Map<string, SchemaFieldInfo>;
-  readonly onChange: (path: string, value: unknown) => void;
-}
-
-function ArrayRenderer({ node, form, fieldMap, onChange }: ArrayRendererProps) {
-  const field = node.path ? fieldMap.get(node.path) : undefined;
-  const title = (field?.metadata?.title as string) ?? node.path ?? 'Items';
-  const [items, setItems] = useState<unknown[]>(() => {
-    const data = form.getState().data as Record<string, unknown> | undefined;
-    const val = data?.[node.path ?? ''];
-    return Array.isArray(val) ? val : [];
-  });
-
-  const updateItems = useCallback((newItems: unknown[]) => {
-    setItems(newItems);
-    if (node.path) onChange(node.path, newItems);
-  }, [node.path, onChange]);
-
-  const addItem = () => {
-    const hasObjectChildren = node.children?.some((c) => c.type === 'field') ?? false;
-    updateItems([...items, hasObjectChildren ? {} : '']);
-  };
-
-  const removeItem = (index: number) => {
-    updateItems(items.filter((_, i) => i !== index));
-  };
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-semibold text-foreground">{title}</Label>
-        <Badge variant="secondary" className="text-xs">{items.length} items</Badge>
-      </div>
-      <div className="flex flex-col gap-2 rounded-md border border-border-muted p-3">
-        {items.length === 0 && (
-          <p className="text-xs text-muted-foreground italic">No items yet</p>
-        )}
-        {items.map((item, index) => (
-          <ArrayItem
-            key={index}
-            item={item}
-            index={index}
-            items={items}
-            node={node}
-            updateItems={updateItems}
-            removeItem={removeItem}
-          />
-        ))}
-        <Button variant="outline" size="sm" onClick={addItem} className="self-start mt-1">
-          + Add Item
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-interface ArrayItemProps {
-  readonly item: unknown;
-  readonly index: number;
-  readonly items: unknown[];
-  readonly node: LayoutNode;
-  readonly updateItems: (newItems: unknown[]) => void;
-  readonly removeItem: (index: number) => void;
-}
-
-function ArrayItem({ item, index, items, node, updateItems, removeItem }: ArrayItemProps) {
-  if (typeof item === 'string' || typeof item !== 'object') {
-    return (
-      <div className="flex items-start gap-2">
-        <div className="flex-1">
-          <Input
-            value={String(item ?? '')}
-            onChange={(e) => {
-              const newItems = [...items];
-              newItems[index] = e.target.value;
-              updateItems(newItems);
-            }}
-            placeholder={`Item ${index + 1}`}
-          />
-        </div>
-        <Button variant="ghost" size="sm" onClick={() => removeItem(index)} className="text-destructive shrink-0 h-8 w-8 p-0">
-          ×
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-start gap-2">
-      <div className="flex-1 text-xs text-muted-foreground bg-surface-inset rounded p-2">
-        {node.children?.filter((c) => c.type === 'field').map((child) => {
-          const key = child.path?.split('.').pop() ?? '';
-          return (
-            <div key={child.id} className="flex gap-2 items-center mt-1 first:mt-0">
-              <span className="text-muted-foreground w-20 shrink-0">{key}:</span>
-              <Input
-                className="h-7 text-xs"
-                value={String((item as Record<string, unknown>)?.[key] ?? '')}
-                onChange={(e) => {
-                  const newItems = [...items];
-                  newItems[index] = { ...(item as Record<string, unknown>), [key]: e.target.value };
-                  updateItems(newItems);
-                }}
-              />
-            </div>
-          );
-        })}
-      </div>
-      <Button variant="ghost" size="sm" onClick={() => removeItem(index)} className="text-destructive shrink-0 h-8 w-8 p-0">
-        ×
-      </Button>
+      {node.children?.map((child) => renderNode(child, form, fieldMap, onChange, arrayItemsMap))}
     </div>
   );
 }
