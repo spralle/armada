@@ -1,6 +1,6 @@
 @import "tailwindcss";
-@source "../../../../packages/ui/src/components";
-@import "../../../../packages/ui/src/styles/theme.css";
+@source "../../../packages/ui/src/components";
+@import "../../../packages/ui/src/styles/theme.css";
 
 /* Standalone theme variables — mimics the Ghost theme + shadcn bridge for demos */
 :root {
