@@ -24,11 +24,13 @@ const schema = {
     },
     brandColor: {
       type: 'string', title: 'Brand Color',
+      pattern: '^#[0-9a-fA-F]{6}$',
       'x-formr': { widget: 'color', options: ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'] },
       description: 'Pick a brand color',
     },
     accentColor: {
       type: 'string', title: 'Accent Color',
+      pattern: '^#[0-9a-fA-F]{6}$',
       'x-formr': { widget: 'color', options: ['#1E293B', '#334155', '#475569', '#64748B', '#94A3B8', '#CBD5E1', '#E2E8F0', '#F8FAFC'] },
     },
     tags: {
@@ -176,7 +178,7 @@ function CustomField({ form, field, onChange }: {
 }
 
 export function CustomRenderersDemo() {
-  const form = useForm({ initialData: {} as Record<string, unknown> });
+  const form = useForm({ initialData: { qualityRating: 0, userSatisfaction: 0, brandColor: '', accentColor: '', completionRate: 0, tags: '', notes: '', productName: '' } as Record<string, unknown> });
   const [formData, setFormData] = useState<Record<string, unknown>>({});
 
   const fields = useMemo(() => ingestSchema(schema).fields, []);

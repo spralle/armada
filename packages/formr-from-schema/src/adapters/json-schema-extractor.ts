@@ -44,7 +44,7 @@ function walkJsonSchema(
 
     const arrayHasMeta = arrayFormrMeta || Object.keys(arrayStandardMeta).length > 0;
     const arrayMetadata = arrayHasMeta
-      ? { ...arrayStandardMeta, ...arrayFormrMeta }
+      ? { ...arrayStandardMeta, ...(arrayFormrMeta ? { 'x-formr': arrayFormrMeta } : {}) }
       : undefined;
     fields.push({
       path: prefix,
@@ -77,7 +77,7 @@ function walkJsonSchema(
 
   const hasMeta = formrMeta || Object.keys(standardMeta).length > 0;
   const metadata = hasMeta
-    ? { ...standardMeta, ...formrMeta }
+    ? { ...standardMeta, ...(formrMeta ? { 'x-formr': formrMeta } : {}) }
     : undefined;
 
   fields.push({
