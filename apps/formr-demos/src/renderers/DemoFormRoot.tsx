@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState } from 'react';
-import { useSchemaForm } from '../hooks/use-schema-form';
+import { useSchemaForm } from '@ghost/formr-react';
 import { isSectionNode } from '@ghost/formr-from-schema';
 import type { LayoutNode, SchemaFieldInfo } from '@ghost/formr-from-schema';
 import type { FormApi } from '@ghost/formr-core';

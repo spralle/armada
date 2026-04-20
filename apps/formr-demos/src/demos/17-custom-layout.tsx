@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useForm } from '@ghost/formr-react';
-import { ingestSchema, isSectionNode } from '@ghost/formr-from-schema';
+import { useSchemaForm } from '@ghost/formr-react';
+import { isSectionNode } from '@ghost/formr-from-schema';
 import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
 import type { LayoutNode } from '@ghost/formr-from-schema';
 import type { FormApi } from '@ghost/formr-core';
@@ -200,16 +200,15 @@ function renderCustomNode(
 }
 
 export function CustomLayoutTypesDemo() {
-  const form = useForm({ initialData: {} as Record<string, unknown> });
+  const { form, fields } = useSchemaForm(schema, { initialData: {} as Record<string, unknown> });
   const [mode, setMode] = useState<LayoutMode>('sections');
   const [formData, setFormData] = useState<Record<string, unknown>>({});
 
   const fieldMap = useMemo(() => {
-    const result = ingestSchema(schema);
     const map = new Map<string, SchemaFieldInfo>();
-    for (const f of result.fields) map.set(f.path, f);
+    for (const f of fields) map.set(f.path, f);
     return map;
-  }, []);
+  }, [fields]);
 
   const activeLayout = layouts[mode];
 

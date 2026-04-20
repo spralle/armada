@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useForm } from '@ghost/formr-react';
-import { ingestSchema } from '@ghost/formr-from-schema';
+import { useSchemaForm } from '@ghost/formr-react';
 import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
 import type { FormApi } from '@ghost/formr-core';
 import { Card, CardContent, CardHeader, CardTitle, cn } from '@ghost/ui';
@@ -91,15 +90,14 @@ function ConditionalForm({ form, fieldMap, onChange, status }: {
 }
 
 export function ConditionalFieldsDemo() {
-  const form = useForm({ initialData: {} as Record<string, unknown> });
+  const { form, fields } = useSchemaForm(schema, { initialData: {} as Record<string, unknown> });
   const [status, setStatus] = useState('');
 
   const fieldMap = useMemo(() => {
-    const result = ingestSchema(schema);
     const map = new Map<string, SchemaFieldInfo>();
-    for (const f of result.fields) map.set(f.path, f);
+    for (const f of fields) map.set(f.path, f);
     return map;
-  }, []);
+  }, [fields]);
 
   const handleChange = useCallback(
     (path: string, value: unknown) => {

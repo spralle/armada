@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSchemaForm } from '../hooks/use-schema-form';
+import { useSchemaForm } from '@ghost/formr-react';
 import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
 import type { FormApi } from '@ghost/formr-core';
 import {

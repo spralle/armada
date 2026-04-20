@@ -6,9 +6,9 @@ import {
   isJsonSchema,
 } from '@ghost/formr-from-schema';
 import type { LayoutNode, SchemaFieldInfo, SchemaMetadata } from '@ghost/formr-from-schema';
-import { useForm } from '@ghost/formr-react';
-import type { UseFormOptions, FormApi } from '@ghost/formr-react';
-import type { ValidatorAdapter } from '@ghost/formr-core';
+import { useForm } from './use-form.js';
+import type { UseFormOptions } from './use-form.js';
+import type { FormApi, ValidatorAdapter } from '@ghost/formr-core';
 
 export interface UseSchemaFormOptions extends Omit<UseFormOptions, 'validators'> {
   readonly validators?: readonly ValidatorAdapter[];
