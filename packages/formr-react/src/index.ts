@@ -30,6 +30,8 @@ export type {
   ValidatorAdapter,
   SubmitContext,
   SubmitResult,
+  DeepKeys,
+  DeepValue,
 } from '@ghost/formr-core';
 
 export { RendererRegistry } from './renderer-registry.js';

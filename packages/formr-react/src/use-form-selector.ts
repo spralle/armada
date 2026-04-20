@@ -2,9 +2,9 @@ import { useRef, useCallback, useSyncExternalStore } from 'react';
 import type { FormApi, FormState } from '@ghost/formr-core';
 
 /** Subscribe to a derived value from form state; only re-render when the selected value changes */
-export function useFormSelector<T>(
-  form: FormApi,
-  selector: (state: FormState) => T,
+export function useFormSelector<TData = unknown, TUi = unknown, T = unknown>(
+  form: FormApi<TData, TUi>,
+  selector: (state: FormState<TData, TUi>) => T,
   equalityFn?: (prev: T, next: T) => boolean,
 ): T {
   const eqRef = useRef(equalityFn ?? Object.is);

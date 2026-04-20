@@ -3,11 +3,11 @@ import type { FormApi, FieldApi, FieldConfig } from '@ghost/formr-core';
 import { useFormSelector } from './use-form-selector.js';
 
 /** Get a FieldApi for a specific path, with fine-grained re-rendering */
-export function useField(
-  form: FormApi,
-  path: string,
+export function useField<TData = unknown, TUi = unknown, P extends string = string>(
+  form: FormApi<TData, TUi>,
+  path: P,
   config?: FieldConfig,
-): FieldApi {
+): FieldApi<TData, TUi, P> {
   // Stabilize config reference — inline objects create new references every render
   const configRef = useRef(config);
   const stableConfig = useMemo(() => {
@@ -23,5 +23,5 @@ export function useField(
   // Subscribe only to this field's value to trigger re-renders
   useFormSelector(form, () => field.get());
 
-  return field;
+  return field as FieldApi<TData, TUi, P>;
 }
