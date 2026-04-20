@@ -97,6 +97,9 @@ export {
   type RuntimeConstraints,
 } from './extensions.js';
 
+// Type utilities (formr-typed-dx)
+export type { DeepKeys, DeepValue } from './type-utils.js';
+
 // Middleware runner (SE6.2)
 export {
   runVetoHooksSync,
