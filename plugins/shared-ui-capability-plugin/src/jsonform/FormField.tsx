@@ -39,7 +39,11 @@ export function FormField({ form, field, onChange }: FormFieldProps) {
 
   const handleChange = useCallback(
     (newValue: unknown) => {
-      fieldApi.set(newValue);
+      try {
+        fieldApi.set(newValue);
+      } catch (err) {
+        console.warn('[FormField] set error:', field.path, err);
+      }
       setValue(newValue);
       onChange(field.path, newValue);
     },

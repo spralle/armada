@@ -1,5 +1,5 @@
 import { describe, test, expect, mock } from 'bun:test';
-import { Transaction } from '../transaction.js';
+import { Transaction, defaultStrategy } from '../transaction.js';
 import { FormStore } from '../store.js';
 import { deepFreeze } from '../utils.js';
 import type { FormState } from '../state.js';
@@ -208,6 +208,15 @@ describe('FormStore', () => {
     store.rollbackTransaction(tx);
 
     expect((store.getState().data as { v: number }).v).toBe(1);
+  });
+});
+
+describe('defaultStrategy', () => {
+  test('clone works without Illegal invocation', () => {
+    const data = { name: 'test', count: 42 };
+    const cloned = defaultStrategy.clone(data);
+    expect(cloned).toEqual(data);
+    expect(cloned).not.toBe(data);
   });
 });
 
