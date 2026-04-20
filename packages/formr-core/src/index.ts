@@ -43,6 +43,8 @@ export {
   type ProductionRule,
   type RuleSession,
   type ArbiterSessionConfig,
+  type ValidationTrigger,
+  type FieldValidationTriggers,
 } from './contracts.js';
 
 // Submit helpers
@@ -68,6 +70,9 @@ export { createArbiterAdapter, createArbiterAdapterFromSession, type ArbiterForm
 
 // Equality utility
 export { structuredEqual } from './equality.js';
+
+// Trigger filter
+export { shouldShowIssues, type TriggerContext } from './trigger-filter.js';
 
 // Nested utilities (extracted from old rule engine)
 export { setNestedValue, deleteNestedValue } from './nested-utils.js';

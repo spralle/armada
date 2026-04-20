@@ -3,6 +3,7 @@ import type { FormState, ValidationIssue, FieldMetaEntry } from './state.js';
 import type { FieldApi, FieldConfig, FormDispatchResult } from './contracts.js';
 import type { DeepValue } from './type-utils.js';
 import { structuredEqual } from './equality.js';
+import { shouldShowIssues } from './trigger-filter.js';
 
 /** Resolve a value from a nested object by walking canonical path segments */
 function resolveValue(root: unknown, segments: readonly (string | number)[]): unknown {
@@ -23,6 +24,7 @@ export interface CreateFieldApiParams<TData, TUi> {
   readonly getInitialValue: () => unknown;
   readonly getFieldMeta: (pathKey: string) => FieldMetaEntry | undefined;
   readonly markTouched: (pathKey: string) => void;
+  readonly getFormSubmitted: () => boolean;
   /** Form-level field defaults (tier 2) */
   readonly formDefaults?: FieldConfig | undefined;
   /** Field-level overrides (tier 3, highest priority) */
@@ -91,6 +93,13 @@ export function createFieldApi<TData, TUi>(params: CreateFieldApiParams<TData, T
     },
 
     issues(): readonly ValidationIssue[] {
+      const triggers = params.config?.validationTriggers;
+      const meta = params.getFieldMeta(pathKey);
+      const formSubmitted = params.getFormSubmitted();
+
+      if (!shouldShowIssues(triggers, { fieldMeta: meta, formSubmitted })) {
+        return [];
+      }
       return params.getIssues(params.path);
     },
 

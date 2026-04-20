@@ -56,6 +56,7 @@ describe('FieldApi.validate()', () => {
       getInitialValue: () => undefined,
       getFieldMeta: () => undefined,
       markTouched: () => {},
+      getFormSubmitted: () => false,
     });
     expect(api.validate()).toEqual([]);
   });
@@ -75,6 +76,7 @@ describe('FieldApi.validate()', () => {
       getInitialValue: () => undefined,
       getFieldMeta: () => undefined,
       markTouched: () => {},
+      getFormSubmitted: () => false,
       config: { validators: [makeValidator('v1', [issue])] },
     });
     expect(api.validate()).toEqual([issue]);
@@ -100,6 +102,7 @@ describe('FieldApi.validate()', () => {
       getInitialValue: () => undefined,
       getFieldMeta: () => undefined,
       markTouched: () => {},
+      getFormSubmitted: () => false,
       config: {
         validators: [
           makeValidator('v1', [issue1]),
@@ -123,6 +126,7 @@ describe('FieldApi.validate()', () => {
       getInitialValue: () => undefined,
       getFieldMeta: () => undefined,
       markTouched: () => {},
+      getFormSubmitted: () => false,
       config: { validators: [spy] },
     });
     api.validate();
@@ -141,6 +145,7 @@ describe('FieldApi.validate()', () => {
       getInitialValue: () => undefined,
       getFieldMeta: () => undefined,
       markTouched: () => {},
+      getFormSubmitted: () => false,
       config: { validators: [spy] },
     });
     api.validate();

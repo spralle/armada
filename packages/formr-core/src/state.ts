@@ -36,6 +36,7 @@ export interface SubmitContext {
 export interface FieldMetaEntry {
   readonly touched: boolean;
   readonly isValidating: boolean;
+  readonly dirty: boolean;
 }
 
 /** ADR section 1.1 — FormState */
@@ -44,6 +45,7 @@ export interface FormState<TData, TUi> {
   readonly uiState: TUi;
   readonly meta: {
     readonly stage?: string;
+    readonly submitted?: boolean;
     readonly validation: {
       readonly lastValidatedAt?: string; // ISO-8601 UTC
     };

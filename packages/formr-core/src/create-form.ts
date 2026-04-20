@@ -206,6 +206,7 @@ export function createForm<TData, TUi>(
       ...draft,
       meta: {
         ...draft.meta,
+        submitted: true,
         submission: { status: 'running' as const, submitId, lastAttemptAt: new Date().toISOString() },
       },
     }));
@@ -321,7 +322,7 @@ export function createForm<TData, TUi>(
         ...draft,
         fieldMeta: {
           ...draft.fieldMeta,
-          [pathKey]: { touched: true, isValidating: existing?.isValidating ?? false },
+          [pathKey]: { touched: true, isValidating: existing?.isValidating ?? false, dirty: existing?.dirty ?? false },
         },
       };
     });
@@ -344,6 +345,7 @@ export function createForm<TData, TUi>(
       getInitialValue: () => resolveInitialValue(canonical.segments),
       getFieldMeta: (pk) => (store.getState().fieldMeta as Record<string, FieldMetaEntry>)[pk],
       markTouched: markFieldTouched,
+      getFormSubmitted: () => store.getState().meta.submitted ?? false,
       formDefaults: options.fieldDefaults,
       config,
     });

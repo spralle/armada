@@ -143,6 +143,21 @@ export interface FormDispatchResult {
   readonly error?: string;
 }
 
+/** When an issue becomes visible to the user */
+export type ValidationTrigger = 'onChange' | 'onBlur' | 'onSubmit' | 'onMount';
+
+/** Per-field validation gating config */
+export interface FieldValidationTriggers {
+  /** Show issues when field value changes (field is dirty). Default trigger. */
+  readonly onChange?: boolean;
+  /** Show issues when field loses focus (field is touched via markTouched). */
+  readonly onBlur?: boolean;
+  /** Show issues only after form.submit() is called. */
+  readonly onSubmit?: boolean;
+  /** Show issues immediately on mount. */
+  readonly onMount?: boolean;
+}
+
 /** ADR section 9.1 — FieldConfig */
 export interface FieldConfig {
   readonly label?: string;
@@ -155,6 +170,7 @@ export interface FieldConfig {
   readonly validators?: readonly ValidatorAdapter[];
   readonly transforms?: readonly Transform[];
   readonly metadata?: Readonly<Record<string, unknown>>;
+  readonly validationTriggers?: FieldValidationTriggers;
 }
 
 /** ADR section 9 — FieldApi */

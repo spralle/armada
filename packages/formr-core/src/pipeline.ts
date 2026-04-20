@@ -157,7 +157,7 @@ export function executePipeline(ctx: PipelineContext): PipelineResult {
             ...draft,
             fieldMeta: {
               ...draft.fieldMeta,
-              [pathKey]: { touched: true, isValidating: existing?.isValidating ?? false },
+              [pathKey]: { touched: true, isValidating: existing?.isValidating ?? false, dirty: true },
             },
           };
         });
