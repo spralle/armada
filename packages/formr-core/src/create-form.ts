@@ -1,4 +1,4 @@
-import type { FormState, CreateFormOptions, ValidationIssue, SubmitContext } from './state.js';
+import type { FormState, CreateFormOptions, ValidationIssue, SubmitContext, FieldMetaEntry } from './state.js';
 import type {
   FormApi,
   FieldApi,
@@ -48,10 +48,14 @@ function getEgressTransforms(options: CreateFormOptions<unknown, unknown>): read
   );
 }
 
+import { structuredEqual } from './equality.js';
+
 /** ADR §9 — createForm factory */
 export function createForm<TData, TUi>(
   options: CreateFormOptions<TData, TUi> = {} as CreateFormOptions<TData, TUi>,
 ): FormApi<TData, TUi> {
+  const initialDataSnapshot: TData = structuredClone((options.initialData ?? {}) as TData);
+
   // Justified: runtime data matches TData/TUi, narrowing for consumer DX
   const initialState = {
     data: (options.initialData ?? {}) as TData,
@@ -59,10 +63,21 @@ export function createForm<TData, TUi>(
     meta: {
       validation: {},
     },
+    fieldMeta: {},
     issues: [],
   } as FormState<TData, TUi>;
 
   const store = new FormStore<TData, TUi>(initialState, options.stateStrategy);
+
+  /** Resolve a value from initialDataSnapshot by path segments */
+  function resolveInitialValue(segments: readonly (string | number)[]): unknown {
+    let current: unknown = initialDataSnapshot;
+    for (const seg of segments) {
+      if (current === null || current === undefined) return undefined;
+      current = (current as Record<string | number, unknown>)[seg];
+    }
+    return current;
+  }
 
   // Create arbiter adapter if arbiter rules or session provided
   let arbiterAdapter: ArbiterFormAdapter | undefined;
@@ -297,6 +312,22 @@ export function createForm<TData, TUi>(
     }
   }
 
+  function markFieldTouched(pathKey: string): void {
+    const tx = store.beginTransaction();
+    tx.mutate((draft) => {
+      const existing = (draft.fieldMeta as Record<string, FieldMetaEntry>)[pathKey];
+      if (existing?.touched) return draft;
+      return {
+        ...draft,
+        fieldMeta: {
+          ...draft.fieldMeta,
+          [pathKey]: { touched: true, isValidating: existing?.isValidating ?? false },
+        },
+      };
+    });
+    store.commitTransaction(tx);
+  }
+
   function field(path: string, config?: FieldConfig): FieldApi<TData, TUi, string> {
     const cacheKey = config ? `${path}::${JSON.stringify(config)}` : path;
     const cached = fieldCache.get(cacheKey);
@@ -310,6 +341,9 @@ export function createForm<TData, TUi>(
     // Justified: runtime path parsing validates path; cast bridges generic method signature
     setValue: dispatchSetValue as FormApi<TData, TUi>['setValue'],
       getIssues: (p) => getIssues(p),
+      getInitialValue: () => resolveInitialValue(canonical.segments),
+      getFieldMeta: (pk) => (store.getState().fieldMeta as Record<string, FieldMetaEntry>)[pk],
+      markTouched: markFieldTouched,
       formDefaults: options.fieldDefaults,
       config,
     });

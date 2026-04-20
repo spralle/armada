@@ -1,4 +1,4 @@
-import type { FormState, CreateFormOptions, ValidationIssue, SubmitContext } from './state.js';
+import type { FormState, CreateFormOptions, ValidationIssue, SubmitContext, FieldMetaEntry } from './state.js';
 import type {
   FormAction,
   Middleware,
@@ -146,6 +146,22 @@ export function executePipeline(ctx: PipelineContext): PipelineResult {
         }
         return { ...draft, data: setAtPath(draft.data, canonical.segments, transformedValue) };
       });
+
+      // Mark field as touched for data-namespace paths (transactional — rolled back on failure)
+      if (canonical.namespace === 'data') {
+        const pathKey = canonical.segments.join('.');
+        tx.mutate((draft) => {
+          const existing = (draft.fieldMeta as Record<string, FieldMetaEntry>)[pathKey];
+          if (existing?.touched) return draft;
+          return {
+            ...draft,
+            fieldMeta: {
+              ...draft.fieldMeta,
+              [pathKey]: { touched: true, isValidating: existing?.isValidating ?? false },
+            },
+          };
+        });
+      }
     }
 
     // Step 6: Middleware beforeEvaluate

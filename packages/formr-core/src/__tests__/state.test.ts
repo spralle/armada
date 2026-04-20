@@ -21,6 +21,7 @@ describe('FormState shape', () => {
       meta: {
         validation: {},
       },
+      fieldMeta: {},
       issues: [],
     };
     expect(state.meta.stage).toBeUndefined();
@@ -34,6 +35,7 @@ describe('FormState shape', () => {
         stage: 'new',
         validation: {},
       },
+      fieldMeta: {},
       issues: [],
     };
     expect(state.meta.stage).toBe('new');
@@ -50,6 +52,7 @@ describe('FormState shape', () => {
           status: 'idle',
         },
       },
+      fieldMeta: {},
       issues: [],
     };
     expect(state.meta.submission?.status).toBe('idle');
@@ -68,6 +71,7 @@ describe('FormState shape', () => {
       data: {},
       uiState: {},
       meta: { stage: 'draft', validation: {} },
+      fieldMeta: {},
       issues: [issue],
     };
     expect(state.issues).toHaveLength(1);

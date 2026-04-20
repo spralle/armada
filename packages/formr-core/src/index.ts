@@ -10,6 +10,7 @@ export {
   type SubmitContext,
   type FormState,
   type CreateFormOptions,
+  type FieldMetaEntry,
 } from './state.js';
 
 // Contract types (SE1.2)
@@ -64,6 +65,9 @@ export { applyRuleWrites } from './expression-integration.js';
 
 // Arbiter integration (ADR arbiter §9)
 export { createArbiterAdapter, createArbiterAdapterFromSession, type ArbiterFormAdapter } from './arbiter-integration.js';
+
+// Equality utility
+export { structuredEqual } from './equality.js';
 
 // Nested utilities (extracted from old rule engine)
 export { setNestedValue, deleteNestedValue } from './nested-utils.js';

@@ -13,6 +13,7 @@ function makeState(overrides?: Partial<FormState>): FormState {
     data: overrides?.data ?? {},
     uiState: overrides?.uiState ?? {},
     meta: overrides?.meta ?? { validation: {} },
+    fieldMeta: overrides?.fieldMeta ?? {},
     issues: overrides?.issues ?? [],
   };
 }
@@ -52,6 +53,9 @@ describe('FieldApi.validate()', () => {
       getState: () => makeState(),
       setValue: () => ({ ok: true }),
       getIssues: () => [],
+      getInitialValue: () => undefined,
+      getFieldMeta: () => undefined,
+      markTouched: () => {},
     });
     expect(api.validate()).toEqual([]);
   });
@@ -68,6 +72,9 @@ describe('FieldApi.validate()', () => {
       getState: () => makeState(),
       setValue: () => ({ ok: true }),
       getIssues: () => [],
+      getInitialValue: () => undefined,
+      getFieldMeta: () => undefined,
+      markTouched: () => {},
       config: { validators: [makeValidator('v1', [issue])] },
     });
     expect(api.validate()).toEqual([issue]);
@@ -90,6 +97,9 @@ describe('FieldApi.validate()', () => {
       getState: () => makeState(),
       setValue: () => ({ ok: true }),
       getIssues: () => [],
+      getInitialValue: () => undefined,
+      getFieldMeta: () => undefined,
+      markTouched: () => {},
       config: {
         validators: [
           makeValidator('v1', [issue1]),
@@ -110,6 +120,9 @@ describe('FieldApi.validate()', () => {
       getState: () => makeState({ data, uiState }),
       setValue: () => ({ ok: true }),
       getIssues: () => [],
+      getInitialValue: () => undefined,
+      getFieldMeta: () => undefined,
+      markTouched: () => {},
       config: { validators: [spy] },
     });
     api.validate();
@@ -125,6 +138,9 @@ describe('FieldApi.validate()', () => {
       getState: () => makeState({ meta: { stage: 'draft', validation: {} } }),
       setValue: () => ({ ok: true }),
       getIssues: () => [],
+      getInitialValue: () => undefined,
+      getFieldMeta: () => undefined,
+      markTouched: () => {},
       config: { validators: [spy] },
     });
     api.validate();

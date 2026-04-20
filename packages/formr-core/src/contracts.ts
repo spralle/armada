@@ -165,6 +165,10 @@ export interface FieldApi<TData, TUi, TPath extends string> {
   validate(): readonly ValidationIssue[];
   issues(): readonly ValidationIssue[];
   ui<T = unknown>(selector: (uiState: TUi) => T): T;
+  isTouched(): boolean;
+  isDirty(): boolean;
+  isValidating(): boolean;
+  markTouched(): void;
 }
 
 /** ADR section 9 — FormApi */

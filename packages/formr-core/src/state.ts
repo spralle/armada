@@ -32,6 +32,12 @@ export interface SubmitContext {
   readonly metadata?: Readonly<Record<string, unknown>>;
 }
 
+/** Per-field engine metadata — NOT in $ui, this is form engine state */
+export interface FieldMetaEntry {
+  readonly touched: boolean;
+  readonly isValidating: boolean;
+}
+
 /** ADR section 1.1 — FormState */
 export interface FormState<TData, TUi> {
   readonly data: TData;
@@ -49,6 +55,7 @@ export interface FormState<TData, TUi> {
       readonly lastErrorCode?: string;
     };
   };
+  readonly fieldMeta: Readonly<Record<string, FieldMetaEntry>>;
   readonly issues: readonly ValidationIssue[];
 }
 

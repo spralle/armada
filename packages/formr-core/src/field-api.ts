@@ -1,7 +1,8 @@
 import type { CanonicalPath } from './path.js';
-import type { FormState, ValidationIssue } from './state.js';
+import type { FormState, ValidationIssue, FieldMetaEntry } from './state.js';
 import type { FieldApi, FieldConfig, FormDispatchResult } from './contracts.js';
 import type { DeepValue } from './type-utils.js';
+import { structuredEqual } from './equality.js';
 
 /** Resolve a value from a nested object by walking canonical path segments */
 function resolveValue(root: unknown, segments: readonly (string | number)[]): unknown {
@@ -19,6 +20,9 @@ export interface CreateFieldApiParams<TData, TUi> {
   readonly getState: () => FormState<TData, TUi>;
   readonly setValue: (path: string, value: unknown) => FormDispatchResult;
   readonly getIssues: (path: CanonicalPath) => readonly ValidationIssue[];
+  readonly getInitialValue: () => unknown;
+  readonly getFieldMeta: (pathKey: string) => FieldMetaEntry | undefined;
+  readonly markTouched: (pathKey: string) => void;
   /** Form-level field defaults (tier 2) */
   readonly formDefaults?: FieldConfig | undefined;
   /** Field-level overrides (tier 3, highest priority) */
@@ -49,6 +53,8 @@ function stripUndefined(obj: FieldConfig): Partial<FieldConfig> {
 
 /** ADR §9.1 — create a FieldApi that delegates to the parent form */
 export function createFieldApi<TData, TUi>(params: CreateFieldApiParams<TData, TUi>): FieldApi<TData, TUi, string> {
+  const pathKey = params.path.segments.join('.');
+
   return {
     path: params.path,
 
@@ -90,6 +96,24 @@ export function createFieldApi<TData, TUi>(params: CreateFieldApiParams<TData, T
 
     ui<T = unknown>(selector: (uiState: TUi) => T): T {
       return selector(params.getState().uiState);
+    },
+
+    isTouched(): boolean {
+      return params.getFieldMeta(pathKey)?.touched ?? false;
+    },
+
+    isDirty(): boolean {
+      const current = this.get();
+      const initial = params.getInitialValue();
+      return !structuredEqual(current, initial);
+    },
+
+    isValidating(): boolean {
+      return params.getFieldMeta(pathKey)?.isValidating ?? false;
+    },
+
+    markTouched(): void {
+      params.markTouched(pathKey);
     },
   };
 }
