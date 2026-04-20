@@ -15,6 +15,7 @@ export default defineConfig({
       "@ghost/ui": resolve("../../packages/ui/src/index.ts"),
       "@ghost/plugin-contracts": resolve("../../packages/plugin-contracts/src/index.ts"),
       "@ghost/predicate": resolve("../../packages/predicate/src/index.ts"),
+      "@ghost/arbiter": resolve("../../packages/arbiter/src/index.ts"),
       "@/": resolve("../../packages/ui/src") + "/",
     },
   },

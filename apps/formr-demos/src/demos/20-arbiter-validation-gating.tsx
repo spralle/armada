@@ -118,6 +118,12 @@ export function ArbiterValidationGatingDemo() {
           )}
 
           <div className="rounded-md bg-surface-inset border border-border-muted p-3">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Form Data</p>
+            <pre className="text-xs text-code-foreground font-mono">
+              {JSON.stringify(data, null, 2)}
+            </pre>
+          </div>
+          <div className="rounded-md bg-surface-inset border border-border-muted p-3">
             <p className="text-xs font-medium text-muted-foreground mb-1">UI State</p>
             <pre className="text-xs text-code-foreground font-mono">
               {JSON.stringify(uiState, null, 2)}
