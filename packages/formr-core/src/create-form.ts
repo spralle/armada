@@ -6,8 +6,8 @@ import type {
   FormDispatchResult,
   FieldConfig,
   SubmitResult,
+  Middleware,
 } from './contracts.js';
-import type { Middleware } from './contracts.js';
 import type { CanonicalPath } from './path.js';
 import { FormStore } from './store.js';
 import { parsePath } from './path-parser.js';
@@ -16,20 +16,17 @@ import { applySubmitOutcome } from './submit.js';
 import { executePipeline } from './pipeline.js';
 import { initMiddlewares, disposeMiddlewares, runNotifyHooksAsync } from './middleware-runner.js';
 import { FormrError } from './errors.js';
-import { runTransforms } from './transforms.js';
-import type { TransformDefinition } from './transforms.js';
-import { createArbiterAdapter, createArbiterAdapterFromSession } from './arbiter-integration.js';
-import type { ArbiterFormAdapter } from './arbiter-integration.js';
+import { runTransforms, type TransformDefinition } from './transforms.js';
+import { createArbiterAdapter, createArbiterAdapterFromSession, type ArbiterFormAdapter } from './arbiter-integration.js';
 import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './extensions.js';
+import { computeIsValid, computeIsSubmitting, computeIsPristine, computeIsTouched } from './convenience-flags.js';
 
-/** Check if two CanonicalPaths are equal */
 function pathEquals(a: CanonicalPath, b: CanonicalPath): boolean {
   if (a.namespace !== b.namespace) return false;
   if (a.segments.length !== b.segments.length) return false;
   return a.segments.every((seg, i) => seg === b.segments[i]);
 }
 
-/** Check if a path starts with a given prefix */
 function pathStartsWith(path: CanonicalPath, prefix: CanonicalPath): boolean {
   if (path.namespace !== prefix.namespace) return false;
   if (path.segments.length < prefix.segments.length) return false;
@@ -40,15 +37,12 @@ function generateSubmitId(): string {
   return `submit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Extract TransformDefinition instances from options.transforms via duck-type check */
 function getEgressTransforms(options: CreateFormOptions<unknown, unknown>): readonly TransformDefinition[] {
   if (!options.transforms?.length) return [];
   return options.transforms.filter(
     (t): t is TransformDefinition => 'transform' in t && typeof (t as TransformDefinition).transform === 'function',
   );
 }
-
-import { structuredEqual } from './equality.js';
 
 /** ADR §9 — createForm factory */
 export function createForm<TData, TUi>(
@@ -70,7 +64,6 @@ export function createForm<TData, TUi>(
 
   const store = new FormStore<TData, TUi>(initialState, options.stateStrategy);
 
-  /** Resolve a value from initialDataSnapshot by path segments */
   function resolveInitialValue(segments: readonly (string | number)[]): unknown {
     let current: unknown = initialDataSnapshot;
     for (const seg of segments) {
@@ -384,6 +377,12 @@ export function createForm<TData, TUi>(
     field: field as FormApi<TData, TUi>['field'],
     subscribe: (listener) => store.subscribe(listener),
     reset,
+    canSubmit: () => !computeIsSubmitting(store.getState()) && computeIsValid(store.getState()),
+    isPristine: () => computeIsPristine(store.getState(), initialDataSnapshot),
+    isDirty: () => !computeIsPristine(store.getState(), initialDataSnapshot),
+    isValid: () => computeIsValid(store.getState()),
+    isSubmitting: () => computeIsSubmitting(store.getState()),
+    isTouched: () => computeIsTouched(store.getState()),
     dispose: () => {
       arbiterAdapter?.dispose();
       const middlewares = (options.middleware ?? []) as readonly Middleware[];
