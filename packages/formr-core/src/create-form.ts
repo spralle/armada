@@ -49,19 +49,20 @@ function getEgressTransforms(options: CreateFormOptions): readonly TransformDefi
 }
 
 /** ADR §9 — createForm factory */
-export function createForm(
-  options: CreateFormOptions = {},
-): FormApi {
-  const initialState: FormState = {
-    data: options.initialData ?? {},
-    uiState: options.initialUiState ?? {},
+export function createForm<TData = unknown, TUi = unknown>(
+  options: CreateFormOptions<TData, TUi> = {} as CreateFormOptions<TData, TUi>,
+): FormApi<TData, TUi> {
+  // Justified: runtime data matches TData/TUi, narrowing for consumer DX
+  const initialState = {
+    data: (options.initialData ?? {}) as TData,
+    uiState: (options.initialUiState ?? {}) as TUi,
     meta: {
       validation: {},
     },
     issues: [],
-  };
+  } as FormState<TData, TUi>;
 
-  const store = new FormStore(initialState, options.stateStrategy);
+  const store = new FormStore<TData, TUi>(initialState, options.stateStrategy);
 
   // Create arbiter adapter if arbiter rules or session provided
   let arbiterAdapter: ArbiterFormAdapter | undefined;
@@ -73,7 +74,7 @@ export function createForm(
   }
 
   // Field cache: keyed by rawPath + serialized config
-  const fieldCache = new Map<string, FieldApi>();
+  const fieldCache = new Map<string, FieldApi<TData, TUi, string>>();
 
   function getIssues(path: CanonicalPath): readonly ValidationIssue[] {
     return store.getState().issues.filter(
@@ -292,13 +293,13 @@ export function createForm(
     }
   }
 
-  function field(path: string, config?: FieldConfig): FieldApi {
+  function field(path: string, config?: FieldConfig): FieldApi<TData, TUi, string> {
     const cacheKey = config ? `${path}::${JSON.stringify(config)}` : path;
     const cached = fieldCache.get(cacheKey);
     if (cached) return cached;
 
     const canonical = parsePath(path);
-    const fieldApi = createFieldApi({
+    const fieldApi = createFieldApi<TData, TUi>({
       path: canonical,
       rawPath: path,
       getState: () => store.getState(),
@@ -312,7 +313,7 @@ export function createForm(
     return fieldApi;
   }
 
-  const api: FormApi = {
+  const api: FormApi<TData, TUi> = {
     getState: () => store.getState(),
     dispatch,
     setValue: dispatchSetValue,

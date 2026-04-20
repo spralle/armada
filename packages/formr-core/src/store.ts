@@ -1,38 +1,38 @@
 import type { FormState } from './state.js';
 import { Transaction, type StateStrategy, defaultStrategy } from './transaction.js';
 
-export type StateListener = (
-  state: FormState,
+export type StateListener<TData = unknown, TUi = unknown> = (
+  state: FormState<TData, TUi>,
 ) => void;
 
 /** Synchronous reactive store with transactional semantics — only one transaction active at a time. */
-export class FormStore {
-  private _state: FormState;
-  private _listeners: Set<StateListener> = new Set();
-  private _activeTransaction: Transaction | null = null;
+export class FormStore<TData = unknown, TUi = unknown> {
+  private _state: FormState<TData, TUi>;
+  private _listeners: Set<StateListener<TData, TUi>> = new Set();
+  private _activeTransaction: Transaction<TData, TUi> | null = null;
   private _strategy: StateStrategy;
 
-  constructor(initialState: FormState, strategy?: StateStrategy) {
+  constructor(initialState: FormState<TData, TUi>, strategy?: StateStrategy) {
     this._state = initialState;
     this._strategy = strategy ?? defaultStrategy;
   }
 
   /** Return the current frozen state snapshot. */
-  getState(): FormState {
+  getState(): FormState<TData, TUi> {
     return this._state;
   }
 
   /** Clone current state into a mutable draft context. Only one transaction may be active at a time. */
-  beginTransaction(): Transaction {
+  beginTransaction(): Transaction<TData, TUi> {
     if (this._activeTransaction) {
       throw new Error('Cannot begin transaction while another is active');
     }
-    this._activeTransaction = new Transaction(this._state, this._strategy);
+    this._activeTransaction = new Transaction<TData, TUi>(this._state, this._strategy);
     return this._activeTransaction;
   }
 
   /** Apply draft state and notify subscribers if state was mutated. */
-  commitTransaction(tx: Transaction): void {
+  commitTransaction(tx: Transaction<TData, TUi>): void {
     if (tx !== this._activeTransaction) {
       throw new Error('Transaction does not belong to this store');
     }
@@ -48,7 +48,7 @@ export class FormStore {
   }
 
   /** Discard draft state without notifying subscribers. */
-  rollbackTransaction(tx: Transaction): void {
+  rollbackTransaction(tx: Transaction<TData, TUi>): void {
     if (tx !== this._activeTransaction) {
       throw new Error('Transaction does not belong to this store');
     }
@@ -57,7 +57,7 @@ export class FormStore {
   }
 
   /** Register a listener called on each commit. Returns an unsubscribe function. */
-  subscribe(listener: StateListener): () => void {
+  subscribe(listener: StateListener<TData, TUi>): () => void {
     this._listeners.add(listener);
     return () => {
       this._listeners.delete(listener);

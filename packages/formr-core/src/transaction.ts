@@ -13,29 +13,29 @@ export const defaultStrategy: StateStrategy = {
 };
 
 /** Read-only view of a transaction's state at a point in time. */
-export interface TransactionSnapshot {
-  readonly prevState: FormState;
-  readonly draftState: FormState;
+export interface TransactionSnapshot<TData = unknown, TUi = unknown> {
+  readonly prevState: FormState<TData, TUi>;
+  readonly draftState: FormState<TData, TUi>;
   readonly status: 'active' | 'committed' | 'rolled-back';
 }
 
 /** Mutable draft context that tracks mutations against a frozen baseline. */
-export class Transaction {
-  private _prevState: FormState;
-  private _draftState: FormState;
+export class Transaction<TData = unknown, TUi = unknown> {
+  private _prevState: FormState<TData, TUi>;
+  private _draftState: FormState<TData, TUi>;
   private _status: 'active' | 'committed' | 'rolled-back' = 'active';
   private _dirty = false;
 
-  constructor(currentState: FormState, strategy: StateStrategy = defaultStrategy) {
+  constructor(currentState: FormState<TData, TUi>, strategy: StateStrategy = defaultStrategy) {
     this._prevState = strategy.freeze(strategy.clone(currentState));
     this._draftState = strategy.clone(currentState);
   }
 
-  get prevState(): FormState {
+  get prevState(): FormState<TData, TUi> {
     return this._prevState;
   }
 
-  get draftState(): FormState {
+  get draftState(): FormState<TData, TUi> {
     return this._draftState;
   }
 
@@ -48,7 +48,7 @@ export class Transaction {
   }
 
   /** Apply a mutation to the draft state */
-  mutate(mutator: (draft: FormState) => FormState): void {
+  mutate(mutator: (draft: FormState<TData, TUi>) => FormState<TData, TUi>): void {
     if (this._status !== 'active') {
       throw new Error(`Cannot mutate ${this._status} transaction`);
     }
@@ -57,7 +57,7 @@ export class Transaction {
   }
 
   /** Commit — returns the final draft state */
-  commit(): FormState {
+  commit(): FormState<TData, TUi> {
     if (this._status !== 'active') {
       throw new Error(`Cannot commit ${this._status} transaction`);
     }
@@ -66,7 +66,7 @@ export class Transaction {
   }
 
   /** Rollback — discard all draft mutations, return original state */
-  rollback(): FormState {
+  rollback(): FormState<TData, TUi> {
     if (this._status !== 'active') {
       throw new Error(`Cannot rollback ${this._status} transaction`);
     }

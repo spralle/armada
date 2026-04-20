@@ -12,10 +12,10 @@ function resolveValue(root: unknown, segments: readonly (string | number)[]): un
   return current;
 }
 
-export interface CreateFieldApiParams {
+export interface CreateFieldApiParams<TData = unknown, TUi = unknown> {
   readonly path: CanonicalPath;
   readonly rawPath: string;
-  readonly getState: () => FormState;
+  readonly getState: () => FormState<TData, TUi>;
   readonly setValue: (path: string, value: unknown) => FormDispatchResult;
   readonly getIssues: (path: CanonicalPath) => readonly ValidationIssue[];
   /** Form-level field defaults (tier 2) */
@@ -47,7 +47,7 @@ function stripUndefined(obj: FieldConfig): Partial<FieldConfig> {
 }
 
 /** ADR §9.1 — create a FieldApi that delegates to the parent form */
-export function createFieldApi(params: CreateFieldApiParams): FieldApi {
+export function createFieldApi<TData = unknown, TUi = unknown>(params: CreateFieldApiParams<TData, TUi>): FieldApi<TData, TUi, string> {
   return {
     path: params.path,
 
@@ -86,7 +86,7 @@ export function createFieldApi(params: CreateFieldApiParams): FieldApi {
       return params.getIssues(params.path);
     },
 
-    ui<T = unknown>(selector: (uiState: unknown) => T): T {
+    ui<T = unknown>(selector: (uiState: TUi) => T): T {
       return selector(params.getState().uiState);
     },
   };
