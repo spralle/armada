@@ -54,7 +54,8 @@ import { structuredEqual } from './equality.js';
 export function createForm<TData, TUi>(
   options: CreateFormOptions<TData, TUi> = {} as CreateFormOptions<TData, TUi>,
 ): FormApi<TData, TUi> {
-  const initialDataSnapshot: TData = structuredClone((options.initialData ?? {}) as TData);
+  let initialDataSnapshot: TData = structuredClone((options.initialData ?? {}) as TData);
+  const initialUiStateSnapshot: TUi = structuredClone((options.initialUiState ?? {}) as TUi);
 
   // Justified: runtime data matches TData/TUi, narrowing for consumer DX
   const initialState = {
@@ -354,6 +355,25 @@ export function createForm<TData, TUi>(
     return fieldApi;
   }
 
+  function reset(nextInitial?: { readonly data?: TData; readonly uiState?: TUi }): void {
+    if (nextInitial?.data !== undefined) {
+      initialDataSnapshot = structuredClone(nextInitial.data);
+    }
+    const resetData = nextInitial?.data !== undefined ? structuredClone(nextInitial.data) : structuredClone(initialDataSnapshot);
+    const resetUi = nextInitial?.uiState !== undefined ? structuredClone(nextInitial.uiState) : structuredClone(initialUiStateSnapshot);
+
+    const tx = store.beginTransaction();
+    tx.mutate(() => ({
+      data: resetData,
+      uiState: resetUi,
+      meta: { validation: {} },
+      fieldMeta: {},
+      issues: [],
+    } as FormState<TData, TUi>));
+    store.commitTransaction(tx);
+    fieldCache.clear();
+  }
+
   const api: FormApi<TData, TUi> = {
     getState: () => store.getState(),
     dispatch,
@@ -363,6 +383,7 @@ export function createForm<TData, TUi>(
     // Justified: runtime path validation ensures P constraint; cast bridges generic method signature
     field: field as FormApi<TData, TUi>['field'],
     subscribe: (listener) => store.subscribe(listener),
+    reset,
     dispose: () => {
       arbiterAdapter?.dispose();
       const middlewares = (options.middleware ?? []) as readonly Middleware[];

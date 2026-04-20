@@ -196,5 +196,7 @@ export interface FormApi<TData, TUi> {
   submit(context?: Partial<SubmitContext>): Promise<SubmitResult>;
   field<P extends string & DeepKeys<TData>>(path: P, config?: FieldConfig): FieldApi<TData, TUi, P>;
   subscribe(listener: (state: FormState<TData, TUi>) => void): () => void;
+  /** Reset form to initial or provided state */
+  reset(nextInitial?: { readonly data?: TData; readonly uiState?: TUi }): void;
   dispose(): void;
 }
