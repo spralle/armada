@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useForm } from '@ghost/formr-react';
-import { ingestSchema } from '@ghost/formr-from-schema';
+import { ingestSchema, isSectionNode } from '@ghost/formr-from-schema';
 import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
 import type { LayoutNode } from '@ghost/formr-from-schema';
 import type { FormApi } from '@ghost/formr-core';
@@ -147,8 +147,8 @@ function renderCustomNode(
     return <DemoFormField key={node.id} form={form} field={field} onChange={onChange} />;
   }
 
-  if (node.type === 'section') {
-    const title = node.props?.title as string | undefined;
+  if (isSectionNode(node)) {
+    const title = node.props?.title;
     return (
       <div key={node.id} className="flex flex-col gap-3">
         {title && <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">{title}</h3>}
@@ -164,7 +164,7 @@ function renderCustomNode(
       <Tabs defaultValue={node.children?.[0]?.id}>
         <TabsList>
           {node.children?.map((s) => (
-            <TabsTrigger key={s.id} value={s.id}>{(s.props?.title as string) ?? s.id}</TabsTrigger>
+            <TabsTrigger key={s.id} value={s.id}>{(isSectionNode(s) ? s.props?.title : undefined) ?? s.id}</TabsTrigger>
           ))}
         </TabsList>
         {node.children?.map((child) => (
@@ -181,7 +181,7 @@ function renderCustomNode(
       <Accordion type="multiple" defaultValue={[node.children?.[0]?.id ?? '']}>
         {node.children?.map((child) => (
           <AccordionItem key={child.id} value={child.id}>
-            <AccordionTrigger>{(child.props?.title as string) ?? child.id}</AccordionTrigger>
+            <AccordionTrigger>{(isSectionNode(child) ? child.props?.title : undefined) ?? child.id}</AccordionTrigger>
             <AccordionContent>
               {renderCustomNode(child, form, fieldMap, onChange)}
             </AccordionContent>

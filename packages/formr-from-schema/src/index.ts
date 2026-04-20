@@ -19,6 +19,7 @@ export {
   type SchemaFieldType,
   type SchemaIngestionResult,
   type SchemaFieldMetadata,
+  type SchemaMetadata,
 } from './types.js';
 export { type JsonSchema } from './adapters/json-schema-types.js';
 export {
@@ -32,6 +33,14 @@ export {
   type LayoutNodeType,
   type BuiltInLayoutNodeType,
   type LayoutNode,
+  type SectionNodeProps,
+  type GroupNodeProps,
+  type FieldNodeProps,
+  type ArrayNodeProps,
+  type SectionNode,
+  type GroupNode,
+  type FieldNode,
+  type ArrayNode,
   isBuiltInNodeType,
   isFieldNode,
   isArrayNode,

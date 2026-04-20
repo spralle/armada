@@ -47,7 +47,8 @@ describe('extractFromZodV4', () => {
     };
     const result = extractFromZodV4(mockSchema);
     expect(result.fields).toHaveLength(0);
-    expect(result.metadata.zodV4ValidationOnly).toBe(true);
+    expect(result.metadata.validationOnly).toBe(true);
+    expect(result.metadata.vendor).toBe('zod4');
   });
 
   test('extracts fields from mock v4 object schema', () => {

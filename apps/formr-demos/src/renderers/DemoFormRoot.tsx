@@ -1,5 +1,6 @@
 import { useMemo, useCallback, useState } from 'react';
 import { useSchemaForm } from '../hooks/use-schema-form';
+import { isSectionNode } from '@ghost/formr-from-schema';
 import type { LayoutNode, SchemaFieldInfo } from '@ghost/formr-from-schema';
 import type { FormApi } from '@ghost/formr-core';
 import { Card, CardContent, CardHeader, CardTitle } from '@ghost/ui';
@@ -95,9 +96,9 @@ function renderNode(
     return <DemoFormField key={node.id} form={form} field={field} onChange={onChange} />;
   }
 
-  if (node.type === 'section') {
+  if (isSectionNode(node)) {
     const columns = (node.props?.columns as number) ?? 1;
-    const title = node.props?.title as string | undefined;
+    const title = node.props?.title;
     const gridClass = COLUMN_CLASSES[columns] ?? 'flex flex-col gap-4';
     return (
       <div key={node.id} className="flex flex-col gap-3">

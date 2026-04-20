@@ -1,4 +1,4 @@
-import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult } from '../types.js';
+import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult, SchemaMetadata } from '../types.js';
 import { FromSchemaError } from '../errors.js';
 
 /**
@@ -19,15 +19,15 @@ interface ZodV4Shape {
 
 export function extractFromZodV4(schema: unknown): SchemaIngestionResult {
   const fields: SchemaFieldInfo[] = [];
-  const metadata: Record<string, unknown> = {};
 
   const v4 = schema as ZodV4Internal;
   if (!v4._zod?.def) {
     // Validation-only fallback: schema conforms to Standard Schema but
     // we cannot introspect its structure without v4 internals.
-    return { fields: [], metadata: { zodV4ValidationOnly: true } };
+    return { fields: [], metadata: { vendor: 'zod4', validationOnly: true } };
   }
 
+  const metadata: SchemaMetadata = { vendor: 'zod4' };
   walkZodV4(schema, '', fields, true);
   return { fields, metadata };
 }

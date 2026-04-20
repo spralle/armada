@@ -1,4 +1,4 @@
-import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult } from '../types.js';
+import type { SchemaFieldInfo, SchemaFieldMetadata, SchemaFieldType, SchemaIngestionResult, SchemaMetadata } from '../types.js';
 import { FromSchemaError } from '../errors.js';
 
 // Zod internal types for duck-typed traversal (Zod has no formal traversal API)
@@ -20,16 +20,16 @@ export function extractFromZod(schema: unknown): SchemaIngestionResult {
   }
 
   const fields: SchemaFieldInfo[] = [];
-  const rootMetadata: Record<string, unknown> = {};
 
   const rootMeta = extractFormrMetadata(zodSchema);
-  if (rootMeta) {
-    Object.assign(rootMetadata, rootMeta);
-  }
+  const metadata: SchemaMetadata = {
+    vendor: 'zod',
+    ...(rootMeta ? { extra: rootMeta as unknown as Readonly<Record<string, unknown>> } : {}),
+  };
 
   walkZodSchema(zodSchema, '', fields, true);
 
-  return { fields, metadata: rootMetadata };
+  return { fields, metadata };
 }
 
 function walkZodSchema(
@@ -165,7 +165,14 @@ function mapZodType(typeName: string): SchemaFieldType {
   }
 }
 
-function extractFormrMetadata(schema: ZodLike): Readonly<Record<string, unknown>> | undefined {
+const KNOWN_META_KEYS = new Set([
+  'title', 'description', 'enum', 'default',
+  'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
+  'minLength', 'maxLength', 'format', 'pattern',
+  'widget', 'options', 'label', 'placeholder',
+]);
+
+function extractFormrMetadata(schema: ZodLike): SchemaFieldMetadata | undefined {
   const def = schema._def;
   if (!def) return undefined;
 
@@ -178,7 +185,23 @@ function extractFormrMetadata(schema: ZodLike): Readonly<Record<string, unknown>
   }
 
   if (rawMeta && typeof rawMeta === 'object' && 'formr' in rawMeta) {
-    return rawMeta['formr'] as Readonly<Record<string, unknown>>;
+    const formr = rawMeta['formr'] as Record<string, unknown>;
+    const result: Record<string, unknown> = {};
+    const extra: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(formr)) {
+      if (KNOWN_META_KEYS.has(key)) {
+        result[key] = value;
+      } else {
+        extra[key] = value;
+      }
+    }
+
+    if (Object.keys(extra).length > 0) {
+      result.extra = extra;
+    }
+
+    return Object.keys(result).length > 0 ? (result as SchemaFieldMetadata) : undefined;
   }
 
   return undefined;

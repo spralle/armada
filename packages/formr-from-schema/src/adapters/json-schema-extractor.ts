@@ -1,20 +1,54 @@
-import type { SchemaFieldInfo, SchemaFieldType, SchemaIngestionResult } from '../types.js';
+import type { SchemaFieldInfo, SchemaFieldMetadata, SchemaFieldType, SchemaIngestionResult, SchemaMetadata } from '../types.js';
 import type { JsonSchema } from './json-schema-types.js';
 import { dereferenceSchema } from './json-schema-deref.js';
+
+/** Named keys on SchemaFieldMetadata (excluding extra) */
+const KNOWN_META_KEYS = new Set([
+  'title', 'description', 'enum', 'default',
+  'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
+  'minLength', 'maxLength', 'format', 'pattern',
+  'widget', 'options', 'label', 'placeholder',
+]);
+
+function buildMetadata(standardMeta: Record<string, unknown>, formrMeta?: Record<string, unknown>): SchemaFieldMetadata | undefined {
+  const result: Record<string, unknown> = { ...standardMeta };
+  const extra: Record<string, unknown> = {};
+
+  if (formrMeta) {
+    for (const [key, value] of Object.entries(formrMeta)) {
+      if (KNOWN_META_KEYS.has(key)) {
+        result[key] = value;
+      } else {
+        extra[key] = value;
+      }
+    }
+  }
+
+  const hasContent = Object.keys(result).length > 0 || Object.keys(extra).length > 0;
+  if (!hasContent) return undefined;
+
+  if (Object.keys(extra).length > 0) {
+    result.extra = extra;
+  }
+
+  return result as SchemaFieldMetadata;
+}
 
 export function extractFromJsonSchema(rawSchema: JsonSchema): SchemaIngestionResult {
   const schema = dereferenceSchema(rawSchema);
   const fields: SchemaFieldInfo[] = [];
-  const rootMetadata: Record<string, unknown> = {};
 
-  const rootFormr = schema['x-formr'];
-  if (rootFormr) {
-    Object.assign(rootMetadata, rootFormr);
-  }
+  const rootFormr = schema['x-formr'] as Record<string, unknown> | undefined;
+  const metadata: SchemaMetadata = {
+    vendor: 'json-schema',
+    ...(schema.title !== undefined ? { title: schema.title } : {}),
+    ...(schema.description !== undefined ? { description: schema.description } : {}),
+    ...(rootFormr ? { extra: rootFormr } : {}),
+  };
 
   walkJsonSchema(schema, '', fields);
 
-  return { fields, metadata: rootMetadata };
+  return { fields, metadata };
 }
 
 function walkJsonSchema(
@@ -42,10 +76,7 @@ function walkJsonSchema(
     if (schema.description !== undefined) arrayStandardMeta.description = schema.description;
     if (schema.default !== undefined) arrayStandardMeta.default = schema.default;
 
-    const arrayHasMeta = arrayFormrMeta || Object.keys(arrayStandardMeta).length > 0;
-    const arrayMetadata = arrayHasMeta
-      ? { ...arrayStandardMeta, ...arrayFormrMeta }
-      : undefined;
+    const arrayMetadata = buildMetadata(arrayStandardMeta, arrayFormrMeta ?? undefined);
     fields.push({
       path: prefix,
       type: 'array',
@@ -88,10 +119,7 @@ function walkJsonSchema(
     if (schema.format !== undefined) standardMeta.format = schema.format;
     if (schema.pattern !== undefined) standardMeta.pattern = schema.pattern;
 
-  const hasMeta = formrMeta || Object.keys(standardMeta).length > 0;
-  const metadata = hasMeta
-    ? { ...standardMeta, ...formrMeta }
-    : undefined;
+  const metadata = buildMetadata(standardMeta, formrMeta ?? undefined);
 
   fields.push({
     path: prefix,

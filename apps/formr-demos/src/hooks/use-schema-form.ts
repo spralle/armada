@@ -5,7 +5,7 @@ import {
   createJsonSchemaValidator,
   isJsonSchema,
 } from '@ghost/formr-from-schema';
-import type { LayoutNode, SchemaFieldInfo } from '@ghost/formr-from-schema';
+import type { LayoutNode, SchemaFieldInfo, SchemaMetadata } from '@ghost/formr-from-schema';
 import { useForm } from '@ghost/formr-react';
 import type { UseFormOptions, FormApi } from '@ghost/formr-react';
 import type { ValidatorAdapter } from '@ghost/formr-core';
@@ -19,7 +19,7 @@ export interface UseSchemaFormResult {
   readonly form: FormApi;
   readonly fields: readonly SchemaFieldInfo[];
   readonly layout: LayoutNode;
-  readonly metadata: Readonly<Record<string, unknown>>;
+  readonly metadata: SchemaMetadata;
 }
 
 /**

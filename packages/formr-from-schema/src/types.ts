@@ -40,7 +40,7 @@ export interface SchemaFieldMetadata {
   readonly options?: readonly unknown[];
   readonly label?: string;
   readonly placeholder?: string;
-  readonly [key: string]: unknown;
+  readonly extra?: Readonly<Record<string, unknown>>;
 }
 
 // Extracted field info from schema ingestion
@@ -65,8 +65,17 @@ export type SchemaFieldType =
   | 'union'
   | 'unknown';
 
+/** Typed metadata produced by schema ingestion at the root level */
+export interface SchemaMetadata {
+  readonly vendor?: string;
+  readonly title?: string;
+  readonly description?: string;
+  readonly validationOnly?: boolean;
+  readonly extra?: Readonly<Record<string, unknown>>;
+}
+
 // Schema ingestion result
 export interface SchemaIngestionResult {
   readonly fields: readonly SchemaFieldInfo[];
-  readonly metadata: Readonly<Record<string, unknown>>;
+  readonly metadata: SchemaMetadata;
 }

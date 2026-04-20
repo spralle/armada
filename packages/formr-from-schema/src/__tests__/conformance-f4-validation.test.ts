@@ -1,6 +1,21 @@
 import { describe, test, expect } from 'bun:test';
 import { createJsonSchemaValidator } from '../adapters/json-schema-validator.js';
 import type { JsonSchema } from '../adapters/json-schema-types.js';
+import type { ValidatorAdapter, ValidationIssue } from '@ghost/formr-core';
+
+/**
+ * Narrow the sync-or-async return of ValidatorAdapter.validate() to sync,
+ * since createJsonSchemaValidator always returns synchronously.
+ */
+function validateSync(
+  validator: ValidatorAdapter,
+  data: unknown,
+  stage?: string,
+): readonly ValidationIssue[] {
+  const result = validator.validate({ data, uiState: undefined, schema: undefined, stage });
+  if (result instanceof Promise) throw new Error('Expected sync validation');
+  return result;
+}
 
 /**
  * F4: Validation envelope conformance fixtures.
@@ -20,9 +35,9 @@ describe('F4: Validation envelope — required fields present', () => {
   const validator = createJsonSchemaValidator(schema);
 
   test('every issue has code, message, severity, stage, path, source', () => {
-    const issues = validator.validate({ data: {}, uiState: {}, stage: 'submit' });
-    expect((issues as any).length).toBeGreaterThan(0);
-    for (const i of issues as any) {
+    const issues = validateSync(validator, {}, 'submit');
+    expect(issues.length).toBeGreaterThan(0);
+    for (const i of issues) {
       expect(typeof i.code).toBe('string');
       expect(i.code.length).toBeGreaterThan(0);
       expect(typeof i.message).toBe('string');
@@ -39,8 +54,8 @@ describe('F4: Validation envelope — required fields present', () => {
   });
 
   test('origin metadata is json-schema-adapter for JSON Schema validator', () => {
-    const issues = validator.validate({ data: {}, uiState: {}, stage: 'submit' });
-    for (const i of issues as any) {
+    const issues = validateSync(validator, {}, 'submit');
+    for (const i of issues) {
       expect(i.source.origin).toBe('json-schema-adapter');
       expect(i.source.validatorId).toBe('json-schema-adapter');
     }
@@ -60,12 +75,11 @@ describe('F4: Validation envelope — ordering stability', () => {
   const validator = createJsonSchemaValidator(schema);
 
   test('same input produces same issue order across multiple runs', () => {
-    const data = { data: {}, uiState: {}, stage: 'submit' as const };
-    const run1 = validator.validate(data) as any;
-    const run2 = validator.validate(data) as any;
-    const run3 = validator.validate(data) as any;
+    const run1 = validateSync(validator, {}, 'submit');
+    const run2 = validateSync(validator, {}, 'submit');
+    const run3 = validateSync(validator, {}, 'submit');
 
-    const key = (i: any) => i.code + ':' + i.path.segments.join('.');
+    const key = (i: ValidationIssue) => i.code + ':' + i.path.segments.join('.');
     expect(run1.map(key)).toEqual(run2.map(key));
     expect(run2.map(key)).toEqual(run3.map(key));
   });
@@ -79,10 +93,10 @@ describe('F4: Validation envelope — dedupe', () => {
       required: ['name'],
     };
     const validator = createJsonSchemaValidator(schema);
-    const issues = validator.validate({ data: {}, uiState: {}, stage: 'submit' }) as any;
+    const issues = validateSync(validator, {}, 'submit');
 
     const nameRequired = issues.filter(
-      (i: any) => i.code === 'REQUIRED' && i.path.segments.includes('name'),
+      (i) => i.code === 'REQUIRED' && i.path.segments.includes('name'),
     );
     expect(nameRequired).toHaveLength(1);
   });
@@ -94,8 +108,8 @@ describe('F4: Validation envelope — dedupe', () => {
       required: ['age'],
     };
     const validator = createJsonSchemaValidator(schema);
-    const issues = validator.validate({ data: { age: 'not-a-number' }, uiState: {}, stage: 'submit' }) as any;
-    const ageCodes = issues.filter((i: any) => i.path.segments.includes('age')).map((i: any) => i.code);
+    const issues = validateSync(validator, { age: 'not-a-number' }, 'submit');
+    const ageCodes = issues.filter((i) => i.path.segments.includes('age')).map((i) => i.code);
     expect(ageCodes).toContain('INVALID_TYPE');
     expect(ageCodes).not.toContain('REQUIRED');
   });

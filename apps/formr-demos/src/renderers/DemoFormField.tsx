@@ -32,18 +32,18 @@ interface FieldMeta {
 }
 
 function extractFieldMeta(field: SchemaFieldInfo): FieldMeta {
-  const meta = field.metadata ?? {};
+  const meta = field.metadata;
   return {
-    widget: meta.widget,
-    enumValues: Array.isArray(meta.enum) ? meta.enum.map(String) : undefined,
-    format: meta.format,
-    min: meta.minimum,
-    max: meta.maximum,
-    minLength: meta.minLength,
-    maxLength: meta.maxLength,
-    pattern: meta.pattern,
-    title: meta.title ?? field.path,
-    description: meta.description,
+    widget: meta?.widget,
+    enumValues: Array.isArray(meta?.enum) ? meta.enum.map(String) : undefined,
+    format: meta?.format,
+    min: meta?.minimum,
+    max: meta?.maximum,
+    minLength: meta?.minLength,
+    maxLength: meta?.maxLength,
+    pattern: meta?.pattern,
+    title: meta?.title ?? field.path,
+    description: meta?.description,
   };
 }
 
