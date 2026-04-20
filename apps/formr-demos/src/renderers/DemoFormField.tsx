@@ -94,7 +94,7 @@ export function DemoFormField({ form, field, onChange }: DemoFormFieldProps) {
 
   const { widget, enumValues, format, min, max, minLength, maxLength, pattern, title, description } = extractFieldMeta(field);
 
-  const issues = form.getState().issues?.filter((i) => String(i.path) === String(field.path)) ?? [];
+  const issues = form.getState().issues?.filter((i) => i.path.segments.join('.') === field.path) ?? [];
   const hasError = issues.length > 0;
 
   const constraints = buildConstraints(field, min, max, minLength, maxLength, pattern, format);
