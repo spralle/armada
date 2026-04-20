@@ -4,6 +4,11 @@ export { extractFromZod } from './adapters/zod-extractor.js';
 export { extractFromZodV4 } from './adapters/zod4-extractor.js';
 export { extractFromJsonSchema } from './adapters/json-schema-extractor.js';
 export { createJsonSchemaValidator, isJsonSchema } from './adapters/json-schema-validator.js';
+export {
+  createSchemaForm,
+  type CreateSchemaFormOptions,
+  type SchemaFormResult,
+} from './create-schema-form.js';
 export { FromSchemaError, type FromSchemaErrorCode } from './errors.js';
 export {
   mergeMetadata,

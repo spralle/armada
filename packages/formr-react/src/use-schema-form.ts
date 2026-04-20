@@ -1,10 +1,5 @@
 import { useMemo } from 'react';
-import {
-  ingestSchema,
-  compileLayout,
-  createJsonSchemaValidator,
-  isJsonSchema,
-} from '@ghost/formr-from-schema';
+import { createSchemaForm } from '@ghost/formr-from-schema';
 import type { LayoutNode, SchemaFieldInfo, SchemaMetadata } from '@ghost/formr-from-schema';
 import { useForm } from './use-form.js';
 import type { UseFormOptions } from './use-form.js';
@@ -23,36 +18,31 @@ export interface UseSchemaFormResult {
 }
 
 /**
- * Convenience hook: schema in → form + fields + layout + validation out.
- * Composes ingestSchema, createJsonSchemaValidator, useForm, and compileLayout.
+ * React lifecycle wrapper over createSchemaForm.
+ * Memoizes schema preparation; wires validators into useForm.
  */
 export function useSchemaForm(
   schema: unknown,
   options?: UseSchemaFormOptions,
 ): UseSchemaFormResult {
-  const ingested = useMemo(() => {
-    const result = ingestSchema(schema);
-    const layout = options?.layoutOverride ?? compileLayout(result);
-    const validators: ValidatorAdapter[] = [];
-    if (isJsonSchema(schema)) {
-      validators.push(createJsonSchemaValidator(schema));
-    }
-    if (options?.validators) {
-      validators.push(...options.validators);
-    }
-    return { fields: result.fields, metadata: result.metadata, layout, validators };
-  }, [schema, options?.layoutOverride]);
+  const prepared = useMemo(
+    () => createSchemaForm(schema, {
+      layoutOverride: options?.layoutOverride,
+      validators: options?.validators,
+    }),
+    [schema, options?.layoutOverride],
+  );
 
   const form = useForm({
     ...options,
     schema,
-    validators: ingested.validators,
+    validators: prepared.validators,
   });
 
   return {
     form,
-    fields: ingested.fields,
-    layout: ingested.layout,
-    metadata: ingested.metadata,
+    fields: prepared.fields,
+    layout: prepared.layout,
+    metadata: prepared.metadata,
   };
 }
