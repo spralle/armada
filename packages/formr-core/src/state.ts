@@ -16,7 +16,8 @@ export interface ValidationIssue {
       | 'function-validator'
       | 'json-schema-adapter'
       | 'rule'
-      | 'middleware';
+      | 'middleware'
+      | 'async-validator';
     readonly validatorId: string;
     readonly adapterId?: string;
     readonly ruleId?: string;
@@ -85,11 +86,13 @@ export interface CreateFormOptions<TData, TUi> {
     readonly submit?: number;
   };
   readonly stateStrategy?: StateStrategy;
+  readonly asyncValidators?: readonly AsyncValidatorAdapter[];
 }
 
 // Imports for CreateFormOptions references
 import type {
   ValidatorAdapter,
+  AsyncValidatorAdapter,
   Middleware,
   Transform,
   FieldConfig,

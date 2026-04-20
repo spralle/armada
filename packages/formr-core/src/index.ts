@@ -47,6 +47,7 @@ export {
   type FieldValidationTriggers,
   type ArrayFieldHelpers,
   type FieldApiWithArray,
+  type AsyncValidatorAdapter,
 } from './contracts.js';
 
 // Submit helpers
@@ -81,6 +82,9 @@ export { shiftFieldMeta, clearChildFieldMeta, swapFieldMeta } from './field-meta
 
 // Listener registry
 export { createListenerRegistry, type ListenerEntry } from './listener-registry.js';
+
+// Async validation
+export { createAsyncValidationManager, type AsyncValidationManager, type AsyncManagerDeps } from './async-validation.js';
 
 // Nested utilities (extracted from old rule engine)
 export { setNestedValue, deleteNestedValue } from './nested-utils.js';
