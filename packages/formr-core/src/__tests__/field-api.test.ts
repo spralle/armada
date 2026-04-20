@@ -157,3 +157,61 @@ describe('FieldApi.validate()', () => {
     });
   });
 });
+
+describe('FieldApi.handleChange()', () => {
+  it('sets the field value (same as set())', () => {
+    let lastSetValue: unknown;
+    const api = createFieldApi({
+      path: makePath(['name']),
+      rawPath: 'name',
+      getState: () => makeState(),
+      setValue: (_path, value) => { lastSetValue = value; return { ok: true }; },
+      getIssues: () => [],
+      getInitialValue: () => undefined,
+      getFieldMeta: () => undefined,
+      markTouched: () => {},
+      getFormSubmitted: () => false,
+    });
+    const result = api.handleChange('Alice');
+    expect(result).toEqual({ ok: true });
+    expect(lastSetValue).toBe('Alice');
+  });
+});
+
+describe('FieldApi.handleBlur()', () => {
+  it('marks field as touched', () => {
+    let touchedPath: string | undefined;
+    const api = createFieldApi({
+      path: makePath(['name']),
+      rawPath: 'name',
+      getState: () => makeState(),
+      setValue: () => ({ ok: true }),
+      getIssues: () => [],
+      getInitialValue: () => undefined,
+      getFieldMeta: () => undefined,
+      markTouched: (p) => { touchedPath = p; },
+      getFormSubmitted: () => false,
+    });
+    api.handleBlur();
+    expect(touchedPath).toBe('name');
+  });
+
+  it('is idempotent on already-touched field', () => {
+    let touchCount = 0;
+    const api = createFieldApi({
+      path: makePath(['name']),
+      rawPath: 'name',
+      getState: () => makeState(),
+      setValue: () => ({ ok: true }),
+      getIssues: () => [],
+      getInitialValue: () => undefined,
+      getFieldMeta: () => ({ touched: true }),
+      markTouched: () => { touchCount++; },
+      getFormSubmitted: () => false,
+    });
+    api.handleBlur();
+    api.handleBlur();
+    // markTouched is called but the field was already touched — no error thrown
+    expect(touchCount).toBe(2);
+  });
+});

@@ -124,5 +124,13 @@ export function createFieldApi<TData, TUi>(params: CreateFieldApiParams<TData, T
     markTouched(): void {
       params.markTouched(pathKey);
     },
+
+    handleChange(value: DeepValue<TData, string>): FormDispatchResult {
+      return this.set(value);
+    },
+
+    handleBlur(): void {
+      this.markTouched();
+    },
   };
 }

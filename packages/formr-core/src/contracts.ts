@@ -185,6 +185,10 @@ export interface FieldApi<TData, TUi, TPath extends string> {
   isDirty(): boolean;
   isValidating(): boolean;
   markTouched(): void;
+  /** Set field value — wraps set(). Ready to bind to onChange. */
+  handleChange(value: DeepValue<TData, TPath>): FormDispatchResult;
+  /** Mark field as touched — wraps markTouched(). Ready to bind to onBlur. */
+  handleBlur(): void;
 }
 
 /** ADR section 9 — FormApi */
@@ -198,5 +202,17 @@ export interface FormApi<TData, TUi> {
   subscribe(listener: (state: FormState<TData, TUi>) => void): () => void;
   /** Reset form to initial or provided state */
   reset(nextInitial?: { readonly data?: TData; readonly uiState?: TUi }): void;
+  /** True when no error-severity issues exist and not currently submitting */
+  canSubmit(): boolean;
+  /** True when form data equals initial data */
+  isPristine(): boolean;
+  /** True when form data differs from initial data */
+  isDirty(): boolean;
+  /** True when no error-severity issues exist */
+  isValid(): boolean;
+  /** True when submission is in progress */
+  isSubmitting(): boolean;
+  /** True when any field has been touched */
+  isTouched(): boolean;
   dispose(): void;
 }
