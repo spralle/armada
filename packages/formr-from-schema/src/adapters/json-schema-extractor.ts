@@ -7,6 +7,8 @@ const KNOWN_META_KEYS = new Set([
   'title', 'description', 'enum', 'default',
   'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
   'minLength', 'maxLength', 'format', 'pattern',
+  'minItems', 'maxItems', 'uniqueItems',
+  'readOnly', 'writeOnly', 'deprecated', 'dependentRequired',
   'widget', 'options', 'label', 'placeholder',
 ]);
 
@@ -51,6 +53,42 @@ export function extractFromJsonSchema(rawSchema: JsonSchema): SchemaIngestionRes
   return { fields, metadata };
 }
 
+/** Merge allOf subschemas into a single combined schema */
+function mergeAllOf(schema: JsonSchema): JsonSchema {
+  if (!schema.allOf || schema.allOf.length === 0) return schema;
+
+  const merged: Record<string, unknown> = { ...schema };
+  delete merged.allOf;
+
+  let mergedProperties: Record<string, JsonSchema> = { ...(schema.properties ?? {}) };
+  let mergedRequired: string[] = [...(schema.required ?? [])];
+
+  for (const subschema of schema.allOf) {
+    const resolved = mergeAllOf(subschema);
+    if (resolved.properties) {
+      mergedProperties = { ...mergedProperties, ...resolved.properties };
+    }
+    if (resolved.required) {
+      mergedRequired = [...mergedRequired, ...resolved.required];
+    }
+    // Merge other keywords (type, etc.) — subschema wins if parent doesn't have it
+    for (const [key, value] of Object.entries(resolved)) {
+      if (key !== 'properties' && key !== 'required' && !(key in merged)) {
+        merged[key] = value;
+      }
+    }
+  }
+
+  if (Object.keys(mergedProperties).length > 0) {
+    merged.properties = mergedProperties;
+  }
+  if (mergedRequired.length > 0) {
+    merged.required = [...new Set(mergedRequired)];
+  }
+
+  return merged as JsonSchema;
+}
+
 function walkJsonSchema(
   schema: JsonSchema,
   prefix: string,
@@ -58,23 +96,31 @@ function walkJsonSchema(
   parentRequired?: readonly string[],
   fieldName?: string,
 ): void {
-  const resolvedType = resolveType(schema);
+  const effective = mergeAllOf(schema);
+  const resolvedType = resolveType(effective);
 
-  if (resolvedType === 'object' && schema.properties) {
-    for (const [key, childSchema] of Object.entries(schema.properties)) {
+  if (resolvedType === 'object' && effective.properties) {
+    for (const [key, childSchema] of Object.entries(effective.properties)) {
       const childPath = prefix ? `${prefix}.${key}` : key;
-      walkJsonSchema(childSchema, childPath, fields, schema.required, key);
+      walkJsonSchema(childSchema, childPath, fields, effective.required, key);
+    }
+    // Also extract if/then/else conditional fields at object level
+    if (effective.if && (effective.then ?? effective.else)) {
+      walkConditionalFields(effective, prefix, fields);
     }
     return;
   }
 
   if (resolvedType === 'array') {
     const isRequired = fieldName !== undefined && parentRequired?.includes(fieldName) === true;
-    const arrayFormrMeta = schema['x-formr'] as Record<string, unknown> | undefined;
+    const arrayFormrMeta = effective['x-formr'] as Record<string, unknown> | undefined;
     const arrayStandardMeta: Record<string, unknown> = {};
-    if (schema.title !== undefined) arrayStandardMeta.title = schema.title;
-    if (schema.description !== undefined) arrayStandardMeta.description = schema.description;
-    if (schema.default !== undefined) arrayStandardMeta.default = schema.default;
+    if (effective.title !== undefined) arrayStandardMeta.title = effective.title;
+    if (effective.description !== undefined) arrayStandardMeta.description = effective.description;
+    if (effective.default !== undefined) arrayStandardMeta.default = effective.default;
+    if (effective.minItems !== undefined) arrayStandardMeta.minItems = effective.minItems;
+    if (effective.maxItems !== undefined) arrayStandardMeta.maxItems = effective.maxItems;
+    if (effective.uniqueItems !== undefined) arrayStandardMeta.uniqueItems = effective.uniqueItems;
 
     const arrayMetadata = buildMetadata(arrayStandardMeta, arrayFormrMeta ?? undefined);
     fields.push({
@@ -84,8 +130,7 @@ function walkJsonSchema(
       ...(arrayMetadata ? { metadata: arrayMetadata } : {}),
     });
 
-    // Walk items properties so array-of-objects get proper child fields
-    const itemSchema = schema.items;
+    const itemSchema = effective.items;
     if (itemSchema && typeof itemSchema === 'object' && !Array.isArray(itemSchema)) {
       const items = itemSchema as JsonSchema;
       if (items.properties) {
@@ -99,25 +144,54 @@ function walkJsonSchema(
     return;
   }
 
+  // oneOf/anyOf: emit union field and walk variant fields
+  if (effective.oneOf ?? effective.anyOf) {
+    if (prefix) {
+      const isRequired = fieldName !== undefined && parentRequired?.includes(fieldName) === true;
+      const formrMeta = effective['x-formr'] as Record<string, unknown> | undefined;
+      const standardMeta: Record<string, unknown> = {};
+      if (effective.title !== undefined) standardMeta.title = effective.title;
+      if (effective.description !== undefined) standardMeta.description = effective.description;
+      const metadata = buildMetadata(standardMeta, formrMeta ?? undefined);
+      fields.push({
+        path: prefix,
+        type: 'union',
+        required: isRequired,
+        ...(metadata ? { metadata } : {}),
+      });
+      walkUnionVariants(effective, prefix, fields);
+    }
+    return;
+  }
+
+  // if/then/else: extract conditional fields
+  if (effective.if && (effective.then ?? effective.else)) {
+    walkConditionalFields(effective, prefix, fields);
+  }
+
   if (!prefix) return;
 
   const isRequired = fieldName !== undefined && parentRequired?.includes(fieldName) === true;
-  const fieldType = mapJsonSchemaType(schema);
+  const fieldType = mapJsonSchemaType(effective);
 
-  const formrMeta = schema['x-formr'] as Record<string, unknown> | undefined;
+  const formrMeta = effective['x-formr'] as Record<string, unknown> | undefined;
   const standardMeta: Record<string, unknown> = {};
-  if (schema.title !== undefined) standardMeta.title = schema.title;
-  if (schema.description !== undefined) standardMeta.description = schema.description;
-  if (schema.enum !== undefined) standardMeta.enum = schema.enum;
-  if (schema.default !== undefined) standardMeta.default = schema.default;
-    if (schema.minimum !== undefined) standardMeta.minimum = schema.minimum;
-    if (schema.maximum !== undefined) standardMeta.maximum = schema.maximum;
-    if (schema.exclusiveMinimum !== undefined) standardMeta.exclusiveMinimum = schema.exclusiveMinimum;
-    if (schema.exclusiveMaximum !== undefined) standardMeta.exclusiveMaximum = schema.exclusiveMaximum;
-    if (schema.minLength !== undefined) standardMeta.minLength = schema.minLength;
-    if (schema.maxLength !== undefined) standardMeta.maxLength = schema.maxLength;
-    if (schema.format !== undefined) standardMeta.format = schema.format;
-    if (schema.pattern !== undefined) standardMeta.pattern = schema.pattern;
+  if (effective.title !== undefined) standardMeta.title = effective.title;
+  if (effective.description !== undefined) standardMeta.description = effective.description;
+  if (effective.enum !== undefined) standardMeta.enum = effective.enum;
+  if (effective.default !== undefined) standardMeta.default = effective.default;
+  if (effective.minimum !== undefined) standardMeta.minimum = effective.minimum;
+  if (effective.maximum !== undefined) standardMeta.maximum = effective.maximum;
+  if (effective.exclusiveMinimum !== undefined) standardMeta.exclusiveMinimum = effective.exclusiveMinimum;
+  if (effective.exclusiveMaximum !== undefined) standardMeta.exclusiveMaximum = effective.exclusiveMaximum;
+  if (effective.minLength !== undefined) standardMeta.minLength = effective.minLength;
+  if (effective.maxLength !== undefined) standardMeta.maxLength = effective.maxLength;
+  if (effective.format !== undefined) standardMeta.format = effective.format;
+  if (effective.pattern !== undefined) standardMeta.pattern = effective.pattern;
+  if (effective.readOnly !== undefined) standardMeta.readOnly = effective.readOnly;
+  if (effective.writeOnly !== undefined) standardMeta.writeOnly = effective.writeOnly;
+  if (effective.deprecated !== undefined) standardMeta.deprecated = effective.deprecated;
+  if (effective.dependentRequired !== undefined) standardMeta.dependentRequired = effective.dependentRequired;
 
   const metadata = buildMetadata(standardMeta, formrMeta ?? undefined);
 
@@ -125,7 +199,7 @@ function walkJsonSchema(
     path: prefix,
     type: fieldType,
     required: isRequired,
-    ...(schema.const !== undefined ? { defaultValue: schema.const } : {}),
+    ...(effective.const !== undefined ? { defaultValue: effective.const } : {}),
     ...(metadata ? { metadata } : {}),
   });
 }
@@ -164,5 +238,50 @@ function mapJsonSchemaType(schema: JsonSchema): SchemaFieldType {
       return 'array';
     default:
       return 'unknown';
+  }
+}
+
+/** Walk oneOf/anyOf variants and collect all fields as a union */
+function walkUnionVariants(
+  schema: JsonSchema,
+  prefix: string,
+  fields: SchemaFieldInfo[],
+): void {
+  const variants = schema.oneOf ?? schema.anyOf ?? [];
+  const variantFields: Map<string, { count: number; field: SchemaFieldInfo }> = new Map();
+
+  for (const variant of variants) {
+    const variantResult: SchemaFieldInfo[] = [];
+    walkJsonSchema(variant, prefix, variantResult);
+    for (const field of variantResult) {
+      const existing = variantFields.get(field.path);
+      if (existing) {
+        existing.count++;
+      } else {
+        variantFields.set(field.path, { count: 1, field });
+      }
+    }
+  }
+
+  const totalVariants = variants.length;
+  for (const [, { count, field }] of variantFields) {
+    const isUniversal = count === totalVariants;
+    fields.push({ ...field, required: isUniversal });
+  }
+}
+
+/** Walk if/then/else and extract conditional fields as optional */
+function walkConditionalFields(
+  schema: JsonSchema,
+  prefix: string,
+  fields: SchemaFieldInfo[],
+): void {
+  const branches = [schema.then, schema.else].filter(Boolean) as JsonSchema[];
+  for (const branch of branches) {
+    const branchFields: SchemaFieldInfo[] = [];
+    walkJsonSchema(branch, prefix, branchFields);
+    for (const field of branchFields) {
+      fields.push({ ...field, required: false });
+    }
   }
 }
