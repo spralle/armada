@@ -1,7 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import type { FormApi } from '@ghost/formr-core';
 import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
-import { useField } from '@ghost/formr-react';
 import {
   Input,
   Switch,
@@ -19,14 +18,29 @@ interface FormFieldProps {
   readonly onChange: (path: string, value: unknown) => void;
 }
 
+/**
+ * Uses local React state instead of useSyncExternalStore to drive re-renders.
+ * This avoids a reactivity gap where formr's store notifications (bundled in the
+ * plugin) fail to trigger React's (shared via Module Federation) re-render cycle.
+ */
 export function FormField({ form, field, onChange }: FormFieldProps) {
-  const fieldApi = useField(form, field.path);
-  const value = fieldApi.get();
+  const fieldApiRef = useRef(form.field(field.path));
+  const fieldApi = fieldApiRef.current;
+  const [value, setValue] = useState<unknown>(() => fieldApi.get());
   const id = `field-${field.path}`;
+
+  // Sync from store → local state via manual subscription
+  useEffect(() => {
+    return form.subscribe(() => {
+      const storeValue: unknown = fieldApi.get();
+      setValue((prev: unknown) => (Object.is(prev, storeValue) ? prev : storeValue));
+    });
+  }, [form, fieldApi]);
 
   const handleChange = useCallback(
     (newValue: unknown) => {
       fieldApi.set(newValue);
+      setValue(newValue);
       onChange(field.path, newValue);
     },
     [fieldApi, field.path, onChange],
