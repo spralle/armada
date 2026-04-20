@@ -20,6 +20,7 @@ import { runTransforms, type TransformDefinition } from './transforms.js';
 import { createArbiterAdapter, createArbiterAdapterFromSession, type ArbiterFormAdapter } from './arbiter-integration.js';
 import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './extensions.js';
 import { computeIsValid, computeIsSubmitting, computeIsPristine, computeIsTouched } from './convenience-flags.js';
+import { createListenerRegistry } from './listener-registry.js';
 
 function pathEquals(a: CanonicalPath, b: CanonicalPath): boolean {
   if (a.namespace !== b.namespace) return false;
@@ -58,6 +59,7 @@ export function createForm<TData, TUi>(
   } as FormState<TData, TUi>;
 
   const store = new FormStore<TData, TUi>(initialState, options.stateStrategy);
+  const listeners = createListenerRegistry();
 
   function resolveInitialValue(segments: readonly (string | number)[]): unknown {
     let current: unknown = initialDataSnapshot;
@@ -88,32 +90,42 @@ export function createForm<TData, TUi>(
   const pipelineStore = store as unknown as import('./store.js').FormStore<unknown, unknown>;
   const pipelineOptions = options as unknown as CreateFormOptions<unknown, unknown>;
 
+  function propagateListeners(pathKey: string, trigger: 'change' | 'blur'): void {
+    const targets = listeners.getListeners(pathKey, trigger);
+    if (targets.length === 0) return;
+    const tx = store.beginTransaction();
+    tx.mutate((draft) => {
+      const meta = { ...draft.fieldMeta } as Record<string, FieldMetaEntry>;
+      for (const t of targets) {
+        const existing = meta[t.path];
+        meta[t.path] = {
+          touched: existing?.touched ?? false, isValidating: existing?.isValidating ?? false,
+          dirty: existing?.dirty ?? false, listenerTriggered: true,
+        };
+      }
+      return { ...draft, fieldMeta: meta };
+    });
+    store.commitTransaction(tx);
+  }
+
   function dispatchSetValue(rawPath: string, value: unknown): FormDispatchResult {
     const result = executePipeline({
       action: { type: 'set-value', path: rawPath, value },
-      store: pipelineStore,
-      options: pipelineOptions,
-      isSubmit: false,
-      arbiterAdapter,
+      store: pipelineStore, options: pipelineOptions, isSubmit: false, arbiterAdapter,
     });
+    if (result.ok) {
+      const canonical = parsePath(rawPath);
+      if (canonical.namespace === 'data') propagateListeners(canonical.segments.join('.'), 'change');
+    }
     const errorMsg = result.error ?? result.vetoReason;
     return errorMsg ? { ok: result.ok, error: errorMsg } : { ok: result.ok };
   }
 
   function dispatch(action: FormAction): FormDispatchResult {
-    if (action.type === 'set-value' && action.path !== undefined) {
-      return dispatchSetValue(action.path, action.value);
-    }
-
-    const result = executePipeline({
-      action,
-      store: pipelineStore,
-      options: pipelineOptions,
-      isSubmit: false,
-      arbiterAdapter,
-    });
-    const errorMsg2 = result.error ?? result.vetoReason;
-    return errorMsg2 ? { ok: result.ok, error: errorMsg2 } : { ok: result.ok };
+    if (action.type === 'set-value' && action.path !== undefined) return dispatchSetValue(action.path, action.value);
+    const result = executePipeline({ action, store: pipelineStore, options: pipelineOptions, isSubmit: false, arbiterAdapter });
+    const errorMsg = result.error ?? result.vetoReason;
+    return errorMsg ? { ok: result.ok, error: errorMsg } : { ok: result.ok };
   }
 
   function validate(stage?: string): readonly ValidationIssue[] {
@@ -138,33 +150,17 @@ export function createForm<TData, TUi>(
 
   async function submit(context?: Partial<SubmitContext>): Promise<SubmitResult> {
     const state = store.getState();
-
     if (state.meta.submission?.status === 'running') {
-      return Promise.reject(
-        new FormrError('FORMR_SUBMIT_CONCURRENT', 'Submit rejected: a submission is already in progress'),
-      );
+      return Promise.reject(new FormrError('FORMR_SUBMIT_CONCURRENT', 'Submit rejected: a submission is already in progress'));
     }
-
     const submitId = generateSubmitId();
     const submitContext = buildSubmitContext(context, submitId);
-
     markSubmissionRunning(submitId);
-
     const pipelineResult = runSubmitPipeline(submitContext);
-
-    if (!pipelineResult.ok) {
-      return handlePipelineFailure(pipelineResult, submitId);
-    }
-
+    if (!pipelineResult.ok) return handlePipelineFailure(pipelineResult, submitId);
     const currentIssues = store.getState().issues;
-    if (currentIssues.some((i) => i.severity === 'error')) {
-      return handleValidationFailure(currentIssues, submitId);
-    }
-
-    if (options.onSubmit) {
-      return executeOnSubmit(submitContext, submitId);
-    }
-
+    if (currentIssues.some((i) => i.severity === 'error')) return handleValidationFailure(currentIssues, submitId);
+    if (options.onSubmit) return executeOnSubmit(submitContext, submitId);
     // No onSubmit — succeed as no-op
     const txDone = store.beginTransaction();
     txDone.mutate((draft) => ({
@@ -309,11 +305,12 @@ export function createForm<TData, TUi>(
         ...draft,
         fieldMeta: {
           ...draft.fieldMeta,
-          [pathKey]: { touched: true, isValidating: existing?.isValidating ?? false, dirty: existing?.dirty ?? false },
+          [pathKey]: { touched: true, isValidating: existing?.isValidating ?? false, dirty: existing?.dirty ?? false, listenerTriggered: existing?.listenerTriggered ?? false },
         },
       };
     });
     store.commitTransaction(tx);
+    propagateListeners(pathKey, 'blur');
   }
 
   function updateFieldMeta(updater: (meta: Record<string, FieldMetaEntry>) => Record<string, FieldMetaEntry>): void {
@@ -328,6 +325,7 @@ export function createForm<TData, TUi>(
     if (cached) return cached;
 
     const canonical = parsePath(path);
+    if (config?.validationTriggers) listeners.register(path, config.validationTriggers);
     const fieldApi = createFieldApi<TData, TUi>({
       path: canonical,
       rawPath: path,
@@ -365,6 +363,7 @@ export function createForm<TData, TUi>(
     } as FormState<TData, TUi>));
     store.commitTransaction(tx);
     fieldCache.clear();
+    listeners.clear();
   }
 
   const api: FormApi<TData, TUi> = {

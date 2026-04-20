@@ -27,6 +27,7 @@ export function shouldShowIssues(
   if (t.onSubmit && ctx.formSubmitted) return true;
   if (t.onBlur && (ctx.fieldMeta?.touched ?? false)) return true;
   if (t.onChange && (ctx.fieldMeta?.dirty ?? false)) return true;
+  if (ctx.fieldMeta?.listenerTriggered) return true;
 
   return false;
 }

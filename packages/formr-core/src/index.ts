@@ -79,6 +79,9 @@ export { shouldShowIssues, type TriggerContext } from './trigger-filter.js';
 // Field meta shifting
 export { shiftFieldMeta, clearChildFieldMeta, swapFieldMeta } from './field-meta-shift.js';
 
+// Listener registry
+export { createListenerRegistry, type ListenerEntry } from './listener-registry.js';
+
 // Nested utilities (extracted from old rule engine)
 export { setNestedValue, deleteNestedValue } from './nested-utils.js';
 

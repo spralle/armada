@@ -2,8 +2,8 @@ import { describe, it, expect } from 'bun:test';
 import { shiftFieldMeta, clearChildFieldMeta, swapFieldMeta } from '../field-meta-shift.js';
 import type { FieldMetaEntry } from '../state.js';
 
-const touched: FieldMetaEntry = { touched: true, isValidating: false, dirty: true };
-const clean: FieldMetaEntry = { touched: false, isValidating: false, dirty: false };
+const touched: FieldMetaEntry = { touched: true, isValidating: false, dirty: true, listenerTriggered: false };
+const clean: FieldMetaEntry = { touched: false, isValidating: false, dirty: false, listenerTriggered: false };
 
 describe('shiftFieldMeta', () => {
   it('remove (delta=-1): drops removed index, shifts subsequent down', () => {

@@ -37,6 +37,8 @@ export interface FieldMetaEntry {
   readonly touched: boolean;
   readonly isValidating: boolean;
   readonly dirty: boolean;
+  /** True when a listened-to field changed, making issues visible */
+  readonly listenerTriggered: boolean;
 }
 
 /** ADR section 1.1 — FormState */

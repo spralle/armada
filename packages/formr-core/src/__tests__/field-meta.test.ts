@@ -64,7 +64,7 @@ describe('field metadata', () => {
     form.subscribe((state) => notifications.push(state.fieldMeta));
     field.markTouched();
     expect(notifications).toHaveLength(1);
-    expect(notifications[0]).toEqual({ name: { touched: true, isValidating: false, dirty: false } });
+    expect(notifications[0]).toEqual({ name: { touched: true, isValidating: false, dirty: false, listenerTriggered: false } });
     form.dispose();
   });
 

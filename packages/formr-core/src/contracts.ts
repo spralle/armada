@@ -156,6 +156,10 @@ export interface FieldValidationTriggers {
   readonly onSubmit?: boolean;
   /** Show issues immediately on mount. */
   readonly onMount?: boolean;
+  /** Re-show issues when any listed source field's value changes */
+  readonly onChangeListenTo?: readonly string[];
+  /** Re-show issues when any listed source field is blurred */
+  readonly onBlurListenTo?: readonly string[];
 }
 
 /** ADR section 9.1 — FieldConfig */

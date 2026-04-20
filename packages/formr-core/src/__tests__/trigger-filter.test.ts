@@ -7,6 +7,7 @@ function makeMeta(overrides: Partial<FieldMetaEntry> = {}): FieldMetaEntry {
     touched: overrides.touched ?? false,
     isValidating: overrides.isValidating ?? false,
     dirty: overrides.dirty ?? false,
+    listenerTriggered: overrides.listenerTriggered ?? false,
   };
 }
 
@@ -55,5 +56,16 @@ describe('shouldShowIssues', () => {
   it('undefined fieldMeta → treated as not touched/dirty', () => {
     expect(shouldShowIssues(undefined, { fieldMeta: undefined, formSubmitted: false })).toBe(false);
     expect(shouldShowIssues({ onBlur: true }, { fieldMeta: undefined, formSubmitted: false })).toBe(false);
+  });
+
+  it('listenerTriggered: true → shows issues regardless of other triggers', () => {
+    const triggers = { onBlur: true };
+    expect(shouldShowIssues(triggers, { fieldMeta: makeMeta({ listenerTriggered: true }), formSubmitted: false })).toBe(true);
+  });
+
+  it('listenerTriggered: false → falls through to other trigger checks', () => {
+    const triggers = { onBlur: true };
+    expect(shouldShowIssues(triggers, { fieldMeta: makeMeta({ listenerTriggered: false }), formSubmitted: false })).toBe(false);
+    expect(shouldShowIssues(triggers, { fieldMeta: makeMeta({ listenerTriggered: false, touched: true }), formSubmitted: false })).toBe(true);
   });
 });
