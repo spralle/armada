@@ -1,14 +1,10 @@
 import type { LayoutNode } from '@ghost/formr-from-schema';
 import type { ComponentType, ReactNode } from 'react';
 import type { ValidationIssue } from '@ghost/formr-core';
+import type { FieldA11yProps } from './a11y.js';
 
-/** ARIA attributes derived from field state */
-export interface FieldAriaAttributes {
-  readonly 'aria-invalid'?: boolean;
-  readonly 'aria-required'?: boolean;
-  readonly 'aria-describedby'?: string;
-  readonly 'aria-errormessage'?: string;
-}
+/** ARIA attributes derived from field state — alias for FieldA11yProps */
+export type FieldAriaAttributes = FieldA11yProps;
 
 /** Props passed to every layout node renderer */
 export interface LayoutRendererProps {

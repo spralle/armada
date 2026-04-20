@@ -22,6 +22,7 @@ export function compileLayout(
   return {
     type: 'group',
     id: 'layout-root',
+    role: 'group',
     children,
   };
 }
@@ -84,6 +85,7 @@ function treeEntryToNode(entry: TreeEntry, parentPath: string): LayoutNode {
   return {
     type: 'group',
     id: `layout-${currentPath}`,
+    role: 'group',
     children: entry.children.map((child) => treeEntryToNode(child, currentPath)),
   };
 }

@@ -7,6 +7,8 @@ export interface LayoutNode {
   readonly children?: readonly LayoutNode[];
   readonly path?: string;
   readonly props?: Readonly<Record<string, unknown>>;
+  readonly role?: string;
+  readonly ariaLabel?: string;
 }
 
 export interface SectionNodeProps {
