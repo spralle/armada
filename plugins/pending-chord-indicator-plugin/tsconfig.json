@@ -6,10 +6,15 @@
     "strict": true,
     "noEmit": true,
     "composite": true,
-    "skipLibCheck": true,`n    "resolveJsonModule": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true
   },
   "references": [
-    { "path": "../../packages/plugin-contracts" }
+    {
+      "path": "../../packages/plugin-contracts"
+    }
   ],
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

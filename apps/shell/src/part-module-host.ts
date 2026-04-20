@@ -194,7 +194,11 @@ async function mountPart(options: MountPartOptions): Promise<void> {
       mountKey,
     });
     hideFallback(fallbackTarget);
-  } catch {
+  } catch (error: unknown) {
+    console.warn(
+      `[shell:part-host] failed to mount part '${part.component ?? part.definitionId ?? part.id}' from plugin '${part.pluginId}'`,
+      error,
+    );
     showFallback(target, fallbackTarget);
   }
 }

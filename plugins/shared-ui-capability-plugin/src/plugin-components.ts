@@ -1,3 +1,6 @@
+import type { JsonFormCapability } from '@ghost/plugin-contracts';
+import { createJsonFormCapability } from './jsonform/index.js';
+
 type CapabilityRenderTarget = HTMLElement;
 
 interface RenderableCapability {
@@ -12,7 +15,7 @@ function makeLabelledRenderer(label: string): RenderableCapability {
   };
 }
 
-export const pluginComponents = {
-  "ghost.component.jsonform.control": makeLabelledRenderer("shared jsonform control"),
+export const pluginComponents: Record<string, JsonFormCapability | RenderableCapability> = {
+  "ghost.component.jsonform.control": createJsonFormCapability(),
   "ghost.component.entity-list.seed": makeLabelledRenderer("shared entity list seed"),
 };

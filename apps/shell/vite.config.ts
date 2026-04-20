@@ -7,6 +7,9 @@ const BACKEND_DEV_PORT = 8787;
 const PLUGIN_CONTRACTS_SOURCE = fileURLToPath(
   new URL("../../packages/plugin-contracts/src/index.ts", import.meta.url),
 );
+const PREDICATE_SOURCE = fileURLToPath(
+  new URL("../../packages/predicate/src/index.ts", import.meta.url),
+);
 const UI_SOURCE = fileURLToPath(
   new URL("../../packages/ui/src/index.ts", import.meta.url),
 );
@@ -19,6 +22,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@ghost/plugin-contracts": PLUGIN_CONTRACTS_SOURCE,
+      "@ghost/predicate": PREDICATE_SOURCE,
       "@ghost/ui": UI_SOURCE,
       // Mirror the UI package's tsconfig path mapping so that its internal
       // `@/lib/utils` imports resolve when the shell consumes raw source.

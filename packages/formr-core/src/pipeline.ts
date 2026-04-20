@@ -14,6 +14,7 @@ import type { ArbiterFormAdapter } from './arbiter-integration.js';
 import { normalizeIssues } from './validation.js';
 import { runTransforms } from './transforms.js';
 import { runVetoHooksSync, runNotifyHooksSync } from './middleware-runner.js';
+import type { Transaction } from './transaction.js';
 import { FormrError } from './errors.js';
 
 /** Set a value at a dot/bracket path inside a nested object, returning a new root */
@@ -112,10 +113,11 @@ export function executePipeline(ctx: PipelineContext): PipelineResult {
   }
 
   // Step 2: Begin transaction — capture immutable prevState snapshot
-  const tx = store.beginTransaction();
-  const prevState = tx.prevState;
-
+  let tx: Transaction | undefined;
   try {
+    tx = store.beginTransaction();
+    const prevState = tx.prevState;
+
     // Step 3: Middleware beforeAction — MAY veto
     const beforeActionDecision = runVetoHooksSync(middlewares, 'beforeAction', { action, state: prevState });
     if (beforeActionDecision.action === 'veto') {
@@ -204,9 +206,9 @@ export function executePipeline(ctx: PipelineContext): PipelineResult {
   } catch (err) {
     // Step 14: Abort gate — rollback full transaction on fatal error
     try {
-      store.rollbackTransaction(tx);
+      if (tx) store.rollbackTransaction(tx);
     } catch {
-      // Transaction may already be rolled back
+      // Transaction may already be rolled back or never started
     }
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }

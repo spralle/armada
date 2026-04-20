@@ -8,7 +8,7 @@ export interface StateStrategy {
 }
 
 export const defaultStrategy: StateStrategy = {
-  clone: structuredClone,
+  clone: <T>(value: T): T => structuredClone(value),
   freeze: deepFreeze,
 };
 
