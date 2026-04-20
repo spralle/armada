@@ -14,6 +14,8 @@ import { SurveyQuestionnaireDemo } from './12-survey-questionnaire';
 import { MultiSchemaSourcesDemo } from './13-multi-schema-sources';
 import { OrderEntryDemo } from './14-order-entry';
 import { KitchenSinkDemo } from './15-kitchen-sink';
+import { CustomRenderersDemo } from './16-custom-renderers';
+import { CustomLayoutTypesDemo } from './17-custom-layout';
 
 export interface DemoRegistration {
   readonly id: string;
@@ -42,4 +44,6 @@ export const demos: readonly DemoRegistration[] = [
   { id: 'multi-schema', title: '13. Multiple Schema Sources', subtitle: 'Minimal vs explicit schemas', category: 'advanced', component: MultiSchemaSourcesDemo },
   { id: 'order-entry', title: '14. Order Entry', subtitle: 'Invoice with payment & pricing', category: 'advanced', component: OrderEntryDemo },
   { id: 'kitchen-sink', title: '15. Kitchen Sink', subtitle: 'Every field type and feature', category: 'advanced', component: KitchenSinkDemo },
+  { id: 'custom-renderers', title: '16. Custom Renderers', subtitle: 'Stars, colors, checkboxes, progress', category: 'advanced', component: CustomRenderersDemo },
+  { id: 'custom-layout-types', title: '17. Custom Layout Types', subtitle: 'Tabs, accordion, sections', category: 'advanced', component: CustomLayoutTypesDemo },
 ];

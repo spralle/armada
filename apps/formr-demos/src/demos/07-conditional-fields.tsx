@@ -1,5 +1,11 @@
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useForm } from '@ghost/formr-react';
+import { ingestSchema } from '@ghost/formr-from-schema';
+import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
+import type { FormApi } from '@ghost/formr-core';
+import { Card, CardContent, CardHeader, CardTitle, cn } from '@ghost/ui';
 import { DemoShell } from '../renderers/DemoShell';
-import { DemoFormRoot } from '../renderers/DemoFormRoot';
+import { DemoFormField } from '../renderers/DemoFormField';
 
 const schema = {
   type: 'object',
@@ -10,111 +16,134 @@ const schema = {
       title: 'Employment Status',
       enum: ['Employed', 'Self-Employed', 'Student', 'Retired', 'Unemployed'],
     },
-    companyName: {
-      type: 'string',
-      title: 'Company Name',
-      description: 'Required if employed',
-    },
+    companyName: { type: 'string', title: 'Company Name', description: 'Your employer' },
     jobTitle: { type: 'string', title: 'Job Title' },
-    businessName: {
-      type: 'string',
-      title: 'Business Name',
-      description: 'Required if self-employed',
-    },
+    businessName: { type: 'string', title: 'Business Name' },
     businessType: {
       type: 'string',
       title: 'Business Type',
       enum: ['Sole Proprietorship', 'LLC', 'Corporation', 'Partnership'],
     },
-    schoolName: {
-      type: 'string',
-      title: 'School/University',
-      description: 'Required if student',
-    },
+    schoolName: { type: 'string', title: 'School / University' },
     fieldOfStudy: { type: 'string', title: 'Field of Study' },
-    annualIncome: {
-      type: 'number',
-      title: 'Annual Income',
-      minimum: 0,
-      description: 'Approximate annual income',
-    },
+    annualIncome: { type: 'number', title: 'Annual Income', minimum: 0 },
     hasHealthInsurance: {
       type: 'boolean',
       title: 'Health Insurance',
       description: 'Do you have health insurance?',
     },
   },
-  dependentRequired: {
-    companyName: ['employmentStatus'],
-    businessName: ['employmentStatus'],
-  },
 };
 
-const layout = {
-  type: 'group',
-  id: 'root',
-  children: [
-    {
-      type: 'section',
-      id: 'status',
-      props: { title: 'Employment Status' },
-      children: [{ type: 'field', id: 'f-status', path: 'employmentStatus' }],
-    },
-    {
-      type: 'section',
-      id: 'employed',
-      props: { title: 'Employment Details', columns: 2 },
-      children: [
-        { type: 'field', id: 'f-company', path: 'companyName' },
-        { type: 'field', id: 'f-job', path: 'jobTitle' },
-      ],
-    },
-    {
-      type: 'section',
-      id: 'self-employed',
-      props: { title: 'Business Details', columns: 2 },
-      children: [
-        { type: 'field', id: 'f-business', path: 'businessName' },
-        { type: 'field', id: 'f-businessType', path: 'businessType' },
-      ],
-    },
-    {
-      type: 'section',
-      id: 'student',
-      props: { title: 'Education', columns: 2 },
-      children: [
-        { type: 'field', id: 'f-school', path: 'schoolName' },
-        { type: 'field', id: 'f-study', path: 'fieldOfStudy' },
-      ],
-    },
-    {
-      type: 'section',
-      id: 'financial',
-      props: { title: 'Financial Information', columns: 2 },
-      children: [
-        { type: 'field', id: 'f-income', path: 'annualIncome' },
-        { type: 'field', id: 'f-insurance', path: 'hasHealthInsurance' },
-      ],
-    },
-  ],
-} as const;
+const VISIBILITY_RULES: Record<string, readonly string[]> = {
+  Employed: ['companyName', 'jobTitle', 'annualIncome', 'hasHealthInsurance'],
+  'Self-Employed': ['businessName', 'businessType', 'annualIncome', 'hasHealthInsurance'],
+  Student: ['schoolName', 'fieldOfStudy', 'hasHealthInsurance'],
+  Retired: ['annualIncome', 'hasHealthInsurance'],
+  Unemployed: ['hasHealthInsurance'],
+};
+
+function getSectionTitle(status: string): string {
+  if (status === 'Employed') return 'Employment Details';
+  if (status === 'Self-Employed') return 'Business Details';
+  if (status === 'Student') return 'Education Details';
+  return 'Details';
+}
+
+function ConditionalForm({ form, fieldMap, onChange, status }: {
+  form: FormApi;
+  fieldMap: Map<string, SchemaFieldInfo>;
+  onChange: (path: string, value: unknown) => void;
+  status: string;
+}) {
+  const visiblePaths = VISIBILITY_RULES[status] ?? [];
+  const statusField = fieldMap.get('employmentStatus');
+
+  return (
+    <div className="flex flex-col gap-4">
+      {statusField && <DemoFormField form={form} field={statusField} onChange={onChange} />}
+
+      {status && (
+        <div className="flex flex-col gap-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+          <h3 className="text-sm font-semibold text-foreground">
+            {getSectionTitle(status)}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {visiblePaths.map((path) => {
+              const field = fieldMap.get(path);
+              if (!field) return null;
+              return <DemoFormField key={path} form={form} field={field} onChange={onChange} />;
+            })}
+          </div>
+        </div>
+      )}
+
+      {!status && (
+        <p className={cn(
+          'text-sm text-muted-foreground italic p-4 rounded-md',
+          'border border-border-muted bg-surface-inset',
+        )}>
+          Select an employment status to see relevant fields
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function ConditionalFieldsDemo() {
+  const form = useForm({ initialData: {} as Record<string, unknown> });
+  const [status, setStatus] = useState('');
+
+  const fieldMap = useMemo(() => {
+    const result = ingestSchema(schema);
+    const map = new Map<string, SchemaFieldInfo>();
+    for (const f of result.fields) map.set(f.path, f);
+    return map;
+  }, []);
+
+  const handleChange = useCallback(
+    (path: string, value: unknown) => {
+      if (path === 'employmentStatus') setStatus(String(value ?? ''));
+      console.log('change', path, value);
+    },
+    [],
+  );
+
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
+
+  useEffect(() => {
+    return form.subscribe(() => {
+      setFormData({ ...(form.getState().data as Record<string, unknown>) });
+    });
+  }, [form]);
+
   return (
     <DemoShell
       title="Conditional Fields"
-      description="Demonstrates conditional field requirements. The Employment Status choice drives which fields become contextually required. Uses JSON Schema `dependentRequired` for automatic validation."
-      features={['Conditional Required', 'dependentRequired', 'RadioGroup', 'Multi-Section', 'Responsive Columns']}
+      description="Sections dynamically show/hide based on the Employment Status selection. Only relevant fields appear for each status. This demonstrates UI-level visibility rules driven by form state."
+      features={['Show/Hide Sections', 'Dynamic Visibility', 'RadioGroup', 'Responsive Grid', 'State-Driven UI']}
       schema={schema}
-      layout={layout}
     >
-      <DemoFormRoot
-        schema={schema}
-        data={{}}
-        layout={layout}
-        onChange={(path, value) => console.log('change', path, value)}
-        responsive
-      />
+      <div className="flex flex-col gap-4">
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle className="text-foreground">Live Form</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ConditionalForm form={form} fieldMap={fieldMap} onChange={handleChange} status={status} />
+          </CardContent>
+        </Card>
+        <Card className="border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-foreground">Form Data (JSON)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="rounded-md bg-surface-inset p-3 text-xs text-code-foreground overflow-auto max-h-48 border border-border-muted font-mono">
+              {JSON.stringify(formData, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
+      </div>
     </DemoShell>
   );
 }

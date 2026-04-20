@@ -66,6 +66,14 @@ function walkJsonSchema(
   if (schema.description !== undefined) standardMeta.description = schema.description;
   if (schema.enum !== undefined) standardMeta.enum = schema.enum;
   if (schema.default !== undefined) standardMeta.default = schema.default;
+    if (schema.minimum !== undefined) standardMeta.minimum = schema.minimum;
+    if (schema.maximum !== undefined) standardMeta.maximum = schema.maximum;
+    if (schema.exclusiveMinimum !== undefined) standardMeta.exclusiveMinimum = schema.exclusiveMinimum;
+    if (schema.exclusiveMaximum !== undefined) standardMeta.exclusiveMaximum = schema.exclusiveMaximum;
+    if (schema.minLength !== undefined) standardMeta.minLength = schema.minLength;
+    if (schema.maxLength !== undefined) standardMeta.maxLength = schema.maxLength;
+    if (schema.format !== undefined) standardMeta.format = schema.format;
+    if (schema.pattern !== undefined) standardMeta.pattern = schema.pattern;
 
   const hasMeta = formrMeta || Object.keys(standardMeta).length > 0;
   const metadata = hasMeta

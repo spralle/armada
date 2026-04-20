@@ -24,7 +24,9 @@ interface FieldMeta {
   readonly format: string | undefined;
   readonly min: number | undefined;
   readonly max: number | undefined;
+  readonly minLength: number | undefined;
   readonly maxLength: number | undefined;
+  readonly pattern: string | undefined;
   readonly title: string;
   readonly description: string | undefined;
 }
@@ -50,7 +52,9 @@ function extractFieldMeta(field: SchemaFieldInfo): FieldMeta {
     format: asString(meta['format']),
     min: asNumber(meta['minimum']),
     max: asNumber(meta['maximum']),
+    minLength: asNumber(meta['minLength']),
     maxLength: asNumber(meta['maxLength']),
+    pattern: asString(meta['pattern']),
     title: asString(meta['title']) ?? field.path,
     description: asString(meta['description']),
   };
@@ -60,6 +64,25 @@ interface DemoFormFieldProps {
   readonly form: FormApi;
   readonly field: SchemaFieldInfo;
   readonly onChange: (path: string, value: unknown) => void;
+}
+
+function buildConstraints(
+  field: SchemaFieldInfo,
+  min: number | undefined,
+  max: number | undefined,
+  minLength: number | undefined,
+  maxLength: number | undefined,
+  pattern: string | undefined,
+  format: string | undefined,
+): string[] {
+  const constraints: string[] = [];
+  if (field.required) constraints.push('Required');
+  if (minLength) constraints.push(`Min ${minLength} chars`);
+  if (maxLength) constraints.push(`Max ${maxLength} chars`);
+  if (pattern) constraints.push(`Pattern: ${pattern}`);
+  if (min != null && max != null && field.type !== 'number' && field.type !== 'integer') constraints.push(`${min}–${max}`);
+  if (format) constraints.push(format);
+  return constraints;
 }
 
 export function DemoFormField({ form, field, onChange }: DemoFormFieldProps) {
@@ -82,10 +105,12 @@ export function DemoFormField({ form, field, onChange }: DemoFormFieldProps) {
     [fieldApi, field.path, onChange],
   );
 
-  const { widget, enumValues, format, min, max, maxLength, title, description } = extractFieldMeta(field);
+  const { widget, enumValues, format, min, max, minLength, maxLength, pattern, title, description } = extractFieldMeta(field);
 
   const issues = form.getState().issues?.filter((i) => String(i.path) === String(field.path)) ?? [];
   const hasError = issues.length > 0;
+
+  const constraints = buildConstraints(field, min, max, minLength, maxLength, pattern, format);
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -98,8 +123,11 @@ export function DemoFormField({ form, field, onChange }: DemoFormFieldProps) {
         )}
       </div>
       {description && <p className="text-xs text-muted-foreground">{description}</p>}
-      <div>{renderControl(field, value, handleChange, widget, enumValues, format, min, max, maxLength, hasError)}</div>
+      <div>{renderControl(field, value, handleChange, widget, enumValues, format, min, max, minLength, maxLength, pattern, hasError)}</div>
       {hasError && <p className="text-xs text-destructive">{issues[0]?.message}</p>}
+      {!hasError && constraints.length > 0 && (
+        <p className="text-xs text-muted-foreground">{constraints.join(' · ')}</p>
+      )}
     </div>
   );
 }
@@ -147,7 +175,9 @@ function renderStringControl(
   onChange: (v: unknown) => void,
   widget: string | undefined,
   format: string | undefined,
+  minLength: number | undefined,
   maxLength: number | undefined,
+  pattern: string | undefined,
   hasError: boolean,
 ): React.ReactNode {
   const errorClass = hasError ? 'border-destructive' : '';
@@ -157,6 +187,7 @@ function renderStringControl(
         value={(value as string) ?? ''}
         onChange={(e) => onChange(e.target.value)}
         className={cn(errorClass)}
+        maxLength={maxLength}
         rows={4}
       />
     );
@@ -168,6 +199,9 @@ function renderStringControl(
       value={(value as string) ?? ''}
       onChange={(e) => onChange(e.target.value)}
       className={cn(errorClass)}
+      minLength={minLength}
+      maxLength={maxLength}
+      pattern={pattern}
     />
   );
 }
@@ -198,11 +232,19 @@ function renderNumberControl(
     );
   }
   const errorClass = hasError ? 'border-destructive' : '';
+  const step = field.type === 'integer' ? 1 : 'any';
+  const parseValue = (raw: string) => {
+    if (raw === '') return undefined;
+    return field.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
+  };
   return (
     <Input
       type="number"
+      step={step}
+      min={min}
+      max={max}
       value={(value as string) ?? ''}
-      onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+      onChange={(e) => onChange(parseValue(e.target.value))}
       className={cn(errorClass)}
     />
   );
@@ -221,7 +263,9 @@ function renderControl(
   format: string | undefined,
   min: number | undefined,
   max: number | undefined,
+  minLength: number | undefined,
   maxLength: number | undefined,
+  pattern: string | undefined,
   hasError: boolean,
 ): React.ReactNode {
   if (field.type === 'enum' && enumValues) {
@@ -231,7 +275,7 @@ function renderControl(
     return renderBooleanControl(value, onChange);
   }
   if (field.type === 'string') {
-    return renderStringControl(value, onChange, widget, format, maxLength, hasError);
+    return renderStringControl(value, onChange, widget, format, minLength, maxLength, pattern, hasError);
   }
   if (field.type === 'number' || field.type === 'integer') {
     return renderNumberControl(field, value, onChange, min, max, hasError);
