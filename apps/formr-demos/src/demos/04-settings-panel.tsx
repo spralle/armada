@@ -45,6 +45,7 @@ export function SettingsPanelDemo() {
     <DemoShell
       title="Settings Panel"
       description="Toggle-heavy settings form with categorized sections. Demonstrates Switch controls, Slider, and RadioGroup widgets."
+      motivation="Shows boolean-heavy configuration UIs with toggle switches. Common enterprise pattern: app preferences panels where every field is a boolean. Schema-driven means settings are type-safe and self-documenting."
       features={['Switch Controls', 'Slider (Font Size)', 'RadioGroup', 'Sections', 'Custom Layout']}
       schema={schema}
       layout={layout}

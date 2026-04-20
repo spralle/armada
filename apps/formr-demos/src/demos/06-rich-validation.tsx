@@ -53,6 +53,7 @@ export function RichValidationDemo() {
     <DemoShell
       title="Rich Validation Showcase"
       description="Demonstrates various JSON Schema validation constraints including min/max length, patterns, format validation, and number ranges."
+      motivation="Exercises the full validation keyword surface: pattern, format, minLength, maxLength, minimum, maximum. Proves the extractor correctly passes all JSON Schema validation constraints to renderers."
       features={['Required Fields', 'Min/Max Length', 'Pattern Validation', 'Format (email/uri)', 'Number Range', 'Slider']}
       schema={schema}
     >

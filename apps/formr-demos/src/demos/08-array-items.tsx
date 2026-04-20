@@ -44,6 +44,7 @@ export function ArrayItemsDemo() {
     <DemoShell
       title="Array/Repeatable Items"
       description="Shows how formr handles array fields in JSON Schema. Simple arrays, object arrays, and nested structures are all supported. Array items render with a placeholder — the extension point for custom array renderers."
+      motivation="Demonstrates repeatable field groups with add/remove controls. Covers both primitive arrays (tags) and object arrays (line items). Critical for order entry, configuration lists, and any variable-length data."
       features={['Array Fields', 'Nested Arrays', 'Object Array Items', 'Auto Layout', 'Mixed Types']}
       schema={schema}
     >

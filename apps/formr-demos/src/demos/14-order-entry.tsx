@@ -56,6 +56,7 @@ export function OrderEntryDemo() {
     <DemoShell
       title="Order / Invoice Entry"
       description="A real-world order entry form with multiple sections for header, customer, payment, and delivery details. Demonstrates formr handling business forms with mixed field types."
+      motivation="A realistic business form: invoice with line items, payment method switching, and calculated fields. Proves the system handles real-world complexity, not just toy examples."
       features={['Order Entry', 'Multi-Section', '2-Column Grid', 'Select (Payment/Currency)', 'Number Inputs', 'Switch Toggles', 'Textarea']}
       schema={schema}
       layout={layout}

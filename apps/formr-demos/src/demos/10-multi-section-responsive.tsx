@@ -79,6 +79,7 @@ export function MultiSectionResponsiveDemo() {
     <DemoShell
       title="Multi-Section Responsive Form"
       description="A comprehensive passenger registration form with responsive multi-section layout. The 2-column grid gracefully collapses to single-column on smaller viewports, demonstrating formr's responsive capabilities."
+      motivation="Shows responsive multi-column layouts that collapse gracefully on mobile. Demonstrates that the layout system produces real responsive UIs, not just desktop-only forms."
       features={['Responsive Grid', 'Multi-Section', '2-Column Collapse', 'RadioGroup', 'Select', 'Textarea', 'Switch']}
       schema={schema}
       layout={layout}

@@ -121,6 +121,7 @@ export function ConditionalFieldsDemo() {
     <DemoShell
       title="Conditional Fields"
       description="Sections dynamically show/hide based on the Employment Status selection. Only relevant fields appear for each status. This demonstrates UI-level visibility rules driven by form state."
+      motivation="Shows dynamic form behavior — fields appear/disappear based on user selection. This is the most requested enterprise form feature: context-sensitive forms that don't overwhelm users with irrelevant fields."
       features={['Show/Hide Sections', 'Dynamic Visibility', 'RadioGroup', 'Responsive Grid', 'State-Driven UI']}
       schema={schema}
     >

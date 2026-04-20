@@ -37,6 +37,7 @@ export function NestedAddressDemo() {
     <DemoShell
       title="Nested Address Form"
       description="Demonstrates auto-layout generation for nested JSON Schema objects. No manual layout override — the layout compiler groups nested fields automatically."
+      motivation="Proves the engine handles nested object schemas with automatic grouping. Developers describe hierarchical data and get organized form sections without writing layout code."
       features={['Auto Layout', 'Nested Objects', 'Path Grouping', 'Select (Country)']}
       schema={schema}
     >

@@ -17,6 +17,7 @@ export function BasicContactDemo() {
     <DemoShell
       title="Basic Contact Form"
       description="Simple contact form with text, email, and textarea fields. Auto-generated layout from JSON Schema."
+      motivation="Shows the simplest path from JSON Schema to rendered form — zero layout config needed. Proves that schema-first DX means developers declare data shape once and get a usable form immediately."
       features={['Auto Layout', 'Email Format', 'Textarea Widget', 'Required Fields']}
       schema={schema}
     >

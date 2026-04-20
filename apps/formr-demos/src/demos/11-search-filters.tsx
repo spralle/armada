@@ -37,6 +37,7 @@ export function SearchFiltersDemo() {
     <DemoShell
       title="Search Filter Bar"
       description="A compact search and filter panel demonstrating formr for non-traditional form UIs. Select components keep the interface clean, while switch toggles provide quick boolean options."
+      motivation="Compact filter panel pattern common in data-heavy apps. Shows how the same schema-to-form pipeline works for search/filter UIs, not just data entry — proving the system's versatility."
       features={['Filter Panel', 'Select Controls', 'Switch Toggles', 'Compact Layout', '2-Column Grid']}
       schema={schema}
       layout={layout}

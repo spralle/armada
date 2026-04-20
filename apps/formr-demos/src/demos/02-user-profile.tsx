@@ -40,6 +40,7 @@ export function UserProfileDemo() {
     <DemoShell
       title="User Profile"
       description="Multi-column layout with enum fields (RadioGroup and Select), slider for age, textarea, and boolean switch."
+      motivation="Demonstrates enum-to-widget mapping (radio groups, selects) and number constraints rendered as sliders. Shows how the system automatically chooses the right input based on schema metadata — no manual widget wiring."
       features={['2-Column Layout', 'RadioGroup (≤5)', 'Select (>5)', 'Slider (Age)', 'Textarea', 'Switch']}
       schema={schema}
       layout={layout}

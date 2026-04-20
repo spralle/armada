@@ -195,6 +195,7 @@ export function CustomRenderersDemo() {
     <DemoShell
       title="Custom Renderers"
       description="Demonstrates custom field renderers using x-formr metadata extensions. Star ratings, color pickers, checkbox groups, and progress bars — all driven by schema metadata."
+      motivation="Shows the extensibility story: star ratings, color pickers, checkbox groups, and progress bars via custom renderer functions. Proves developers aren't locked into built-in widgets — they can plug in any React component."
       features={['Custom Widgets', 'x-formr Metadata', 'Star Rating', 'Color Picker', 'Checkbox Group', 'Progress Bar', 'Extensible Renderers']}
       schema={schema}
     >

@@ -4,18 +4,24 @@ import { CodeBlock } from './CodeBlock';
 interface DemoShellProps {
   readonly title: string;
   readonly description: string;
+  readonly motivation?: string;
   readonly features: readonly string[];
   readonly schema: object;
   readonly layout?: object;
   readonly children: React.ReactNode;
 }
 
-export function DemoShell({ title, description, features, schema, layout, children }: DemoShellProps) {
+export function DemoShell({ title, description, motivation, features, schema, layout, children }: DemoShellProps) {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <header className="mb-6">
         <h2 className="text-2xl font-bold text-foreground">{title}</h2>
         <p className="text-sm text-muted-foreground mt-1">{description}</p>
+        {motivation && (
+          <p className="text-sm italic text-muted-foreground mt-2 border-l-2 border-muted pl-3">
+            {motivation}
+          </p>
+        )}
         <div className="flex flex-wrap gap-2 mt-3">
           {features.map((f) => (
             <Badge key={f} variant="secondary" className="text-xs">

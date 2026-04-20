@@ -44,6 +44,7 @@ export function SurveyQuestionnaireDemo() {
     <DemoShell
       title="Survey / Questionnaire"
       description="A customer satisfaction survey demonstrating radio groups for small enums, a slider for NPS scoring, and auto-detected textarea for long-form feedback."
+      motivation="Radio groups, rating scales, and open-ended text in a questionnaire format. Shows the system handles read-heavy forms where the schema describes choices, not just data types."
       features={['RadioGroup (≤5)', 'Slider (NPS)', 'Textarea (Auto)', 'Multi-Section', 'Rich Descriptions', 'Survey Pattern']}
       schema={schema}
       layout={layout}

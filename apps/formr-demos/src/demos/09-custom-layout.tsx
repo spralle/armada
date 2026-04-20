@@ -69,6 +69,7 @@ export function CustomLayoutDemo() {
     <DemoShell
       title="Custom Layout Override"
       description="The same schema can be rendered with completely different layouts. This layout groups vessel properties by identity, classification, and dimensions — different from the schema's flat structure."
+      motivation="Proves layout is fully decoupled from schema. Same data schema, completely different visual arrangement. Shows the split between 'what data' (schema) and 'how to display' (layout) that enables designer/developer collaboration."
       features={['Custom Layout', '2-Column Grid', 'Select (>5)', 'RadioGroup (≤5)', 'Number Inputs', 'Slider (Year)']}
       schema={schema}
       layout={layout}

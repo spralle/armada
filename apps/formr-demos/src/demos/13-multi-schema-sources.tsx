@@ -34,6 +34,7 @@ export function MultiSchemaSourcesDemo() {
     <DemoShell
       title="Multiple Schema Sources"
       description="Formr's ingestSchema() auto-detects multiple formats: JSON Schema, Zod v3/v4, Standard Schema v1. This demo shows minimal vs. explicit JSON Schema defining the same form — demonstrating flexible DX."
+      motivation="Demonstrates schema ingestion from multiple input formats. Shows that formr's adapter architecture means teams can bring their existing schemas — JSON Schema, Zod, or Standard Schema — without rewriting."
       features={['Auto-Detection', 'JSON Schema', 'Zod v3/v4', 'Standard Schema v1', 'Flexible DX']}
       schema={schema}
     >

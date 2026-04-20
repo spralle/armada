@@ -146,6 +146,7 @@ export function CustomLayoutTypesDemo() {
     <DemoShell
       title="Custom Layout Types"
       description="The same vessel inspection schema rendered in three different layout modes: standard sections, tabbed interface, and accordion. Demonstrates that formr's layout system is extensible beyond simple groups."
+      motivation="Demonstrates custom layout containers: tabs, accordion, and section grouping. Shows that the layout system is extensible beyond simple rows/columns — teams can build domain-specific form chrome."
       features={['Custom Layout Types', 'Tabs Layout', 'Accordion Layout', 'Layout Switching', 'Same Schema, Different UX']}
       schema={schema}
     >

@@ -56,6 +56,7 @@ export function KitchenSinkDemo() {
     <DemoShell
       title="Kitchen Sink"
       description="Every supported field type and layout feature in one form. This is the complete showcase of formr's schema-to-form rendering capabilities with the shadcn component library."
+      motivation="Every field type and feature in one form. This is the stress test — if the system handles this, it handles anything. Shows the complete widget palette available out of the box."
       features={['All Field Types', 'Text Input', 'Email/URL', 'Textarea', 'Number', 'Slider', 'Switch', 'RadioGroup', 'Select', 'Required Badge', 'Default Values', 'Multi-Column', 'Sections']}
       schema={schema}
       layout={layout}

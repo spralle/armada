@@ -46,6 +46,7 @@ export function ProductEntryDemo() {
     <DemoShell
       title="Product Catalog Entry"
       description="Product entry form with number constraints, rich descriptions, and multi-column grid layout."
+      motivation="Demonstrates number fields with constraint enforcement (min, max, step) in a grid layout. Shows how the layout system controls visual arrangement independently from schema structure."
       features={['Number Inputs', 'Slider (Rating)', 'Select (>5 Options)', 'Textarea (Auto)', 'Multi-Column Grid', 'Required Fields']}
       schema={schema}
       layout={layout}
