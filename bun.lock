@@ -135,6 +135,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@ghost/formr-core": "workspace:*",
+        "@ghost/formr-from-schema": "workspace:*",
         "@ghost/formr-react": "workspace:*",
         "@radix-ui/react-accordion": "1.2.12",
         "@radix-ui/react-alert-dialog": "1.1.15",
