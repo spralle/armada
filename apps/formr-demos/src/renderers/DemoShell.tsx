@@ -1,6 +1,12 @@
 import { Badge } from '@ghost/ui';
 import { CodeBlock } from './CodeBlock';
 
+interface CodeBlockEntry {
+  readonly title: string;
+  readonly code: string | object;
+  readonly defaultOpen?: boolean;
+}
+
 interface DemoShellProps {
   readonly title: string;
   readonly description: string;
@@ -8,10 +14,11 @@ interface DemoShellProps {
   readonly features: readonly string[];
   readonly schema: object;
   readonly layout?: object;
+  readonly codeBlocks?: readonly CodeBlockEntry[];
   readonly children: React.ReactNode;
 }
 
-export function DemoShell({ title, description, motivation, features, schema, layout, children }: DemoShellProps) {
+export function DemoShell({ title, description, motivation, features, schema, layout, codeBlocks, children }: DemoShellProps) {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <header className="mb-6">
@@ -35,6 +42,9 @@ export function DemoShell({ title, description, motivation, features, schema, la
         <div className="lg:w-80 flex flex-col gap-3 shrink-0">
           <CodeBlock title="JSON Schema" code={schema} defaultOpen />
           {layout && <CodeBlock title="Layout" code={layout} />}
+          {codeBlocks?.map((block) => (
+            <CodeBlock key={block.title} title={block.title} code={block.code} defaultOpen={block.defaultOpen} />
+          ))}
         </div>
         <div className="flex-1 min-w-0">{children}</div>
       </div>

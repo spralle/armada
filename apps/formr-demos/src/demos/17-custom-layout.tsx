@@ -82,6 +82,59 @@ const layouts: Record<LayoutMode, LayoutNode> = {
   accordion: accordionLayout,
 };
 
+const RENDERER_CODE = `function renderCustomNode(node, form, fieldMap, onChange) {
+  if (node.type === 'field' && node.path) {
+    const field = fieldMap.get(node.path);
+    return <DemoFormField form={form} field={field} onChange={onChange} />;
+  }
+
+  if (node.type === 'section') {
+    return (
+      <div className="flex flex-col gap-3">
+        <h3>{node.props?.title}</h3>
+        <div className="grid grid-cols-2 gap-4">
+          {node.children?.map(child => renderCustomNode(child, ...))}
+        </div>
+      </div>
+    );
+  }
+
+  if (node.type === 'tabs') {
+    return (
+      <Tabs defaultValue={node.children?.[0]?.id}>
+        <TabsList>
+          {node.children?.map(s => (
+            <TabsTrigger value={s.id}>{s.props?.title}</TabsTrigger>
+          ))}
+        </TabsList>
+        {node.children?.map(child => (
+          <TabsContent value={child.id}>
+            {renderCustomNode(child, ...)}
+          </TabsContent>
+        ))}
+      </Tabs>
+    );
+  }
+
+  if (node.type === 'accordion') {
+    return (
+      <Accordion type="multiple">
+        {node.children?.map(child => (
+          <AccordionItem value={child.id}>
+            <AccordionTrigger>{child.props?.title}</AccordionTrigger>
+            <AccordionContent>
+              {renderCustomNode(child, ...)}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    );
+  }
+
+  // Fallback: stack children vertically
+  return <div>{node.children?.map(child => renderCustomNode(child, ...))}</div>;
+}`;
+
 function renderCustomNode(
   node: LayoutNode,
   form: FormApi,
@@ -178,6 +231,7 @@ export function CustomLayoutTypesDemo() {
       features={['LayoutNode JSON Trees', 'Custom Node Types (tabs, accordion)', 'Layout-Driven Rendering', 'Mode Switching', 'Same Schema, Different UX']}
       schema={schema}
       layout={activeLayout}
+      codeBlocks={[{ title: 'Renderer (TSX)', code: RENDERER_CODE }]}
     >
       <div className="flex flex-col gap-4">
         <Card className="border-border">
