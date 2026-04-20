@@ -186,6 +186,7 @@ export type { PluginServices, PluginMountContext } from "./plugin-services.js";
 
 export type {
   JsonFormSchema,
+  JsonFormLayoutNode,
   JsonFormOptions,
   JsonFormController,
   JsonFormCapability,

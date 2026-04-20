@@ -17,6 +17,7 @@ export function createJsonFormCapability(): JsonFormCapability {
               schema={opts.schema}
               data={opts.data}
               onChange={opts.onChange}
+              layout={opts.layout}
             />
           </ErrorBoundary>,
         );

@@ -1,7 +1,10 @@
+import type { ReactElement } from 'react';
 import { useMemo } from 'react';
 import { useForm } from '@ghost/formr-react';
-import { ingestSchema } from '@ghost/formr-from-schema';
-import type { JsonFormSchema } from '@ghost/plugin-contracts';
+import type { FormApi } from '@ghost/formr-core';
+import { ingestSchema, compileLayout } from '@ghost/formr-from-schema';
+import type { LayoutNode, SchemaFieldInfo } from '@ghost/formr-from-schema';
+import type { JsonFormSchema, JsonFormLayoutNode } from '@ghost/plugin-contracts';
 import { FieldGroup } from '@ghost/ui';
 import { FormField } from './FormField.js';
 
@@ -9,6 +12,7 @@ interface JsonFormRootProps {
   readonly schema: JsonFormSchema;
   readonly data: Readonly<Record<string, unknown>>;
   readonly onChange: (path: string, value: unknown) => void;
+  readonly layout?: JsonFormLayoutNode;
 }
 
 interface SchemaPanelProps {
@@ -29,8 +33,54 @@ function SchemaPanel({ title, value }: SchemaPanelProps) {
   );
 }
 
-export function JsonFormRoot({ schema, data, onChange }: JsonFormRootProps) {
+function renderNode(
+  node: LayoutNode,
+  fieldMap: ReadonlyMap<string, SchemaFieldInfo>,
+  form: FormApi,
+  onChange: (path: string, value: unknown) => void,
+): ReactElement | null {
+  if (node.type === 'field') {
+    const fieldInfo = node.path ? fieldMap.get(node.path) : undefined;
+    if (!fieldInfo) return null;
+    return <FormField key={node.id} form={form} field={fieldInfo} onChange={onChange} />;
+  }
+
+  const children = node.children?.map((child) => renderNode(child, fieldMap, form, onChange));
+
+  if (node.type === 'section') {
+    const title = node.props?.title as string | undefined;
+    return (
+      <div key={node.id} className="flex flex-col gap-3">
+        {title ? (
+          <h3 className="text-sm font-semibold text-[var(--ghost-text-primary)]">{title}</h3>
+        ) : null}
+        <FieldGroup>{children}</FieldGroup>
+      </div>
+    );
+  }
+
+  return <FieldGroup key={node.id}>{children}</FieldGroup>;
+}
+
+export function JsonFormRoot({ schema, data, onChange, layout }: JsonFormRootProps) {
   const ingestion = useMemo(() => ingestSchema(schema), [schema]);
+
+  const compiledLayout = useMemo(
+    () =>
+      compileLayout(
+        ingestion,
+        layout ? { overrideLayout: layout as LayoutNode } : undefined,
+      ),
+    [ingestion, layout],
+  );
+
+  const fieldMap = useMemo(() => {
+    const map = new Map<string, SchemaFieldInfo>();
+    for (const field of ingestion.fields) {
+      map.set(field.path, field);
+    }
+    return map;
+  }, [ingestion.fields]);
 
   const form = useForm({
     initialData: { ...data } as Record<string, unknown>,
@@ -40,16 +90,8 @@ export function JsonFormRoot({ schema, data, onChange }: JsonFormRootProps) {
     <div className="flex flex-col gap-4">
       <SchemaPanel title="JSON Schema Input" value={schema} />
       <SchemaPanel title="Ingested Fields (layout)" value={ingestion.fields} />
-      <FieldGroup>
-        {ingestion.fields.map((field) => (
-          <FormField
-            key={field.path}
-            form={form}
-            field={field}
-            onChange={onChange}
-          />
-        ))}
-      </FieldGroup>
+      <SchemaPanel title="Compiled Layout Tree" value={compiledLayout} />
+      {renderNode(compiledLayout, fieldMap, form, onChange)}
     </div>
   );
 }

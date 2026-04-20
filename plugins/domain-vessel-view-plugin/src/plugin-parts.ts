@@ -1,8 +1,33 @@
-import type { JsonFormCapability, JsonFormController, JsonFormSchema } from '@ghost/plugin-contracts';
+import type { JsonFormCapability, JsonFormController, JsonFormLayoutNode, JsonFormSchema } from '@ghost/plugin-contracts';
 
 const REQUESTER_PLUGIN_ID = "ghost.domain.vessel-view";
 const JSONFORM_COMPONENT_CAPABILITY = "ghost.component.jsonform.control";
 const ENTITY_LIST_COMPONENT_CAPABILITY = "ghost.component.entity-list.seed";
+
+const DEMO_LAYOUT: JsonFormLayoutNode = {
+  type: 'group',
+  id: 'root',
+  children: [
+    {
+      type: 'section',
+      id: 'vessel-identity',
+      props: { title: 'Vessel Identity' },
+      children: [
+        { type: 'field', id: 'f-vesselName', path: 'vesselName' },
+        { type: 'field', id: 'f-imoNumber', path: 'imoNumber' },
+      ],
+    },
+    {
+      type: 'section',
+      id: 'vessel-details',
+      props: { title: 'Details' },
+      children: [
+        { type: 'field', id: 'f-deadweight', path: 'deadweight' },
+        { type: 'field', id: 'f-isActive', path: 'isActive' },
+      ],
+    },
+  ],
+};
 
 const DEMO_SCHEMA: JsonFormSchema = {
   type: 'object' as const,
@@ -93,6 +118,7 @@ function mountJsonForm(
   const controller = typed.mount(host, {
     schema: DEMO_SCHEMA,
     data: {},
+    layout: DEMO_LAYOUT,
     onChange(path: string, value: unknown) {
       statusEl.textContent = `Changed: ${path} = ${JSON.stringify(value)}`;
     },
