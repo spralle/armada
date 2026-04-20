@@ -1,16 +1,12 @@
-import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import { federation } from "@module-federation/vite";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-
-const UI_SOURCE = fileURLToPath(
-  new URL("../../packages/ui/src/index.ts", import.meta.url),
-);
-const UI_SRC_ROOT = fileURLToPath(
-  new URL("../../packages/ui/src", import.meta.url),
-);
 
 export default defineConfig({
   plugins: [
+    react(),
+    tailwindcss(),
     federation({
       name: "ghost.shared.ui-capabilities",
       filename: "remoteEntry.js",
@@ -26,33 +22,32 @@ export default defineConfig({
       shared: {
         "@ghost/plugin-contracts": {
           singleton: true,
+          import: false,
           requiredVersion: "^0.0.0",
         },
-        "react": {
+        "@ghost/ui": {
           singleton: true,
+          import: false,
+          requiredVersion: "^0.0.0",
+        },
+        react: {
+          singleton: true,
+          import: false,
           requiredVersion: "^18.3.1",
         },
         "react-dom": {
           singleton: true,
+          import: false,
           requiredVersion: "^18.3.1",
         },
         "react-dom/client": {
           singleton: true,
+          import: false,
           requiredVersion: "^18.3.1",
-        },
-        "@ghost/ui": {
-          singleton: true,
-          requiredVersion: "^0.0.0",
         },
       },
     }),
   ],
-  resolve: {
-    alias: {
-      "@ghost/ui": UI_SOURCE,
-      "@/": `${UI_SRC_ROOT}/`,
-    },
-  },
   server: {
     host: "127.0.0.1",
     port: 4175,
