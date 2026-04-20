@@ -45,6 +45,8 @@ export {
   type ArbiterSessionConfig,
   type ValidationTrigger,
   type FieldValidationTriggers,
+  type ArrayFieldHelpers,
+  type FieldApiWithArray,
 } from './contracts.js';
 
 // Submit helpers
@@ -73,6 +75,9 @@ export { structuredEqual } from './equality.js';
 
 // Trigger filter
 export { shouldShowIssues, type TriggerContext } from './trigger-filter.js';
+
+// Field meta shifting
+export { shiftFieldMeta, clearChildFieldMeta, swapFieldMeta } from './field-meta-shift.js';
 
 // Nested utilities (extracted from old rule engine)
 export { setNestedValue, deleteNestedValue } from './nested-utils.js';
@@ -107,7 +112,7 @@ export {
 } from './extensions.js';
 
 // Type utilities (formr-typed-dx)
-export type { DeepKeys, DeepValue } from './type-utils.js';
+export type { DeepKeys, DeepValue, ArrayElement } from './type-utils.js';
 
 // Middleware runner (SE6.2)
 export {

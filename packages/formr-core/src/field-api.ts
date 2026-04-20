@@ -4,6 +4,7 @@ import type { FieldApi, FieldConfig, FormDispatchResult } from './contracts.js';
 import type { DeepValue } from './type-utils.js';
 import { structuredEqual } from './equality.js';
 import { shouldShowIssues } from './trigger-filter.js';
+import { createArrayHelpers } from './array-helpers.js';
 
 /** Resolve a value from a nested object by walking canonical path segments */
 function resolveValue(root: unknown, segments: readonly (string | number)[]): unknown {
@@ -25,6 +26,7 @@ export interface CreateFieldApiParams<TData, TUi> {
   readonly getFieldMeta: (pathKey: string) => FieldMetaEntry | undefined;
   readonly markTouched: (pathKey: string) => void;
   readonly getFormSubmitted: () => boolean;
+  readonly updateFieldMeta: (updater: (meta: Record<string, FieldMetaEntry>) => Record<string, FieldMetaEntry>) => void;
   /** Form-level field defaults (tier 2) */
   readonly formDefaults?: FieldConfig | undefined;
   /** Field-level overrides (tier 3, highest priority) */
@@ -57,7 +59,7 @@ function stripUndefined(obj: FieldConfig): Partial<FieldConfig> {
 export function createFieldApi<TData, TUi>(params: CreateFieldApiParams<TData, TUi>): FieldApi<TData, TUi, string> {
   const pathKey = params.path.segments.join('.');
 
-  return {
+  const fieldApi: FieldApi<TData, TUi, string> = {
     path: params.path,
 
     // Justified: resolveValue walks the actual data structure; cast bridges runtime to static type
@@ -133,4 +135,14 @@ export function createFieldApi<TData, TUi>(params: CreateFieldApiParams<TData, T
       this.markTouched();
     },
   };
+
+  const arrayHelpers = createArrayHelpers({
+    get: () => fieldApi.get(),
+    // Justified: runtime array value is typed at call site; cast bridges generic set signature
+    set: (value: unknown) => fieldApi.set(value as DeepValue<TData, string>),
+    pathKey,
+    updateFieldMeta: params.updateFieldMeta,
+  });
+
+  return { ...fieldApi, ...arrayHelpers };
 }

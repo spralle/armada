@@ -2,7 +2,7 @@ import type { CanonicalPath } from './path.js';
 import type { FormState, ValidationIssue, SubmitContext } from './state.js';
 import type { ExprNode, ExpressionDefinition, EvaluationScope } from '@ghost/predicate';
 import type { TransformDefinition } from './transforms.js';
-import type { DeepKeys, DeepValue } from './type-utils.js';
+import type { DeepKeys, DeepValue, ArrayElement } from './type-utils.js';
 
 export type { ExprNode, ExpressionDefinition, EvaluationScope };
 
@@ -191,6 +191,22 @@ export interface FieldApi<TData, TUi, TPath extends string> {
   handleBlur(): void;
 }
 
+/** Array manipulation helpers — available when field value is an array. */
+export interface ArrayFieldHelpers<TValue> {
+  pushValue(item: ArrayElement<TValue>): FormDispatchResult;
+  removeValue(index: number): FormDispatchResult;
+  insertValue(index: number, item: ArrayElement<TValue>): FormDispatchResult;
+  moveValue(fromIndex: number, toIndex: number): FormDispatchResult;
+  swapValue(indexA: number, indexB: number): FormDispatchResult;
+}
+
+/** FieldApi with array helpers when the field value is an array. */
+export type FieldApiWithArray<TData, TUi, TPath extends string> =
+  FieldApi<TData, TUi, TPath> &
+  (NonNullable<DeepValue<TData, TPath>> extends readonly unknown[]
+    ? ArrayFieldHelpers<DeepValue<TData, TPath>>
+    : unknown);
+
 /** ADR section 9 — FormApi */
 export interface FormApi<TData, TUi> {
   getState(): FormState<TData, TUi>;
@@ -198,7 +214,7 @@ export interface FormApi<TData, TUi> {
   setValue<P extends string & DeepKeys<TData>>(path: P, value: DeepValue<TData, P>): FormDispatchResult;
   validate(stage?: string): readonly ValidationIssue[];
   submit(context?: Partial<SubmitContext>): Promise<SubmitResult>;
-  field<P extends string & DeepKeys<TData>>(path: P, config?: FieldConfig): FieldApi<TData, TUi, P>;
+  field<P extends string & DeepKeys<TData>>(path: P, config?: FieldConfig): FieldApiWithArray<TData, TUi, P>;
   subscribe(listener: (state: FormState<TData, TUi>) => void): () => void;
   /** Reset form to initial or provided state */
   reset(nextInitial?: { readonly data?: TData; readonly uiState?: TUi }): void;

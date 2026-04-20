@@ -60,3 +60,6 @@ export type DeepValue<T, P> =
 
 /** Extracts `undefined` from T if T is optional/nullable (includes undefined or null). */
 type ExtractUndefined<T> = undefined extends T ? undefined : null extends T ? undefined : never;
+
+/** Extracts the element type from an array type, or `never` if not an array. */
+export type ArrayElement<T> = T extends readonly (infer E)[] ? E : never;

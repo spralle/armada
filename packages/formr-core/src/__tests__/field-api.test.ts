@@ -57,6 +57,7 @@ describe('FieldApi.validate()', () => {
       getFieldMeta: () => undefined,
       markTouched: () => {},
       getFormSubmitted: () => false,
+      updateFieldMeta: () => {},
     });
     expect(api.validate()).toEqual([]);
   });
@@ -77,6 +78,7 @@ describe('FieldApi.validate()', () => {
       getFieldMeta: () => undefined,
       markTouched: () => {},
       getFormSubmitted: () => false,
+      updateFieldMeta: () => {},
       config: { validators: [makeValidator('v1', [issue])] },
     });
     expect(api.validate()).toEqual([issue]);
@@ -103,6 +105,7 @@ describe('FieldApi.validate()', () => {
       getFieldMeta: () => undefined,
       markTouched: () => {},
       getFormSubmitted: () => false,
+      updateFieldMeta: () => {},
       config: {
         validators: [
           makeValidator('v1', [issue1]),
@@ -127,6 +130,7 @@ describe('FieldApi.validate()', () => {
       getFieldMeta: () => undefined,
       markTouched: () => {},
       getFormSubmitted: () => false,
+      updateFieldMeta: () => {},
       config: { validators: [spy] },
     });
     api.validate();
@@ -146,6 +150,7 @@ describe('FieldApi.validate()', () => {
       getFieldMeta: () => undefined,
       markTouched: () => {},
       getFormSubmitted: () => false,
+      updateFieldMeta: () => {},
       config: { validators: [spy] },
     });
     api.validate();
@@ -171,6 +176,7 @@ describe('FieldApi.handleChange()', () => {
       getFieldMeta: () => undefined,
       markTouched: () => {},
       getFormSubmitted: () => false,
+      updateFieldMeta: () => {},
     });
     const result = api.handleChange('Alice');
     expect(result).toEqual({ ok: true });
@@ -191,6 +197,7 @@ describe('FieldApi.handleBlur()', () => {
       getFieldMeta: () => undefined,
       markTouched: (p) => { touchedPath = p; },
       getFormSubmitted: () => false,
+      updateFieldMeta: () => {},
     });
     api.handleBlur();
     expect(touchedPath).toBe('name');
@@ -208,6 +215,7 @@ describe('FieldApi.handleBlur()', () => {
       getFieldMeta: () => ({ touched: true }),
       markTouched: () => { touchCount++; },
       getFormSubmitted: () => false,
+      updateFieldMeta: () => {},
     });
     api.handleBlur();
     api.handleBlur();

@@ -53,13 +53,8 @@ export function createForm<TData, TUi>(
 
   // Justified: runtime data matches TData/TUi, narrowing for consumer DX
   const initialState = {
-    data: (options.initialData ?? {}) as TData,
-    uiState: (options.initialUiState ?? {}) as TUi,
-    meta: {
-      validation: {},
-    },
-    fieldMeta: {},
-    issues: [],
+    data: (options.initialData ?? {}) as TData, uiState: (options.initialUiState ?? {}) as TUi,
+    meta: { validation: {} }, fieldMeta: {}, issues: [],
   } as FormState<TData, TUi>;
 
   const store = new FormStore<TData, TUi>(initialState, options.stateStrategy);
@@ -72,7 +67,6 @@ export function createForm<TData, TUi>(
     }
     return current;
   }
-
   // Create arbiter adapter if arbiter rules or session provided
   let arbiterAdapter: ArbiterFormAdapter | undefined;
   if (options.arbiterSession) {
@@ -82,7 +76,6 @@ export function createForm<TData, TUi>(
     arbiterAdapter = createArbiterAdapter(options.arbiterRules, initialDataObj);
   }
 
-  // Field cache: keyed by rawPath + serialized config
   const fieldCache = new Map<string, FieldApi<TData, TUi, string>>();
 
   function getIssues(path: CanonicalPath): readonly ValidationIssue[] {
@@ -323,6 +316,12 @@ export function createForm<TData, TUi>(
     store.commitTransaction(tx);
   }
 
+  function updateFieldMeta(updater: (meta: Record<string, FieldMetaEntry>) => Record<string, FieldMetaEntry>): void {
+    const tx = store.beginTransaction();
+    tx.mutate((draft) => ({ ...draft, fieldMeta: updater(draft.fieldMeta as Record<string, FieldMetaEntry>) }));
+    store.commitTransaction(tx);
+  }
+
   function field(path: string, config?: FieldConfig): FieldApi<TData, TUi, string> {
     const cacheKey = config ? `${path}::${JSON.stringify(config)}` : path;
     const cached = fieldCache.get(cacheKey);
@@ -340,6 +339,7 @@ export function createForm<TData, TUi>(
       getFieldMeta: (pk) => (store.getState().fieldMeta as Record<string, FieldMetaEntry>)[pk],
       markTouched: markFieldTouched,
       getFormSubmitted: () => store.getState().meta.submitted ?? false,
+      updateFieldMeta,
       formDefaults: options.fieldDefaults,
       config,
     });
