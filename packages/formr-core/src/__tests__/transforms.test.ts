@@ -3,6 +3,7 @@ import {
   runTransforms,
   createDateTransform,
   createDateEgressTransform,
+  createFieldTransform,
   type TransformDefinition,
 } from '../transforms.js';
 
@@ -72,5 +73,19 @@ describe('createDateEgressTransform', () => {
   it('passes values through unchanged', () => {
     const t = createDateEgressTransform();
     expect(t.transform('2025-01-15T12:00:00.000Z', { phase: 'egress', state: {} })).toBe('2025-01-15T12:00:00.000Z');
+  });
+});
+
+describe('createFieldTransform', () => {
+  it('creates a valid TransformDefinition', () => {
+    type MyForm = { age: number; name: string };
+    const t = createFieldTransform<MyForm, 'age'>(
+      'double-age', 'age', 'field',
+      (value) => value * 2,
+    );
+    expect(t.id).toBe('double-age');
+    expect(t.path).toBe('age');
+    expect(t.phase).toBe('field');
+    expect(t.transform(5, { phase: 'field', path: 'age', state: {} as never })).toBe(10);
   });
 });

@@ -2,7 +2,7 @@
 
 import type { ComponentType } from "react"
 import type { ReactNode } from "react"
-import type { FormApi } from "@ghost/formr-core"
+import type { FormApi, ValidationIssue } from "@ghost/formr-core"
 import type { SchemaFieldInfo } from "@ghost/formr-from-schema"
 import type { FieldMapping } from "./field-mapping"
 
@@ -24,12 +24,41 @@ export interface WidgetProps {
   readonly field: ReturnType<FormApi<unknown, unknown>["field"]>
   readonly fieldInfo: SchemaFieldInfo
   readonly mapping: FieldMapping
-  readonly aria: {
-    readonly id: string
-    readonly "aria-invalid"?: boolean
-    readonly "aria-describedby"?: string
-    readonly "aria-required"?: boolean
+  readonly aria: FieldAriaAttributes
+}
+
+/** Aria attributes passed to widget components */
+export interface FieldAriaAttributes {
+  readonly id: string
+  readonly "aria-invalid"?: boolean
+  readonly "aria-describedby"?: string
+  readonly "aria-required"?: boolean
+}
+
+/** Typed widget props — field accessors are typed to TValue */
+export interface TypedWidgetProps<TValue> {
+  readonly field: {
+    get(): TValue
+    handleChange(value: TValue): void
+    handleBlur(): void
+    isTouched(): boolean
+    isDirty(): boolean
+    issues(): readonly ValidationIssue[]
+    readonly path: string
   }
+  readonly fieldInfo: SchemaFieldInfo
+  readonly mapping: FieldMapping
+  readonly aria: FieldAriaAttributes
+}
+
+/**
+ * Type-safe widget factory — wraps a typed component as a WidgetProps component.
+ * The cast is safe because the runtime field API is identical — generics only narrow at compile time.
+ */
+export function createWidget<TValue>(
+  Component: ComponentType<TypedWidgetProps<TValue>>,
+): ComponentType<WidgetProps> {
+  return Component as unknown as ComponentType<WidgetProps>
 }
 
 export function GhostInputWidget({ field, mapping, aria }: WidgetProps): ReactNode {

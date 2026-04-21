@@ -62,75 +62,75 @@ export type MiddlewareDecision =
   | { readonly action: 'veto'; readonly reason: string };
 
 /** Context for beforeAction hook */
-export interface BeforeActionContext {
+export interface BeforeActionContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState<unknown, unknown>;
+  readonly state: FormState<TData, TUi>;
 }
 
 /** Context for afterAction hook */
-export interface AfterActionContext {
+export interface AfterActionContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly prevState: FormState<unknown, unknown>;
-  readonly nextState: FormState<unknown, unknown>;
+  readonly prevState: FormState<TData, TUi>;
+  readonly nextState: FormState<TData, TUi>;
 }
 
 /** Context for beforeEvaluate hook */
-export interface BeforeEvaluateContext {
+export interface BeforeEvaluateContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState<unknown, unknown>;
+  readonly state: FormState<TData, TUi>;
 }
 
 /** Context for afterEvaluate hook */
-export interface AfterEvaluateContext {
+export interface AfterEvaluateContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState<unknown, unknown>;
+  readonly state: FormState<TData, TUi>;
 }
 
 /** Context for beforeValidate hook */
-export interface BeforeValidateContext {
+export interface BeforeValidateContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState<unknown, unknown>;
+  readonly state: FormState<TData, TUi>;
   readonly stage?: string;
 }
 
 /** Context for afterValidate hook */
-export interface AfterValidateContext {
+export interface AfterValidateContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState<unknown, unknown>;
+  readonly state: FormState<TData, TUi>;
   readonly issues: readonly ValidationIssue[];
 }
 
 /** Context for beforeSubmit hook */
-export interface BeforeSubmitContext {
+export interface BeforeSubmitContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState<unknown, unknown>;
+  readonly state: FormState<TData, TUi>;
   readonly submitContext: SubmitContext;
 }
 
 /** Context for afterSubmit hook */
-export interface AfterSubmitContext {
+export interface AfterSubmitContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState<unknown, unknown>;
+  readonly state: FormState<TData, TUi>;
   readonly result: SubmitResult;
 }
 
 /** Context for middleware init */
-export interface MiddlewareInitContext {
-  readonly state: FormState<unknown, unknown>;
+export interface MiddlewareInitContext<TData = unknown, TUi = unknown> {
+  readonly state: FormState<TData, TUi>;
 }
 
 /** ADR section 9 — Middleware with full lifecycle hooks */
-export interface Middleware {
+export interface Middleware<TData = unknown, TUi = unknown> {
   readonly id: string;
-  onInit?(ctx: MiddlewareInitContext): void;
-  beforeAction?(ctx: BeforeActionContext): MiddlewareDecision | Promise<MiddlewareDecision>;
-  afterAction?(ctx: AfterActionContext): void;
-  beforeEvaluate?(ctx: BeforeEvaluateContext): void;
-  afterEvaluate?(ctx: AfterEvaluateContext): void;
-  beforeValidate?(ctx: BeforeValidateContext): void;
-  afterValidate?(ctx: AfterValidateContext): void;
-  beforeSubmit?(ctx: BeforeSubmitContext): MiddlewareDecision | Promise<MiddlewareDecision>;
-  afterSubmit?(ctx: AfterSubmitContext): void;
+  onInit?(ctx: MiddlewareInitContext<TData, TUi>): void;
+  beforeAction?(ctx: BeforeActionContext<TData, TUi>): MiddlewareDecision | Promise<MiddlewareDecision>;
+  afterAction?(ctx: AfterActionContext<TData, TUi>): void;
+  beforeEvaluate?(ctx: BeforeEvaluateContext<TData, TUi>): void;
+  afterEvaluate?(ctx: AfterEvaluateContext<TData, TUi>): void;
+  beforeValidate?(ctx: BeforeValidateContext<TData, TUi>): void;
+  afterValidate?(ctx: AfterValidateContext<TData, TUi>): void;
+  beforeSubmit?(ctx: BeforeSubmitContext<TData, TUi>): MiddlewareDecision | Promise<MiddlewareDecision>;
+  afterSubmit?(ctx: AfterSubmitContext<TData, TUi>): void;
   onDispose?(): void;
 }
 

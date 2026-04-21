@@ -99,6 +99,7 @@ export {
   createDateTransform,
   createDateEgressTransform,
   createConfigurableDateEgressTransform,
+  createFieldTransform,
   type TransformDefinition,
   type TransformPhase,
   type TransformContext,

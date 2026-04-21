@@ -1,15 +1,17 @@
 // ADR section 10 — Three transform phases
 
+import type { DeepKeys, DeepValue } from './type-utils.js';
+
 export type TransformPhase = 'ingress' | 'field' | 'egress';
 
-export interface TransformDefinition {
+export interface TransformDefinition<TData = unknown> {
   readonly id: string;
   readonly phase: TransformPhase;
   readonly path?: string;
-  transform(value: unknown, context: TransformContext): unknown;
+  transform(value: unknown, context: TransformContext<TData>): unknown;
 }
 
-export interface TransformContext {
+export interface TransformContext<TData = unknown> {
   readonly phase: TransformPhase;
   readonly path?: string;
   readonly state: unknown;
@@ -121,4 +123,20 @@ const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 
 function isIsoDateString(value: string): boolean {
   return ISO_DATE_RE.test(value);
+}
+
+/** Type-safe field transform builder — narrows value type at compile time */
+export function createFieldTransform<TData, P extends string & DeepKeys<TData>>(
+  id: string,
+  path: P,
+  phase: TransformPhase,
+  transform: (value: DeepValue<TData, P>, context: TransformContext<TData>) => DeepValue<TData, P>,
+): TransformDefinition<TData> {
+  return {
+    id,
+    phase,
+    path,
+    // Justified: generic narrows at compile time, runtime value is the same shape
+    transform: transform as (value: unknown, context: TransformContext<TData>) => unknown,
+  };
 }

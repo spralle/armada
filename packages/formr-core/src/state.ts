@@ -71,8 +71,8 @@ export interface CreateFormOptions<TData, TUi> {
   readonly initialData?: TData;
   readonly initialUiState?: TUi;
   readonly validators?: readonly ValidatorFn[];
-  readonly middleware?: readonly Middleware[];
-  readonly transforms?: readonly Transform[];
+  readonly middleware?: readonly Middleware<TData, TUi>[];
+  readonly transforms?: readonly TransformDefinition<TData>[];
   readonly arbiterRules?: readonly ProductionRule[] | undefined;
   readonly arbiterSession?: RuleSession | undefined;
   /** Form-level field defaults — merged below field-level overrides (tier 2 of 3) */
@@ -94,10 +94,10 @@ import type {
   ValidatorFn,
   AsyncValidatorConfig,
   Middleware,
-  Transform,
   FieldConfig,
   SubmitExecutionContext,
   SubmitResult,
 } from './contracts.js';
 import type { StateStrategy } from './transaction.js';
 import type { ProductionRule, RuleSession } from '@ghost/arbiter';
+import type { TransformDefinition } from './transforms.js';
