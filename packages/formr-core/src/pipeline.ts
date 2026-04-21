@@ -3,7 +3,7 @@ import type {
   FormAction,
   Middleware,
   MiddlewareDecision,
-  ValidatorAdapter,
+  ValidatorFn,
 } from './contracts.js';
 import type { FormStore } from './store.js';
 import type { TransformDefinition } from './transforms.js';
@@ -71,7 +71,7 @@ function getTransformDefs(options: CreateFormOptions<unknown, unknown>): readonl
 
 /** Run validators synchronously; throws FORMR_ASYNC_IN_SYNC_PIPELINE if any return a Promise */
 function runValidators(
-  validators: readonly ValidatorAdapter[],
+  validators: readonly ValidatorFn[],
   state: { readonly data: unknown; readonly uiState: unknown; readonly meta: { readonly stage?: string } },
   stage: string | undefined,
   submitContext?: SubmitContext,
@@ -83,11 +83,11 @@ function runValidators(
     const input = submitContext
       ? { ...withStage, context: submitContext }
       : withStage;
-    const result = v.validate(input);
+    const result = v(input);
     if (result instanceof Promise) {
       throw new FormrError(
         'FORMR_ASYNC_IN_SYNC_PIPELINE',
-        `Validator "${v.id}" returned a Promise in synchronous pipeline — use async submit path`,
+        'Validator returned a Promise in synchronous pipeline — use async submit path',
       );
     }
     allIssues.push(...result);

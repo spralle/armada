@@ -17,34 +17,35 @@ export type Transform = TransformDefinition;
 
 /** Backward-compat alias — prefer EvaluationScope in new code */
 export type ExpressionScope = EvaluationScope;
-export interface ValidatorAdapter {
-  readonly id: string;
-  supports(schema: unknown): boolean;
-  validate(input: {
-    readonly data: unknown;
-    readonly uiState: unknown;
-    readonly stage?: string;
-    readonly context?: SubmitContext;
-  }): Promise<readonly ValidationIssue[]> | readonly ValidationIssue[];
+/** Input bag passed to sync validators */
+export interface ValidatorInput<TData = unknown, TUi = unknown> {
+  readonly data: TData;
+  readonly uiState: TUi;
+  readonly stage?: string;
+  readonly context?: SubmitContext;
 }
 
-/** Async validator that runs outside the synchronous pipeline */
-export interface AsyncValidatorAdapter {
-  readonly id: string;
-  /** Dot paths this validator applies to. Empty/undefined = form-level (runs on any change). */
+/** Sync validator — a plain function returning issues */
+export type ValidatorFn<TData = unknown, TUi = unknown> = (
+  input: ValidatorInput<TData, TUi>,
+) => readonly ValidationIssue[];
+
+/** Async validator config — function + metadata for scheduling */
+export interface AsyncValidatorConfig<TData = unknown, TUi = unknown> {
+  /** The validation function. MUST respect signal for cancellation. */
+  readonly validate: (input: {
+    readonly data: TData;
+    readonly uiState: TUi;
+    readonly signal: AbortSignal;
+  }) => Promise<readonly ValidationIssue[]>;
+  /** Dot paths this validator watches. Empty/undefined = form-level. */
   readonly fields?: readonly string[];
   /** Debounce in ms. Default: 300. */
   readonly debounceMs?: number;
-  /** Event that triggers this validator. Default: 'onChange'. */
+  /** Event trigger. Default: 'onChange'. */
   readonly trigger?: 'onChange' | 'onBlur';
-  /** Return true if this validator should run for the given context */
-  supports(context: { readonly data: unknown; readonly uiState: unknown }): boolean;
-  /** Run async validation. MUST respect signal for cancellation. */
-  validate(input: {
-    readonly data: unknown;
-    readonly uiState: unknown;
-    readonly signal: AbortSignal;
-  }): Promise<readonly ValidationIssue[]>;
+  /** Dedup label. Auto-generated from fields if omitted. */
+  readonly label?: string;
 }
 
 /** ADR section 5.2 — RuleWriteIntent */
@@ -190,7 +191,7 @@ export interface FieldConfig {
   readonly readOnly?: boolean;
   readonly required?: boolean;
   readonly hidden?: boolean;
-  readonly validators?: readonly ValidatorAdapter[];
+  readonly validators?: readonly ValidatorFn[];
   readonly transforms?: readonly Transform[];
   readonly metadata?: Readonly<Record<string, unknown>>;
   readonly validationTriggers?: FieldValidationTriggers;

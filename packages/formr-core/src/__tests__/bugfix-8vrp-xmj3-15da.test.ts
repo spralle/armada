@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createForm } from '../create-form.js';
 import { FormrError } from '../errors.js';
 import { runVetoHooksSync } from '../middleware-runner.js';
-import type { Middleware, ValidatorAdapter } from '../contracts.js';
+import type { Middleware, ValidatorFn } from '../contracts.js';
 import type { ValidationIssue } from '../state.js';
 import type { TransformDefinition } from '../transforms.js';
 
@@ -40,25 +40,21 @@ describe('armada-8vrp: async middleware in sync pipeline throws', () => {
 });
 
 describe('armada-xmj3: form.validate() returns actual issues', () => {
-  function createRequiredValidator(): ValidatorAdapter {
-    return {
-      id: 'required-name',
-      supports: () => true,
-      validate: (input) => {
-        const data = input.data as Record<string, unknown>;
-        const issues: ValidationIssue[] = [];
-        if (!data.name) {
-          issues.push({
-            code: 'required',
-            message: 'Name is required',
-            severity: 'error',
-            ...(input.stage !== undefined ? { stage: input.stage } : {}),
-            path: { namespace: 'data', segments: ['name'] },
-            source: { origin: 'function-validator', validatorId: 'required-name' },
-          });
-        }
-        return issues;
-      },
+  function createRequiredValidator(): ValidatorFn {
+    return (input) => {
+      const data = input.data as Record<string, unknown>;
+      const issues: ValidationIssue[] = [];
+      if (!data.name) {
+        issues.push({
+          code: 'required',
+          message: 'Name is required',
+          severity: 'error',
+          ...(input.stage !== undefined ? { stage: input.stage } : {}),
+          path: { namespace: 'data', segments: ['name'] },
+          source: { origin: 'function-validator', validatorId: 'required-name' },
+        });
+      }
+      return issues;
     };
   }
 
@@ -85,22 +81,18 @@ describe('armada-xmj3: form.validate() returns actual issues', () => {
   });
 
   it('validate(stage) scopes validation to given stage', () => {
-    const stageValidator: ValidatorAdapter = {
-      id: 'stage-check',
-      supports: () => true,
-      validate: (input) => {
-        if (input.stage === 'submit') {
-          return [{
-            code: 'submit-only',
-            message: 'Only on submit',
-            severity: 'error',
-            stage: input.stage,
-            path: { namespace: 'data', segments: ['x'] },
-            source: { origin: 'function-validator', validatorId: 'stage-check' },
-          }];
-        }
-        return [];
-      },
+    const stageValidator: ValidatorFn = (input) => {
+      if (input.stage === 'submit') {
+        return [{
+          code: 'submit-only',
+          message: 'Only on submit',
+          severity: 'error',
+          stage: input.stage,
+          path: { namespace: 'data', segments: ['x'] },
+          source: { origin: 'function-validator', validatorId: 'stage-check' },
+        }];
+      }
+      return [];
     };
 
     const form = createForm({

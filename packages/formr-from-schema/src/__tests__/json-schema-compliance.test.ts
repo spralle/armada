@@ -5,7 +5,7 @@ import { resolveIfThenElseRequired } from '../conditional-required.js';
 import type { JsonSchema } from '../adapters/json-schema-types.js';
 
 function validate(schema: JsonSchema, data: unknown) {
-  return createJsonSchemaValidator(schema).validate({ data, uiState: {}, stage: 'submit' });
+  return createJsonSchemaValidator(schema)({ data, uiState: {}, stage: 'submit' });
 }
 
 describe('constraint validation', () => {

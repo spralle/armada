@@ -103,7 +103,7 @@ describe('createJsonSchemaValidator', () => {
   const validator = createJsonSchemaValidator(simpleSchema);
 
   test('missing required field produces error issue', () => {
-    const issues = validator.validate({ data: { age: 25 }, uiState: {}, stage: 'submit' });
+    const issues = validator({ data: { age: 25 }, uiState: {}, stage: 'submit' });
     expect(issues.length).toBeGreaterThan(0);
     const nameIssue = issues.find((i) => i.path.segments.includes('name'));
     expect(nameIssue).toBeDefined();
@@ -112,7 +112,7 @@ describe('createJsonSchemaValidator', () => {
   });
 
   test('wrong type produces error issue', () => {
-    const issues = validator.validate({ data: { name: 123, age: 25 }, uiState: {}, stage: 'submit' });
+    const issues = validator({ data: { name: 123, age: 25 }, uiState: {}, stage: 'submit' });
     const typeIssue = issues.find((i) => i.path.segments.includes('name') && i.code === 'INVALID_TYPE');
     expect(typeIssue).toBeDefined();
   });
@@ -124,7 +124,7 @@ describe('createJsonSchemaValidator', () => {
       required: ['status'],
     };
     const v = createJsonSchemaValidator(schema);
-    const issues = v.validate({ data: { status: 'unknown' }, uiState: {}, stage: 'draft' });
+    const issues = v({ data: { status: 'unknown' }, uiState: {}, stage: 'draft' });
     expect(issues.find((i) => i.code === 'INVALID_ENUM')).toBeDefined();
   });
 
@@ -145,10 +145,10 @@ describe('createJsonSchemaValidator', () => {
       },
     };
     const v = createJsonSchemaValidator(schema);
-    const issues = v.validate({ data: { hasEmail: true }, uiState: {}, stage: 'submit' });
+    const issues = v({ data: { hasEmail: true }, uiState: {}, stage: 'submit' });
     expect(issues.find((i) => i.code === 'REQUIRED' && i.path.segments.includes('email'))).toBeDefined();
 
-    const okIssues = v.validate({ data: { hasEmail: true, email: 'a@b.com' }, uiState: {}, stage: 'submit' });
+    const okIssues = v({ data: { hasEmail: true, email: 'a@b.com' }, uiState: {}, stage: 'submit' });
     expect(okIssues.find((i) => i.code === 'REQUIRED' && i.path.segments.includes('email'))).toBeUndefined();
   });
 
@@ -162,12 +162,12 @@ describe('createJsonSchemaValidator', () => {
       dependentRequired: { country: ['state'] },
     };
     const v = createJsonSchemaValidator(schema);
-    const issues = v.validate({ data: { country: 'US' }, uiState: {}, stage: 'submit' });
+    const issues = v({ data: { country: 'US' }, uiState: {}, stage: 'submit' });
     expect(issues.find((i) => i.code === 'DEPENDENT_REQUIRED')).toBeDefined();
   });
 
   test('passing data produces no issues', () => {
-    const issues = validator.validate({ data: { name: 'Alice', age: 30 }, uiState: {}, stage: 'submit' });
+    const issues = validator({ data: { name: 'Alice', age: 30 }, uiState: {}, stage: 'submit' });
     expect(issues).toHaveLength(0);
   });
 });

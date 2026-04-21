@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { createFieldApi, mergeFieldConfig } from '../field-api.js';
 import type { CanonicalPath } from '../path.js';
 import type { FormState, ValidationIssue } from '../state.js';
-import type { ValidatorAdapter } from '../contracts.js';
+import type { ValidatorFn } from '../contracts.js';
 
 function makePath(segments: readonly string[]): CanonicalPath {
   return { namespace: 'data', segments, canonical: segments.join('.') };
@@ -19,30 +19,23 @@ function makeState(overrides?: Partial<FormState>): FormState {
 }
 
 function makeValidator(
-  id: string,
+  _id: string,
   issues: readonly ValidationIssue[],
-): ValidatorAdapter {
-  return {
-    id,
-    supports: () => true,
-    validate: () => issues,
-  };
+): ValidatorFn {
+  return () => issues;
 }
 
 function makeSpyValidator(
-  id: string,
+  _id: string,
   issues: readonly ValidationIssue[],
-): ValidatorAdapter & { readonly calls: Array<Record<string, unknown>> } {
+): ValidatorFn & { readonly calls: Array<Record<string, unknown>> } {
   const calls: Array<Record<string, unknown>> = [];
-  return {
-    id,
-    supports: () => true,
-    validate(input) {
-      calls.push({ ...input });
-      return issues;
-    },
-    calls,
-  };
+  const fn = ((input: Record<string, unknown>) => {
+    calls.push({ ...input });
+    return issues;
+  }) as ValidatorFn & { readonly calls: Array<Record<string, unknown>> };
+  Object.defineProperty(fn, 'calls', { value: calls });
+  return fn;
 }
 
 describe('FieldApi.validate()', () => {

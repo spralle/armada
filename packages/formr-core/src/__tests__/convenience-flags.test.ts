@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { createForm } from '../create-form.js';
-import type { ValidatorAdapter } from '../contracts.js';
+import type { ValidatorFn } from '../contracts.js';
 import type { ValidationIssue } from '../state.js';
 
 function makeIssue(severity: 'error' | 'warning'): ValidationIssue {
@@ -13,8 +13,8 @@ function makeIssue(severity: 'error' | 'warning'): ValidationIssue {
   };
 }
 
-function makeValidator(issues: readonly ValidationIssue[]): ValidatorAdapter {
-  return { id: 'v1', supports: () => true, validate: () => issues };
+function makeValidator(issues: readonly ValidationIssue[]): ValidatorFn {
+  return () => issues;
 }
 
 describe('convenience flags', () => {

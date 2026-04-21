@@ -86,7 +86,7 @@ export function createFieldApi<TData, TUi>(params: CreateFieldApiParams<TData, T
           uiState: state.uiState,
           ...(state.meta.stage !== undefined ? { stage: state.meta.stage } : {}),
         };
-        const result = validator.validate(input);
+        const result = validator(input);
         if (Array.isArray(result)) {
           allIssues.push(...result);
         }

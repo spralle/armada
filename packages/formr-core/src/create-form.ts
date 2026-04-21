@@ -135,11 +135,11 @@ export function createForm<TData, TUi>(
     for (const v of options.validators) {
       const base = { data: state.data, uiState: state.uiState };
       const input = activeStage !== undefined ? { ...base, stage: activeStage } : base;
-      const result = v.validate(input);
+      const result = v(input);
       if (result instanceof Promise) {
         throw new FormrError(
           'FORMR_ASYNC_IN_SYNC_PIPELINE',
-          `Validator "${v.id}" returned a Promise in synchronous validate() — use async submit path`,
+          'Validator returned a Promise in synchronous validate() — use async submit path',
         );
       }
       allIssues.push(...result);

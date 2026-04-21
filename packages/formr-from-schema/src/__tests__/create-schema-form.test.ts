@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { createSchemaForm } from '../create-schema-form.js';
 import type { LayoutNode } from '../layout/layout-types.js';
-import type { ValidatorAdapter } from '@ghost/formr-core';
+import type { ValidatorFn } from '@ghost/formr-core';
 
 const simpleJsonSchema = {
   type: 'object',
@@ -33,9 +33,7 @@ describe('createSchemaForm', () => {
   });
 
   test('includes additional validators from options', () => {
-    const mockValidator: ValidatorAdapter = {
-      validate: () => [],
-    };
+    const mockValidator: ValidatorFn = () => [];
     const result = createSchemaForm(simpleJsonSchema, { validators: [mockValidator] });
     // Should have JSON Schema validator + our mock
     expect(result.validators.length).toBeGreaterThanOrEqual(2);

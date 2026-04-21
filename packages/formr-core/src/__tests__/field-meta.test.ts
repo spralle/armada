@@ -113,17 +113,13 @@ describe('field metadata', () => {
 
 describe('validation trigger gating', () => {
   function makeValidator() {
-    return {
-      id: 'test-validator',
-      supports: () => true,
-      validate: () => [{
-        code: 'required',
-        message: 'Required',
-        severity: 'error' as const,
-        path: { namespace: 'data' as const, segments: ['name'], canonical: 'name' },
-        source: { origin: 'function-validator' as const, validatorId: 'test-validator' },
-      }],
-    };
+    return () => [{
+      code: 'required',
+      message: 'Required',
+      severity: 'error' as const,
+      path: { namespace: 'data' as const, segments: ['name'], canonical: 'name' },
+      source: { origin: 'function-validator' as const, validatorId: 'test-validator' },
+    }];
   }
 
   it('onBlur: issues hidden before markTouched, shown after', async () => {

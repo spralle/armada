@@ -1,4 +1,4 @@
-import type { ValidatorAdapter, ValidationIssue } from '@ghost/formr-core';
+import type { ValidatorFn, ValidationIssue } from '@ghost/formr-core';
 import type { JsonSchema } from './json-schema-types.js';
 import { dereferenceSchema } from './json-schema-deref.js';
 import { makeIssue as makeIssueBase, isObject, checkType } from '../utils.js';
@@ -40,18 +40,12 @@ export function isJsonSchema(value: unknown): value is JsonSchema {
 
 export function createJsonSchemaValidator(
   rawSchema: JsonSchema,
-): ValidatorAdapter {
+): ValidatorFn {
   const schema = dereferenceSchema(rawSchema);
-  return {
-    id: 'json-schema-adapter',
-    supports(s: unknown): boolean {
-      return isJsonSchema(s);
-    },
-    validate(input) {
-      const issues: ValidationIssue[] = [];
-      validateNode(schema, input.data, [], input.stage, issues);
-      return issues;
-    },
+  return (input) => {
+    const issues: ValidationIssue[] = [];
+    validateNode(schema, input.data, [], input.stage, issues);
+    return issues;
   };
 }
 

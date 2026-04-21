@@ -1,19 +1,15 @@
 import { describe, it, expect } from 'bun:test';
 import { createForm } from '../create-form.js';
-import type { ValidatorAdapter } from '../contracts.js';
+import type { ValidatorFn } from '../contracts.js';
 
-function makeValidator(fieldPath: string, code: string): ValidatorAdapter {
-  return {
-    id: `validator-${code}`,
-    supports: () => true,
-    validate: () => [{
-      code,
-      message: `${code} error`,
-      severity: 'error' as const,
-      path: { namespace: 'data' as const, segments: fieldPath.split('.'), canonical: fieldPath },
-      source: { origin: 'function-validator' as const, validatorId: `validator-${code}` },
-    }],
-  };
+function makeValidator(fieldPath: string, code: string): ValidatorFn {
+  return () => [{
+    code,
+    message: `${code} error`,
+    severity: 'error' as const,
+    path: { namespace: 'data' as const, segments: fieldPath.split('.'), canonical: fieldPath },
+    source: { origin: 'function-validator' as const, validatorId: `validator-${code}` },
+  }];
 }
 
 describe('onChangeListenTo', () => {

@@ -15,17 +15,13 @@ describe('form.reset()', () => {
   it('clears all validation issues', () => {
     const form = createForm({
       initialData: { name: '' },
-      validators: [{
-        id: 'v1',
-        supports: () => true,
-        validate: () => [{
+      validators: [() => [{
           code: 'required',
           message: 'Required',
           severity: 'error' as const,
           path: { namespace: 'data' as const, segments: ['name'], canonical: 'name' },
           source: { origin: 'function-validator' as const, validatorId: 'v1' },
-        }],
-      }],
+        }]],
     });
     form.setValue('name', 'x');
     expect(form.getState().issues.length).toBeGreaterThan(0);

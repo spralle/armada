@@ -3,10 +3,10 @@ import { createSchemaForm } from '@ghost/formr-from-schema';
 import type { LayoutNode, SchemaFieldInfo, SchemaMetadata } from '@ghost/formr-from-schema';
 import { useForm } from './use-form.js';
 import type { UseFormOptions } from './use-form.js';
-import type { FormApi, ValidatorAdapter } from '@ghost/formr-core';
+import type { FormApi, ValidatorFn } from '@ghost/formr-core';
 
 export interface UseSchemaFormOptions<TData, TUi> extends Omit<UseFormOptions<TData, TUi>, 'validators'> {
-  readonly validators?: readonly ValidatorAdapter[];
+  readonly validators?: readonly ValidatorFn[];
   readonly layoutOverride?: LayoutNode;
 }
 

@@ -28,18 +28,16 @@ describe('F8: JSON Schema adapter', () => {
     expect(isJsonSchema({})).toBe(false);
   });
 
-  test('createJsonSchemaValidator produces correct adapter shape', () => {
+  test('createJsonSchemaValidator produces a validator function', () => {
     const schema: JsonSchema = { type: 'object', properties: { x: { type: 'string' } } };
-    const adapter = createJsonSchemaValidator(schema);
-    expect(adapter.id).toBe('json-schema-adapter');
-    expect(typeof adapter.supports).toBe('function');
-    expect(typeof adapter.validate).toBe('function');
+    const validator = createJsonSchemaValidator(schema);
+    expect(typeof validator).toBe('function');
   });
 
-  test('adapter.supports returns true for JSON Schema', () => {
-    const adapter = createJsonSchemaValidator({ type: 'object' });
-    expect(adapter.supports({ type: 'object' })).toBe(true);
-    expect(adapter.supports('not-a-schema')).toBe(false);
+  test('validator function returns issues for invalid data', () => {
+    const validator = createJsonSchemaValidator({ type: 'object', properties: { x: { type: 'string' } }, required: ['x'] });
+    const issues = validator({ data: {}, uiState: {}, stage: 'submit' });
+    expect(issues.length).toBeGreaterThan(0);
   });
 
   test('JSON Schema ingestion via ingestSchema', () => {

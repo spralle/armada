@@ -15,7 +15,8 @@ export {
 
 // Contract types (SE1.2)
 export {
-  type ValidatorAdapter,
+  type ValidatorFn,
+  type ValidatorInput,
   type ExprNode,
   type ExpressionDefinition,
   type EvaluationScope,
@@ -47,7 +48,7 @@ export {
   type FieldValidationTriggers,
   type ArrayFieldHelpers,
   type FieldApiWithArray,
-  type AsyncValidatorAdapter,
+  type AsyncValidatorConfig,
 } from './contracts.js';
 
 // Submit helpers

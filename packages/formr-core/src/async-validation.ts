@@ -1,4 +1,4 @@
-import type { AsyncValidatorAdapter } from './contracts.js';
+import type { AsyncValidatorConfig } from './contracts.js';
 import type { FormState, ValidationIssue, FieldMetaEntry } from './state.js';
 
 export interface AsyncValidationManager {
@@ -10,12 +10,18 @@ export interface AsyncValidationManager {
 }
 
 export interface AsyncManagerDeps {
-  readonly asyncValidators: readonly AsyncValidatorAdapter[];
+  readonly asyncValidators: readonly AsyncValidatorConfig[];
   readonly getState: () => FormState<unknown, unknown>;
   readonly updateState: (updater: (draft: FormState<unknown, unknown>) => FormState<unknown, unknown>) => void;
 }
 
 const DEFAULT_DEBOUNCE_MS = 300;
+
+function getLabel(v: AsyncValidatorConfig, index: number): string {
+  if (v.label) return v.label;
+  if (v.fields?.length) return `async:${[...v.fields].sort().join(',')}`;
+  return `async:form-level:${index}`;
+}
 
 interface InFlightEntry {
   controller: AbortController;
@@ -82,10 +88,10 @@ function mergeAsyncIssues(
 }
 
 function getMatchingValidators(
-  validators: readonly AsyncValidatorAdapter[],
+  validators: readonly AsyncValidatorConfig[],
   path: string,
   trigger: 'onChange' | 'onBlur',
-): readonly AsyncValidatorAdapter[] {
+): readonly AsyncValidatorConfig[] {
   return validators.filter((v) => {
     const vTrigger = v.trigger ?? 'onChange';
     if (vTrigger !== trigger) return false;
@@ -94,7 +100,7 @@ function getMatchingValidators(
   });
 }
 
-function getFieldPaths(validator: AsyncValidatorAdapter, triggerPath: string): readonly string[] {
+function getFieldPaths(validator: AsyncValidatorConfig, triggerPath: string): readonly string[] {
   return validator.fields?.length ? validator.fields : [triggerPath];
 }
 
@@ -111,8 +117,8 @@ export function createAsyncValidationManager(deps: AsyncManagerDeps): AsyncValid
     inFlight.delete(key);
   }
 
-  function cancelAndDecrementForValidator(validator: AsyncValidatorAdapter, triggerPath: string): void {
-    const key = `${validator.id}:${triggerPath}`;
+  function cancelAndDecrementForValidator(validator: AsyncValidatorConfig, index: number, triggerPath: string): void {
+    const key = `${getLabel(validator, index)}:${triggerPath}`;
     if (inFlight.has(key)) {
       // Bump generation so stale finally blocks skip their decrement
       const nextGen = (generations.get(key) ?? 0) + 1;
@@ -124,14 +130,14 @@ export function createAsyncValidationManager(deps: AsyncManagerDeps): AsyncValid
     }
   }
 
-  function scheduleValidation(validator: AsyncValidatorAdapter, triggerPath: string): void {
-    cancelAndDecrementForValidator(validator, triggerPath);
+  function scheduleValidation(validator: AsyncValidatorConfig, index: number, triggerPath: string): void {
+    cancelAndDecrementForValidator(validator, index, triggerPath);
 
     const fieldPaths = getFieldPaths(validator, triggerPath);
     for (const fp of fieldPaths) incrementValidating(validatingCount, fp, deps);
 
     const controller = new AbortController();
-    const key = `${validator.id}:${triggerPath}`;
+    const key = `${getLabel(validator, index)}:${triggerPath}`;
     const debounceMs = validator.debounceMs ?? DEFAULT_DEBOUNCE_MS;
     const gen = (generations.get(key) ?? 0) + 1;
     generations.set(key, gen);
@@ -139,27 +145,28 @@ export function createAsyncValidationManager(deps: AsyncManagerDeps): AsyncValid
     const timer = setTimeout(() => {
       const entry = inFlight.get(key);
       if (entry) entry.timer = null;
-      runValidator(validator, triggerPath, controller, gen);
+      runValidator(validator, index, triggerPath, controller, gen);
     }, debounceMs);
 
     inFlight.set(key, { controller, timer });
   }
 
   async function runValidator(
-    validator: AsyncValidatorAdapter,
+    validator: AsyncValidatorConfig,
+    index: number,
     triggerPath: string,
     controller: AbortController,
     gen: number,
   ): Promise<readonly ValidationIssue[]> {
-    const key = `${validator.id}:${triggerPath}`;
+    const label = getLabel(validator, index);
+    const key = `${label}:${triggerPath}`;
     const fieldPaths = getFieldPaths(validator, triggerPath);
     try {
       if (controller.signal.aborted) return [];
       const state = deps.getState();
-      if (!validator.supports({ data: state.data, uiState: state.uiState })) return [];
       const issues = await validator.validate({ data: state.data, uiState: state.uiState, signal: controller.signal });
       if (controller.signal.aborted) return [];
-      mergeAsyncIssues(deps, validator.id, fieldPaths, issues);
+      mergeAsyncIssues(deps, label, fieldPaths, issues);
       return issues;
     } catch {
       // Swallow errors from aborted/failed validators — isValidating cleaned up in finally
@@ -175,7 +182,10 @@ export function createAsyncValidationManager(deps: AsyncManagerDeps): AsyncValid
 
   function triggerForPath(path: string, trigger: 'onChange' | 'onBlur'): void {
     const matching = getMatchingValidators(deps.asyncValidators, path, trigger);
-    for (const v of matching) scheduleValidation(v, path);
+    for (const v of matching) {
+      const index = deps.asyncValidators.indexOf(v);
+      scheduleValidation(v, index, path);
+    }
   }
 
   function cancelAll(): void {
@@ -198,7 +208,6 @@ export function createAsyncValidationManager(deps: AsyncManagerDeps): AsyncValid
     const state = deps.getState();
     const allIssues: ValidationIssue[] = [];
     const promises = deps.asyncValidators
-      .filter((v) => v.supports({ data: state.data, uiState: state.uiState }))
       .map(async (v) => {
         if (signal.aborted) return;
         const issues = await v.validate({ data: state.data, uiState: state.uiState, signal });

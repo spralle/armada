@@ -1,31 +1,30 @@
 import { describe, it, expect } from 'bun:test';
 import { createForm } from '../create-form.js';
-import type { AsyncValidatorAdapter } from '../contracts.js';
+import type { AsyncValidatorConfig } from '../contracts.js';
 import type { ValidationIssue } from '../state.js';
 
 function makeAsyncValidator(opts: {
-  id: string;
+  label: string;
   fields?: readonly string[];
   debounceMs?: number;
   trigger?: 'onChange' | 'onBlur';
   issues?: readonly ValidationIssue[];
   delayMs?: number;
   onCall?: () => void;
-}): AsyncValidatorAdapter {
+}): AsyncValidatorConfig {
   const issues = opts.issues ?? [{
     code: 'async-error',
     message: 'Async validation failed',
     severity: 'error' as const,
     path: { namespace: 'data' as const, segments: (opts.fields?.[0] ?? 'field').split('.'), canonical: opts.fields?.[0] ?? 'field' },
-    source: { origin: 'async-validator' as const, validatorId: opts.id },
+    source: { origin: 'async-validator' as const, validatorId: opts.label },
   }];
 
   return {
-    id: opts.id,
+    label: opts.label,
     fields: opts.fields,
     debounceMs: opts.debounceMs,
     trigger: opts.trigger,
-    supports: () => true,
     validate: async ({ signal }) => {
       opts.onCall?.();
       if (opts.delayMs) {
@@ -48,7 +47,7 @@ describe('async validation', () => {
   it('debounce fires after delay and sets isValidating', async () => {
     const form = createForm({
       initialData: { name: '' },
-      asyncValidators: [makeAsyncValidator({ id: 'av1', fields: ['name'], debounceMs: 20 })],
+      asyncValidators: [makeAsyncValidator({ label: 'av1', fields: ['name'], debounceMs: 20 })],
     });
     const field = form.field('name');
 
@@ -71,7 +70,7 @@ describe('async validation', () => {
     const form = createForm({
       initialData: { name: '' },
       asyncValidators: [makeAsyncValidator({
-        id: 'av1', fields: ['name'], debounceMs: 20,
+        label: 'av1', fields: ['name'], debounceMs: 20,
         onCall: () => { callCount++; },
       })],
     });
@@ -91,7 +90,7 @@ describe('async validation', () => {
     const form = createForm({
       initialData: { name: '' },
       asyncValidators: [makeAsyncValidator({
-        id: 'av1', fields: ['name'], debounceMs: 10, delayMs: 50,
+        label: 'av1', fields: ['name'], debounceMs: 10, delayMs: 50,
         onCall: () => { callCount++; },
       })],
     });
@@ -112,7 +111,7 @@ describe('async validation', () => {
   it('isValidating transitions: false → true → false', async () => {
     const form = createForm({
       initialData: { name: '' },
-      asyncValidators: [makeAsyncValidator({ id: 'av1', fields: ['name'], debounceMs: 10, delayMs: 20 })],
+      asyncValidators: [makeAsyncValidator({ label: 'av1', fields: ['name'], debounceMs: 10, delayMs: 20 })],
     });
     const field = form.field('name');
 
@@ -128,9 +127,9 @@ describe('async validation', () => {
     const form = createForm({
       initialData: { name: '', email: '' },
       asyncValidators: [
-        makeAsyncValidator({ id: 'av-name', fields: ['name'], debounceMs: 10, delayMs: 30 }),
+        makeAsyncValidator({ label: 'av-name', fields: ['name'], debounceMs: 10, delayMs: 30 }),
         makeAsyncValidator({
-          id: 'av-email', fields: ['email'], debounceMs: 10, delayMs: 30,
+          label: 'av-email', fields: ['email'], debounceMs: 10, delayMs: 30,
           issues: [{
             code: 'async-email', message: 'Bad email', severity: 'error' as const,
             path: { namespace: 'data' as const, segments: ['email'], canonical: 'email' },
@@ -163,8 +162,7 @@ describe('async validation', () => {
     const form = createForm({
       initialData: { name: '' },
       asyncValidators: [{
-        id: 'av1', fields: ['name'], debounceMs: 10,
-        supports: () => true,
+        label: 'av1', fields: ['name'], debounceMs: 10,
         validate: async ({ signal }) => {
           if (signal.aborted) return [];
           return [{
@@ -191,20 +189,16 @@ describe('async validation', () => {
   });
 
   it('sync issues untouched when async issues merge', async () => {
-    const syncValidator = {
-      id: 'sync-v',
-      supports: () => true,
-      validate: () => [{
-        code: 'sync-error', message: 'Sync error', severity: 'error' as const,
-        path: { namespace: 'data' as const, segments: ['name'], canonical: 'name' },
-        source: { origin: 'function-validator' as const, validatorId: 'sync-v' },
-      }],
-    };
+    const syncValidator = () => [{
+      code: 'sync-error', message: 'Sync error', severity: 'error' as const,
+      path: { namespace: 'data' as const, segments: ['name'], canonical: 'name' },
+      source: { origin: 'function-validator' as const, validatorId: 'sync-v' },
+    }];
 
     const form = createForm({
       initialData: { name: '' },
       validators: [syncValidator],
-      asyncValidators: [makeAsyncValidator({ id: 'av1', fields: ['name'], debounceMs: 10 })],
+      asyncValidators: [makeAsyncValidator({ label: 'av1', fields: ['name'], debounceMs: 10 })],
     });
 
     form.setValue('name', 'x');
@@ -220,7 +214,7 @@ describe('async validation', () => {
   it('reset cancels all and clears isValidating', async () => {
     const form = createForm({
       initialData: { name: '' },
-      asyncValidators: [makeAsyncValidator({ id: 'av1', fields: ['name'], debounceMs: 10, delayMs: 50 })],
+      asyncValidators: [makeAsyncValidator({ label: 'av1', fields: ['name'], debounceMs: 10, delayMs: 50 })],
     });
     const field = form.field('name');
 
@@ -243,7 +237,7 @@ describe('async validation', () => {
     const form = createForm({
       initialData: { name: '' },
       asyncValidators: [makeAsyncValidator({
-        id: 'av1', fields: ['name'], debounceMs: 10, trigger: 'onBlur',
+        label: 'av1', fields: ['name'], debounceMs: 10, trigger: 'onBlur',
         onCall: () => { callCount++; },
       })],
     });
@@ -263,8 +257,7 @@ describe('async validation', () => {
     const form = createForm({
       initialData: { name: '' },
       asyncValidators: [{
-        id: 'av1', fields: ['name'], debounceMs: 300,
-        supports: () => true,
+        label: 'av1', fields: ['name'], debounceMs: 300,
         validate: async ({ signal }) => {
           asyncCalled = true;
           if (signal.aborted) return [];
@@ -288,7 +281,7 @@ describe('async validation', () => {
     const form = createForm({
       initialData: { name: '' },
       asyncValidators: [makeAsyncValidator({
-        id: 'av1', fields: ['name'], debounceMs: 5, delayMs: 40,
+        label: 'av1', fields: ['name'], debounceMs: 5, delayMs: 40,
       })],
     });
     const field = form.field('name');
