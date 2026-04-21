@@ -6,8 +6,6 @@ import { SectionRenderer } from './renderers/section-renderer.js';
 import { FieldRenderer } from './renderers/field-renderer.js';
 import { ArrayRenderer } from './renderers/array-renderer.js';
 
-const CAPABILITY_KEY = 'renderer.exp.v1';
-
 export class RendererRegistry {
   private readonly renderers = new Map<string, ComponentType<LayoutRendererProps>>();
 
@@ -39,9 +37,5 @@ export class RendererRegistry {
       );
     }
     return component;
-  }
-
-  get capabilityKey(): string {
-    return CAPABILITY_KEY;
   }
 }

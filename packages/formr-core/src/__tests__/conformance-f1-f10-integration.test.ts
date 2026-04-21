@@ -9,13 +9,8 @@ import {
   createDateEgressTransform,
   applyRuleWrites,
   sortIssues,
-  validateExtension,
-  clearExtensionRegistry,
-  isCompatibleVersion,
-  STABLE_CAPABILITIES,
   type TransformDefinition,
   type ProductionRule,
-  type ExtensionManifest,
 } from '../index.js';
 import {
   ingestSchema,
@@ -205,33 +200,6 @@ describe('F1-F10: Full integration conformance', () => {
       expect(data.birthDate).toBe('2025-06-15T00:00:00.000Z');
 
       form.dispose();
-    });
-  });
-
-  // --- (e) Extension validation: F10 ---
-  describe('(e) Extension validation — F10 capabilities', () => {
-    test('validate extension manifest with capabilities', () => {
-      const supportedCaps = new Map<string, { version: string; stability: 'stable' | 'experimental' }>([
-        ['expr-engine.v1', { version: '1.0.0', stability: 'stable' }],
-        ['operators.v1', { version: '1.0.0', stability: 'stable' }],
-      ]);
-
-      const manifest: ExtensionManifest = {
-        id: 'test-extension',
-        apiVersion: '1.0.0',
-        capabilities: ['expr-engine.v1'],
-      };
-
-      // Should not throw
-      clearExtensionRegistry();
-      expect(() => validateExtension(manifest, supportedCaps)).not.toThrow();
-
-      // Version compatibility
-      expect(isCompatibleVersion('1.2.0', '1.0.0', 'stable')).toBe(true);
-      expect(isCompatibleVersion('2.0.0', '1.0.0', 'stable')).toBe(false);
-
-      // Stable capabilities are defined
-      expect(STABLE_CAPABILITIES.length).toBeGreaterThan(0);
     });
   });
 });

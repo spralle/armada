@@ -105,18 +105,12 @@ export {
   type DateEgressOptions,
 } from './transforms.js';
 
-// Extensions (SE6.3)
+// Timeout utilities (SE6.3)
 export {
-  validateExtension,
-  isCompatibleVersion,
   withTimeout,
-  clearExtensionRegistry,
-  STABLE_CAPABILITIES,
-  EXPERIMENTAL_CAPABILITIES,
   DEFAULT_RUNTIME_CONSTRAINTS,
-  type ExtensionManifest,
   type RuntimeConstraints,
-} from './extensions.js';
+} from './timeout.js';
 
 // Type utilities (formr-typed-dx)
 export type { DeepKeys, DeepValue, ArrayElement } from './type-utils.js';

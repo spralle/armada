@@ -1,5 +1,5 @@
 import type { Middleware, MiddlewareDecision, MiddlewareInitContext } from './contracts.js';
-import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './extensions.js';
+import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './timeout.js';
 import { FormrError } from './errors.js';
 
 /** Run veto-capable hooks synchronously (for non-submit pipeline path) */

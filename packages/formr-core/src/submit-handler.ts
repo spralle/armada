@@ -6,7 +6,7 @@ import { executePipeline } from './pipeline.js';
 import { runNotifyHooksAsync } from './middleware-runner.js';
 import { FormrError } from './errors.js';
 import { runTransforms, type TransformDefinition } from './transforms.js';
-import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './extensions.js';
+import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './timeout.js';
 import type { ArbiterFormAdapter } from './arbiter-integration.js';
 
 function generateSubmitId(): string {

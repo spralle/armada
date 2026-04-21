@@ -98,11 +98,6 @@ describe('LayoutNodeRegistry', () => {
     };
     expect(() => registry.validate(tree)).not.toThrow();
   });
-
-  test('capabilityKey is layout-node.exp.v1', () => {
-    const registry = new LayoutNodeRegistry();
-    expect(registry.capabilityKey).toBe('layout-node.exp.v1');
-  });
 });
 
 // --- Compiler ---
