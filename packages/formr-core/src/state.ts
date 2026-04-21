@@ -17,7 +17,8 @@ export interface ValidationIssue {
       | 'json-schema-adapter'
       | 'rule'
       | 'middleware'
-      | 'async-validator';
+      | 'async-validator'
+      | 'submit';
     readonly validatorId: string;
     readonly adapterId?: string;
     readonly ruleId?: string;

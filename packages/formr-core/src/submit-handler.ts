@@ -5,9 +5,20 @@ import { applySubmitOutcome } from './submit.js';
 import { executePipeline } from './pipeline.js';
 import { runNotifyHooksAsync } from './middleware-runner.js';
 import { FormrError } from './errors.js';
+import { parsePath } from './path-parser.js';
 import { runTransforms, type TransformDefinition } from './transforms.js';
 import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './timeout.js';
 import type { ArbiterFormAdapter } from './arbiter-integration.js';
+
+function normalizeFieldErrors(fieldErrors: Readonly<Record<string, string>>): ValidationIssue[] {
+  return Object.entries(fieldErrors).map(([path, message]) => ({
+    code: 'SUBMIT_ERROR',
+    message,
+    severity: 'error' as const,
+    path: parsePath(`data.${path}`),
+    source: { origin: 'submit' as const, validatorId: 'onSubmit' },
+  }));
+}
 
 function generateSubmitId(): string {
   return `submit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -99,11 +110,12 @@ export function createSubmitHandler<TData, TUi>(deps: SubmitHandlerDeps<TData, T
         'onSubmit callback timed out',
       );
 
+      const normalizedFieldErrors = result.fieldErrors ? normalizeFieldErrors(result.fieldErrors) : [];
       const txResult = store.beginTransaction();
       txResult.mutate((draft) => ({
         ...draft,
         meta: applySubmitOutcome(draft.meta, result.ok, submitId),
-        issues: [...draft.issues, ...(result.fieldIssues ?? []), ...(result.globalIssues ?? [])],
+        issues: [...draft.issues, ...normalizedFieldErrors, ...(result.fieldIssues ?? []), ...(result.globalIssues ?? [])],
       }));
       store.commitTransaction(txResult);
 

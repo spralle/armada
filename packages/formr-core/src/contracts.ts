@@ -152,6 +152,8 @@ export interface SubmitResult {
   readonly ok: boolean;
   readonly submitId: string;
   readonly message?: string;
+  /** Shorthand: { fieldPath: errorMessage } — auto-converted to ValidationIssue[] */
+  readonly fieldErrors?: Readonly<Record<string, string>>;
   readonly fieldIssues?: readonly ValidationIssue[];
   readonly globalIssues?: readonly ValidationIssue[];
 }
