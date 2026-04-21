@@ -70,7 +70,7 @@ export interface CreateFormOptions<TData, TUi> {
   readonly uiStateSchema?: unknown;
   readonly initialData?: TData;
   readonly initialUiState?: TUi;
-  readonly validators?: readonly ValidatorFn[];
+  readonly validators?: readonly SchemaValidator<TData, TUi>[];
   readonly middleware?: readonly Middleware<TData, TUi>[];
   readonly transforms?: readonly TransformDefinition<TData>[];
   readonly arbiterRules?: readonly ProductionRule[] | undefined;
@@ -91,6 +91,7 @@ export interface CreateFormOptions<TData, TUi> {
 
 // Imports for CreateFormOptions references
 import type {
+  SchemaValidator,
   ValidatorFn,
   AsyncValidatorConfig,
   Middleware,

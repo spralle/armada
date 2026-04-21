@@ -17,6 +17,7 @@ export {
 export {
   type ValidatorFn,
   type ValidatorInput,
+  type SchemaValidator,
   type ExprNode,
   type ExpressionDefinition,
   type EvaluationScope,
@@ -116,6 +117,10 @@ export {
 
 // Type utilities (formr-typed-dx)
 export type { DeepKeys, DeepValue, ArrayElement } from './type-utils.js';
+
+// Standard Schema support
+export { isStandardSchemaLike, createStandardSchemaValidator } from './standard-schema.js';
+export type { StandardSchemaLike } from './standard-schema.js';
 
 // Middleware runner (SE6.2)
 export {

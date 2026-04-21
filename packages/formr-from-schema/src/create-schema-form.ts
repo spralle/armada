@@ -1,4 +1,5 @@
 import type { ValidatorFn } from '@ghost/formr-core';
+import { isStandardSchemaLike, createStandardSchemaValidator } from '@ghost/formr-core';
 import type { LayoutNode } from './layout/layout-types.js';
 import type { SchemaFieldInfo, SchemaMetadata } from './types.js';
 import { ingestSchema } from './ingest.js';
@@ -32,6 +33,8 @@ export function createSchemaForm(
   const validators: ValidatorFn[] = [];
   if (isJsonSchema(schema)) {
     validators.push(createJsonSchemaValidator(schema));
+  } else if (isStandardSchemaLike(schema)) {
+    validators.push(createStandardSchemaValidator(schema));
   }
   if (options?.validators) {
     validators.push(...options.validators);

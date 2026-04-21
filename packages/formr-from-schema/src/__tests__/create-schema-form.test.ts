@@ -67,4 +67,21 @@ describe('createSchemaForm', () => {
     const result = createSchemaForm(simpleJsonSchema);
     expect(result.metadata.vendor).toBe('json-schema');
   });
+
+  test('auto-wires validation for Standard Schema', () => {
+    const schema = {
+      '~standard': {
+        version: 1 as const,
+        vendor: 'test',
+        validate: (data: unknown) => {
+          const d = data as Record<string, unknown>;
+          if (!d['name']) return { issues: [{ message: 'Name required', path: ['name'] }] };
+          return { value: data };
+        },
+      },
+    };
+
+    const result = createSchemaForm(schema);
+    expect(result.validators.length).toBeGreaterThan(0);
+  });
 });

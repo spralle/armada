@@ -1,5 +1,5 @@
 import type { FormState, CreateFormOptions, ValidationIssue, FieldMetaEntry } from './state.js';
-import type { FormApi, FieldApi, FormAction, FormDispatchResult, FieldConfig, Middleware } from './contracts.js';
+import type { FormApi, FieldApi, FormAction, FormDispatchResult, FieldConfig, Middleware, ValidatorFn } from './contracts.js';
 import type { CanonicalPath } from './path.js';
 import { FormStore } from './store.js';
 import { parsePath } from './path-parser.js';
@@ -7,6 +7,7 @@ import { createFieldApi } from './field-api.js';
 import { executePipeline } from './pipeline.js';
 import { initMiddlewares, disposeMiddlewares } from './middleware-runner.js';
 import { FormrError } from './errors.js';
+import { isStandardSchemaLike, createStandardSchemaValidator } from './standard-schema.js';
 import { createArbiterAdapter, createArbiterAdapterFromSession, type ArbiterFormAdapter } from './arbiter-integration.js';
 import { computeIsValid, computeIsSubmitting, computeIsPristine, computeIsTouched } from './convenience-flags.js';
 import { createListenerRegistry } from './listener-registry.js';
@@ -41,6 +42,16 @@ export function createForm<TData, TUi>(
   const store = new FormStore<TData, TUi>(initialState, options.stateStrategy);
   const listeners = createListenerRegistry();
 
+  // Normalize validators: auto-wrap Standard Schema objects as ValidatorFn
+  const normalizedValidators: ValidatorFn[] = (options.validators ?? []).map((v) => {
+    if (typeof v === 'function') return v as ValidatorFn;
+    if (isStandardSchemaLike(v)) return createStandardSchemaValidator(v);
+    throw new FormrError(
+      'FORMR_INVALID_VALIDATOR',
+      'Validator must be a function or a Standard Schema v1 object',
+    );
+  });
+
   function resolveInitialValue(segments: readonly (string | number)[]): unknown {
     let current: unknown = initialDataSnapshot;
     for (const seg of segments) {
@@ -68,7 +79,10 @@ export function createForm<TData, TUi>(
 
   // Justified: pipeline treats data as opaque; variance cast is safe at this internal boundary
   const pipelineStore = store as unknown as import('./store.js').FormStore<unknown, unknown>;
-  const pipelineOptions = options as unknown as CreateFormOptions<unknown, unknown>;
+  const pipelineOptions = {
+    ...(options as unknown as CreateFormOptions<unknown, unknown>),
+    validators: normalizedValidators,
+  };
 
   function updateState(updater: (draft: FormState<unknown, unknown>) => FormState<unknown, unknown>): void {
     const tx = store.beginTransaction();
@@ -130,9 +144,9 @@ export function createForm<TData, TUi>(
   function validate(stage?: string): readonly ValidationIssue[] {
     const state = store.getState();
     const activeStage = stage ?? state.meta.stage;
-    if (!options.validators?.length) return [];
+    if (!normalizedValidators.length) return [];
     const allIssues: ValidationIssue[] = [];
-    for (const v of options.validators) {
+    for (const v of normalizedValidators) {
       const base = { data: state.data, uiState: state.uiState };
       const input = activeStage !== undefined ? { ...base, stage: activeStage } : base;
       const result = v(input);

@@ -3,6 +3,7 @@ import type { FormState, ValidationIssue, SubmitContext } from './state.js';
 import type { ExprNode, ExpressionDefinition, EvaluationScope } from '@ghost/predicate';
 import type { TransformDefinition } from './transforms.js';
 import type { DeepKeys, DeepValue, ArrayElement } from './type-utils.js';
+import type { StandardSchemaLike } from './standard-schema.js';
 
 export type { ExprNode, ExpressionDefinition, EvaluationScope };
 
@@ -29,6 +30,11 @@ export interface ValidatorInput<TData = unknown, TUi = unknown> {
 export type ValidatorFn<TData = unknown, TUi = unknown> = (
   input: ValidatorInput<TData, TUi>,
 ) => readonly ValidationIssue[];
+
+/** A validator can be a function OR a Standard Schema object (auto-detected and wrapped) */
+export type SchemaValidator<TData = unknown, TUi = unknown> =
+  | ValidatorFn<TData, TUi>
+  | StandardSchemaLike;
 
 /** Async validator config — function + metadata for scheduling */
 export interface AsyncValidatorConfig<TData = unknown, TUi = unknown> {
