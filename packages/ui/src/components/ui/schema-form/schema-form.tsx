@@ -1,12 +1,15 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 import { useSchemaForm } from "@ghost/formr-react"
 import type { UseSchemaFormOptions } from "@ghost/formr-react"
+import { renderLayoutTree } from "@ghost/formr-react"
+import type { RendererRegistry } from "@ghost/formr-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { SchemaFormProvider } from "./schema-form-context"
-import { renderNode } from "./renderers"
+import { createGhostRegistry } from "./ghost-renderers"
+import type { WidgetOverrides } from "./widget-overrides"
 
 export interface SchemaFormProps {
   readonly schema: unknown
@@ -15,6 +18,8 @@ export interface SchemaFormProps {
   readonly className?: string
   readonly children?: React.ReactNode
   readonly options?: Omit<UseSchemaFormOptions<unknown, unknown>, "initialData">
+  readonly registry?: RendererRegistry
+  readonly overrides?: WidgetOverrides
 }
 
 export function SchemaForm({
@@ -24,11 +29,15 @@ export function SchemaForm({
   className,
   children,
   options,
+  registry,
+  overrides,
 }: SchemaFormProps) {
   const { form, fields, layout } = useSchemaForm(schema, {
     ...options,
     initialData: initialData as never,
   })
+
+  const resolvedRegistry = useMemo(() => registry ?? createGhostRegistry(), [registry])
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -42,9 +51,9 @@ export function SchemaForm({
   )
 
   return (
-    <SchemaFormProvider value={{ form, fields }}>
+    <SchemaFormProvider value={{ form, fields, overrides, registry: resolvedRegistry }}>
       <form onSubmit={handleSubmit} className={cn("flex flex-col gap-6", className)} noValidate>
-        {layout.children?.map((node) => renderNode(node, form, fields))}
+        {layout.children?.map((node) => renderLayoutTree(node, resolvedRegistry))}
         {children ?? (
           <Button type="submit" disabled={!form.canSubmit()}>
             Submit

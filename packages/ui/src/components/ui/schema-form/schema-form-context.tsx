@@ -3,10 +3,14 @@
 import { createContext, useContext } from "react"
 import type { FormApi } from "@ghost/formr-core"
 import type { SchemaFieldInfo } from "@ghost/formr-from-schema"
+import type { RendererRegistry } from "@ghost/formr-react"
+import type { WidgetOverrides } from "./widget-overrides"
 
 export interface SchemaFormContextValue {
   readonly form: FormApi<unknown, unknown>
   readonly fields: readonly SchemaFieldInfo[]
+  readonly overrides?: WidgetOverrides
+  readonly registry: RendererRegistry
 }
 
 const SchemaFormContext = createContext<SchemaFormContextValue | null>(null)
