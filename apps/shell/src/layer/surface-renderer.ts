@@ -5,6 +5,8 @@ import type {
 } from "@ghost/plugin-contracts";
 import {
   evaluateContributionPredicate,
+  HOOK_REGISTRY_SERVICE_ID,
+  ELEMENT_TRANSITION_HOOK_ID,
 } from "@ghost/plugin-contracts";
 import type { LayerRegistry } from "./registry.js";
 import type { ShellRuntime } from "../app/types.js";
@@ -16,7 +18,7 @@ import { type KeyboardExclusiveManager, createKeyboardExclusiveManager } from ".
 import { type FocusGrabManager, createFocusGrabManager } from "./focus-grab.js";
 import { type SessionLockManager, createSessionLockManager } from "./session-lock.js";
 import { reconcileLayerContainer, type ReconcilerContext } from "./surface-reconciler.js";
-import { type HookRegistry, HOOK_REGISTRY_SERVICE_ID, ELEMENT_TRANSITION_HOOK_ID } from "../hook-registry.js";
+import { type HookRegistry } from "../hook-registry.js";
 
 // ---------------------------------------------------------------------------
 // Types

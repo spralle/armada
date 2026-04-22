@@ -1,4 +1,5 @@
 import type { PluginContract, GhostApi, ActivationContext, HookService, ElementTransitionHook } from "@ghost/plugin-contracts";
+import { HOOK_REGISTRY_SERVICE_ID, ELEMENT_TRANSITION_HOOK_ID } from "@ghost/plugin-contracts";
 import { activateMotion, deactivateMotion } from "./plugin-services-expose.js";
 import { createMotionTransitionHook } from "./motion-hook.js";
 import pkg from "../package.json" with { type: "json" };
@@ -9,9 +10,6 @@ const ghost = pkg.ghost as {
   dependsOn?: Record<string, unknown>;
   activationEvents?: string[];
 };
-
-const HOOK_REGISTRY_SERVICE_ID = "ghost.hooks.registry";
-const ELEMENT_TRANSITION_HOOK_ID = "ghost.hooks.element-transition";
 
 export const pluginContract: PluginContract = {
   manifest: { id: pkg.name, name: ghost.displayName, version: pkg.version },

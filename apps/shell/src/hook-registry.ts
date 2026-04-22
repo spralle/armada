@@ -1,10 +1,5 @@
 import type { Disposable, HookService } from "@ghost/plugin-contracts";
 
-export const HOOK_REGISTRY_SERVICE_ID = "ghost.hooks.registry";
-
-/** Hook ID for element enter/exit lifecycle transitions. */
-export const ELEMENT_TRANSITION_HOOK_ID = "ghost.hooks.element-transition";
-
 /**
  * In-memory hook registry. Implements the plugin-facing HookService
  * and exposes getHooks() for shell-side consumers.

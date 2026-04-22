@@ -84,7 +84,6 @@ export function MotionSettingsPanel(): JSX.Element {
             <AnimationCard
               key={cat.name}
               category={cat}
-              entry={config.animations[cat.name]}
               resolvedEntry={resolveEntry(cat.name, config)}
               curves={config.curves.map((c) => c.name)}
               onUpdate={(patch) => handleEntryUpdate(cat.name, patch)}
@@ -98,13 +97,11 @@ export function MotionSettingsPanel(): JSX.Element {
 
 function AnimationCard({
   category,
-  entry,
   resolvedEntry,
   curves,
   onUpdate,
 }: {
   category: (typeof ANIMATION_CATEGORIES)[number];
-  entry: AnimationEntry | undefined;
   resolvedEntry: Required<AnimationEntry>;
   curves: string[];
   onUpdate: (patch: Partial<AnimationEntry>) => void;

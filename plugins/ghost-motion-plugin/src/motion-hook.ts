@@ -1,5 +1,6 @@
 import type { ElementTransitionHook, TransitionContext } from "@ghost/plugin-contracts";
 import { getCurrentConfig } from "./activate.js";
+import { resolveEntry } from "./config-resolver.js";
 
 const DATA_MOTION_ENTER = "data-motion-enter";
 const DATA_MOTION_EXIT = "data-motion-exit";
@@ -15,10 +16,16 @@ export function createMotionTransitionHook(): ElementTransitionHook {
       if (!config.enabled) return;
 
       el.setAttribute(DATA_MOTION_ENTER, "");
-      el.addEventListener("animationend", function handler() {
+      el.addEventListener("animationend", () => {
         el.removeAttribute(DATA_MOTION_ENTER);
-        el.removeEventListener("animationend", handler);
       }, { once: true });
+
+      // Safety cleanup — remove stale attribute if animation never fires
+      const resolved = resolveEntry("layers", config);
+      const cleanupMs = resolved.speed * 100 * 2;
+      setTimeout(() => {
+        el.removeAttribute(DATA_MOTION_ENTER);
+      }, Math.max(cleanupMs, 200));
     },
 
     async onExit(el: HTMLElement, _context: TransitionContext): Promise<void> {
@@ -27,21 +34,19 @@ export function createMotionTransitionHook(): ElementTransitionHook {
 
       el.setAttribute(DATA_MOTION_EXIT, "");
 
-      return new Promise<void>((resolve) => {
-        const handler = () => {
-          el.removeAttribute(DATA_MOTION_EXIT);
-          el.removeEventListener("animationend", handler);
-          resolve();
-        };
-        el.addEventListener("animationend", handler, { once: true });
+      const resolved = resolveEntry("layers", config);
+      const durationMs = resolved.speed * 100;
 
-        // Safety timeout — don't block removal forever
-        const speed = config.animations.global?.speed ?? 1;
-        const timeout = Math.max(500 / speed, 100);
-        setTimeout(() => {
-          el.removeEventListener("animationend", handler);
+      return new Promise<void>((resolve) => {
+        el.addEventListener("animationend", () => {
+          el.removeAttribute(DATA_MOTION_EXIT);
           resolve();
-        }, timeout);
+        }, { once: true });
+
+        setTimeout(() => {
+          el.removeAttribute(DATA_MOTION_EXIT);
+          resolve();
+        }, Math.max(durationMs * 2, 200));
       });
     },
   };

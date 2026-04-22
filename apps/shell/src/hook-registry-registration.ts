@@ -1,5 +1,6 @@
 import type { PluginContract } from "@ghost/plugin-contracts";
-import { HookRegistry, HOOK_REGISTRY_SERVICE_ID } from "./hook-registry.js";
+import { HOOK_REGISTRY_SERVICE_ID } from "@ghost/plugin-contracts";
+import { HookRegistry } from "./hook-registry.js";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export const HOOK_REGISTRY_PLUGIN_ID = "ghost.shell.hook-registry";
