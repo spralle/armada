@@ -131,6 +131,7 @@ export function createShellRuntime(options?: {
     commandNotice: "",
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,
     pluginConfigSyncDispose: null,
+    registrySubscriptionDispose: null,
     activeTransportPath: "legacy-bridge",
     activeTransportReason: "default-legacy",
     activeDndPath: crossWindowDnd.path,
