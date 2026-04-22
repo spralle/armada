@@ -4,8 +4,14 @@ import type {
   PluginContract,
   TenantPluginDescriptor,
 } from "@ghost/plugin-contracts";
+import type { DeactivationContext } from "@ghost/plugin-contracts";
 import type { CapabilityDependencyFailureCode } from "./capability-registry.js";
+import type { GhostApiInstance } from "./plugin-api/ghost-api-factory.js";
 import type { PluginActivateFunction, RuntimeFirstPluginLoader, ShellPluginLoadMode } from "./plugin-loader.js";
+
+/** The deactivate() function signature optionally exported by a plugin module. */
+export type PluginDeactivateFunction =
+  (context: DeactivationContext) => void | Promise<void>;
 
 export interface PluginRuntimeFailure {
   code:
@@ -58,6 +64,10 @@ export interface PluginRuntimeState {
   activate: PluginActivateFunction | null;
   /** Disposables pushed by the plugin's activate() via ActivationContext.subscriptions. */
   activationSubscriptions: Disposable[];
+  /** The GhostApi instance created during activation, disposed on deactivation. */
+  ghostApiInstance: GhostApiInstance | null;
+  /** The plugin's optional deactivate() export, called before disposal. */
+  deactivate: PluginDeactivateFunction | null;
   builtinServiceInstances: Map<string, unknown> | null;
 }
 

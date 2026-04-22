@@ -7,9 +7,9 @@ import {
 import {
   createRuntimeFirstPluginLoader,
 } from "./plugin-loader.js";
-import type { GhostApiFactoryDependencies } from "./plugin-api/ghost-api-factory.js";
 import { createActivationController } from "./plugin-registry-activation.js";
 import { readCapabilityComponents, readCapabilityServices } from "./plugin-registry-contract.js";
+import { cascadeDisableDependents, disposeActivationSubscriptions, resetRuntimeState, safeCallDeactivate } from "./plugin-registry-lifecycle.js";
 import {
   cloneLifecycle,
   cloneRuntimeFailure,
@@ -32,8 +32,9 @@ export type {
   PluginLifecycleState,
   PluginRegistryDiagnostic,
   PluginRegistrySnapshot,
+  ShellPluginRegistry,
+  ShellPluginRegistryOptions,
 } from "./plugin-registry-types.js";
-export type { ShellPluginRegistry, ShellPluginRegistryOptions } from "./plugin-registry-types.js";
 
 export function createShellPluginRegistry(
   options: ShellPluginRegistryOptions = {},
@@ -95,6 +96,8 @@ export function createShellPluginRegistry(
       activationPromise: null,
       activate: null,
       activationSubscriptions: [],
+      ghostApiInstance: null,
+      deactivate: null,
       builtinServiceInstances: instanceMap,
     });
   }
@@ -132,6 +135,8 @@ export function createShellPluginRegistry(
           activationPromise: null,
           activate: null,
           activationSubscriptions: [],
+          ghostApiInstance: null,
+          deactivate: null,
           builtinServiceInstances: null,
         });
       }
@@ -145,6 +150,7 @@ export function createShellPluginRegistry(
 
       state.enabled = enabled;
       if (!enabled) {
+        await safeCallDeactivate(state, pluginId, diagnostics);
         disposeActivationSubscriptions(state);
         capabilityRegistry.unregisterPlugin(pluginId);
         if (options.layerRegistry) {
@@ -154,6 +160,9 @@ export function createShellPluginRegistry(
         resetRuntimeState(state);
         transitionLifecycle(state, "disabled", null);
         notifyListeners();
+
+        // Cascade-disable dependent plugins
+        await cascadeDisableDependents(pluginId, this, diagnostics);
         return;
       }
 
@@ -192,6 +201,7 @@ export function createShellPluginRegistry(
         // Cache the loaded contract + activate fn so activateState can reuse it.
         state.contract = loadResult.contract;
         state.activate = loadResult.activate;
+        state.deactivate = loadResult.deactivate ?? null;
         return loadResult.contract;
       } catch {
         return null;
@@ -366,22 +376,4 @@ export function createShellPluginRegistry(
       };
     },
   };
-}
-
-function disposeActivationSubscriptions(state: PluginRuntimeState): void {
-  for (const sub of state.activationSubscriptions) {
-    sub.dispose();
-  }
-  state.activationSubscriptions = [];
-}
-
-function resetRuntimeState(state: PluginRuntimeState): void {
-  state.contract = null;
-  state.componentsModule = null;
-  state.servicesModule = null;
-  state.failure = null;
-  state.activationPromise = null;
-  state.activate = null;
-  state.activationSubscriptions = [];
-  // NOTE: Do NOT reset builtinServiceInstances — they persist across resets
 }

@@ -119,6 +119,7 @@ async function activateState(
       const loadResult = await pluginLoader.loadPluginContract(state.descriptor);
       state.contract = loadResult.contract;
       state.activate = loadResult.activate;
+      state.deactivate = loadResult.deactivate ?? null;
     }
 
     const dependencyFailures = capabilityRegistry.validateDependencies({
@@ -156,12 +157,13 @@ async function activateState(
 
     // Call the plugin's activate() lifecycle hook if present
     if (state.activate && apiDeps) {
-      const { api } = createGhostApi(apiDeps);
+      const ghostApiInstance = createGhostApi(apiDeps);
       const ctx = createActivationContext(pluginId);
 
       try {
-        await state.activate(api, ctx);
+        await state.activate(ghostApiInstance.api, ctx);
         state.activationSubscriptions = ctx.subscriptions;
+        state.ghostApiInstance = ghostApiInstance;
       } catch (activateError) {
         const message = activateError instanceof Error
           ? activateError.message

@@ -123,6 +123,8 @@ export function startShell(root: HTMLElement): ShellRuntime {
 
       disposed = true;
       disposeMount();
+      shellRuntime.registrySubscriptionDispose?.();
+      shellRuntime.registrySubscriptionDispose = null;
       shellRuntime.pluginConfigSyncDispose?.();
       shellRuntime.pluginConfigSyncDispose = null;
       shellRuntime.dragSessionBroker.dispose();
@@ -269,6 +271,25 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
     }
     runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
     refreshCommandContributions(runtime);
+    // Subscribe to plugin registry changes to re-render UI on enable/disable.
+    // Uses microtask batching to coalesce rapid notifications (e.g. cascade-disable).
+    let renderPending = false;
+    const registrySub = runtime.registry.subscribe(() => {
+      if (renderPending) return;
+      renderPending = true;
+      queueMicrotask(() => {
+        renderPending = false;
+        if (!isActive()) return;
+        refreshCommandContributions(runtime);
+        runtime.themeRegistry?.pruneDisabledPluginThemes();
+        runtime.themeRegistry?.discoverThemes();
+        getShellBootstrap(runtime).renderPanels(root, runtime);
+        renderParts(root, runtime);
+        getShellBootstrap(runtime).renderEdgeSlots(root, runtime);
+        getShellBootstrap(runtime).renderLayerSurfaces(root, runtime);
+      });
+    });
+    runtime.registrySubscriptionDispose = () => registrySub.dispose();
     getShellBootstrap(runtime).renderPanels(root, runtime);
     renderParts(root, runtime);
     getShellBootstrap(runtime).renderEdgeSlots(root, runtime);

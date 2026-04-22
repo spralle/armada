@@ -204,3 +204,14 @@ export interface ActivationContext {
   /** The ID of the plugin being activated. */
   readonly pluginId: string;
 }
+
+// ─── DeactivationContext ───
+
+/**
+ * Context passed to a plugin's optional deactivate() function.
+ * Allows the plugin to perform cleanup before the shell disposes subscriptions.
+ */
+export interface DeactivationContext {
+  /** The ID of the plugin being deactivated. */
+  readonly pluginId: string;
+}
