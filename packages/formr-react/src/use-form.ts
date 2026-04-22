@@ -14,6 +14,7 @@ export function useForm<TData, TUi>(
 ): FormApi<TData, TUi> {
   const autoFocus = options?.autoFocusOnError ?? true;
   const formRef = useRef<FormApi<TData, TUi> | null>(null);
+  const disposeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (formRef.current === null) {
     formRef.current = createForm<TData, TUi>(options);
@@ -28,11 +29,18 @@ export function useForm<TData, TUi>(
 
   useSyncExternalStore(subscribe, () => form.getState());
 
+  // Deferred disposal: schedule dispose in a macrotask so StrictMode remount can cancel it
   useEffect(() => {
+    if (disposeTimerRef.current !== null) {
+      clearTimeout(disposeTimerRef.current);
+      disposeTimerRef.current = null;
+    }
     return () => {
-      form.dispose();
+      disposeTimerRef.current = setTimeout(() => {
+        formRef.current?.dispose();
+      }, 0);
     };
-  }, [form]);
+  }, []);
 
   // Wrap the form API to auto-focus on submit errors (ADR §12)
   const wrappedApi = useMemo((): FormApi<TData, TUi> => {
