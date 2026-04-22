@@ -1,9 +1,31 @@
 {
-  "name": "@ghost/__PLUGIN_NAME__",
+  "name": "ghost.__PLUGIN_NAME__",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "ghost": {
+    "displayName": "__PLUGIN_TITLE__",
+    "contributes": {
+      "parts": [
+        {
+          "id": "__PART_ID__",
+          "title": "__PLUGIN_TITLE__",
+          "dock": {
+            "container": "main"
+          },
+          "component": "__PLUGIN_COMPONENT__"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "dev": "vite"
+  },
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-    "@ghost/ui": "file:../../packages/ui"
+__PLUGIN_DEPS__
+  },
+  "devDependencies": {
+    "@module-federation/vite": "^1.8.1",
+    "vite": "^5.4.19"
   }
 }

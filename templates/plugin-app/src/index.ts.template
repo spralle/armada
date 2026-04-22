@@ -1,18 +1,5 @@
-import type { PluginContract } from "@ghost/plugin-contracts";
+import { pluginContract } from "./plugin-contract-expose.js";
 
-export const pluginContract: PluginContract = {
-  manifest: {
-    id: "com.ghost.__PLUGIN_NAME__",
-    name: "__PLUGIN_TITLE__",
-    version: "0.1.0",
-  },
-  contributes: {
-    views: [
-      {
-        id: "__PLUGIN_NAME__.view",
-        title: "__PLUGIN_TITLE__ View",
-        component: "__PLUGIN_COMPONENT__",
-      },
-    ],
-  },
-};
+export { pluginContract };
+
+console.log("[__PLUGIN_NAME__] plugin ready", pluginContract.manifest.id);
