@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from '@ghost/formr-react';
 import { Card, CardContent, CardHeader, CardTitle, cn } from '@ghost/ui';
 import { DemoShell } from '../renderers/DemoShell';
@@ -39,10 +39,7 @@ export function ArbiterValidationGatingDemo() {
     arbiterRules,
   });
 
-  const [state, setState] = useState(() => form.getState());
-  useEffect(() => form.subscribe(() => setState(form.getState())), [form]);
-
-  const { data, uiState } = state;
+  const { data, uiState } = form.getState();
   const [submitted, setSubmitted] = useState(false);
 
   return (
