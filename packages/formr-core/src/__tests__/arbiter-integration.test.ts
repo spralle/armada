@@ -145,4 +145,56 @@ describe('createForm with arbiterRules', () => {
     expect((form.getState().uiState as Record<string, unknown>).ready).toBe(true);
     form.dispose();
   });
+
+  test('data writes do not overwrite the user-edited field', () => {
+    const rules: readonly ProductionRule[] = [{
+      name: 'resetQty',
+      when: {},
+      then: [{ $set: { qty: 0 } }],
+    }];
+    const form = createForm({
+      initialData: { qty: 0, label: '' },
+      arbiterRules: rules,
+    });
+    form.setValue('qty', 5);
+    // User set qty=5; arbiter rule tries to set qty=0 but should be filtered
+    expect((form.getState().data as Record<string, unknown>).qty).toBe(5);
+    form.dispose();
+  });
+
+  test('arbiter writes to OTHER fields still apply when user edits a field', () => {
+    const rules: readonly ProductionRule[] = [{
+      name: 'computeLabel',
+      when: {},
+      then: [{ $set: { label: 'computed' } }],
+    }];
+    const form = createForm({
+      initialData: { qty: 0, label: '' },
+      arbiterRules: rules,
+    });
+    form.setValue('qty', 5);
+    // label should be computed even though user edited qty
+    expect((form.getState().data as Record<string, unknown>).label).toBe('computed');
+    form.dispose();
+  });
+
+  test('uiState retracts when rule condition becomes false', () => {
+    const rules: readonly ProductionRule[] = [{
+      name: 'showDiscount',
+      when: { qty: { $gte: 10 } },
+      then: [{ $set: { '$ui.showDiscount': true } }],
+    }];
+    const form = createForm({
+      initialData: { qty: 15 },
+      arbiterRules: rules,
+    });
+
+    form.setValue('qty', 15);
+    expect((form.getState().uiState as Record<string, unknown>).showDiscount).toBe(true);
+
+    form.setValue('qty', 3);
+    // After retraction, showDiscount should be gone
+    expect((form.getState().uiState as Record<string, unknown>).showDiscount).toBeUndefined();
+    form.dispose();
+  });
 });
