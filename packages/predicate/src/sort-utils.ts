@@ -1,5 +1,6 @@
 import { validateAndSplitPath, resolveSegments } from './path-utils.js';
 
+/** Compare two values for sorting: numbers numerically, strings lexicographically, Dates by epoch. */
 export function compareValues(a: unknown, b: unknown): number {
   if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
   if (typeof a === 'number' && typeof b === 'number') return a - b;
@@ -14,6 +15,7 @@ interface SortField {
   readonly dir: 1 | -1;
 }
 
+/** Sort items in-place by a multi-field sort specification (1 = ascending, -1 = descending). */
 export function applySorting<T>(items: T[], sortSpec: Record<string, 1 | -1>): T[] {
   const fields: SortField[] = Object.entries(sortSpec).map(([field, dir]) => ({
     segments: validateAndSplitPath(field),

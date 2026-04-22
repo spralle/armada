@@ -11,10 +11,10 @@ export function validateAndSplitPath(path: string): readonly string[] {
   return segments;
 }
 
-/** Normalize Date to epoch ms for comparison; pass through numbers and strings. */
-export function normalizeComparable(v: unknown): number | string {
+/** Normalize Date to epoch ms for comparison; pass through other values unchanged. */
+export function normalizeComparable(v: unknown): unknown {
   if (v instanceof Date) return v.getTime();
-  return v as number | string;
+  return v;
 }
 
 /** Throw if operands are not both numbers or both strings (after Date normalization). */

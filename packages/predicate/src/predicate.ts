@@ -1,17 +1,27 @@
 import type { Query } from './compile.js';
-import type { FilterFn } from './filter-compiler.js';
+import type { TypedQuery } from './typed-query.js';
+import type { CompileFilterOptions, FilterFn } from './filter-compiler.js';
 import { compileFilter } from './filter-compiler.js';
 import { PredicateError } from './errors.js';
 import { applySorting } from './sort-utils.js';
 
+/** Options for constructing a Predicate instance. */
+export interface PredicateOptions {
+  readonly registry?: CompileFilterOptions['registry'];
+}
+
+/** Compiled query that can test documents and find matches in collections. */
 export class Predicate<T = Record<string, unknown>> {
-  private readonly _filter: FilterFn;
+  private readonly _filter: FilterFn<T>;
   private _skip?: number;
   private _limit?: number;
   private _sort?: Record<string, 1 | -1>;
 
-  constructor(query: Query) {
-    this._filter = compileFilter(query);
+  constructor(query: TypedQuery<T>, options?: PredicateOptions);
+  constructor(query: Query, options?: PredicateOptions);
+  constructor(query: Query, options?: PredicateOptions) {
+    // Safe: FilterFn only reads from doc, T extends object at runtime
+    this._filter = compileFilter(query, options?.registry ? { registry: options.registry } : undefined) as FilterFn<T>;
   }
 
   skip(count: number): this {
@@ -31,7 +41,7 @@ export class Predicate<T = Record<string, unknown>> {
 
   /** Test a single document against the query. */
   test(doc: T): boolean {
-    return this._filter(doc as unknown as Record<string, unknown>);
+    return this._filter(doc);
   }
 
   /** Find all matching documents with optional sort/skip/limit. */
@@ -44,7 +54,7 @@ export class Predicate<T = Record<string, unknown>> {
       const results: T[] = [];
       let skipped = 0;
       for (const item of collection) {
-        if (this._filter(item as unknown as Record<string, unknown>)) {
+        if (this._filter(item)) {
           if (skipped < skip) { skipped++; continue; }
           results.push(item);
           if (results.length >= limit) break;
@@ -54,7 +64,7 @@ export class Predicate<T = Record<string, unknown>> {
     }
 
     let results = collection.filter(
-      (item) => this._filter(item as unknown as Record<string, unknown>),
+      (item) => this._filter(item),
     );
 
     if (this._sort) {
@@ -76,7 +86,7 @@ export class Predicate<T = Record<string, unknown>> {
     let found: T | undefined;
     let count = 0;
     for (const item of collection) {
-      if (this._filter(item as unknown as Record<string, unknown>)) {
+      if (this._filter(item)) {
         count++;
         if (count === 1) found = item;
         if (count > 1) break;

@@ -1,5 +1,6 @@
 import { PredicateError } from './errors.js';
 
+/** Set of path segment names that are blocked to prevent prototype pollution. */
 export const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 /** Throws PredicateError if a path segment could cause prototype pollution. */

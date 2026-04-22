@@ -1,3 +1,4 @@
+/** Discriminated error codes for all predicate-related failures. */
 export type PredicateErrorCode =
   | 'FORMR_EXPR_PARSE_INVALID_ROOT'
   | 'FORMR_EXPR_PARSE_UNKNOWN_OPERATOR'
@@ -11,6 +12,7 @@ export type PredicateErrorCode =
   | 'PREDICATE_UNKNOWN_OPERATOR'
   | 'PREDICATE_FIND_ONE';
 
+/** Typed error with a discriminated code for programmatic error handling. */
 export class PredicateError extends Error {
   readonly code: PredicateErrorCode;
   readonly sourcePath?: string | undefined;

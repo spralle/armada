@@ -3,6 +3,7 @@ import { evaluate } from './evaluator.js';
 import { resolvePath } from './path-utils.js';
 import { COMPARISON_OPS } from './compile.js';
 
+/** A single trace entry describing why a predicate comparison failed. */
 export interface PredicateFailureTrace {
   readonly path: string;
   readonly operator: string;
@@ -10,6 +11,7 @@ export interface PredicateFailureTrace {
   readonly actual: unknown;
 }
 
+/** Result of evaluating an expression with failure tracing enabled. */
 export interface EvaluateWithTraceResult {
   readonly result: unknown;
   readonly traces: readonly PredicateFailureTrace[];
@@ -49,6 +51,7 @@ function collectTraces(
   }
 }
 
+/** Evaluate an expression and collect traces for any failed comparisons. */
 export function evaluateWithTrace(
   node: ExprNode,
   scope: EvaluationScope,

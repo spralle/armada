@@ -1,22 +1,27 @@
 import type { ExprNode } from './ast.js';
 import { PredicateError } from './errors.js';
 import { compile, type Query } from './compile.js';
+import type { TypedQuery } from './typed-query.js';
 import { PATH_MISSING, validateAndSplitPath, assertComparableTypes, collectPath, collectArrayLeaves, normalizeComparable } from './path-utils.js';
 import type { OperatorRegistry } from './operators.js';
 import { clearRegexCache, getRegexCacheSize, getCachedRegex } from './regex-cache.js';
 
 export { clearRegexCache, getRegexCacheSize };
 
-export type FilterFn = (doc: Readonly<Record<string, unknown>>) => boolean;
+/** Predicate function that tests a document against a compiled query. */
+export type FilterFn<T = Record<string, unknown>> = (doc: Readonly<T>) => boolean;
 
+/** Options for compiling a filter from a query or AST. */
 export interface CompileFilterOptions {
   readonly registry?: OperatorRegistry;
   readonly maxDepth?: number;
 }
 
-type ScopeFn = (scope: Record<string, unknown>) => unknown;
-
-function compilePath(node: ExprNode & { kind: 'path' }): ScopeFn {
+/** Boolean predicate closure (filter operators). */
+type BoolScopeFn = (scope: Record<string, unknown>) => boolean;
+/** Value-resolving closure (paths, literals). */
+type ValScopeFn = (scope: Record<string, unknown>) => unknown;
+function compilePath(node: ExprNode & { kind: 'path' }): ValScopeFn {
   const segments = validateAndSplitPath(node.path);
   if (segments.length === 1) {
     const key = segments[0]!;
@@ -25,7 +30,7 @@ function compilePath(node: ExprNode & { kind: 'path' }): ScopeFn {
   return (scope) => collectPath(scope, segments);
 }
 
-function compilePathWithMissing(node: ExprNode & { kind: 'path' }): ScopeFn {
+function compilePathWithMissing(node: ExprNode & { kind: 'path' }): ValScopeFn {
   const segments = validateAndSplitPath(node.path);
   if (segments.length === 1) {
     const key = segments[0]!;
@@ -40,8 +45,7 @@ function compilePathWithMissing(node: ExprNode & { kind: 'path' }): ScopeFn {
 // ---------------------------------------------------------------------------
 // Literal compilation
 // ---------------------------------------------------------------------------
-
-function compileLiteral(node: ExprNode & { kind: 'literal' }): ScopeFn {
+function compileLiteral(node: ExprNode & { kind: 'literal' }): ValScopeFn {
   const val = node.value;
   return () => val;
 }
@@ -49,8 +53,7 @@ function compileLiteral(node: ExprNode & { kind: 'literal' }): ScopeFn {
 // ---------------------------------------------------------------------------
 // Operator compilation
 // ---------------------------------------------------------------------------
-
-function compileComparison(op: string, args: readonly ExprNode[]): ScopeFn {
+function compileComparison(op: string, args: readonly ExprNode[]): BoolScopeFn {
   const resolveA = compileArgWithMissing(args[0]!);
   const bNode = args[1]!;
   const isLiteral = bNode.kind === 'literal';
@@ -139,17 +142,17 @@ function compileComparison(op: string, args: readonly ExprNode[]): ScopeFn {
   };
 }
 
-function buildCmpFn(op: string): (a: number | string, b: number | string) => boolean {
+function buildCmpFn(op: string): (a: unknown, b: unknown) => boolean {
   switch (op) {
-    case '$gt': return (a, b) => a > b;
-    case '$gte': return (a, b) => a >= b;
-    case '$lt': return (a, b) => a < b;
-    case '$lte': return (a, b) => a <= b;
+    case '$gt': return (a, b) => (a as number | string) > (b as number | string);
+    case '$gte': return (a, b) => (a as number | string) >= (b as number | string);
+    case '$lt': return (a, b) => (a as number | string) < (b as number | string);
+    case '$lte': return (a, b) => (a as number | string) <= (b as number | string);
     default: throw new PredicateError('PREDICATE_UNKNOWN_OPERATOR', `Unknown comparison: ${op}`);
   }
 }
 
-function compileInclusion(args: readonly ExprNode[], negate: boolean): ScopeFn {
+function compileInclusion(args: readonly ExprNode[], negate: boolean): BoolScopeFn {
   const resolveValue = compileNode(args[0]!);
   const listNode = args[1]!;
   if (listNode.kind === 'literal' && Array.isArray(listNode.value)) {
@@ -173,7 +176,7 @@ function compileInclusion(args: readonly ExprNode[], negate: boolean): ScopeFn {
   };
 }
 
-function compileRegex(args: readonly ExprNode[]): ScopeFn {
+function compileRegex(args: readonly ExprNode[]): BoolScopeFn {
   const resolveTarget = compileNode(args[0]!);
   const patternNode = args[1]!;
   const flagsNode = args.length > 2 ? args[2] : undefined;
@@ -215,7 +218,7 @@ function compileRegex(args: readonly ExprNode[]): ScopeFn {
   };
 }
 
-function compileExists(args: readonly ExprNode[]): ScopeFn {
+function compileExists(args: readonly ExprNode[]): BoolScopeFn {
   const resolvePath = args[0]!.kind === 'path'
     ? compilePathWithMissing(args[0] as ExprNode & { kind: 'path' })
     : compileNode(args[0]!);
@@ -229,7 +232,7 @@ function compileExists(args: readonly ExprNode[]): ScopeFn {
   };
 }
 
-function compileElemMatch(args: readonly ExprNode[], registry?: OperatorRegistry): ScopeFn {
+function compileElemMatch(args: readonly ExprNode[], registry?: OperatorRegistry): BoolScopeFn {
   const pathNode = args[0]!;
   const subFilter = compileNode(args[1]!, registry);
 
@@ -255,7 +258,7 @@ function compileElemMatch(args: readonly ExprNode[], registry?: OperatorRegistry
   };
 }
 
-function compileAll(args: readonly ExprNode[]): ScopeFn {
+function compileAll(args: readonly ExprNode[]): BoolScopeFn {
   const resolveValue = compileNode(args[0]!);
   const listNode = args[1]!;
   if (listNode.kind === 'literal' && Array.isArray(listNode.value)) {
@@ -278,7 +281,7 @@ function compileAll(args: readonly ExprNode[]): ScopeFn {
   };
 }
 
-function compileSize(args: readonly ExprNode[]): ScopeFn {
+function compileSize(args: readonly ExprNode[]): BoolScopeFn {
   const resolveValue = compileNode(args[0]!);
   const sizeNode = args[1]!;
   if (sizeNode.kind === 'literal' && typeof sizeNode.value === 'number') {
@@ -297,7 +300,7 @@ function compileSize(args: readonly ExprNode[]): ScopeFn {
   };
 }
 
-function compileOp(node: ExprNode & { kind: 'op' }, registry?: OperatorRegistry): ScopeFn {
+function compileOp(node: ExprNode & { kind: 'op' }, registry?: OperatorRegistry): BoolScopeFn | ValScopeFn {
   const { op, args } = node;
 
   if (op === '$eq' || op === '$ne' || op === '$gt' || op === '$gte' || op === '$lt' || op === '$lte') {
@@ -338,7 +341,7 @@ function compileOp(node: ExprNode & { kind: 'op' }, registry?: OperatorRegistry)
 // Node dispatch
 // ---------------------------------------------------------------------------
 
-function compileNode(node: ExprNode, registry?: OperatorRegistry): ScopeFn {
+function compileNode(node: ExprNode, registry?: OperatorRegistry): BoolScopeFn | ValScopeFn {
   switch (node.kind) {
     case 'literal': return compileLiteral(node);
     case 'path': return compilePath(node);
@@ -347,7 +350,7 @@ function compileNode(node: ExprNode, registry?: OperatorRegistry): ScopeFn {
 }
 
 /** Compile arg with MISSING sentinel for comparison operators. */
-function compileArgWithMissing(node: ExprNode): ScopeFn {
+function compileArgWithMissing(node: ExprNode): ValScopeFn {
   if (node.kind === 'path') return compilePathWithMissing(node);
   return compileNode(node);
 }
@@ -357,9 +360,11 @@ function compileArgWithMissing(node: ExprNode): ScopeFn {
 // ---------------------------------------------------------------------------
 
 /** Compile a MongoDB-style query to an optimized native filter function. */
-export function compileFilter(query: Query): FilterFn {
+export function compileFilter<T>(query: TypedQuery<T>, options?: CompileFilterOptions): FilterFn<T>;
+export function compileFilter(query: Query, options?: CompileFilterOptions): FilterFn;
+export function compileFilter(query: Query, options?: CompileFilterOptions): FilterFn {
   const ast = compile(query);
-  return compileFilterFromAst(ast);
+  return compileFilterFromAst(ast, options);
 }
 
 /** Compile an existing AST to an optimized native filter function. */

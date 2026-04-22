@@ -13,6 +13,7 @@ export function getRegexCacheSize(): number {
   return regexCache.size;
 }
 
+/** Retrieve or create a cached RegExp, evicting the oldest entry if the cache is full. */
 export function getCachedRegex(pattern: string, flags?: string): RegExp {
   const key = flags ? `${pattern}\0${flags}` : pattern;
   const existing = regexCache.get(key);
