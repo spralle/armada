@@ -284,6 +284,17 @@
         "vite": "^5.4.19",
       },
     },
+    "plugins/ghost-motion-plugin": {
+      "name": "ghost.motion",
+      "version": "0.1.0",
+      "dependencies": {
+        "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+      },
+      "devDependencies": {
+        "@module-federation/vite": "^1.8.1",
+        "vite": "^5.4.19",
+      },
+    },
     "plugins/ghost-ui-plugin": {
       "name": "ghost.ui",
       "version": "1.0.0",
@@ -1019,6 +1030,8 @@
 
     "ghost.keybindings": ["ghost.keybindings@workspace:plugins/keybindings-plugin"],
 
+    "ghost.motion": ["ghost.motion@workspace:plugins/ghost-motion-plugin"],
+
     "ghost.pending-chord-indicator": ["ghost.pending-chord-indicator@workspace:plugins/pending-chord-indicator-plugin"],
 
     "ghost.plugin-starter": ["ghost.plugin-starter@workspace:plugins/plugin-starter"],
@@ -1372,6 +1385,8 @@
     "ghost.keybindings/@types/react": ["@types/react@18.3.28", "", { "dependencies": { "@types/prop-types": "*", "csstype": "^3.2.2" } }, "sha512-z9VXpC7MWrhfWipitjNdgCauoMLRdIILQsAEV+ZesIzBq/oUlxk0m3ApZuMFCXdnS4U7KrI+l3WRUEGQ8K1QKw=="],
 
     "ghost.keybindings/react": ["react@18.3.1", "", { "dependencies": { "loose-envify": "^1.1.0" } }, "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ=="],
+
+    "ghost.motion/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
     "ghost.pending-chord-indicator/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 

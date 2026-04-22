@@ -59,6 +59,9 @@
       "path": "./plugins/shadcn-theme-bridge-plugin"
     },
     {
+      "path": "./plugins/ghost-motion-plugin"
+    },
+    {
       "path": "./plugins/ghost-ui-plugin"
     },
     {
