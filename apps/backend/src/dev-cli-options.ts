@@ -8,6 +8,7 @@ export interface BackendDevCliOptions {
   selectedLocalPluginIds: string[];
   duplicateSelectedLocalPluginIds: string[];
   gatewayPort: number | undefined;
+  pluginDirs: string[];
 }
 
 export function parseBackendDevCliOptions(
@@ -28,11 +29,13 @@ export function parseBackendDevCliOptions(
   validateSelectedLocalPluginIds(selectedLocalPluginIds);
 
   const gatewayPort = parseSingleNumericOption(argv, "--gateway-port");
+  const pluginDirs = collectRepeatableOptionValues(argv, "--plugin-dir");
 
   return {
     selectedLocalPluginIds,
     duplicateSelectedLocalPluginIds,
     gatewayPort,
+    pluginDirs,
   };
 }
 

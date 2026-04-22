@@ -25,6 +25,7 @@ export interface DiscoverLocalUiPluginsOptions {
   protocol?: "http" | "https";
   definitions?: readonly CanonicalLocalUiPluginDefinition[];
   gatewayPort?: number;
+  extraPluginsDirs?: readonly string[];
 }
 
 const VALID_LOCAL_PLUGIN_ID_PATTERN =
@@ -38,11 +39,12 @@ const VALID_LOCAL_PLUGIN_ID_PATTERN =
  * Plugins without a valid `package.json` or without a `name` field are
  * skipped with a warning. Results are sorted by folder name.
  */
+const DEFAULT_DEV_PORT_BASE = 4170;
+
 export function discoverPluginDefinitions(
   pluginsDir: string,
+  startPort?: number,
 ): CanonicalLocalUiPluginDefinition[] {
-  const DEFAULT_DEV_PORT_BASE = 4170;
-
   let entries: string[];
   try {
     entries = readdirSync(pluginsDir);
@@ -66,7 +68,7 @@ export function discoverPluginDefinitions(
     .sort((a, b) => a.localeCompare(b));
 
   const definitions: CanonicalLocalUiPluginDefinition[] = [];
-  let nextAutoPort = DEFAULT_DEV_PORT_BASE + 1;
+  let nextAutoPort = startPort ?? (DEFAULT_DEV_PORT_BASE + 1);
 
   for (const folderName of folderNames) {
     const packageJsonPath = join(pluginsDir, folderName, "package.json");
@@ -121,6 +123,25 @@ export function discoverPluginDefinitions(
 }
 
 /**
+ * Discovers plugin definitions from multiple directories, assigning
+ * globally unique dev ports across all directories.
+ */
+export function discoverPluginDefinitionsFromDirs(
+  pluginsDirs: readonly string[],
+): CanonicalLocalUiPluginDefinition[] {
+  let nextPort = DEFAULT_DEV_PORT_BASE + 1;
+  const allDefinitions: CanonicalLocalUiPluginDefinition[] = [];
+
+  for (const dir of pluginsDirs) {
+    const defs = discoverPluginDefinitions(dir, nextPort);
+    allDefinitions.push(...defs);
+    nextPort += defs.length;
+  }
+
+  return allDefinitions;
+}
+
+/**
  * Canonical local UI plugin conventions for Ghost development.
  *
  * - local plugin folders live under `plugins/<folderName>`
@@ -136,7 +157,10 @@ export function discoverLocalUiPlugins(
   const host = options.host ?? "127.0.0.1";
   const protocol = options.protocol ?? "http";
   const definitions =
-    options.definitions ?? discoverPluginDefinitions(options.appsRoot);
+    options.definitions ?? discoverPluginDefinitionsFromDirs([
+      options.appsRoot,
+      ...(options.extraPluginsDirs ?? []),
+    ]);
 
   const normalizedDefinitions = definitions.map((definition) => ({
     ...definition,

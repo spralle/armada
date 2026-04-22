@@ -5,6 +5,7 @@ import {
   getTenantManifestResponse,
   createDefaultLocalPluginEntryUrlMap,
   resolveTenantManifestRequest,
+  rebuildTenantManifest,
 } from "./tenant-manifest.js";
 import {
   formatLocalPluginOverrideStartupSummary,
@@ -25,10 +26,16 @@ interface NodeHttpRequestLike { method?: string | undefined; url?: string | unde
 interface NodeHttpResponseLike { setHeader(name: string, value: string): void; statusCode: number; end(body?: string): void }
 
 const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
+
+if (backendDevCliOptions.pluginDirs.length > 0) {
+  rebuildTenantManifest(backendDevCliOptions.pluginDirs);
+}
+
 const localPluginEntryOverrides = backendDevCliOptions.gatewayPort
   ? createDefaultLocalPluginEntryUrlMap({
       appsRoot: "plugins",
       gatewayPort: backendDevCliOptions.gatewayPort,
+      extraPluginsDirs: backendDevCliOptions.pluginDirs,
     })
   : getDefaultLocalPluginEntryUrlMap();
 

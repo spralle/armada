@@ -31,15 +31,22 @@ export function getDefaultLocalPluginEntryUrlMap(): ReadonlyMap<string, string> 
   return DEFAULT_LOCAL_PLUGIN_ENTRY_URL_MAP;
 }
 
-const inMemoryTenantPluginDescriptors: Readonly<
-  Record<string, TenantPluginDescriptor[]>
-> = {
+let inMemoryTenantPluginDescriptors: Record<string, TenantPluginDescriptor[]> = {
   demo: createCanonicalLocalTenantDescriptors(),
 };
 
-export function createCanonicalLocalTenantDescriptors(): TenantPluginDescriptor[] {
+export function rebuildTenantManifest(extraPluginsDirs: readonly string[]): void {
+  inMemoryTenantPluginDescriptors = {
+    demo: createCanonicalLocalTenantDescriptors(extraPluginsDirs),
+  };
+}
+
+export function createCanonicalLocalTenantDescriptors(
+  extraPluginsDirs?: readonly string[],
+): TenantPluginDescriptor[] {
   const plugins = discoverLocalUiPlugins({
     appsRoot: "plugins",
+    extraPluginsDirs,
   });
 
   return Array.from(plugins.values()).map((plugin) => ({
@@ -59,6 +66,7 @@ export function createDefaultLocalPluginEntryUrlMap(options: {
   host?: string;
   protocol?: "http" | "https";
   gatewayPort?: number;
+  extraPluginsDirs?: readonly string[];
 }): ReadonlyMap<string, string> {
   const discovered = discoverLocalUiPlugins(options);
 
