@@ -1,8 +1,8 @@
-# ADR: formr architecture for schema-driven + headless forms
+﻿# ADR: formr architecture for schema-driven + headless forms
 
 ## Status
 
-**Amended (2026-04-18)** — Added layout model (§13), schema optionality (§9), field extend+override (§9.1)
+**Amended (2026-04-19)** — Rule engine superseded by @ghost/arbiter (see adr-arbiter-rule-engine.md). Sections 5.5 and 5.6 are superseded. Previous: Added layout model, schema optionality, field extend+override
 
 ## Context
 
@@ -450,7 +450,7 @@ Transactional semantics are all-or-nothing: runtime MUST NOT commit partial inte
 
 ```ts
 export interface CreateFormOptions<S extends string = 'draft' | 'submit' | 'approve'> {
-  schema?: unknown; // Standard Schema root — optional in core
+  schema?: unknown; // Standard Schema root â€” optional in core
   uiStateSchema?: unknown;
   initialData?: unknown;
   initialUiState?: unknown;
@@ -561,7 +561,7 @@ export interface FieldConfig {
 **Merge rules (deterministic):**
 
 - `undefined` properties: treated as absent, do not override lower-precedence values
-- `null`: explicit clear — removes the lower-precedence value
+- `null`: explicit clear â€” removes the lower-precedence value
 - Scalars (`string`, `number`, `boolean`): replace (highest precedence wins)
 - Objects (`metadata`): deep merge per section 7.1 rules
 - Arrays (`validators`, `transforms`): replace wholesale (no concat) per section 7.1 rules
