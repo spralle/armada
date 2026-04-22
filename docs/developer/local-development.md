@@ -252,10 +252,14 @@ Create a new plugin app from the template:
 
 ```bash
 bun run scaffold:plugin -- --name my-plugin
+bun run scaffold:plugin -- --name my-plugin --tier ui
+bun run scaffold:plugin -- --name my-plugin --tier ui --port 4200
+bun run scaffold:plugin -- --name my-plugin --federation-name ghost.custom-name
 ```
 
-Fallback:
+Options:
 
-```bash
-npm run scaffold:plugin -- --name my-plugin
-```
+- `--name <name>` (required) — plugin name, lowercase-dashes-only
+- `--tier <minimal|ui|provider>` (optional, default: `minimal`) — controls shared dependency config
+- `--port <number>` (optional) — dev server port (auto-assigned if omitted)
+- `--federation-name <name>` (optional) — override MF2 federation name (default: `ghost.<name>`)
