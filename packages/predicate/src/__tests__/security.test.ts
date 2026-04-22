@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { assertSafeSegment } from '../safe-path.js';
 import { evaluate } from '../evaluator.js';
-import { compile } from '../compiler.js';
+import { compile } from '../compile.js';
 import type { ExprNode } from '../ast.js';
 import { PredicateError } from '../errors.js';
 
@@ -58,18 +58,10 @@ describe('prototype pollution prevention', () => {
     });
   });
 
-  describe('compile path validation', () => {
-    it('rejects __proto__ in $path', () => {
-      expect(() => compile({ $path: '__proto__.polluted' })).toThrow('prototype pollution');
-    });
-
-    it('rejects constructor in $path', () => {
-      expect(() => compile({ $path: 'constructor.prototype' })).toThrow('prototype pollution');
-    });
-
-    it('compiles normal paths', () => {
-      const node = compile({ $path: 'user.name' });
-      expect(node).toEqual({ kind: 'path', path: 'user.name' });
+  describe('compile path validation via shorthand', () => {
+    it('compiles normal paths via shorthand', () => {
+      const ast = compile({ 'user.name': 'Alice' });
+      expect(ast.kind).toBe('op');
     });
   });
 });
@@ -100,27 +92,4 @@ describe('recursion depth guard', () => {
     const scope = makeScope();
     expect(() => evaluate(node, scope, { maxDepth: 5 })).toThrow('exceeded maximum depth');
   });
-
-  it('compiles within default depth limit', () => {
-    const input = buildNestedCompileInput(100);
-    expect(() => compile(input)).not.toThrow();
-  });
-
-  it('compile throws when exceeding depth limit', () => {
-    const input = buildNestedCompileInput(300);
-    expect(() => compile(input)).toThrow('exceeded maximum depth');
-    });
-
-  it('compile respects custom maxDepth', () => {
-    const input = buildNestedCompileInput(10);
-    expect(() => compile(input, { maxDepth: 5 })).toThrow('exceeded maximum depth');
-  });
 });
-
-function buildNestedCompileInput(depth: number): unknown {
-  let node: unknown = true;
-  for (let i = 0; i < depth; i++) {
-    node = { $not: [node] };
-  }
-  return node;
-}

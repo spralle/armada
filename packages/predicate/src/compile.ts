@@ -1,6 +1,6 @@
 import type { ExprNode } from './ast.js';
 
-export type ShorthandQuery = Record<string, unknown>;
+export type Query = Record<string, unknown>;
 
 const LOGICAL_OPS = new Set(['$and', '$or', '$not']);
 const COMPARISON_OPS = new Set(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$exists', '$regex']);
@@ -18,6 +18,9 @@ function makePath(field: string): ExprNode {
 function makeLiteral(value: unknown): ExprNode {
   if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return { kind: 'literal', value };
+  }
+  if (value instanceof Date) {
+    return { kind: 'literal', value: value.getTime() };
   }
   if (Array.isArray(value)) {
     return { kind: 'literal', value: value as unknown as null };
@@ -39,18 +42,37 @@ function compileFieldOperators(field: string, operators: Record<string, unknown>
   for (const [op, value] of entries) {
     if (op === '$options') continue;
 
+    if (op === '$not') {
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        throw new Error('$not requires an object value');
+      }
+      const inner = compileFieldOperators(field, value as Record<string, unknown>);
+      nodes.push({ kind: 'op', op: '$not', args: [inner] });
+      continue;
+    }
+
     if (op === '$elemMatch') {
       if (value === null || typeof value !== 'object' || Array.isArray(value)) {
         throw new Error('$elemMatch requires an object sub-query');
       }
-      nodes.push({ kind: 'op', op: '$elemMatch', args: [makePath(field), compileShorthand(value as ShorthandQuery)] });
+      nodes.push({ kind: 'op', op: '$elemMatch', args: [makePath(field), compile(value as Query)] });
       continue;
     }
 
     if (op === '$regex') {
-      const regexArgs: ExprNode[] = [makePath(field), makeLiteral(String(value))];
+      let pattern: string;
+      let flags: string | undefined;
+      if (value instanceof RegExp) {
+        pattern = value.source;
+        flags = value.flags || undefined;
+      } else {
+        pattern = String(value);
+      }
+      const regexArgs: ExprNode[] = [makePath(field), makeLiteral(pattern)];
       if (hasOptions) {
         regexArgs.push(makeLiteral(String(operators['$options'])));
+      } else if (flags) {
+        regexArgs.push(makeLiteral(flags));
       }
       nodes.push({ kind: 'op', op: '$regex', args: regexArgs });
       continue;
@@ -96,7 +118,7 @@ function compileLogicalOp(op: string, value: unknown): ExprNode {
     if (value === null || typeof value !== 'object' || Array.isArray(value)) {
       throw new Error('$not requires an object value');
     }
-    return { kind: 'op', op: '$not', args: [compileShorthand(value as ShorthandQuery)] };
+    return { kind: 'op', op: '$not', args: [compile(value as Query)] };
   }
   if (!Array.isArray(value)) {
     throw new Error(`${op} requires an array of conditions`);
@@ -105,7 +127,7 @@ function compileLogicalOp(op: string, value: unknown): ExprNode {
     if (item === null || typeof item !== 'object' || Array.isArray(item)) {
       throw new Error(`${op} array items must be objects`);
     }
-    return compileShorthand(item as ShorthandQuery);
+    return compile(item as Query);
   });
   return { kind: 'op', op, args };
 }
@@ -116,7 +138,7 @@ function compileLogicalOp(op: string, value: unknown): ExprNode {
  * Supports field-implicit equality, operator objects, logical combinators,
  * and dot-notation paths.
  */
-export function compileShorthand(query: ShorthandQuery): ExprNode {
+export function compile(query: Query): ExprNode {
   const entries = Object.entries(query);
 
   if (entries.length === 0) {
@@ -136,3 +158,8 @@ export function compileShorthand(query: ShorthandQuery): ExprNode {
   if (nodes.length === 1) return nodes[0];
   return { kind: 'op', op: '$and', args: nodes };
 }
+
+/** @deprecated Use `compile` instead */
+export const compileShorthand = compile;
+/** @deprecated Use `Query` instead */
+export type ShorthandQuery = Query;

@@ -130,7 +130,7 @@ describe('F1-F10: Full integration conformance', () => {
   describe('(c) Expression-driven visibility — F3 predicate + arbiter rules', () => {
     test('compile predicate, arbiter rule applies writes to form state', () => {
       // F3: compile a predicate AST
-      const ast = compile({ $eq: [{ $path: 'country' }, 'US'] });
+      const ast = compile({ country: 'US' });
       expect(ast.kind).toBe('op');
 
       // Evaluate against scope where country = 'US'

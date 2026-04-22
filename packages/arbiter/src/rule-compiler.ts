@@ -1,5 +1,5 @@
 import type { ProductionRule, CompiledRule } from './contracts.js';
-import { compileShorthand } from '@ghost/predicate';
+import { compile } from '@ghost/predicate/compile';
 import { ArbiterError, ArbiterErrorCode } from './errors.js';
 import { compileThenActions } from './then-compiler.js';
 
@@ -30,7 +30,7 @@ export function compileRule(rule: ProductionRule): CompiledRule {
     );
   }
 
-  const condition = compileShorthand(rule.when);
+  const condition = compile(rule.when);
   const actions = compileThenActions(rule.then);
   const elseActions = rule.else ? compileThenActions(rule.else) : undefined;
 

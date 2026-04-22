@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { find } from '../collection/find.js';
-import { compileShorthand } from '../shorthand.js';
+import { compile } from '../compile.js';
 import { evaluate } from '../evaluator.js';
 import { compileFilter } from '../filter-compiler.js';
 import type { EvaluationScope, ExprNode } from '../ast.js';
@@ -221,7 +221,7 @@ describe('memory footprint', () => {
     const predBefore = process.memoryUsage().heapUsed;
     const predCompiled: ExprNode[] = [];
     for (let i = 0; i < 1000; i++) {
-      predCompiled.push(compileShorthand(queries[i % queries.length]!));
+      predCompiled.push(compile(queries[i % queries.length]!));
     }
     const predAfter = process.memoryUsage().heapUsed;
     const predBytes = predAfter - predBefore;

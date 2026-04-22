@@ -13,6 +13,38 @@
     "./collection": {
       "types": "./src/collection/index.ts",
       "import": "./src/collection/index.ts"
+    },
+    "./filter": {
+      "types": "./src/filter-compiler.ts",
+      "import": "./src/filter-compiler.ts"
+    },
+    "./compile": {
+      "types": "./src/compile.ts",
+      "import": "./src/compile.ts"
+    },
+    "./evaluate": {
+      "types": "./src/evaluator.ts",
+      "import": "./src/evaluator.ts"
+    },
+    "./trace": {
+      "types": "./src/failure-trace.ts",
+      "import": "./src/failure-trace.ts"
+    },
+    "./operators": {
+      "types": "./src/operators.ts",
+      "import": "./src/operators.ts"
+    },
+    "./ast": {
+      "types": "./src/ast.ts",
+      "import": "./src/ast.ts"
+    },
+    "./errors": {
+      "types": "./src/errors.ts",
+      "import": "./src/errors.ts"
+    },
+    "./safe-path": {
+      "types": "./src/safe-path.ts",
+      "import": "./src/safe-path.ts"
     }
   },
   "scripts": {

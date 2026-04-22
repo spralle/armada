@@ -1,5 +1,6 @@
 import type { ExprNode, EvaluationScope } from './ast.js';
 import { evaluate } from './evaluator.js';
+import { resolvePath } from './path-utils.js';
 
 export interface PredicateFailureTrace {
   readonly path: string;
@@ -14,17 +15,6 @@ export interface EvaluateWithTraceResult {
 }
 
 const COMPARISON_OPS = new Set(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$exists', '$regex']);
-
-function resolvePath(path: string, scope: EvaluationScope): unknown {
-  let current: unknown = scope;
-  for (const segment of path.split('.')) {
-    if (current === null || current === undefined || typeof current !== 'object') {
-      return undefined;
-    }
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return current;
-}
 
 function collectTraces(
   node: ExprNode,

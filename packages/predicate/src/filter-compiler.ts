@@ -1,23 +1,54 @@
 import type { ExprNode } from './ast.js';
 import { PredicateError } from './errors.js';
-import { assertSafeSegment } from './safe-path.js';
-import { compileShorthand, type ShorthandQuery } from './shorthand.js';
+import { compile, type Query } from './compile.js';
+import { PATH_MISSING, validateAndSplitPath, assertComparableTypes, collectPath, collectArrayLeaves, normalizeComparable } from './path-utils.js';
+import type { OperatorRegistry } from './operators.js';
 
 export type FilterFn = (doc: Readonly<Record<string, unknown>>) => boolean;
 
+export interface CompileFilterOptions {
+  readonly registry?: OperatorRegistry;
+}
+
 type ScopeFn = (scope: Record<string, unknown>) => unknown;
 
-const PATH_MISSING = Symbol('PATH_MISSING');
+// ---------------------------------------------------------------------------
+// Regex LRU cache
+// ---------------------------------------------------------------------------
+
+const REGEX_CACHE_MAX = 256;
+const regexCache = new Map<string, RegExp>();
+
+/** Clear the regex cache (useful for testing and memory cleanup). */
+export function clearRegexCache(): void {
+  regexCache.clear();
+}
+
+/** Visible for testing — returns current regex cache size. */
+export function getRegexCacheSize(): number {
+  return regexCache.size;
+}
+
+function getCachedRegex(pattern: string, flags?: string): RegExp {
+  const key = flags ? `${pattern}\0${flags}` : pattern;
+  const existing = regexCache.get(key);
+  if (existing) {
+    regexCache.delete(key);
+    regexCache.set(key, existing);
+    return existing;
+  }
+  const re = new RegExp(pattern, flags);
+  if (regexCache.size >= REGEX_CACHE_MAX) {
+    const oldest = regexCache.keys().next().value;
+    if (oldest !== undefined) regexCache.delete(oldest);
+  }
+  regexCache.set(key, re);
+  return re;
+}
 
 // ---------------------------------------------------------------------------
 // Path compilation
 // ---------------------------------------------------------------------------
-
-function validateAndSplitPath(path: string): readonly string[] {
-  const segments = path.split('.');
-  for (const seg of segments) assertSafeSegment(seg);
-  return segments;
-}
 
 function compilePath(node: ExprNode & { kind: 'path' }): ScopeFn {
   const segments = validateAndSplitPath(node.path);
@@ -25,14 +56,7 @@ function compilePath(node: ExprNode & { kind: 'path' }): ScopeFn {
     const key = segments[0]!;
     return (scope) => scope[key];
   }
-  return (scope) => {
-    let current: unknown = scope;
-    for (let i = 0; i < segments.length; i++) {
-      if (current === null || current === undefined || typeof current !== 'object') return undefined;
-      current = (current as Record<string, unknown>)[segments[i]!];
-    }
-    return current;
-  };
+  return (scope) => collectPath(scope, segments);
 }
 
 function compilePathWithMissing(node: ExprNode & { kind: 'path' }): ScopeFn {
@@ -42,14 +66,8 @@ function compilePathWithMissing(node: ExprNode & { kind: 'path' }): ScopeFn {
     return (scope) => (key in scope ? scope[key] : PATH_MISSING);
   }
   return (scope) => {
-    let current: unknown = scope;
-    for (let i = 0; i < segments.length; i++) {
-      if (current === null || current === undefined || typeof current !== 'object') return PATH_MISSING;
-      const seg = segments[i]!;
-      if (!(seg in (current as Record<string, unknown>))) return PATH_MISSING;
-      current = (current as Record<string, unknown>)[seg];
-    }
-    return current;
+    const result = collectPath(scope, segments);
+    return result === undefined ? PATH_MISSING : result;
   };
 }
 
@@ -77,7 +95,8 @@ function compileComparison(op: string, args: readonly ExprNode[]): ScopeFn {
       if (a === PATH_MISSING && b === PATH_MISSING) return true;
       if (a === PATH_MISSING) return b === undefined;
       if (b === PATH_MISSING) return a === undefined;
-      return a === b;
+      if (Array.isArray(a)) return a.some((v) => normalizeComparable(v) === normalizeComparable(b));
+      return normalizeComparable(a) === normalizeComparable(b);
     };
   }
   if (op === '$ne') {
@@ -87,7 +106,8 @@ function compileComparison(op: string, args: readonly ExprNode[]): ScopeFn {
       if (a === PATH_MISSING && b === PATH_MISSING) return false;
       if (a === PATH_MISSING) return b !== undefined;
       if (b === PATH_MISSING) return a !== undefined;
-      return a !== b;
+      if (Array.isArray(a)) return !a.some((v) => normalizeComparable(v) === normalizeComparable(b));
+      return normalizeComparable(a) !== normalizeComparable(b);
     };
   }
   // $gt, $gte, $lt, $lte
@@ -96,8 +116,15 @@ function compileComparison(op: string, args: readonly ExprNode[]): ScopeFn {
     const a = resolveA(scope);
     const b = resolveB(scope);
     if (a === PATH_MISSING || b === PATH_MISSING) return false;
+    if (Array.isArray(a)) {
+      const nb = normalizeComparable(b);
+      return a.some((v) => {
+        const nv = normalizeComparable(v);
+        return typeof nv === typeof nb && cmpFn(nv, nb);
+      });
+    }
     assertComparableTypes(a, b, op);
-    return cmpFn(a as number | string, b as number | string);
+    return cmpFn(normalizeComparable(a), normalizeComparable(b));
   };
 }
 
@@ -111,23 +138,16 @@ function buildCmpFn(op: string): (a: number | string, b: number | string) => boo
   }
 }
 
-function assertComparableTypes(a: unknown, b: unknown, op: string): void {
-  const ta = typeof a;
-  const tb = typeof b;
-  if (ta !== tb || (ta !== 'number' && ta !== 'string')) {
-    throw new PredicateError(
-      'FORMR_EXPR_TYPE_MISMATCH',
-      `${op} requires operands of the same type (number or string), got ${ta} and ${tb}`,
-    );
-  }
-}
-
 function compileIn(args: readonly ExprNode[]): ScopeFn {
   const resolveValue = compileNode(args[0]!);
   const listNode = args[1]!;
   if (listNode.kind === 'literal' && Array.isArray(listNode.value)) {
     const set = new Set(listNode.value as unknown[]);
-    return (scope) => set.has(resolveValue(scope));
+    return (scope) => {
+      const v = resolveValue(scope);
+      if (Array.isArray(v)) return v.some((el) => set.has(el));
+      return set.has(v);
+    };
   }
   const resolveList = compileNode(listNode);
   return (scope) => {
@@ -135,7 +155,9 @@ function compileIn(args: readonly ExprNode[]): ScopeFn {
     if (!Array.isArray(arr)) {
       throw new PredicateError('FORMR_EXPR_TYPE_MISMATCH', '$in requires second argument to be an array');
     }
-    return arr.includes(resolveValue(scope));
+    const v = resolveValue(scope);
+    if (Array.isArray(v)) return v.some((el) => arr.includes(el));
+    return arr.includes(v);
   };
 }
 
@@ -144,7 +166,11 @@ function compileNin(args: readonly ExprNode[]): ScopeFn {
   const listNode = args[1]!;
   if (listNode.kind === 'literal' && Array.isArray(listNode.value)) {
     const set = new Set(listNode.value as unknown[]);
-    return (scope) => !set.has(resolveValue(scope));
+    return (scope) => {
+      const v = resolveValue(scope);
+      if (Array.isArray(v)) return !v.some((el) => set.has(el));
+      return !set.has(v);
+    };
   }
   const resolveList = compileNode(listNode);
   return (scope) => {
@@ -152,7 +178,9 @@ function compileNin(args: readonly ExprNode[]): ScopeFn {
     if (!Array.isArray(arr)) {
       throw new PredicateError('FORMR_EXPR_TYPE_MISMATCH', '$nin requires second argument to be an array');
     }
-    return !arr.includes(resolveValue(scope));
+    const v = resolveValue(scope);
+    if (Array.isArray(v)) return !v.some((el) => arr.includes(el));
+    return !arr.includes(v);
   };
 }
 
@@ -164,12 +192,11 @@ function compileRegex(args: readonly ExprNode[]): ScopeFn {
   const flags = flagsNode?.kind === 'literal' ? String(flagsNode.value) : undefined;
 
   if (pattern !== null) {
-    const re = new RegExp(pattern, flags);
+    const re = getCachedRegex(pattern, flags);
     return (scope) => {
       const target = resolveTarget(scope);
-      if (typeof target !== 'string') {
-        throw new PredicateError('FORMR_EXPR_TYPE_MISMATCH', '$regex requires string operands');
-      }
+      if (Array.isArray(target)) return target.some((v) => typeof v === 'string' && re.test(v));
+      if (typeof target !== 'string') return false;
       return re.test(target);
     };
   }
@@ -177,10 +204,13 @@ function compileRegex(args: readonly ExprNode[]): ScopeFn {
   return (scope) => {
     const target = resolveTarget(scope);
     const pat = resolvePattern(scope);
-    if (typeof target !== 'string' || typeof pat !== 'string') {
+    if (typeof pat !== 'string') {
       throw new PredicateError('FORMR_EXPR_TYPE_MISMATCH', '$regex requires string operands');
     }
-    return new RegExp(pat, flags).test(target);
+    const re = getCachedRegex(pat, flags);
+    if (Array.isArray(target)) return target.some((v) => typeof v === 'string' && re.test(v));
+    if (typeof target !== 'string') return false;
+    return re.test(target);
   };
 }
 
@@ -198,11 +228,25 @@ function compileExists(args: readonly ExprNode[]): ScopeFn {
   };
 }
 
-function compileElemMatch(args: readonly ExprNode[]): ScopeFn {
-  const resolvePath = args[0]!.kind === 'path'
-    ? compilePath(args[0] as ExprNode & { kind: 'path' })
-    : compileNode(args[0]!);
-  const subFilter = compileNode(args[1]!);
+function compileElemMatch(args: readonly ExprNode[], registry?: OperatorRegistry): ScopeFn {
+  const pathNode = args[0]!;
+  const subFilter = compileNode(args[1]!, registry);
+
+  // For dotted paths, use collectArrayLeaves to mirror kuery's lastPathMustBeArray behavior
+  if (pathNode.kind === 'path' && pathNode.path.includes('.')) {
+    const segments = validateAndSplitPath(pathNode.path);
+    return (scope) => {
+      const arrays = collectArrayLeaves(scope, segments);
+      return arrays.some((arr) =>
+        arr.some((el) => Boolean(subFilter(el as Record<string, unknown>))),
+      );
+    };
+  }
+
+  // Simple (non-dotted) path: resolve directly and check if it's an array
+  const resolvePath = pathNode.kind === 'path'
+    ? compilePath(pathNode as ExprNode & { kind: 'path' })
+    : compileNode(pathNode);
   return (scope) => {
     const arr = resolvePath(scope);
     if (!Array.isArray(arr)) return false;
@@ -210,29 +254,37 @@ function compileElemMatch(args: readonly ExprNode[]): ScopeFn {
   };
 }
 
-function compileOp(node: ExprNode & { kind: 'op' }): ScopeFn {
+function compileOp(node: ExprNode & { kind: 'op' }, registry?: OperatorRegistry): ScopeFn {
   const { op, args } = node;
 
   if (op === '$eq' || op === '$ne' || op === '$gt' || op === '$gte' || op === '$lt' || op === '$lte') {
     return compileComparison(op, args);
   }
   if (op === '$and') {
-    const compiled = args.map(compileNode);
+    const compiled = args.map((a) => compileNode(a, registry));
     return (scope) => compiled.every((fn) => Boolean(fn(scope)));
   }
   if (op === '$or') {
-    const compiled = args.map(compileNode);
+    const compiled = args.map((a) => compileNode(a, registry));
     return (scope) => compiled.some((fn) => Boolean(fn(scope)));
   }
   if (op === '$not') {
-    const inner = compileNode(args[0]!);
+    const inner = compileNode(args[0]!, registry);
     return (scope) => !inner(scope);
   }
   if (op === '$in') return compileIn(args);
   if (op === '$nin') return compileNin(args);
   if (op === '$regex') return compileRegex(args);
   if (op === '$exists') return compileExists(args);
-  if (op === '$elemMatch') return compileElemMatch(args);
+  if (op === '$elemMatch') return compileElemMatch(args, registry);
+
+  if (registry) {
+    const handler = registry.getHandler(op);
+    if (handler) {
+      const compiledArgs = args.map((a) => compileNode(a, registry));
+      return (scope) => handler(compiledArgs.map((fn) => fn(scope)), scope);
+    }
+  }
 
   throw new PredicateError('PREDICATE_UNKNOWN_OPERATOR', `Unknown operator: ${op}`);
 }
@@ -241,11 +293,11 @@ function compileOp(node: ExprNode & { kind: 'op' }): ScopeFn {
 // Node dispatch
 // ---------------------------------------------------------------------------
 
-function compileNode(node: ExprNode): ScopeFn {
+function compileNode(node: ExprNode, registry?: OperatorRegistry): ScopeFn {
   switch (node.kind) {
     case 'literal': return compileLiteral(node);
     case 'path': return compilePath(node);
-    case 'op': return compileOp(node);
+    case 'op': return compileOp(node, registry);
   }
 }
 
@@ -260,13 +312,18 @@ function compileArgWithMissing(node: ExprNode): ScopeFn {
 // ---------------------------------------------------------------------------
 
 /** Compile a MongoDB-style query to an optimized native filter function. */
-export function compileFilter(query: ShorthandQuery): FilterFn {
-  const ast = compileShorthand(query);
+export function compileFilter(query: Query): FilterFn {
+  const ast = compile(query);
   return compileFilterFromAst(ast);
 }
 
 /** Compile an existing AST to an optimized native filter function. */
-export function compileFilterFromAst(ast: ExprNode): FilterFn {
-  const inner = compileNode(ast);
+export function compileFilterFromAst(ast: ExprNode, options?: CompileFilterOptions): FilterFn {
+  const inner = compileNode(ast, options?.registry);
   return (doc) => Boolean(inner(doc as Record<string, unknown>));
+}
+
+/** Compile an AST to a raw scope function (returns unknown, not boolean). */
+export function compileRawFromAst(ast: ExprNode, options?: CompileFilterOptions): (doc: Readonly<Record<string, unknown>>) => unknown {
+  return compileNode(ast, options?.registry);
 }

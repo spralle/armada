@@ -1,5 +1,6 @@
-import type { ShorthandQuery } from '../shorthand.js';
+import type { Query } from '../compile.js';
 import { compileFilter } from '../filter-compiler.js';
+import { getNestedValue } from '../path-utils.js';
 
 export interface FindOptions {
   readonly skip?: number;
@@ -13,17 +14,6 @@ function compareValues(a: unknown, b: unknown): number {
   if (a === undefined && b !== undefined) return -1;
   if (a !== undefined && b === undefined) return 1;
   return 0;
-}
-
-function getNestedValue(obj: unknown, path: string): unknown {
-  let current: unknown = obj;
-  for (const segment of path.split('.')) {
-    if (current === null || current === undefined || typeof current !== 'object') {
-      return undefined;
-    }
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return current;
 }
 
 function applySorting<T>(items: readonly T[], sort: Record<string, 1 | -1>): readonly T[] {
@@ -45,7 +35,7 @@ function applySorting<T>(items: readonly T[], sort: Record<string, 1 | -1>): rea
 
 export function find<T>(
   collection: readonly T[],
-  query: ShorthandQuery,
+  query: Query,
   options?: FindOptions,
 ): readonly T[] {
   const filter = compileFilter(query);

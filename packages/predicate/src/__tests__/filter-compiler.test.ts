@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { compileFilter, compileFilterFromAst } from '../filter-compiler.js';
-import { compileShorthand } from '../shorthand.js';
+import { compile } from '../compile.js';
 import { clearRegexCache, getRegexCacheSize } from '../evaluator.js';
 
 // ---------------------------------------------------------------------------
@@ -197,7 +197,7 @@ describe('compileFilter', () => {
   // ---------------------------------------------------------------------------
 
   test('compileFilterFromAst works with pre-compiled AST', () => {
-    const ast = compileShorthand({ status: 'active' });
+    const ast = compile({ status: 'active' });
     const filter = compileFilterFromAst(ast);
     expect(filter({ status: 'active' })).toBe(true);
     expect(filter({ status: 'inactive' })).toBe(false);
@@ -237,10 +237,10 @@ describe('regex cache LRU', () => {
     // The evaluator cache is tested separately.
     // Here we test the evaluator cache size via getRegexCacheSize.
     const { evaluate } = require('../evaluator.js');
-    const { compileShorthand } = require('../shorthand.js');
+    const { compile: compileQuery } = require('../compile.js');
 
     for (let i = 0; i < 300; i++) {
-      const ast = compileShorthand({ name: { $regex: `^pattern_${i}` } });
+      const ast = compileQuery({ name: { $regex: `^pattern_${i}` } });
       evaluate(ast, { name: `pattern_${i}_test` });
     }
 

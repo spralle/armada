@@ -8,7 +8,8 @@ export type PredicateErrorCode =
   | 'FORMR_EXPR_TYPE_MISMATCH'
   | 'PREDICATE_PROTOTYPE_POLLUTION'
   | 'PREDICATE_DEPTH_EXCEEDED'
-  | 'PREDICATE_UNKNOWN_OPERATOR';
+  | 'PREDICATE_UNKNOWN_OPERATOR'
+  | 'PREDICATE_FIND_ONE';
 
 export class PredicateError extends Error {
   readonly code: PredicateErrorCode;
