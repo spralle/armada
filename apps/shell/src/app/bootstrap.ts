@@ -16,6 +16,7 @@ import { registerSyncStatusServiceCapability } from "../sync-status-service-regi
 import { registerActivityStatusServiceCapability } from "../activity-status-service-registration.js";
 import { registerContextServiceCapability } from "../context-service-registration.js";
 import { registerKeybindingServiceCapability } from "../keybinding-service-registration.js";
+import { registerHookRegistryCapability } from "../hook-registry-registration.js";
 import {
   createPluginConfigSyncController,
   deriveNamespace,
@@ -136,6 +137,9 @@ export async function bootstrapShellWithTenantManifest(
   if (options.keybindingServiceDeps) {
     registerKeybindingServiceCapability(registry, options.keybindingServiceDeps);
   }
+
+  // Register hook registry so plugins can register lifecycle hooks.
+  registerHookRegistryCapability(registry);
 
   // Now activate onStartup plugins — all 7 builtin services are available.
   const activationResult = await activateByStartupEvent(registry, options.onProgress ? () => options.onProgress!(registry) : undefined);

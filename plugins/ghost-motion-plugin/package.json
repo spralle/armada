@@ -8,8 +8,18 @@
     "activationEvents": ["onStartup"],
     "contributes": {
       "capabilities": {
-        "services": [{ "id": "ghost.motion.service", "version": "0.1.0" }]
+        "services": [{ "id": "ghost.motion.service", "version": "0.1.0" }],
+        "components": [{ "id": "ghost.motion.settings-panel", "version": "0.1.0" }]
       },
+      "sections": [
+        {
+          "id": "ghost.motion.settings",
+          "title": "Motion",
+          "target": "config.appearance",
+          "order": 200,
+          "component": "ghost.motion.settings-panel"
+        }
+      ],
       "configuration": {
         "properties": {
           "ghost.motion.enabled": {
@@ -52,6 +62,18 @@
           }
         }
       }
+    },
+    "dependsOn": {
+      "plugins": [
+        {
+          "pluginId": "ghost.ui",
+          "versionRange": "^1.0.0"
+        },
+        {
+          "pluginId": "ghost.shadcn.theme-bridge",
+          "versionRange": "^1.0.0"
+        }
+      ]
     }
   },
   "scripts": {
@@ -59,10 +81,18 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+    "@ghost/ui": "file:../../packages/ui",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@module-federation/vite": "^1.8.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@tailwindcss/vite": "^4.0.0",
+    "tailwindcss": "^4.0.0",
     "vite": "^5.4.19"
   }
 }

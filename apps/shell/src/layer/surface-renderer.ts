@@ -1,6 +1,7 @@
 import type {
   PluginLayerSurfaceContribution,
   LayerSurfaceContext,
+  ElementTransitionHook,
 } from "@ghost/plugin-contracts";
 import {
   evaluateContributionPredicate,
@@ -15,6 +16,7 @@ import { type KeyboardExclusiveManager, createKeyboardExclusiveManager } from ".
 import { type FocusGrabManager, createFocusGrabManager } from "./focus-grab.js";
 import { type SessionLockManager, createSessionLockManager } from "./session-lock.js";
 import { reconcileLayerContainer, type ReconcilerContext } from "./surface-reconciler.js";
+import { type HookRegistry, HOOK_REGISTRY_SERVICE_ID, ELEMENT_TRANSITION_HOOK_ID } from "../hook-registry.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -149,6 +151,25 @@ export function createLayerSurfaceRenderer(
       maybeActivateSurfaceBehaviors,
       onSurfaceMounted,
       onSurfaceMountError,
+      onSurfaceEntering(el: HTMLElement, _surfaceId: string, _pluginId: string) {
+        const hookReg = runtime.registry.getService(HOOK_REGISTRY_SERVICE_ID) as HookRegistry | null;
+        if (!hookReg) return;
+        const hooks = hookReg.getHooks<ElementTransitionHook>(ELEMENT_TRANSITION_HOOK_ID);
+        for (const hook of hooks) {
+          hook.onEnter?.(el, { type: "surface", id: _surfaceId });
+        }
+      },
+      async onSurfaceExiting(el: HTMLElement, _surfaceId: string, _pluginId: string) {
+        const hookReg = runtime.registry.getService(HOOK_REGISTRY_SERVICE_ID) as HookRegistry | null;
+        if (!hookReg) return;
+        const hooks = hookReg.getHooks<ElementTransitionHook>(ELEMENT_TRANSITION_HOOK_ID);
+        const exitPromises = hooks
+          .filter(h => typeof h.onExit === "function")
+          .map(h => h.onExit!(el, { type: "surface", id: _surfaceId }));
+        if (exitPromises.length > 0) {
+          await Promise.all(exitPromises);
+        }
+      },
     };
   }
 

@@ -1,5 +1,6 @@
-import type { PluginContract, GhostApi, ActivationContext } from "@ghost/plugin-contracts";
+import type { PluginContract, GhostApi, ActivationContext, HookService, ElementTransitionHook } from "@ghost/plugin-contracts";
 import { activateMotion, deactivateMotion } from "./plugin-services-expose.js";
+import { createMotionTransitionHook } from "./motion-hook.js";
 import pkg from "../package.json" with { type: "json" };
 
 const ghost = pkg.ghost as {
@@ -8,6 +9,9 @@ const ghost = pkg.ghost as {
   dependsOn?: Record<string, unknown>;
   activationEvents?: string[];
 };
+
+const HOOK_REGISTRY_SERVICE_ID = "ghost.hooks.registry";
+const ELEMENT_TRANSITION_HOOK_ID = "ghost.hooks.element-transition";
 
 export const pluginContract: PluginContract = {
   manifest: { id: pkg.name, name: ghost.displayName, version: pkg.version },
@@ -21,6 +25,16 @@ export const pluginContract: PluginContract = {
 export function activate(_api: GhostApi, context: ActivationContext): void {
   activateMotion();
   context.subscriptions.push({ dispose: deactivateMotion });
+
+  // Register element transition hook if hook service is available
+  if (context.services) {
+    const hookService = context.services.getService<HookService>(HOOK_REGISTRY_SERVICE_ID);
+    if (hookService) {
+      const hook = createMotionTransitionHook();
+      const registration = hookService.add<ElementTransitionHook>(ELEMENT_TRANSITION_HOOK_ID, hook);
+      context.subscriptions.push(registration);
+    }
+  }
 }
 
 export function deactivate(): void {

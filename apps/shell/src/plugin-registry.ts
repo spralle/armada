@@ -1,4 +1,4 @@
-import type { PluginContract } from "@ghost/plugin-contracts";
+import type { PluginContract, PluginServices } from "@ghost/plugin-contracts";
 import {
   createCapabilityRegistry,
   pickComponentModuleExport,
@@ -55,6 +55,32 @@ export function createShellPluginRegistry(
       contract: state.contract,
     })),
   );
+  // Lazy service accessor for activation contexts — closes over capabilityRegistry
+  // and states which are available. Safe because plugins activate after construction.
+  const activationServices: PluginServices = {
+    getService<T = unknown>(serviceId: string): T | null {
+      const provider = capabilityRegistry.resolveService(serviceId, {
+        requesterPluginId: "shell",
+      });
+      if (!provider) return null;
+      const state = states.get(provider.providerPluginId);
+      if (!state) return null;
+      if (state.builtinServiceInstances?.has(serviceId)) {
+        return (state.builtinServiceInstances.get(serviceId) as T) ?? null;
+      }
+      if (state.servicesModule && state.contract) {
+        const providerServices = readCapabilityServices(state.contract);
+        const cap = providerServices.find(s => s.id === serviceId);
+        if (cap) {
+          return (pickServiceModuleExport(state.servicesModule, cap) as T) ?? null;
+        }
+      }
+      return null;
+    },
+    hasService(serviceId: string): boolean {
+      return this.getService(serviceId) !== null;
+    },
+  };
   const ensureActivated = createActivationController(
     states,
     diagnostics,
@@ -62,6 +88,7 @@ export function createShellPluginRegistry(
     capabilityRegistry,
     options.apiDeps,
     options.layerRegistry ?? null,
+    activationServices,
   );
   const listeners = new Set<() => void>();
 
