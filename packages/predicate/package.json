@@ -18,5 +18,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "bun test"
+  },
+  "devDependencies": {
+    "kuery": "0.6.0"
   }
 }

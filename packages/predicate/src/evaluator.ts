@@ -14,6 +14,38 @@ export interface EvaluateOptions {
 
 const MISSING = Symbol('MISSING');
 
+const REGEX_CACHE_MAX = 256;
+const regexCache = new Map<string, RegExp>();
+
+/** Clear the regex cache (useful for testing and memory cleanup). */
+export function clearRegexCache(): void {
+  regexCache.clear();
+}
+
+/** Visible for testing — returns current regex cache size. */
+export function getRegexCacheSize(): number {
+  return regexCache.size;
+}
+
+function getCachedRegex(pattern: string, flags?: string): RegExp {
+  const key = flags ? `${pattern}\0${flags}` : pattern;
+  const existing = regexCache.get(key);
+  if (existing) {
+    // Move to end (most recently used)
+    regexCache.delete(key);
+    regexCache.set(key, existing);
+    return existing;
+  }
+  const re = new RegExp(pattern, flags);
+  if (regexCache.size >= REGEX_CACHE_MAX) {
+    // Evict oldest (first key)
+    const oldest = regexCache.keys().next().value;
+    if (oldest !== undefined) regexCache.delete(oldest);
+  }
+  regexCache.set(key, re);
+  return re;
+}
+
 function resolvePath(path: string, scope: EvaluationScope): unknown {
   const segments = path.split('.');
   let current: unknown = scope;
@@ -187,7 +219,19 @@ function executeOperator(
           '$regex requires string operands',
         );
       }
-      return new RegExp(pattern).test(target);
+      const flags = args.length > 2
+        ? evaluateInner(args[2], scope, depth, maxDepth, registry)
+        : undefined;
+      const flagStr = typeof flags === 'string' ? flags : undefined;
+      return getCachedRegex(pattern, flagStr).test(target);
+    }
+    case '$elemMatch': {
+      const arr = resolveArg(args[0], scope, depth, maxDepth, registry);
+      if (arr === MISSING || !Array.isArray(arr)) return false;
+      const subQuery = args[1];
+      return arr.some((element) => {
+        return Boolean(evaluateInner(subQuery, element as EvaluationScope, depth + 1, maxDepth, registry));
+      });
     }
     default:
       throw new PredicateError(

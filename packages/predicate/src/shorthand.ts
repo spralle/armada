@@ -33,7 +33,29 @@ function makeLiteralArray(arr: readonly unknown[]): ExprNode {
 
 function compileFieldOperators(field: string, operators: Record<string, unknown>): ExprNode {
   const entries = Object.entries(operators);
-  const nodes: ExprNode[] = entries.map(([op, value]) => {
+  const hasOptions = '$options' in operators;
+  const nodes: ExprNode[] = [];
+
+  for (const [op, value] of entries) {
+    if (op === '$options') continue;
+
+    if (op === '$elemMatch') {
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        throw new Error('$elemMatch requires an object sub-query');
+      }
+      nodes.push({ kind: 'op', op: '$elemMatch', args: [makePath(field), compileShorthand(value as ShorthandQuery)] });
+      continue;
+    }
+
+    if (op === '$regex') {
+      const regexArgs: ExprNode[] = [makePath(field), makeLiteral(String(value))];
+      if (hasOptions) {
+        regexArgs.push(makeLiteral(String(operators['$options'])));
+      }
+      nodes.push({ kind: 'op', op: '$regex', args: regexArgs });
+      continue;
+    }
+
     if (!COMPARISON_OPS.has(op)) {
       throw new Error(`Unknown operator: ${op}`);
     }
@@ -41,22 +63,28 @@ function compileFieldOperators(field: string, operators: Record<string, unknown>
       if (!Array.isArray(value)) {
         throw new Error(`${op} requires an array value`);
       }
-      return { kind: 'op', op, args: [makePath(field), makeLiteralArray(value)] } as ExprNode;
+      nodes.push({ kind: 'op', op, args: [makePath(field), makeLiteralArray(value)] });
+      continue;
     }
     if (op === '$exists') {
-      return { kind: 'op', op: '$exists', args: [makePath(field), makeLiteral(Boolean(value))] } as ExprNode;
+      nodes.push({ kind: 'op', op: '$exists', args: [makePath(field), makeLiteral(Boolean(value))] });
+      continue;
     }
-    if (op === '$regex') {
-      return { kind: 'op', op: '$regex', args: [makePath(field), makeLiteral(String(value))] } as ExprNode;
-    }
-    return { kind: 'op', op, args: [makePath(field), makeLiteral(value)] } as ExprNode;
-  });
+    nodes.push({ kind: 'op', op, args: [makePath(field), makeLiteral(value)] });
+  }
 
   if (nodes.length === 1) return nodes[0];
   return { kind: 'op', op: '$and', args: nodes };
 }
 
 function compileFieldEntry(field: string, value: unknown): ExprNode {
+  if (value instanceof RegExp) {
+    const args: ExprNode[] = [makePath(field), makeLiteral(value.source)];
+    if (value.flags) {
+      args.push(makeLiteral(value.flags));
+    }
+    return { kind: 'op', op: '$regex', args };
+  }
   if (isOperatorObject(value)) {
     return compileFieldOperators(field, value as Record<string, unknown>);
   }

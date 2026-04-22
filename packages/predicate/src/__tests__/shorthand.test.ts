@@ -208,5 +208,110 @@ describe('compileShorthand', () => {
     it('empty query evaluates to true', () => {
       expect(evaluate(compileShorthand({}), {})).toBe(true);
     });
+
+    it('$elemMatch matches element in array', () => {
+      const ast = compileShorthand({ orders: { $elemMatch: { amount: { $gte: 100 } } } });
+      expect(evaluate(ast, { orders: [{ amount: 50 }, { amount: 150 }] })).toBe(true);
+      expect(evaluate(ast, { orders: [{ amount: 10 }, { amount: 20 }] })).toBe(false);
+    });
+
+    it('$elemMatch returns false for non-array', () => {
+      const ast = compileShorthand({ orders: { $elemMatch: { amount: { $gte: 100 } } } });
+      expect(evaluate(ast, { orders: 'not-an-array' })).toBe(false);
+    });
+
+    it('$elemMatch returns false for missing field', () => {
+      const ast = compileShorthand({ orders: { $elemMatch: { amount: { $gte: 100 } } } });
+      expect(evaluate(ast, {})).toBe(false);
+    });
+
+    it('$regex with $options flags', () => {
+      const ast = compileShorthand({ name: { $regex: '^alice', $options: 'i' } });
+      expect(evaluate(ast, { name: 'Alice' })).toBe(true);
+      expect(evaluate(ast, { name: 'ALICE' })).toBe(true);
+      expect(evaluate(ast, { name: 'Bob' })).toBe(false);
+    });
+
+    it('RegExp literal compiles to $regex', () => {
+      const ast = compileShorthand({ name: /^Alice/i });
+      expect(evaluate(ast, { name: 'Alice' })).toBe(true);
+      expect(evaluate(ast, { name: 'alice' })).toBe(true);
+      expect(evaluate(ast, { name: 'Bob' })).toBe(false);
+    });
+
+    it('RegExp literal without flags', () => {
+      const ast = compileShorthand({ name: /^Alice/ });
+      expect(evaluate(ast, { name: 'Alice' })).toBe(true);
+      expect(evaluate(ast, { name: 'alice' })).toBe(false);
+    });
+
+    it('$regex cache returns consistent results', () => {
+      const ast = compileShorthand({ email: { $regex: '@test\\.com$' } });
+      expect(evaluate(ast, { email: 'a@test.com' })).toBe(true);
+      expect(evaluate(ast, { email: 'b@test.com' })).toBe(true);
+      expect(evaluate(ast, { email: 'a@other.com' })).toBe(false);
+    });
+  });
+
+  describe('$elemMatch compilation', () => {
+    it('compiles $elemMatch with sub-query', () => {
+      const ast = compileShorthand({ items: { $elemMatch: { qty: { $gte: 5 } } } });
+      expect(ast.kind).toBe('op');
+      if (ast.kind === 'op') {
+        expect(ast.op).toBe('$elemMatch');
+        expect(ast.args[0]).toEqual(path('items'));
+      }
+    });
+
+    it('throws if $elemMatch value is not object', () => {
+      expect(() => compileShorthand({ items: { $elemMatch: 'bad' } })).toThrow('$elemMatch requires an object sub-query');
+    });
+
+    it('throws if $elemMatch value is array', () => {
+      expect(() => compileShorthand({ items: { $elemMatch: [1, 2] } })).toThrow('$elemMatch requires an object sub-query');
+    });
+  });
+
+  describe('$regex with $options compilation', () => {
+    it('compiles $regex + $options as 3-arg node', () => {
+      const ast = compileShorthand({ name: { $regex: '^test', $options: 'i' } });
+      expect(ast.kind).toBe('op');
+      if (ast.kind === 'op') {
+        expect(ast.op).toBe('$regex');
+        expect(ast.args).toHaveLength(3);
+        expect(ast.args[2]).toEqual(lit('i'));
+      }
+    });
+
+    it('compiles $regex without $options as 2-arg node', () => {
+      const ast = compileShorthand({ name: { $regex: '^test' } });
+      expect(ast.kind).toBe('op');
+      if (ast.kind === 'op') {
+        expect(ast.op).toBe('$regex');
+        expect(ast.args).toHaveLength(2);
+      }
+    });
+  });
+
+  describe('RegExp literal compilation', () => {
+    it('compiles RegExp with flags to 3-arg $regex', () => {
+      const ast = compileShorthand({ name: /^test/gi });
+      expect(ast.kind).toBe('op');
+      if (ast.kind === 'op') {
+        expect(ast.op).toBe('$regex');
+        expect(ast.args).toHaveLength(3);
+        expect(ast.args[1]).toEqual(lit('^test'));
+        expect(ast.args[2]).toEqual(lit('gi'));
+      }
+    });
+
+    it('compiles RegExp without flags to 2-arg $regex', () => {
+      const ast = compileShorthand({ name: /^test/ });
+      expect(ast.kind).toBe('op');
+      if (ast.kind === 'op') {
+        expect(ast.op).toBe('$regex');
+        expect(ast.args).toHaveLength(2);
+      }
+    });
   });
 });

@@ -1,6 +1,5 @@
-import { compileShorthand, type ShorthandQuery } from '../shorthand.js';
-import { evaluate } from '../evaluator.js';
-import type { EvaluationScope } from '../ast.js';
+import type { ShorthandQuery } from '../shorthand.js';
+import { compileFilter } from '../filter-compiler.js';
 
 export interface FindOptions {
   readonly skip?: number;
@@ -49,11 +48,10 @@ export function find<T>(
   query: ShorthandQuery,
   options?: FindOptions,
 ): readonly T[] {
-  const ast = compileShorthand(query);
+  const filter = compileFilter(query);
 
   let results = collection.filter((item) => {
-    const scope = item as unknown as EvaluationScope;
-    return Boolean(evaluate(ast, scope));
+    return filter(item as unknown as Record<string, unknown>);
   });
 
   if (options?.sort) {
