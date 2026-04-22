@@ -168,7 +168,8 @@ function handleRoutedRequest(
   if (instance) {
     // Intercept mf-manifest.json to rewrite asset URLs to absolute paths
     if (routeResult.strippedPath === "/mf-manifest.json") {
-      req.url = routeResult.strippedPath;
+      // MF vite plugin serves dev manifest at `${base}mf-manifest.json`, so keep the base prefix
+      req.url = `/${routeResult.pluginId}${routeResult.strippedPath}`;
       const originalWrite = res.write.bind(res);
       const originalEnd = res.end.bind(res);
       const chunks: Buffer[] = [];
