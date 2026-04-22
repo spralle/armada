@@ -66,6 +66,24 @@ const QUERIES: Record<string, Record<string, unknown>> = {
   '$in': { role: { $in: ['admin', 'moderator', 'editor'] } },
   '$regex': { name: { $regex: '^User_1' } },
   'compound': { $and: [{ status: 'active' }, { score: { $gte: 50 } }, { $or: [{ role: 'admin' }, { 'address.state': 'NY' }] }] },
+  'complex-compound': {
+    $and: [
+      { $or: [
+        { status: 'active', score: { $gte: 50 } },
+        { status: 'pending', role: 'admin' },
+        { 'address.state': 'NY', score: { $lt: 20 } },
+        { role: { $in: ['editor', 'moderator'] } },
+        { 'metadata.version': { $gte: 10 } },
+      ]},
+      { $or: [
+        { 'address.city': { $in: ['NYC', 'LA', 'Chicago'] } },
+        { tags: { $in: ['tag1', 'tag3', 'tag5'] } },
+        { email: { $regex: '^user[0-9]' } },
+        { score: { $gte: 75 } },
+        { role: 'viewer', active: true },
+      ]},
+    ],
+  },
 };
 
 const ELEMATCH_QUERY = { orders: { $elemMatch: { amount: { $gte: 100 } } } };
@@ -159,7 +177,7 @@ for (const [qName, query] of Object.entries(QUERIES)) {
   describe(`query: ${qName}`, () => {
     for (const [docSize, factory] of Object.entries(DOC_FACTORIES)) {
       // Skip queries needing nested fields on small docs
-      if (docSize === 'small' && ['nested-dot', '$or', 'compound'].includes(qName)) continue;
+      if (docSize === 'small' && ['nested-dot', '$or', 'compound', 'complex-compound'].includes(qName)) continue;
 
       describe(`docs: ${docSize}`, () => {
         for (const size of COLLECTION_SIZES) {

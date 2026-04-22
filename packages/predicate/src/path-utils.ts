@@ -36,6 +36,19 @@ export function assertComparableTypes(a: unknown, b: unknown, op: string): void 
  * For multi-segment paths, arrays encountered mid-traversal are iterated.
  */
 export function collectPath(root: unknown, segments: readonly string[]): unknown {
+  // Fast path: direct traversal with no array allocation
+  let current: unknown = root;
+  for (let i = 0; i < segments.length; i++) {
+    if (current === null || current === undefined || typeof current !== 'object') return undefined;
+    if (Array.isArray(current)) {
+      return collectPathSlow(root, segments);
+    }
+    current = (current as Record<string, unknown>)[segments[i]!];
+  }
+  return current;
+}
+
+function collectPathSlow(root: unknown, segments: readonly string[]): unknown {
   let targets: unknown[] = [root];
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i]!;
@@ -59,6 +72,16 @@ export function collectPath(root: unknown, segments: readonly string[]): unknown
   if (targets.length === 0) return undefined;
   if (targets.length === 1) return targets[0];
   return targets;
+}
+
+/** Resolve pre-split segments against an object (no validation, no array traversal). */
+export function resolveSegments(obj: unknown, segments: readonly string[]): unknown {
+  let current: unknown = obj;
+  for (const seg of segments) {
+    if (current === null || current === undefined || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[seg];
+  }
+  return current;
 }
 
 /**

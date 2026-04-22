@@ -86,9 +86,20 @@ function compileLiteral(node: ExprNode & { kind: 'literal' }): ScopeFn {
 
 function compileComparison(op: string, args: readonly ExprNode[]): ScopeFn {
   const resolveA = compileArgWithMissing(args[0]!);
-  const resolveB = compileArgWithMissing(args[1]!);
+  const bNode = args[1]!;
+  const isLiteral = bNode.kind === 'literal';
 
   if (op === '$eq') {
+    if (isLiteral) {
+      const bVal = bNode.value;
+      return (scope) => {
+        const a = resolveA(scope);
+        if (a === PATH_MISSING) return bVal === undefined;
+        if (Array.isArray(a)) return a.some((v) => normalizeComparable(v) === bVal);
+        return normalizeComparable(a) === bVal;
+      };
+    }
+    const resolveB = compileArgWithMissing(bNode);
     return (scope) => {
       const a = resolveA(scope);
       const b = resolveB(scope);
@@ -99,7 +110,18 @@ function compileComparison(op: string, args: readonly ExprNode[]): ScopeFn {
       return normalizeComparable(a) === normalizeComparable(b);
     };
   }
+
   if (op === '$ne') {
+    if (isLiteral) {
+      const bVal = bNode.value;
+      return (scope) => {
+        const a = resolveA(scope);
+        if (a === PATH_MISSING) return bVal !== undefined;
+        if (Array.isArray(a)) return !a.some((v) => normalizeComparable(v) === bVal);
+        return normalizeComparable(a) !== bVal;
+      };
+    }
+    const resolveB = compileArgWithMissing(bNode);
     return (scope) => {
       const a = resolveA(scope);
       const b = resolveB(scope);
@@ -110,8 +132,31 @@ function compileComparison(op: string, args: readonly ExprNode[]): ScopeFn {
       return normalizeComparable(a) !== normalizeComparable(b);
     };
   }
+
   // $gt, $gte, $lt, $lte
   const cmpFn = buildCmpFn(op);
+  if (isLiteral) {
+    const bVal = bNode.value as number | string;
+    return (scope) => {
+      const a = resolveA(scope);
+      if (a === PATH_MISSING) return false;
+      if (Array.isArray(a)) {
+        return a.some((v) => {
+          const nv = normalizeComparable(v);
+          return typeof nv === typeof bVal && cmpFn(nv, bVal);
+        });
+      }
+      const na = normalizeComparable(a);
+      if (typeof na !== typeof bVal || (typeof na !== 'number' && typeof na !== 'string')) {
+        throw new PredicateError(
+          'FORMR_EXPR_TYPE_MISMATCH',
+          `${op} requires operands of the same type (number or string), got ${typeof na} and ${typeof bVal}`,
+        );
+      }
+      return cmpFn(na, bVal);
+    };
+  }
+  const resolveB = compileArgWithMissing(bNode);
   return (scope) => {
     const a = resolveA(scope);
     const b = resolveB(scope);
@@ -193,9 +238,15 @@ function compileRegex(args: readonly ExprNode[]): ScopeFn {
 
   if (pattern !== null) {
     const re = getCachedRegex(pattern, flags);
+    const needsReset = re.global || re.sticky;
     return (scope) => {
       const target = resolveTarget(scope);
-      if (Array.isArray(target)) return target.some((v) => typeof v === 'string' && re.test(v));
+      if (needsReset) re.lastIndex = 0;
+      if (Array.isArray(target)) return target.some((v) => {
+        if (typeof v !== 'string') return false;
+        if (needsReset) re.lastIndex = 0;
+        return re.test(v);
+      });
       if (typeof target !== 'string') return false;
       return re.test(target);
     };
@@ -208,7 +259,13 @@ function compileRegex(args: readonly ExprNode[]): ScopeFn {
       throw new PredicateError('FORMR_EXPR_TYPE_MISMATCH', '$regex requires string operands');
     }
     const re = getCachedRegex(pat, flags);
-    if (Array.isArray(target)) return target.some((v) => typeof v === 'string' && re.test(v));
+    const needsReset = re.global || re.sticky;
+    if (needsReset) re.lastIndex = 0;
+    if (Array.isArray(target)) return target.some((v) => {
+      if (typeof v !== 'string') return false;
+      if (needsReset) re.lastIndex = 0;
+      return re.test(v);
+    });
     if (typeof target !== 'string') return false;
     return re.test(target);
   };

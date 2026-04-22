@@ -113,6 +113,15 @@ describe('compileFilter', () => {
     expect(filter({ name: 'user_1' })).toBe(true);
   });
 
+  test('$regex with g flag does not cause stateful lastIndex issues', () => {
+    const filter = compileFilter({ name: { $regex: 'foo', $options: 'g' } });
+    expect(filter({ name: 'foo bar' })).toBe(true);
+    expect(filter({ name: 'foo baz' })).toBe(true);
+    expect(filter({ name: 'foo qux' })).toBe(true);
+    expect(filter({ name: 'no match' })).toBe(false);
+    expect(filter({ name: 'foo again' })).toBe(true);
+  });
+
   // ---------------------------------------------------------------------------
   // $exists
   // ---------------------------------------------------------------------------

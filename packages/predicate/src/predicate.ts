@@ -2,23 +2,26 @@ import type { Query } from './compile.js';
 import type { FilterFn } from './filter-compiler.js';
 import { compileFilter } from './filter-compiler.js';
 import { PredicateError } from './errors.js';
-import { getNestedValue } from './path-utils.js';
+import { validateAndSplitPath, resolveSegments } from './path-utils.js';
 
 function compareValues(a: unknown, b: unknown): number {
   if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
   if (typeof a === 'number' && typeof b === 'number') return a - b;
-  if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b);
+  if (typeof a === 'string' && typeof b === 'string') return a < b ? -1 : a > b ? 1 : 0;
   if (a === undefined && b !== undefined) return -1;
   if (a !== undefined && b === undefined) return 1;
   return 0;
 }
 
 function applySorting<T>(items: T[], sortSpec: Record<string, 1 | -1>): T[] {
-  const entries = Object.entries(sortSpec);
+  const fields = Object.entries(sortSpec).map(([field, dir]) => ({
+    segments: validateAndSplitPath(field),
+    dir,
+  }));
   return items.sort((a, b) => {
-    for (const [field, dir] of entries) {
-      const va = getNestedValue(a, field);
-      const vb = getNestedValue(b, field);
+    for (const { segments, dir } of fields) {
+      const va = resolveSegments(a, segments);
+      const vb = resolveSegments(b, segments);
       const cmp = compareValues(va, vb) * dir;
       if (cmp !== 0) return cmp;
     }
@@ -58,6 +61,23 @@ export class Predicate<T = Record<string, unknown>> {
 
   /** Find all matching documents with optional sort/skip/limit. */
   find(collection: readonly T[]): readonly T[] {
+    const skip = this._skip ?? 0;
+    const limit = this._limit;
+
+    // Fast path: no sort + has limit — avoid full collection scan
+    if (!this._sort && limit !== undefined) {
+      const results: T[] = [];
+      let skipped = 0;
+      for (const item of collection) {
+        if (this._filter(item as unknown as Record<string, unknown>)) {
+          if (skipped < skip) { skipped++; continue; }
+          results.push(item);
+          if (results.length >= limit) break;
+        }
+      }
+      return results;
+    }
+
     let results = collection.filter(
       (item) => this._filter(item as unknown as Record<string, unknown>),
     );
@@ -66,9 +86,6 @@ export class Predicate<T = Record<string, unknown>> {
       results = applySorting(results, this._sort);
     }
 
-    const skip = this._skip ?? 0;
-    const limit = this._limit;
-
     if (skip > 0 || limit !== undefined) {
       results = results.slice(skip, limit !== undefined ? skip + limit : undefined);
     }
@@ -76,15 +93,26 @@ export class Predicate<T = Record<string, unknown>> {
     return results;
   }
 
-  /** Find exactly one matching document. Throws if count !== 1 (kuery-compatible). */
+  /**
+   * Find exactly one matching document. Throws if count !== 1 (kuery-compatible).
+   * Ignores sort/skip/limit — findOne asserts uniqueness over the full collection.
+   */
   findOne(collection: readonly T[]): T {
-    const results = this.find(collection);
-    if (results.length !== 1) {
+    let found: T | undefined;
+    let count = 0;
+    for (const item of collection) {
+      if (this._filter(item as unknown as Record<string, unknown>)) {
+        count++;
+        if (count === 1) found = item;
+        if (count > 1) break;
+      }
+    }
+    if (count !== 1) {
       throw new PredicateError(
         'PREDICATE_FIND_ONE',
-        `findOne returned ${String(results.length)} results`,
+        `findOne returned ${count === 0 ? '0' : 'multiple'} results`,
       );
     }
-    return results[0]!;
+    return found!;
   }
 }
