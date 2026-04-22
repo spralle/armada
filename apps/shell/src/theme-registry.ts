@@ -76,6 +76,8 @@ export interface ThemeRegistry {
   clearCustomBackground(): void;
   /** Get all CSS variable values for a given theme, or null if not found. */
   getThemePalette(themeId: string): Record<string, string> | null;
+  /** Remove themes from disabled plugins. Falls back if active theme was pruned. */
+  pruneDisabledPluginThemes(): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -373,6 +375,21 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
         }
       }
       return result;
+    },
+
+    pruneDisabledPluginThemes(): void {
+      const snapshot = pluginRegistry.getSnapshot();
+      const enabledIds = new Set(snapshot.plugins.filter((p) => p.enabled).map((p) => p.id));
+      discoveredThemes = discoveredThemes.filter((t) => enabledIds.has(t.pluginId));
+      if (activeThemeId && !findTheme(activeThemeId)) {
+        activeThemeId = null;
+        activeBackground = null;
+        const fallback = discoveredThemes[0] ? findTheme(discoveredThemes[0].id) : undefined;
+        if (fallback) {
+          applyTheme(fallback);
+          activeThemeId = fallback.id;
+        }
+      }
     },
   };
 }

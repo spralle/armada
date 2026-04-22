@@ -14,10 +14,15 @@ import {
 export type PluginActivateFunction =
   (api: GhostApi, context: ActivationContext) => void | Promise<void>;
 
+/** The optional deactivate() function signature exported by a plugin module. */
+export type PluginDeactivateExport =
+  (context: { readonly pluginId: string }) => void | Promise<void>;
+
 /** Result of loading and validating a plugin's contract module. */
 export interface PluginContractLoadResult {
   contract: PluginContract;
   activate: PluginActivateFunction | null;
+  deactivate: PluginDeactivateExport | null;
 }
 
 export type ShellPluginLoadMode = "remote-manifest";
@@ -116,7 +121,7 @@ export function createRuntimeFirstPluginLoader(
         remoteLoadRetryDelayMs,
         onDiagnostic,
       });
-      const { contractData, activate } = extractContractAndActivate(rawContract);
+      const { contractData, activate, deactivate } = extractContractAndActivate(rawContract);
       const parsed = parsePluginContract(contractData);
 
       if (!parsed.success) {
@@ -140,7 +145,7 @@ export function createRuntimeFirstPluginLoader(
         });
       }
 
-      return { contract: parsed.data, activate };
+      return { contract: parsed.data, activate, deactivate };
     },
     async loadPluginComponents(descriptor) {
       const mode: ShellPluginLoadMode = "remote-manifest";
@@ -356,22 +361,28 @@ function normalizeRemoteContractModule(input: unknown): unknown {
 interface ExtractedContractModule {
   contractData: unknown;
   activate: PluginActivateFunction | null;
+  deactivate: PluginDeactivateExport | null;
 }
 
 /**
- * Extract contract data and optional activate function from a raw module.
- * The activate function is a sidecar export alongside the contract data.
+ * Extract contract data and optional activate/deactivate functions from a raw module.
+ * The activate and deactivate functions are sidecar exports alongside the contract data.
  */
 function extractContractAndActivate(rawModule: unknown): ExtractedContractModule {
   let activate: PluginActivateFunction | null = null;
+  let deactivate: PluginDeactivateExport | null = null;
 
   if (rawModule && typeof rawModule === "object") {
     const record = rawModule as Record<string, unknown>;
+    // Module exports are untyped at the federation boundary; typeof guard above validates shape
     if (typeof record.activate === "function") {
       activate = record.activate as PluginActivateFunction;
+    }
+    if (typeof record.deactivate === "function") {
+      deactivate = record.deactivate as PluginDeactivateExport;
     }
   }
 
   const contractData = normalizeRemoteContractModule(rawModule);
-  return { contractData, activate };
+  return { contractData, activate, deactivate };
 }

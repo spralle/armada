@@ -148,6 +148,7 @@ export type {
   QuickPick,
   InputBoxOptions,
   ActivationContext,
+  DeactivationContext,
   ViewService,
   ViewDescriptor,
   OpenViewOptions,

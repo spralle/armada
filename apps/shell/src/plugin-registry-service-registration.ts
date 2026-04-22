@@ -89,7 +89,7 @@ function mapDependencies(contract: PluginContract | null): PluginDependencySumma
 // ---------------------------------------------------------------------------
 
 /** Build a map from target id → reverse dependency entries across all plugins. */
-function computeReverseDependencies(
+export function computeReverseDependencies(
   snap: PluginRegistrySnapshot,
 ): Map<string, PluginReverseDependency[]> {
   const reverseMap = new Map<string, PluginReverseDependency[]>();

@@ -137,6 +137,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   partHost: ShellPartHostAdapter;
   workspaceManager: WorkspaceManagerState;
   pluginConfigSyncDispose: (() => void) | null;
+  registrySubscriptionDispose: (() => void) | null;
   activeTransportPath: ShellTransportPath;
   activeTransportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
   activeDndPath: DndDiagnosticPath;
