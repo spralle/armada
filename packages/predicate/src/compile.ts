@@ -2,8 +2,8 @@ import type { ExprNode } from './ast.js';
 
 export type Query = Record<string, unknown>;
 
-const LOGICAL_OPS = new Set(['$and', '$or', '$not']);
-const COMPARISON_OPS = new Set(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$exists', '$regex']);
+const LOGICAL_OPS = new Set(['$and', '$or', '$not', '$nor']);
+export const COMPARISON_OPS = new Set(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$exists', '$regex', '$all', '$size']);
 
 function isOperatorObject(value: unknown): value is Record<string, unknown> {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -23,15 +23,9 @@ function makeLiteral(value: unknown): ExprNode {
     return { kind: 'literal', value: value.getTime() };
   }
   if (Array.isArray(value)) {
-    return { kind: 'literal', value: value as unknown as null };
+    return { kind: 'literal', value };
   }
   throw new Error(`Unsupported literal value: ${String(value)}`);
-}
-
-function makeLiteralArray(arr: readonly unknown[]): ExprNode {
-  // Represent arrays as a literal node; the evaluator handles arrays via $in
-  // We store the array directly — the evaluate function reads it as-is from literal nodes
-  return { kind: 'literal', value: arr as unknown as null };
 }
 
 function compileFieldOperators(field: string, operators: Record<string, unknown>): ExprNode {
@@ -85,7 +79,18 @@ function compileFieldOperators(field: string, operators: Record<string, unknown>
       if (!Array.isArray(value)) {
         throw new Error(`${op} requires an array value`);
       }
-      nodes.push({ kind: 'op', op, args: [makePath(field), makeLiteralArray(value)] });
+      nodes.push({ kind: 'op', op, args: [makePath(field), makeLiteral(value)] });
+      continue;
+    }
+    if (op === '$all') {
+      if (!Array.isArray(value)) {
+        throw new Error('$all requires an array value');
+      }
+      nodes.push({ kind: 'op', op: '$all', args: [makePath(field), makeLiteral(value)] });
+      continue;
+    }
+    if (op === '$size') {
+      nodes.push({ kind: 'op', op: '$size', args: [makePath(field), makeLiteral(value)] });
       continue;
     }
     if (op === '$exists') {
@@ -129,6 +134,9 @@ function compileLogicalOp(op: string, value: unknown): ExprNode {
     }
     return compile(item as Query);
   });
+  if (op === '$nor') {
+    return { kind: 'op', op: '$not', args: [{ kind: 'op', op: '$or', args }] };
+  }
   return { kind: 'op', op, args };
 }
 

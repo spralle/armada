@@ -1,39 +1,11 @@
 import type { Query } from '../compile.js';
 import { compileFilter } from '../filter-compiler.js';
-import { validateAndSplitPath, resolveSegments } from '../path-utils.js';
+import { applySorting } from '../sort-utils.js';
 
 export interface FindOptions {
   readonly skip?: number;
   readonly limit?: number;
   readonly sort?: Record<string, 1 | -1>;
-}
-
-function compareValues(a: unknown, b: unknown): number {
-  if (typeof a === 'number' && typeof b === 'number') return a - b;
-  if (typeof a === 'string' && typeof b === 'string') return a < b ? -1 : a > b ? 1 : 0;
-  if (a === undefined && b !== undefined) return -1;
-  if (a !== undefined && b === undefined) return 1;
-  return 0;
-}
-
-function applySorting<T>(items: readonly T[], sort: Record<string, 1 | -1>): readonly T[] {
-  const fields = Object.entries(sort).map(([field, dir]) => ({
-    segments: validateAndSplitPath(field),
-    dir,
-  }));
-  if (fields.length === 0) return items;
-
-  const sorted = [...items];
-  sorted.sort((a, b) => {
-    for (const { segments, dir } of fields) {
-      const va = resolveSegments(a, segments);
-      const vb = resolveSegments(b, segments);
-      const cmp = compareValues(va, vb) * dir;
-      if (cmp !== 0) return cmp;
-    }
-    return 0;
-  });
-  return sorted;
 }
 
 export function find<T>(
@@ -64,7 +36,7 @@ export function find<T>(
   });
 
   if (options?.sort) {
-    results = applySorting(results, options.sort) as T[];
+    results = applySorting(results, options.sort);
   }
 
   if (skip > 0 || limit !== undefined) {

@@ -1,16 +1,12 @@
-import { compile, type Query } from '../compile.js';
-import { evaluate } from '../evaluator.js';
-import type { EvaluationScope } from '../ast.js';
+import type { Query } from '../compile.js';
+import { compileFilter } from '../filter-compiler.js';
 
 export function findOne<T>(collection: readonly T[], query: Query): T | undefined {
-  const ast = compile(query);
-
+  const filter = compileFilter(query);
   for (const item of collection) {
-    const scope = item as unknown as EvaluationScope;
-    if (Boolean(evaluate(ast, scope))) {
+    if (filter(item as unknown as Record<string, unknown>)) {
       return item;
     }
   }
-
   return undefined;
 }

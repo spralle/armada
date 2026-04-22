@@ -3,52 +3,18 @@ import { PredicateError } from './errors.js';
 import { compile, type Query } from './compile.js';
 import { PATH_MISSING, validateAndSplitPath, assertComparableTypes, collectPath, collectArrayLeaves, normalizeComparable } from './path-utils.js';
 import type { OperatorRegistry } from './operators.js';
+import { clearRegexCache, getRegexCacheSize, getCachedRegex } from './regex-cache.js';
+
+export { clearRegexCache, getRegexCacheSize };
 
 export type FilterFn = (doc: Readonly<Record<string, unknown>>) => boolean;
 
 export interface CompileFilterOptions {
   readonly registry?: OperatorRegistry;
+  readonly maxDepth?: number;
 }
 
 type ScopeFn = (scope: Record<string, unknown>) => unknown;
-
-// ---------------------------------------------------------------------------
-// Regex LRU cache
-// ---------------------------------------------------------------------------
-
-const REGEX_CACHE_MAX = 256;
-const regexCache = new Map<string, RegExp>();
-
-/** Clear the regex cache (useful for testing and memory cleanup). */
-export function clearRegexCache(): void {
-  regexCache.clear();
-}
-
-/** Visible for testing — returns current regex cache size. */
-export function getRegexCacheSize(): number {
-  return regexCache.size;
-}
-
-function getCachedRegex(pattern: string, flags?: string): RegExp {
-  const key = flags ? `${pattern}\0${flags}` : pattern;
-  const existing = regexCache.get(key);
-  if (existing) {
-    regexCache.delete(key);
-    regexCache.set(key, existing);
-    return existing;
-  }
-  const re = new RegExp(pattern, flags);
-  if (regexCache.size >= REGEX_CACHE_MAX) {
-    const oldest = regexCache.keys().next().value;
-    if (oldest !== undefined) regexCache.delete(oldest);
-  }
-  regexCache.set(key, re);
-  return re;
-}
-
-// ---------------------------------------------------------------------------
-// Path compilation
-// ---------------------------------------------------------------------------
 
 function compilePath(node: ExprNode & { kind: 'path' }): ScopeFn {
   const segments = validateAndSplitPath(node.path);
@@ -183,49 +149,27 @@ function buildCmpFn(op: string): (a: number | string, b: number | string) => boo
   }
 }
 
-function compileIn(args: readonly ExprNode[]): ScopeFn {
+function compileInclusion(args: readonly ExprNode[], negate: boolean): ScopeFn {
   const resolveValue = compileNode(args[0]!);
   const listNode = args[1]!;
   if (listNode.kind === 'literal' && Array.isArray(listNode.value)) {
     const set = new Set(listNode.value as unknown[]);
     return (scope) => {
       const v = resolveValue(scope);
-      if (Array.isArray(v)) return v.some((el) => set.has(el));
-      return set.has(v);
+      const found = Array.isArray(v) ? v.some((el) => set.has(el)) : set.has(v);
+      return negate ? !found : found;
     };
   }
   const resolveList = compileNode(listNode);
+  const opName = negate ? '$nin' : '$in';
   return (scope) => {
     const arr = resolveList(scope);
     if (!Array.isArray(arr)) {
-      throw new PredicateError('FORMR_EXPR_TYPE_MISMATCH', '$in requires second argument to be an array');
+      throw new PredicateError('FORMR_EXPR_TYPE_MISMATCH', `${opName} requires second argument to be an array`);
     }
     const v = resolveValue(scope);
-    if (Array.isArray(v)) return v.some((el) => arr.includes(el));
-    return arr.includes(v);
-  };
-}
-
-function compileNin(args: readonly ExprNode[]): ScopeFn {
-  const resolveValue = compileNode(args[0]!);
-  const listNode = args[1]!;
-  if (listNode.kind === 'literal' && Array.isArray(listNode.value)) {
-    const set = new Set(listNode.value as unknown[]);
-    return (scope) => {
-      const v = resolveValue(scope);
-      if (Array.isArray(v)) return !v.some((el) => set.has(el));
-      return !set.has(v);
-    };
-  }
-  const resolveList = compileNode(listNode);
-  return (scope) => {
-    const arr = resolveList(scope);
-    if (!Array.isArray(arr)) {
-      throw new PredicateError('FORMR_EXPR_TYPE_MISMATCH', '$nin requires second argument to be an array');
-    }
-    const v = resolveValue(scope);
-    if (Array.isArray(v)) return !v.some((el) => arr.includes(el));
-    return !arr.includes(v);
+    const found = Array.isArray(v) ? v.some((el) => arr.includes(el)) : arr.includes(v);
+    return negate ? !found : found;
   };
 }
 
@@ -311,6 +255,48 @@ function compileElemMatch(args: readonly ExprNode[], registry?: OperatorRegistry
   };
 }
 
+function compileAll(args: readonly ExprNode[]): ScopeFn {
+  const resolveValue = compileNode(args[0]!);
+  const listNode = args[1]!;
+  if (listNode.kind === 'literal' && Array.isArray(listNode.value)) {
+    const required = listNode.value as readonly unknown[];
+    return (scope) => {
+      const v = resolveValue(scope);
+      if (!Array.isArray(v)) return false;
+      return required.every((item) => v.includes(item));
+    };
+  }
+  const resolveList = compileNode(listNode);
+  return (scope) => {
+    const v = resolveValue(scope);
+    if (!Array.isArray(v)) return false;
+    const required = resolveList(scope);
+    if (!Array.isArray(required)) {
+      throw new PredicateError('FORMR_EXPR_TYPE_MISMATCH', '$all requires an array argument');
+    }
+    return required.every((item) => v.includes(item));
+  };
+}
+
+function compileSize(args: readonly ExprNode[]): ScopeFn {
+  const resolveValue = compileNode(args[0]!);
+  const sizeNode = args[1]!;
+  if (sizeNode.kind === 'literal' && typeof sizeNode.value === 'number') {
+    const expected = sizeNode.value;
+    return (scope) => {
+      const v = resolveValue(scope);
+      if (!Array.isArray(v)) return false;
+      return v.length === expected;
+    };
+  }
+  const resolveSize = compileNode(sizeNode);
+  return (scope) => {
+    const v = resolveValue(scope);
+    if (!Array.isArray(v)) return false;
+    return v.length === resolveSize(scope);
+  };
+}
+
 function compileOp(node: ExprNode & { kind: 'op' }, registry?: OperatorRegistry): ScopeFn {
   const { op, args } = node;
 
@@ -329,11 +315,13 @@ function compileOp(node: ExprNode & { kind: 'op' }, registry?: OperatorRegistry)
     const inner = compileNode(args[0]!, registry);
     return (scope) => !inner(scope);
   }
-  if (op === '$in') return compileIn(args);
-  if (op === '$nin') return compileNin(args);
+  if (op === '$in') return compileInclusion(args, false);
+  if (op === '$nin') return compileInclusion(args, true);
   if (op === '$regex') return compileRegex(args);
   if (op === '$exists') return compileExists(args);
   if (op === '$elemMatch') return compileElemMatch(args, registry);
+  if (op === '$all') return compileAll(args);
+  if (op === '$size') return compileSize(args);
 
   if (registry) {
     const handler = registry.getHandler(op);
@@ -382,5 +370,31 @@ export function compileFilterFromAst(ast: ExprNode, options?: CompileFilterOptio
 
 /** Compile an AST to a raw scope function (returns unknown, not boolean). */
 export function compileRawFromAst(ast: ExprNode, options?: CompileFilterOptions): (doc: Readonly<Record<string, unknown>>) => unknown {
+  if (options?.maxDepth !== undefined) {
+    assertAstDepth(ast, options.maxDepth);
+  }
   return compileNode(ast, options?.registry);
+}
+
+// ---------------------------------------------------------------------------
+// AST depth validation
+// ---------------------------------------------------------------------------
+
+function astDepth(node: ExprNode): number {
+  if (node.kind !== 'op') return 0;
+  let max = 0;
+  for (const arg of node.args) {
+    const d = astDepth(arg);
+    if (d > max) max = d;
+  }
+  return max + 1;
+}
+
+function assertAstDepth(node: ExprNode, maxDepth: number): void {
+  if (astDepth(node) > maxDepth) {
+    throw new PredicateError(
+      'PREDICATE_DEPTH_EXCEEDED',
+      `Expression exceeded maximum depth of ${String(maxDepth)}`,
+    );
+  }
 }

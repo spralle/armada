@@ -128,15 +128,3 @@ export function resolvePath(path: string, scope: Record<string, unknown>): unkno
   return collectPath(scope, segments);
 }
 
-/** Resolve a dotted path against an arbitrary object (used by collection sort). */
-export function getNestedValue(obj: unknown, path: string): unknown {
-  let current: unknown = obj;
-  for (const segment of path.split('.')) {
-    assertSafeSegment(segment);
-    if (current === null || current === undefined || typeof current !== 'object') {
-      return undefined;
-    }
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return current;
-}

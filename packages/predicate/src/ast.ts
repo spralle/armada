@@ -1,6 +1,6 @@
 // ADR section 5.2 — Expression AST contract
 export type ExprNode =
-  | { readonly kind: 'literal'; readonly value: string | number | boolean | null }
+  | { readonly kind: 'literal'; readonly value: string | number | boolean | null | readonly unknown[] }
   | { readonly kind: 'path'; readonly path: string }
   | { readonly kind: 'op'; readonly op: string; readonly args: readonly ExprNode[] };
 

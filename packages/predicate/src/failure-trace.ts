@@ -1,6 +1,7 @@
 import type { ExprNode, EvaluationScope } from './ast.js';
 import { evaluate } from './evaluator.js';
 import { resolvePath } from './path-utils.js';
+import { COMPARISON_OPS } from './compile.js';
 
 export interface PredicateFailureTrace {
   readonly path: string;
@@ -13,8 +14,6 @@ export interface EvaluateWithTraceResult {
   readonly result: unknown;
   readonly traces: readonly PredicateFailureTrace[];
 }
-
-const COMPARISON_OPS = new Set(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$exists', '$regex']);
 
 function collectTraces(
   node: ExprNode,
