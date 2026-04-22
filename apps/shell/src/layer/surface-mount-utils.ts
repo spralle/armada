@@ -37,6 +37,11 @@ export function resolveSurfaceMount(
     return moduleRecord.mountSurface as MountSurfaceComponentFn;
   }
 
+  // Try: module.mount (named export)
+  if (typeof moduleRecord.mount === "function") {
+    return moduleRecord.mount as MountSurfaceComponentFn;
+  }
+
   // Try: module.surfaces[component].mount or module.surfaces[component] (function)
   const surfaces = toRecord(moduleRecord.surfaces);
   if (surfaces) {
