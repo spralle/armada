@@ -361,3 +361,57 @@ describe('assert / retract', () => {
     expect(session.getPath('x')).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// TMS retraction changes in FiringResult
+// ---------------------------------------------------------------------------
+
+describe('TMS retraction changes in FiringResult', () => {
+  it('includes retraction changes when rule deactivates', () => {
+    const session = createSession({
+      initialState: { qty: 15 },
+      rules: [{
+        name: 'showDiscount',
+        when: { qty: { $gte: 10 } },
+        then: [{ $set: { '$ui.showDiscount': true } }],
+      }],
+    });
+
+    // First fire — rule activates
+    const result1 = session.fire();
+    expect(result1.changes.some(c => c.path === '$ui.showDiscount' && c.newValue === true)).toBe(true);
+
+    // Change qty below threshold — rule deactivates
+    session.assert('qty', 3);
+    const result2 = session.fire();
+
+    // Retraction should appear in changes
+    const retraction = result2.changes.find(c => c.path === '$ui.showDiscount');
+    expect(retraction).toBeDefined();
+    expect(retraction!.ruleName).toBe('showDiscount');
+    // After retraction, the value should be reverted (undefined)
+    expect(session.getPath('$ui.showDiscount')).toBeUndefined();
+  });
+
+  it('retraction changes have correct newValue after revert', () => {
+    const session = createSession({
+      initialState: { active: true },
+      rules: [{
+        name: 'setFlag',
+        when: { active: true },
+        then: [{ $set: { '$ui.flag': 'on' } }],
+      }],
+    });
+
+    session.fire();
+    expect(session.getPath('$ui.flag')).toBe('on');
+
+    session.assert('active', false);
+    const result = session.fire();
+
+    const retraction = result.changes.find(c => c.path === '$ui.flag');
+    expect(retraction).toBeDefined();
+    // newValue should reflect post-revert state (undefined since $ui is auto-retract)
+    expect(retraction!.newValue).toBeUndefined();
+  });
+});

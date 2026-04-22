@@ -21,13 +21,35 @@ export interface StandardSchemaIssue {
   readonly path?: readonly (string | number | symbol)[];
 }
 
+/** Typed metadata produced by schema extractors (source-agnostic) */
+export interface SchemaFieldMetadata {
+  readonly title?: string;
+  readonly description?: string;
+  readonly enum?: readonly unknown[];
+  readonly default?: unknown;
+  readonly minimum?: number;
+  readonly maximum?: number;
+  readonly exclusiveMinimum?: number;
+  readonly exclusiveMaximum?: number;
+  readonly minLength?: number;
+  readonly maxLength?: number;
+  readonly format?: string;
+  readonly pattern?: string;
+  // Renderer hints (from x-formr in JSON Schema, formr in Zod)
+  readonly widget?: string;
+  readonly options?: readonly unknown[];
+  readonly label?: string;
+  readonly placeholder?: string;
+  readonly extra?: Readonly<Record<string, unknown>>;
+}
+
 // Extracted field info from schema ingestion
 export interface SchemaFieldInfo {
   readonly path: string;
   readonly type: SchemaFieldType;
   readonly required: boolean;
   readonly defaultValue?: unknown;
-  readonly metadata?: Readonly<Record<string, unknown>>;
+  readonly metadata?: SchemaFieldMetadata;
 }
 
 export type SchemaFieldType =
@@ -43,8 +65,17 @@ export type SchemaFieldType =
   | 'union'
   | 'unknown';
 
+/** Typed metadata produced by schema ingestion at the root level */
+export interface SchemaMetadata {
+  readonly vendor?: string;
+  readonly title?: string;
+  readonly description?: string;
+  readonly validationOnly?: boolean;
+  readonly extra?: Readonly<Record<string, unknown>>;
+}
+
 // Schema ingestion result
 export interface SchemaIngestionResult {
   readonly fields: readonly SchemaFieldInfo[];
-  readonly metadata: Readonly<Record<string, unknown>>;
+  readonly metadata: SchemaMetadata;
 }

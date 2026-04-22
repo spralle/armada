@@ -55,7 +55,7 @@ function insertField(
   }
 
   const segment = segments[depth];
-  let existing = entries.find((e) => e.segment === segment && !e.field);
+  let existing = entries.find((e) => e.segment === segment && (!e.field || e.field.type === 'array'));
 
   if (!existing) {
     const entry: TreeEntry = { segment, children: [] };

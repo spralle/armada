@@ -13,6 +13,7 @@ export {
   type DescriptionA11yProps,
 } from './a11y.js';
 export { useForm, type UseFormOptions } from './use-form.js';
+export { useSchemaForm, type UseSchemaFormOptions, type UseSchemaFormResult } from './use-schema-form.js';
 export { useFormSelector } from './use-form-selector.js';
 export { useField } from './use-field.js';
 
@@ -26,6 +27,7 @@ export type {
   FieldConfig,
   CreateFormOptions,
   ValidationIssue,
+  ValidatorAdapter,
   SubmitContext,
   SubmitResult,
 } from '@ghost/formr-core';

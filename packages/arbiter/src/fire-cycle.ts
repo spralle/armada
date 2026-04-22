@@ -57,14 +57,31 @@ export function evaluateCondition(
 }
 
 // ---------------------------------------------------------------------------
+// TMS retraction → StateChange conversion
+// ---------------------------------------------------------------------------
+
+function buildRetractionChanges(
+  rule: CompiledRule,
+  ctx: FireContext,
+): readonly StateChange[] {
+  const revertedPaths = ctx.tms.ruleDeactivated(rule, ctx.scope);
+  return revertedPaths.map((path) => ({
+    path,
+    newValue: ctx.scope.get(path),
+    previousValue: undefined,
+    ruleName: rule.name,
+  }));
+}
+
+// ---------------------------------------------------------------------------
 // Rule evaluation (single rule)
 // ---------------------------------------------------------------------------
 
 export function reevaluateRule(
   rule: CompiledRule,
   ctx: FireContext,
-): void {
-  if (!rule.enabled) return;
+): readonly StateChange[] {
+  if (!rule.enabled) return [];
   const wasActive = ctx.ruleConditionState.get(rule.name) ?? false;
   const isActive = evaluateCondition(rule, ctx.scope);
   ctx.ruleConditionState.set(rule.name, isActive);
@@ -76,15 +93,17 @@ export function reevaluateRule(
     ctx.agenda.addActivation(rule);
   } else if (!isActive && wasActive) {
     ctx.agenda.removeActivation(rule.name);
-    ctx.tms.ruleDeactivated(rule, ctx.scope);
+    return buildRetractionChanges(rule, ctx);
   }
+  return [];
 }
 
 // ---------------------------------------------------------------------------
 // Evaluate all rules (initial pass)
 // ---------------------------------------------------------------------------
 
-export function evaluateAllRules(ctx: FireContext): void {
+export function evaluateAllRules(ctx: FireContext): readonly StateChange[] {
+  const retractions: StateChange[] = [];
   for (const rule of ctx.compiledRules.values()) {
     if (!rule.enabled) continue;
     const isActive = evaluateCondition(rule, ctx.scope);
@@ -96,9 +115,10 @@ export function evaluateAllRules(ctx: FireContext): void {
       ctx.tms.ruleActivated(rule);
     } else if (!isActive && wasActive) {
       ctx.agenda.removeActivation(rule.name);
-      ctx.tms.ruleDeactivated(rule, ctx.scope);
+      retractions.push(...buildRetractionChanges(rule, ctx));
     }
   }
+  return retractions;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +146,7 @@ export function executeElseBranches(
 function propagateChanges(
   changes: readonly StateChange[],
   ctx: FireContext,
+  allChanges: StateChange[],
 ): void {
   const affectedNames = new Set<string>();
   for (const change of changes) {
@@ -135,7 +156,10 @@ function propagateChanges(
   }
   for (const name of affectedNames) {
     const rule = ctx.compiledRules.get(name);
-    if (rule?.enabled) reevaluateRule(rule, ctx);
+    if (rule?.enabled) {
+      const retractions = reevaluateRule(rule, ctx);
+      allChanges.push(...retractions);
+    }
   }
 }
 
@@ -149,7 +173,7 @@ export function fireCycle(ctx: FireContext): FiringResult {
   let rulesFired = 0;
   let cycles = 0;
 
-  evaluateAllRules(ctx);
+  evaluateAllRules(ctx).forEach((c) => changes.push(c));
   executeElseBranches(ctx, changes);
 
   while (!ctx.agenda.isEmpty()) {
@@ -188,7 +212,7 @@ export function fireCycle(ctx: FireContext): FiringResult {
       });
     }
 
-    propagateChanges(ruleChanges, ctx);
+    propagateChanges(ruleChanges, ctx, changes);
   }
 
   return { rulesFired, cycles, changes, warnings };

@@ -281,3 +281,19 @@ describe('pipeline — 18-step engine', () => {
     expect(() => form.validate()).toThrow('returned a Promise in synchronous validate');
   });
 });
+
+describe('pipeline — arbiter write filtering on action path', () => {
+  it('filters arbiter writes that target the same path as the user action', () => {
+    const form = createForm({
+      initialData: { qty: 0, total: 0 },
+      arbiterRules: [{
+        name: 'resetQty',
+        when: {},
+        then: [{ $set: { qty: 0 } }],
+      }],
+    });
+    form.setValue('qty', 10);
+    expect((form.getState().data as Record<string, unknown>).qty).toBe(10);
+    form.dispose();
+  });
+});
