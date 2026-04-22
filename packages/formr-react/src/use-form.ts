@@ -4,19 +4,20 @@ import type { CreateFormOptions, FormApi, SubmitResult } from '@ghost/formr-core
 import { focusFirstError } from './a11y.js';
 
 /** Options for useForm, extending core CreateFormOptions with React-specific behavior */
-export interface UseFormOptions extends CreateFormOptions {
+export interface UseFormOptions<TData, TUi> extends CreateFormOptions<TData, TUi> {
   /** Auto-focus the first error field on submit failure (default: true) */
   readonly autoFocusOnError?: boolean;
 }
 
-export function useForm(
-  options?: UseFormOptions,
-): FormApi {
+export function useForm<TData, TUi>(
+  options?: UseFormOptions<TData, TUi>,
+): FormApi<TData, TUi> {
   const autoFocus = options?.autoFocusOnError ?? true;
-  const formRef = useRef<FormApi | null>(null);
+  const formRef = useRef<FormApi<TData, TUi> | null>(null);
+  const disposeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (formRef.current === null) {
-    formRef.current = createForm(options);
+    formRef.current = createForm<TData, TUi>(options);
   }
 
   const form = formRef.current;
@@ -28,19 +29,26 @@ export function useForm(
 
   useSyncExternalStore(subscribe, () => form.getState());
 
+  // Deferred disposal: schedule dispose in a macrotask so StrictMode remount can cancel it
   useEffect(() => {
+    if (disposeTimerRef.current !== null) {
+      clearTimeout(disposeTimerRef.current);
+      disposeTimerRef.current = null;
+    }
     return () => {
-      form.dispose();
+      disposeTimerRef.current = setTimeout(() => {
+        formRef.current?.dispose();
+      }, 0);
     };
-  }, [form]);
+  }, []);
 
   // Wrap the form API to auto-focus on submit errors (ADR §12)
-  const wrappedApi = useMemo((): FormApi => {
+  const wrappedApi = useMemo((): FormApi<TData, TUi> => {
     if (!autoFocus) return form;
 
     return {
       ...form,
-      submit: async (...args: Parameters<FormApi['submit']>): Promise<SubmitResult> => {
+      submit: async (...args: Parameters<FormApi<TData, TUi>['submit']>): Promise<SubmitResult> => {
         const result = await form.submit(...args);
         if (!result.ok && result.fieldIssues?.length) {
           focusFirstError(result.fieldIssues);

@@ -6,8 +6,6 @@ export interface LayoutNodeDefinition {
   readonly rendererKey: string;
 }
 
-const CAPABILITY_KEY = 'layout-node.exp.v1';
-
 export class LayoutNodeRegistry {
   private readonly custom = new Map<string, LayoutNodeDefinition>();
 
@@ -30,11 +28,6 @@ export class LayoutNodeRegistry {
   /** Check if a node type is known (built-in or registered). */
   has(type: string): boolean {
     return isBuiltInNodeType(type) || this.custom.has(type);
-  }
-
-  /** The capability key for extension manifest validation. */
-  get capabilityKey(): string {
-    return CAPABILITY_KEY;
   }
 
   /** Walk a layout tree and throw for any unknown node type. */

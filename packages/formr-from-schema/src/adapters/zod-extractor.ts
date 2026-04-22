@@ -32,11 +32,18 @@ export function extractFromZod(schema: unknown): SchemaIngestionResult {
   return { fields, metadata };
 }
 
+interface WalkContext {
+  nullable?: boolean;
+  readOnly?: boolean;
+  defaultValue?: unknown;
+}
+
 function walkZodSchema(
   schema: ZodLike,
   prefix: string,
   fields: SchemaFieldInfo[],
   required: boolean,
+  ctx: WalkContext = {},
 ): void {
   const def = schema._def;
   if (!def) return;
@@ -54,15 +61,18 @@ function walkZodSchema(
   if (typeName === 'ZodNullable') {
     const inner = def['innerType'] as ZodLike | undefined;
     if (inner) {
-      walkZodSchema(inner, prefix, fields, required);
+      walkZodSchema(inner, prefix, fields, required, { ...ctx, nullable: true });
     }
     return;
   }
 
   if (typeName === 'ZodDefault') {
     const inner = def['innerType'] as ZodLike | undefined;
+    const defaultValue = typeof def['defaultValue'] === 'function'
+      ? (def['defaultValue'] as () => unknown)()
+      : undefined;
     if (inner) {
-      walkZodSchema(inner, prefix, fields, false);
+      walkZodSchema(inner, prefix, fields, false, { defaultValue });
     }
     return;
   }
@@ -110,7 +120,7 @@ function walkZodSchema(
   if (typeName === 'ZodReadonly') {
     const inner = def['innerType'] as ZodLike | undefined;
     if (inner) {
-      walkZodSchema(inner, prefix, fields, required);
+      walkZodSchema(inner, prefix, fields, required, { ...ctx, readOnly: true });
     }
     return;
   }
@@ -128,24 +138,80 @@ function walkZodSchema(
   }
 
   if (typeName === 'ZodArray') {
-    const metadata = extractFormrMetadata(schema);
+    const metadata = mergeZodMetadata(schema, ctx);
     fields.push({
       path: prefix,
       type: 'array',
       required,
+      ...(ctx.defaultValue !== undefined ? { defaultValue: ctx.defaultValue } : {}),
       ...(metadata ? { metadata } : {}),
     });
     return;
   }
 
+  if (typeName === 'ZodLiteral') {
+    const value = def['value'];
+    const literalType = typeof value === 'number' ? 'number'
+      : typeof value === 'boolean' ? 'boolean' : 'string';
+    const metadata = mergeZodMetadata(schema, ctx, { const: value });
+    if (prefix) {
+      fields.push({ path: prefix, type: literalType as SchemaFieldType, required, ...(metadata ? { metadata } : {}) });
+    }
+    return;
+  }
+
+  if (typeName === 'ZodNativeEnum') {
+    const values = def['values'] as Record<string, unknown> | undefined;
+    const enumValues = values ? Object.values(values) : [];
+    const metadata = mergeZodMetadata(schema, ctx, { enum: enumValues });
+    if (prefix) {
+      fields.push({ path: prefix, type: 'enum', required, ...(metadata ? { metadata } : {}) });
+    }
+    return;
+  }
+
+  if (typeName === 'ZodIntersection') {
+    const left = def['left'] as ZodLike | undefined;
+    const right = def['right'] as ZodLike | undefined;
+    if (left) walkZodSchema(left, prefix, fields, required, ctx);
+    if (right) walkZodSchema(right, prefix, fields, required, ctx);
+    return;
+  }
+
+  if (typeName === 'ZodRecord') {
+    const metadata = mergeZodMetadata(schema, ctx, { additionalProperties: true });
+    if (prefix) {
+      fields.push({ path: prefix, type: 'object', required, ...(metadata ? { metadata } : {}) });
+    }
+    return;
+  }
+
+  if (typeName === 'ZodTuple') {
+    const items = def['items'] as readonly ZodLike[] | undefined;
+    const metadata = mergeZodMetadata(schema, ctx, { tuple: true, itemCount: items?.length ?? 0 });
+    if (prefix) {
+      fields.push({ path: prefix, type: 'array', required, ...(metadata ? { metadata } : {}) });
+    }
+    return;
+  }
+
+  if (typeName === 'ZodBigInt') {
+    const metadata = mergeZodMetadata(schema, ctx);
+    if (prefix) {
+      fields.push({ path: prefix, type: 'integer', required, ...(metadata ? { metadata } : {}) });
+    }
+    return;
+  }
+
   const fieldType = mapZodType(typeName);
-  const metadata = extractFormrMetadata(schema);
+  const metadata = mergeZodMetadata(schema, ctx);
 
   if (prefix) {
     fields.push({
       path: prefix,
       type: fieldType,
       required,
+      ...(ctx.defaultValue !== undefined ? { defaultValue: ctx.defaultValue } : {}),
       ...(metadata ? { metadata } : {}),
     });
   }
@@ -205,4 +271,68 @@ function extractFormrMetadata(schema: ZodLike): SchemaFieldMetadata | undefined 
   }
 
   return undefined;
+}
+
+/** Extract validation checks from Zod _def.checks array */
+function extractZodChecks(def: ZodTypeDef & Record<string, unknown>): Record<string, unknown> {
+  const checks = def.checks as readonly Record<string, unknown>[] | undefined;
+  if (!checks || checks.length === 0) return {};
+
+  const result: Record<string, unknown> = {};
+  for (const check of checks) {
+    const kind = check['kind'] as string | undefined;
+    if (!kind) continue;
+    switch (kind) {
+      case 'min': result.minLength = check['value']; break;
+      case 'max': result.maxLength = check['value']; break;
+      case 'length': result.minLength = check['value']; result.maxLength = check['value']; break;
+      case 'regex': result.pattern = String(check['regex']); break;
+      case 'email': case 'url': case 'uuid': case 'cuid':
+        result.format = kind; break;
+      case 'gte': case 'min_value': result.minimum = check['value']; break;
+      case 'lte': case 'max_value': result.maximum = check['value']; break;
+      case 'gt': result.exclusiveMinimum = check['value']; break;
+      case 'lt': result.exclusiveMaximum = check['value']; break;
+      case 'int': result.format = 'int'; break;
+      default: result[kind] = check['value'] ?? true;
+    }
+  }
+  return result;
+}
+
+/** Merge formr metadata, checks, description, and context into SchemaFieldMetadata */
+function mergeZodMetadata(
+  schema: ZodLike,
+  ctx: WalkContext,
+  extra?: Record<string, unknown>,
+): SchemaFieldMetadata | undefined {
+  const def = schema._def;
+  if (!def) return extra ? (extra as SchemaFieldMetadata) : undefined;
+
+  const result: Record<string, unknown> = {};
+
+  // Description from .describe()
+  if (def.description) result.description = def.description;
+
+  // Validation checks
+  const checks = extractZodChecks(def);
+  Object.assign(result, checks);
+
+  // Enum values
+  if (def['values'] && def.typeName === 'ZodEnum') {
+    result.enum = def['values'];
+  }
+
+  // Context flags
+  if (ctx.nullable) result.nullable = true;
+  if (ctx.readOnly) result.readOnly = true;
+
+  // Extra type-specific metadata
+  if (extra) Object.assign(result, extra);
+
+  // Formr metadata (from .meta({ formr: {...} }))
+  const formrMeta = extractFormrMetadata(schema);
+  if (formrMeta) Object.assign(result, formrMeta);
+
+  return Object.keys(result).length > 0 ? (result as SchemaFieldMetadata) : undefined;
 }

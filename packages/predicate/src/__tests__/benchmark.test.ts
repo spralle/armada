@@ -1,9 +1,8 @@
 import { describe, test, expect } from 'bun:test';
 import { evaluate } from '../evaluator.js';
-import { compile } from '../compiler.js';
-import { compileShorthand } from '../shorthand.js';
+import { compile } from '../compile.js';
 import { find } from '../collection/find.js';
-import type { ExprNode, EvaluationScope } from '../ast.js';
+import type { EvaluationScope } from '../ast.js';
 
 function time(fn: () => void): number {
   const start = performance.now();
@@ -12,7 +11,7 @@ function time(fn: () => void): number {
 }
 
 describe('benchmark: evaluate()', () => {
-  const ast = compile({ $eq: [{ $path: 'status' }, 'active'] });
+  const ast = compile({ status: 'active' });
   const scope: EvaluationScope = { status: 'active', count: 42 };
 
   test('1000 simple evaluations < 100ms', () => {
@@ -26,13 +25,11 @@ describe('benchmark: evaluate()', () => {
 
   test('1000 nested evaluations < 200ms', () => {
     const nested = compile({
-      $and: [
-        { $eq: [{ $path: 'status' }, 'active'] },
-        { $gt: [{ $path: 'count' }, 0] },
-        { $or: [
-          { $eq: [{ $path: 'role' }, 'admin'] },
-          { $gte: [{ $path: 'count' }, 10] },
-        ]},
+      status: 'active',
+      count: { $gt: 0 },
+      $or: [
+        { role: 'admin' },
+        { count: { $gte: 10 } },
       ],
     });
     const s: EvaluationScope = { status: 'active', count: 42, role: 'user' };
@@ -47,22 +44,10 @@ describe('benchmark: evaluate()', () => {
 
 describe('benchmark: compile()', () => {
   test('1000 compilations < 200ms', () => {
-    const input = { $and: [{ $eq: [{ $path: 'a' }, 1] }, { $gt: [{ $path: 'b' }, 2] }] };
+    const input = { a: 1, b: { $gt: 2 } };
     const ms = time(() => {
       for (let i = 0; i < 1000; i++) {
         compile(input);
-      }
-    });
-    expect(ms).toBeLessThan(200);
-  });
-});
-
-describe('benchmark: compileShorthand()', () => {
-  test('1000 shorthand compilations < 200ms', () => {
-    const query = { status: 'active', count: { $gt: 0 }, role: { $in: ['admin', 'user'] } };
-    const ms = time(() => {
-      for (let i = 0; i < 1000; i++) {
-        compileShorthand(query);
       }
     });
     expect(ms).toBeLessThan(200);

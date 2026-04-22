@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { createSchemaForm } from '../create-schema-form.js';
 import type { LayoutNode } from '../layout/layout-types.js';
-import type { ValidatorAdapter } from '@ghost/formr-core';
+import type { ValidatorFn } from '@ghost/formr-core';
 
 const simpleJsonSchema = {
   type: 'object',
@@ -33,9 +33,7 @@ describe('createSchemaForm', () => {
   });
 
   test('includes additional validators from options', () => {
-    const mockValidator: ValidatorAdapter = {
-      validate: () => [],
-    };
+    const mockValidator: ValidatorFn = () => [];
     const result = createSchemaForm(simpleJsonSchema, { validators: [mockValidator] });
     // Should have JSON Schema validator + our mock
     expect(result.validators.length).toBeGreaterThanOrEqual(2);
@@ -68,5 +66,22 @@ describe('createSchemaForm', () => {
   test('metadata contains vendor info for JSON Schema', () => {
     const result = createSchemaForm(simpleJsonSchema);
     expect(result.metadata.vendor).toBe('json-schema');
+  });
+
+  test('auto-wires validation for Standard Schema', () => {
+    const schema = {
+      '~standard': {
+        version: 1 as const,
+        vendor: 'test',
+        validate: (data: unknown) => {
+          const d = data as Record<string, unknown>;
+          if (!d['name']) return { issues: [{ message: 'Name required', path: ['name'] }] };
+          return { value: data };
+        },
+      },
+    };
+
+    const result = createSchemaForm(schema);
+    expect(result.validators.length).toBeGreaterThan(0);
   });
 });

@@ -61,9 +61,4 @@ describe('RendererRegistry', () => {
     registry.register({ type: 'group', component: CustomGroup });
     expect(registry.resolve('group')).toBe(CustomGroup);
   });
-
-  it('capabilityKey returns renderer.exp.v1', () => {
-    const registry = new RendererRegistry();
-    expect(registry.capabilityKey).toBe('renderer.exp.v1');
-  });
 });

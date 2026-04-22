@@ -3,15 +3,15 @@ import { createSchemaForm } from '@ghost/formr-from-schema';
 import type { LayoutNode, SchemaFieldInfo, SchemaMetadata } from '@ghost/formr-from-schema';
 import { useForm } from './use-form.js';
 import type { UseFormOptions } from './use-form.js';
-import type { FormApi, ValidatorAdapter } from '@ghost/formr-core';
+import type { FormApi, ValidatorFn } from '@ghost/formr-core';
 
-export interface UseSchemaFormOptions extends Omit<UseFormOptions, 'validators'> {
-  readonly validators?: readonly ValidatorAdapter[];
+export interface UseSchemaFormOptions<TData, TUi> extends Omit<UseFormOptions<TData, TUi>, 'validators'> {
+  readonly validators?: readonly ValidatorFn[];
   readonly layoutOverride?: LayoutNode;
 }
 
-export interface UseSchemaFormResult {
-  readonly form: FormApi;
+export interface UseSchemaFormResult<TData, TUi> {
+  readonly form: FormApi<TData, TUi>;
   readonly fields: readonly SchemaFieldInfo[];
   readonly layout: LayoutNode;
   readonly metadata: SchemaMetadata;
@@ -21,10 +21,10 @@ export interface UseSchemaFormResult {
  * React lifecycle wrapper over createSchemaForm.
  * Memoizes schema preparation; wires validators into useForm.
  */
-export function useSchemaForm(
+export function useSchemaForm<TData, TUi>(
   schema: unknown,
-  options?: UseSchemaFormOptions,
-): UseSchemaFormResult {
+  options?: UseSchemaFormOptions<TData, TUi>,
+): UseSchemaFormResult<TData, TUi> {
   const prepared = useMemo(
     () => createSchemaForm(schema, {
       layoutOverride: options?.layoutOverride,
@@ -33,7 +33,7 @@ export function useSchemaForm(
     [schema, options?.layoutOverride],
   );
 
-  const form = useForm({
+  const form = useForm<TData, TUi>({
     ...options,
     schema,
     validators: prepared.validators,

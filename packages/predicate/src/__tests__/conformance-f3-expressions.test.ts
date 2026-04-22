@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import type { ExprNode } from '../ast.js';
 import { evaluate } from '../evaluator.js';
-import { compile } from '../compiler.js';
+import { compile } from '../compile.js';
 import { PredicateError } from '../errors.js';
 
 /**
@@ -114,8 +114,8 @@ describe('F3: Operator typing enforced — no coercion', () => {
 });
 
 describe('F3: Compiler correctness', () => {
-  it('compiles $eq operator', () => {
-    const ast = compile({ $eq: [{ $path: 'x' }, 42] });
+  it('compiles $eq via shorthand', () => {
+    const ast = compile({ x: 42 });
     expect(ast.kind).toBe('op');
     if (ast.kind === 'op') {
       expect(ast.op).toBe('$eq');
@@ -123,20 +123,21 @@ describe('F3: Compiler correctness', () => {
     }
   });
 
-  it('rejects unsupported literal types', () => {
-    expect(() => compile(undefined)).toThrow(PredicateError);
-    expect(() => compile(Symbol('x'))).toThrow(PredicateError);
+  it('compiles $eq with explicit operator', () => {
+    const ast = compile({ x: { $eq: 42 } });
+    expect(ast.kind).toBe('op');
+    if (ast.kind === 'op') {
+      expect(ast.op).toBe('$eq');
+      expect(ast.args).toHaveLength(2);
+    }
   });
 
-  it('rejects arrays as root', () => {
-    expect(() => compile([1, 2])).toThrow(PredicateError);
+  it('rejects unknown operators in field expressions', () => {
+    expect(() => compile({ x: { $bogus: 1 } })).toThrow('Unknown operator');
   });
 
-  it('rejects unknown operators', () => {
-    expect(() => compile({ $bogus: [1] })).toThrow(PredicateError);
-  });
-
-  it('rejects empty objects', () => {
-    expect(() => compile({})).toThrow(PredicateError);
+  it('empty query compiles to literal true', () => {
+    const ast = compile({});
+    expect(ast).toEqual(lit(true));
   });
 });

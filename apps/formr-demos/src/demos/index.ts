@@ -16,6 +16,10 @@ import { OrderEntryDemo } from './14-order-entry';
 import { KitchenSinkDemo } from './15-kitchen-sink';
 import { CustomRenderersDemo } from './16-custom-renderers';
 import { CustomLayoutTypesDemo } from './17-custom-layout';
+import { ArbiterVisibilityDemo } from './18-arbiter-visibility';
+import { ArbiterCalculatedDemo } from './19-arbiter-calculated';
+import { ArbiterValidationGatingDemo } from './20-arbiter-validation-gating';
+import { ArbiterDynamicSectionsDemo } from './21-arbiter-dynamic-sections';
 
 export interface DemoRegistration {
   readonly id: string;
@@ -46,4 +50,9 @@ export const demos: readonly DemoRegistration[] = [
   { id: 'kitchen-sink', title: '15. Kitchen Sink', subtitle: 'Every field type and feature', category: 'advanced', component: KitchenSinkDemo },
   { id: 'custom-renderers', title: '16. Custom Renderers', subtitle: 'Stars, colors, checkboxes, progress', category: 'advanced', component: CustomRenderersDemo },
   { id: 'custom-layout-types', title: '17. Custom Layout Types', subtitle: 'Tabs, accordion, sections', category: 'advanced', component: CustomLayoutTypesDemo },
+  // Arbiter + $ui (18-21)
+  { id: 'arbiter-visibility', title: '18. Arbiter: Visibility', subtitle: 'Rule-driven field visibility via $ui', category: 'advanced', component: ArbiterVisibilityDemo },
+  { id: 'arbiter-calculated', title: '19. Arbiter: Calculated', subtitle: 'Tier detection and computed values', category: 'advanced', component: ArbiterCalculatedDemo },
+  { id: 'arbiter-validation-gating', title: '20. Arbiter: Validation Gating', subtitle: 'Submit gating via $ui.canSubmit', category: 'advanced', component: ArbiterValidationGatingDemo },
+  { id: 'arbiter-dynamic-sections', title: '21. Arbiter: Dynamic Sections', subtitle: 'Insurance form with rule-driven sections', category: 'advanced', component: ArbiterDynamicSectionsDemo },
 ];

@@ -1,20 +1,17 @@
 import { describe, test, expect } from 'bun:test';
 import { createJsonSchemaValidator } from '../adapters/json-schema-validator.js';
 import type { JsonSchema } from '../adapters/json-schema-types.js';
-import type { ValidatorAdapter, ValidationIssue } from '@ghost/formr-core';
+import type { ValidatorFn, ValidationIssue } from '@ghost/formr-core';
 
 /**
- * Narrow the sync-or-async return of ValidatorAdapter.validate() to sync,
- * since createJsonSchemaValidator always returns synchronously.
+ * Call the sync validator function directly.
  */
 function validateSync(
-  validator: ValidatorAdapter,
+  validator: ValidatorFn,
   data: unknown,
   stage?: string,
 ): readonly ValidationIssue[] {
-  const result = validator.validate({ data, uiState: undefined, schema: undefined, stage });
-  if (result instanceof Promise) throw new Error('Expected sync validation');
-  return result;
+  return validator({ data, uiState: undefined, stage });
 }
 
 /**

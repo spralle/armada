@@ -6,7 +6,7 @@ import { isArbiterInternalPath } from './expression-integration.js';
 
 export interface ArbiterFormAdapter {
   readonly session: RuleSession;
-  readonly syncAndFire: (state: FormState) => readonly RuleWriteIntent[];
+  readonly syncAndFire: (state: FormState<unknown, unknown>) => readonly RuleWriteIntent[];
   readonly dispose: () => void;
 }
 
@@ -16,7 +16,7 @@ export interface ArbiterFormAdapter {
  */
 function syncAndFireImpl(
   session: RuleSession,
-  state: FormState,
+  state: FormState<unknown, unknown>,
 ): readonly RuleWriteIntent[] {
   const data = (state.data ?? {}) as Readonly<Record<string, unknown>>;
   const uiState = (state.uiState ?? {}) as Readonly<Record<string, unknown>>;
@@ -56,7 +56,7 @@ export function createArbiterAdapter(
 
   return {
     session,
-    syncAndFire: (state: FormState) => syncAndFireImpl(session, state),
+    syncAndFire: (state: FormState<unknown, unknown>) => syncAndFireImpl(session, state),
     dispose: () => session.dispose(),
   };
 }
@@ -67,7 +67,7 @@ export function createArbiterAdapterFromSession(
 ): ArbiterFormAdapter {
   return {
     session,
-    syncAndFire: (state: FormState) => syncAndFireImpl(session, state),
+    syncAndFire: (state: FormState<unknown, unknown>) => syncAndFireImpl(session, state),
     dispose: () => session.dispose(),
   };
 }

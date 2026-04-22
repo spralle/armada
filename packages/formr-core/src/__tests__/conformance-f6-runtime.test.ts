@@ -3,7 +3,7 @@ import {
   createForm,
   normalizeIssues,
   type Middleware,
-  type ValidatorAdapter,
+  type ValidatorFn,
   type ValidationIssue,
   type FormState,
 } from '../index.js';
@@ -87,18 +87,14 @@ describe('F6: Runtime algorithm conformance', () => {
   });
 
   test('F6.05: validator issues collected and normalized', () => {
-    const validator: ValidatorAdapter = {
-      id: 'test-validator',
-      supports: () => true,
-      validate: ({ stage }) => [{
-        code: 'REQUIRED',
-        message: 'Name is required',
-        severity: 'error' as const,
-        ...(stage !== undefined ? { stage } : {}),
-        path: { namespace: 'data' as const, segments: ['name'] },
-        source: { origin: 'function-validator' as const, validatorId: 'test-validator' },
-      }],
-    };
+    const validator: ValidatorFn = ({ stage }) => [{
+      code: 'REQUIRED',
+      message: 'Name is required',
+      severity: 'error' as const,
+      ...(stage !== undefined ? { stage } : {}),
+      path: { namespace: 'data' as const, segments: ['name'] },
+      source: { origin: 'function-validator' as const, validatorId: 'test-validator' },
+    }];
     const form = createForm({
       initialData: { name: '' },
       validators: [validator],
@@ -123,18 +119,14 @@ describe('F6: Runtime algorithm conformance', () => {
   });
 
   test('F6.08: submit failure retains validation issues', async () => {
-    const validator: ValidatorAdapter = {
-      id: 'blocker',
-      supports: () => true,
-      validate: () => [{
-        code: 'BLOCKED',
-        message: 'Blocked',
-        severity: 'error' as const,
-        stage: 'draft',
-        path: { namespace: 'data' as const, segments: ['x'] },
-        source: { origin: 'function-validator' as const, validatorId: 'blocker' },
-      }],
-    };
+    const validator: ValidatorFn = () => [{
+      code: 'BLOCKED',
+      message: 'Blocked',
+      severity: 'error' as const,
+      stage: 'draft',
+      path: { namespace: 'data' as const, segments: ['x'] },
+      source: { origin: 'function-validator' as const, validatorId: 'blocker' },
+    }];
     const form = createForm({
       initialData: {},
       validators: [validator],

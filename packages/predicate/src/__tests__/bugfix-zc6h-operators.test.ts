@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { evaluate, OperatorRegistry, compile } from '../index.js';
+import { evaluate, OperatorRegistry } from '../index.js';
 import type { ExprNode } from '../ast.js';
 
 describe('zc6h: custom operator registry wiring', () => {
@@ -28,13 +28,13 @@ describe('zc6h: custom operator registry wiring', () => {
   });
 
   test('built-in operators still work with registry', () => {
-    const node = compile({ $eq: [1, 1] });
+    const node: ExprNode = { kind: 'op', op: '$eq', args: [{ kind: 'literal', value: 1 }, { kind: 'literal', value: 1 }] };
     const result = evaluate(node, {}, { operators: new OperatorRegistry() });
     expect(result).toBe(true);
   });
 
   test('evaluate works without registry (backward compat)', () => {
-    const node = compile({ $eq: [1, 1] });
+    const node: ExprNode = { kind: 'op', op: '$eq', args: [{ kind: 'literal', value: 1 }, { kind: 'literal', value: 1 }] };
     const result = evaluate(node, {});
     expect(result).toBe(true);
   });

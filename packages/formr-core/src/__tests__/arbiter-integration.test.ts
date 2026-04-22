@@ -11,6 +11,7 @@ function makeState(overrides: Partial<FormState> = {}): FormState {
     data: overrides.data ?? {},
     uiState: overrides.uiState ?? {},
     meta: overrides.meta ?? { stage: 'draft', validation: {} },
+    fieldMeta: overrides.fieldMeta ?? {},
     issues: overrides.issues ?? [],
   };
 }

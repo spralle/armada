@@ -1,9 +1,9 @@
-import type { FormState, CreateFormOptions, ValidationIssue, SubmitContext } from './state.js';
+import type { FormState, CreateFormOptions, ValidationIssue, SubmitContext, FieldMetaEntry } from './state.js';
 import type {
   FormAction,
   Middleware,
   MiddlewareDecision,
-  ValidatorAdapter,
+  ValidatorFn,
 } from './contracts.js';
 import type { FormStore } from './store.js';
 import type { TransformDefinition } from './transforms.js';
@@ -43,8 +43,8 @@ function setAtPath(root: unknown, segments: readonly (string | number)[], value:
 /** Pipeline context — everything the 18-step engine needs */
 export interface PipelineContext {
   readonly action: FormAction;
-  readonly store: FormStore;
-  readonly options: CreateFormOptions;
+  readonly store: FormStore<unknown, unknown>;
+  readonly options: CreateFormOptions<unknown, unknown>;
   readonly submitContext?: SubmitContext;
   readonly isSubmit: boolean;
   readonly arbiterAdapter?: ArbiterFormAdapter | undefined;
@@ -62,7 +62,7 @@ export interface PipelineResult {
 
 
 /** Resolve TransformDefinitions from options.transforms (duck-type check) */
-function getTransformDefs(options: CreateFormOptions): readonly TransformDefinition[] {
+function getTransformDefs(options: CreateFormOptions<unknown, unknown>): readonly TransformDefinition[] {
   if (!options.transforms?.length) return [];
   return options.transforms.filter(
     (t): t is TransformDefinition => 'transform' in t && typeof (t as TransformDefinition).transform === 'function',
@@ -71,8 +71,8 @@ function getTransformDefs(options: CreateFormOptions): readonly TransformDefinit
 
 /** Run validators synchronously; throws FORMR_ASYNC_IN_SYNC_PIPELINE if any return a Promise */
 function runValidators(
-  validators: readonly ValidatorAdapter[],
-  state: FormState,
+  validators: readonly ValidatorFn[],
+  state: { readonly data: unknown; readonly uiState: unknown; readonly meta: { readonly stage?: string } },
   stage: string | undefined,
   submitContext?: SubmitContext,
 ): readonly ValidationIssue[] {
@@ -83,11 +83,11 @@ function runValidators(
     const input = submitContext
       ? { ...withStage, context: submitContext }
       : withStage;
-    const result = v.validate(input);
+    const result = v(input);
     if (result instanceof Promise) {
       throw new FormrError(
         'FORMR_ASYNC_IN_SYNC_PIPELINE',
-        `Validator "${v.id}" returned a Promise in synchronous pipeline — use async submit path`,
+        'Validator returned a Promise in synchronous pipeline — use async submit path',
       );
     }
     allIssues.push(...result);
@@ -113,7 +113,7 @@ export function executePipeline(ctx: PipelineContext): PipelineResult {
   }
 
   // Step 2: Begin transaction — capture immutable prevState snapshot
-  let tx: Transaction | undefined;
+  let tx: Transaction<unknown, unknown> | undefined;
   try {
     tx = store.beginTransaction();
     const prevState = tx.prevState;
@@ -146,6 +146,22 @@ export function executePipeline(ctx: PipelineContext): PipelineResult {
         }
         return { ...draft, data: setAtPath(draft.data, canonical.segments, transformedValue) };
       });
+
+      // Mark field as touched for data-namespace paths (transactional — rolled back on failure)
+      if (canonical.namespace === 'data') {
+        const pathKey = canonical.segments.join('.');
+        tx.mutate((draft) => {
+          const existing = (draft.fieldMeta as Record<string, FieldMetaEntry>)[pathKey];
+          if (existing?.touched) return draft;
+          return {
+            ...draft,
+            fieldMeta: {
+              ...draft.fieldMeta,
+              [pathKey]: { touched: true, isValidating: existing?.isValidating ?? false, dirty: true, listenerTriggered: existing?.listenerTriggered ?? false },
+            },
+          };
+        });
+      }
     }
 
     // Step 6: Middleware beforeEvaluate

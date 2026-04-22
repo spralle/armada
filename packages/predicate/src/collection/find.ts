@@ -1,67 +1,50 @@
-import { compileShorthand, type ShorthandQuery } from '../shorthand.js';
-import { evaluate } from '../evaluator.js';
-import type { EvaluationScope } from '../ast.js';
+import type { Query } from '../compile.js';
+import type { TypedQuery } from '../typed-query.js';
+import type { CompileFilterOptions, FilterFn } from '../filter-compiler.js';
+import { compileFilter } from '../filter-compiler.js';
+import { applySorting } from '../sort-utils.js';
 
+/** Options for the find() collection helper. */
 export interface FindOptions {
   readonly skip?: number;
   readonly limit?: number;
   readonly sort?: Record<string, 1 | -1>;
+  readonly registry?: CompileFilterOptions['registry'];
 }
 
-function compareValues(a: unknown, b: unknown): number {
-  if (typeof a === 'number' && typeof b === 'number') return a - b;
-  if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b);
-  if (a === undefined && b !== undefined) return -1;
-  if (a !== undefined && b === undefined) return 1;
-  return 0;
-}
-
-function getNestedValue(obj: unknown, path: string): unknown {
-  let current: unknown = obj;
-  for (const segment of path.split('.')) {
-    if (current === null || current === undefined || typeof current !== 'object') {
-      return undefined;
-    }
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return current;
-}
-
-function applySorting<T>(items: readonly T[], sort: Record<string, 1 | -1>): readonly T[] {
-  const entries = Object.entries(sort);
-  if (entries.length === 0) return items;
-
-  const sorted = [...items];
-  sorted.sort((a, b) => {
-    for (const [field, direction] of entries) {
-      const va = getNestedValue(a, field);
-      const vb = getNestedValue(b, field);
-      const cmp = compareValues(va, vb) * direction;
-      if (cmp !== 0) return cmp;
-    }
-    return 0;
-  });
-  return sorted;
-}
-
+/** Find all documents in a collection matching a query, with optional sort/skip/limit. */
+export function find<T>(collection: readonly T[], query: TypedQuery<T>, options?: FindOptions): readonly T[];
+export function find<T>(collection: readonly T[], query: Query, options?: FindOptions): readonly T[];
 export function find<T>(
   collection: readonly T[],
-  query: ShorthandQuery,
+  query: Query,
   options?: FindOptions,
 ): readonly T[] {
-  const ast = compileShorthand(query);
+  const filter = compileFilter(query, options?.registry ? { registry: options.registry } : undefined) as FilterFn<T>;
+  const skip = options?.skip ?? 0;
+  const limit = options?.limit;
+
+  // Fast path: no sort + has limit — avoid full collection scan
+  if (!options?.sort && limit !== undefined) {
+    const results: T[] = [];
+    let skipped = 0;
+    for (const item of collection) {
+      if (filter(item)) {
+        if (skipped < skip) { skipped++; continue; }
+        results.push(item);
+        if (results.length >= limit) break;
+      }
+    }
+    return results;
+  }
 
   let results = collection.filter((item) => {
-    const scope = item as unknown as EvaluationScope;
-    return Boolean(evaluate(ast, scope));
+    return filter(item);
   });
 
   if (options?.sort) {
-    results = applySorting(results, options.sort) as T[];
+    results = applySorting(results, options.sort);
   }
-
-  const skip = options?.skip ?? 0;
-  const limit = options?.limit;
 
   if (skip > 0 || limit !== undefined) {
     results = results.slice(skip, limit !== undefined ? skip + limit : undefined) as T[];

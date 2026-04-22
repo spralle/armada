@@ -3,13 +3,14 @@ import { FormStore } from '../store.js';
 import { createForm } from '../create-form.js';
 import { runNotifyHooksSync } from '../middleware-runner.js';
 import type { FormState, ValidationIssue } from '../state.js';
-import type { Middleware, ValidatorAdapter } from '../contracts.js';
+import type { Middleware, ValidatorFn } from '../contracts.js';
 
 function makeState(data: unknown = {}): FormState {
   return {
     data,
     uiState: {},
     meta: { validation: {} },
+    fieldMeta: {},
     issues: [],
   };
 }
@@ -34,20 +35,16 @@ describe('reliability — subscriber error isolation', () => {
 describe('reliability — validation issues cleared between dispatches', () => {
   it('issues do not accumulate across dispatches', () => {
     let shouldFail = true;
-    const validator: ValidatorAdapter = {
-      id: 'conditional',
-      supports: () => true,
-      validate: ({ data }) => {
-        if (!shouldFail) return [];
-        return [{
-          code: 'required',
-          message: 'Required',
-          severity: 'error' as const,
-          stage: 'draft',
-          path: { namespace: 'data' as const, segments: ['name'] },
-          source: { origin: 'function-validator' as const, validatorId: 'conditional' },
-        }];
-      },
+    const validator: ValidatorFn = ({ data }) => {
+      if (!shouldFail) return [];
+      return [{
+        code: 'required',
+        message: 'Required',
+        severity: 'error' as const,
+        stage: 'draft',
+        path: { namespace: 'data' as const, segments: ['name'] },
+        source: { origin: 'function-validator' as const, validatorId: 'conditional' },
+      }];
     };
     const form = createForm({
       validators: [validator],

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createForm } from '../create-form.js';
-import type { Middleware, MiddlewareDecision, ValidatorAdapter } from '../contracts.js';
+import type { Middleware, MiddlewareDecision, ValidatorFn } from '../contracts.js';
 import type { ValidationIssue } from '../state.js';
 import type { TransformDefinition } from '../transforms.js';
 
@@ -77,18 +77,14 @@ describe('pipeline — 18-step engine', () => {
   });
 
   it('validators produce issues that are normalized and stored', () => {
-    const validator: ValidatorAdapter = {
-      id: 'test-validator',
-      supports: () => true,
-      validate: ({ stage }) => [{
-        code: 'required',
-        message: 'Name is required',
-        severity: 'error',
-        ...(stage !== undefined ? { stage } : {}),
-        path: { namespace: 'data', segments: ['name'] },
-        source: { origin: 'function-validator', validatorId: 'test-validator' },
-      }],
-    };
+    const validator: ValidatorFn = ({ stage }) => [{
+      code: 'required',
+      message: 'Name is required',
+      severity: 'error',
+      ...(stage !== undefined ? { stage } : {}),
+      path: { namespace: 'data', segments: ['name'] },
+      source: { origin: 'function-validator', validatorId: 'test-validator' },
+    }];
     const form = createForm({
       validators: [validator],
       initialData: { name: '' },
@@ -226,18 +222,14 @@ describe('pipeline — 18-step engine', () => {
   });
 
   it('validator issues block submit', async () => {
-    const validator: ValidatorAdapter = {
-      id: 'blocker',
-      supports: () => true,
-      validate: () => [{
-        code: 'required',
-        message: 'Required',
-        severity: 'error',
-        stage: 'draft',
-        path: { namespace: 'data' as const, segments: ['x'] },
-        source: { origin: 'function-validator' as const, validatorId: 'blocker' },
-      }],
-    };
+    const validator: ValidatorFn = () => [{
+      code: 'required',
+      message: 'Required',
+      severity: 'error',
+      stage: 'draft',
+      path: { namespace: 'data' as const, segments: ['x'] },
+      source: { origin: 'function-validator' as const, validatorId: 'blocker' },
+    }];
     const onSubmit = vi.fn().mockResolvedValue({ ok: true, submitId: 'x' });
     const form = createForm({
       validators: [validator],
@@ -252,11 +244,7 @@ describe('pipeline — 18-step engine', () => {
   });
 
   it('throws FORMR_ASYNC_IN_SYNC_PIPELINE when validator returns Promise in dispatch', () => {
-    const asyncValidator: ValidatorAdapter = {
-      id: 'async-val',
-      supports: () => true,
-      validate: () => Promise.resolve([]),
-    };
+    const asyncValidator: ValidatorFn = () => Promise.resolve([]) as unknown as readonly ValidationIssue[];
 
     const form = createForm({
       validators: [asyncValidator],
@@ -268,11 +256,7 @@ describe('pipeline — 18-step engine', () => {
   });
 
   it('throws FORMR_ASYNC_IN_SYNC_PIPELINE when validator returns Promise in validate()', () => {
-    const asyncValidator: ValidatorAdapter = {
-      id: 'async-val',
-      supports: () => true,
-      validate: () => Promise.resolve([]),
-    };
+    const asyncValidator: ValidatorFn = () => Promise.resolve([]) as unknown as readonly ValidationIssue[];
 
     const form = createForm({
       validators: [asyncValidator],

@@ -11,8 +11,8 @@ import type { ScopeManager } from './scope.js';
 import type { AlphaNetwork } from './alpha-network.js';
 import type { Agenda } from './agenda.js';
 import type { TruthMaintenanceSystem } from './tms.js';
-import { evaluate } from '@ghost/predicate';
-import type { ExprNode } from '@ghost/predicate';
+import { evaluate } from '@ghost/predicate/evaluate';
+import type { ExprNode } from '@ghost/predicate/ast';
 import { ArbiterError, ArbiterErrorCode } from './errors.js';
 import { executeStages } from './stage-executor.js';
 

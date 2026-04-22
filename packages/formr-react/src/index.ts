@@ -27,9 +27,12 @@ export type {
   FieldConfig,
   CreateFormOptions,
   ValidationIssue,
-  ValidatorAdapter,
+  ValidatorFn,
+  ValidatorInput,
   SubmitContext,
   SubmitResult,
+  DeepKeys,
+  DeepValue,
 } from '@ghost/formr-core';
 
 export { RendererRegistry } from './renderer-registry.js';

@@ -1,13 +1,22 @@
 import { useMemo, useRef } from 'react';
-import type { FormApi, FieldApi, FieldConfig } from '@ghost/formr-core';
+import type { FormApi, FieldApi, FieldConfig, FieldMetaEntry } from '@ghost/formr-core';
 import { useFormSelector } from './use-form-selector.js';
 
+interface FieldSnapshot {
+  readonly value: unknown;
+  readonly meta: FieldMetaEntry | undefined;
+}
+
+function fieldSnapshotEqual(a: FieldSnapshot, b: FieldSnapshot): boolean {
+  return a.value === b.value && a.meta === b.meta;
+}
+
 /** Get a FieldApi for a specific path, with fine-grained re-rendering */
-export function useField(
-  form: FormApi,
-  path: string,
+export function useField<TData, TUi, P extends string>(
+  form: FormApi<TData, TUi>,
+  path: P,
   config?: FieldConfig,
-): FieldApi {
+): FieldApi<TData, TUi, P> {
   // Stabilize config reference — inline objects create new references every render
   const configRef = useRef(config);
   const stableConfig = useMemo(() => {
@@ -20,8 +29,13 @@ export function useField(
 
   const field = useMemo(() => form.field(path, stableConfig), [form, path, stableConfig]);
 
-  // Subscribe only to this field's value to trigger re-renders
-  useFormSelector(form, () => field.get());
+  // Subscribe to field value and touched state to trigger re-renders
+  useFormSelector(form, () => {
+    const state = form.getState();
+    const pathKey = field.path.segments.join('.');
+    const meta = (state.fieldMeta as Readonly<Record<string, FieldMetaEntry>>)[pathKey];
+    return { value: field.get(), meta } as FieldSnapshot;
+  }, fieldSnapshotEqual);
 
-  return field;
+  return field as FieldApi<TData, TUi, P>;
 }

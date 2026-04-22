@@ -157,7 +157,7 @@ describe('const support', () => {
     };
 
     const validator = createJsonSchemaValidator(schema);
-    const issues = validator.validate({ data: { kind: 'user' }, uiState: {}, stage: 'submit' });
+    const issues = validator({ data: { kind: 'user' }, uiState: {}, stage: 'submit' });
     expect(issues).toHaveLength(0);
   });
 
@@ -170,7 +170,7 @@ describe('const support', () => {
     };
 
     const validator = createJsonSchemaValidator(schema);
-    const issues = validator.validate({ data: { kind: 'admin' }, uiState: {}, stage: 'submit' });
+    const issues = validator({ data: { kind: 'admin' }, uiState: {}, stage: 'submit' });
     expect(issues).toHaveLength(1);
     expect(issues[0].code).toBe('INVALID_CONST');
   });
@@ -184,10 +184,10 @@ describe('const support', () => {
     };
 
     const validator = createJsonSchemaValidator(schema);
-    const pass = validator.validate({ data: { config: { a: 1, b: [2, 3] } }, uiState: {}, stage: 'submit' });
+    const pass = validator({ data: { config: { a: 1, b: [2, 3] } }, uiState: {}, stage: 'submit' });
     expect(pass).toHaveLength(0);
 
-    const fail = validator.validate({ data: { config: { a: 1, b: [2, 4] } }, uiState: {}, stage: 'submit' });
+    const fail = validator({ data: { config: { a: 1, b: [2, 4] } }, uiState: {}, stage: 'submit' });
     expect(fail).toHaveLength(1);
   });
 

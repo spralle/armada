@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'bun:test';
 import { evaluateWithTrace } from '../failure-trace.js';
-import { compileShorthand } from '../shorthand.js';
+import { compile } from '../compile.js';
 
 describe('evaluateWithTrace', () => {
   it('returns empty traces when all conditions pass', () => {
-    const ast = compileShorthand({ name: 'alice', age: 30 });
+    const ast = compile({ name: 'alice', age: 30 });
     const { result, traces } = evaluateWithTrace(ast, { name: 'alice', age: 30 });
     expect(result).toBe(true);
     expect(traces).toHaveLength(0);
   });
 
   it('collects trace for failing $eq', () => {
-    const ast = compileShorthand({ name: 'alice' });
+    const ast = compile({ name: 'alice' });
     const { result, traces } = evaluateWithTrace(ast, { name: 'bob' });
     expect(result).toBe(false);
     expect(traces).toHaveLength(1);
@@ -22,14 +22,14 @@ describe('evaluateWithTrace', () => {
   });
 
   it('collects traces for multiple failing conditions', () => {
-    const ast = compileShorthand({ name: 'alice', age: 30 });
+    const ast = compile({ name: 'alice', age: 30 });
     const { result, traces } = evaluateWithTrace(ast, { name: 'bob', age: 25 });
     expect(result).toBe(false);
     expect(traces).toHaveLength(2);
   });
 
   it('collects trace for failing $gt', () => {
-    const ast = compileShorthand({ age: { $gt: 30 } });
+    const ast = compile({ age: { $gt: 30 } });
     const { result, traces } = evaluateWithTrace(ast, { age: 25 });
     expect(result).toBe(false);
     expect(traces).toHaveLength(1);
@@ -39,7 +39,7 @@ describe('evaluateWithTrace', () => {
   });
 
   it('collects trace for failing $in', () => {
-    const ast = compileShorthand({ role: { $in: ['admin', 'moderator'] } });
+    const ast = compile({ role: { $in: ['admin', 'moderator'] } });
     const { result, traces } = evaluateWithTrace(ast, { role: 'user' });
     expect(result).toBe(false);
     expect(traces).toHaveLength(1);
@@ -47,7 +47,7 @@ describe('evaluateWithTrace', () => {
   });
 
   it('handles nested $and with partial failures', () => {
-    const ast = compileShorthand({
+    const ast = compile({
       $and: [{ name: 'alice' }, { age: { $gte: 40 } }],
     });
     const { result, traces } = evaluateWithTrace(ast, { name: 'alice', age: 30 });
@@ -57,7 +57,7 @@ describe('evaluateWithTrace', () => {
   });
 
   it('handles dot-path fields', () => {
-    const ast = compileShorthand({ 'user.name': 'alice' });
+    const ast = compile({ 'user.name': 'alice' });
     const { result, traces } = evaluateWithTrace(ast, { user: { name: 'bob' } });
     expect(result).toBe(false);
     expect(traces[0].path).toBe('user.name');

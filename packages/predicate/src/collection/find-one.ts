@@ -1,16 +1,17 @@
-import { compileShorthand, type ShorthandQuery } from '../shorthand.js';
-import { evaluate } from '../evaluator.js';
-import type { EvaluationScope } from '../ast.js';
+import type { Query } from '../compile.js';
+import type { TypedQuery } from '../typed-query.js';
+import type { CompileFilterOptions, FilterFn } from '../filter-compiler.js';
+import { compileFilter } from '../filter-compiler.js';
 
-export function findOne<T>(collection: readonly T[], query: ShorthandQuery): T | undefined {
-  const ast = compileShorthand(query);
-
+/** Find the first document in a collection matching a query, or undefined if none match. */
+export function findOne<T>(collection: readonly T[], query: TypedQuery<T>, options?: CompileFilterOptions): T | undefined;
+export function findOne<T>(collection: readonly T[], query: Query, options?: CompileFilterOptions): T | undefined;
+export function findOne<T>(collection: readonly T[], query: Query, options?: CompileFilterOptions): T | undefined {
+  const filter = compileFilter(query, options) as FilterFn<T>;
   for (const item of collection) {
-    const scope = item as unknown as EvaluationScope;
-    if (Boolean(evaluate(ast, scope))) {
+    if (filter(item)) {
       return item;
     }
   }
-
   return undefined;
 }

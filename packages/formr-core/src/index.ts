@@ -10,11 +10,14 @@ export {
   type SubmitContext,
   type FormState,
   type CreateFormOptions,
+  type FieldMetaEntry,
 } from './state.js';
 
 // Contract types (SE1.2)
 export {
-  type ValidatorAdapter,
+  type ValidatorFn,
+  type ValidatorInput,
+  type SchemaValidator,
   type ExprNode,
   type ExpressionDefinition,
   type EvaluationScope,
@@ -42,6 +45,11 @@ export {
   type ProductionRule,
   type RuleSession,
   type ArbiterSessionConfig,
+  type ValidationTrigger,
+  type FieldValidationTriggers,
+  type ArrayFieldHelpers,
+  type FieldApiWithArray,
+  type AsyncValidatorConfig,
 } from './contracts.js';
 
 // Submit helpers
@@ -65,6 +73,21 @@ export { applyRuleWrites } from './expression-integration.js';
 // Arbiter integration (ADR arbiter §9)
 export { createArbiterAdapter, createArbiterAdapterFromSession, type ArbiterFormAdapter } from './arbiter-integration.js';
 
+// Equality utility
+export { structuredEqual } from './equality.js';
+
+// Trigger filter
+export { shouldShowIssues, type TriggerContext } from './trigger-filter.js';
+
+// Field meta shifting
+export { shiftFieldMeta, clearChildFieldMeta, swapFieldMeta } from './field-meta-shift.js';
+
+// Listener registry
+export { createListenerRegistry, type ListenerEntry } from './listener-registry.js';
+
+// Async validation
+export { createAsyncValidationManager, type AsyncValidationManager, type AsyncManagerDeps } from './async-validation.js';
+
 // Nested utilities (extracted from old rule engine)
 export { setNestedValue, deleteNestedValue } from './nested-utils.js';
 
@@ -77,6 +100,7 @@ export {
   createDateTransform,
   createDateEgressTransform,
   createConfigurableDateEgressTransform,
+  createFieldTransform,
   type TransformDefinition,
   type TransformPhase,
   type TransformContext,
@@ -84,18 +108,19 @@ export {
   type DateEgressOptions,
 } from './transforms.js';
 
-// Extensions (SE6.3)
+// Timeout utilities (SE6.3)
 export {
-  validateExtension,
-  isCompatibleVersion,
   withTimeout,
-  clearExtensionRegistry,
-  STABLE_CAPABILITIES,
-  EXPERIMENTAL_CAPABILITIES,
   DEFAULT_RUNTIME_CONSTRAINTS,
-  type ExtensionManifest,
   type RuntimeConstraints,
-} from './extensions.js';
+} from './timeout.js';
+
+// Type utilities (formr-typed-dx)
+export type { DeepKeys, DeepValue, ArrayElement } from './type-utils.js';
+
+// Standard Schema support
+export { isStandardSchemaLike, createStandardSchemaValidator } from './standard-schema.js';
+export type { StandardSchemaLike } from './standard-schema.js';
 
 // Middleware runner (SE6.2)
 export {

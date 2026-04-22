@@ -15,7 +15,9 @@ export type FormrErrorCode =
   | 'FORMR_ASYNC_IN_SYNC_PIPELINE'
   | 'FORMR_RULE_WRITE_CONFLICT'
   | 'FORMR_RULE_NON_CONVERGENT'
-  | 'FORMR_RULE_DISALLOWED_TARGET';
+  | 'FORMR_RULE_DISALLOWED_TARGET'
+  | 'FORMR_ASYNC_SCHEMA_IN_SYNC'
+  | 'FORMR_INVALID_VALIDATOR';
 
 export class FormrError extends Error {
   readonly code: FormrErrorCode;

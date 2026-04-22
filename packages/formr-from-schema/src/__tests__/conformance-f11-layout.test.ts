@@ -143,9 +143,4 @@ describe('F11.D: Unknown node rejection', () => {
       expect((e as FromSchemaError).code).toBe('FORMR_LAYOUT_UNKNOWN_NODE_TYPE');
     }
   });
-
-  test('F11.12: Registry capabilityKey returns layout-node.exp.v1', () => {
-    const registry = new LayoutNodeRegistry();
-    expect(registry.capabilityKey).toBe('layout-node.exp.v1');
-  });
 });

@@ -1,5 +1,5 @@
 import type { ThenStage, CompiledStage } from './contracts.js';
-import { compileShorthand } from '@ghost/predicate';
+import { compile } from '@ghost/predicate/compile';
 import { validatePath } from './path-utils.js';
 import { ArbiterError, ArbiterErrorCode } from './errors.js';
 
@@ -37,7 +37,7 @@ function compileStage(stage: ThenStage): CompiledStage {
   for (const [path, value] of Object.entries(fieldMap)) {
     validatePath(path);
     if (operator === '$pull') {
-      entries.set(path, compileShorthand(value as Record<string, unknown>));
+      entries.set(path, compile(value as Record<string, unknown>));
     } else {
       entries.set(path, value);
     }

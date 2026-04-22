@@ -1,4 +1,5 @@
-import type { ValidatorAdapter } from '@ghost/formr-core';
+import type { ValidatorFn } from '@ghost/formr-core';
+import { isStandardSchemaLike, createStandardSchemaValidator } from '@ghost/formr-core';
 import type { LayoutNode } from './layout/layout-types.js';
 import type { SchemaFieldInfo, SchemaMetadata } from './types.js';
 import { ingestSchema } from './ingest.js';
@@ -7,7 +8,7 @@ import { createJsonSchemaValidator, isJsonSchema } from './adapters/json-schema-
 
 export interface CreateSchemaFormOptions {
   /** Additional validators to include beyond the auto-detected schema validator */
-  readonly validators?: readonly ValidatorAdapter[];
+  readonly validators?: readonly ValidatorFn[];
   /** Override the auto-compiled layout with a custom LayoutNode tree */
   readonly layoutOverride?: LayoutNode;
 }
@@ -16,7 +17,7 @@ export interface SchemaFormResult {
   readonly fields: readonly SchemaFieldInfo[];
   readonly layout: LayoutNode;
   readonly metadata: SchemaMetadata;
-  readonly validators: readonly ValidatorAdapter[];
+  readonly validators: readonly ValidatorFn[];
 }
 
 /**
@@ -29,9 +30,11 @@ export function createSchemaForm(
 ): SchemaFormResult {
   const result = ingestSchema(schema);
   const layout = options?.layoutOverride ?? compileLayout(result);
-  const validators: ValidatorAdapter[] = [];
+  const validators: ValidatorFn[] = [];
   if (isJsonSchema(schema)) {
     validators.push(createJsonSchemaValidator(schema));
+  } else if (isStandardSchemaLike(schema)) {
+    validators.push(createStandardSchemaValidator(schema));
   }
   if (options?.validators) {
     validators.push(...options.validators);

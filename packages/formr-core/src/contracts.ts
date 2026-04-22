@@ -2,6 +2,8 @@ import type { CanonicalPath } from './path.js';
 import type { FormState, ValidationIssue, SubmitContext } from './state.js';
 import type { ExprNode, ExpressionDefinition, EvaluationScope } from '@ghost/predicate';
 import type { TransformDefinition } from './transforms.js';
+import type { DeepKeys, DeepValue, ArrayElement } from './type-utils.js';
+import type { StandardSchemaLike } from './standard-schema.js';
 
 export type { ExprNode, ExpressionDefinition, EvaluationScope };
 
@@ -16,15 +18,40 @@ export type Transform = TransformDefinition;
 
 /** Backward-compat alias — prefer EvaluationScope in new code */
 export type ExpressionScope = EvaluationScope;
-export interface ValidatorAdapter {
-  readonly id: string;
-  supports(schema: unknown): boolean;
-  validate(input: {
-    readonly data: unknown;
-    readonly uiState: unknown;
-    readonly stage?: string;
-    readonly context?: SubmitContext;
-  }): Promise<readonly ValidationIssue[]> | readonly ValidationIssue[];
+/** Input bag passed to sync validators */
+export interface ValidatorInput<TData = unknown, TUi = unknown> {
+  readonly data: TData;
+  readonly uiState: TUi;
+  readonly stage?: string;
+  readonly context?: SubmitContext;
+}
+
+/** Sync validator — a plain function returning issues */
+export type ValidatorFn<TData = unknown, TUi = unknown> = (
+  input: ValidatorInput<TData, TUi>,
+) => readonly ValidationIssue[];
+
+/** A validator can be a function OR a Standard Schema object (auto-detected and wrapped) */
+export type SchemaValidator<TData = unknown, TUi = unknown> =
+  | ValidatorFn<TData, TUi>
+  | StandardSchemaLike;
+
+/** Async validator config — function + metadata for scheduling */
+export interface AsyncValidatorConfig<TData = unknown, TUi = unknown> {
+  /** The validation function. MUST respect signal for cancellation. */
+  readonly validate: (input: {
+    readonly data: TData;
+    readonly uiState: TUi;
+    readonly signal: AbortSignal;
+  }) => Promise<readonly ValidationIssue[]>;
+  /** Dot paths this validator watches. Empty/undefined = form-level. */
+  readonly fields?: readonly string[];
+  /** Debounce in ms. Default: 300. */
+  readonly debounceMs?: number;
+  /** Event trigger. Default: 'onChange'. */
+  readonly trigger?: 'onChange' | 'onBlur';
+  /** Dedup label. Auto-generated from fields if omitted. */
+  readonly label?: string;
 }
 
 /** ADR section 5.2 — RuleWriteIntent */
@@ -41,83 +68,83 @@ export type MiddlewareDecision =
   | { readonly action: 'veto'; readonly reason: string };
 
 /** Context for beforeAction hook */
-export interface BeforeActionContext {
+export interface BeforeActionContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<TData, TUi>;
 }
 
 /** Context for afterAction hook */
-export interface AfterActionContext {
+export interface AfterActionContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly prevState: FormState;
-  readonly nextState: FormState;
+  readonly prevState: FormState<TData, TUi>;
+  readonly nextState: FormState<TData, TUi>;
 }
 
 /** Context for beforeEvaluate hook */
-export interface BeforeEvaluateContext {
+export interface BeforeEvaluateContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<TData, TUi>;
 }
 
 /** Context for afterEvaluate hook */
-export interface AfterEvaluateContext {
+export interface AfterEvaluateContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<TData, TUi>;
 }
 
 /** Context for beforeValidate hook */
-export interface BeforeValidateContext {
+export interface BeforeValidateContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<TData, TUi>;
   readonly stage?: string;
 }
 
 /** Context for afterValidate hook */
-export interface AfterValidateContext {
+export interface AfterValidateContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<TData, TUi>;
   readonly issues: readonly ValidationIssue[];
 }
 
 /** Context for beforeSubmit hook */
-export interface BeforeSubmitContext {
+export interface BeforeSubmitContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<TData, TUi>;
   readonly submitContext: SubmitContext;
 }
 
 /** Context for afterSubmit hook */
-export interface AfterSubmitContext {
+export interface AfterSubmitContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
-  readonly state: FormState;
+  readonly state: FormState<TData, TUi>;
   readonly result: SubmitResult;
 }
 
 /** Context for middleware init */
-export interface MiddlewareInitContext {
-  readonly state: FormState;
+export interface MiddlewareInitContext<TData = unknown, TUi = unknown> {
+  readonly state: FormState<TData, TUi>;
 }
 
 /** ADR section 9 — Middleware with full lifecycle hooks */
-export interface Middleware {
+export interface Middleware<TData = unknown, TUi = unknown> {
   readonly id: string;
-  onInit?(ctx: MiddlewareInitContext): void;
-  beforeAction?(ctx: BeforeActionContext): MiddlewareDecision | Promise<MiddlewareDecision>;
-  afterAction?(ctx: AfterActionContext): void;
-  beforeEvaluate?(ctx: BeforeEvaluateContext): void;
-  afterEvaluate?(ctx: AfterEvaluateContext): void;
-  beforeValidate?(ctx: BeforeValidateContext): void;
-  afterValidate?(ctx: AfterValidateContext): void;
-  beforeSubmit?(ctx: BeforeSubmitContext): MiddlewareDecision | Promise<MiddlewareDecision>;
-  afterSubmit?(ctx: AfterSubmitContext): void;
+  onInit?(ctx: MiddlewareInitContext<TData, TUi>): void;
+  beforeAction?(ctx: BeforeActionContext<TData, TUi>): MiddlewareDecision | Promise<MiddlewareDecision>;
+  afterAction?(ctx: AfterActionContext<TData, TUi>): void;
+  beforeEvaluate?(ctx: BeforeEvaluateContext<TData, TUi>): void;
+  afterEvaluate?(ctx: AfterEvaluateContext<TData, TUi>): void;
+  beforeValidate?(ctx: BeforeValidateContext<TData, TUi>): void;
+  afterValidate?(ctx: AfterValidateContext<TData, TUi>): void;
+  beforeSubmit?(ctx: BeforeSubmitContext<TData, TUi>): MiddlewareDecision | Promise<MiddlewareDecision>;
+  afterSubmit?(ctx: AfterSubmitContext<TData, TUi>): void;
   onDispose?(): void;
 }
 
 /** ADR section 9 — SubmitExecutionContext */
-export interface SubmitExecutionContext {
-  readonly form: FormApi;
+export interface SubmitExecutionContext<TData, TUi> {
+  readonly form: FormApi<TData, TUi>;
   readonly submitContext: SubmitContext;
-  readonly payload: unknown;
+  readonly payload: TData;
 }
 
 /** ADR section 9 — SubmitResult */
@@ -125,6 +152,8 @@ export interface SubmitResult {
   readonly ok: boolean;
   readonly submitId: string;
   readonly message?: string;
+  /** Shorthand: { fieldPath: errorMessage } — auto-converted to ValidationIssue[] */
+  readonly fieldErrors?: Readonly<Record<string, string>>;
   readonly fieldIssues?: readonly ValidationIssue[];
   readonly globalIssues?: readonly ValidationIssue[];
 }
@@ -142,6 +171,25 @@ export interface FormDispatchResult {
   readonly error?: string;
 }
 
+/** When an issue becomes visible to the user */
+export type ValidationTrigger = 'onChange' | 'onBlur' | 'onSubmit' | 'onMount';
+
+/** Per-field validation gating config */
+export interface FieldValidationTriggers {
+  /** Show issues when field value changes (field is dirty). Default trigger. */
+  readonly onChange?: boolean;
+  /** Show issues when field loses focus (field is touched via markTouched). */
+  readonly onBlur?: boolean;
+  /** Show issues only after form.submit() is called. */
+  readonly onSubmit?: boolean;
+  /** Show issues immediately on mount. */
+  readonly onMount?: boolean;
+  /** Re-show issues when any listed source field's value changes */
+  readonly onChangeListenTo?: readonly string[];
+  /** Re-show issues when any listed source field is blurred */
+  readonly onBlurListenTo?: readonly string[];
+}
+
 /** ADR section 9.1 — FieldConfig */
 export interface FieldConfig {
   readonly label?: string;
@@ -151,29 +199,68 @@ export interface FieldConfig {
   readonly readOnly?: boolean;
   readonly required?: boolean;
   readonly hidden?: boolean;
-  readonly validators?: readonly ValidatorAdapter[];
+  readonly validators?: readonly ValidatorFn[];
   readonly transforms?: readonly Transform[];
   readonly metadata?: Readonly<Record<string, unknown>>;
+  readonly validationTriggers?: FieldValidationTriggers;
 }
 
 /** ADR section 9 — FieldApi */
-export interface FieldApi {
+export interface FieldApi<TData, TUi, TPath extends string> {
   readonly path: CanonicalPath;
-  get(): unknown;
-  set(value: unknown): FormDispatchResult;
+  get(): DeepValue<TData, TPath>;
+  set(value: DeepValue<TData, TPath>): FormDispatchResult;
   validate(): readonly ValidationIssue[];
   issues(): readonly ValidationIssue[];
-  ui<T = unknown>(selector: (uiState: unknown) => T): T;
+  ui<T = unknown>(selector: (uiState: TUi) => T): T;
+  isTouched(): boolean;
+  isDirty(): boolean;
+  isValidating(): boolean;
+  markTouched(): void;
+  /** Set field value — wraps set(). Ready to bind to onChange. */
+  handleChange(value: DeepValue<TData, TPath>): FormDispatchResult;
+  /** Mark field as touched — wraps markTouched(). Ready to bind to onBlur. */
+  handleBlur(): void;
 }
 
+/** Array manipulation helpers — available when field value is an array. */
+export interface ArrayFieldHelpers<TValue> {
+  pushValue(item: ArrayElement<TValue>): FormDispatchResult;
+  removeValue(index: number): FormDispatchResult;
+  insertValue(index: number, item: ArrayElement<TValue>): FormDispatchResult;
+  moveValue(fromIndex: number, toIndex: number): FormDispatchResult;
+  swapValue(indexA: number, indexB: number): FormDispatchResult;
+}
+
+/** FieldApi with array helpers when the field value is an array. */
+export type FieldApiWithArray<TData, TUi, TPath extends string> =
+  FieldApi<TData, TUi, TPath> &
+  (NonNullable<DeepValue<TData, TPath>> extends readonly unknown[]
+    ? ArrayFieldHelpers<DeepValue<TData, TPath>>
+    : unknown);
+
 /** ADR section 9 — FormApi */
-export interface FormApi {
-  getState(): FormState;
+export interface FormApi<TData, TUi> {
+  getState(): FormState<TData, TUi>;
   dispatch(action: FormAction): FormDispatchResult;
-  setValue(path: string, value: unknown): FormDispatchResult;
+  setValue<P extends string & DeepKeys<TData>>(path: P, value: DeepValue<TData, P>): FormDispatchResult;
   validate(stage?: string): readonly ValidationIssue[];
   submit(context?: Partial<SubmitContext>): Promise<SubmitResult>;
-  field(path: string, config?: FieldConfig): FieldApi;
-  subscribe(listener: (state: FormState) => void): () => void;
+  field<P extends string & DeepKeys<TData>>(path: P, config?: FieldConfig): FieldApiWithArray<TData, TUi, P>;
+  subscribe(listener: (state: FormState<TData, TUi>) => void): () => void;
+  /** Reset form to initial or provided state */
+  reset(nextInitial?: { readonly data?: TData; readonly uiState?: TUi }): void;
+  /** True when no error-severity issues exist and not currently submitting */
+  canSubmit(): boolean;
+  /** True when form data equals initial data */
+  isPristine(): boolean;
+  /** True when form data differs from initial data */
+  isDirty(): boolean;
+  /** True when no error-severity issues exist */
+  isValid(): boolean;
+  /** True when submission is in progress */
+  isSubmitting(): boolean;
+  /** True when any field has been touched */
+  isTouched(): boolean;
   dispose(): void;
 }

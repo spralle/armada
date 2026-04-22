@@ -16,7 +16,9 @@ export interface ValidationIssue {
       | 'function-validator'
       | 'json-schema-adapter'
       | 'rule'
-      | 'middleware';
+      | 'middleware'
+      | 'async-validator'
+      | 'submit';
     readonly validatorId: string;
     readonly adapterId?: string;
     readonly ruleId?: string;
@@ -32,12 +34,22 @@ export interface SubmitContext {
   readonly metadata?: Readonly<Record<string, unknown>>;
 }
 
+/** Per-field engine metadata — NOT in $ui, this is form engine state */
+export interface FieldMetaEntry {
+  readonly touched: boolean;
+  readonly isValidating: boolean;
+  readonly dirty: boolean;
+  /** True when a listened-to field changed, making issues visible */
+  readonly listenerTriggered: boolean;
+}
+
 /** ADR section 1.1 — FormState */
-export interface FormState {
-  readonly data: unknown;
-  readonly uiState: unknown;
+export interface FormState<TData, TUi> {
+  readonly data: TData;
+  readonly uiState: TUi;
   readonly meta: {
     readonly stage?: string;
+    readonly submitted?: boolean;
     readonly validation: {
       readonly lastValidatedAt?: string; // ISO-8601 UTC
     };
@@ -49,24 +61,25 @@ export interface FormState {
       readonly lastErrorCode?: string;
     };
   };
+  readonly fieldMeta: Readonly<Record<string, FieldMetaEntry>>;
   readonly issues: readonly ValidationIssue[];
 }
 
 /** ADR section 9 — CreateFormOptions */
-export interface CreateFormOptions {
+export interface CreateFormOptions<TData, TUi> {
   readonly schema?: unknown;
   readonly uiStateSchema?: unknown;
-  readonly initialData?: unknown;
-  readonly initialUiState?: unknown;
-  readonly validators?: readonly ValidatorAdapter[];
-  readonly middleware?: readonly Middleware[];
-  readonly transforms?: readonly Transform[];
+  readonly initialData?: TData;
+  readonly initialUiState?: TUi;
+  readonly validators?: readonly SchemaValidator<TData, TUi>[];
+  readonly middleware?: readonly Middleware<TData, TUi>[];
+  readonly transforms?: readonly TransformDefinition<TData>[];
   readonly arbiterRules?: readonly ProductionRule[] | undefined;
   readonly arbiterSession?: RuleSession | undefined;
   /** Form-level field defaults — merged below field-level overrides (tier 2 of 3) */
   readonly fieldDefaults?: Readonly<FieldConfig>;
   readonly onSubmit?: (
-    ctx: SubmitExecutionContext,
+    ctx: SubmitExecutionContext<TData, TUi>,
   ) => Promise<SubmitResult>;
   readonly timeouts?: {
     readonly validator?: number;
@@ -74,16 +87,19 @@ export interface CreateFormOptions {
     readonly submit?: number;
   };
   readonly stateStrategy?: StateStrategy;
+  readonly asyncValidators?: readonly AsyncValidatorConfig[];
 }
 
 // Imports for CreateFormOptions references
 import type {
-  ValidatorAdapter,
+  SchemaValidator,
+  ValidatorFn,
+  AsyncValidatorConfig,
   Middleware,
-  Transform,
   FieldConfig,
   SubmitExecutionContext,
   SubmitResult,
 } from './contracts.js';
 import type { StateStrategy } from './transaction.js';
 import type { ProductionRule, RuleSession } from '@ghost/arbiter';
+import type { TransformDefinition } from './transforms.js';
