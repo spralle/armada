@@ -56,6 +56,8 @@
     "src/layer/__tests__/surface-context.spec.ts",
     "src/layer/__tests__/anchor-positioning.spec.ts",
     "src/layer/__tests__/auto-stacking.spec.ts",
-    "src/layer/__tests__/visual-effects.spec.ts"
+    "src/layer/__tests__/visual-effects.spec.ts",
+    "src/layer/surface-mount-utils.ts",
+    "src/federation-mount-utils.ts"
   ]
 }
