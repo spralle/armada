@@ -22,7 +22,7 @@ export interface PluginGatewayOptions {
   livePluginIds: readonly string[];
   port: number;
   workspaceRoot: string;
-  pluginsDir: string;
+  pluginsDirs: string[];
 }
 
 export interface PluginGateway {
@@ -41,7 +41,7 @@ export interface PluginGateway {
 export function createPluginGateway(
   options: PluginGatewayOptions,
 ): PluginGateway {
-  const { pluginIds, livePluginIds, port, workspaceRoot, pluginsDir } = options;
+  const { pluginIds, livePluginIds, port, workspaceRoot, pluginsDirs } = options;
   let httpServer: HttpServer | undefined;
   let viteInstances: ManagedViteInstance[] = [];
 
@@ -54,7 +54,7 @@ export function createPluginGateway(
 
     httpServer = createHttpServer(handleRequest);
 
-    const allDefinitions = discoverPlugins(pluginsDir);
+    const allDefinitions = discoverPlugins(pluginsDirs);
     const definitionMap = new Map(allDefinitions.map((d) => [d.id, d]));
 
     const liveSet = new Set(livePluginIds);
@@ -64,7 +64,6 @@ export function createPluginGateway(
     const staticDistMap = buildStaticDistMap(
       staticPluginIds,
       definitionMap,
-      pluginsDir,
     );
 
     // Create Vite instances only for live plugins
@@ -76,8 +75,8 @@ export function createPluginGateway(
             `No definition found for plugin '${pluginId}'. Discovered: ${allDefinitions.map((d) => d.id).join(", ")}`,
           );
         }
-        const configPath = resolvePluginConfigPath(definition, workspaceRoot);
-        const pluginDir = resolvePluginDir(definition, workspaceRoot);
+        const configPath = resolvePluginConfigPath(definition);
+        const pluginDir = resolvePluginDir(definition);
 
         return createPluginViteInstance({
           pluginId,
@@ -292,7 +291,6 @@ function setCorsHeaders(res: ServerResponse): void {
 function buildStaticDistMap(
   staticPluginIds: readonly string[],
   definitionMap: ReadonlyMap<string, DiscoveredPluginDefinition>,
-  pluginsDir: string,
 ): Map<string, string> {
   const map = new Map<string, string>();
 
@@ -305,7 +303,7 @@ function buildStaticDistMap(
       continue;
     }
 
-    const distDir = join(pluginsDir, definition.folderName, "dist");
+    const distDir = join(definition.dir, "dist");
     if (!existsSync(distDir)) {
       console.warn(
         `[plugin-dev-host] ⚠ plugin '${pluginId}' has no dist/ directory. ` +

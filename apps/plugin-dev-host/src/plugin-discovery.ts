@@ -17,6 +17,8 @@ export interface DiscoveredPluginDefinition {
   id: string;
   folderName: string;
   devPort: number;
+  /** Absolute path to the plugin's directory. */
+  dir: string;
 }
 
 const BASE_DEV_PORT = 4170;
@@ -29,13 +31,41 @@ interface PluginPackageJson {
 }
 
 /**
- * Discovers plugins by scanning a directory for subdirectories containing
- * a package.json with a name field.
+ * Discovers plugins across multiple directories. Each directory is scanned
+ * independently. If two directories contain a plugin with the same ID, the
+ * first occurrence wins and a warning is emitted.
+ */
+export function discoverPlugins(pluginsDirs: string[]): DiscoveredPluginDefinition[] {
+  const seen = new Map<string, string>(); // id → source dir
+  const merged: DiscoveredPluginDefinition[] = [];
+
+  for (const dir of pluginsDirs) {
+    const found = discoverPluginsInDir(dir);
+    for (const definition of found) {
+      const existingDir = seen.get(definition.id);
+      if (existingDir) {
+        console.warn(
+          `[plugin-discovery] duplicate plugin '${definition.id}' in ${dir} — ` +
+            `already discovered in ${existingDir}, skipping duplicate`,
+        );
+        continue;
+      }
+      seen.set(definition.id, dir);
+      merged.push(definition);
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Discovers plugins by scanning a single directory for subdirectories
+ * containing a package.json with a name field.
  *
  * Results are sorted by folder name for deterministic port assignment and
  * consistent ordering.
  */
-export function discoverPlugins(pluginsDir: string): DiscoveredPluginDefinition[] {
+function discoverPluginsInDir(pluginsDir: string): DiscoveredPluginDefinition[] {
   let entries: string[];
   try {
     entries = readdirSync(pluginsDir);
@@ -91,7 +121,7 @@ export function discoverPlugins(pluginsDir: string): DiscoveredPluginDefinition[
       nextAutoPort += 1;
     }
 
-    discovered.push({ id: pluginId, folderName, devPort });
+    discovered.push({ id: pluginId, folderName, devPort, dir: join(pluginsDir, folderName) });
   }
 
   return discovered;

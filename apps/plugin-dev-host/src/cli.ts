@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import {
   discoverPlugins,
   type DiscoveredPluginDefinition,
@@ -13,13 +14,15 @@ export interface PluginDevHostCliOptions {
   /** Build non-live plugins before starting the gateway. */
   buildBeforeStart: boolean;
   port: number;
+  /** Extra plugin directories from --plugin-dir flags. */
+  extraPluginDirs: string[];
 }
 
 export function parsePluginDevHostArgs(
   argv: readonly string[],
-  pluginsDir: string,
+  pluginsDirs: string[],
 ): PluginDevHostCliOptions {
-  const definitions = discoverPlugins(pluginsDir);
+  const definitions = discoverPlugins(pluginsDirs);
   const discoveredIds = definitions.map((d) => d.id);
   const hasLive = argv.includes("--live");
   const hasOnly = argv.includes("--only");
@@ -39,6 +42,7 @@ export function parsePluginDevHostArgs(
 
   const port = parsePortFlag(argv);
   const buildBeforeStart = argv.includes("--build");
+  const extraPluginDirs = parsePluginDirFlags(argv);
 
   // --all: serve all plugins as static (no live Vite instances)
   // --live / --only <ids>: specified plugins get live Vite, all discovered are served
@@ -47,21 +51,19 @@ export function parsePluginDevHostArgs(
     : parseLiveFlag(argv, hasLive ? "--live" : "--only", discoveredIds);
   const allPluginIds = discoveredIds.slice();
 
-  return { allPluginIds, livePluginIds, buildBeforeStart, port };
+  return { allPluginIds, livePluginIds, buildBeforeStart, port, extraPluginDirs };
 }
 
 export function resolvePluginDir(
   definition: DiscoveredPluginDefinition,
-  workspaceRoot: string,
 ): string {
-  return `${workspaceRoot}/plugins/${definition.folderName}`;
+  return definition.dir;
 }
 
 export function resolvePluginConfigPath(
   definition: DiscoveredPluginDefinition,
-  workspaceRoot: string,
 ): string {
-  return `${resolvePluginDir(definition, workspaceRoot)}/vite.config.ts`;
+  return `${definition.dir}/vite.config.ts`;
 }
 
 function parseLiveFlag(
@@ -94,6 +96,24 @@ function parseLiveFlag(
   }
 
   return requestedIds;
+}
+
+/**
+ * Collects all `--plugin-dir <path>` values from argv. The flag is repeatable.
+ */
+export function parsePluginDirFlags(argv: readonly string[]): string[] {
+  const dirs: string[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--plugin-dir") {
+      const value = argv[i + 1];
+      if (!value || value.startsWith("--")) {
+        exitWithError("Missing value for --plugin-dir. Use --plugin-dir <path>.");
+      }
+      dirs.push(resolve(value));
+      i += 1;
+    }
+  }
+  return dirs;
 }
 
 function parsePortFlag(argv: readonly string[]): number {
@@ -131,6 +151,7 @@ function printUsageAndExit(availableIds: readonly string[]): never {
     "  --all          Serve all discovered plugins as pre-built static files",
     "  --build        Build non-live plugins before starting",
     "  --port <num>   Gateway port (default: 41337)",
+    "  --plugin-dir <path>  Additional plugin directory (repeatable, additive)",
     "",
     "Discovered plugins:",
     ...availableIds.map((id) => `  - ${id}`),

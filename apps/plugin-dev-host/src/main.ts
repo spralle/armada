@@ -1,13 +1,15 @@
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
-import { parsePluginDevHostArgs } from "./cli.js";
+import { parsePluginDevHostArgs, parsePluginDirFlags } from "./cli.js";
 import { createPluginGateway } from "./gateway-server.js";
 import { discoverPlugins } from "./plugin-discovery.js";
 
 const workspaceRoot = resolve(import.meta.dirname, "../../..");
-const pluginsDir = resolve(workspaceRoot, "plugins");
+const builtinPluginsDir = resolve(workspaceRoot, "plugins");
+const extraPluginDirs = parsePluginDirFlags(process.argv.slice(2));
+const pluginsDirs = [builtinPluginsDir, ...extraPluginDirs];
 
-const cliOptions = parsePluginDevHostArgs(process.argv.slice(2), pluginsDir);
+const cliOptions = parsePluginDevHostArgs(process.argv.slice(2), pluginsDirs);
 
 if (cliOptions.buildBeforeStart) {
   runPreBuild(cliOptions.livePluginIds);
@@ -18,7 +20,7 @@ const gateway = createPluginGateway({
   livePluginIds: cliOptions.livePluginIds,
   port: cliOptions.port,
   workspaceRoot,
-  pluginsDir,
+  pluginsDirs,
 });
 
 gateway.start().catch((error: unknown) => {
@@ -34,7 +36,7 @@ gateway.start().catch((error: unknown) => {
 function runPreBuild(livePluginIds: readonly string[]): void {
   const buildScript = resolve(workspaceRoot, "scripts/build-plugins.mjs");
   const liveSet = new Set(livePluginIds);
-  const definitions = discoverPlugins(pluginsDir);
+  const definitions = discoverPlugins(pluginsDirs);
 
   const toBuild = definitions
     .filter((d) => !liveSet.has(d.id))
