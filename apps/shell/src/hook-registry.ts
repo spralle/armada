@@ -1,4 +1,4 @@
-import type { Disposable, HookService } from "@ghost/plugin-contracts";
+import type { Disposable, HookService } from "@ghost-shell/contracts";
 
 /**
  * In-memory hook registry. Implements the plugin-facing HookService
