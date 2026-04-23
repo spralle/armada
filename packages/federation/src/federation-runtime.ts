@@ -7,6 +7,7 @@ import * as ghostUi from "@ghost-shell/ui";
 import * as react from "react";
 import * as reactDom from "react-dom";
 import * as reactDomClient from "react-dom/client";
+import * as ghostReact from "@ghost-shell/react";
 
 type RuntimeCreateOptions = Parameters<typeof createInstance>[0];
 
@@ -63,6 +64,16 @@ const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
     shareConfig: {
       singleton: true,
       requiredVersion: "^18.3.1",
+      strictVersion: false,
+    },
+    strategy: "loaded-first",
+  },
+  "@ghost-shell/react": {
+    version: "0.0.0",
+    lib: () => ghostReact,
+    shareConfig: {
+      singleton: true,
+      requiredVersion: "^0.0.0",
       strictVersion: false,
     },
     strategy: "loaded-first",

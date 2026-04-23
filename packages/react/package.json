@@ -1,5 +1,5 @@
 {
-  "name": "@ghost-shell/federation",
+  "name": "@ghost-shell/react",
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -20,13 +20,16 @@
     "build:dist": "tsup"
   },
   "dependencies": {
-    "@ghost-shell/contracts": "workspace:*",
-    "@ghost-shell/react": "workspace:*",
-    "@ghost-shell/ui": "workspace:*"
+    "@ghost-shell/contracts": "workspace:*"
   },
   "peerDependencies": {
-    "@module-federation/enhanced": "^2.3.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }
