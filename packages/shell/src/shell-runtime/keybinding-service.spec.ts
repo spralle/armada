@@ -60,7 +60,7 @@ function createIntentRuntime(calls: { intent: string; context: Readonly<Record<s
       if (intent.type === "shell.intent.hidden") {
         return { kind: "no-match", feedback: "no match", trace };
       }
-      return { kind: "executed", match: { pluginId: "stub", pluginName: "Stub", actionId: "stub", title: "Stub", handler: "stub", intentType: intent.type, when: {}, loadMode: "eager", registrationOrder: 0, sortKey: "stub" }, trace };
+      return { kind: "executed", match: { pluginId: "stub", pluginName: "Stub", actionId: "stub", title: "Stub", handler: "stub", intentType: intent.type, when: {}, loadStrategy: "eager", registrationOrder: 0, sortKey: "stub" }, trace };
     },
   };
 }

@@ -40,7 +40,7 @@ function createSingleMatchPlugin() {
     {
       id: "plugin-single",
       enabled: true,
-      loadMode: "local-source",
+      loadStrategy: "local-source",
       contract: createContract({
         manifest: { id: "plugin-single", name: "Single", version: "0.1.0" },
         contributes: {
@@ -58,7 +58,7 @@ function createMultiMatchPlugins() {
     {
       id: "plugin-err-a",
       enabled: true,
-      loadMode: "local-source",
+      loadStrategy: "local-source",
       contract: createContract({
         manifest: { id: "plugin-err-a", name: "Err A", version: "0.1.0" },
         contributes: {
@@ -71,7 +71,7 @@ function createMultiMatchPlugins() {
     {
       id: "plugin-err-b",
       enabled: true,
-      loadMode: "local-source",
+      loadStrategy: "local-source",
       contract: createContract({
         manifest: { id: "plugin-err-b", name: "Err B", version: "0.1.0" },
         contributes: {

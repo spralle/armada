@@ -1,4 +1,4 @@
-import type { KeybindingOverrideEntryV1 } from "@ghost-shell/persistence";
+import type { KeybindingOverrideEntry } from "./keybinding-persistence-contracts.js";
 import { normalizeConfiguredSequence } from "./keybinding-normalizer.js";
 
 // ---------------------------------------------------------------------------
@@ -8,7 +8,7 @@ import { normalizeConfiguredSequence } from "./keybinding-normalizer.js";
 export interface KeybindingExportEnvelope {
   version: 1;
   exportedAt: string;
-  overrides: KeybindingOverrideEntryV1[];
+  overrides: KeybindingOverrideEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -17,7 +17,7 @@ export interface KeybindingExportEnvelope {
 
 export interface KeybindingImportResult {
   success: boolean;
-  entries: KeybindingOverrideEntryV1[];
+  entries: KeybindingOverrideEntry[];
   warnings: string[];
   errors: string[];
 }
@@ -27,7 +27,7 @@ export interface KeybindingImportResult {
 // ---------------------------------------------------------------------------
 
 export function exportKeybindingOverrides(
-  overrides: KeybindingOverrideEntryV1[],
+  overrides: KeybindingOverrideEntry[],
 ): KeybindingExportEnvelope {
   return {
     version: 1,
@@ -49,7 +49,7 @@ export function validateKeybindingImport(
 ): KeybindingImportResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const entries: KeybindingOverrideEntryV1[] = [];
+  const entries: KeybindingOverrideEntry[] = [];
 
   if (typeof input !== "object" || input === null || Array.isArray(input)) {
     errors.push("Input must be a JSON object with version and overrides fields.");

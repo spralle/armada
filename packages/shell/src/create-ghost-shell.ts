@@ -25,10 +25,10 @@ import {
 } from "./bootstrap-shell.js";
 import type { ShellBootstrapDeps } from "./bootstrap-shell.js";
 import {
+  ShellWiringContext,
   activatePluginForBoundary,
   announce,
   createBridgeBindings,
-  createWorkspaceSwitchDeps,
   dismissIntentChooser,
   primeEnabledPluginActivations,
   refreshActionContributions,
@@ -132,12 +132,13 @@ export function createGhostShell(options: GhostShellOptions): GhostShell {
         throw new Error("Cannot start a disposed GhostShell instance.");
       }
 
+      const ctx = new ShellWiringContext(root, runtime);
       const bootstrapDeps = buildBootstrapDeps(root, runtime);
       const bootstrap = createShellBootstrap(root, runtime, flags, bootstrapDeps);
       registerShellBootstrap(runtime, bootstrap);
 
       registerWorkspaceRuntimeActions(runtime, {
-        getWorkspaceSwitchDeps: () => createWorkspaceSwitchDeps(root, runtime),
+        getWorkspaceSwitchDeps: () => ctx.createWorkspaceSwitchDeps(),
       });
 
       runtime.activeTransportPath = bootstrap.transportPath;
@@ -167,7 +168,7 @@ export function createGhostShell(options: GhostShellOptions): GhostShell {
         cleanupDebug(runtime, options);
       };
 
-      await primeEnabledPluginActivations(root, runtime);
+      await ctx.primeEnabledPluginActivations();
 
       // Plugin hydration (tenant manifest, config, themes)
       if (options.tenant && !runtime.isPopout) {

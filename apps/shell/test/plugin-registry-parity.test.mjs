@@ -24,9 +24,7 @@ const invalidContract = {
 test("registry maps remote invalid contracts to INVALID_CONTRACT", async () => {
   const registry = createShellPluginRegistry({
     pluginLoader: {
-      loadModeFor(descriptor) {
-        return "remote-manifest";
-      },
+      name: "remote-manifest",
       async loadPluginContract(descriptor) {
 
         const { createRuntimeFirstPluginLoader } = await import("../dist-test/src/plugin-loader.js");

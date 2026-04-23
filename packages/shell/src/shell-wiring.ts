@@ -1,7 +1,10 @@
 /**
- * Shell wiring helpers — factory functions that bind (root, runtime) closures
- * for bridge sync, keyboard shortcuts, workspace switching, plugin activation,
- * and render delegation. Extracted from index.ts to keep both files cohesive.
+ * Shell wiring context — caches binding objects that were previously
+ * re-created on every call. Constructed once per (root, runtime) pair
+ * and exposes the same operations as the old stand-alone factory functions.
+ *
+ * Stand-alone functions are preserved as thin delegates so that existing
+ * call-sites continue to compile without changes.
  */
 
 import {
@@ -33,6 +36,93 @@ import {
   dismissIntentChooser as dismissIntentChooserState,
 } from "./shell-runtime/keyboard-handlers.js";
 import { createWindowId } from "./app/utils.js";
+
+// ---------------------------------------------------------------------------
+// ShellWiringContext — cached binding container
+// ---------------------------------------------------------------------------
+
+export class ShellWiringContext {
+  private _runtimeEventHandlerBindings: ReturnType<typeof createRuntimeEventHandlerBindings> | null = null;
+  private _runtimeEventHandlers: ReturnType<typeof createRuntimeEventHandlers> | null = null;
+  private _bridgeBindings: ReturnType<typeof createBridgeBindings> | null = null;
+
+  constructor(
+    readonly root: HTMLElement,
+    readonly runtime: ShellRuntime,
+  ) {}
+
+  get runtimeEventHandlerBindings() {
+    return (this._runtimeEventHandlerBindings ??= createRuntimeEventHandlerBindings(this.root, this.runtime));
+  }
+
+  get runtimeEventHandlers() {
+    return (this._runtimeEventHandlers ??= createRuntimeEventHandlers(
+      this.root,
+      this.runtime,
+      this.runtimeEventHandlerBindings,
+    ));
+  }
+
+  get bridgeBindings() {
+    return (this._bridgeBindings ??= createBridgeBindingsFromHandlers(
+      this.root,
+      this.runtime,
+      this.runtimeEventHandlers,
+    ));
+  }
+
+  announce(message: string): void {
+    announce(this.root, this.runtime, message);
+  }
+
+  renderParts(): void {
+    renderParts(this.root, this.runtime);
+  }
+
+  renderSyncStatus(): void {
+    renderSyncStatus(this.root, this.runtime);
+  }
+
+  renderContextControlsPanel(): void {
+    renderContextControlsPanel(this.root, this.runtime);
+  }
+
+  dismissIntentChooser(): void {
+    dismissIntentChooser(this.root, this.runtime);
+  }
+
+  bindBridgeSync(
+    core: Pick<ReturnType<typeof createRuntimeEventHandlers>, "applyContext" | "applySelection">,
+  ): () => void {
+    return bindBridgeSync(this.root, this.runtime, core);
+  }
+
+  bindKeyboardShortcuts(): () => void {
+    return bindKeyboardShortcuts(this.root, this.runtime);
+  }
+
+  createWorkspaceSwitchDeps(
+    applySelectionOverride?: ReturnType<typeof createRuntimeEventHandlers>["applySelection"],
+  ) {
+    return createWorkspaceSwitchDeps(this.root, this.runtime, applySelectionOverride);
+  }
+
+  async primeEnabledPluginActivations(): Promise<void> {
+    return primeEnabledPluginActivations(this.root, this.runtime);
+  }
+
+  async activatePluginForBoundary(options: {
+    pluginId: string;
+    triggerType: PluginActivationTriggerType;
+    triggerId: string;
+  }): Promise<boolean> {
+    return activatePluginForBoundary(this.root, this.runtime, options);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stand-alone functions (preserved for backward compatibility)
+// ---------------------------------------------------------------------------
 
 export function announce(root: HTMLElement, runtime: ShellRuntime, message: string): void {
   announceImpl(root, runtime, message);
@@ -74,16 +164,7 @@ export function dismissIntentChooser(root: HTMLElement, runtime: ShellRuntime): 
 
 export function createBridgeBindings(root: HTMLElement, runtime: ShellRuntime) {
   const handlers = createRuntimeEventHandlers(root, runtime, createRuntimeEventHandlerBindings(root, runtime));
-  return {
-    announce: (message: string) => announce(root, runtime, message),
-    applyContext: handlers.applyContext,
-    applySelection: handlers.applySelection,
-    createWindowId,
-    renderContextControlsPanel: () => renderContextControlsPanel(root, runtime),
-    renderParts: () => renderParts(root, runtime),
-    renderSyncStatus: () => renderSyncStatus(root, runtime),
-    summarizeSelectionPriorities: () => summarizeSelectionPriorities(runtime),
-  };
+  return createBridgeBindingsFromHandlers(root, runtime, handlers);
 }
 
 export function createRuntimeEventHandlerBindings(root: HTMLElement, runtime: ShellRuntime) {
@@ -225,4 +306,25 @@ export async function activatePluginForBoundary(
     console.error("[shell] plugin activation boundary failed", options, error);
     return false;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Internal helper
+// ---------------------------------------------------------------------------
+
+function createBridgeBindingsFromHandlers(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  handlers: ReturnType<typeof createRuntimeEventHandlers>,
+) {
+  return {
+    announce: (message: string) => announce(root, runtime, message),
+    applyContext: handlers.applyContext,
+    applySelection: handlers.applySelection,
+    createWindowId,
+    renderContextControlsPanel: () => renderContextControlsPanel(root, runtime),
+    renderParts: () => renderParts(root, runtime),
+    renderSyncStatus: () => renderSyncStatus(root, runtime),
+    summarizeSelectionPriorities: () => summarizeSelectionPriorities(runtime),
+  };
 }

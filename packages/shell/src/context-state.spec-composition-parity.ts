@@ -307,7 +307,7 @@ function createRuntimeFixture(pluginRecords: MutablePluginRecord[]): ShellRuntim
           plugins: pluginRecords.map((plugin) => ({
             id: plugin.id,
             enabled: plugin.enabled,
-            loadMode: "local",
+            loadStrategy: "local",
             contract: plugin.contract,
           })),
         };

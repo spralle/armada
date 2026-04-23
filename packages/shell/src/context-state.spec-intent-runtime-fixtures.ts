@@ -4,7 +4,7 @@ import { createActionCatalogFromRegistrySnapshot } from "@ghost-shell/intents";
 type CatalogPlugin = {
   id: string;
   enabled: boolean;
-  loadMode: string;
+  loadStrategy: string;
   contract: PluginContract;
 };
 

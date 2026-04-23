@@ -73,7 +73,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
       {
         id: "plugin-orders",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: { id: "plugin-orders", name: "Orders", version: "0.1.0" },
           contributes: {
@@ -113,7 +113,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
       {
         id: "plugin-orders",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: { id: "plugin-orders", name: "Orders", version: "0.1.0" },
           contributes: {
@@ -151,7 +151,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
       {
         id: "plugin-a",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: { id: "plugin-a", name: "Plugin A", version: "0.1.0" },
           contributes: {
@@ -164,7 +164,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
       {
         id: "plugin-b",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: { id: "plugin-b", name: "Plugin B", version: "0.1.0" },
           contributes: {
@@ -201,7 +201,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
       {
         id: "plugin-a",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: { id: "plugin-a", name: "Plugin A", version: "0.1.0" },
           contributes: {
@@ -214,7 +214,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
       {
         id: "plugin-b",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: { id: "plugin-b", name: "Plugin B", version: "0.1.0" },
           contributes: {
@@ -247,7 +247,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
       {
         id: "plugin-a",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: { id: "plugin-a", name: "Plugin A", version: "0.1.0" },
           contributes: {
@@ -260,7 +260,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
       {
         id: "plugin-b",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: { id: "plugin-b", name: "Plugin B", version: "0.1.0" },
           contributes: {
@@ -294,7 +294,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
       {
         id: "plugin-orders",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: { id: "plugin-orders", name: "Orders", version: "0.1.0" },
           contributes: {

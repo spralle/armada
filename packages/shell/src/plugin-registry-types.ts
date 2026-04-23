@@ -7,7 +7,7 @@ import type { CompatibilityReasonCode } from "@ghost-shell/plugin-system";
 import type { DeactivationContext } from "@ghost-shell/contracts";
 import type { CapabilityDependencyFailureCode } from "./capability-registry.js";
 import type { GhostApiInstance } from "./plugin-api/ghost-api-factory.js";
-import type { PluginActivateFunction, RuntimeFirstPluginLoader, ShellPluginLoadMode } from "./plugin-loader.js";
+import type { PluginActivateFunction, PluginLoadStrategy } from "./plugin-loader.js";
 
 /** The deactivate() function signature optionally exported by a plugin module. */
 export type PluginDeactivateFunction =
@@ -53,7 +53,7 @@ export interface PluginLifecycleSnapshot {
 export interface PluginRuntimeState {
   descriptor: TenantPluginDescriptor;
   enabled: boolean;
-  loadMode: ShellPluginLoadMode;
+  loadStrategy: string;
   contract: PluginContract | null;
   componentsModule: unknown | null;
   servicesModule: unknown | null;
@@ -85,7 +85,7 @@ export interface PluginRegistrySnapshot {
   plugins: {
     id: string;
     enabled: boolean;
-    loadMode: ShellPluginLoadMode;
+    loadStrategy: string;
     descriptor: TenantPluginDescriptor;
     contract: PluginContract | null;
     failure: PluginRuntimeFailure | null;
@@ -112,7 +112,7 @@ export interface ShellPluginRegistry {
 }
 
 export interface ShellPluginRegistryOptions {
-  pluginLoader?: RuntimeFirstPluginLoader;
+  pluginLoader?: PluginLoadStrategy;
   /** Dependencies for creating GhostApi instances during plugin activation. */
   apiDeps?: import("./plugin-api/ghost-api-factory.js").GhostApiFactoryDependencies;
   /** Optional LayerRegistry for registering/unregistering plugin layers during lifecycle. */

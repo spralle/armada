@@ -10,7 +10,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
       {
         id: "plugin-orders",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "plugin-orders",
@@ -57,7 +57,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
       {
         id: "plugin-b",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "plugin-b",
@@ -79,7 +79,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
       {
         id: "plugin-a",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "plugin-a",
@@ -119,7 +119,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
       {
         id: "plugin-orders",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "plugin-orders",
@@ -164,7 +164,7 @@ export function registerIntentRuntimeResolutionSpecs(harness: SpecHarness): void
       {
         id: "plugin-orders",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "plugin-orders",

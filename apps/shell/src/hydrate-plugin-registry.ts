@@ -15,7 +15,7 @@ import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
 import { getShellBootstrap } from "./bootstrap-shell.js";
 import type { ShellRuntime } from "./app/types.js";
 import {
-  createWorkspaceSwitchDeps,
+  ShellWiringContext,
   refreshActionContributions,
   renderParts,
 } from "./shell-wiring.js";
@@ -48,9 +48,10 @@ export async function hydratePluginRegistry(
 ): Promise<void> {
   const modalLayer = root.querySelector<HTMLElement>('.shell-layer[data-layer="modal"]');
   const quickPickBridge = createQuickPickBridge(modalLayer ?? undefined);
+  const ctx = new ShellWiringContext(root, runtime);
   try {
     const apiDeps = createGhostApiDeps(runtime, quickPickBridge, {
-      getWorkspaceSwitchDeps: () => createWorkspaceSwitchDeps(root, runtime),
+      getWorkspaceSwitchDeps: () => ctx.createWorkspaceSwitchDeps(),
     });
 
     const { configService } = await createShellConfigService();

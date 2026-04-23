@@ -21,7 +21,7 @@ export interface RuntimeActionDescriptor {
   handler: string;
   intentType: string;
   when: Record<string, unknown>;
-  loadMode: string;
+  loadStrategy: string;
   registrationOrder: number;
 }
 
@@ -99,7 +99,7 @@ export function createActionCatalogFromRegistrySnapshot(snapshot: {
   plugins: {
     id: string;
     enabled: boolean;
-    loadMode: string;
+    loadStrategy: string;
     contract: PluginContract | null;
   }[];
 }): RuntimeActionDescriptor[] {
@@ -121,7 +121,7 @@ export function createActionCatalogFromRegistrySnapshot(snapshot: {
         handler: action.handler,
         intentType: action.intentType,
         when: action.when,
-        loadMode: plugin.loadMode,
+        loadStrategy: plugin.loadStrategy,
         registrationOrder,
       });
       registrationOrder += 1;
@@ -249,7 +249,7 @@ export interface IntentRuntimeDeps {
     plugins: {
       id: string;
       enabled: boolean;
-      loadMode: string;
+      loadStrategy: string;
       contract: PluginContract | null;
     }[];
   };

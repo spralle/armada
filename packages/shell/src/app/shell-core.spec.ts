@@ -92,7 +92,7 @@ test("shell core returns snapshot and notifies subscribers", async () => {
     handler: "open",
     intentType: "open-order",
     when: {},
-    loadMode: "eager",
+    loadStrategy: "eager",
     registrationOrder: 0,
     sortKey: "demo.plugin::open::open::0",
   }, null);

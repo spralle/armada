@@ -49,7 +49,7 @@ function createTestSurface(): ActionSurface {
 function createMockIntentRuntime(): IntentRuntime {
   return {
     async resolve(_intent, _delegate, _options) {
-      return { kind: "executed", match: { pluginId: "shell.core", pluginName: "Shell", actionId: "stub", title: "Stub", handler: "stub", intentType: "stub", when: {}, loadMode: "eager", registrationOrder: 0, sortKey: "stub" }, trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] } };
+      return { kind: "executed", match: { pluginId: "shell.core", pluginName: "Shell", actionId: "stub", title: "Stub", handler: "stub", intentType: "stub", when: {}, loadStrategy: "eager", registrationOrder: 0, sortKey: "stub" }, trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] } };
     },
   };
 }

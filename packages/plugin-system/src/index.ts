@@ -59,3 +59,7 @@ export { createContextContributionRegistry } from "./context-contribution-regist
 export { createEventEmitter } from "./event-emitter.js";
 
 export { createVanillaDomRenderer } from "./vanilla-dom-renderer.js";
+
+// Re-export resolve-mount utilities — canonical import path for runtime mount resolution
+export { resolveModuleMountFn } from "@ghost-shell/contracts/parts";
+export type { ResolveMountOptions } from "@ghost-shell/contracts/parts";
