@@ -1,4 +1,5 @@
 import type {
+  ContextContributionRegistry,
   PartRenderer,
   PartRenderContext,
   PartRenderHandle,
@@ -6,7 +7,7 @@ import type {
   ReactPartsModule,
 } from "@ghost-shell/contracts";
 import { isReactPartsModule } from "@ghost-shell/contracts";
-import { createElement, type ComponentType } from "react";
+import { createElement, type ComponentType, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { GhostContext, type GhostContextValue } from "./ghost-context.js";
 
@@ -37,7 +38,35 @@ export function findReactPartsModule(module: unknown): ReactPartsModule | undefi
  * The renderer wraps each component in a GhostProvider so that plugin
  * components can access shell services and context via hooks.
  */
-export function createReactPartRenderer(): PartRenderer {
+/**
+ * Build the React element tree for a plugin part, wrapping with
+ * GhostContext and contributed providers (lowest order = outermost).
+ */
+function buildRenderTree(
+  Component: ComponentType<{ readonly context: PluginMountContext }>,
+  ghostValue: GhostContextValue,
+  registry: ContextContributionRegistry | undefined,
+): ReactElement {
+  const providers = registry?.getProviders() ?? [];
+
+  let tree: ReactElement = createElement(Component, {
+    context: ghostValue.mountContext,
+  });
+  tree = createElement(GhostContext.Provider, { value: ghostValue }, tree);
+
+  // Wrap with contributed providers: lowest order = outermost,
+  // so iterate in reverse (highest order wraps first, ends up innermost).
+  for (let i = providers.length - 1; i >= 0; i--) {
+    const P = providers[i].Provider as ComponentType<{ readonly children: ReactElement }>;
+    tree = createElement(P, null, tree);
+  }
+
+  return tree;
+}
+
+export function createReactPartRenderer(
+  registry?: ContextContributionRegistry,
+): PartRenderer {
   return {
     id: "react",
 
@@ -65,23 +94,23 @@ export function createReactPartRenderer(): PartRenderer {
         return { dispose() {} };
       }
 
-      const root = createRoot(context.container);
       const ghostValue: GhostContextValue = {
         pluginId: context.pluginId,
         partId: context.partId,
         mountContext: context.mountContext,
+        ...(registry ? { contextRegistry: registry } : {}),
       };
 
-      root.render(
-        createElement(
-          GhostContext.Provider,
-          { value: ghostValue },
-          createElement(Component, { context: context.mountContext }),
-        ),
-      );
+      const root = createRoot(context.container);
+      root.render(buildRenderTree(Component, ghostValue, registry));
+
+      const providerSub = registry?.subscribeProviders(() => {
+        root.render(buildRenderTree(Component, ghostValue, registry));
+      });
 
       return {
         dispose() {
+          providerSub?.dispose();
           root.unmount();
         },
       };
