@@ -8,7 +8,7 @@ Every Ghost theme color is available as a standard Tailwind utility class. The p
 
 1. **Ghost Theme Engine** sets `--ghost-*` CSS custom properties on `:root`
 2. **shadcn-theme-bridge-plugin** maps `--ghost-*` → intermediate vars (`--background`, `--primary`, etc.)
-3. **`@ghost/ui/theme.css`** maps intermediates → Tailwind `--color-*` tokens
+3. **`@ghost-shell/ui/theme.css`** maps intermediates → Tailwind `--color-*` tokens
 4. **Result**: `bg-primary` resolves to the current Ghost theme's primary color at runtime
 
 Each plugin compiles its own Tailwind CSS — no build-time coordination with other plugins needed.
@@ -32,7 +32,7 @@ Create `src/styles/tailwind.css`:
 
 ```css
 @import "tailwindcss/utilities";
-@import "@ghost/ui/theme.css";
+@import "@ghost-shell/ui/theme.css";
 ```
 
 > **Important**: Use `tailwindcss/utilities`, not `tailwindcss`. The shell already provides preflight and base styles.

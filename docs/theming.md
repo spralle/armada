@@ -17,7 +17,7 @@ Key concepts:
 
 - **Themes as plugins**: A theme is a `contributes.themes` entry in a plugin contract. Themes are discovered, composed, and applied the same way as other plugin contributions.
 - **CSS custom properties**: All visual tokens are exposed as `--ghost-*` CSS variables on `:root`. Any component in any micro-frontend can consume them without importing JavaScript.
-- **Derivation engine**: A pure function in `@ghost/plugin-contracts` expands a minimum 3-value palette to the full 47-token set. Plugin authors supply what they know; the engine fills the rest.
+- **Derivation engine**: A pure function in `@ghost-shell/contracts` expands a minimum 3-value palette to the full 47-token set. Plugin authors supply what they know; the engine fills the rest.
 - **Bridge plugin pattern**: Ghost's canonical tokens (`--ghost-*`) are decoupled from any UI library. A separate bridge plugin maps them to library-specific variables (e.g., shadcn's `--primary`, `--card`).
 
 ## Token Reference
@@ -154,7 +154,7 @@ Create a new plugin app (see the [plugin scaffold docs](../templates/plugin-app/
 ### 2. Define the plugin contract with `contributes.themes`
 
 ```ts
-import type { PluginContract } from "@ghost/plugin-contracts";
+import type { PluginContract } from "@ghost-shell/contracts";
 
 export const pluginContract: PluginContract = {
   manifest: {

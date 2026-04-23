@@ -5,14 +5,14 @@ How to make your plugin participate in the intent framework's polymorphic action
 ## 1. Shared Intent Type Conventions
 
 Intent types follow `domain.entity.<verb>` naming. Constants are defined in
-`packages/plugin-contracts/src/domain-intents.ts` and exported from `@ghost/plugin-contracts`:
+`packages/plugin-contracts/src/domain-intents.ts` and exported from `@ghost-shell/contracts`:
 
 ```ts
 import {
   INTENT_ENTITY_OPEN,    // "domain.entity.open"
   INTENT_ENTITY_INSPECT, // "domain.entity.inspect"
   INTENT_ENTITY_ASSIGN,  // "domain.entity.assign"
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 ```
 
 These are plain string constants, not enums. Any plugin can introduce new intent types by using
@@ -35,8 +35,8 @@ Declare actions in your plugin contract's `contributes.actions` array. Each entr
 **Example** (from `plugins/domain-unplanned-orders-plugin/src/plugin-contract.ts`):
 
 ```ts
-import type { PluginContract } from "@ghost/plugin-contracts";
-import { INTENT_ENTITY_OPEN, INTENT_ENTITY_INSPECT } from "@ghost/plugin-contracts";
+import type { PluginContract } from "@ghost-shell/contracts";
+import { INTENT_ENTITY_OPEN, INTENT_ENTITY_INSPECT } from "@ghost-shell/contracts";
 
 const pluginContract: PluginContract = {
   manifest: { id: "ghost.domain.unplanned-orders", name: "Unplanned Orders", version: "0.1.0" },
@@ -107,7 +107,7 @@ Push the returned disposable into `ctx.subscriptions` for proper lifecycle clean
 **Example** (from `plugins/domain-unplanned-orders-plugin/src/plugin-activate.ts`):
 
 ```ts
-import type { GhostApi, ActivationContext } from "@ghost/plugin-contracts";
+import type { GhostApi, ActivationContext } from "@ghost-shell/contracts";
 
 function activate(api: GhostApi, ctx: ActivationContext): void {
   ctx.subscriptions.push(
