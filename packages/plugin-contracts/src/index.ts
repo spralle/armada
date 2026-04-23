@@ -203,7 +203,7 @@ export { KEYBINDING_SERVICE_ID } from "./keybinding-service.js";
 
 export type { PartRenderer, PartRenderHandle, PartRenderContext, PartRendererRegistry } from "./part-renderer.js";
 
-export { REACT_PARTS_SYMBOL, isReactPartsModule } from "./define-parts.js";
+export { REACT_PARTS_SYMBOL, isReactPartsModule, containsReactParts } from "./define-parts.js";
 export type { ReactPartsModule } from "./define-parts.js";
 
 export { createVanillaDomRenderer } from "./vanilla-dom-renderer.js";

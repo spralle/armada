@@ -4,7 +4,7 @@
  */
 
 import type { PartRenderer, PartRenderContext, PartRenderHandle } from "./part-renderer.js";
-import { isReactPartsModule } from "./define-parts.js";
+import { containsReactParts } from "./define-parts.js";
 
 /**
  * Resolve a mount function from a vanilla DOM module.
@@ -64,7 +64,7 @@ export function createVanillaDomRenderer(): PartRenderer {
     id: "vanilla-dom",
 
     canRender(partId: string, _pluginId: string, module: unknown): boolean {
-      if (isReactPartsModule(module)) {
+      if (containsReactParts(module)) {
         return false;
       }
       return resolveVanillaMountFn(module, partId) !== undefined;

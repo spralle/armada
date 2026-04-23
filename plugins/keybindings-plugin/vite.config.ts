@@ -22,6 +22,10 @@ export default defineConfig({
           singleton: true,
           requiredVersion: "^0.0.0",
         },
+        "@ghost-shell/react": {
+          singleton: true,
+          requiredVersion: "^0.0.0",
+        },
         "@ghost-shell/ui": {
           singleton: true,
           import: false,

@@ -2,12 +2,34 @@ import type {
   PartRenderer,
   PartRenderContext,
   PartRenderHandle,
+  PluginMountContext,
   ReactPartsModule,
 } from "@ghost-shell/contracts";
 import { isReactPartsModule } from "@ghost-shell/contracts";
 import { createElement, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 import { GhostContext, type GhostContextValue } from "./ghost-context.js";
+
+/**
+ * Find a ReactPartsModule in a loaded MF module.
+ * Checks the module itself first, then iterates named exports.
+ * MF exposes return the file's exports as an object, so the Symbol
+ * lives on a named export (e.g. `module.parts`), not the module itself.
+ */
+export function findReactPartsModule(module: unknown): ReactPartsModule | undefined {
+  if (isReactPartsModule(module)) {
+    return module;
+  }
+  if (typeof module !== "object" || module === null) {
+    return undefined;
+  }
+  for (const value of Object.values(module as Record<string, unknown>)) {
+    if (isReactPartsModule(value)) {
+      return value;
+    }
+  }
+  return undefined;
+}
 
 /**
  * Create a PartRenderer that mounts React components from ReactPartsModule.
@@ -20,13 +42,20 @@ export function createReactPartRenderer(): PartRenderer {
     id: "react",
 
     canRender(_partId: string, _pluginId: string, module: unknown): boolean {
-      return isReactPartsModule(module);
+      return findReactPartsModule(module) !== undefined;
     },
 
     mount(context: PartRenderContext): PartRenderHandle {
-      const reactModule = context.module as ReactPartsModule;
+      const reactModule = findReactPartsModule(context.module);
+      if (!reactModule) {
+        console.warn(
+          `[react-renderer] No ReactPartsModule found for plugin '${context.pluginId}'`,
+        );
+        return { dispose() {} };
+      }
+
       const Component = reactModule.components[context.partId] as
-        | ComponentType<{ readonly context: PartRenderContext }>
+        | ComponentType<{ readonly context: PluginMountContext }>
         | undefined;
 
       if (!Component) {
@@ -47,7 +76,7 @@ export function createReactPartRenderer(): PartRenderer {
         createElement(
           GhostContext.Provider,
           { value: ghostValue },
-          createElement(Component, { context }),
+          createElement(Component, { context: context.mountContext }),
         ),
       );
 
