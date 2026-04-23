@@ -32,3 +32,24 @@ export type {
 } from "./compatibility.js";
 
 export { evaluateShellPluginCompatibility } from "./compatibility.js";
+
+export type {
+  CapabilityDependencyFailureCode,
+  CapabilityDependencyFailure,
+  PluginDependencyValidationContext,
+  CapabilityResolutionContext,
+  CapabilityRegistry,
+  PluginComponentsModule,
+  PluginServicesModule,
+} from "./capability-registry.js";
+
+export {
+  createCapabilityRegistry,
+  pickComponentModuleExport,
+  pickServiceModuleExport,
+} from "./capability-registry.js";
+
+export {
+  readCapabilityComponents,
+  readCapabilityServices,
+} from "./plugin-registry-contract.js";
