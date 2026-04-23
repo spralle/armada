@@ -10,7 +10,8 @@ import type {
   KeySequenceCompletedEvent,
   KeySequenceCancelledEvent,
 } from "@ghost-shell/contracts";
-import { KEYBINDING_SERVICE_ID, createEventEmitter } from "@ghost-shell/contracts";
+import { KEYBINDING_SERVICE_ID } from "@ghost-shell/contracts";
+import { createEventEmitter } from "@ghost-shell/plugin-system";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 import type { KeybindingOverrideManager } from "./shell-runtime/keybinding-override-manager.js";
 import type { ActionKeybinding } from "./action-surface.js";

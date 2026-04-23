@@ -5,7 +5,7 @@ import type {
 } from "@ghost-shell/contracts";
 import {
   createEventEmitter,
-} from "@ghost-shell/contracts";
+} from "@ghost-shell/plugin-system";
 import {
   evaluateContributionPredicate,
 } from "@ghost-shell/plugin-system";

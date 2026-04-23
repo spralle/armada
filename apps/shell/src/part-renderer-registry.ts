@@ -8,7 +8,7 @@ import type {
   PartRendererRegistry,
   Disposable,
 } from "@ghost-shell/contracts";
-import { createVanillaDomRenderer } from "@ghost-shell/contracts";
+import { createVanillaDomRenderer } from "@ghost-shell/plugin-system";
 
 /** Create a PartRendererRegistry with vanilla-dom as the default fallback. */
 export function createPartRendererRegistry(): PartRendererRegistry {

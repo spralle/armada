@@ -16,7 +16,6 @@ export type {
 } from "./layer-types.js";
 
 export type { Event, EventEmitter } from "./event.js";
-export { createEventEmitter } from "./event.js";
 
 export type {
   ConfigurationPropertySchema,
@@ -206,7 +205,7 @@ export type { PartRenderer, PartRenderHandle, PartRenderContext, PartRendererReg
 export { REACT_PARTS_SYMBOL, isReactPartsModule, containsReactParts, findReactPartsModule } from "./define-parts.js";
 export type { ReactPartsModule } from "./define-parts.js";
 
-export { createVanillaDomRenderer } from "./vanilla-dom-renderer.js";
+
 
 export { resolveModuleMountFn } from "./resolve-mount.js";
 export type { ResolveMountOptions } from "./resolve-mount.js";

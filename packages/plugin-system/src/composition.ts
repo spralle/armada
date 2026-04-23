@@ -70,6 +70,13 @@ export interface PluginContributionSource {
   contract: PluginContract | null;
 }
 
+/**
+ * Composes contributions from all enabled plugins.
+ *
+ * NOTE: Adding a new contribution type requires modifying this function.
+ * Consider extracting a ContributionStrategy<T> pattern if contribution
+ * types grow beyond the current set. See armada-7fks.
+ */
 export function composeEnabledPluginContributions(
   plugins: PluginContributionSource[],
 ): ComposedPluginContributions {

@@ -2,7 +2,7 @@
 // Bridges the state machine with the event system for plugin consumers.
 
 import type { QuickPick, QuickPickItem } from "@ghost-shell/contracts";
-import { createEventEmitter } from "@ghost-shell/contracts";
+import { createEventEmitter } from "@ghost-shell/plugin-system";
 import type { QuickPickAction, QuickPickState } from "./quick-pick-state.js";
 import {
   createInitialQuickPickState,

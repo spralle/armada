@@ -9,7 +9,7 @@ import type {
   WindowDescriptor,
   WindowService,
 } from "@ghost-shell/contracts";
-import { createEventEmitter } from "@ghost-shell/contracts";
+import { createEventEmitter } from "@ghost-shell/plugin-system";
 import { createQuickPickController } from "../ui/quick-pick/quick-pick-controller.js";
 
 /**

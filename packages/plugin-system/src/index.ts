@@ -55,3 +55,7 @@ export {
 } from "./plugin-registry-contract.js";
 
 export { createContextContributionRegistry } from "./context-contribution-registry.js";
+
+export { createEventEmitter } from "./event-emitter.js";
+
+export { createVanillaDomRenderer } from "./vanilla-dom-renderer.js";

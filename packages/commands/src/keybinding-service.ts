@@ -1,5 +1,5 @@
 import type { ContributionPredicateMatcher } from "@ghost-shell/plugin-system";
-import { createEventEmitter } from "@ghost-shell/contracts";
+import { createEventEmitter } from "@ghost-shell/plugin-system";
 import type {
   Event,
   KeySequencePendingEvent,
