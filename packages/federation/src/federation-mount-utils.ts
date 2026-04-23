@@ -3,8 +3,8 @@
  * Used by both part-module-host (dock parts) and edge-slot-renderer (slot components).
  */
 
-/** Cleanup returned by a mount function — can be a function, object with unmount(), or void. */
-export type MountCleanup = (() => void) | { unmount?: () => void } | void;
+/** Cleanup returned by a mount function — can be a function, object with unmount()/dispose(), or void. */
+export type MountCleanup = (() => void) | { unmount?: () => void } | { dispose?: () => void } | void;
 
 /** Normalize any mount cleanup into a plain function or null. */
 export function normalizeCleanup(cleanup: MountCleanup): (() => void) | null {
@@ -12,12 +12,14 @@ export function normalizeCleanup(cleanup: MountCleanup): (() => void) | null {
     return cleanup;
   }
 
-  if (cleanup && typeof cleanup === "object" && "unmount" in cleanup) {
-    const unmount = cleanup.unmount;
-    if (typeof unmount === "function") {
-      return () => {
-        unmount();
-      };
+  if (cleanup && typeof cleanup === "object") {
+    if ("dispose" in cleanup && typeof cleanup.dispose === "function") {
+      const dispose = cleanup.dispose;
+      return () => { dispose(); };
+    }
+    if ("unmount" in cleanup && typeof cleanup.unmount === "function") {
+      const unmount = cleanup.unmount;
+      return () => { unmount(); };
     }
   }
 

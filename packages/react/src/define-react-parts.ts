@@ -1,17 +1,5 @@
-import { REACT_PARTS_SYMBOL, type ReactPartsModule } from "@ghost-shell/contracts";
+import { REACT_PARTS_SYMBOL, type ReactPartsModule, type ExtractPartIds } from "@ghost-shell/contracts";
 import type { ComponentType } from "react";
-
-/**
- * Extract part IDs from a plugin manifest's contributes.parts array.
- * Falls back to `string` when the manifest shape is not statically known.
- */
-type ExtractPartIds<M> = M extends {
-  contributes?: { parts?: ReadonlyArray<{ id: infer Id }> };
-}
-  ? Id extends string
-    ? Id
-    : never
-  : string;
 
 /**
  * Define a React-based plugin module that maps manifest part IDs to React components.
@@ -27,7 +15,7 @@ export function defineReactParts<
   const M extends { contributes?: { parts?: ReadonlyArray<{ id: string }> } },
 >(
   manifest: M,
-  components: Record<ExtractPartIds<M>, ComponentType<never>>,
+  components: Record<ExtractPartIds<M, string>, ComponentType<never>>,
 ): ReactPartsModule {
   return {
     [REACT_PARTS_SYMBOL]: true as const,

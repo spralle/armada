@@ -137,7 +137,7 @@ export {
 export type { ThemeService, ThemeInfo, BackgroundInfo } from "./theme-service.js";
 export { THEME_SERVICE_ID } from "./theme-service.js";
 
-export type { PluginServices, PluginMountContext } from "./plugin-services.js";
+export type { PluginServices, PluginMountContext, PartMountCleanup, MountPartFn } from "./plugin-services.js";
 
 export type { HookService, TransitionContext, ElementTransitionHook } from "./hooks.js";
 export { HOOK_REGISTRY_SERVICE_ID, ELEMENT_TRANSITION_HOOK_ID } from "./hooks.js";
@@ -203,10 +203,13 @@ export { KEYBINDING_SERVICE_ID } from "./keybinding-service.js";
 
 export type { PartRenderer, PartRenderHandle, PartRenderContext, PartRendererRegistry } from "./part-renderer.js";
 
-export { REACT_PARTS_SYMBOL, isReactPartsModule, containsReactParts } from "./define-parts.js";
+export { REACT_PARTS_SYMBOL, isReactPartsModule, containsReactParts, findReactPartsModule } from "./define-parts.js";
 export type { ReactPartsModule } from "./define-parts.js";
 
 export { createVanillaDomRenderer } from "./vanilla-dom-renderer.js";
+
+export { resolveModuleMountFn } from "./resolve-mount.js";
+export type { ResolveMountOptions } from "./resolve-mount.js";
 
 export type { ContextContribution, ProviderContribution } from "./context-contribution.js";
 

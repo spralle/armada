@@ -9,14 +9,14 @@ export function definePlugin<const T extends PluginContract>(manifest: T): T {
   return manifest;
 }
 
-/** Extract literal union of part IDs from a manifest. */
-export type ExtractPartIds<M> = M extends {
+/** Extract literal union of part IDs from a manifest. Fallback defaults to `never`. */
+export type ExtractPartIds<M, Fallback = never> = M extends {
   contributes?: { parts?: ReadonlyArray<{ id: infer Id }> };
 }
   ? Id extends string
     ? Id
-    : never
-  : never;
+    : Fallback
+  : Fallback;
 
 /** Extract literal union of action IDs from a manifest. */
 export type ExtractActionIds<M> = M extends {

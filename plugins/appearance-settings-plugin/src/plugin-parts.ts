@@ -5,6 +5,8 @@ import type {
   PluginMountContext,
   PluginContract,
   ActivityStatusService,
+  PartMountCleanup,
+  MountPartFn,
 } from "@ghost-shell/contracts";
 import type { ComposedPluginSectionContribution } from "@ghost-shell/plugin-system";
 import {
@@ -23,13 +25,6 @@ import {
   renderSectionContainer,
 } from "./appearance-dom.js";
 import { pluginContract, APPEARANCE_SECTION_TARGET } from "./plugin-contract-expose.js";
-
-type PartMountCleanup = { unmount: () => void };
-
-type MountPartFn = (
-  target: HTMLElement,
-  context: PluginMountContext,
-) => Promise<PartMountCleanup>;
 
 const APPEARANCE_PLUGIN_ID = pluginContract.manifest.id;
 

@@ -2,8 +2,9 @@ import type {
   PluginLayerSurfaceContribution,
   LayerSurfaceContext,
 } from "@ghost-shell/contracts";
+import { resolveModuleMountFn } from "@ghost-shell/contracts";
 import type { PluginHost, ShellRuntime } from "../app/types.js";
-import { type MountCleanup, toRecord } from "../federation-mount-utils.js";
+import type { MountCleanup } from "../federation-mount-utils.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,44 +28,14 @@ export function resolveSurfaceMount(
   moduleValue: unknown,
   surface: PluginLayerSurfaceContribution,
 ): MountSurfaceComponentFn | null {
-  const moduleRecord = toRecord(moduleValue);
-  if (!moduleRecord) {
-    return null;
-  }
+  const fn = resolveModuleMountFn(moduleValue, {
+    topLevelNames: ["mountSurface", "mount"],
+    collectionName: "surfaces",
+    collectionKeys: [surface.component, surface.id],
+    checkDefault: true,
+  });
 
-  // Try: module.mountSurface (generic mount function)
-  if (typeof moduleRecord.mountSurface === "function") {
-    return moduleRecord.mountSurface as MountSurfaceComponentFn;
-  }
-
-  // Try: module.mount (named export)
-  if (typeof moduleRecord.mount === "function") {
-    return moduleRecord.mount as MountSurfaceComponentFn;
-  }
-
-  // Try: module.surfaces[component].mount or module.surfaces[component] (function)
-  const surfaces = toRecord(moduleRecord.surfaces);
-  if (surfaces) {
-    const candidate = surfaces[surface.component] ?? surfaces[surface.id];
-    if (typeof candidate === "function") {
-      return candidate as MountSurfaceComponentFn;
-    }
-    const candidateRecord = toRecord(candidate);
-    if (candidateRecord && typeof candidateRecord.mount === "function") {
-      return candidateRecord.mount as MountSurfaceComponentFn;
-    }
-  }
-
-  // Try: module.default
-  if (typeof moduleRecord.default === "function") {
-    return moduleRecord.default as MountSurfaceComponentFn;
-  }
-  const defaultRecord = toRecord(moduleRecord.default);
-  if (defaultRecord && typeof defaultRecord.mount === "function") {
-    return defaultRecord.mount as MountSurfaceComponentFn;
-  }
-
-  return null;
+  return (fn as MountSurfaceComponentFn) ?? null;
 }
 
 // ---------------------------------------------------------------------------

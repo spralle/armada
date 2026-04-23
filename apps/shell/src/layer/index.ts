@@ -29,7 +29,7 @@ export type {
 } from "@ghost-shell/layer";
 
 export type {
-  BuiltInSurfaceMountFn,
+  MountSurfaceComponentFn,
   LayerSurfaceRendererOptions,
   LayerSurfaceRenderer,
 } from "./surface-renderer.js";

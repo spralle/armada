@@ -23,7 +23,7 @@ import {
 import { computeAnchorStyles } from "@ghost-shell/layer";
 import { applyInputBehavior, applyKeyboardInteractivity } from "@ghost-shell/layer";
 import { applyAutoStacking } from "@ghost-shell/layer";
-import type { BuiltInSurfaceMountFn, SurfaceMountState } from "./surface-renderer.js";
+import type { MountSurfaceComponentFn, SurfaceMountState } from "./surface-renderer.js";
 import type { FocusGrabManager } from "@ghost-shell/layer";
 
 // ---------------------------------------------------------------------------
@@ -36,7 +36,7 @@ type PluginSnapshotEntry = ReturnType<PluginHost["registry"]["getSnapshot"]>["pl
 export interface ReconcilerContext {
   mounted: Map<string, SurfaceMountState>;
   registeredRemoteIds: Set<string>;
-  builtInSurfaceMounts: Map<string, BuiltInSurfaceMountFn>;
+  builtInSurfaceMounts: Map<string, MountSurfaceComponentFn>;
   layerRegistry: LayerRegistry;
   federationRuntime: ShellFederationRuntime;
   focusGrabManager: FocusGrabManager;
@@ -223,7 +223,7 @@ async function mountSurfaceComponent(
 
 async function mountBuiltIn(
   ctx: ReconcilerContext,
-  builtInMount: BuiltInSurfaceMountFn,
+  builtInMount: MountSurfaceComponentFn,
   target: HTMLDivElement,
   pluginId: string,
   surface: PluginLayerSurfaceContribution,

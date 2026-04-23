@@ -6,31 +6,10 @@ import type {
   PluginMountContext,
   ReactPartsModule,
 } from "@ghost-shell/contracts";
-import { isReactPartsModule } from "@ghost-shell/contracts";
+import { isReactPartsModule, findReactPartsModule } from "@ghost-shell/contracts";
 import { createElement, type ComponentType, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { GhostContext, type GhostContextValue } from "./ghost-context.js";
-
-/**
- * Find a ReactPartsModule in a loaded MF module.
- * Checks the module itself first, then iterates named exports.
- * MF exposes return the file's exports as an object, so the Symbol
- * lives on a named export (e.g. `module.parts`), not the module itself.
- */
-export function findReactPartsModule(module: unknown): ReactPartsModule | undefined {
-  if (isReactPartsModule(module)) {
-    return module;
-  }
-  if (typeof module !== "object" || module === null) {
-    return undefined;
-  }
-  for (const value of Object.values(module as Record<string, unknown>)) {
-    if (isReactPartsModule(value)) {
-      return value;
-    }
-  }
-  return undefined;
-}
 
 /**
  * Create a PartRenderer that mounts React components from ReactPartsModule.

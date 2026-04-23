@@ -12,7 +12,7 @@ import type { LayerRegistry } from "@ghost-shell/layer";
 import type { ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";
 import { safeUnmount, type MountCleanup } from "../federation-mount-utils.js";
-import { composeSurfaceKey } from "./surface-mount-utils.js";
+import { composeSurfaceKey, type MountSurfaceComponentFn } from "./surface-mount-utils.js";
 import { computeExclusiveZones } from "@ghost-shell/layer";
 import { type KeyboardExclusiveManager, createKeyboardExclusiveManager } from "@ghost-shell/layer";
 import { type FocusGrabManager, createFocusGrabManager } from "@ghost-shell/layer";
@@ -24,15 +24,7 @@ import { type HookRegistry } from "../hook-registry.js";
 // Types
 // ---------------------------------------------------------------------------
 
-export type BuiltInSurfaceMountFn = (
-  target: HTMLElement,
-  context: {
-    surface: PluginLayerSurfaceContribution;
-    pluginId: string;
-    surfaceContext: LayerSurfaceContext;
-    runtime: ShellRuntime;
-  },
-) => MountCleanup | Promise<MountCleanup>;
+export type { MountSurfaceComponentFn } from "./surface-mount-utils.js";
 
 export interface SurfaceMountState {
   surfaceId: string;
@@ -59,7 +51,7 @@ export interface LayerSurfaceRendererOptions {
 export interface LayerSurfaceRenderer {
   renderLayerSurfaces(runtime: ShellRuntime): void;
   dispose(): void;
-  registerBuiltInSurfaceMount(component: string, mountFn: BuiltInSurfaceMountFn): void;
+  registerBuiltInSurfaceMount(component: string, mountFn: MountSurfaceComponentFn): void;
   readonly focusGrabManager: FocusGrabManager;
   readonly sessionLockManager: SessionLockManager;
   readonly keyboardExclusiveManager: KeyboardExclusiveManager;
@@ -73,7 +65,7 @@ export function createLayerSurfaceRenderer(
   const onSurfaceMountError = options.onSurfaceMountError;
   const mounted = new Map<string, SurfaceMountState>();
   const registeredRemoteIds = new Set<string>();
-  const builtInSurfaceMounts = new Map<string, BuiltInSurfaceMountFn>();
+  const builtInSurfaceMounts = new Map<string, MountSurfaceComponentFn>();
   let generation = 0;
 
   const keyboardExclusiveManager = createKeyboardExclusiveManager();
@@ -133,7 +125,7 @@ export function createLayerSurfaceRenderer(
     }
   }
 
-  function registerBuiltInSurfaceMount(component: string, mountFn: BuiltInSurfaceMountFn): void {
+  function registerBuiltInSurfaceMount(component: string, mountFn: MountSurfaceComponentFn): void {
     builtInSurfaceMounts.set(component, mountFn);
   }
 

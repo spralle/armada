@@ -52,3 +52,18 @@ export interface PluginMountContext {
     services: PluginServices;
   };
 }
+
+// ---------------------------------------------------------------------------
+// Plugin mount function types
+// ---------------------------------------------------------------------------
+
+/** Cleanup handle returned by a plugin part mount function. */
+export interface PartMountCleanup {
+  unmount: () => void;
+}
+
+/** Standard mount function signature for plugin parts. */
+export type MountPartFn = (
+  target: HTMLElement,
+  context: PluginMountContext,
+) => Promise<PartMountCleanup>;

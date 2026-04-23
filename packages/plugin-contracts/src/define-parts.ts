@@ -17,21 +17,27 @@ export function isReactPartsModule(mod: unknown): mod is ReactPartsModule {
 }
 
 /**
- * Check whether a loaded MF module contains a ReactPartsModule in any export.
- * MF exposes return the file's exports as an object, so the Symbol
- * may live on a named export rather than the module object itself.
+ * Find a ReactPartsModule in a loaded MF module.
+ * Checks the module itself first, then iterates named exports.
  */
-export function containsReactParts(module: unknown): boolean {
+export function findReactPartsModule(module: unknown): ReactPartsModule | undefined {
   if (isReactPartsModule(module)) {
-    return true;
+    return module;
   }
   if (typeof module !== "object" || module === null) {
-    return false;
+    return undefined;
   }
   for (const value of Object.values(module as Record<string, unknown>)) {
     if (isReactPartsModule(value)) {
-      return true;
+      return value;
     }
   }
-  return false;
+  return undefined;
+}
+
+/**
+ * Check whether a loaded MF module contains a ReactPartsModule in any export.
+ */
+export function containsReactParts(module: unknown): boolean {
+  return findReactPartsModule(module) !== undefined;
 }

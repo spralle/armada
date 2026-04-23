@@ -5,55 +5,35 @@
 
 import type { PartRenderer, PartRenderContext, PartRenderHandle } from "./part-renderer.js";
 import { containsReactParts } from "./define-parts.js";
+import { resolveModuleMountFn } from "./resolve-mount.js";
 
 /**
- * Resolve a mount function from a vanilla DOM module.
- * Supports: `mountPart(el, ctx)`, `parts.{id}.mount(el, ctx)`, `parts.{id}(el, ctx)`, `default(el, ctx)`.
+ * Resolve a mount function from a vanilla DOM module using the generic resolver.
  */
 function resolveVanillaMountFn(
   module: unknown,
   partId: string,
 ): ((container: HTMLElement, context: unknown) => unknown) | undefined {
-  if (typeof module !== "object" || module === null) {
-    return undefined;
-  }
-
-  const record = module as Record<string, unknown>;
-
-  if (typeof record.mountPart === "function") {
-    return record.mountPart as (container: HTMLElement, context: unknown) => unknown;
-  }
-
-  const parts = record.parts;
-  if (typeof parts === "object" && parts !== null) {
-    const partsRecord = parts as Record<string, unknown>;
-    const candidate = partsRecord[partId];
-    if (typeof candidate === "function") {
-      return candidate as (container: HTMLElement, context: unknown) => unknown;
-    }
-    if (typeof candidate === "object" && candidate !== null) {
-      const mount = (candidate as Record<string, unknown>).mount;
-      if (typeof mount === "function") {
-        return mount as (container: HTMLElement, context: unknown) => unknown;
-      }
-    }
-  }
-
-  if (typeof record.default === "function") {
-    return record.default as (container: HTMLElement, context: unknown) => unknown;
-  }
-
-  return undefined;
+  return resolveModuleMountFn(module, {
+    topLevelNames: ["mountPart"],
+    collectionName: "parts",
+    collectionKeys: [partId],
+    checkDefault: true,
+  }) as ((container: HTMLElement, context: unknown) => unknown) | undefined;
 }
 
+/** Normalize a mount result into a dispose function. Checks for function, .dispose, and .unmount. */
 function normalizeToDispose(result: unknown): (() => void) | undefined {
   if (typeof result === "function") {
     return result as () => void;
   }
-  if (typeof result === "object" && result !== null && "dispose" in result) {
-    const disposable = result as { dispose: unknown };
-    if (typeof disposable.dispose === "function") {
-      return () => (disposable.dispose as () => void)();
+  if (typeof result === "object" && result !== null) {
+    const record = result as Record<string, unknown>;
+    if (typeof record.dispose === "function") {
+      return () => (record.dispose as () => void)();
+    }
+    if (typeof record.unmount === "function") {
+      return () => (record.unmount as () => void)();
     }
   }
   return undefined;
