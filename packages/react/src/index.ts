@@ -8,6 +8,8 @@ export {
   useService,
   usePluginContext,
   createServiceHook,
+  useContextValue,
+  createContextHook,
 } from "./hooks.js";
 
 export { createReactPartRenderer } from "./react-part-renderer.js";

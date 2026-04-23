@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useSyncExternalStore } from "react";
 import { GhostContext, type GhostContextValue } from "./ghost-context.js";
 
 /**
@@ -43,5 +43,32 @@ export function createServiceHook<T>(
 ): () => T | undefined {
   return function useTypedService(): T | undefined {
     return useService<T>(serviceId);
+  };
+}
+
+/**
+ * Subscribe to a reactive context value by ID.
+ * Uses useSyncExternalStore for concurrent-safe reads.
+ */
+export function useContextValue<T>(id: string): T | undefined {
+  const { contextRegistry } = useGhostApi();
+
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      if (!contextRegistry) return () => {};
+      const disposable = contextRegistry.subscribe(id, onStoreChange);
+      return () => disposable.dispose();
+    },
+    () => contextRegistry?.get<T>(id),
+  );
+}
+
+/**
+ * Factory: create a pre-typed hook for a specific context ID.
+ * Usage: export const useActiveTheme = createContextHook<Theme>("ghost.context.activeTheme");
+ */
+export function createContextHook<T>(id: string): () => T | undefined {
+  return function useTypedContext(): T | undefined {
+    return useContextValue<T>(id);
   };
 }
