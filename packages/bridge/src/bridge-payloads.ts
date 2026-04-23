@@ -1,4 +1,4 @@
-import type { ContextSyncEvent, SelectionSyncEvent } from "../window-bridge.js";
+import type { ContextSyncEvent, SelectionSyncEvent } from "./window-bridge.js";
 
 export function buildSelectionSyncEvent(input: {
   selectedPartId: string;

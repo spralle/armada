@@ -2,7 +2,7 @@ import type { ComposedShellPart } from "../ui/parts-rendering.js";
 import type {
   ContextSyncEvent,
   SelectionSyncEvent,
-} from "../window-bridge.js";
+} from "@ghost-shell/bridge";
 import type {
   IntentActionMatch,
   IntentResolutionTrace,

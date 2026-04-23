@@ -1,10 +1,10 @@
-import { createDragSessionBroker } from "./dnd-session-broker.js";
+import { createDragSessionBroker } from "@ghost-shell/bridge";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 import type {
   WindowBridge,
   WindowBridgeEvent,
   WindowBridgeHealth,
-} from "./window-bridge.js";
+} from "@ghost-shell/bridge";
 
 class TestBridgeHub implements WindowBridge {
   available = true;

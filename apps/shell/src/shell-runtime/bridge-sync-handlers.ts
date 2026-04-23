@@ -16,9 +16,9 @@ import {
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
 import { restorePart } from "../ui/parts-controller.js";
 import type { ShellRuntime } from "../app/types.js";
-import type { AsyncWindowBridgeHealth } from "../app/async-bridge.js";
+import type { AsyncWindowBridgeHealth } from "@ghost-shell/bridge";
 import { getTabGroupId } from "../context-state.js";
-import { buildGroupContextSyncEvent } from "../sync/bridge-payloads.js";
+import { buildGroupContextSyncEvent } from "@ghost-shell/bridge";
 import {
   applySourceTabTransferTerminal,
   beginSourceTabTransferPending,
@@ -27,7 +27,7 @@ import type {
   ContextSyncEvent,
   SelectionSyncEvent,
   WindowBridgeEvent,
-} from "../window-bridge.js";
+} from "@ghost-shell/bridge";
 
 export interface BridgeSyncBindings {
   announce: (message: string) => void;

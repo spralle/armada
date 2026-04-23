@@ -3,7 +3,7 @@ import type {
   AsyncWindowBridge,
   AsyncWindowBridgeHealth,
   AsyncWindowBridgePublishResult,
-} from "./app/async-bridge.js";
+} from "@ghost-shell/bridge";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 import { bindBridgeSync } from "./shell-runtime/bridge-sync-handlers.js";
 import { publishWithDegrade } from "./sync/bridge-degraded.js";
@@ -11,7 +11,7 @@ import type {
   WindowBridge,
   WindowBridgeEvent,
   WindowBridgeHealth,
-} from "./window-bridge.js";
+} from "@ghost-shell/bridge";
 
 class StubWindowBridge implements WindowBridge {
   available = true;

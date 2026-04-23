@@ -3,7 +3,7 @@ import type {
   PluginSelectionContribution,
   PluginServices,
 } from "@ghost-shell/contracts";
-import { createDragSessionBroker } from "../dnd-session-broker.js";
+import { createDragSessionBroker } from "@ghost-shell/bridge";
 import type { ShellLayoutState } from "../layout.js";
 import type {
   ShellContextStatePersistence,
@@ -15,11 +15,11 @@ import type { ShellPluginRegistry } from "../plugin-registry.js";
 import type { ThemeRegistry } from "../theme-registry.js";
 import type {
   WindowBridge,
-} from "../window-bridge.js";
+} from "@ghost-shell/bridge";
 import type {
   AsyncWindowBridge,
   AsyncWindowBridgeRejectReason,
-} from "./async-bridge.js";
+} from "@ghost-shell/bridge";
 import type {
   ContextTabCloseability,
   DerivedLaneDefinition,

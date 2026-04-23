@@ -41,6 +41,9 @@
       "path": "./packages/intents"
     },
     {
+      "path": "./packages/bridge"
+    },
+    {
       "path": "./packages/formr-react"
     },
     {

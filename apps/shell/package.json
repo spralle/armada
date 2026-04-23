@@ -6,6 +6,7 @@
     "dev": "vite"
   },
   "dependencies": {
+    "@ghost-shell/bridge": "workspace:*",
     "@ghost-shell/config-plugin-runtime": "workspace:*",
     "@ghost-shell/contracts": "file:../../packages/plugin-contracts",
     "@ghost-shell/intents": "workspace:*",

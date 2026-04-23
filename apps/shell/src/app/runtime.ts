@@ -1,4 +1,4 @@
-import { createDragSessionBroker } from "../dnd-session-broker.js";
+import { createDragSessionBroker } from "@ghost-shell/bridge";
 import { createInitialShellContextState } from "../context-state.js";
 import { createIncomingTransferJournal } from "../context-state.js";
 import { createDefaultLayoutState } from "../layout.js";
@@ -22,9 +22,9 @@ import { createShellPartHostAdapter } from "../part-module-host.js";
 import { initPlacementStrategy } from "../context-state/placement-strategy/setup.js";
 import { createEventEmitter } from "@ghost-shell/contracts";
 
-import { createWindowBridge } from "../window-bridge.js";
-import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";
-import { createAsyncScompWindowBridge } from "../window-bridge-scomp.js";
+import { createWindowBridge } from "@ghost-shell/bridge";
+import { createAsyncWindowBridgeCompatibilityShim } from "@ghost-shell/bridge";
+import { createAsyncScompWindowBridge } from "@ghost-shell/bridge";
 import {
   readShellMigrationFlags,
   selectCrossWindowDnd,

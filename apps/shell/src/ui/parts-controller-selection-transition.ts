@@ -1,5 +1,5 @@
 import { readEntityTypeSelection, type ShellContextState } from "../context-state.js";
-import type { SelectionSyncEvent } from "../window-bridge.js";
+import type { SelectionSyncEvent } from "@ghost-shell/bridge";
 
 interface SelectionEnvelopeInput {
   selectedPartId: string;

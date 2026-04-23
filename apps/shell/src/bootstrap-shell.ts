@@ -1,7 +1,7 @@
 import type { ShellCoreApi } from "./app/contracts.js";
 import type { ShellRuntime } from "./app/types.js";
 import type { PluginActivationTriggerType } from "./plugin-registry.js";
-import type { WindowBridgeEvent } from "./window-bridge.js";
+import type { WindowBridgeEvent } from "@ghost-shell/bridge";
 import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
 import { createShellCoreApi } from "./app/shell-core.js";
 import {

@@ -50,6 +50,7 @@
     "apps/shell": {
       "name": "@ghost-shell/shell-app",
       "dependencies": {
+        "@ghost-shell/bridge": "workspace:*",
         "@ghost-shell/config-plugin-runtime": "workspace:*",
         "@ghost-shell/contracts": "file:../../packages/plugin-contracts",
         "@ghost-shell/intents": "workspace:*",
@@ -78,6 +79,10 @@
       "dependencies": {
         "@ghost-shell/predicate": "workspace:*",
       },
+    },
+    "packages/bridge": {
+      "name": "@ghost-shell/bridge",
+      "version": "0.0.0",
     },
     "packages/config-plugin-runtime": {
       "name": "@ghost-shell/config-plugin-runtime",
@@ -633,6 +638,8 @@
     "@ghost-shell/arbiter": ["@ghost-shell/arbiter@workspace:packages/arbiter"],
 
     "@ghost-shell/backend-app": ["@ghost-shell/backend-app@workspace:apps/backend"],
+
+    "@ghost-shell/bridge": ["@ghost-shell/bridge@workspace:packages/bridge"],
 
     "@ghost-shell/config-plugin-runtime": ["@ghost-shell/config-plugin-runtime@workspace:packages/config-plugin-runtime"],
 
@@ -1392,9 +1399,19 @@
 
     "@ghost-shell/backend-app/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
+    "@ghost-shell/config-plugin-runtime/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
     "@ghost-shell/formr-react/@types/react": ["@types/react@19.2.14", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
 
     "@ghost-shell/formr-react/react": ["react@19.2.5", "", {}, "sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA=="],
+
+    "@ghost-shell/intents/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost-shell/plugin-system/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost-shell/shell-app/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost-shell/theme/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost-shell/typecheck-fixture/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 

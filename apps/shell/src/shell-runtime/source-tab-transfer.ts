@@ -1,7 +1,7 @@
 import type { ShellRuntime, SourceTabTransferPendingState } from "../app/types.js";
 import { closeTab, setActiveTab } from "../context-state.js";
 import { updateContextState } from "../context/runtime-state.js";
-import type { DndSessionDeleteEvent, DndSessionUpsertEvent } from "../window-bridge.js";
+import type { DndSessionDeleteEvent, DndSessionUpsertEvent } from "@ghost-shell/bridge";
 
 type TabDragPayload = {
   tabId: string;

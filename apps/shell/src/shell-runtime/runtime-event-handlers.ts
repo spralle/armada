@@ -28,7 +28,7 @@ import type { ShellRuntime } from "../app/types.js";
 import type {
   ContextSyncEvent,
   SelectionSyncEvent,
-} from "../window-bridge.js";
+} from "@ghost-shell/bridge";
 import { applySelectionPropagation } from "../domain/selection-graph.js";
 import { updateDockTabVisibility } from "../ui/dock-tab-visibility.js";
 

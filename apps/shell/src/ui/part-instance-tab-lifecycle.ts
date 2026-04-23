@@ -11,8 +11,8 @@ import {
   type ContextTabSlot,
 } from "../context-state.js";
 import type { BridgeHost, ShellRuntime } from "../app/types.js";
-import type { SelectionSyncEvent } from "../window-bridge.js";
-import { buildSelectionSyncEvent } from "../sync/bridge-payloads.js";
+import type { SelectionSyncEvent } from "@ghost-shell/bridge";
+import { buildSelectionSyncEvent } from "@ghost-shell/bridge";
 import { resolvePartTitle } from "./parts-rendering.js";
 import { buildSelectionByEntityType } from "./parts-controller-selection-transition.js";
 import {

@@ -1,10 +1,10 @@
 import {
   createAsyncScompWindowBridge,
   normalizeScompFailureReason,
-} from "./window-bridge-scomp.js";
+} from "@ghost-shell/bridge";
 import type {
   AsyncWindowBridgeRejectReason,
-} from "./app/async-bridge.js";
+} from "@ghost-shell/bridge";
 
 type TestCase = {
   name: string;

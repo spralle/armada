@@ -15,7 +15,7 @@ import type {
   ShellRuntime,
 } from "../app/types.js";
 import { applySelectionUpdate, getTabGroupId, readEntityTypeSelection, type RevisionMeta } from "../context-state.js";
-import type { SelectionSyncEvent } from "../window-bridge.js";
+import type { SelectionSyncEvent } from "@ghost-shell/bridge";
 
 type SelectionInterestDescriptor = {
   sourceEntityType: string;

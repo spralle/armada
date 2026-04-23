@@ -1,8 +1,8 @@
 import {
   createAsyncWindowBridgeCompatibilityShim,
   normalizeBridgePublishRejectionReason,
-} from "./async-bridge.js";
-import type { WindowBridge, WindowBridgeEvent, WindowBridgeHealth } from "../window-bridge.js";
+} from "@ghost-shell/bridge";
+import type { WindowBridge, WindowBridgeEvent, WindowBridgeHealth } from "@ghost-shell/bridge";
 
 type TestCase = {
   name: string;

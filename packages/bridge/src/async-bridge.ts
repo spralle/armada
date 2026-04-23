@@ -2,7 +2,7 @@ import type {
   WindowBridge,
   WindowBridgeEvent,
   WindowBridgeHealth,
-} from "../window-bridge.js";
+} from "./window-bridge.js";
 
 export type AsyncWindowBridgeRejectReason =
   | "unavailable"

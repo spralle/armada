@@ -11,7 +11,7 @@ import {
   applySourceTabTransferTerminal,
   beginSourceTabTransferPending,
 } from "./source-tab-transfer.js";
-import type { DndSessionDeleteEvent, DndSessionUpsertEvent } from "../window-bridge.js";
+import type { DndSessionDeleteEvent, DndSessionUpsertEvent } from "@ghost-shell/bridge";
 
 function createRuntime(): ShellRuntime {
   let state: ShellContextState = createInitialShellContextState({

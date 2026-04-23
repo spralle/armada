@@ -18,6 +18,9 @@
       "path": "../../packages/plugin-contracts"
     },
     {
+      "path": "../../packages/bridge"
+    },
+    {
       "path": "../../packages/intents"
     },
     {

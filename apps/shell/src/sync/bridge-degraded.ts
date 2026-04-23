@@ -1,11 +1,11 @@
 import { formatDegradedModeAnnouncement } from "../keyboard-a11y.js";
-import type { SyncAckEvent, SyncProbeEvent, WindowBridge } from "../window-bridge.js";
+import type { SyncAckEvent, SyncProbeEvent, WindowBridge } from "@ghost-shell/bridge";
 import type { BridgeHost, DndHost } from "../app/types.js";
 import {
   normalizeBridgePublishRejectionReason,
   type AsyncWindowBridgeHealth,
   type AsyncWindowBridgeRejectReason,
-} from "../app/async-bridge.js";
+} from "@ghost-shell/bridge";
 
 export interface BridgeRenderBindings {
   announce: (message: string) => void;

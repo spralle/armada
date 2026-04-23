@@ -17,7 +17,7 @@ import {
 } from "./bootstrap-shell.js";
 import type { ShellRuntime } from "./app/types.js";
 import type { PluginActivationTriggerType } from "./plugin-registry.js";
-import type { WindowBridgeEvent } from "./window-bridge.js";
+import type { WindowBridgeEvent } from "@ghost-shell/bridge";
 import {
   summarizeSelectionPriorities as summarizeSelectionPrioritiesImpl,
   toActionContext,

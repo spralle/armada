@@ -3,11 +3,11 @@ import {
   writeGlobalSelectionLane,
 } from "../context/runtime-state.js";
 import type { BridgeHost, ShellRuntime } from "../app/types.js";
-import { buildSelectionSyncEvent } from "../sync/bridge-payloads.js";
+import { buildSelectionSyncEvent } from "@ghost-shell/bridge";
 import { buildSelectionByEntityType } from "./parts-controller-selection-transition.js";
 
 export interface SelectionEffectDeps {
-  applySelection: (event: import("../window-bridge.js").SelectionSyncEvent) => void;
+  applySelection: (event: import("@ghost-shell/bridge").SelectionSyncEvent) => void;
   publishWithDegrade: (event: Parameters<BridgeHost["bridge"]["publish"]>[0]) => void;
 }
 

@@ -3,7 +3,7 @@ import {
   type AsyncWindowBridge,
   type AsyncWindowBridgeHealth,
   type AsyncWindowBridgeRejectReason,
-} from "./app/async-bridge.js";
+} from "./async-bridge.js";
 import type { WindowBridgeEvent } from "./window-bridge.js";
 import { parseBridgeEvent } from "./window-bridge-parse.js";
 

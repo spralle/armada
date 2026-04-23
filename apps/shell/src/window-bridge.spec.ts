@@ -1,8 +1,8 @@
-import { createWindowBridge } from "./window-bridge.js";
+import { createWindowBridge } from "@ghost-shell/bridge";
 import {
   createAsyncWindowBridgeCompatibilityShim,
-} from "./app/async-bridge.js";
-import type { ContextSyncEvent, SelectionSyncEvent, WindowBridgeEvent } from "./window-bridge.js";
+} from "@ghost-shell/bridge";
+import type { ContextSyncEvent, SelectionSyncEvent, WindowBridgeEvent } from "@ghost-shell/bridge";
 
 type TestCase = {
   name: string;

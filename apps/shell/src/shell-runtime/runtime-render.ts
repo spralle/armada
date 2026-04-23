@@ -8,7 +8,7 @@ import {
 } from "../context/runtime-state.js";
 import { getTabGroupId } from "../context-state.js";
 import type { BridgeHost, ShellRuntime } from "../app/types.js";
-import { buildGroupContextSyncEvent } from "../sync/bridge-payloads.js";
+import { buildGroupContextSyncEvent } from "@ghost-shell/bridge";
 import { createReactPanelsHost } from "../ui/react/panels-host.js";
 import { getVisibleComposedParts } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
