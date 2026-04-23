@@ -31,6 +31,14 @@ export function createContextContributionRegistry(): ContextContributionRegistry
   const contextListeners = new Map<string, Set<() => void>>();
   const providerListeners = new Set<() => void>();
 
+  /** Cached snapshot of provider contributions, invalidated on mutation. */
+  let providersSnapshot: readonly ProviderContribution[] = [];
+  let providersSnapshotDirty = true;
+
+  function invalidateProvidersSnapshot(): void {
+    providersSnapshotDirty = true;
+  }
+
   function getOrCreateListenerSet(id: string): Set<() => void> {
     let set = contextListeners.get(id);
     if (!set) {
@@ -40,11 +48,14 @@ export function createContextContributionRegistry(): ContextContributionRegistry
     return set;
   }
 
-  function contribute<T>(contribution: ContextContribution<T>): Disposable {
+  function contribute<T>(
+    contribution: ContextContribution<T>,
+    pluginId = "",
+  ): Disposable {
     const id = contribution.id;
     entries.set(id, {
       contribution: contribution as ContextContribution<unknown>,
-      pluginId: "",
+      pluginId,
     });
     const listeners = contextListeners.get(id);
     if (listeners) notifyAll(listeners);
@@ -70,31 +81,21 @@ export function createContextContributionRegistry(): ContextContributionRegistry
     const set = getOrCreateListenerSet(id);
     set.add(listener);
 
-    // Also delegate to the contribution's own subscribe if it exists
-    const entry = entries.get(id);
-    let innerCleanup: Disposable | (() => void) | undefined;
-    if (entry) {
-      innerCleanup = entry.contribution.subscribe(listener);
-    }
-
     return {
       dispose() {
         set.delete(listener);
-        if (innerCleanup) {
-          if (typeof innerCleanup === "function") {
-            innerCleanup();
-          } else {
-            innerCleanup.dispose();
-          }
-        }
       },
     };
   }
 
-  function contributeProvider(contribution: ProviderContribution): Disposable {
-    const entry: ProviderEntry = { contribution, pluginId: "" };
+  function contributeProvider(
+    contribution: ProviderContribution,
+    pluginId = "",
+  ): Disposable {
+    const entry: ProviderEntry = { contribution, pluginId };
     providers.push(entry);
     providers.sort((a, b) => a.contribution.order - b.contribution.order);
+    invalidateProvidersSnapshot();
     notifyAll(providerListeners);
 
     return {
@@ -102,6 +103,7 @@ export function createContextContributionRegistry(): ContextContributionRegistry
         const idx = providers.indexOf(entry);
         if (idx !== -1) {
           providers.splice(idx, 1);
+          invalidateProvidersSnapshot();
           notifyAll(providerListeners);
         }
       },
@@ -109,7 +111,11 @@ export function createContextContributionRegistry(): ContextContributionRegistry
   }
 
   function getProviders(): readonly ProviderContribution[] {
-    return providers.map((e) => e.contribution);
+    if (providersSnapshotDirty) {
+      providersSnapshot = providers.map((e) => e.contribution);
+      providersSnapshotDirty = false;
+    }
+    return providersSnapshot;
   }
 
   function subscribeProviders(listener: () => void): Disposable {
@@ -145,6 +151,7 @@ export function createContextContributionRegistry(): ContextContributionRegistry
     }
 
     if (removedProviders) {
+      invalidateProvidersSnapshot();
       notifyAll(providerListeners);
     }
   }

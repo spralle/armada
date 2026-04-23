@@ -83,14 +83,16 @@ describe("createContextContributionRegistry", () => {
       expect(called).toBe(1);
     });
 
-    it("delegates to contribution subscribe for value changes", () => {
+    it("notifies listener when contribution is replaced", () => {
       const registry = createContextContributionRegistry();
-      const { contribution, setValue } = makeContribution("key", "a");
-      registry.contribute(contribution);
+      const { contribution: c1 } = makeContribution("key", "a");
+      registry.contribute(c1);
       let called = 0;
       registry.subscribe("key", () => called++);
-      setValue("b");
+      const { contribution: c2 } = makeContribution("key", "b");
+      registry.contribute(c2);
       expect(called).toBe(1);
+      expect(registry.get<string>("key")).toBe("b");
     });
 
     it("stops notifying after dispose", () => {
@@ -142,13 +144,57 @@ describe("createContextContributionRegistry", () => {
       d.dispose();
       expect(registry.getProviders()).toEqual([]);
     });
+
+    it("returns referentially stable array when unchanged", () => {
+      const registry = createContextContributionRegistry();
+      registry.contributeProvider(makeProvider("p", 0));
+      const a = registry.getProviders();
+      const b = registry.getProviders();
+      expect(a).toBe(b);
+    });
   });
 
   describe("removeByPlugin", () => {
     it("is a no-op for unknown plugin", () => {
       const registry = createContextContributionRegistry();
-      // Should not throw
       registry.removeByPlugin("unknown");
+    });
+
+    it("removes context contributions for a plugin", () => {
+      const registry = createContextContributionRegistry();
+      const { contribution } = makeContribution("key", "val");
+      registry.contribute(contribution, "plugin-a");
+      expect(registry.get("key")).toBe("val");
+      registry.removeByPlugin("plugin-a");
+      expect(registry.get("key")).toBeUndefined();
+    });
+
+    it("removes provider contributions for a plugin", () => {
+      const registry = createContextContributionRegistry();
+      registry.contributeProvider(makeProvider("p1", 1), "plugin-a");
+      registry.contributeProvider(makeProvider("p2", 2), "plugin-b");
+      registry.removeByPlugin("plugin-a");
+      const ids = registry.getProviders().map((p) => p.id);
+      expect(ids).toEqual(["p2"]);
+    });
+
+    it("notifies context listeners on removal", () => {
+      const registry = createContextContributionRegistry();
+      const { contribution } = makeContribution("key", "val");
+      registry.contribute(contribution, "plugin-a");
+      let called = 0;
+      registry.subscribe("key", () => called++);
+      registry.removeByPlugin("plugin-a");
+      expect(called).toBe(1);
+    });
+
+    it("notifies provider listeners on removal", () => {
+      const registry = createContextContributionRegistry();
+      registry.contributeProvider(makeProvider("p1", 1), "plugin-a");
+      let called = 0;
+      registry.subscribeProviders(() => called++);
+      registry.removeByPlugin("plugin-a");
+      expect(called).toBe(1);
     });
   });
 });
