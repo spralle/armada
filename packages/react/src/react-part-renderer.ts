@@ -1,5 +1,6 @@
 import type {
-  ContextContributionRegistry,
+  ContextApi,
+  ContextProviderSource,
   PartRenderer,
   PartRenderContext,
   PartRenderHandle,
@@ -21,10 +22,13 @@ import { GhostContext, type GhostContextValue } from "./ghost-context.js";
  * Build the React element tree for a plugin part, wrapping with
  * GhostContext and contributed providers (lowest order = outermost).
  */
+/** Consumer-facing subset: context reads + provider composition. */
+type RendererContextSource = ContextApi & ContextProviderSource;
+
 function buildRenderTree(
   Component: ComponentType<{ readonly context: PluginMountContext }>,
   ghostValue: GhostContextValue,
-  registry: ContextContributionRegistry | undefined,
+  registry: RendererContextSource | undefined,
 ): ReactElement {
   const providers = registry?.getProviders() ?? [];
 
@@ -44,7 +48,7 @@ function buildRenderTree(
 }
 
 export function createReactPartRenderer(
-  registry?: ContextContributionRegistry,
+  registry?: RendererContextSource,
 ): PartRenderer {
   return {
     id: "react",

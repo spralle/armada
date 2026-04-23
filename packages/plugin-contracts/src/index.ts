@@ -213,7 +213,7 @@ export type { ResolveMountOptions } from "./resolve-mount.js";
 
 export type { ContextContribution, ProviderContribution } from "./context-contribution.js";
 
-export type { ContextApi, ContextContributionRegistry } from "./context-contribution-registry.js";
+export type { ContextApi, ContextProviderSource, ContextContributionRegistry } from "./context-contribution-registry.js";
 
 export { definePlugin } from "./define-plugin.js";
 export type { ExtractPartIds, ExtractActionIds } from "./define-plugin.js";
