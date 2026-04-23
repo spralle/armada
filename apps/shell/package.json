@@ -10,6 +10,7 @@
     "@ghost-shell/commands": "workspace:*",
     "@ghost-shell/config-plugin-runtime": "workspace:*",
     "@ghost-shell/contracts": "file:../../packages/plugin-contracts",
+    "@ghost-shell/federation": "workspace:*",
     "@ghost-shell/intents": "workspace:*",
     "@ghost-shell/layer": "workspace:*",
     "@ghost-shell/persistence": "workspace:*",
