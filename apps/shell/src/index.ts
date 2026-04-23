@@ -57,6 +57,9 @@ export type {
   ShellPartHostAdapter,
 } from "./app/contracts.js";
 
+export { createGhostShell } from "./create-ghost-shell.js";
+export type { GhostShell, GhostShellOptions } from "./create-ghost-shell.js";
+
 declare global {
   interface Window {
     __g?: {
