@@ -71,6 +71,14 @@ export function createContextContributionRegistry(): ContextContributionRegistry
     };
   }
 
+  /**
+   * Returns the current value for the given context ID.
+   *
+   * **Type safety note**: The generic parameter `T` is unchecked at runtime.
+   * Callers are responsible for ensuring the type matches what was contributed
+   * for this context ID. Use `createContextHook<T>(id)` for type-safe access
+   * patterns.
+   */
   function get<T>(id: string): T | undefined {
     const entry = entries.get(id);
     if (!entry) return undefined;

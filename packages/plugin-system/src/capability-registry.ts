@@ -348,6 +348,9 @@ function isProviderUsable(
 }
 
 function readContractShape(contract: PluginContract): PluginContractDependencyShape {
+  if (typeof contract !== "object" || contract === null) {
+    return {};
+  }
   return contract as PluginContractDependencyShape;
 }
 

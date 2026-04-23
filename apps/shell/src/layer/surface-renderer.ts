@@ -121,7 +121,9 @@ export function createLayerSurfaceRenderer(
     }
 
     if (surface.sessionLock) {
-      sessionLockManager.activateLock(key, target as HTMLDivElement, target.parentElement!);
+      const parent = target.parentElement;
+      if (!parent) return;
+      sessionLockManager.activateLock(key, target as HTMLDivElement, parent);
     }
   }
 
