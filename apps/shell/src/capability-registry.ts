@@ -1,7 +1,7 @@
 import {
   evaluateShellPluginCompatibility,
-  type PluginContract,
-} from "@ghost-shell/contracts";
+} from "@ghost-shell/plugin-system";
+import type { PluginContract } from "@ghost-shell/contracts";
 
 interface PluginCapabilityComponentContribution {
   id: string;

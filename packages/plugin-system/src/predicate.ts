@@ -1,6 +1,6 @@
 import type { ExprNode, EvaluationScope } from "@ghost-shell/predicate";
 import { evaluate as evaluateExpr, PredicateError } from "@ghost-shell/predicate";
-import type { PluginContributionPredicate } from "./types.js";
+import type { PluginContributionPredicate } from "@ghost-shell/contracts";
 
 export interface PredicateFactBag {
   [key: string]: unknown;

@@ -5,8 +5,10 @@ import type {
 } from "@ghost-shell/contracts";
 import {
   createEventEmitter,
-  evaluateContributionPredicate,
 } from "@ghost-shell/contracts";
+import {
+  evaluateContributionPredicate,
+} from "@ghost-shell/plugin-system";
 import type { ActionKeybinding, ActionSurface } from "../action-surface.js";
 import { dispatchAction } from "../action-surface.js";
 import type { IntentRuntime } from "../intent-runtime.js";

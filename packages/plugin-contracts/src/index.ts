@@ -98,47 +98,12 @@ export {
 } from "./schemas.js";
 
 export type {
-  ComposedPluginViewContribution,
-  ComposedPluginPartContribution,
-  ComposedPluginSlotContribution,
-  ComposedPluginSectionContribution,
-  ComposedPluginLayerSurfaceContribution,
-  ComposedPluginContributions,
-  ComposedThemeContribution,
-  PluginContributionSource,
-} from "./composition.js";
-
-export {
-  composeEnabledPluginContributions,
-  composeThemeContributions,
-} from "./composition.js";
-
-export type {
   PluginContractValidationIssue,
   ParsePluginContractResult,
   ParseTenantPluginManifestResult,
 } from "./parsing.js";
 
 export { parsePluginContract, parseTenantPluginManifest } from "./parsing.js";
-
-export type {
-  PredicateFactBag,
-  PredicateFailureTrace,
-  PredicateEvaluationResult,
-  ContributionPredicateMatcher,
-} from "./predicate.js";
-
-export {
-  createDefaultContributionPredicateMatcher,
-  evaluateContributionPredicate,
-} from "./predicate.js";
-
-export type {
-  CompatibilityReasonCode,
-  ShellPluginCompatibilityResult,
-} from "./compatibility.js";
-
-export { evaluateShellPluginCompatibility } from "./compatibility.js";
 
 export type {
   GhostApi,
@@ -162,26 +127,12 @@ export type {
   TerminalPalette,
   PartialThemePalette,
   FullThemePalette,
-} from "./theme-derivation.js";
+} from "./theme-types.js";
 
 export {
   partialThemePaletteSchema,
   terminalPaletteSchema,
-  deriveFullPalette,
-} from "./theme-derivation.js";
-
-export { GHOST_THEME_CSS_VARS, THEME_TOKEN_GROUPS } from "./theme-css-vars.js";
-
-export {
-  adjustLightness,
-  desaturate,
-  contrastSafe,
-  blendWithBackground,
-  contrastRatio,
-  relativeLuminance,
-  isValidHex,
-  withAlpha,
-} from "./theme-color-utils.js";
+} from "./theme-types.js";
 
 export type { ThemeService, ThemeInfo, BackgroundInfo } from "./theme-service.js";
 export { THEME_SERVICE_ID } from "./theme-service.js";
@@ -250,5 +201,5 @@ export type {
 } from "./keybinding-service.js";
 export { KEYBINDING_SERVICE_ID } from "./keybinding-service.js";
 
-export { MF_SHARED_SINGLETONS } from "./shared-dependencies.js";
-export type { MfSharedSingleton } from "./shared-dependencies.js";
+export type { PartRenderer, PartRenderHandle, PartRenderContext } from "./part-renderer.js";
+export type { ContextContribution, ProviderContribution } from "./context-contribution.js";

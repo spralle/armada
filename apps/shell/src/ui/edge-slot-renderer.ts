@@ -1,9 +1,8 @@
+import type { ShellEdgeSlot, ShellEdgeSlotPosition } from "@ghost-shell/contracts";
 import {
   composeEnabledPluginContributions,
   type ComposedPluginSlotContribution,
-  type ShellEdgeSlot,
-  type ShellEdgeSlotPosition,
-} from "@ghost-shell/contracts";
+} from "@ghost-shell/plugin-system";
 import type { ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";
 import {

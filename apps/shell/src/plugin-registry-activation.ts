@@ -1,4 +1,4 @@
-import { evaluateShellPluginCompatibility } from "@ghost-shell/contracts";
+import { evaluateShellPluginCompatibility } from "@ghost-shell/plugin-system";
 import type { PluginServices } from "@ghost-shell/contracts";
 import type { CapabilityRegistry } from "./capability-registry.js";
 import {

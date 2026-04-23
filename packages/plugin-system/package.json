@@ -1,5 +1,5 @@
 {
-  "name": "@ghost-shell/contracts",
+  "name": "@ghost-shell/plugin-system",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,14 +12,13 @@
     },
     "./*": null
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "build:dist": "tsup"
   },
   "dependencies": {
-    "zod": "^3.24.2"
+    "@ghost-shell/contracts": "workspace:*",
+    "@ghost-shell/predicate": "workspace:*"
   }
 }

@@ -7,7 +7,7 @@ import {
   evaluateContributionPredicate,
   HOOK_REGISTRY_SERVICE_ID,
   ELEMENT_TRANSITION_HOOK_ID,
-} from "@ghost-shell/contracts";
+} from "@ghost-shell/plugin-system";
 import type { LayerRegistry } from "./registry.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";

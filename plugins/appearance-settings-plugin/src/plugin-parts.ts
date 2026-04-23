@@ -5,13 +5,15 @@ import type {
   PluginMountContext,
   PluginContract,
   ActivityStatusService,
-  ComposedPluginSectionContribution,
 } from "@ghost-shell/contracts";
+import type { ComposedPluginSectionContribution } from "@ghost-shell/plugin-system";
 import {
   THEME_SERVICE_ID,
   ACTIVITY_STATUS_SERVICE_ID,
-  composeEnabledPluginContributions,
 } from "@ghost-shell/contracts";
+import {
+  composeEnabledPluginContributions,
+} from "@ghost-shell/plugin-system";
 import {
   injectAppearanceStyles,
   renderThemePicker,

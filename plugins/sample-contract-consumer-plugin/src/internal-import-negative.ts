@@ -1,4 +1,4 @@
 // @ts-expect-error contract consumer plugins must not import SDK internals
-import type { __internalOnly } from "@ghost-shell/contracts/internal";
+import type { PartRenderer } from "@ghost-shell/contracts/part-renderer";
 
-void (0 as unknown as typeof __internalOnly);
+void (0 as unknown as typeof PartRenderer);

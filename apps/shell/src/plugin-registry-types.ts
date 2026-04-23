@@ -1,9 +1,9 @@
 import type {
-  CompatibilityReasonCode,
   Disposable,
   PluginContract,
   TenantPluginDescriptor,
 } from "@ghost-shell/contracts";
+import type { CompatibilityReasonCode } from "@ghost-shell/plugin-system";
 import type { DeactivationContext } from "@ghost-shell/contracts";
 import type { CapabilityDependencyFailureCode } from "./capability-registry.js";
 import type { GhostApiInstance } from "./plugin-api/ghost-api-factory.js";

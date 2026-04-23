@@ -19,5 +19,8 @@
     "src"
   ],
   "exclude": ["src/**/__tests__", "src/**/*.test.ts"],
-  "references": []
+  "references": [
+    { "path": "../plugin-contracts" },
+    { "path": "../predicate" }
+  ]
 }

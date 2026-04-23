@@ -1,4 +1,4 @@
-import type { PartialThemePalette, TerminalPalette } from "./theme-derivation.js";
+import type { PartialThemePalette, TerminalPalette } from "./theme-types.js";
 import type { PluginLayerDefinition, PluginLayerSurfaceContribution } from "./layer-types.js";
 /** Configuration property schema (JSON Schema subset with extension fields). */
 export interface ConfigurationPropertySchema {

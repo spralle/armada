@@ -1,15 +1,17 @@
 import type {
-  ContributionPredicateMatcher,
   PluginActionContribution,
   PluginContract,
   PluginContributionPredicate,
   PluginKeybindingContribution,
   PluginMenuContribution,
-  PredicateFactBag,
 } from "@ghost-shell/contracts";
+import type {
+  ContributionPredicateMatcher,
+  PredicateFactBag,
+} from "@ghost-shell/plugin-system";
 import {
   createDefaultContributionPredicateMatcher,
-} from "@ghost-shell/contracts";
+} from "@ghost-shell/plugin-system";
 import type { IntentResolutionDelegate, IntentRuntime, ShellIntent, IntentFactBag } from "./intent-runtime.js";
 
 export interface ActionSurfaceContext {

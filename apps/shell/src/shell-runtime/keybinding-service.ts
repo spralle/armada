@@ -1,4 +1,4 @@
-import type { ContributionPredicateMatcher } from "@ghost-shell/contracts";
+import type { ContributionPredicateMatcher } from "@ghost-shell/plugin-system";
 import { createEventEmitter } from "@ghost-shell/contracts";
 import type {
   Event,

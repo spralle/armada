@@ -1,16 +1,16 @@
 /**
- * Extracted derivation helpers for theme-derivation.ts.
+ * Extracted derivation helpers for theme palette derivation.
  *
  * Keeps the main module under the 350-line lint threshold
  * and each function under 50 lines.
  */
-import type { PartialThemePalette, TerminalPalette, ThemeMode } from "./theme-derivation.js";
+import type { PartialThemePalette, TerminalPalette, ThemeMode } from "@ghost-shell/contracts";
 import {
   adjustLightness,
   blendWithBackground,
   desaturate,
   withAlpha,
-} from "./theme-color-utils.js";
+} from "./color-utils.js";
 
 // ---------------------------------------------------------------------------
 // Fallback constants (co-located with the helpers that use them)

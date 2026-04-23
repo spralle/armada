@@ -19,6 +19,12 @@
     },
     {
       "path": "../../packages/router"
+    },
+    {
+      "path": "../../packages/theme"
+    },
+    {
+      "path": "../../packages/plugin-system"
     }
   ],
   "include": [

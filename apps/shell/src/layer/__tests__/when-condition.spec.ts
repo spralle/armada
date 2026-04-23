@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
-import { evaluateContributionPredicate } from "../../../../../packages/plugin-contracts/src/predicate.js";
-import type { PluginLayerSurfaceContribution } from "../../../../../packages/plugin-contracts/src/layer-types.js";
+import { evaluateContributionPredicate } from "@ghost-shell/plugin-system";
+import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts";
 
 /**
  * Mirrors the filterByWhenCondition logic from surface-renderer.ts
