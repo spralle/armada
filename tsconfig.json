@@ -44,6 +44,9 @@
       "path": "./packages/bridge"
     },
     {
+      "path": "./packages/layer"
+    },
+    {
       "path": "./packages/formr-react"
     },
     {

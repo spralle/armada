@@ -6,7 +6,7 @@ import {
   createGhostApi,
   type GhostApiFactoryDependencies,
 } from "./plugin-api/ghost-api-factory.js";
-import type { LayerRegistry } from "./layer/registry.js";
+import type { LayerRegistry } from "@ghost-shell/layer";
 import type { RuntimeFirstPluginLoader, PluginLoadError } from "./plugin-loader.js";
 import { buildActivationPlan } from "./plugin-activation-plan.js";
 import { pushDiagnostic, transitionLifecycle } from "./plugin-registry-diagnostics.js";

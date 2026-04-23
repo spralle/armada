@@ -1,27 +1,32 @@
-export { BUILTIN_LAYERS, LayerRegistry } from "./registry.js";
-
-export { createLayerContainer, removeLayerContainer } from "./layer-dom.js";
-
-export { computeAnchorStyles, computeExclusiveZones, getAnchorKey } from "./anchor-positioning.js";
-
-export type { StackedSurface } from "./auto-stacking.js";
-export { applyAutoStacking } from "./auto-stacking.js";
-
-export type { FocusGrabOptions, FocusGrabManager } from "./focus-grab.js";
-export { createFocusGrabManager } from "./focus-grab.js";
-
 export {
+  BUILTIN_LAYERS,
+  LayerRegistry,
+  createLayerContainer,
+  removeLayerContainer,
+  computeAnchorStyles,
+  computeExclusiveZones,
+  getAnchorKey,
+  applyAutoStacking,
+  createFocusGrabManager,
   applyInputBehavior,
   applyKeyboardInteractivity,
   createKeyboardExclusiveManager,
-} from "./input-behavior.js";
-export type { KeyboardExclusiveEntry, KeyboardExclusiveManager } from "./input-behavior.js";
+  createSessionLockManager,
+  createLayerSurfaceContext,
+  applyVisualEffects,
+  setDynamicOpacity,
+} from "@ghost-shell/layer";
 
-export type { SessionLockManager, SessionLockManagerOptions } from "./session-lock.js";
-export { createSessionLockManager } from "./session-lock.js";
-
-export type { LayerSurfaceContextOptions } from "./surface-context.js";
-export { createLayerSurfaceContext } from "./surface-context.js";
+export type {
+  StackedSurface,
+  FocusGrabOptions,
+  FocusGrabManager,
+  KeyboardExclusiveEntry,
+  KeyboardExclusiveManager,
+  SessionLockManager,
+  SessionLockManagerOptions,
+  LayerSurfaceContextOptions,
+} from "@ghost-shell/layer";
 
 export type {
   BuiltInSurfaceMountFn,
@@ -29,5 +34,3 @@ export type {
   LayerSurfaceRenderer,
 } from "./surface-renderer.js";
 export { createLayerSurfaceRenderer } from "./surface-renderer.js";
-
-export { applyVisualEffects, setDynamicOpacity } from "./visual-effects.js";

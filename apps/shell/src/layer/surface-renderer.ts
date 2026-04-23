@@ -8,15 +8,15 @@ import {
   HOOK_REGISTRY_SERVICE_ID,
   ELEMENT_TRANSITION_HOOK_ID,
 } from "@ghost-shell/plugin-system";
-import type { LayerRegistry } from "./registry.js";
+import type { LayerRegistry } from "@ghost-shell/layer";
 import type { ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";
 import { safeUnmount, type MountCleanup } from "../federation-mount-utils.js";
 import { composeSurfaceKey } from "./surface-mount-utils.js";
-import { computeExclusiveZones } from "./anchor-positioning.js";
-import { type KeyboardExclusiveManager, createKeyboardExclusiveManager } from "./input-behavior.js";
-import { type FocusGrabManager, createFocusGrabManager } from "./focus-grab.js";
-import { type SessionLockManager, createSessionLockManager } from "./session-lock.js";
+import { computeExclusiveZones } from "@ghost-shell/layer";
+import { type KeyboardExclusiveManager, createKeyboardExclusiveManager } from "@ghost-shell/layer";
+import { type FocusGrabManager, createFocusGrabManager } from "@ghost-shell/layer";
+import { type SessionLockManager, createSessionLockManager } from "@ghost-shell/layer";
 import { reconcileLayerContainer, type ReconcilerContext } from "./surface-reconciler.js";
 import { type HookRegistry } from "../hook-registry.js";
 

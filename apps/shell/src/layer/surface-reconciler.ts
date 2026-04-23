@@ -5,7 +5,7 @@ import {
   InputBehavior,
   KeyboardInteractivity,
 } from "@ghost-shell/contracts";
-import type { LayerRegistry } from "./registry.js";
+import type { LayerRegistry } from "@ghost-shell/layer";
 import type { PluginHost, ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";
 import {
@@ -13,18 +13,18 @@ import {
   safeUnmount,
   ensureRemoteRegistered,
 } from "../federation-mount-utils.js";
-import { applyVisualEffects } from "./visual-effects.js";
-import { createLayerSurfaceContext } from "./surface-context.js";
+import { applyVisualEffects } from "@ghost-shell/layer";
+import { createLayerSurfaceContext } from "@ghost-shell/layer";
 import {
   composeSurfaceKey,
   createSurfaceMountKey,
   resolveSurfaceMount,
 } from "./surface-mount-utils.js";
-import { computeAnchorStyles } from "./anchor-positioning.js";
-import { applyInputBehavior, applyKeyboardInteractivity } from "./input-behavior.js";
-import { applyAutoStacking } from "./auto-stacking.js";
+import { computeAnchorStyles } from "@ghost-shell/layer";
+import { applyInputBehavior, applyKeyboardInteractivity } from "@ghost-shell/layer";
+import { applyAutoStacking } from "@ghost-shell/layer";
 import type { BuiltInSurfaceMountFn, SurfaceMountState } from "./surface-renderer.js";
-import type { FocusGrabManager } from "./focus-grab.js";
+import type { FocusGrabManager } from "@ghost-shell/layer";
 
 // ---------------------------------------------------------------------------
 // Dependencies context passed from the renderer
