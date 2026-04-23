@@ -14,6 +14,8 @@ export interface PartRenderContext {
   readonly partId: string;
   /** The plugin ID that owns this part. */
   readonly pluginId: string;
+  /** The loaded remote module (for renderer dispatch). */
+  readonly module: unknown;
 }
 
 /**
@@ -33,8 +35,21 @@ export interface PartRenderHandle extends Disposable {
 export interface PartRenderer {
   /** Unique identifier for this renderer (e.g., "react", "vanilla-dom"). */
   readonly id: string;
-  /** Returns true if this renderer can handle the given part. */
-  canRender(partId: string, pluginId: string): boolean;
+  /** Returns true if this renderer can handle the given part/module combination. */
+  canRender(partId: string, pluginId: string, module: unknown): boolean;
   /** Mount a part into the given container. */
   mount(context: PartRenderContext): PartRenderHandle;
+}
+
+/**
+ * Registry for part renderers. The shell uses this to dispatch
+ * mount calls to the appropriate renderer based on module type.
+ */
+export interface PartRendererRegistry {
+  /** Register a renderer. Returns a Disposable to unregister. */
+  register(renderer: PartRenderer): Disposable;
+  /** Find the first renderer that can handle the given part/module. */
+  getRendererFor(partId: string, pluginId: string, module: unknown): PartRenderer | undefined;
+  /** All registered renderers (ordered by registration, last wins). */
+  readonly renderers: readonly PartRenderer[];
 }

@@ -9,20 +9,21 @@ import {
   type MountCleanup,
   normalizeCleanup,
   safeUnmount,
-  toRecord,
   ensureRemoteRegistered,
 } from "./federation-mount-utils.js";
-
-type MountPartFn = (
-  target: HTMLElement,
-  context: {
-    part: ComposedShellPart;
-    instanceId: string;
-    definitionId: string;
-    args: Record<string, string>;
-    runtime: ShellRuntime;
-  },
-) => MountCleanup | Promise<MountCleanup>;
+import type {
+  PartRenderer,
+  PartRendererRegistry,
+  PartRenderHandle,
+} from "@ghost-shell/contracts";
+import { createPartRendererRegistry } from "./part-renderer-registry.js";
+import {
+  type MountPartFn,
+  resolvePartMount,
+  resolvePartInstanceId,
+  resolvePartDefinitionId,
+  resolvePartArgs,
+} from "./part-mount-resolution.js";
 
 interface PartModuleHostEntry {
   target: HTMLElement;
@@ -32,6 +33,7 @@ interface PartModuleHostEntry {
 
 interface PartModuleHostOptions {
   federationRuntime?: ShellFederationRuntime;
+  rendererRegistry?: PartRendererRegistry;
 }
 
 export interface PartModuleHostRuntime {
@@ -44,6 +46,7 @@ export function createPartModuleHostRuntime(
   options: PartModuleHostOptions = {},
 ): PartModuleHostRuntime {
   const federationRuntime = options.federationRuntime ?? createShellFederationRuntime();
+  const rendererRegistry = options.rendererRegistry ?? createPartRendererRegistry();
   const mounted = new Map<string, PartModuleHostEntry>();
   const registeredRemoteIds = new Set<string>();
   let generation = 0;
@@ -105,6 +108,7 @@ export function createPartModuleHostRuntime(
             part,
             pluginSnapshot: pluginsById.get(part.pluginId),
             registeredRemoteIds,
+            rendererRegistry,
             runtime,
             target,
           }),
@@ -136,6 +140,7 @@ interface MountPartOptions {
   part: ComposedShellPart;
   pluginSnapshot: ReturnType<PluginHost["registry"]["getSnapshot"]>["plugins"][number] | undefined;
   registeredRemoteIds: Set<string>;
+  rendererRegistry: PartRendererRegistry;
   runtime: ShellRuntime;
   target: HTMLElement;
 }
@@ -150,6 +155,7 @@ async function mountPart(options: MountPartOptions): Promise<void> {
     part,
     pluginSnapshot,
     registeredRemoteIds,
+    rendererRegistry,
     runtime,
     target,
   } = options;
@@ -168,6 +174,17 @@ async function mountPart(options: MountPartOptions): Promise<void> {
       return;
     }
 
+    const partId = resolvePartDefinitionId(part);
+    const renderer = rendererRegistry.getRendererFor(partId, part.pluginId, remoteModule);
+
+    if (renderer) {
+      const handle = mountViaRenderer(renderer, target, part, runtime, remoteModule);
+      mountedFromHandle(handle, resolvePartInstanceId(part), target, mountKey, mounted);
+      hideFallback(fallbackTarget);
+      return;
+    }
+
+    // Legacy fallback: direct mount resolution (for backward compat during transition)
     const mountFn = resolvePartMount(remoteModule, part);
     if (!mountFn) {
       showFallback(target, fallbackTarget);
@@ -203,6 +220,42 @@ async function mountPart(options: MountPartOptions): Promise<void> {
   }
 }
 
+function mountViaRenderer(
+  renderer: PartRenderer,
+  container: HTMLElement,
+  part: ComposedShellPart,
+  runtime: ShellRuntime,
+  module: unknown,
+): PartRenderHandle {
+  return renderer.mount({
+    container,
+    mountContext: {
+      part: { id: part.id, title: part.title ?? part.id, component: part.component ?? part.id },
+      instanceId: resolvePartInstanceId(part),
+      definitionId: resolvePartDefinitionId(part),
+      args: resolvePartArgs(part),
+      runtime: { services: runtime.services },
+    },
+    partId: resolvePartDefinitionId(part),
+    pluginId: part.pluginId,
+    module,
+  });
+}
+
+function mountedFromHandle(
+  handle: PartRenderHandle,
+  instanceId: string,
+  target: HTMLElement,
+  mountKey: string,
+  mounted: Map<string, PartModuleHostEntry>,
+): void {
+  mounted.set(instanceId, {
+    target,
+    cleanup: () => handle.dispose(),
+    mountKey,
+  });
+}
+
 function createPartMountKey(
   part: ComposedShellPart,
   pluginSnapshot: ReturnType<PluginHost["registry"]["getSnapshot"]>["plugins"][number] | undefined,
@@ -226,60 +279,6 @@ function createPartMountKey(
     pluginSnapshot.contract ? "contract:present" : "contract:missing",
     failureCode,
   ].join("|");
-}
-
-function resolvePartMount(moduleValue: unknown, part: ComposedShellPart): MountPartFn | null {
-  const moduleRecord = toRecord(moduleValue);
-  if (!moduleRecord) {
-    return null;
-  }
-
-  const mountPart = moduleRecord.mountPart;
-  if (typeof mountPart === "function") {
-    return mountPart as MountPartFn;
-  }
-
-  const parts = toRecord(moduleRecord.parts);
-  if (parts) {
-    const candidate = parts[resolvePartDefinitionId(part)]
-      ?? parts[part.id]
-      ?? (part.component ? parts[part.component] : undefined);
-    const resolved = resolvePartCandidate(candidate);
-    if (resolved) {
-      return resolved;
-    }
-  }
-
-  return resolvePartCandidate(moduleRecord.default);
-}
-
-function resolvePartCandidate(candidate: unknown): MountPartFn | null {
-  if (typeof candidate === "function") {
-    return candidate as MountPartFn;
-  }
-
-  const candidateRecord = toRecord(candidate);
-  if (!candidateRecord) {
-    return null;
-  }
-
-  if (typeof candidateRecord.mount === "function") {
-    return candidateRecord.mount as MountPartFn;
-  }
-
-  return null;
-}
-
-function resolvePartInstanceId(part: ComposedShellPart): string {
-  return part.instanceId ?? part.id;
-}
-
-function resolvePartDefinitionId(part: ComposedShellPart): string {
-  return part.definitionId ?? part.id;
-}
-
-function resolvePartArgs(part: ComposedShellPart): Record<string, string> {
-  return part.args ? { ...part.args } : {};
 }
 
 function collectTargetsByPart(

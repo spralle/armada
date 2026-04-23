@@ -201,5 +201,11 @@ export type {
 } from "./keybinding-service.js";
 export { KEYBINDING_SERVICE_ID } from "./keybinding-service.js";
 
-export type { PartRenderer, PartRenderHandle, PartRenderContext } from "./part-renderer.js";
+export type { PartRenderer, PartRenderHandle, PartRenderContext, PartRendererRegistry } from "./part-renderer.js";
+
+export { REACT_PARTS_SYMBOL, isReactPartsModule } from "./define-parts.js";
+export type { ReactPartsModule } from "./define-parts.js";
+
+export { createVanillaDomRenderer } from "./vanilla-dom-renderer.js";
+
 export type { ContextContribution, ProviderContribution } from "./context-contribution.js";
