@@ -99,9 +99,19 @@ export interface StorageWriteResult {
 }
 
 // ---------------------------------------------------------------------------
-// Runtime stubs
+// Runtime stubs — no-op placeholders for removed @weaver/* packages.
+// Each stub warns once on first invocation so developers know it's non-functional.
 // ---------------------------------------------------------------------------
 
+const _warned = new Set<string>();
+function warnOnce(name: string): void {
+  if (!_warned.has(name)) {
+    _warned.add(name);
+    console.warn(`[config-stubs] ${name} is a no-op placeholder (removed @weaver/* packages)`);
+  }
+}
+
+/** @deprecated No-op stub — @weaver/config-providers removed. Always returns empty data. */
 export class FileSystemStorageProvider {
   constructor(_opts: {
     id: string;
@@ -112,6 +122,7 @@ export class FileSystemStorageProvider {
   }) {}
 
   async load(): Promise<StorageLoadResult> {
+    warnOnce("FileSystemStorageProvider.load");
     return { entries: {} };
   }
 
@@ -124,18 +135,22 @@ export class FileSystemStorageProvider {
   }
 }
 
+/** @deprecated No-op stub — @weaver/config-engine removed. Always returns "allowed". */
 export function evaluateChangePolicy(
   _schema: ConfigurationPropertySchema,
   _context: PolicyEvaluationContext,
   _layer: string,
   _canWrite: () => boolean,
 ): PolicyDecision {
+  warnOnce("evaluateChangePolicy");
   return { outcome: "allowed" };
 }
 
+/** @deprecated No-op stub — @weaver/config-engine removed. Merges layers left-to-right. */
 export function resolveConfiguration(opts: {
   layers: ConfigurationLayerEntry[];
 }): { entries: Record<string, unknown> } {
+  warnOnce("resolveConfiguration");
   const entries: Record<string, unknown> = {};
   for (const layer of opts.layers) {
     Object.assign(entries, layer.entries);
@@ -143,10 +158,12 @@ export function resolveConfiguration(opts: {
   return { entries };
 }
 
+/** @deprecated No-op stub — @weaver/config-engine removed. */
 export function inspectKey(
   opts: { layers: ConfigurationLayerEntry[] },
   key: string,
 ): { effectiveValue: unknown } {
+  warnOnce("inspectKey");
   let effectiveValue: unknown;
   for (const layer of opts.layers) {
     if (key in layer.entries) {
@@ -156,7 +173,9 @@ export function inspectKey(
   return { effectiveValue };
 }
 
+/** @deprecated No-op stub — returns an in-memory audit log that discards all entries. */
 export function createInMemoryAuditLog(): ConfigAuditLog {
+  warnOnce("createInMemoryAuditLog");
   return {
     async append() {},
     async queryByKey() { return []; },
@@ -165,7 +184,9 @@ export function createInMemoryAuditLog(): ConfigAuditLog {
   };
 }
 
+/** @deprecated No-op stub — returns an override tracker that tracks nothing. */
 export function createInMemoryOverrideTracker(): OverrideTracker {
+  warnOnce("createInMemoryOverrideTracker");
   return {
     async create() {},
     async listActive() { return []; },
@@ -174,7 +195,9 @@ export function createInMemoryOverrideTracker(): OverrideTracker {
   };
 }
 
+/** @deprecated No-op stub — returns a session controller that is never active. */
 export function createOverrideSessionProvider(): OverrideSessionController {
+  warnOnce("createOverrideSessionProvider");
   return {
     isActive() { return false; },
     activate(_data: unknown) { return { active: true }; },
@@ -183,9 +206,11 @@ export function createOverrideSessionProvider(): OverrideSessionController {
   };
 }
 
+/** @deprecated No-op stub — returns a config service that stores nothing. */
 export async function createConfigurationService(
   _opts: unknown,
 ): Promise<ConfigurationService> {
+  warnOnce("createConfigurationService");
   return {
     get() { return undefined; },
     set() {},
@@ -193,9 +218,11 @@ export async function createConfigurationService(
   };
 }
 
+/** @deprecated No-op stub — returns a service config that always returns undefined. */
 export function createServiceConfigurationService(
   _opts: unknown,
 ): ServiceConfigurationService {
+  warnOnce("createServiceConfigurationService");
   return { get() { return undefined; } };
 }
 

@@ -70,3 +70,5 @@ export {
 
 export { definePlugin } from "./define-plugin.js";
 export type { ExtractPartIds, ExtractActionIds } from "./define-plugin.js";
+
+export { createPluginContract } from "./create-plugin-contract.js";

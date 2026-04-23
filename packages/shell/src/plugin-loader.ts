@@ -150,7 +150,7 @@ export function createRuntimeFirstPluginLoader(
     async loadPluginComponents(descriptor) {
       federationRuntime.registerRemote({ id: descriptor.id, entry: descriptor.entry });
       try {
-        return await loadRemoteModuleWithRetry({
+        const mod = await loadRemoteModuleWithRetry({
           descriptor,
           federationRuntime,
           remoteLoadMaxAttempts,
@@ -158,24 +158,16 @@ export function createRuntimeFirstPluginLoader(
           onDiagnostic,
           module: "pluginComponents",
         });
-      } catch (cause) {
-        throw new PluginLoadError({
-          pluginId: descriptor.id,
-          strategy: "remote-manifest",
-          reason: "COMPONENTS_UNAVAILABLE",
-          message:
-            `Plugin '${descriptor.id}' capabilities module './pluginComponents' could not be loaded. `
-            + "Check remote expose configuration and availability.",
-          attempts: remoteLoadMaxAttempts,
-          maxAttempts: remoteLoadMaxAttempts,
-          cause,
-        });
+        return mod ?? {};
+      } catch {
+        // Plugin does not expose components — fall back to empty module
+        return {};
       }
     },
     async loadPluginServices(descriptor) {
       federationRuntime.registerRemote({ id: descriptor.id, entry: descriptor.entry });
       try {
-        return await loadRemoteModuleWithRetry({
+        const mod = await loadRemoteModuleWithRetry({
           descriptor,
           federationRuntime,
           remoteLoadMaxAttempts,
@@ -183,18 +175,10 @@ export function createRuntimeFirstPluginLoader(
           onDiagnostic,
           module: "pluginServices",
         });
-      } catch (cause) {
-        throw new PluginLoadError({
-          pluginId: descriptor.id,
-          strategy: "remote-manifest",
-          reason: "SERVICES_UNAVAILABLE",
-          message:
-            `Plugin '${descriptor.id}' capabilities module './pluginServices' could not be loaded. `
-            + "Check remote expose configuration and availability.",
-          attempts: remoteLoadMaxAttempts,
-          maxAttempts: remoteLoadMaxAttempts,
-          cause,
-        });
+        return mod ?? {};
+      } catch {
+        // Plugin does not expose services — fall back to empty module
+        return {};
       }
     },
   };
