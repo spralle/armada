@@ -9,21 +9,22 @@ import type {
   PluginContract,
   ThemeBackgroundEntry,
 } from "@ghost-shell/contracts";
-import { deriveFullPalette, GHOST_THEME_CSS_VARS } from "@ghost-shell/theme";
 import {
-  composeThemeContributions,
-  type ComposedThemeContribution,
-} from "@ghost-shell/plugin-system";
-import type { ShellPluginRegistry } from "./plugin-registry-types.js";
-import {
+  deriveFullPalette,
+  GHOST_THEME_CSS_VARS,
   readUserThemePreference,
   writeUserThemePreference,
   readBackgroundPreference,
   writeBackgroundPreference,
   clearBackgroundPreference,
-} from "./theme-persistence.js";
-import { manageBackgroundImage } from "./theme-background.js";
-import { preloadBackgroundUrls } from "./theme-background-cache.js";
+  manageBackgroundImage,
+  preloadBackgroundUrls,
+} from "@ghost-shell/theme";
+import {
+  composeThemeContributions,
+  type ComposedThemeContribution,
+} from "@ghost-shell/plugin-system";
+import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 import { activateAllThemePlugins } from "./theme-activation.js";
 
 // ---------------------------------------------------------------------------
@@ -159,7 +160,7 @@ function resolveThemeId(
 }
 
 // Re-export for backward compatibility.
-export { manageBackgroundImage } from "./theme-background.js";
+export { manageBackgroundImage } from "@ghost-shell/theme";
 
 // ---------------------------------------------------------------------------
 // Factory

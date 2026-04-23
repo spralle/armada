@@ -1,5 +1,5 @@
 import type { ShellRuntime } from "../app/types.js";
-import { DEFAULT_DARK_PALETTE, injectThemeVariables } from "../theme-tokens.js";
+import { DEFAULT_DARK_PALETTE, injectThemeVariables } from "@ghost-shell/theme";
 import { LayerRegistry, BUILTIN_LAYERS } from "../layer/registry.js";
 
 type MountDeps = {

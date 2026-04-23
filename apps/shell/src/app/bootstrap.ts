@@ -3,7 +3,7 @@ import { createShellPluginRegistry } from "../plugin-registry.js";
 import { activateByStartupEvent } from "../plugin-registry-activation.js";
 import { createThemeRegistry } from "../theme-registry.js";
 import type { ThemeRegistry } from "../theme-registry.js";
-import { readUserThemePreference } from "../theme-persistence.js";
+import { readUserThemePreference } from "@ghost-shell/theme";
 import {
   activatePreferredThemePlugin,
   DEFAULT_THEME_PLUGIN_ID,
