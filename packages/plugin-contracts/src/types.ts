@@ -241,6 +241,26 @@ export interface PluginContributions {
   sections?: PluginSectionContribution[] | undefined;
   layers?: PluginLayerDefinition[] | undefined;
   layerSurfaces?: PluginLayerSurfaceContribution[] | undefined;
+  /** Route declarations with schemas for type-safe navigation. */
+  routes?: PluginRouteContribution[] | undefined;
+}
+
+/**
+ * Route contribution declared by a plugin for type-safe navigation.
+ * The schema field carries a Zod schema for runtime validation of route params.
+ */
+export interface PluginRouteContribution {
+  /** Unique route identifier within this plugin. */
+  id: string;
+  /** Human-readable title for the route. */
+  title: string;
+  /** ID of the view this route maps to. */
+  viewId?: string | undefined;
+  /**
+   * Zod schema for route params — used for runtime validation at federation boundaries.
+   * This is a runtime value (Zod schema object), not a type.
+   */
+  params?: unknown | undefined;
 }
 
 export interface PluginContract {

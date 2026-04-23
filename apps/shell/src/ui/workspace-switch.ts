@@ -58,6 +58,10 @@ export function performWorkspaceSwitch(
   // --- Step 5: Swap state --------------------------------------------------
   runtime.workspaceManager = result.state;
   runtime.contextState = result.activeContextState;
+  runtime.stateObserver?.onWorkspaceSwitched?.(
+    runtime.workspaceManager.activeWorkspaceId,
+    runtime.contextState,
+  );
 
   // --- Step 6: Re-render dock tree and mount parts -------------------------
   renderParts(root, runtime, partsDeps, { teardownMode: true });
