@@ -85,64 +85,116 @@ export interface ShellBootstrapOptions {
   keybindingServiceDeps?: KeybindingServiceDeps | undefined;
 }
 
-export interface ShellRuntime extends DndDiagnosticRuntime {
+// ---------------------------------------------------------------------------
+// Narrow capability interfaces — each captures a cohesive slice of runtime.
+// Consumers should depend on the narrowest interface(s) they actually need.
+// ---------------------------------------------------------------------------
+
+export interface LayoutHost {
   layout: ShellLayoutState;
-  persistence: ShellLayoutPersistence;
-  contextPersistence: ShellContextStatePersistence;
-  keybindingPersistence: ShellKeybindingPersistence;
-  workspacePersistence: ShellWorkspacePersistence;
-  registry: ShellPluginRegistry;
+}
+
+export interface StateHost {
+  contextState: ShellContextState;
+  workspaceManager: WorkspaceManagerState;
+}
+
+export interface BridgeHost {
   bridge: WindowBridge;
   asyncBridge: AsyncWindowBridge;
   windowId: string;
-  hostWindowId: string | null;
-  popoutTabId: string | null;
-  isPopout: boolean;
-  selectedPartId: string | null;
-  selectedPartTitle: string | null;
-  contextState: ShellContextState;
-  notice: string;
-  pluginNotice: string;
-  intentNotice: string;
+  syncDegraded: boolean;
+  syncHealthState: "healthy" | "degraded" | "unavailable";
+  syncDegradedReason: AsyncWindowBridgeRejectReason | null;
+  pendingProbeId: string | null;
+  activeTransportPath: ShellTransportPath;
+  activeTransportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
+}
+
+export interface PluginHost {
+  registry: ShellPluginRegistry;
+  services: PluginServices;
+  /** Shared registry of runtime action handlers registered by plugins via ActionService. */
+  runtimeActionRegistry: Map<string, (...args: unknown[]) => unknown>;
+}
+
+export interface ThemeHost {
+  themeRegistry: ThemeRegistry | null;
+}
+
+export interface CommandHost {
+  actionSurface: ActionSurface;
+  keybindingOverrideManager: KeybindingOverrideManager;
+}
+
+export interface IntentHost {
+  intentRuntime: IntentRuntime;
   activeIntentSession: IntentSession | null;
   lastIntentTrace: IntentResolutionTrace | null;
   /** Resolver for the async chooser promise bridge. Set by showChooser delegate, consumed by UI handlers. */
   _pendingChooserResolve: ((match: IntentActionMatch | null) => void) | null;
-  popoutHandles: Map<string, Window>;
-  poppedOutTabIds: Set<string>;
-  closeableTabIds: Set<string>;
+}
+
+export interface DndHost {
   dragSessionBroker: ReturnType<typeof createDragSessionBroker>;
   incomingTransferJournal: IncomingTransferJournal;
   sourceTabTransferPendingBySessionId?: Map<string, SourceTabTransferPendingState>;
   sourceTabTransferTerminalSessionIds?: Set<string>;
   crossWindowDndEnabled: boolean;
   crossWindowDndKillSwitchActive: boolean;
-  syncDegraded: boolean;
-  syncHealthState: "healthy" | "degraded" | "unavailable";
-  syncDegradedReason: AsyncWindowBridgeRejectReason | null;
-  pendingProbeId: string | null;
+  activeDndPath: DndDiagnosticPath;
+  activeDndReason: "kill-switch-force-disabled" | "flag-enabled" | "default-same-window-only";
+}
+
+export interface PersistenceHost {
+  persistence: ShellLayoutPersistence;
+  contextPersistence: ShellContextStatePersistence;
+  keybindingPersistence: ShellKeybindingPersistence;
+  workspacePersistence: ShellWorkspacePersistence;
+}
+
+export interface PopoutHost {
+  hostWindowId: string | null;
+  popoutTabId: string | null;
+  isPopout: boolean;
+  popoutHandles: Map<string, Window>;
+  poppedOutTabIds: Set<string>;
+}
+
+// ---------------------------------------------------------------------------
+// ShellRuntime — the full god-object, composed from all capability interfaces.
+// Composition root and top-level wiring keep this type; leaf consumers should
+// migrate to the narrowest host interface(s) they need (armada-mi6h).
+// ---------------------------------------------------------------------------
+
+export interface ShellRuntime extends
+  DndDiagnosticRuntime,
+  LayoutHost,
+  StateHost,
+  BridgeHost,
+  PluginHost,
+  ThemeHost,
+  CommandHost,
+  IntentHost,
+  DndHost,
+  PersistenceHost,
+  PopoutHost {
+  selectedPartId: string | null;
+  selectedPartTitle: string | null;
+  notice: string;
+  pluginNotice: string;
+  intentNotice: string;
+  closeableTabIds: Set<string>;
   announcement: string;
   pendingFocusSelector: string | null;
-  actionSurface: ActionSurface;
-  keybindingOverrideManager: KeybindingOverrideManager;
-  services: PluginServices;
-  themeRegistry: ThemeRegistry | null;
-  intentRuntime: IntentRuntime;
-  /** Shared registry of runtime action handlers registered by plugins via ActionService. */
-  runtimeActionRegistry: Map<string, (...args: unknown[]) => unknown>;
   workspaceEvents: {
     fireDidChangeWorkspaces(): void;
     readonly onDidChangeWorkspaces: import("@ghost-shell/contracts").Event<void>;
   };
   commandNotice: string;
   partHost: ShellPartHostAdapter;
-  workspaceManager: WorkspaceManagerState;
   pluginConfigSyncDispose: (() => void) | null;
   registrySubscriptionDispose: (() => void) | null;
-  activeTransportPath: ShellTransportPath;
-  activeTransportReason: "kill-switch-force-legacy" | "async-flag-enabled" | "default-legacy";
-  activeDndPath: DndDiagnosticPath;
-  activeDndReason: "kill-switch-force-disabled" | "flag-enabled" | "default-same-window-only";
   lastDndDiagnostic: DndDiagnosticEnvelope | null;
   placementRegistry: PlacementStrategyRegistry;
   placementConfig: PlacementConfig;
