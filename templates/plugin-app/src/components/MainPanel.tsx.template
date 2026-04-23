@@ -1,0 +1,21 @@
+import { useGhostApi, usePluginContext } from "@ghost-shell/react";
+
+export function MainPanel() {
+  const { pluginId } = usePluginContext();
+  const api = useGhostApi();
+
+  return (
+    <section
+      style={{
+        backgroundColor: "var(--ghost-surface)",
+        color: "var(--ghost-foreground)",
+        border: "1px solid var(--ghost-border)",
+        borderRadius: "var(--ghost-radius)",
+        padding: "1rem",
+      }}
+    >
+      <h3 style={{ color: "var(--ghost-primary)" }}>__PLUGIN_TITLE__</h3>
+      <p>Hello from {pluginId}!</p>
+    </section>
+  );
+}

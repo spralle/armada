@@ -1,5 +1,2 @@
-import { pluginContract } from "./plugin-contract-expose.js";
-
-export { pluginContract };
-
-console.log("[__PLUGIN_NAME__] plugin ready", pluginContract.manifest.id);
+export { pluginManifest } from "./manifest.js";
+export { pluginParts } from "./plugin-parts-expose.js";

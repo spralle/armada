@@ -2,8 +2,7 @@
 
 Generated plugin scaffold for Ghost shell runtime.
 
-- Keep imports on `@ghost/plugin-contracts` public exports.
-- Start with `src/index.ts` and evolve contributions as needed.
-- For core shell flows, model invocations with `contributes.actions` and object `when` predicates (including menu/keybinding gating).
-- Default shell keyboard behavior is browser-safe and modifier-based (`Shift+Alt` / `Ctrl+Alt` families) without requiring `Meta/Super` bindings.
-- Use `var(--ghost-*)` CSS custom properties for all colors in your UI. Never hardcode hex values — this ensures your plugin adapts to any theme. See `docs/theming.md` for the full token reference.
+- Use `definePlugin()` from `@ghost-shell/contracts` for your manifest.
+- Use `defineReactParts()` from `@ghost-shell/react` for React-based parts.
+- Use hooks (`useGhostApi`, `usePluginContext`) instead of prop drilling.
+- Use `var(--ghost-*)` CSS custom properties for all colors. Never hardcode hex values.
