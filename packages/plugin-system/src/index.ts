@@ -53,3 +53,5 @@ export {
   readCapabilityComponents,
   readCapabilityServices,
 } from "./plugin-registry-contract.js";
+
+export { createContextContributionRegistry } from "./context-contribution-registry.js";

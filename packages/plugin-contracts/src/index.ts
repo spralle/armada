@@ -209,3 +209,5 @@ export type { ReactPartsModule } from "./define-parts.js";
 export { createVanillaDomRenderer } from "./vanilla-dom-renderer.js";
 
 export type { ContextContribution, ProviderContribution } from "./context-contribution.js";
+
+export type { ContextApi, ContextContributionRegistry } from "./context-contribution-registry.js";
