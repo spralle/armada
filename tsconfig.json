@@ -38,6 +38,9 @@
       "path": "./packages/predicate"
     },
     {
+      "path": "./packages/intents"
+    },
+    {
       "path": "./packages/formr-react"
     },
     {

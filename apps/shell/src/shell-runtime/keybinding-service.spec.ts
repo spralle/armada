@@ -1,7 +1,7 @@
 import { createDefaultContributionPredicateMatcher } from "@ghost-shell/plugin-system";
 import type { ActionSurface } from "../action-surface.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import type { IntentRuntime } from "../intent-runtime.js";
+import type { IntentRuntime } from "@ghost-shell/intents";
 import { createKeybindingService } from "./keybinding-service.js";
 
 function createActionSurface(): ActionSurface {

@@ -11,7 +11,7 @@ import {
 } from "@ghost-shell/plugin-system";
 import type { ActionKeybinding, ActionSurface } from "../action-surface.js";
 import { dispatchAction } from "../action-surface.js";
-import type { IntentRuntime } from "../intent-runtime.js";
+import type { IntentRuntime } from "@ghost-shell/intents";
 
 /**
  * Dependencies required by ActionService to bridge shell internals.

@@ -13,7 +13,7 @@ import type {
   ActionSurfaceContext,
   InvokableAction,
 } from "../action-surface.js";
-import type { IntentRuntime } from "../intent-runtime.js";
+import type { IntentRuntime } from "@ghost-shell/intents";
 import {
   normalizeConfiguredSequence,
   normalizeKeyboardEventChord,

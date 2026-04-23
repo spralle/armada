@@ -1,4 +1,4 @@
-import { resolveIntent, resolveIntentWithTrace } from "./intent-runtime.js";
+import { resolveIntent, resolveIntentWithTrace } from "@ghost-shell/intents";
 import { createCatalog, createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 

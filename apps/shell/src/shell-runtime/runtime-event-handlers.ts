@@ -17,7 +17,7 @@ import {
   type IntentActionMatch,
   type IntentResolutionDelegate,
   type ShellIntent,
-} from "../intent-runtime.js";
+} from "@ghost-shell/intents";
 import {
   formatSelectionAnnouncement,
   resolveChooserFocusRestoration,

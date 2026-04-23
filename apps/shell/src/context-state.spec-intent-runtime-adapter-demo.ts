@@ -1,5 +1,5 @@
-import { resolveIntent, resolveIntentWithTrace } from "./intent-runtime.js";
-import type { IntentWhenMatcher } from "./intents/matcher/contracts.js";
+import { resolveIntent, resolveIntentWithTrace } from "@ghost-shell/intents";
+import type { IntentWhenMatcher } from "@ghost-shell/intents";
 import { createCatalog, createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 

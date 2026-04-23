@@ -5,7 +5,7 @@ import {
   type ShellIntent,
   type IntentResolutionTrace,
   type IntentResolutionOutcome,
-} from "./intent-runtime.js";
+} from "@ghost-shell/intents";
 import { createCatalog, createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 

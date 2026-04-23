@@ -8,6 +8,7 @@
   "dependencies": {
     "@ghost-shell/config-plugin-runtime": "workspace:*",
     "@ghost-shell/contracts": "file:../../packages/plugin-contracts",
+    "@ghost-shell/intents": "workspace:*",
     "@ghost-shell/router": "workspace:*",
     "@ghost-shell/theme": "workspace:*",
     "@ghost-shell/plugin-system": "workspace:*",

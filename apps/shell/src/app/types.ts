@@ -33,7 +33,7 @@ import type {
   IntentRuntime,
   IntentResolutionTrace,
   IntentSession,
-} from "../intent-runtime.js";
+} from "@ghost-shell/intents";
 import type { ActionSurface } from "../action-surface.js";
 import type { KeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import type { ShellPartHostAdapter } from "./contracts.js";

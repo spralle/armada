@@ -13,7 +13,7 @@ import {
 } from "../ui/parts-controller.js";
 import { handleShellKeyboardAction } from "./shell-keyboard-actions.js";
 import type { BridgeHost, ShellRuntime } from "../app/types.js";
-import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
+import type { IntentActionMatch, ShellIntent } from "@ghost-shell/intents";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
 import type { NormalizedKeybindingChord } from "./keybinding-normalizer.js";
 import { updateDockTabVisibility, needsStructuralRender } from "../ui/dock-tab-visibility.js";

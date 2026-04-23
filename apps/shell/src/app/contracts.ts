@@ -8,7 +8,7 @@ import type {
   IntentResolutionTrace,
   IntentSession,
   ShellIntent,
-} from "../intent-runtime.js";
+} from "@ghost-shell/intents";
 import type { DevLaneMetadata, RenderTabMetadata } from "./types.js";
 
 export interface ShellCoreSnapshot {

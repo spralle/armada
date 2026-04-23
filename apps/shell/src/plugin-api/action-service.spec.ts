@@ -1,5 +1,5 @@
 import type { ActionSurface } from "../action-surface.js";
-import type { IntentRuntime } from "../intent-runtime.js";
+import type { IntentRuntime } from "@ghost-shell/intents";
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import {
   createActionService,

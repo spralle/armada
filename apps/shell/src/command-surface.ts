@@ -5,7 +5,7 @@ import type {
   PluginKeybindingContribution,
   PluginMenuContribution,
 } from "@ghost-shell/contracts";
-import type { IntentResolutionDelegate, IntentRuntime } from "./intent-runtime.js";
+import type { IntentResolutionDelegate, IntentRuntime } from "@ghost-shell/intents";
 
 export interface CommandSurfaceContext {
   [key: string]: string;

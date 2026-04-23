@@ -12,7 +12,7 @@ import type {
 import {
   createDefaultContributionPredicateMatcher,
 } from "@ghost-shell/plugin-system";
-import type { IntentResolutionDelegate, IntentRuntime, ShellIntent, IntentFactBag } from "./intent-runtime.js";
+import type { IntentResolutionDelegate, IntentRuntime, ShellIntent, IntentFactBag } from "@ghost-shell/intents";
 
 export interface ActionSurfaceContext {
   [key: string]: unknown;

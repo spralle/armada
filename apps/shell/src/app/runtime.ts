@@ -17,7 +17,7 @@ import {
   DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
 } from "../shell-runtime/default-shell-keybindings.js";
 import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
-import { createIntentRuntime } from "../intent-runtime.js";
+import { createIntentRuntime } from "@ghost-shell/intents";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { initPlacementStrategy } from "../context-state/placement-strategy/setup.js";
 import { createEventEmitter } from "@ghost-shell/contracts";

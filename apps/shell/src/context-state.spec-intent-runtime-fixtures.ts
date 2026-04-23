@@ -1,5 +1,5 @@
 import type { PluginContract } from "@ghost-shell/contracts";
-import { createActionCatalogFromRegistrySnapshot } from "./intent-runtime.js";
+import { createActionCatalogFromRegistrySnapshot } from "@ghost-shell/intents";
 
 type CatalogPlugin = {
   id: string;

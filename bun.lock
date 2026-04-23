@@ -52,6 +52,7 @@
       "dependencies": {
         "@ghost-shell/config-plugin-runtime": "workspace:*",
         "@ghost-shell/contracts": "file:../../packages/plugin-contracts",
+        "@ghost-shell/intents": "workspace:*",
         "@ghost-shell/plugin-system": "workspace:*",
         "@ghost-shell/theme": "workspace:*",
         "@module-federation/enhanced": "^2.3.1",
@@ -119,6 +120,14 @@
       },
       "peerDependencies": {
         "react": ">=18.0.0",
+      },
+    },
+    "packages/intents": {
+      "name": "@ghost-shell/intents",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost-shell/contracts": "workspace:*",
+        "@ghost-shell/predicate": "workspace:*",
       },
     },
     "packages/plugin-contracts": {
@@ -636,6 +645,8 @@
     "@ghost-shell/formr-from-schema": ["@ghost-shell/formr-from-schema@workspace:packages/formr-from-schema"],
 
     "@ghost-shell/formr-react": ["@ghost-shell/formr-react@workspace:packages/formr-react"],
+
+    "@ghost-shell/intents": ["@ghost-shell/intents@workspace:packages/intents"],
 
     "@ghost-shell/plugin-dev-host": ["@ghost-shell/plugin-dev-host@workspace:apps/plugin-dev-host"],
 
@@ -1384,8 +1395,6 @@
     "@ghost-shell/formr-react/@types/react": ["@types/react@19.2.14", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
 
     "@ghost-shell/formr-react/react": ["react@19.2.5", "", {}, "sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA=="],
-
-    "@ghost-shell/shell-app/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost-shell/typecheck-fixture/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
