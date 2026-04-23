@@ -17,6 +17,8 @@ import {
 import { handleCrossWindowDockDrop } from "./dock-tab-dnd-cross-window.js";
 import { isDockDropZone, readTabDragPayload, type DockDragPayload as DragPayload } from "./dock-tab-dnd-payload.js";
 
+const DEBUG_DND = typeof globalThis !== "undefined" && (globalThis as Record<string, unknown>).__GHOST_DEBUG_DND === true;
+
 type DockDragDeps = {
   renderContextControls: () => void;
   renderParts: () => void;
@@ -52,7 +54,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
           zone: dropTarget.zone,
           transferSessionId: dropTarget.transferSessionId,
         });
-        console.log("[shell:dnd:dock] dragend-fallback", {
+        if (DEBUG_DND) console.log("[shell:dnd:dock] dragend-fallback", {
           targetTabId: dropTarget.targetTabId,
           zone: dropTarget.zone,
           payload,
@@ -81,7 +83,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
       if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
         removeRootClass(root, "is-dock-dragging");
         dataTransfer.dropEffect = "none";
-        console.log("[shell:dnd:dock] dragover-ignored", {
+        if (DEBUG_DND) console.log("[shell:dnd:dock] dragover-ignored", {
           targetTabId: zoneNode.dataset.targetTabId,
           zone: zoneNode.dataset.dockDropZone,
           payload,
@@ -126,7 +128,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         });
         setDockDropPreview(zoneNode, zone);
       }
-      console.log("[shell:dnd:dock] dragover-armed", {
+      if (DEBUG_DND) console.log("[shell:dnd:dock] dragover-armed", {
         targetTabId: zoneNode.dataset.targetTabId,
         zone: zoneNode.dataset.dockDropZone,
         payload,
@@ -162,7 +164,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         event.stopPropagation();
       }
       if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
-        console.log("[shell:dnd:dock] drop-blocked", {
+        if (DEBUG_DND) console.log("[shell:dnd:dock] drop-blocked", {
           targetTabId: zoneNode.dataset.targetTabId,
           zone: zoneNode.dataset.dockDropZone,
           reason: "splitter-active",
@@ -179,7 +181,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
       const targetTabId = zoneNode.dataset.targetTabId;
       const zone = zoneNode.dataset.dockDropZone;
       if (!targetTabId || !isDockDropZone(zone)) {
-        console.log("[shell:dnd:dock] drop-blocked", {
+        if (DEBUG_DND) console.log("[shell:dnd:dock] drop-blocked", {
           targetTabId,
           zone,
           stack: new Error().stack,
@@ -196,7 +198,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         ?? readActiveDockDragPayload(root)
         ?? null;
       if (!payload) {
-        console.log("[shell:dnd:dock] drop-no-payload", {
+        if (DEBUG_DND) console.log("[shell:dnd:dock] drop-no-payload", {
           targetTabId,
           zone,
           hasDataTransfer: Boolean(dataTransfer),
@@ -217,7 +219,7 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
         zone,
         transferSessionId: readTransferSessionId(payload),
       });
-      console.log("[shell:dnd:dock] drop", {
+      if (DEBUG_DND) console.log("[shell:dnd:dock] drop", {
         targetTabId,
         zone,
         payload,
@@ -243,7 +245,7 @@ export function moveDockTabThroughRuntime(
     transferSessionId?: string;
   },
 ): boolean {
-  console.log("[shell:dnd:dock] move-attempt", {
+  if (DEBUG_DND) console.log("[shell:dnd:dock] move-attempt", {
     tabId: input.tabId,
     sourceWindowId: input.sourceWindowId,
     targetTabId: input.targetTabId,
@@ -265,7 +267,7 @@ export function moveDockTabThroughRuntime(
   }
 
   if (!runtime.contextState.tabs[input.tabId] || !runtime.contextState.tabs[input.targetTabId]) {
-    console.log("[shell:dnd:dock] move-rejected-missing-tab", {
+    if (DEBUG_DND) console.log("[shell:dnd:dock] move-rejected-missing-tab", {
       input,
       stack: new Error().stack,
     });
@@ -285,7 +287,7 @@ export function moveDockTabThroughRuntime(
   deps.renderContextControls();
   deps.renderParts();
   deps.renderSyncStatus();
-  console.log("[shell:dnd:dock] move-applied", {
+  if (DEBUG_DND) console.log("[shell:dnd:dock] move-applied", {
     tabId: input.tabId,
     targetTabId: input.targetTabId,
     zone: input.zone,

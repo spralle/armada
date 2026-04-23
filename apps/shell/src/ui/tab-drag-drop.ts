@@ -11,6 +11,8 @@ import {
 import { readTabDragPayload as readDockTabDragPayload } from "./dock-tab-dnd-payload.js";
 import { handleCrossWindowTabStripDrop } from "./tab-drag-drop-cross-window.js";
 
+const DEBUG_DND = typeof globalThis !== "undefined" && (globalThis as Record<string, unknown>).__GHOST_DEBUG_DND === true;
+
 interface TabDragPayload {
   kind: "shell-tab-dnd";
   tabId: string;
@@ -69,7 +71,7 @@ export function wireTabStripDragDrop(
 
       const dataTransfer = event.dataTransfer;
       if (!dataTransfer || !tabId || runtime.syncDegraded) {
-        console.log("[shell:dnd:tab] dragstart-blocked", {
+        if (DEBUG_DND) console.log("[shell:dnd:tab] dragstart-blocked", {
           hasDataTransfer: Boolean(dataTransfer),
           tabId,
           syncDegraded: runtime.syncDegraded,
@@ -136,7 +138,7 @@ export function wireTabStripDragDrop(
       const dataTransfer = event.dataTransfer;
       if (runtime.syncDegraded || !dataTransfer) {
         clearDragState(root);
-        console.log("[shell:dnd:tab] drop-blocked", {
+        if (DEBUG_DND) console.log("[shell:dnd:tab] drop-blocked", {
           hasDataTransfer: Boolean(dataTransfer),
           syncDegraded: runtime.syncDegraded,
           targetTabId: tabId,

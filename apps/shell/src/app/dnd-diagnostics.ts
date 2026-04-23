@@ -1,6 +1,8 @@
 export type DndDiagnosticOutcome = "start" | "commit" | "abort" | "reject";
 export type DndDiagnosticPath = "same-window" | "cross-window-bridge";
 
+const DEBUG_DND = typeof globalThis !== "undefined" && (globalThis as Record<string, unknown>).__GHOST_DEBUG_DND === true;
+
 export interface DndDiagnosticCorrelation {
   transferId?: string;
   operationId?: string;
@@ -34,7 +36,7 @@ export function createDndDiagnosticEnvelope(event: DndDiagnosticEvent): DndDiagn
 export function emitDndDiagnostic(runtime: DndDiagnosticRuntime, event: DndDiagnosticEvent): DndDiagnosticEnvelope {
   const envelope = createDndDiagnosticEnvelope(event);
   runtime.lastDndDiagnostic = envelope;
-  console.log("[shell:dnd:diag]", envelope);
+  if (DEBUG_DND) console.log("[shell:dnd:diag]", envelope);
   return envelope;
 }
 

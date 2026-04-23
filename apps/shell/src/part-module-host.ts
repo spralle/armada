@@ -212,7 +212,7 @@ async function mountPart(options: MountPartOptions): Promise<void> {
     });
     hideFallback(fallbackTarget);
   } catch (error: unknown) {
-    console.warn(
+    console.error(
       `[shell:part-host] failed to mount part '${part.component ?? part.definitionId ?? part.id}' from plugin '${part.pluginId}'`,
       error,
     );

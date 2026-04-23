@@ -222,7 +222,7 @@ export async function activatePluginForBoundary(
   } catch (error) {
     runtime.notice = `Plugin activation failed for '${options.pluginId}' (${options.triggerType}:${options.triggerId}).`;
     renderSyncStatus(root, runtime);
-    console.warn("[shell] plugin activation boundary failed", options, error);
+    console.error("[shell] plugin activation boundary failed", options, error);
     return false;
   }
 }

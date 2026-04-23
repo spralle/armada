@@ -150,13 +150,6 @@ export function startShell(root: HTMLElement): ShellRuntime {
     void hydratePluginRegistry(root, shellRuntime, () => !disposed);
   }
 
-  console.log("[shell] POC shell stub ready", {
-    bootstrapMode: shellBootstrapState.mode,
-    transportPath: shellRuntime.activeTransportPath,
-    transportReason: shellRuntime.activeTransportReason,
-    windowCount: hmrRegistry.windowIds.size,
-  });
-
   return shellRuntime;
 }
 
@@ -270,7 +263,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
         console.info("[shell] persistence migrations completed", migrations);
       }
     } catch (configError) {
-      console.warn("[shell] config service creation failed, continuing without it", configError);
+      console.error("[shell] config service creation failed, continuing without it", configError);
     }
     runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
     refreshCommandContributions(runtime);
@@ -299,7 +292,7 @@ async function hydratePluginRegistry(root: HTMLElement, runtime: ShellRuntime, i
     getShellBootstrap(runtime).renderLayerSurfaces(root, runtime);
   } catch (error) {
     quickPickBridge.dispose();
-    console.warn("[shell] plugin registry hydration skipped", error);
+    console.error("[shell] plugin registry hydration skipped", error);
   }
 }
 

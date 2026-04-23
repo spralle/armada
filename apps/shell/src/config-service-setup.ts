@@ -41,7 +41,12 @@ export interface ShellConfigServiceResult {
 // Factory
 // ---------------------------------------------------------------------------
 
-/** No-op ConfigurationService stub (@weaver packages removed). */
+/**
+ * Stub ConfigurationService for degraded operation.
+ * Returns undefined for all config reads and silently drops writes.
+ * Replace with a real implementation when a config backend is available.
+ * @see armada-1g3r for the broader config service roadmap
+ */
 const noopConfigService: ConfigurationService = {
   get: () => undefined,
   set: () => {},
