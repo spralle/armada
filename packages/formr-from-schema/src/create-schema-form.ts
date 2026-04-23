@@ -8,9 +8,9 @@ import { createJsonSchemaValidator, isJsonSchema } from './adapters/json-schema-
 
 export interface CreateSchemaFormOptions {
   /** Additional validators to include beyond the auto-detected schema validator */
-  readonly validators?: readonly ValidatorFn[];
+  readonly validators?: readonly ValidatorFn[] | undefined;
   /** Override the auto-compiled layout with a custom LayoutNode tree */
-  readonly layoutOverride?: LayoutNode;
+  readonly layoutOverride?: LayoutNode | undefined;
 }
 
 export interface SchemaFormResult {

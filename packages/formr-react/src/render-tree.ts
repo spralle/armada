@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import type { LayoutNode } from '@ghost-shell/formr-from-schema';
 import type { ValidationIssue } from '@ghost-shell/formr-core';
 import type { RendererRegistry } from './renderer-registry.js';
+import type { LayoutRendererProps } from './renderer-types.js';
 import { getFieldProps } from './a11y.js';
 
 /** Options for rendering a layout tree with a11y context */
@@ -26,7 +27,11 @@ export function renderLayoutTree(
   const aria = computeAriaProps(tree, options);
   const issues = tree.path ? filterIssuesForPath(tree.path, options?.issues) : undefined;
 
-  return createElement(Component, { key: tree.id, node: tree, aria, issues }, children);
+  const props: Record<string, unknown> = { key: tree.id, node: tree };
+  if (aria !== undefined) props.aria = aria;
+  if (issues !== undefined) props.issues = issues;
+
+  return createElement(Component, props as unknown as LayoutRendererProps, children);
 }
 
 function computeAriaProps(node: LayoutNode, options?: RenderTreeOptions) {

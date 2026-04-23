@@ -39,7 +39,7 @@ export interface SubmitHandlerDeps<TData, TUi> {
   readonly arbiterAdapter: ArbiterFormAdapter | undefined;
   readonly getApi: () => FormApi<TData, TUi>;
   /** Hook called before onSubmit execution — run async validators, return merged issues */
-  readonly beforeOnSubmit?: () => Promise<readonly ValidationIssue[]>;
+  readonly beforeOnSubmit?: (() => Promise<readonly ValidationIssue[]>) | undefined;
 }
 
 export function createSubmitHandler<TData, TUi>(deps: SubmitHandlerDeps<TData, TUi>) {

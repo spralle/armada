@@ -195,7 +195,7 @@ export function createForm<TData, TUi>(
       path: canonical, rawPath: path,
       getState: () => store.getState(),
       // Justified: runtime path parsing validates path; cast bridges generic method signature
-      setValue: dispatchSetValue as FormApi<TData, TUi>['setValue'],
+      setValue: dispatchSetValue as unknown as (path: string, value: unknown) => FormDispatchResult,
       getIssues: (p) => getIssues(p),
       getInitialValue: () => resolveInitialValue(canonical.segments),
       getFieldMeta: (pk) => (store.getState().fieldMeta as Record<string, FieldMetaEntry>)[pk],

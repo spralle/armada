@@ -15,8 +15,8 @@ import {
   FieldSet,
   FieldGroup,
   FieldLegend,
-} from "@/components/ui/field"
-import { Button } from "@/components/ui/button"
+} from "../field"
+import { Button } from "../button"
 
 import { useSchemaFormContext } from "./schema-form-context"
 import { mapFieldToWidget } from "./field-mapping"
@@ -55,9 +55,9 @@ function GhostFieldRenderer({ node }: LayoutRendererProps): ReactNode {
 
   const aria = {
     id,
-    "aria-invalid": hasErrors || undefined,
-    "aria-describedby": ariaDescribedBy,
-    "aria-required": fieldInfo.required || undefined,
+    ...(hasErrors ? { "aria-invalid": true as const } : {}),
+    ...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {}),
+    ...(fieldInfo.required ? { "aria-required": true as const } : {}),
   }
 
   return (
@@ -83,7 +83,7 @@ function GhostGroupRenderer({ node, children }: LayoutRendererProps): ReactNode 
   return (
     <FieldGroup>
       {title && <FieldLegend>{title}</FieldLegend>}
-      {children}
+      {children as ReactNode}
     </FieldGroup>
   )
 }
@@ -95,7 +95,7 @@ function GhostSectionRenderer({ node, children }: LayoutRendererProps): ReactNod
     <FieldSet>
       {title && <FieldLegend>{title}</FieldLegend>}
       {description && <FieldDescription>{description}</FieldDescription>}
-      {children}
+      {children as ReactNode}
     </FieldSet>
   )
 }
@@ -110,7 +110,7 @@ function GhostArrayRenderer({ node }: LayoutRendererProps): ReactNode {
   const maxItems = getNodeProp(node, "maxItems") as number | undefined
   const canAdd = maxItems === undefined || arrayValue.length < maxItems
 
-  const hasArrayHelpers = typeof (fieldApi as Record<string, unknown>)["pushValue"] === "function"
+  const hasArrayHelpers = typeof (fieldApi as unknown as Record<string, unknown>)["pushValue"] === "function"
   const arrayHelpers = fieldApi as unknown as {
     pushValue(item: unknown): unknown
     removeValue(index: number): unknown
@@ -134,7 +134,7 @@ function GhostArrayRenderer({ node }: LayoutRendererProps): ReactNode {
       {arrayValue.map((_, index) => (
         <div key={index} className="flex items-start gap-2">
           <div className="flex-1">
-            {node.children?.map((child) => {
+            {(node.children?.map((child) => {
               const indexedPath = child.path
                 ? child.path.replace(`${node.path}.`, `${node.path}.${index}.`)
                 : child.path
@@ -144,7 +144,7 @@ function GhostArrayRenderer({ node }: LayoutRendererProps): ReactNode {
                 ...(indexedPath !== undefined ? { path: indexedPath } : {}),
               }
               return renderLayoutTree(indexedChild, registry)
-            })}
+            }) ?? []) as ReactNode}
           </div>
           {hasArrayHelpers && (
             <Button

@@ -29,7 +29,7 @@ const fixturePlugin: PluginContract = {
         id: "fixture.action",
         title: "Run Fixture",
         intent: "fixture.run",
-        predicate: {
+        when: {
           entityType: "workbench.item",
           hasSelection: true
         }

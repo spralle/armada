@@ -54,6 +54,7 @@ export type {
   PluginSectionContribution,
   PluginContributions,
   PluginContract,
+  PluginContractInput,
   PluginCompatibilityMetadata,
   TenantPluginDescriptor,
   TenantPluginManifestResponse,

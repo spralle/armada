@@ -9,7 +9,7 @@ import type { WidgetOverrides } from "./widget-overrides"
 export interface SchemaFormContextValue {
   readonly form: FormApi<unknown, unknown>
   readonly fields: readonly SchemaFieldInfo[]
-  readonly overrides?: WidgetOverrides
+  readonly overrides?: WidgetOverrides | undefined
   readonly registry: RendererRegistry
 }
 

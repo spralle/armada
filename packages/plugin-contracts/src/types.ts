@@ -265,9 +265,15 @@ export interface PluginRouteContribution {
 
 export interface PluginContract {
   manifest: PluginManifestIdentity;
+  displayName?: string | undefined;
   contributes?: PluginContributions | undefined;
   dependsOn?: PluginDependencies | undefined;
   activationEvents?: ("onStartup")[] | undefined;
+}
+
+/** Partial plugin contract for use in definePlugin — manifest is injected at runtime from package.json. */
+export type PluginContractInput = Omit<PluginContract, 'manifest'> & {
+  manifest?: PluginManifestIdentity | undefined;
 }
 
 export interface PluginCompatibilityMetadata {

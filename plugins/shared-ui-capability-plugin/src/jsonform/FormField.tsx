@@ -13,7 +13,7 @@ import {
 } from '@ghost-shell/ui';
 
 interface FormFieldProps {
-  readonly form: FormApi;
+  readonly form: FormApi<unknown, unknown>;
   readonly field: SchemaFieldInfo;
   readonly onChange: (path: string, value: unknown) => void;
 }
@@ -40,7 +40,7 @@ export function FormField({ form, field, onChange }: FormFieldProps) {
   const handleChange = useCallback(
     (newValue: unknown) => {
       try {
-        fieldApi.set(newValue);
+        fieldApi.set(newValue as never);
       } catch (err) {
         console.warn('[FormField] set error:', field.path, err);
       }

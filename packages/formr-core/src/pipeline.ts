@@ -191,7 +191,7 @@ export function executePipeline(ctx: PipelineContext): PipelineResult {
     // Step 11: Run validators and normalize to issue envelope
     let issues: readonly ValidationIssue[] = [];
     if (options.validators?.length) {
-      const rawIssues = runValidators(options.validators, tx.draftState, activeStage, submitContext);
+      const rawIssues = runValidators(options.validators as readonly ValidatorFn[], tx.draftState, activeStage, submitContext);
       issues = normalizeIssues(rawIssues);
     }
 

@@ -36,7 +36,7 @@ function SchemaPanel({ title, value }: SchemaPanelProps) {
 function renderNode(
   node: LayoutNode,
   fieldMap: ReadonlyMap<string, SchemaFieldInfo>,
-  form: FormApi,
+  form: FormApi<unknown, unknown>,
   onChange: (path: string, value: unknown) => void,
 ): ReactElement | null {
   if (node.type === 'field') {
@@ -91,7 +91,7 @@ export function JsonFormRoot({ schema, data, onChange, layout }: JsonFormRootPro
       <SchemaPanel title="JSON Schema Input" value={schema} />
       <SchemaPanel title="Ingested Fields (layout)" value={ingestion.fields} />
       <SchemaPanel title="Compiled Layout Tree" value={compiledLayout} />
-      {renderNode(compiledLayout, fieldMap, form, onChange)}
+      {renderNode(compiledLayout, fieldMap, form as FormApi<unknown, unknown>, onChange)}
     </div>
   );
 }

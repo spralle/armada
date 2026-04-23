@@ -14,10 +14,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "skipLibCheck": true,
-    "composite": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "composite": true
   },
   "include": ["src"],
   "references": []
