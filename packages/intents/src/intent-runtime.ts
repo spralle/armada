@@ -1,4 +1,4 @@
-import type { PluginContract } from "@ghost-shell/contracts";
+import type { PluginContract } from "@ghost-shell/contracts/plugin";
 import { createPredicateWhenMatcher } from "./matcher/predicate-when-matcher.js";
 import type {
   IntentFactBag,

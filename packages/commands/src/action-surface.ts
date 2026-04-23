@@ -4,7 +4,7 @@ import type {
   PluginContributionPredicate,
   PluginKeybindingContribution,
   PluginMenuContribution,
-} from "@ghost-shell/contracts";
+} from "@ghost-shell/contracts/plugin";
 import type {
   ContributionPredicateMatcher,
   PredicateFactBag,

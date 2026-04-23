@@ -1,4 +1,4 @@
-import type { PluginContract } from "@ghost-shell/contracts";
+import type { PluginContract } from "@ghost-shell/contracts/plugin";
 
 interface PluginContractCapabilityShape {
   contributes?: {

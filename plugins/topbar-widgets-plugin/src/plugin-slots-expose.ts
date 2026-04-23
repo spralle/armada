@@ -4,8 +4,8 @@
 // `slots[componentId]`.
 // ---------------------------------------------------------------------------
 
-import type { ActivityStatusService } from "@ghost-shell/contracts";
-import { ACTIVITY_STATUS_SERVICE_ID } from "@ghost-shell/contracts";
+import type { ActivityStatusService } from "@ghost-shell/contracts/services";
+import { ACTIVITY_STATUS_SERVICE_ID } from "@ghost-shell/contracts/services";
 import { getGhostApi } from "./plugin-activate.js";
 import {
   showWorkspaceContextMenu,

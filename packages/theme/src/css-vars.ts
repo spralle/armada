@@ -3,7 +3,7 @@
  *
  * Maps every palette token name to its `--ghost-*` CSS variable name.
  */
-import type { FullThemePalette } from "@ghost-shell/contracts";
+import type { FullThemePalette } from "@ghost-shell/contracts/theme";
 
 /** Maps every palette token name to its Ghost CSS custom property name. */
 export const GHOST_THEME_CSS_VARS: Readonly<Record<keyof FullThemePalette, string>> = {

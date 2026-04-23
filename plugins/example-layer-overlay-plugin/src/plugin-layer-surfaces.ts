@@ -1,4 +1,4 @@
-import type { LayerSurfaceContext } from "@ghost-shell/contracts";
+import type { LayerSurfaceContext } from "@ghost-shell/contracts/layer";
 
 /**
  * Overlay lock surface mount — session lock screen.

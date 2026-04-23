@@ -1,5 +1,7 @@
 // appearance-dom.ts — Vanilla DOM rendering helpers for the appearance settings UI.
-import type { ThemeInfo, BackgroundInfo, ThemeBackgroundEntry, FullThemePalette, ActivityStatusService } from "@ghost-shell/contracts";
+import type { ThemeBackgroundEntry } from "@ghost-shell/contracts/plugin";
+import type { ThemeInfo, BackgroundInfo, ActivityStatusService } from "@ghost-shell/contracts/services";
+import type { FullThemePalette } from "@ghost-shell/contracts/theme";
 import { GHOST_THEME_CSS_VARS, THEME_TOKEN_GROUPS } from "@ghost-shell/theme";
 
 const blobUrlCache = new Map<string, string>();

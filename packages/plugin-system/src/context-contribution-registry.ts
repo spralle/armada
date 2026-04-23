@@ -1,9 +1,9 @@
+import type { Disposable } from "@ghost-shell/contracts/plugin";
 import type {
   ContextContribution,
   ContextContributionRegistry,
-  Disposable,
   ProviderContribution,
-} from "@ghost-shell/contracts";
+} from "@ghost-shell/contracts/context";
 
 interface ContextEntry {
   readonly contribution: ContextContribution<unknown>;

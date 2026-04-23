@@ -1,4 +1,4 @@
-import type { Event, EventEmitter } from "@ghost-shell/contracts";
+import type { Event, EventEmitter } from "@ghost-shell/contracts/plugin";
 
 /**
  * Create an EventEmitter<T> for producing typed events.

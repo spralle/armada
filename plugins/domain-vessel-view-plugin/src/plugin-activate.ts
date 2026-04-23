@@ -1,4 +1,4 @@
-import type { GhostApi, ActivationContext } from "@ghost-shell/contracts";
+import type { GhostApi, ActivationContext } from "@ghost-shell/contracts/plugin";
 
 function activate(api: GhostApi, ctx: ActivationContext): void {
   ctx.subscriptions.push(

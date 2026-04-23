@@ -1,4 +1,4 @@
-import { AnchorEdge, type PluginLayerSurfaceContribution } from "@ghost-shell/contracts";
+import { AnchorEdge, type PluginLayerSurfaceContribution } from "@ghost-shell/contracts/layer";
 
 /**
  * Format a CSS dimension value: numbers become `px`, strings pass through.

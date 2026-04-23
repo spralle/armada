@@ -1,4 +1,4 @@
-import type { PluginContract } from "@ghost-shell/contracts";
+import type { PluginContract } from "@ghost-shell/contracts/plugin";
 import pkg from "../package.json" with { type: "json" };
 
 const ghost = pkg.ghost as {

@@ -1,4 +1,4 @@
-import type { ElementTransitionHook, TransitionContext } from "@ghost-shell/contracts";
+import type { ElementTransitionHook, TransitionContext } from "@ghost-shell/contracts/services";
 import { getCurrentConfig } from "./activate.js";
 import { resolveEntry } from "./config-resolver.js";
 

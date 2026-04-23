@@ -1,4 +1,4 @@
-import type { FocusGrabConfig } from "@ghost-shell/contracts";
+import type { FocusGrabConfig } from "@ghost-shell/contracts/layer";
 import type { KeyboardExclusiveManager } from "./input-behavior.js";
 
 // ---------------------------------------------------------------------------

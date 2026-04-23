@@ -2,8 +2,8 @@ import type {
   LayerDefinition,
   PluginLayerDefinition,
   PluginLayerSurfaceContribution,
-} from "@ghost-shell/contracts";
-import { KeyboardInteractivity, InputBehavior } from "@ghost-shell/contracts";
+} from "@ghost-shell/contracts/layer";
+import { KeyboardInteractivity, InputBehavior } from "@ghost-shell/contracts/layer";
 import { createLayerContainer, removeLayerContainer } from "./layer-dom.js";
 
 /** The 7 built-in layers with generous z-order gaps for plugin insertion. */

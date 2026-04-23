@@ -1,4 +1,4 @@
-import type { LayerSurfaceContext } from "@ghost-shell/contracts";
+import type { LayerSurfaceContext } from "@ghost-shell/contracts/layer";
 
 /**
  * Background surface mount — animated gradient using theme CSS custom properties.

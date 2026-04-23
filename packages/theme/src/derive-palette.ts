@@ -3,7 +3,7 @@
  * Terminal palette (Omarchy compat) maps ANSI colors to semantic tokens
  * when those tokens are not explicitly set. Pure function — no side effects.
  */
-import type { PartialThemePalette, FullThemePalette, TerminalPalette } from "@ghost-shell/contracts";
+import type { PartialThemePalette, FullThemePalette, TerminalPalette } from "@ghost-shell/contracts/theme";
 import {
   adjustLightness,
   blendWithBackground,

@@ -1,8 +1,6 @@
 import { createContext, createElement, type ReactNode } from "react";
-import type {
-  ContextApi,
-  PluginMountContext,
-} from "@ghost-shell/contracts";
+import type { PluginMountContext } from "@ghost-shell/contracts/plugin";
+import type { ContextApi } from "@ghost-shell/contracts/context";
 
 /** Values exposed to plugin components via GhostContext. */
 export interface GhostContextValue {
