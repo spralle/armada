@@ -39,7 +39,7 @@ export type { NavigationModifierMap, NavigationHandlerOptions, DelegatedNavigati
 export { DEFAULT_MODIFIER_MAP, NAVIGATION_DATA_ATTRIBUTES } from "./dom/link-types.js";
 
 // DOM runtime
-export { resolveModifiers, createNavigationHandler } from "./dom/navigation-handler.js";
+export { resolveModifiers, resolveHintsFromEvent, createNavigationHandler } from "./dom/navigation-handler.js";
 export type { CreateNavigationHandlerOptions } from "./dom/navigation-handler.js";
 export { createDelegatedNavigation, parseNavigationTarget } from "./dom/delegated-navigation.js";
 export { attachNavigation } from "./dom/attach-navigation.js";

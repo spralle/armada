@@ -1,7 +1,14 @@
 import type { NavigationTarget, NavigationHints, PlacementHint } from "../core/types.js";
 import type { DelegatedNavigationOptions, NavigationAttachment } from "./link-types.js";
 import { NAVIGATION_DATA_ATTRIBUTES, DEFAULT_MODIFIER_MAP } from "./link-types.js";
-import { resolveModifiers } from "./navigation-handler.js";
+import { resolveHintsFromEvent } from "./navigation-handler.js";
+
+/** Valid placement hint values for data-attribute validation. */
+const VALID_PLACEMENT_HINTS = new Set<string>(["tab", "tab-background", "replace", "split", "window", "auto"]);
+
+function isPlacementHint(value: string): value is PlacementHint {
+  return VALID_PLACEMENT_HINTS.has(value);
+}
 
 /**
  * Parses a {@link NavigationTarget} from data attributes on an HTML element.
@@ -24,14 +31,30 @@ export function parseNavigationTarget(element: Element): NavigationTarget | null
   const route = element.getAttribute(NAVIGATION_DATA_ATTRIBUTES.route);
   if (route) {
     const rawParams = element.getAttribute(NAVIGATION_DATA_ATTRIBUTES.params);
-    const params: Record<string, string> = rawParams ? JSON.parse(rawParams) : {};
+    let params: Record<string, string> = {};
+    if (rawParams) {
+      try {
+        params = JSON.parse(rawParams);
+      } catch {
+        console.warn(`[delegated-navigation] Failed to parse data-params: ${rawParams}`);
+        return null;
+      }
+    }
     return { route, params };
   }
 
   const intent = element.getAttribute(NAVIGATION_DATA_ATTRIBUTES.intent);
   if (intent) {
     const rawFacts = element.getAttribute(NAVIGATION_DATA_ATTRIBUTES.facts);
-    const facts: Record<string, unknown> = rawFacts ? JSON.parse(rawFacts) : {};
+    let facts: Record<string, unknown> = {};
+    if (rawFacts) {
+      try {
+        facts = JSON.parse(rawFacts);
+      } catch {
+        console.warn(`[delegated-navigation] Failed to parse data-facts: ${rawFacts}`);
+        return null;
+      }
+    }
     return { intent, facts };
   }
 
@@ -55,8 +78,8 @@ export function parseNavigationHints(element: Element): NavigationHints {
   const hints: { open?: PlacementHint; history?: "push" | "replace" } = {};
 
   const open = element.getAttribute(NAVIGATION_DATA_ATTRIBUTES.open);
-  if (open) {
-    hints.open = open as PlacementHint;
+  if (open && isPlacementHint(open)) {
+    hints.open = open;
   }
 
   const history = element.getAttribute(NAVIGATION_DATA_ATTRIBUTES.history);
@@ -126,14 +149,7 @@ export function createDelegatedNavigation(options: DelegatedNavigationOptions): 
     event.preventDefault();
 
     const dataHints = parseNavigationHints(navElement);
-    const placement = resolveModifiers(event, modifiers ?? DEFAULT_MODIFIER_MAP);
-    const isModifierNavigation = placement !== "auto" && placement !== "replace";
-
-    const mergedHints: NavigationHints = {
-      ...dataHints,
-      open: placement,
-      history: isModifierNavigation ? "push" : (dataHints.history ?? "push"),
-    };
+    const mergedHints = resolveHintsFromEvent(event, dataHints, modifiers ?? DEFAULT_MODIFIER_MAP);
 
     navigate(navTarget, mergedHints);
   };

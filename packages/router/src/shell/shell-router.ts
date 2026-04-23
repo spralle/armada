@@ -10,6 +10,7 @@ import type { NavigationTarget, NavigationHints, NavigationResult } from "../cor
 import type { UrlCodecRegistry, UrlCodecState } from "../codec/codec-types.js";
 import type { HistoryAdapter } from "./history-adapter.js";
 import type { NavigationDelegate } from "./navigation-runtime-types.js";
+import { createNavigationRuntime } from "./navigation-runtime.js";
 
 /** Hints that should push a new history entry (vs replace) */
 const PUSH_HINTS: ReadonlySet<StateChangeHint> = new Set([
@@ -163,25 +164,8 @@ export function createShellRouter(options: CreateShellRouterOptions): ShellRoute
         ...hints,
       };
 
-      if ("intent" in target) {
-        const resolution = await delegate.resolveIntent(target.intent, target.facts);
-        if (!resolution.resolved) {
-          return { outcome: "no-match", reason: resolution.reason };
-        }
-        const tabId = await delegate.openTab(
-          resolution.definitionId,
-          target.facts as Record<string, string>,
-          resolvedHints,
-        );
-        return { outcome: "navigated", tabId };
-      }
-
-      const tabId = await delegate.openTab(
-        target.route,
-        target.params as Record<string, string>,
-        resolvedHints,
-      );
-      return { outcome: "navigated", tabId };
+      const runtime = createNavigationRuntime(delegate);
+      return runtime.navigate(target, resolvedHints);
     },
 
     reconcileInitialUrl(url: URL): void {

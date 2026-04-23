@@ -20,6 +20,17 @@ export interface CreatePluginRouterOptions {
 const ROUTE_KEY = "_route";
 
 /**
+ * Look up a route definition, throwing a descriptive error if not found.
+ */
+function getRouteDef(routes: AnyRouteMap, route: string): AnyRouteMap[string] {
+  const def = routes[route];
+  if (!def) {
+    throw new Error(`[PluginRouter] Unknown route: "${route}". Available routes: ${Object.keys(routes).join(", ")}`);
+  }
+  return def;
+}
+
+/**
  * Serialize typed params to a flat string record with _route convention.
  * Zod ensures type correctness; we just stringify values for shell transport.
  */
@@ -90,10 +101,7 @@ export function createPluginRouter<T extends AnyRouteMap>(
 
   const router: PluginRouter<T> = {
     navigate(route, params, hints) {
-      const routeDef = routes[route as string];
-      if (!routeDef) {
-        throw new Error(`[PluginRouter] Unknown route: "${route as string}"`);
-      }
+      const routeDef = getRouteDef(routes, route as string);
       const serialized = serializeParams(route as string, params as Record<string, unknown>, routeDef.schema);
       updateArgs(serialized);
       if (onNavigate) {
@@ -111,19 +119,13 @@ export function createPluginRouter<T extends AnyRouteMap>(
     },
 
     buildTarget(route, params) {
-      const routeDef = routes[route as string];
-      if (!routeDef) {
-        throw new Error(`[PluginRouter] Unknown route: "${route as string}"`);
-      }
+      const routeDef = getRouteDef(routes, route as string);
       const serialized = serializeParams(route as string, params as Record<string, unknown>, routeDef.schema);
       return { route: route as string, params: serialized };
     },
 
     serializeRoute(route, params) {
-      const routeDef = routes[route as string];
-      if (!routeDef) {
-        throw new Error(`[PluginRouter] Unknown route: "${route as string}"`);
-      }
+      const routeDef = getRouteDef(routes, route as string);
       return serializeParams(route as string, params as Record<string, unknown>, routeDef.schema);
     },
   };
