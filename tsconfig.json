@@ -53,6 +53,9 @@
       "path": "./packages/persistence"
     },
     {
+      "path": "./packages/commands"
+    },
+    {
       "path": "./packages/formr-react"
     },
     {
