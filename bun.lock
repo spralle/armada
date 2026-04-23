@@ -51,10 +51,13 @@
       "name": "@ghost-shell/shell-app",
       "dependencies": {
         "@ghost-shell/bridge": "workspace:*",
+        "@ghost-shell/commands": "workspace:*",
         "@ghost-shell/config-plugin-runtime": "workspace:*",
         "@ghost-shell/contracts": "file:../../packages/plugin-contracts",
+        "@ghost-shell/federation": "workspace:*",
         "@ghost-shell/intents": "workspace:*",
         "@ghost-shell/layer": "workspace:*",
+        "@ghost-shell/persistence": "workspace:*",
         "@ghost-shell/plugin-system": "workspace:*",
         "@ghost-shell/state": "workspace:*",
         "@ghost-shell/theme": "workspace:*",
@@ -86,11 +89,34 @@
       "name": "@ghost-shell/bridge",
       "version": "0.0.0",
     },
+    "packages/commands": {
+      "name": "@ghost-shell/commands",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost-shell/contracts": "workspace:*",
+        "@ghost-shell/intents": "workspace:*",
+        "@ghost-shell/persistence": "workspace:*",
+        "@ghost-shell/plugin-system": "workspace:*",
+      },
+    },
     "packages/config-plugin-runtime": {
       "name": "@ghost-shell/config-plugin-runtime",
       "version": "0.0.0",
       "dependencies": {
         "@ghost-shell/contracts": "workspace:*",
+      },
+    },
+    "packages/federation": {
+      "name": "@ghost-shell/federation",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost-shell/contracts": "workspace:*",
+        "@ghost-shell/ui": "workspace:*",
+      },
+      "peerDependencies": {
+        "@module-federation/enhanced": "^2.3.1",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
       },
     },
     "packages/formr-core": {
@@ -142,6 +168,14 @@
       "version": "0.0.0",
       "dependencies": {
         "@ghost-shell/contracts": "workspace:*",
+      },
+    },
+    "packages/persistence": {
+      "name": "@ghost-shell/persistence",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost-shell/contracts": "workspace:*",
+        "@ghost-shell/state": "workspace:*",
       },
     },
     "packages/plugin-contracts": {
@@ -654,9 +688,13 @@
 
     "@ghost-shell/bridge": ["@ghost-shell/bridge@workspace:packages/bridge"],
 
+    "@ghost-shell/commands": ["@ghost-shell/commands@workspace:packages/commands"],
+
     "@ghost-shell/config-plugin-runtime": ["@ghost-shell/config-plugin-runtime@workspace:packages/config-plugin-runtime"],
 
     "@ghost-shell/contracts": ["@ghost-shell/contracts@workspace:packages/plugin-contracts"],
+
+    "@ghost-shell/federation": ["@ghost-shell/federation@workspace:packages/federation"],
 
     "@ghost-shell/formr-core": ["@ghost-shell/formr-core@workspace:packages/formr-core"],
 
@@ -669,6 +707,8 @@
     "@ghost-shell/intents": ["@ghost-shell/intents@workspace:packages/intents"],
 
     "@ghost-shell/layer": ["@ghost-shell/layer@workspace:packages/layer"],
+
+    "@ghost-shell/persistence": ["@ghost-shell/persistence@workspace:packages/persistence"],
 
     "@ghost-shell/plugin-dev-host": ["@ghost-shell/plugin-dev-host@workspace:apps/plugin-dev-host"],
 
@@ -1332,7 +1372,7 @@
 
     "schema-utils": ["schema-utils@4.3.3", "", { "dependencies": { "@types/json-schema": "^7.0.9", "ajv": "^8.9.0", "ajv-formats": "^2.1.1", "ajv-keywords": "^5.1.0" } }, "sha512-eflK8wEtyOE6+hsaRVPxvUKYCpRgzLqDTb8krvAsRIwOGlHoSgYLgBXoubGgLd2fT41/OUYdb48v4k4WWHQurA=="],
 
-    "semver": ["semver@6.3.1", "", { "bin": "bin/semver.js" }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
+    "semver": ["semver@7.6.3", "", { "bin": "bin/semver.js" }, "sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A=="],
 
     "shell-quote": ["shell-quote@1.8.3", "", {}, "sha512-ObmnIF4hXNg1BqhnHmgbDETF8dLPCggZWBjkQfhZpbszZnYur5DUljTcCHii5LC3J5E0yeO/1LIMyH+UvHQgyw=="],
 
@@ -1414,29 +1454,19 @@
 
     "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
-    "@ghost-shell/backend-app/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "@babel/core/semver": ["semver@6.3.1", "", { "bin": "bin/semver.js" }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
 
-    "@ghost-shell/config-plugin-runtime/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+    "@babel/helper-compilation-targets/semver": ["semver@6.3.1", "", { "bin": "bin/semver.js" }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
+
+    "@ghost-shell/backend-app/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost-shell/formr-react/@types/react": ["@types/react@19.2.14", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
 
     "@ghost-shell/formr-react/react": ["react@19.2.5", "", {}, "sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA=="],
 
-    "@ghost-shell/intents/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/layer/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/plugin-system/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/shell-app/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/theme/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
     "@ghost-shell/typecheck-fixture/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost-shell/ui/zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
-
-    "@module-federation/bridge-react-webpack-plugin/semver": ["semver@7.6.3", "", { "bin": "bin/semver.js" }, "sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A=="],
 
     "@module-federation/cli/chalk": ["chalk@3.0.0", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-4D3B6Wf41KOYRFdszmDqMCGq5VV/uMAB273JILmO+3jAlh8X4qDtdtgCR3fxtbLEMzSx22QdhnDcJvu2u1fVwg=="],
 
