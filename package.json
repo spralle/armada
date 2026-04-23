@@ -27,7 +27,8 @@
     "build:plugins": "node ./scripts/build-plugins.mjs",
     "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs",
     "generate:config-schema": "node ./scripts/build-config-schemas.mjs",
-    "build:dist": "bun run --filter './packages/*' build:dist"
+    "build:dist": "bun run --filter './packages/*' build:dist",
+    "sync-manifests": "bun run scripts/sync-manifests.ts"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
