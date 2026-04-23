@@ -1,6 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
 import { getTabCloseability } from "../context-state.js";
-import { moveTabInDirection } from "../context-state/window-management.js";
+import { moveTabInDirection } from "@ghost-shell/state";
 import { updateContextState } from "../context/runtime-state.js";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
 import type { PartLifecycleDeps } from "./part-instance-tab-lifecycle.js";

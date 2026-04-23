@@ -28,7 +28,7 @@ export interface KeyboardBindings {
   announce: (message: string) => void;
   dismissIntentChooser: () => void;
   executeResolvedAction: (match: IntentActionMatch, intent: ShellIntent | null) => Promise<void>;
-  applySelection: (event: import("../window-bridge.js").SelectionSyncEvent) => void;
+  applySelection: (event: import("@ghost-shell/bridge").SelectionSyncEvent) => void;
   publishWithDegrade: (event: Parameters<BridgeHost["bridge"]["publish"]>[0]) => void;
   renderContextControls: () => void;
   renderEdgeSlots: () => void;

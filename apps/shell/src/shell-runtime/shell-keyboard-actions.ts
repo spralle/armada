@@ -13,7 +13,7 @@ import {
   reorderActiveTabInStack,
   explodeActiveStack,
   swapTabInDirection,
-} from "../context-state/window-management.js";
+} from "@ghost-shell/state";
 import { updateContextState } from "../context/runtime-state.js";
 import { closeTabThroughRuntime } from "../ui/parts-controller.js";
 import { openPopout, requestPopoutFromHostShim } from "../ui/part-instance-popout-lifecycle.js";

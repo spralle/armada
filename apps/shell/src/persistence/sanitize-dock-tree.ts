@@ -2,12 +2,12 @@ import {
   createInitialDockTree,
   ensureTabRegisteredInDockTree,
   readDockSplitRatio,
-} from "../context-state/dock-tree.js";
+} from "@ghost-shell/state";
 import type {
   DockNode,
   DockOrientation,
   DockTreeState,
-} from "../context-state/dock-tree-types.js";
+} from "@ghost-shell/state";
 import type { ContextTab } from "../context-state.js";
 import { isRecord } from "./utils.js";
 

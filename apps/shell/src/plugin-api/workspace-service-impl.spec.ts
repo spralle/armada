@@ -1,7 +1,7 @@
 import { createEventEmitter } from "@ghost-shell/contracts";
 import type { ShellRuntime } from "../app/types.js";
 import { createInitialShellContextState } from "../context-state.js";
-import { createInitialWorkspaceManagerState } from "../context-state/workspace.js";
+import { createInitialWorkspaceManagerState } from "@ghost-shell/state";
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import { createWorkspaceService } from "./workspace-service-impl.js";
 

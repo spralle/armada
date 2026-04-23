@@ -12,6 +12,7 @@
     "@ghost-shell/intents": "workspace:*",
     "@ghost-shell/layer": "workspace:*",
     "@ghost-shell/router": "workspace:*",
+    "@ghost-shell/state": "workspace:*",
     "@ghost-shell/theme": "workspace:*",
     "@ghost-shell/plugin-system": "workspace:*",
     "@module-federation/enhanced": "^2.3.1",

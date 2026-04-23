@@ -15,7 +15,7 @@ import {
   isBrowserSafeDefaultKeybinding,
 } from "./shell-runtime/default-shell-keybindings.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
-import { createInitialWorkspaceManagerState } from "./context-state/workspace.js";
+import { createInitialWorkspaceManagerState } from "@ghost-shell/state";
 
 type KeydownListener = (event: KeyboardEvent) => Promise<void>;
 

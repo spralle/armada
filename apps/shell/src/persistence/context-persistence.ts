@@ -1,5 +1,5 @@
 import { createInitialShellContextState } from "../context-state.js";
-import { createInitialWorkspaceManagerState } from "../context-state/workspace.js";
+import { createInitialWorkspaceManagerState } from "@ghost-shell/state";
 import type {
   ContextStateEnvelopeV2,
   ContextStatePersistenceOptions,

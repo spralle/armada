@@ -34,7 +34,7 @@ import { registerWorkspaceServiceImplSpecs } from "./plugin-api/workspace-servic
 import { registerWindowServiceSpecs } from "./plugin-api/window-service.spec.js";
 import { registerGhostApiFactorySpecs } from "./plugin-api/ghost-api-factory.spec.js";
 import { registerQuickPickStateSpecs } from "./ui/quick-pick/quick-pick-state.spec.js";
-import { registerPlacementStrategySpecs } from "./context-state/placement-strategy/placement-strategy.spec.js";
+import { registerPlacementStrategySpecs } from "./context-state.spec-placement-strategy.js";
 import { registerGodModeSpecs } from "./shell-runtime/god-mode.spec.js";
 
 const { harness, runAll } = createSpecHarness();

@@ -24,6 +24,9 @@
       "path": "../../packages/layer"
     },
     {
+      "path": "../../packages/state"
+    },
+    {
       "path": "../../packages/intents"
     },
     {

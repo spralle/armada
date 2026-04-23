@@ -17,7 +17,7 @@ export type {
   SelectionWriteInput,
   ShellContextState,
   TabInstanceId,
-} from "@ghost-shell/state";
+} from "./types.js";
 
 export type {
   DockDirection,
@@ -28,7 +28,7 @@ export type {
   DockStackNode,
   DockTabDropInput,
   DockTreeState,
-} from "@ghost-shell/state";
+} from "./dock-tree-types.js";
 
 export {
   applyDockTabDrop,
@@ -40,9 +40,9 @@ export {
   readDockSplitRatio,
   removeTabFromDockTree,
   setDockSplitRatioById,
-} from "@ghost-shell/state";
+} from "./dock-tree.js";
 
-export { setDockSplitRatio } from "@ghost-shell/state";
+export { setDockSplitRatio } from "./dock-tree-ratio.js";
 
 export {
   focusActiveTabInDirection,
@@ -51,9 +51,9 @@ export {
   moveActiveTabToDirectionalGroup,
   resizeNearestSplitInDirection,
   swapActiveTabInDirection,
-} from "@ghost-shell/state";
+} from "./dock-tree-commands.js";
 
-export { createInitialShellContextState } from "@ghost-shell/state";
+export { createInitialShellContextState } from "./state.js";
 
 export {
   addEntityTypeSelectionId,
@@ -62,9 +62,9 @@ export {
   removeEntityTypeSelectionId,
   setEntityTypePriority,
   setEntityTypeSelection,
-} from "@ghost-shell/state";
+} from "./selection.js";
 
-export { applySelectionUpdate } from "@ghost-shell/state";
+export { applySelectionUpdate } from "./selection-update.js";
 
 export {
   closeTab,
@@ -77,18 +77,24 @@ export {
   reopenMostRecentlyClosedTab,
   registerTab,
   setActiveTab,
-} from "@ghost-shell/state";
+} from "./tabs-groups.js";
 
 export {
+  absorbStackInDirection,
   cycleTabGroup,
   cycleTabInActiveStack,
+  detachTabInDirection,
   equalizeSplits,
+  explodeActiveStack,
   focusTabInDirection,
   gotoTabByIndex,
   moveTabInDirection,
+  navigateBackInActiveStack,
+  navigateForwardInActiveStack,
+  reorderActiveTabInStack,
   resizeInDirection,
   swapTabInDirection,
-} from "@ghost-shell/state";
+} from "./window-management.js";
 
 export type {
   IncomingTransferJournal,
@@ -96,19 +102,19 @@ export type {
   IncomingTransferTarget,
   IncomingTransferTransactionInput,
   IncomingTransferTransactionResult,
-} from "@ghost-shell/state";
+} from "./incoming-transfer-transaction.js";
 
 export {
   applyIncomingTransferTransaction,
   createIncomingTransferJournal,
-} from "@ghost-shell/state";
+} from "./incoming-transfer-transaction.js";
 
 export {
   closeTabIfAllowed,
   closeTabIfAllowedWithHistory,
   getTabCloseability,
   getTabGroupId,
-} from "@ghost-shell/state";
+} from "./tabs-groups-closeability.js";
 
 export {
   readGlobalLane,
@@ -117,4 +123,56 @@ export {
   writeGroupLaneByGroup,
   writeGroupLaneByTab,
   writeTabSubcontext,
-} from "@ghost-shell/state";
+} from "./lanes.js";
+
+export type {
+  Workspace,
+  WorkspaceManagerState,
+  WorkspaceOperationResult,
+  WorkspaceSwitchResult,
+} from "./workspace-types.js";
+
+export {
+  createInitialWorkspaceManagerState,
+  createWorkspace,
+  deleteWorkspace,
+  moveTabToWorkspace,
+  renameWorkspace,
+  reorderWorkspace,
+  switchWorkspace,
+} from "./workspace.js";
+
+export type {
+  TabPlacementStrategy,
+  PlacementConfig,
+} from "./placement-strategy/types.js";
+
+export type {
+  PlacementStrategyRegistry,
+} from "./placement-strategy/registry.js";
+
+export {
+  initPlacementStrategy,
+} from "./placement-strategy/setup.js";
+
+export {
+  createPlacementStrategyRegistry,
+} from "./placement-strategy/registry.js";
+
+export {
+  createTabsPlacementStrategy,
+} from "./placement-strategy/tabs.js";
+
+export {
+  createDwindlePlacementStrategy,
+} from "./placement-strategy/dwindle.js";
+
+export {
+  createStackPlacementStrategy,
+} from "./placement-strategy/stack.js";
+
+export {
+  DEFAULT_PLACEMENT_CONFIG,
+  PLACEMENT_STRATEGY_CONFIG_KEY,
+  DWINDLE_DIRECTION_CONFIG_KEY,
+} from "./placement-strategy/config.js";

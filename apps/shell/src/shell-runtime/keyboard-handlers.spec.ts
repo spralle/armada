@@ -4,7 +4,7 @@ import {
   registerTab,
   setActiveTab,
 } from "../context-state.js";
-import { createInitialWorkspaceManagerState } from "../context-state/workspace.js";
+import { createInitialWorkspaceManagerState } from "@ghost-shell/state";
 import { bindKeyboardShortcuts, type KeyboardBindings } from "./keyboard-handlers.js";
 import { createDefaultShellKeybindingContract, DEFAULT_SHELL_KEYBINDINGS, DEFAULT_SHELL_KEYBINDING_PLUGIN_ID } from "./default-shell-keybindings.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";

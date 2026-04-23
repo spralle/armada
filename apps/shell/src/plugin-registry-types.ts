@@ -116,5 +116,5 @@ export interface ShellPluginRegistryOptions {
   /** Dependencies for creating GhostApi instances during plugin activation. */
   apiDeps?: import("./plugin-api/ghost-api-factory.js").GhostApiFactoryDependencies;
   /** Optional LayerRegistry for registering/unregistering plugin layers during lifecycle. */
-  layerRegistry?: import("./layer/registry.js").LayerRegistry;
+  layerRegistry?: import("@ghost-shell/layer").LayerRegistry;
 }

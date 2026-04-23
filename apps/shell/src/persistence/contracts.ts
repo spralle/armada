@@ -1,6 +1,6 @@
 import type { ShellContextState } from "../context-state.js";
 import type { ShellLayoutState } from "../layout.js";
-import type { WorkspaceManagerState } from "../context-state/workspace-types.js";
+import type { WorkspaceManagerState } from "@ghost-shell/state";
 
 export interface ShellLayoutPersistence {
   load(): ShellLayoutState;

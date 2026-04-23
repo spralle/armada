@@ -4,7 +4,7 @@ import {
   createWorkspace as createWorkspacePure,
   deleteWorkspace as deleteWorkspacePure,
   renameWorkspace as renameWorkspacePure,
-} from "../context-state/workspace.js";
+} from "@ghost-shell/state";
 import {
   performWorkspaceSwitch,
   type WorkspaceSwitchDeps,

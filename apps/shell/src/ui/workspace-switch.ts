@@ -1,6 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
 import { reconcileActiveTab } from "../context/runtime-state.js";
-import { switchWorkspace } from "../context-state/workspace.js";
+import { switchWorkspace } from "@ghost-shell/state";
 import type { PartsControllerDeps } from "./parts-controller-types.js";
 import { renderParts } from "./parts-controller.js";
 

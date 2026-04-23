@@ -26,7 +26,7 @@ export interface RuntimeRenderBindings {
     triggerType: PluginActivationTriggerType;
     triggerId: string;
   }) => Promise<boolean>;
-  applySelection: (event: import("../window-bridge.js").SelectionSyncEvent) => void;
+  applySelection: (event: import("@ghost-shell/bridge").SelectionSyncEvent) => void;
   dismissIntentChooser: () => void;
   executeResolvedAction: (
     match: import("../intent-runtime.js").IntentActionMatch,

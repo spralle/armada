@@ -37,7 +37,7 @@ import type {
 import type { ActionSurface } from "../action-surface.js";
 import type { KeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import type { ShellPartHostAdapter } from "./contracts.js";
-import type { WorkspaceManagerState } from "../context-state/workspace-types.js";
+import type { WorkspaceManagerState } from "@ghost-shell/state";
 import type { ShellTransportPath } from "./migration-flags.js";
 import type {
   DndDiagnosticEnvelope,
@@ -55,8 +55,8 @@ import type { GhostApiFactoryDependencies } from "../plugin-api/ghost-api-factor
 import type { SyncStatusServiceDeps } from "../sync-status-service-registration.js";
 import type { ContextServiceDeps } from "../context-service-registration.js";
 import type { KeybindingServiceDeps } from "../keybinding-service-registration.js";
-import type { PlacementStrategyRegistry } from "../context-state/placement-strategy/registry.js";
-import type { PlacementConfig } from "../context-state/placement-strategy/types.js";
+import type { PlacementStrategyRegistry } from "@ghost-shell/state";
+import type { PlacementConfig } from "@ghost-shell/state";
 import type { ShellStateObserver } from "@ghost/router";
 
 export interface ShellBootstrapState {

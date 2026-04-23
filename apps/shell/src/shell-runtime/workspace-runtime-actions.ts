@@ -1,5 +1,5 @@
 import type { ShellRuntime } from "../app/types.js";
-import { createWorkspace, deleteWorkspace } from "../context-state/workspace.js";
+import { createWorkspace, deleteWorkspace } from "@ghost-shell/state";
 import { performWorkspaceSwitch } from "../ui/workspace-switch.js";
 import type { WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
 

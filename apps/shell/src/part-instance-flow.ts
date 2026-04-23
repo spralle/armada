@@ -2,7 +2,7 @@ import {
   openPartInstance,
   type ShellContextState,
 } from "./context-state.js";
-import type { TabPlacementStrategy, PlacementConfig } from "./context-state/placement-strategy/types.js";
+import type { TabPlacementStrategy, PlacementConfig } from "@ghost-shell/state";
 
 function normalizeArgs(input: Record<string, string> | undefined): Record<string, string> {
   return input ? { ...input } : {};

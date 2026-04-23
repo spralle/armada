@@ -7,7 +7,7 @@ import type {
   RevisionMeta,
   ShellContextState,
 } from "../context-state.js";
-import type { WorkspaceManagerState } from "../context-state/workspace-types.js";
+import type { WorkspaceManagerState } from "@ghost-shell/state";
 import { isRecord } from "./utils.js";
 import type { WorkspacePersistenceEnvelopeV1 } from "./contracts.js";
 import { sanitizeDockTreeState } from "./sanitize-dock-tree.js";

@@ -1,15 +1,14 @@
-import type { SpecHarness } from "../../context-state.spec-harness.js";
-import type { DockNode, DockStackNode, DockSplitNode, DockTreeState } from "../dock-tree-types.js";
-import type { PlacementConfig } from "./types.js";
-import { createPlacementStrategyRegistry } from "./registry.js";
-import { createTabsPlacementStrategy } from "./tabs.js";
-import { createDwindlePlacementStrategy } from "./dwindle.js";
-import { createStackPlacementStrategy } from "./stack.js";
+import type { SpecHarness } from "./context-state.spec-harness.js";
+import type { DockNode, DockStackNode, DockSplitNode, DockTreeState, PlacementConfig } from "@ghost-shell/state";
 import {
+  createPlacementStrategyRegistry,
+  createTabsPlacementStrategy,
+  createDwindlePlacementStrategy,
+  createStackPlacementStrategy,
   DEFAULT_PLACEMENT_CONFIG,
   PLACEMENT_STRATEGY_CONFIG_KEY,
   DWINDLE_DIRECTION_CONFIG_KEY,
-} from "./config.js";
+} from "@ghost-shell/state";
 
 function makeStack(id: string, tabs: string[], activeTabId?: string | null): DockStackNode {
   return {

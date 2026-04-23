@@ -47,6 +47,9 @@
       "path": "./packages/layer"
     },
     {
+      "path": "./packages/state"
+    },
+    {
       "path": "./packages/formr-react"
     },
     {

@@ -19,7 +19,7 @@ import {
 import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-override-manager.js";
 import { createIntentRuntime } from "@ghost-shell/intents";
 import { createShellPartHostAdapter } from "../part-module-host.js";
-import { initPlacementStrategy } from "../context-state/placement-strategy/setup.js";
+import { initPlacementStrategy } from "@ghost-shell/state";
 import { createEventEmitter } from "@ghost-shell/contracts";
 
 import { createWindowBridge } from "@ghost-shell/bridge";
