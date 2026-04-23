@@ -21,5 +21,8 @@
   },
   "dependencies": {
     "@ghost-shell/predicate": "workspace:*"
+  },
+  "scripts": {
+    "build:dist": "tsup"
   }
 }

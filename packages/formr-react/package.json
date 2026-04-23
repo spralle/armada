@@ -19,7 +19,8 @@
     "@ghost-shell/formr-from-schema": "workspace:*"
   },
   "scripts": {
-    "test": "bun test"
+    "test": "bun test",
+    "build:dist": "tsup"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
