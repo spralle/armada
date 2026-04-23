@@ -211,3 +211,6 @@ export { createVanillaDomRenderer } from "./vanilla-dom-renderer.js";
 export type { ContextContribution, ProviderContribution } from "./context-contribution.js";
 
 export type { ContextApi, ContextContributionRegistry } from "./context-contribution-registry.js";
+
+export { definePlugin } from "./define-plugin.js";
+export type { ExtractPartIds, ExtractActionIds } from "./define-plugin.js";
