@@ -176,3 +176,18 @@ export {
   PLACEMENT_STRATEGY_CONFIG_KEY,
   DWINDLE_DIRECTION_CONFIG_KEY,
 } from "./placement-strategy/config.js";
+
+export type {
+  ShellLayoutState,
+  PartialLayoutState,
+  PaneResizeRequest,
+  EdgeSlotState,
+  ShellEdgeSlotsLayout,
+} from "./layout.js";
+
+export {
+  createDefaultLayoutState,
+  sanitizeLayoutState,
+  applyPaneResize,
+  createDefaultEdgeSlotsLayout,
+} from "./layout.js";

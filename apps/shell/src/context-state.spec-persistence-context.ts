@@ -1,5 +1,5 @@
 import { createLocalStorageContextStatePersistence } from "./persistence.js";
-import { sanitizeContextState } from "./persistence/sanitize.js";
+import { sanitizeContextState } from "@ghost-shell/persistence";
 import {
   createInitialShellContextState,
   moveTabInDockTree,

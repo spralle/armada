@@ -23,9 +23,9 @@ interface OverrideSessionController {
   [key: string]: unknown;
 }
 
-import { createLayoutConfigBridge } from "./persistence/layout-config-bridge.js";
-import { createContextConfigBridge } from "./persistence/context-config-bridge.js";
-import { createKeybindingConfigBridge } from "./persistence/keybinding-config-bridge.js";
+import { createLayoutConfigBridge } from "@ghost-shell/persistence";
+import { createContextConfigBridge } from "@ghost-shell/persistence";
+import { createKeybindingConfigBridge } from "@ghost-shell/persistence";
 import { getCurrentUserId, getStorage } from "./app/utils.js";
 
 // ---------------------------------------------------------------------------

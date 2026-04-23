@@ -7,15 +7,15 @@ export type {
   ShellWorkspacePersistence,
   WorkspaceManagerLoadResult,
   WorkspaceManagerSaveResult,
-} from "./persistence/contracts.js";
+} from "@ghost-shell/persistence";
 
 export {
   createLocalStorageContextStatePersistence,
   createLocalStorageWorkspacePersistence,
-} from "./persistence/context-persistence.js";
+} from "@ghost-shell/persistence";
 export {
   createLocalStorageKeybindingPersistence,
-} from "./persistence/keybinding-persistence.js";
+} from "@ghost-shell/persistence";
 export {
   createLocalStorageLayoutPersistence,
-} from "./persistence/layout-persistence.js";
+} from "@ghost-shell/persistence";
