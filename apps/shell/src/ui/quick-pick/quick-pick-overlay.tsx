@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { QuickPickItem } from "@ghost/plugin-contracts";
+import type { QuickPickItem } from "@ghost-shell/contracts";
 import type { QuickPickState } from "./quick-pick-state.js";
 import { getSelectedItem } from "./quick-pick-state.js";
 

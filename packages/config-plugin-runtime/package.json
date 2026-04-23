@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/config-plugin-runtime",
+  "name": "@ghost-shell/config-plugin-runtime",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -19,6 +19,6 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ghost/plugin-contracts": "workspace:*"
+    "@ghost-shell/contracts": "workspace:*"
   }
 }

@@ -1,5 +1,5 @@
 import type { ProductionRule, CompiledRule } from './contracts.js';
-import { compile } from '@ghost/predicate/compile';
+import { compile } from '@ghost-shell/predicate/compile';
 import { ArbiterError, ArbiterErrorCode } from './errors.js';
 import { compileThenActions } from './then-compiler.js';
 

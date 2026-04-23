@@ -1,7 +1,7 @@
 import type {
   PluginContract,
   PluginSelectionContribution,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   type DerivedLaneDefinition,
   type SelectionPropagationRule,

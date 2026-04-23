@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/formr-react",
+  "name": "@ghost-shell/formr-react",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -15,8 +15,8 @@
     "react": ">=18.0.0"
   },
   "dependencies": {
-    "@ghost/formr-core": "workspace:*",
-    "@ghost/formr-from-schema": "workspace:*"
+    "@ghost-shell/formr-core": "workspace:*",
+    "@ghost-shell/formr-from-schema": "workspace:*"
   },
   "scripts": {
     "test": "bun test"

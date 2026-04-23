@@ -1,4 +1,4 @@
-import { assertSafeSegment } from '@ghost/predicate/safe-path';
+import { assertSafeSegment } from '@ghost-shell/predicate/safe-path';
 import { ArbiterError, ArbiterErrorCode } from './errors.js';
 
 /**

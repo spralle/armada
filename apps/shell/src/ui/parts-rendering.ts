@@ -1,4 +1,4 @@
-import { composeEnabledPluginContributions } from "@ghost/plugin-contracts";
+import { composeEnabledPluginContributions } from "@ghost-shell/contracts";
 import type { ShellRuntime } from "../app/types.js";
 import { escapeHtml } from "../app/utils.js";
 import type { DockNode } from "../context-state.js";

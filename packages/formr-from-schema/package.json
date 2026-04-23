@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/formr-from-schema",
+  "name": "@ghost-shell/formr-from-schema",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -16,7 +16,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@ghost/formr-core": "workspace:*"
+    "@ghost-shell/formr-core": "workspace:*"
   },
   "peerDependencies": {
     "zod": "^3.24.0"

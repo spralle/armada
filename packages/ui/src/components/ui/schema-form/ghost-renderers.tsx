@@ -1,11 +1,11 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { LayoutRendererProps } from "@ghost/formr-react"
-import { renderLayoutTree } from "@ghost/formr-react"
-import { RendererRegistry } from "@ghost/formr-react"
-import { fieldId, descriptionId, errorId } from "@ghost/formr-react"
-import type { LayoutNode } from "@ghost/formr-from-schema"
+import type { LayoutRendererProps } from "@ghost-shell/formr-react"
+import { renderLayoutTree } from "@ghost-shell/formr-react"
+import { RendererRegistry } from "@ghost-shell/formr-react"
+import { fieldId, descriptionId, errorId } from "@ghost-shell/formr-react"
+import type { LayoutNode } from "@ghost-shell/formr-from-schema"
 
 import {
   Field,

@@ -3,8 +3,8 @@
 import type {
   SyncStatusService,
   PluginContract,
-} from "@ghost/plugin-contracts";
-import { SYNC_STATUS_SERVICE_ID } from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
+import { SYNC_STATUS_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export const SYNC_STATUS_SERVICE_PLUGIN_ID = "ghost.shell.sync-status-service";

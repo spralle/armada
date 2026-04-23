@@ -4,7 +4,7 @@ import {
   type GhostApi,
   type PluginContract,
   type TenantPluginDescriptor,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   createShellFederationRuntime,
   type ShellFederationRuntime,

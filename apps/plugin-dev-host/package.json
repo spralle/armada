@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/plugin-dev-host",
+  "name": "@ghost-shell/plugin-dev-host",
   "private": true,
   "type": "module",
   "scripts": {

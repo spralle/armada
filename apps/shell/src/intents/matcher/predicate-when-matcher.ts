@@ -1,6 +1,6 @@
-import { compileShorthand } from "@ghost/predicate";
-import { evaluateWithTrace } from "@ghost/predicate";
-import { evaluate } from "@ghost/predicate";
+import { compileShorthand } from "@ghost-shell/predicate";
+import { evaluateWithTrace } from "@ghost-shell/predicate";
+import { evaluate } from "@ghost-shell/predicate";
 import type {
   IntentFactBag,
   IntentWhenMatcher,

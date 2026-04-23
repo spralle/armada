@@ -1,6 +1,6 @@
 // Plugin schema ingestion bridge — extracts config schemas from plugin contracts
 
-import type { ConfigurationPropertySchema } from "@ghost/plugin-contracts";
+import type { ConfigurationPropertySchema } from "@ghost-shell/contracts";
 
 // @weaver/config-engine removed — inline stub types and throwing functions
 
@@ -57,7 +57,7 @@ function createSchemaRegistry(): ConfigurationSchemaRegistry {
 
 /**
  * Minimal plugin configuration input to avoid circular dependency
- * on @ghost/plugin-contracts.
+ * on @ghost-shell/contracts.
  */
 export interface PluginConfigInput {
   pluginId: string;

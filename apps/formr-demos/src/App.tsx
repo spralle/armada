@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import './globals.css';
-import { ScrollArea, cn } from '@ghost/ui';
+import { ScrollArea, cn } from '@ghost-shell/ui';
 import { demos } from './demos/index';
 
 export function App() {

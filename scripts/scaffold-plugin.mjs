@@ -61,11 +61,11 @@ async function findNextPort(pluginsDir) {
 }
 
 function buildSharedConfig(tier) {
-  const contracts = `        "@ghost/plugin-contracts": {\n          singleton: true,\n          requiredVersion: "^0.0.0",\n        },`;
+  const contracts = `        "@ghost-shell/contracts": {\n          singleton: true,\n          requiredVersion: "^0.0.0",\n        },`;
   if (tier === "minimal") return contracts;
 
   const importFlag = tier === "provider" ? "eager: true" : "import: false";
-  const extra = `        "@ghost/ui": {
+  const extra = `        "@ghost-shell/ui": {
           singleton: true,
           ${importFlag},
           requiredVersion: "^0.0.0",
@@ -84,9 +84,9 @@ function buildSharedConfig(tier) {
 }
 
 function buildDependencies(tier) {
-  const base = `    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"`;
+  const base = `    "@ghost-shell/contracts": "file:../../packages/plugin-contracts"`;
   if (tier === "minimal") return base;
-  return `${base},\n    "@ghost/ui": "file:../../packages/ui"`;
+  return `${base},\n    "@ghost-shell/ui": "file:../../packages/ui"`;
 }
 
 async function main() {

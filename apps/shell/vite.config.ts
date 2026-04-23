@@ -21,9 +21,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@ghost/plugin-contracts": PLUGIN_CONTRACTS_SOURCE,
-      "@ghost/predicate": PREDICATE_SOURCE,
-      "@ghost/ui": UI_SOURCE,
+      "@ghost-shell/contracts": PLUGIN_CONTRACTS_SOURCE,
+      "@ghost-shell/predicate": PREDICATE_SOURCE,
+      "@ghost-shell/ui": UI_SOURCE,
       // Mirror the UI package's tsconfig path mapping so that its internal
       // `@/lib/utils` imports resolve when the shell consumes raw source.
       "@/": `${UI_SRC_ROOT}/`,

@@ -3,7 +3,7 @@ import {
   type ComposedPluginSlotContribution,
   type ShellEdgeSlot,
   type ShellEdgeSlotPosition,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import type { ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";
 import {

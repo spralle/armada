@@ -1,6 +1,6 @@
 import { LayerRegistry, BUILTIN_LAYERS } from "../registry.js";
-import { KeyboardInteractivity, InputBehavior } from "@ghost/plugin-contracts";
-import type { PluginLayerSurfaceContribution } from "@ghost/plugin-contracts";
+import { KeyboardInteractivity, InputBehavior } from "@ghost-shell/contracts";
+import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];

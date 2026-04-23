@@ -1,5 +1,5 @@
 import { createRoot, type Root } from "react-dom/client";
-import type { QuickPickItem } from "@ghost/plugin-contracts";
+import type { QuickPickItem } from "@ghost-shell/contracts";
 import type { QuickPickController } from "./quick-pick-controller.js";
 import type { QuickPickState } from "./quick-pick-state.js";
 import { QuickPickOverlay } from "./quick-pick-overlay.js";

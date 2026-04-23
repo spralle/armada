@@ -12,8 +12,8 @@ import type {
   PluginReverseDependency,
   PluginRegistryDiagnosticEntry,
   PluginContract,
-} from "@ghost/plugin-contracts";
-import { PLUGIN_REGISTRY_SERVICE_ID } from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
+import { PLUGIN_REGISTRY_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry, PluginRegistrySnapshot } from "./plugin-registry-types.js";
 
 export const PLUGIN_REGISTRY_SERVICE_PLUGIN_ID = "ghost.shell.plugin-registry-service";

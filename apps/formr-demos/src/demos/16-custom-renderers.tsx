@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSchemaForm } from '@ghost/formr-react';
-import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
-import type { FormApi } from '@ghost/formr-core';
+import { useSchemaForm } from '@ghost-shell/formr-react';
+import type { SchemaFieldInfo } from '@ghost-shell/formr-from-schema';
+import type { FormApi } from '@ghost-shell/formr-core';
 import {
   Card, CardContent, CardHeader, CardTitle,
   Checkbox, Label, Progress, Slider, cn,
-} from '@ghost/ui';
+} from '@ghost-shell/ui';
 import { DemoShell } from '../renderers/DemoShell';
 import { DemoFormField } from '../renderers/DemoFormField';
 

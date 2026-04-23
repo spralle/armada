@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
-import type { FormApi } from '@ghost/formr-core';
-import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
+import type { FormApi } from '@ghost-shell/formr-core';
+import type { SchemaFieldInfo } from '@ghost-shell/formr-from-schema';
 import {
   Input,
   Switch,
@@ -10,7 +10,7 @@ import {
   FieldLabel,
   FieldDescription,
   FieldContent,
-} from '@ghost/ui';
+} from '@ghost-shell/ui';
 
 interface FormFieldProps {
   readonly form: FormApi;

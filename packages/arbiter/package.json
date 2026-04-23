@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/arbiter",
+  "name": "@ghost-shell/arbiter",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -20,6 +20,6 @@
     }
   },
   "dependencies": {
-    "@ghost/predicate": "workspace:*"
+    "@ghost-shell/predicate": "workspace:*"
   }
 }

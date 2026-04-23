@@ -3,8 +3,8 @@ import type {
   Disposable,
   PluginContract,
   TenantPluginDescriptor,
-} from "@ghost/plugin-contracts";
-import type { DeactivationContext } from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
+import type { DeactivationContext } from "@ghost-shell/contracts";
 import type { CapabilityDependencyFailureCode } from "./capability-registry.js";
 import type { GhostApiInstance } from "./plugin-api/ghost-api-factory.js";
 import type { PluginActivateFunction, RuntimeFirstPluginLoader, ShellPluginLoadMode } from "./plugin-loader.js";

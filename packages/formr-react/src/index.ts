@@ -33,7 +33,7 @@ export type {
   SubmitResult,
   DeepKeys,
   DeepValue,
-} from '@ghost/formr-core';
+} from '@ghost-shell/formr-core';
 
 export { RendererRegistry } from './renderer-registry.js';
 export {
@@ -44,4 +44,4 @@ export {
 } from './renderers/index.js';
 export { renderLayoutTree } from './render-tree.js';
 export type { LayoutRendererProps, NodeRenderer, FieldAriaAttributes } from './renderer-types.js';
-export type { LayoutNode } from '@ghost/formr-from-schema';
+export type { LayoutNode } from '@ghost-shell/formr-from-schema';

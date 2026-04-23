@@ -1,5 +1,5 @@
-import type { ProductionRule, RuleSession, FiringResult } from '@ghost/arbiter';
-import { createSession } from '@ghost/arbiter';
+import type { ProductionRule, RuleSession, FiringResult } from '@ghost-shell/arbiter';
+import { createSession } from '@ghost-shell/arbiter';
 import type { FormState } from './state.js';
 import type { RuleWriteIntent } from './contracts.js';
 import { isArbiterInternalPath } from './expression-integration.js';

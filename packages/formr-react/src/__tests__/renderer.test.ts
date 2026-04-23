@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { FormrError } from '@ghost/formr-core';
+import { FormrError } from '@ghost-shell/formr-core';
 import { RendererRegistry } from '../renderer-registry.js';
 
 describe('RendererRegistry', () => {

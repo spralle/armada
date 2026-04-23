@@ -1,5 +1,5 @@
 import { useRef, useCallback, useSyncExternalStore } from 'react';
-import type { FormApi, FormState } from '@ghost/formr-core';
+import type { FormApi, FormState } from '@ghost-shell/formr-core';
 
 /** Subscribe to a derived value from form state; only re-render when the selected value changes */
 export function useFormSelector<TData, TUi, T>(

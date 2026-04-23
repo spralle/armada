@@ -1,4 +1,4 @@
-import type { FocusGrabConfig, LayerSurfaceContext } from "@ghost/plugin-contracts";
+import type { FocusGrabConfig, LayerSurfaceContext } from "@ghost-shell/contracts";
 import type { LayerRegistry } from "./registry.js";
 import type { FocusGrabManager } from "./focus-grab.js";
 import { setDynamicOpacity } from "./visual-effects.js";
@@ -21,7 +21,7 @@ export interface LayerSurfaceContextOptions {
 /**
  * Create a {@link LayerSurfaceContext} that provides the runtime API for a
  * mounted layer surface.  The returned object satisfies the contract defined
- * in `@ghost/plugin-contracts` and is passed to the plugin mount function.
+ * in `@ghost-shell/contracts` and is passed to the plugin mount function.
  */
 export function createLayerSurfaceContext(options: LayerSurfaceContextOptions): LayerSurfaceContext {
   const {

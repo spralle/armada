@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { createSchemaForm } from '../create-schema-form.js';
 import type { LayoutNode } from '../layout/layout-types.js';
-import type { ValidatorFn } from '@ghost/formr-core';
+import type { ValidatorFn } from '@ghost-shell/formr-core';
 
 const simpleJsonSchema = {
   type: 'object',

@@ -1,5 +1,5 @@
-import { evaluateShellPluginCompatibility } from "@ghost/plugin-contracts";
-import type { PluginServices } from "@ghost/plugin-contracts";
+import { evaluateShellPluginCompatibility } from "@ghost-shell/contracts";
+import type { PluginServices } from "@ghost-shell/contracts";
 import type { CapabilityRegistry } from "./capability-registry.js";
 import {
   createActivationContext,

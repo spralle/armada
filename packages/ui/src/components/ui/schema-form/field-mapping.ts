@@ -1,4 +1,4 @@
-import type { SchemaFieldInfo } from "@ghost/formr-from-schema"
+import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema"
 
 export interface FieldMapping {
   readonly widget: 'input' | 'textarea' | 'select' | 'radio-group' | 'switch' | 'slider'

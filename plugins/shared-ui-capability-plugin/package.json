@@ -24,11 +24,11 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-    "@ghost/formr-core": "workspace:*",
-    "@ghost/formr-from-schema": "workspace:*",
-    "@ghost/formr-react": "workspace:*",
-    "@ghost/ui": "workspace:*",
+    "@ghost-shell/contracts": "file:../../packages/plugin-contracts",
+    "@ghost-shell/formr-core": "workspace:*",
+    "@ghost-shell/formr-from-schema": "workspace:*",
+    "@ghost-shell/formr-react": "workspace:*",
+    "@ghost-shell/ui": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn } from '@ghost/ui';
+import { cn } from '@ghost-shell/ui';
 import { DemoShell } from '../renderers/DemoShell';
 import { DemoFormRoot } from '../renderers/DemoFormRoot';
 

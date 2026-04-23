@@ -1,5 +1,5 @@
 import type { ThenStage, CompiledStage } from './contracts.js';
-import { compile } from '@ghost/predicate/compile';
+import { compile } from '@ghost-shell/predicate/compile';
 import { validatePath } from './path-utils.js';
 import { ArbiterError, ArbiterErrorCode } from './errors.js';
 

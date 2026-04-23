@@ -2,7 +2,7 @@ import type {
   PluginContract,
   PluginSelectionContribution,
   PluginServices,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import { createDragSessionBroker } from "../dnd-session-broker.js";
 import type { ShellLayoutState } from "../layout.js";
 import type {
@@ -132,7 +132,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   runtimeActionRegistry: Map<string, (...args: unknown[]) => unknown>;
   workspaceEvents: {
     fireDidChangeWorkspaces(): void;
-    readonly onDidChangeWorkspaces: import("@ghost/plugin-contracts").Event<void>;
+    readonly onDidChangeWorkspaces: import("@ghost-shell/contracts").Event<void>;
   };
   commandNotice: string;
   partHost: ShellPartHostAdapter;

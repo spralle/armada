@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/predicate",
+  "name": "@ghost-shell/predicate",
   "version": "0.0.0",
   "private": true,
   "type": "module",

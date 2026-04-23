@@ -6,7 +6,7 @@
  * The existing readShellMigrationFlags() remains fully functional as fallback.
  */
 
-import type { ConfigurationPropertySchema } from "@ghost/plugin-contracts";
+import type { ConfigurationPropertySchema } from "@ghost-shell/contracts";
 
 /** Stub for ConfigurationService (@weaver/config-types removed). */
 interface ConfigurationService {

@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/formr-core",
+  "name": "@ghost-shell/formr-core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,8 +12,8 @@
     }
   },
   "dependencies": {
-    "@ghost/predicate": "workspace:*",
-    "@ghost/arbiter": "workspace:*"
+    "@ghost-shell/predicate": "workspace:*",
+    "@ghost-shell/arbiter": "workspace:*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

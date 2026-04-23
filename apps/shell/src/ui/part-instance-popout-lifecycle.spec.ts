@@ -1,6 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import { createEventEmitter, type PluginServices } from "@ghost/plugin-contracts";
+import { createEventEmitter, type PluginServices } from "@ghost-shell/contracts";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
 import { openPopout } from "./part-instance-popout-lifecycle.js";
 import { createIncomingTransferJournal } from "../context-state.js";

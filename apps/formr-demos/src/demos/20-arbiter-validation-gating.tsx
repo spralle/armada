@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useForm } from '@ghost/formr-react';
-import { Card, CardContent, CardHeader, CardTitle, cn } from '@ghost/ui';
+import { useForm } from '@ghost-shell/formr-react';
+import { Card, CardContent, CardHeader, CardTitle, cn } from '@ghost-shell/ui';
 import { DemoShell } from '../renderers/DemoShell';
 
 // NOTE: $ui entries are synced shallowly (top-level keys only).

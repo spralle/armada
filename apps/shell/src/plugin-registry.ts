@@ -1,4 +1,4 @@
-import type { PluginContract, PluginServices } from "@ghost/plugin-contracts";
+import type { PluginContract, PluginServices } from "@ghost-shell/contracts";
 import {
   createCapabilityRegistry,
   pickComponentModuleExport,

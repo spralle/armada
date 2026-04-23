@@ -13,8 +13,8 @@ interface ConfigurationService {
   [key: string]: unknown;
 }
 
-import type { PluginContract } from "@ghost/plugin-contracts";
-import { CONFIG_SERVICE_ID } from "@ghost/plugin-contracts";
+import type { PluginContract } from "@ghost-shell/contracts";
+import { CONFIG_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export const CONFIG_SERVICE_PLUGIN_ID = "ghost.shell.config-service";

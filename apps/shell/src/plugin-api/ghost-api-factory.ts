@@ -3,7 +3,7 @@ import type {
   Disposable,
   GhostApi,
   PluginServices,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   createActionService,
   type ActionServiceDependencies,

@@ -1,4 +1,4 @@
-import type { LayerSurfaceContext } from "@ghost/plugin-contracts";
+import type { LayerSurfaceContext } from "@ghost-shell/contracts";
 
 /**
  * Panel surface mount — side panel with exclusive zone.

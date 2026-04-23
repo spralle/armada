@@ -1,4 +1,4 @@
-import { createEventEmitter } from "@ghost/plugin-contracts";
+import { createEventEmitter } from "@ghost-shell/contracts";
 import type { ShellRuntime } from "../app/types.js";
 import { createInitialShellContextState } from "../context-state.js";
 import { createInitialWorkspaceManagerState } from "../context-state/workspace.js";

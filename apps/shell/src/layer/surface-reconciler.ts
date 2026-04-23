@@ -1,10 +1,10 @@
 import type {
   PluginLayerSurfaceContribution,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   InputBehavior,
   KeyboardInteractivity,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import type { LayerRegistry } from "./registry.js";
 import type { ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";

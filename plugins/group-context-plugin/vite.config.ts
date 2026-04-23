@@ -14,7 +14,7 @@ export default defineConfig({
         "./pluginParts": "./src/plugin-parts.ts",
       },
       shared: {
-        "@ghost/plugin-contracts": {
+        "@ghost-shell/contracts": {
           singleton: true,
           requiredVersion: "^0.0.0",
         },

@@ -1,8 +1,8 @@
 // QuickPick controller — implements the QuickPick<T> interface from ghost-api.ts.
 // Bridges the state machine with the event system for plugin consumers.
 
-import type { QuickPick, QuickPickItem } from "@ghost/plugin-contracts";
-import { createEventEmitter } from "@ghost/plugin-contracts";
+import type { QuickPick, QuickPickItem } from "@ghost-shell/contracts";
+import { createEventEmitter } from "@ghost-shell/contracts";
 import type { QuickPickAction, QuickPickState } from "./quick-pick-state.js";
 import {
   createInitialQuickPickState,

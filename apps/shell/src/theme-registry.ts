@@ -8,13 +8,13 @@ import type {
   FullThemePalette,
   PluginContract,
   ThemeBackgroundEntry,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   composeThemeContributions,
   deriveFullPalette,
   GHOST_THEME_CSS_VARS,
-} from "@ghost/plugin-contracts";
-import type { ComposedThemeContribution } from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
+import type { ComposedThemeContribution } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 import {
   readUserThemePreference,

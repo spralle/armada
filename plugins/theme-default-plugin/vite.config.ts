@@ -13,7 +13,7 @@ export default defineConfig({
         "./pluginContract": "./src/plugin-contract-expose.ts",
       },
       shared: {
-        "@ghost/plugin-contracts": {
+        "@ghost-shell/contracts": {
           singleton: true,
           requiredVersion: "^0.0.0",
         },

@@ -1,4 +1,4 @@
-import type { ValidatorFn, ValidationIssue } from '@ghost/formr-core';
+import type { ValidatorFn, ValidationIssue } from '@ghost-shell/formr-core';
 import type { JsonSchema } from './json-schema-types.js';
 import { dereferenceSchema } from './json-schema-deref.js';
 import { makeIssue as makeIssueBase, isObject, checkType } from '../utils.js';

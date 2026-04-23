@@ -1,4 +1,4 @@
-import { Badge } from "@ghost/ui";
+import { Badge } from "@ghost-shell/ui";
 import { usePlugins } from "./PluginsContext.js";
 
 interface DependencyRowProps {

@@ -2,8 +2,8 @@ import {
   createInstance,
   type ModuleFederation,
 } from "@module-federation/enhanced/runtime";
-import * as pluginContracts from "@ghost/plugin-contracts";
-import * as ghostUi from "@ghost/ui";
+import * as pluginContracts from "@ghost-shell/contracts";
+import * as ghostUi from "@ghost-shell/ui";
 import * as react from "react";
 import * as reactDom from "react-dom";
 import * as reactDomClient from "react-dom/client";
@@ -17,7 +17,7 @@ type RuntimeCreateOptions = Parameters<typeof createInstance>[0];
  * scope would otherwise be empty and remotes would resolve `undefined`.
  */
 const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
-  "@ghost/plugin-contracts": {
+  "@ghost-shell/contracts": {
     version: "0.0.0",
     lib: () => pluginContracts,
     shareConfig: {
@@ -27,7 +27,7 @@ const SHARED_DEPENDENCIES: NonNullable<RuntimeCreateOptions["shared"]> = {
     },
     strategy: "loaded-first",
   },
-  "@ghost/ui": {
+  "@ghost-shell/ui": {
     version: "0.0.0",
     lib: () => ghostUi,
     shareConfig: {

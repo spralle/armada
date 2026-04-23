@@ -8,7 +8,7 @@
  * Fallback: if config service is unavailable, falls back to localStorage.
  */
 
-import type { ConfigurationPropertySchema } from "@ghost/plugin-contracts";
+import type { ConfigurationPropertySchema } from "@ghost-shell/contracts";
 
 /** Stub for ConfigurationService (@weaver/config-types removed). */
 interface ConfigurationService {

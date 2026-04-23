@@ -1,6 +1,6 @@
 import { Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
-import { Alert, Button } from "@ghost/ui";
+import { Alert, Button } from "@ghost-shell/ui";
 
 interface ErrorBoundaryProps {
   children: ReactNode;

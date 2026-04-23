@@ -20,7 +20,7 @@ import { createKeybindingOverrideManager } from "../shell-runtime/keybinding-ove
 import { createIntentRuntime } from "../intent-runtime.js";
 import { createShellPartHostAdapter } from "../part-module-host.js";
 import { initPlacementStrategy } from "../context-state/placement-strategy/setup.js";
-import { createEventEmitter } from "@ghost/plugin-contracts";
+import { createEventEmitter } from "@ghost-shell/contracts";
 
 import { createWindowBridge } from "../window-bridge.js";
 import { createAsyncWindowBridgeCompatibilityShim } from "./async-bridge.js";

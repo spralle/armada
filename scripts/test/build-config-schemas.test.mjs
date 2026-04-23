@@ -44,7 +44,7 @@ describe("buildConfigSchemas", () => {
 
     // Create a plugin with no config declarations
     await createMockPlugin(appsDir, "my-plugin", {
-      name: "@ghost/my-plugin",
+      name: "@ghost-shell/my-plugin",
       version: "1.0.0",
     });
 
@@ -65,7 +65,7 @@ describe("buildConfigSchemas", () => {
     await mkdir(appsDir, { recursive: true });
 
     await createMockPlugin(appsDir, "vessel-view-plugin", {
-      name: "@ghost/vessel-view-plugin",
+      name: "@ghost-shell/vessel-view-plugin",
       version: "1.0.0",
       ghost: {
         configuration: {
@@ -97,7 +97,7 @@ describe("buildConfigSchemas", () => {
     await mkdir(appsDir, { recursive: true });
 
     await createMockPlugin(appsDir, "vessel-view-plugin", {
-      name: "@ghost/vessel-view-plugin",
+      name: "@ghost-shell/vessel-view-plugin",
       version: "1.0.0",
       ghost: {
         configuration: {
@@ -127,7 +127,7 @@ describe("buildConfigSchemas", () => {
     await mkdir(appsDir, { recursive: true });
 
     await createMockPlugin(appsDir, "vessel-view-plugin", {
-      name: "@ghost/vessel-view-plugin",
+      name: "@ghost-shell/vessel-view-plugin",
       version: "1.0.0",
       ghost: {
         configuration: {
@@ -160,7 +160,7 @@ describe("buildConfigSchemas", () => {
 
     // Two plugins declaring the same namespace + key
     await createMockPlugin(appsDir, "plugin-a", {
-      name: "@ghost/plugin-a",
+      name: "@ghost-shell/plugin-a",
       version: "1.0.0",
       ghost: {
         configNamespace: "ghost.vesselView",
@@ -170,7 +170,7 @@ describe("buildConfigSchemas", () => {
       },
     });
     await createMockPlugin(appsDir, "plugin-b", {
-      name: "@ghost/plugin-b",
+      name: "@ghost-shell/plugin-b",
       version: "1.0.0",
       ghost: {
         configNamespace: "ghost.vesselView",
@@ -199,7 +199,7 @@ describe("buildConfigSchemas", () => {
     await mkdir(appsDir, { recursive: true });
 
     await createMockPlugin(appsDir, "my-plugin", {
-      name: "@ghost/my-plugin",
+      name: "@ghost-shell/my-plugin",
       version: "1.0.0",
     });
 
@@ -226,7 +226,7 @@ describe("buildConfigSchemas", () => {
     await mkdir(appsDir, { recursive: true });
 
     await createMockPlugin(appsDir, "fleet-plugin", {
-      name: "@ghost/fleet-plugin",
+      name: "@ghost-shell/fleet-plugin",
       version: "2.0.0",
       contributes: {
         configuration: {
@@ -274,7 +274,7 @@ describe("buildConfigSchemas", () => {
     // Create a package.json (no config) and a view config file
     await writeFile(
       join(appsDir, "my-plugin", "package.json"),
-      JSON.stringify({ name: "@ghost/my-plugin", version: "1.0.0" }),
+      JSON.stringify({ name: "@ghost-shell/my-plugin", version: "1.0.0" }),
     );
     await writeFile(join(viewDir, "FleetMap.config.ts"), "export default {}");
 

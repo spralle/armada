@@ -1,4 +1,4 @@
-import type { PluginServices } from "@ghost/plugin-contracts";
+import type { PluginServices } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export function createPluginServicesBridge(

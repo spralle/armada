@@ -8,8 +8,8 @@ import type {
   QuickPickOptions,
   WindowDescriptor,
   WindowService,
-} from "@ghost/plugin-contracts";
-import { createEventEmitter } from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
+import { createEventEmitter } from "@ghost-shell/contracts";
 import { createQuickPickController } from "../ui/quick-pick/quick-pick-controller.js";
 
 /**

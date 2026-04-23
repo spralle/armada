@@ -1,4 +1,4 @@
-import type { ConfigurationPropertySchema } from "@ghost/plugin-contracts";
+import type { ConfigurationPropertySchema } from "@ghost-shell/contracts";
 import type {
   ComposeResult,
   ConfigurationSchemaDeclaration,

@@ -4,8 +4,8 @@ import type {
   ActivityStatusService,
   ActivityToken,
   PluginContract,
-} from "@ghost/plugin-contracts";
-import { ACTIVITY_STATUS_SERVICE_ID } from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
+import { ACTIVITY_STATUS_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export const ACTIVITY_STATUS_SERVICE_PLUGIN_ID = "ghost.shell.activity-status-service";

@@ -1,5 +1,5 @@
-import type { ExprNode, EvaluationScope } from "@ghost/predicate";
-import { evaluate as evaluateExpr, PredicateError } from "@ghost/predicate";
+import type { ExprNode, EvaluationScope } from "@ghost-shell/predicate";
+import { evaluate as evaluateExpr, PredicateError } from "@ghost-shell/predicate";
 import type { PluginContributionPredicate } from "./types.js";
 
 export interface PredicateFactBag {
@@ -91,7 +91,7 @@ function getFactValue(facts: PredicateFactBag, path: string): unknown {
 
 /**
  * Match a fact value against a condition, delegating comparison operators
- * to @ghost/predicate's evaluator while preserving deep equality semantics
+ * to @ghost-shell/predicate's evaluator while preserving deep equality semantics
  * for $eq/$ne/$in/$nin.
  */
 function matchesCondition(actual: unknown, path: string, condition: unknown, facts: PredicateFactBag): boolean {
@@ -112,7 +112,7 @@ function isOperatorCondition(value: unknown): value is Record<string, unknown> {
   return Object.keys(value).some((key) => key.startsWith("$"));
 }
 
-/** Operators that @ghost/predicate handles via its evaluator. */
+/** Operators that @ghost-shell/predicate handles via its evaluator. */
 const DELEGATED_OPERATORS = new Set(["$gt", "$gte", "$lt", "$lte", "$exists"]);
 
 function applyOperator(
@@ -141,7 +141,7 @@ function applyOperator(
 }
 
 /**
- * Build an ExprNode AST and delegate evaluation to @ghost/predicate.
+ * Build an ExprNode AST and delegate evaluation to @ghost-shell/predicate.
  * Catches PredicateError (e.g. type mismatch) and returns false for
  * backward compatibility — the old implementation returned NaN comparisons
  * which always yielded false.

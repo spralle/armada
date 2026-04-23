@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/plugin-contracts",
+  "name": "@ghost-shell/contracts",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -19,7 +19,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ghost/predicate": "workspace:*",
+    "@ghost-shell/predicate": "workspace:*",
     "zod": "^3.24.2"
   }
 }

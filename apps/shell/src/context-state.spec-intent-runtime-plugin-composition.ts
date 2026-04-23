@@ -1,7 +1,7 @@
 import {
   composeEnabledPluginContributions,
   type PluginContributionSource,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import { createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 

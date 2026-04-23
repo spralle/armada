@@ -1,6 +1,6 @@
-import type { PluginContributionPredicate } from "@ghost/plugin-contracts";
-import type { ContributionPredicateMatcher } from "@ghost/plugin-contracts";
-import { createDefaultContributionPredicateMatcher } from "@ghost/plugin-contracts";
+import type { PluginContributionPredicate } from "@ghost-shell/contracts";
+import type { ContributionPredicateMatcher } from "@ghost-shell/contracts";
+import { createDefaultContributionPredicateMatcher } from "@ghost-shell/contracts";
 import type { ActionSurfaceContext, InvokableAction } from "../action-surface.js";
 import type { NormalizedKeybindingChord, NormalizedKeybindingSequence } from "./keybinding-normalizer.js";
 

@@ -2,11 +2,11 @@ import type {
   ActionDescriptor,
   ActionService,
   Disposable,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   createEventEmitter,
   evaluateContributionPredicate,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import type { ActionKeybinding, ActionSurface } from "../action-surface.js";
 import { dispatchAction } from "../action-surface.js";
 import type { IntentRuntime } from "../intent-runtime.js";

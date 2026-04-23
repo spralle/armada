@@ -1,4 +1,4 @@
-import type { JsonFormCapability } from '@ghost/plugin-contracts';
+import type { JsonFormCapability } from '@ghost-shell/contracts';
 import { createJsonFormCapability } from './jsonform/index.js';
 
 type CapabilityRenderTarget = HTMLElement;

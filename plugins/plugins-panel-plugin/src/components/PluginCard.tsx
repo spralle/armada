@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import type {
   PluginRegistryEntry,
   PluginManagementService,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   Card,
   CardContent,
@@ -13,7 +13,7 @@ import {
   CollapsibleContent,
   Button,
   Separator,
-} from "@ghost/ui";
+} from "@ghost-shell/ui";
 import { PluginDetail } from "./PluginDetail.js";
 
 interface PluginCardProps {

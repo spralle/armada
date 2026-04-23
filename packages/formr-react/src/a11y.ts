@@ -1,4 +1,4 @@
-import type { ValidationIssue } from '@ghost/formr-core';
+import type { ValidationIssue } from '@ghost-shell/formr-core';
 
 const DEFAULT_FIELD_PREFIX = 'field';
 

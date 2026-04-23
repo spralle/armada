@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import { FormrError } from '@ghost/formr-core';
+import { FormrError } from '@ghost-shell/formr-core';
 import type { NodeRenderer, LayoutRendererProps } from './renderer-types.js';
 import { GroupRenderer } from './renderers/group-renderer.js';
 import { SectionRenderer } from './renderers/section-renderer.js';

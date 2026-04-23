@@ -1,4 +1,4 @@
-import { Badge } from '@ghost/ui';
+import { Badge } from '@ghost-shell/ui';
 import { CodeBlock } from './CodeBlock';
 
 interface CodeBlockEntry {

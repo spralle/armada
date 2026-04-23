@@ -1,5 +1,5 @@
 import type { SpecHarness } from "../../context-state.spec-harness.js";
-import type { QuickPickItem } from "@ghost/plugin-contracts";
+import type { QuickPickItem } from "@ghost-shell/contracts";
 import {
   createInitialQuickPickState,
   reduceQuickPickState,

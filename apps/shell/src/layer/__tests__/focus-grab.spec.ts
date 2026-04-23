@@ -1,6 +1,6 @@
 import { createFocusGrabManager } from "../focus-grab.js";
 import type { KeyboardExclusiveManager } from "../input-behavior.js";
-import type { FocusGrabConfig } from "@ghost/plugin-contracts";
+import type { FocusGrabConfig } from "@ghost-shell/contracts";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];

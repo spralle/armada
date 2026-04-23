@@ -1,7 +1,7 @@
 import type {
   PluginLayerSurfaceContribution,
   LayerSurfaceContext,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import type { ShellRuntime } from "../app/types.js";
 import { type MountCleanup, toRecord } from "../federation-mount-utils.js";
 

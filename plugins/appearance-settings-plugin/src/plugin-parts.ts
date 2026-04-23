@@ -6,12 +6,12 @@ import type {
   PluginContract,
   ActivityStatusService,
   ComposedPluginSectionContribution,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   THEME_SERVICE_ID,
   ACTIVITY_STATUS_SERVICE_ID,
   composeEnabledPluginContributions,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   injectAppearanceStyles,
   renderThemePicker,

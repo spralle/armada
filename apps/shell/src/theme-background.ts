@@ -1,6 +1,6 @@
 // theme-background.ts — Fullscreen background image management for themes.
 
-import type { ThemeBackgroundEntry } from "@ghost/plugin-contracts";
+import type { ThemeBackgroundEntry } from "@ghost-shell/contracts";
 import { resolveBackgroundUrl } from "./theme-background-cache.js";
 
 const THEME_BACKGROUND_ID = "ghost-theme-background";

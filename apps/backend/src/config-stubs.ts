@@ -1,4 +1,4 @@
-// Inline stubs replacing deleted @weaver/* and @ghost/config-plugin-runtime packages.
+// Inline stubs replacing deleted @weaver/* and @ghost-shell/config-plugin-runtime packages.
 // All types are structural duplicates; all runtime exports are no-ops.
 
 export type ConfigurationRole =

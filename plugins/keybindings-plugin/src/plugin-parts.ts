@@ -1,5 +1,5 @@
 import "./styles/tailwind.css";
-import type { PluginMountContext } from "@ghost/plugin-contracts";
+import type { PluginMountContext } from "@ghost-shell/contracts";
 import { createRoot, type Root } from "react-dom/client";
 import { createElement } from "react";
 import { KeybindingsPanel } from "./components/KeybindingsPanel.js";

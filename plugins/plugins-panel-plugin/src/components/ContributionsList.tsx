@@ -1,5 +1,5 @@
-import type { PluginContributionsSummary } from "@ghost/plugin-contracts";
-import { Badge } from "@ghost/ui";
+import type { PluginContributionsSummary } from "@ghost-shell/contracts";
+import { Badge } from "@ghost-shell/ui";
 
 interface ContributionsListProps {
   contributions: PluginContributionsSummary;

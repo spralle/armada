@@ -1,4 +1,4 @@
-import type { WorkspaceInfo, WorkspaceService } from "@ghost/plugin-contracts";
+import type { WorkspaceInfo, WorkspaceService } from "@ghost-shell/contracts";
 import type { ShellRuntime } from "../app/types.js";
 import {
   createWorkspace as createWorkspacePure,

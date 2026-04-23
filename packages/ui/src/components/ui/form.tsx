@@ -3,8 +3,8 @@
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
-import type { FormApi, FieldApi, FieldConfig, ValidationIssue } from "@ghost/formr-core"
-import { useField } from "@ghost/formr-react"
+import type { FormApi, FieldApi, FieldConfig, ValidationIssue } from "@ghost-shell/formr-core"
+import { useField } from "@ghost-shell/formr-react"
 
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"

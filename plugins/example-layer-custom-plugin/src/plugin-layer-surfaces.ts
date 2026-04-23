@@ -1,4 +1,4 @@
-import type { LayerSurfaceContext } from "@ghost/plugin-contracts";
+import type { LayerSurfaceContext } from "@ghost-shell/contracts";
 
 /**
  * Custom layer clock widget mount.

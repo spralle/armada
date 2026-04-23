@@ -101,5 +101,5 @@ import type {
   SubmitResult,
 } from './contracts.js';
 import type { StateStrategy } from './transaction.js';
-import type { ProductionRule, RuleSession } from '@ghost/arbiter';
+import type { ProductionRule, RuleSession } from '@ghost-shell/arbiter';
 import type { TransformDefinition } from './transforms.js';

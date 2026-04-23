@@ -3,8 +3,8 @@
 import type {
   PluginManagementService,
   PluginContract,
-} from "@ghost/plugin-contracts";
-import { PLUGIN_MANAGEMENT_SERVICE_ID } from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
+import { PLUGIN_MANAGEMENT_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export const PLUGIN_MANAGEMENT_SERVICE_PLUGIN_ID = "ghost.shell.plugin-management-service";

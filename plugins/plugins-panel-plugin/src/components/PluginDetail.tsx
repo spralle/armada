@@ -1,7 +1,7 @@
 import type {
   PluginRegistryEntry,
-} from "@ghost/plugin-contracts";
-import { Alert, Button, cn } from "@ghost/ui";
+} from "@ghost-shell/contracts";
+import { Alert, Button, cn } from "@ghost-shell/ui";
 import { ContributionsList } from "./ContributionsList.js";
 import { DependencyRow } from "./DependencyRow.js";
 

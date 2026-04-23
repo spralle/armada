@@ -1,4 +1,4 @@
-import type { ValidationIssue, CanonicalPath } from '@ghost/formr-core';
+import type { ValidationIssue, CanonicalPath } from '@ghost-shell/formr-core';
 
 export type IssueOrigin = 'standard-schema' | 'function-validator' | 'json-schema-adapter' | 'rule' | 'middleware';
 

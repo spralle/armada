@@ -1,4 +1,4 @@
-// @ghost/ui — Ghost component library built on shadcn/ui
+// @ghost-shell/ui — Ghost component library built on shadcn/ui
 export { cn } from "./lib/utils";
 
 // Components

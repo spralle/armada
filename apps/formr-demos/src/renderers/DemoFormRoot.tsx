@@ -1,9 +1,9 @@
 import { useMemo, useCallback, useState } from 'react';
-import { useSchemaForm } from '@ghost/formr-react';
-import { isSectionNode } from '@ghost/formr-from-schema';
-import type { LayoutNode, SchemaFieldInfo } from '@ghost/formr-from-schema';
-import type { FormApi } from '@ghost/formr-core';
-import { Card, CardContent, CardHeader, CardTitle } from '@ghost/ui';
+import { useSchemaForm } from '@ghost-shell/formr-react';
+import { isSectionNode } from '@ghost-shell/formr-from-schema';
+import type { LayoutNode, SchemaFieldInfo } from '@ghost-shell/formr-from-schema';
+import type { FormApi } from '@ghost-shell/formr-core';
+import { Card, CardContent, CardHeader, CardTitle } from '@ghost-shell/ui';
 import { DemoFormField } from './DemoFormField';
 import { ArrayRenderer } from './ArrayRenderer';
 

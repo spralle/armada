@@ -3,8 +3,8 @@
 import type {
   ContextService,
   PluginContract,
-} from "@ghost/plugin-contracts";
-import { CONTEXT_SERVICE_ID } from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
+import { CONTEXT_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export const CONTEXT_SERVICE_PLUGIN_ID = "ghost.shell.context-service";

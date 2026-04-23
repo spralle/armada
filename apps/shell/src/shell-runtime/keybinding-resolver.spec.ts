@@ -1,4 +1,4 @@
-import { createDefaultContributionPredicateMatcher } from "@ghost/plugin-contracts";
+import { createDefaultContributionPredicateMatcher } from "@ghost-shell/contracts";
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import type { InvokableAction } from "../action-surface.js";
 import { normalizeConfiguredChord } from "./keybinding-normalizer.js";

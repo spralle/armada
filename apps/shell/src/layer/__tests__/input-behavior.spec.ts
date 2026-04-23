@@ -1,4 +1,4 @@
-import { InputBehavior, KeyboardInteractivity } from "@ghost/plugin-contracts";
+import { InputBehavior, KeyboardInteractivity } from "@ghost-shell/contracts";
 import {
   applyInputBehavior,
   applyKeyboardInteractivity,

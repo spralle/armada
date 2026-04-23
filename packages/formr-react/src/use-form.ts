@@ -1,6 +1,6 @@
 import { useRef, useSyncExternalStore, useEffect, useMemo } from 'react';
-import { createForm } from '@ghost/formr-core';
-import type { CreateFormOptions, FormApi, SubmitResult } from '@ghost/formr-core';
+import { createForm } from '@ghost-shell/formr-core';
+import type { CreateFormOptions, FormApi, SubmitResult } from '@ghost-shell/formr-core';
 import { focusFirstError } from './a11y.js';
 
 /** Options for useForm, extending core CreateFormOptions with React-specific behavior */
