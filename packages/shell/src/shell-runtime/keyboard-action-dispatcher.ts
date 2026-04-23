@@ -16,11 +16,11 @@ export async function dispatchExactMatch(
 ): Promise<void> {
   const activated = await bindings.activatePluginForBoundary({
     pluginId: action.pluginId,
-    triggerType: "command",
+    triggerType: "action",
     triggerId: action.id,
   });
   if (!activated) {
-    runtime.commandNotice = `Action '${action.id}' blocked: plugin '${action.pluginId}' is not active.`;
+    runtime.actionNotice = `Action '${action.id}' blocked: plugin '${action.pluginId}' is not active.`;
     return;
   }
 
@@ -43,7 +43,7 @@ export async function dispatchExactMatch(
   }
 
   const chordStr = chords.map(c => c.value).join(" ");
-  runtime.commandNotice = shellResult.handled
+  runtime.actionNotice = shellResult.handled
     ? `Keybinding (${chordStr}): ${shellResult.message}`
     : executed
       ? `Keybinding (${chordStr}): Action '${action.id}' executed.`

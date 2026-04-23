@@ -110,6 +110,6 @@ export async function handleGodModeAction(runtime: ShellRuntime): Promise<void> 
   if (validateGodModeAuth(secret)) {
     activateElevatedSession(runtime);
   } else {
-    runtime.commandNotice = "Authentication failed";
+    runtime.actionNotice = "Authentication failed";
   }
 }

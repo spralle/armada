@@ -63,7 +63,7 @@ export interface ThemeHost {
   themeRegistry: ThemeRegistry | null;
 }
 
-export interface CommandHost {
+export interface ActionHost {
   actionSurface: ActionSurface;
   keybindingOverrideManager: KeybindingOverrideManager;
 }

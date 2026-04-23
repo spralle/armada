@@ -51,7 +51,7 @@ export {
   moveActiveTabToDirectionalGroup,
   resizeNearestSplitInDirection,
   swapActiveTabInDirection,
-} from "./dock-tree-commands.js";
+} from "./dock-tree-operations.js";
 
 export { createInitialShellContextState } from "./state.js";
 

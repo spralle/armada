@@ -148,7 +148,7 @@ function createRuntime(asyncBridge: TestAsyncBridge): ShellRuntime {
     pendingFocusSelector: null,
     actionSurface: {} as unknown as ShellRuntime["actionSurface"],
     intentRuntime: {} as unknown as ShellRuntime["intentRuntime"],
-    commandNotice: "",
+    actionNotice: "",
     partHost: null as unknown as ShellRuntime["partHost"],
     activeTransportPath: "async-scomp-adapter",
     activeTransportReason: "async-flag-enabled",

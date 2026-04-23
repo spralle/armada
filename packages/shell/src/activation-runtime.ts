@@ -1,5 +1,5 @@
 export type ActivationTrigger =
-  | { type: "command"; id: string }
+  | { type: "action"; id: string }
   | { type: "view"; id: string }
   | { type: "intent"; id: string };
 
@@ -105,8 +105,8 @@ export function createActivationRuntime(
 
 function toEventName(trigger: ActivationTrigger): string {
   switch (trigger.type) {
-    case "command":
-      return `onCommand:${trigger.id}`;
+    case "action":
+      return `onAction:${trigger.id}`;
     case "view":
       return `onView:${trigger.id}`;
     case "intent":

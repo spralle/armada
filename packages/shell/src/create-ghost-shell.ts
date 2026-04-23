@@ -31,7 +31,7 @@ import {
   createWorkspaceSwitchDeps,
   dismissIntentChooser,
   primeEnabledPluginActivations,
-  refreshCommandContributions,
+  refreshActionContributions,
   renderContextControlsPanel,
   renderParts,
   renderSyncStatus,
@@ -204,7 +204,7 @@ function buildBootstrapDeps(root: HTMLElement, runtime: ShellRuntime): ShellBoot
     primeEnabledPluginActivations: () => primeEnabledPluginActivations(root, runtime),
     publishWithDegrade: (event) =>
       publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime)),
-    refreshCommandContributions: () => refreshCommandContributions(runtime),
+    refreshActionContributions: () => refreshActionContributions(runtime),
     renderContextControlsPanel: () => renderContextControlsPanel(root, runtime),
     renderParts: () => renderParts(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),

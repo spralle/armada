@@ -87,7 +87,7 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
 
     assertEqual(result.prevented, true, "mapped shell keybinding should prevent browser default");
     assertEqual(runtime.contextState.tabs["tab-a"], undefined, "close action should remove active tab");
-    assertTruthy(runtime.commandNotice.includes("shell.view.close"), "command notice should reference handled action id");
+    assertTruthy(runtime.actionNotice.includes("shell.view.close"), "action notice should reference handled action id");
 
     dispose();
   });
@@ -114,8 +114,8 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
 
     assertEqual(result.prevented, false, "blocked activation should not consume key event");
     assertEqual(activationCalls, 1, "activation boundary should be consulted once");
-    assertTruthy(runtime.commandNotice.includes("blocked"), "blocked command should surface explicit notice");
-    assertTruthy(runtime.commandNotice.includes("com.ghost.shell.keybindings.default"), "blocked notice should use ghost keybinding plugin id");
+    assertTruthy(runtime.actionNotice.includes("blocked"), "blocked action should surface explicit notice");
+    assertTruthy(runtime.actionNotice.includes("com.ghost.shell.keybindings.default"), "blocked notice should use ghost keybinding plugin id");
   });
 
   test("keyboard handler resolves keybinding when target is not an HTMLElement (Bug B)", async () => {
@@ -135,7 +135,7 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
 
     assertEqual(result.prevented, true, "keybinding should resolve even with non-HTMLElement target");
     assertEqual(runtime.contextState.tabs["tab-a"], undefined, "close action should execute despite non-HTMLElement target");
-    assertTruthy(runtime.commandNotice.includes("shell.view.close"), "command notice should reference action for non-HTMLElement target");
+    assertTruthy(runtime.actionNotice.includes("shell.view.close"), "action notice should reference action for non-HTMLElement target");
   });
 
   test("keyboard handler does not preventDefault for unavailable shell actions (Bug C)", async () => {
@@ -161,12 +161,12 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
 
     assertEqual(result.prevented, false, "unavailable shell action should not consume keypress");
     assertTruthy(
-      runtime.commandNotice.includes("shell.window.mode.toggle"),
-      "command notice should reference the unavailable action",
+      runtime.actionNotice.includes("shell.window.mode.toggle"),
+      "action notice should reference the unavailable action",
     );
     assertTruthy(
-      runtime.commandNotice.includes("no-op"),
-      "command notice should indicate action is a no-op",
+      runtime.actionNotice.includes("no-op"),
+      "action notice should indicate action is a no-op",
     );
   });
 
@@ -201,7 +201,7 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
     const resultNew = await root.dispatch({ key: "x", altKey: true, shiftKey: true, target });
     assertEqual(resultNew.prevented, true, "new override chord should match after content change");
     assertTruthy(
-      runtime.commandNotice.includes("shell.view.close"),
+      runtime.actionNotice.includes("shell.view.close"),
       "new override chord should dispatch the remapped close action",
     );
   });
@@ -256,7 +256,7 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
 
     assertEqual(result.prevented, true, "workspace keybinding should be consumed");
     assertEqual(calls, 1, "workspace delete should execute runtime action handler");
-    assertTruthy(runtime.commandNotice.includes("shell.workspace.delete"), "command notice should reference workspace action");
+    assertTruthy(runtime.actionNotice.includes("shell.workspace.delete"), "action notice should reference workspace action");
 
     dispose();
   });
@@ -282,7 +282,7 @@ function createRuntimeFixture(): ShellRuntime {
     bridge: ({ publish: () => true } as unknown) as ShellRuntime["bridge"],
     activeIntentSession: null,
     closeableTabIds: new Set(["tab-a", "tab-b"]),
-    commandNotice: "",
+    actionNotice: "",
     contextPersistence: { save: () => ({ warning: null }) },
     contextState,
     hostWindowId: null,

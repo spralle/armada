@@ -37,7 +37,7 @@ export interface ShellBootstrapDeps {
   dismissIntentChooser: () => void;
   primeEnabledPluginActivations: () => Promise<void>;
   publishWithDegrade: (event: WindowBridgeEvent) => void;
-  refreshCommandContributions: () => void;
+  refreshActionContributions: () => void;
   summarizeSelectionPriorities: () => string;
   renderContextControlsPanel: () => void;
   renderParts: () => void;
@@ -185,7 +185,7 @@ function buildPanelDeps(
     ) => core.executeResolvedAction(match, intent),
     primeEnabledPluginActivations: () => deps.primeEnabledPluginActivations(),
     publishWithDegrade: (event: WindowBridgeEvent) => effects.publishWithDegrade(event),
-    refreshCommandContributions: () => deps.refreshCommandContributions(),
+    refreshActionContributions: () => deps.refreshActionContributions(),
     renderContextControlsPanel: () => effects.renderContextControlsPanel(),
     renderParts: () => effects.renderParts(),
     renderSyncStatus: () => effects.renderSyncStatus(),

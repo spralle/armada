@@ -34,7 +34,7 @@ export interface RuntimeRenderBindings {
   ) => Promise<void>;
   primeEnabledPluginActivations: () => Promise<void>;
   publishWithDegrade: (event: Parameters<BridgeHost["bridge"]["publish"]>[0]) => void;
-  refreshCommandContributions: () => void;
+  refreshActionContributions: () => void;
   renderContextControlsPanel: () => void;
   renderParts: () => void;
   renderSyncStatus: () => void;
@@ -92,7 +92,7 @@ export function initializeReactPanels(
   });
 
   panelsByRuntime.set(runtime, host);
-  bindings.refreshCommandContributions();
+  bindings.refreshActionContributions();
   renderPanels(root, runtime);
 }
 

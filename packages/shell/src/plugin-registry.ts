@@ -213,8 +213,8 @@ export function createShellPluginRegistry(
       transitionLifecycle(state, "registered", null);
       notifyListeners();
     },
-    async activateByCommand(pluginId, commandId) {
-      const result = await ensureActivated(pluginId, { type: "command", id: commandId });
+    async activateByAction(pluginId, actionId) {
+      const result = await ensureActivated(pluginId, { type: "action", id: actionId });
       notifyListeners();
       return result;
     },

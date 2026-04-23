@@ -6,7 +6,7 @@ import {
   moveActiveTabInDirection,
   swapActiveTabInDirection,
 } from "./dock-tree-window-actions.js";
-import { resizeNearestSplitInDirection } from "./dock-tree-commands.js";
+import { resizeNearestSplitInDirection } from "./dock-tree-operations.js";
 import { readDockSplitRatio } from "./dock-tree.js";
 import { setActiveTab } from "./tabs-groups.js";
 import type { DockNode, DockStackNode } from "./dock-tree-types.js";

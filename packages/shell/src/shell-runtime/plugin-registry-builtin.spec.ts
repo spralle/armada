@@ -28,7 +28,7 @@ export function registerPluginRegistryBuiltinSpecs(harness: SpecHarness): void {
     registry.registerManifestDescriptors("local", []);
     registry.registerBuiltinPlugin(createTestBuiltinContract());
 
-    const activated = await registry.activateByCommand("com.test.builtin", "test.action.one");
+    const activated = await registry.activateByAction("com.test.builtin", "test.action.one");
     assertEqual(activated, true, "builtin plugin should be activatable by command");
   });
 
@@ -40,7 +40,7 @@ export function registerPluginRegistryBuiltinSpecs(harness: SpecHarness): void {
     // Simulate tenant hydration — this calls states.clear() internally
     registry.registerManifestDescriptors("demo-tenant", []);
 
-    const activated = await registry.activateByCommand("com.test.builtin", "test.action.one");
+    const activated = await registry.activateByAction("com.test.builtin", "test.action.one");
     assertEqual(activated, true, "builtin plugin should survive registerManifestDescriptors clear");
   });
 
@@ -61,7 +61,7 @@ export function registerPluginRegistryBuiltinSpecs(harness: SpecHarness): void {
     const registry = createShellPluginRegistry();
     registry.registerManifestDescriptors("local", []);
 
-    const activated = await registry.activateByCommand("com.nonexistent.plugin", "some.action");
+    const activated = await registry.activateByAction("com.nonexistent.plugin", "some.action");
     assertEqual(activated, false, "unregistered plugin should not be activatable");
   });
 }

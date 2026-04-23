@@ -42,7 +42,7 @@ export function summarizeSelectionPriorities(runtime: ShellRuntime): string {
   return summarizeSelectionPrioritiesImpl(runtime);
 }
 
-export function refreshCommandContributions(runtime: ShellRuntime): void {
+export function refreshActionContributions(runtime: ShellRuntime): void {
   const contracts = runtime.registry
     .getSnapshot()
     .plugins
@@ -187,7 +187,7 @@ export async function primeEnabledPluginActivations(root: HTMLElement, runtime: 
   }
 
   await Promise.all(activations);
-  refreshCommandContributions(runtime);
+  refreshActionContributions(runtime);
   getShellBootstrap(runtime).renderPanels(root, runtime);
   renderParts(root, runtime);
 }
@@ -203,8 +203,8 @@ export async function activatePluginForBoundary(
 ): Promise<boolean> {
   try {
     const activated =
-      options.triggerType === "command"
-        ? await runtime.registry.activateByCommand(options.pluginId, options.triggerId)
+      options.triggerType === "action"
+        ? await runtime.registry.activateByAction(options.pluginId, options.triggerId)
         : options.triggerType === "intent"
           ? await runtime.registry.activateByIntent(options.pluginId, options.triggerId)
           : await runtime.registry.activateByView(options.pluginId, options.triggerId);
@@ -216,7 +216,7 @@ export async function activatePluginForBoundary(
     }
 
     runtime.notice = "";
-    refreshCommandContributions(runtime);
+    refreshActionContributions(runtime);
     getShellBootstrap(runtime).renderPanels(root, runtime);
     return true;
   } catch (error) {

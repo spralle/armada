@@ -25,7 +25,7 @@ export function createGhostApiDeps(
     getActionContext: () => toActionContext(runtime),
     getIntentRuntime: () => runtime.intentRuntime,
     activatePlugin: (pluginId, triggerId) =>
-      runtime.registry.activateByCommand(pluginId, triggerId),
+      runtime.registry.activateByAction(pluginId, triggerId),
     runtimeActionRegistry: runtime.runtimeActionRegistry,
 
     getWindowId: () => runtime.windowId,

@@ -283,7 +283,7 @@ function createRuntimeFixture(pluginRecords: MutablePluginRecord[]): ShellRuntim
     notice: "",
     pluginNotice: "",
     intentNotice: "",
-    commandNotice: "",
+    actionNotice: "",
     activeIntentSession: null,
     lastIntentTrace: null,
     pendingFocusSelector: null,

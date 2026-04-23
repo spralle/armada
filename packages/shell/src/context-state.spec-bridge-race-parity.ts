@@ -159,7 +159,7 @@ function createRuntimeForPath(path: "legacy-bridge" | "async-scomp-adapter"): Sh
     pendingFocusSelector: null,
     actionSurface: {} as unknown as ShellRuntime["actionSurface"],
     intentRuntime: {} as unknown as ShellRuntime["intentRuntime"],
-    commandNotice: "",
+    actionNotice: "",
     partHost: null as unknown as ShellRuntime["partHost"],
     activeTransportPath: path,
     activeTransportReason: path === "async-scomp-adapter" ? "async-flag-enabled" : "default-legacy",

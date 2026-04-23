@@ -7,7 +7,7 @@ import type {
 import type { ShellPartHostAdapter } from "../contracts.js";
 import type {
   BridgeHost,
-  CommandHost,
+  ActionHost,
   DndHost,
   IntentHost,
   LayoutHost,
@@ -31,7 +31,7 @@ export interface ShellRuntime extends
   BridgeHost,
   PluginHost,
   ThemeHost,
-  CommandHost,
+  ActionHost,
   IntentHost,
   DndHost,
   PersistenceHost,
@@ -48,7 +48,7 @@ export interface ShellRuntime extends
     fireDidChangeWorkspaces(): void;
     readonly onDidChangeWorkspaces: import("@ghost-shell/contracts").Event<void>;
   };
-  commandNotice: string;
+  actionNotice: string;
   partHost: ShellPartHostAdapter;
   pluginConfigSyncDispose: (() => void) | null;
   registrySubscriptionDispose: (() => void) | null;
