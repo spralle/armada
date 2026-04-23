@@ -17,7 +17,7 @@ import {
 import { updateContextState } from "../context/runtime-state.js";
 import { closeTabThroughRuntime } from "../ui/parts-controller.js";
 import { openPopout, requestPopoutFromHostShim } from "../ui/part-instance-popout-lifecycle.js";
-import type { ShellRuntime } from "../app/types.js";
+import type { StateHost, ShellRuntime } from "../app/types.js";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
 import { isShellKeyboardActionId, SHELL_UNAVAILABLE_ACTION_IDS, type ShellKeyboardActionId } from "./default-shell-keybindings.js";
 import { GOD_MODE_ACTION_ID, handleGodModeAction } from "./god-mode.js";
@@ -237,7 +237,7 @@ function dispatchShellKeyboardAction(
 
 function applyContextMutation(
   runtime: ShellRuntime,
-  result: { state: ShellRuntime["contextState"]; changed: boolean },
+  result: { state: StateHost["contextState"]; changed: boolean },
   actionId: string,
   unavailableReason: string,
 ): ShellKeyboardActionResult {

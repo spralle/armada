@@ -1,12 +1,12 @@
 import { applyPaneResize, type ShellLayoutState } from "../layout.js";
-import type { ShellRuntime } from "../app/types.js";
+import type { LayoutHost, PersistenceHost } from "../app/types.js";
 
 export function applyLayout(root: HTMLElement, layout: ShellLayoutState): void {
   root.style.setProperty("--side-size", `${Math.round(layout.sideSize * 100)}vw`);
   root.style.setProperty("--secondary-size", `${Math.round(layout.secondarySize * 100)}%`);
 }
 
-export function setupResize(root: HTMLElement, runtime: ShellRuntime): () => void {
+export function setupResize(root: HTMLElement, runtime: LayoutHost & PersistenceHost): () => void {
   const sideSplitter = root.querySelector<HTMLElement>("#splitter-side");
   const secondarySplitter = root.querySelector<HTMLElement>("#splitter-secondary");
   const disposers: Array<() => void> = [];

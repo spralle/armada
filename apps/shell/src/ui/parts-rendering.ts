@@ -1,5 +1,5 @@
 import { composeEnabledPluginContributions } from "@ghost-shell/contracts";
-import type { ShellRuntime } from "../app/types.js";
+import type { PluginHost, ShellRuntime } from "../app/types.js";
 import { escapeHtml } from "../app/utils.js";
 import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
@@ -30,7 +30,7 @@ export interface ComposedPartDefinition {
 export type PartSlot = ComposedShellPart["slot"];
 
 export function composePartDefinitionsFromRegistrySnapshot(
-  snapshot: ReturnType<ShellRuntime["registry"]["getSnapshot"]>,
+  snapshot: ReturnType<PluginHost["registry"]["getSnapshot"]>,
 ): ComposedPartDefinition[] {
   const composed = composeEnabledPluginContributions(
     snapshot.plugins.map((plugin) => ({

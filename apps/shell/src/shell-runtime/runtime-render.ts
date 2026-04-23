@@ -7,7 +7,7 @@ import {
   writeGroupSelectionContext,
 } from "../context/runtime-state.js";
 import { getTabGroupId } from "../context-state.js";
-import type { ShellRuntime } from "../app/types.js";
+import type { BridgeHost, ShellRuntime } from "../app/types.js";
 import { buildGroupContextSyncEvent } from "../sync/bridge-payloads.js";
 import { createReactPanelsHost } from "../ui/react/panels-host.js";
 import { getVisibleComposedParts } from "../ui/parts-rendering.js";
@@ -33,7 +33,7 @@ export interface RuntimeRenderBindings {
     intent: import("../intent-runtime.js").ShellIntent | null,
   ) => Promise<void>;
   primeEnabledPluginActivations: () => Promise<void>;
-  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => void;
+  publishWithDegrade: (event: Parameters<BridgeHost["bridge"]["publish"]>[0]) => void;
   refreshCommandContributions: () => void;
   renderContextControlsPanel: () => void;
   renderParts: () => void;

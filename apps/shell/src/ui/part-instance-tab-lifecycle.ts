@@ -10,7 +10,7 @@ import {
   getTabCloseability,
   type ContextTabSlot,
 } from "../context-state.js";
-import type { ShellRuntime } from "../app/types.js";
+import type { BridgeHost, ShellRuntime } from "../app/types.js";
 import type { SelectionSyncEvent } from "../window-bridge.js";
 import { buildSelectionSyncEvent } from "../sync/bridge-payloads.js";
 import { resolvePartTitle } from "./parts-rendering.js";
@@ -24,7 +24,7 @@ import { applySelectionForTab } from "./part-instance-tab-lifecycle-selection-ef
 
 export type PartLifecycleDeps = {
   applySelection: (event: SelectionSyncEvent) => void;
-  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => void;
+  publishWithDegrade: (event: Parameters<BridgeHost["bridge"]["publish"]>[0]) => void;
   renderContextControls: () => void;
   renderParts: () => void;
   renderSyncStatus: () => void;

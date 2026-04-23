@@ -2,7 +2,7 @@ import type {
   PluginLayerSurfaceContribution,
   LayerSurfaceContext,
 } from "@ghost-shell/contracts";
-import type { ShellRuntime } from "../app/types.js";
+import type { PluginHost, ShellRuntime } from "../app/types.js";
 import { type MountCleanup, toRecord } from "../federation-mount-utils.js";
 
 // ---------------------------------------------------------------------------
@@ -78,7 +78,7 @@ export function composeSurfaceKey(pluginId: string, surfaceId: string): string {
 export function createSurfaceMountKey(
   pluginId: string,
   surface: PluginLayerSurfaceContribution,
-  runtime: ShellRuntime,
+  runtime: PluginHost,
   pluginSnapshotMap?: Map<string, { enabled: boolean; lifecycle?: { state: string } }>,
 ): string {
   const pluginSnapshot = pluginSnapshotMap

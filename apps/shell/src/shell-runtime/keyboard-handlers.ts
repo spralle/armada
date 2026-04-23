@@ -12,7 +12,7 @@ import {
   reopenMostRecentlyClosedTabThroughRuntime,
 } from "../ui/parts-controller.js";
 import { handleShellKeyboardAction } from "./shell-keyboard-actions.js";
-import type { ShellRuntime } from "../app/types.js";
+import type { BridgeHost, ShellRuntime } from "../app/types.js";
 import type { IntentActionMatch, ShellIntent } from "../intent-runtime.js";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
 import type { NormalizedKeybindingChord } from "./keybinding-normalizer.js";
@@ -29,7 +29,7 @@ export interface KeyboardBindings {
   dismissIntentChooser: () => void;
   executeResolvedAction: (match: IntentActionMatch, intent: ShellIntent | null) => Promise<void>;
   applySelection: (event: import("../window-bridge.js").SelectionSyncEvent) => void;
-  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => void;
+  publishWithDegrade: (event: Parameters<BridgeHost["bridge"]["publish"]>[0]) => void;
   renderContextControls: () => void;
   renderEdgeSlots: () => void;
   renderParts: () => void;

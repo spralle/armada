@@ -1,6 +1,6 @@
 import { formatDegradedModeAnnouncement } from "../keyboard-a11y.js";
 import type { SyncAckEvent, SyncProbeEvent, WindowBridge } from "../window-bridge.js";
-import type { ShellRuntime } from "../app/types.js";
+import type { BridgeHost, DndHost } from "../app/types.js";
 import {
   normalizeBridgePublishRejectionReason,
   type AsyncWindowBridgeHealth,
@@ -14,7 +14,7 @@ export interface BridgeRenderBindings {
   renderContextControls: () => void;
 }
 
-export function getBridgeWarningMessage(runtime: ShellRuntime): string | null {
+export function getBridgeWarningMessage(runtime: BridgeHost & DndHost): string | null {
   if (!runtime.syncDegraded && runtime.bridge.available && runtime.dragSessionBroker.available) {
     return null;
   }
@@ -27,7 +27,7 @@ export function getBridgeWarningMessage(runtime: ShellRuntime): string | null {
 }
 
 export function publishWithDegrade(
-  runtime: ShellRuntime,
+  runtime: BridgeHost,
   event: Parameters<WindowBridge["publish"]>[0],
   bindings: BridgeRenderBindings,
 ): boolean {
@@ -44,7 +44,7 @@ export function publishWithDegrade(
   });
 }
 
-export function requestSyncProbe(runtime: ShellRuntime, bindings: BridgeRenderBindings, createWindowId: () => string): void {
+export function requestSyncProbe(runtime: BridgeHost, bindings: BridgeRenderBindings, createWindowId: () => string): void {
   if (!runtime.bridge.available && runtime.activeTransportPath !== "async-scomp-adapter") {
     return;
   }
@@ -64,7 +64,7 @@ export function requestSyncProbe(runtime: ShellRuntime, bindings: BridgeRenderBi
   });
 }
 
-export function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent, bindings: BridgeRenderBindings): void {
+export function handleSyncProbe(runtime: BridgeHost, event: SyncProbeEvent, bindings: BridgeRenderBindings): void {
   if (runtime.syncDegraded) {
     return;
   }
@@ -80,7 +80,7 @@ export function handleSyncProbe(runtime: ShellRuntime, event: SyncProbeEvent, bi
 }
 
 function publishBridgeEvent(
-  runtime: ShellRuntime,
+  runtime: BridgeHost,
   event: Parameters<WindowBridge["publish"]>[0],
   options?: {
     onRejected?: (reason: AsyncWindowBridgeRejectReason) => void;
@@ -115,7 +115,7 @@ function publishBridgeEvent(
 }
 
 export function handleSyncAck(
-  runtime: ShellRuntime,
+  runtime: BridgeHost,
   event: SyncAckEvent,
   bindings: BridgeRenderBindings,
 ): boolean {
@@ -145,7 +145,7 @@ export function handleSyncAck(
 }
 
 export function handleBridgeHealth(
-  runtime: ShellRuntime,
+  runtime: BridgeHost,
   health: AsyncWindowBridgeHealth,
   bindings: BridgeRenderBindings,
   requestProbe: () => void,
@@ -168,7 +168,7 @@ export function handleBridgeHealth(
 }
 
 function enterDegradedMode(
-  runtime: ShellRuntime,
+  runtime: BridgeHost,
   reason: AsyncWindowBridgeRejectReason,
   bindings: BridgeRenderBindings,
   state: "degraded" | "unavailable" = reason === "unavailable" ? "unavailable" : "degraded",
@@ -195,7 +195,7 @@ function enterDegradedMode(
 }
 
 function leaveDegradedMode(
-  runtime: ShellRuntime,
+  runtime: BridgeHost,
   bindings: BridgeRenderBindings,
 ): void {
   const changed =

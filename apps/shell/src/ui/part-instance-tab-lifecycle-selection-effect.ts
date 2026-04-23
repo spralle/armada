@@ -2,13 +2,13 @@ import {
   createRevision,
   writeGlobalSelectionLane,
 } from "../context/runtime-state.js";
-import type { ShellRuntime } from "../app/types.js";
+import type { BridgeHost, ShellRuntime } from "../app/types.js";
 import { buildSelectionSyncEvent } from "../sync/bridge-payloads.js";
 import { buildSelectionByEntityType } from "./parts-controller-selection-transition.js";
 
 export interface SelectionEffectDeps {
   applySelection: (event: import("../window-bridge.js").SelectionSyncEvent) => void;
-  publishWithDegrade: (event: Parameters<ShellRuntime["bridge"]["publish"]>[0]) => void;
+  publishWithDegrade: (event: Parameters<BridgeHost["bridge"]["publish"]>[0]) => void;
 }
 
 export function applySelectionForTab(runtime: ShellRuntime, tabId: string, tabTitle: string, deps: SelectionEffectDeps): void {

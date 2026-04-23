@@ -1,4 +1,4 @@
-import type { ShellRuntime } from "./app/types.js";
+import type { PluginHost, ShellRuntime } from "./app/types.js";
 import {
   createShellFederationRuntime,
   type ShellFederationRuntime,
@@ -134,7 +134,7 @@ interface MountPartOptions {
   mountKey: string;
   mounted: Map<string, PartModuleHostEntry>;
   part: ComposedShellPart;
-  pluginSnapshot: ReturnType<ShellRuntime["registry"]["getSnapshot"]>["plugins"][number] | undefined;
+  pluginSnapshot: ReturnType<PluginHost["registry"]["getSnapshot"]>["plugins"][number] | undefined;
   registeredRemoteIds: Set<string>;
   runtime: ShellRuntime;
   target: HTMLElement;
@@ -205,7 +205,7 @@ async function mountPart(options: MountPartOptions): Promise<void> {
 
 function createPartMountKey(
   part: ComposedShellPart,
-  pluginSnapshot: ReturnType<ShellRuntime["registry"]["getSnapshot"]>["plugins"][number] | undefined,
+  pluginSnapshot: ReturnType<PluginHost["registry"]["getSnapshot"]>["plugins"][number] | undefined,
 ): string {
   if (!pluginSnapshot) {
     return `${part.pluginId}|missing`;

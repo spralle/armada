@@ -6,7 +6,7 @@ import {
   KeyboardInteractivity,
 } from "@ghost-shell/contracts";
 import type { LayerRegistry } from "./registry.js";
-import type { ShellRuntime } from "../app/types.js";
+import type { PluginHost, ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";
 import {
   normalizeCleanup,
@@ -31,7 +31,7 @@ import type { FocusGrabManager } from "./focus-grab.js";
 // ---------------------------------------------------------------------------
 
 /** Single plugin entry from the registry snapshot. */
-type PluginSnapshotEntry = ReturnType<ShellRuntime["registry"]["getSnapshot"]>["plugins"][number];
+type PluginSnapshotEntry = ReturnType<PluginHost["registry"]["getSnapshot"]>["plugins"][number];
 
 export interface ReconcilerContext {
   mounted: Map<string, SurfaceMountState>;
