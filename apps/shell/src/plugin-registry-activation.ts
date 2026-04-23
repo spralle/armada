@@ -1,4 +1,5 @@
 import { evaluateShellPluginCompatibility } from "@ghost/plugin-contracts";
+import type { PluginServices } from "@ghost/plugin-contracts";
 import type { CapabilityRegistry } from "./capability-registry.js";
 import {
   createActivationContext,
@@ -26,6 +27,7 @@ export function createActivationController(
   capabilityRegistry: CapabilityRegistry,
   apiDeps?: GhostApiFactoryDependencies,
   layerRegistry?: LayerRegistry | null,
+  pluginServices?: PluginServices | null,
 ): (pluginId: string, trigger: PluginActivationTrigger) => Promise<boolean> {
   return async (pluginId, trigger) => {
     const state = states.get(pluginId);
@@ -70,6 +72,7 @@ export function createActivationController(
       capabilityRegistry,
       apiDeps,
       layerRegistry ?? null,
+      pluginServices,
     );
     await state.activationPromise;
     return state.contract !== null && state.lifecycle.state === "active";
@@ -85,6 +88,7 @@ async function activateState(
   capabilityRegistry: CapabilityRegistry,
   apiDeps?: GhostApiFactoryDependencies,
   layerRegistry?: LayerRegistry | null,
+  pluginServices?: PluginServices | null,
 ): Promise<void> {
   state.failure = null;
   transitionLifecycle(state, "activating", trigger);
@@ -158,7 +162,7 @@ async function activateState(
     // Call the plugin's activate() lifecycle hook if present
     if (state.activate && apiDeps) {
       const ghostApiInstance = createGhostApi(apiDeps);
-      const ctx = createActivationContext(pluginId);
+      const ctx = createActivationContext(pluginId, pluginServices ?? undefined);
 
       try {
         await state.activate(ghostApiInstance.api, ctx);

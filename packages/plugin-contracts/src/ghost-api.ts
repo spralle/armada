@@ -1,5 +1,6 @@
 import type { Disposable } from "./disposable.js";
 import type { Event } from "./event.js";
+import type { PluginServices } from "./plugin-services.js";
 import type { WorkspaceService } from "./workspace-service.js";
 
 // ─── GhostApi (top-level namespace) ───
@@ -203,6 +204,8 @@ export interface ActivationContext {
   readonly subscriptions: Disposable[];
   /** The ID of the plugin being activated. */
   readonly pluginId: string;
+  /** Optional service accessor — available when the shell provides services. */
+  readonly services?: PluginServices;
 }
 
 // ─── DeactivationContext ───

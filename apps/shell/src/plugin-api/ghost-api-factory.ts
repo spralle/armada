@@ -2,6 +2,7 @@ import type {
   ActivationContext,
   Disposable,
   GhostApi,
+  PluginServices,
 } from "@ghost/plugin-contracts";
 import {
   createActionService,
@@ -65,7 +66,9 @@ export function createGhostApi(deps: GhostApiFactoryDependencies): GhostApiInsta
  * Create an ActivationContext for a plugin.
  * The subscriptions array collects Disposables that are auto-disposed on deactivation.
  */
-export function createActivationContext(pluginId: string): ActivationContext {
+export function createActivationContext(pluginId: string, services?: PluginServices): ActivationContext {
   const subscriptions: Disposable[] = [];
-  return { pluginId, subscriptions };
+  return services
+    ? { pluginId, subscriptions, services }
+    : { pluginId, subscriptions };
 }

@@ -188,6 +188,9 @@ export { THEME_SERVICE_ID } from "./theme-service.js";
 
 export type { PluginServices, PluginMountContext } from "./plugin-services.js";
 
+export type { HookService, TransitionContext, ElementTransitionHook } from "./hooks.js";
+export { HOOK_REGISTRY_SERVICE_ID, ELEMENT_TRANSITION_HOOK_ID } from "./hooks.js";
+
 export type {
   JsonFormSchema,
   JsonFormLayoutNode,

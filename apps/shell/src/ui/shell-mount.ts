@@ -32,7 +32,7 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     #layer-host { position: relative; width: 100%; height: 100%; }
     .shell-layer { position: absolute; inset: 0; pointer-events: none; isolation: isolate; }
     .shell-layer[data-layer="main"] { pointer-events: auto; top: var(--exclusive-top, 0px); right: var(--exclusive-right, 0px); bottom: var(--exclusive-bottom, 0px); left: var(--exclusive-left, 0px); }
-    .shell-layer .layer-surface { pointer-events: auto; transition: opacity 200ms ease, transform 200ms ease; }
+    .shell-layer .layer-surface { pointer-events: auto; }
     .shell { display: grid; grid-template-areas: 'top top top' 'left main right' 'bottom bottom bottom'; grid-template-rows: auto 1fr auto; grid-template-columns: auto 1fr auto; width: 100%; height: 100%; overflow: hidden; }
     .edge-slot { display: flex; overflow: hidden; }
     .edge-slot-top { grid-area: top; flex-direction: row; min-height: var(--ghost-edge-top-min-height, 36px); background: var(--ghost-edge-top); color: var(--ghost-edge-top-foreground); border-bottom: 1px solid var(--ghost-edge-top-border); padding: 0 8px; align-items: center; }

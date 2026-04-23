@@ -46,6 +46,10 @@ export interface ReconcilerContext {
   maybeActivateSurfaceBehaviors(key: string, target: HTMLElement, surface: PluginLayerSurfaceContribution): void;
   onSurfaceMounted?: (surfaceId: string, pluginId: string) => void;
   onSurfaceMountError?: (surfaceId: string, pluginId: string, error: unknown) => void;
+  /** Called when a surface element enters the DOM. Fires enter hooks. */
+  onSurfaceEntering?: (el: HTMLElement, surfaceId: string, pluginId: string) => void;
+  /** Called before a surface element exits the DOM. Returns a promise that resolves when exit animations complete. */
+  onSurfaceExiting?: (el: HTMLElement, surfaceId: string, pluginId: string) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,14 +108,23 @@ function removeStaleChildren(
 ): void {
   for (const child of Array.from(container.children) as HTMLElement[]) {
     const surfaceId = child.dataset.surfaceId;
-    if (surfaceId && !desiredIds.has(surfaceId)) {
+    if (surfaceId && !desiredIds.has(surfaceId) && !child.hasAttribute("data-exiting")) {
       const state = ctx.mounted.get(surfaceId);
       if (state) {
         ctx.cleanupSurfaceBehaviors(surfaceId);
         safeUnmount(state.cleanup);
         ctx.mounted.delete(surfaceId);
       }
-      child.remove();
+
+      if (ctx.onSurfaceExiting) {
+        child.setAttribute("data-exiting", "");
+        child.style.pointerEvents = "none";
+        void ctx.onSurfaceExiting(child, surfaceId, state?.pluginId ?? "").then(() => {
+          child.remove();
+        });
+      } else {
+        child.remove();
+      }
     }
   }
 }
@@ -232,6 +245,7 @@ async function mountBuiltIn(
     ctx.mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
     ctx.maybeActivateSurfaceBehaviors(key, target, surface);
     ctx.onSurfaceMounted?.(key, pluginId);
+    ctx.onSurfaceEntering?.(target, key, pluginId);
   } catch (err) {
     console.warn(`[shell] Built-in surface mount failed for "${key}":`, err);
     ctx.onSurfaceMountError?.(key, pluginId, err);
@@ -281,6 +295,7 @@ async function mountViaFederation(
     ctx.mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
     ctx.maybeActivateSurfaceBehaviors(key, target, surface);
     ctx.onSurfaceMounted?.(key, pluginId);
+    ctx.onSurfaceEntering?.(target, key, pluginId);
   } catch (err) {
     console.warn(`[shell] Federation surface mount failed for "${key}" (plugin: ${pluginId}):`, err);
     ctx.onSurfaceMountError?.(key, pluginId, err);

@@ -1,4 +1,4 @@
-import type { PluginContract } from "@ghost/plugin-contracts";
+import type { PluginContract, PluginServices } from "@ghost/plugin-contracts";
 import {
   createCapabilityRegistry,
   pickComponentModuleExport,
@@ -24,6 +24,38 @@ import type {
   ShellPluginRegistry,
   ShellPluginRegistryOptions,
 } from "./plugin-registry-types.js";
+
+import type {
+  CapabilityRegistry,
+} from "./capability-registry.js";
+
+function resolveServiceFromRegistry<T = unknown>(
+  serviceId: string,
+  capabilityRegistry: CapabilityRegistry,
+  states: Map<string, PluginRuntimeState>,
+): T | null {
+  const provider = capabilityRegistry.resolveService(serviceId, {
+    requesterPluginId: "shell",
+  });
+  if (!provider) return null;
+
+  const state = states.get(provider.providerPluginId);
+  if (!state) return null;
+
+  if (state.builtinServiceInstances?.has(serviceId)) {
+    return (state.builtinServiceInstances.get(serviceId) as T) ?? null;
+  }
+
+  if (state.servicesModule && state.contract) {
+    const providerServices = readCapabilityServices(state.contract);
+    const cap = providerServices.find(s => s.id === serviceId);
+    if (cap) {
+      return (pickServiceModuleExport(state.servicesModule, cap) as T) ?? null;
+    }
+  }
+
+  return null;
+}
 
 export type {
   PluginActivationTrigger,
@@ -55,6 +87,16 @@ export function createShellPluginRegistry(
       contract: state.contract,
     })),
   );
+  // Lazy service accessor for activation contexts — closes over capabilityRegistry
+  // and states which are available. Safe because plugins activate after construction.
+  const activationServices: PluginServices = {
+    getService<T = unknown>(serviceId: string): T | null {
+      return resolveServiceFromRegistry<T>(serviceId, capabilityRegistry, states);
+    },
+    hasService(serviceId: string): boolean {
+      return resolveServiceFromRegistry(serviceId, capabilityRegistry, states) !== null;
+    },
+  };
   const ensureActivated = createActivationController(
     states,
     diagnostics,
@@ -62,6 +104,7 @@ export function createShellPluginRegistry(
     capabilityRegistry,
     options.apiDeps,
     options.layerRegistry ?? null,
+    activationServices,
   );
   const listeners = new Set<() => void>();
 
@@ -329,29 +372,7 @@ export function createShellPluginRegistry(
       return resolved;
     },
     getService<T = unknown>(serviceId: string): T | null {
-      const provider = capabilityRegistry.resolveService(serviceId, {
-        requesterPluginId: "shell",
-      });
-      if (!provider) return null;
-
-      const state = states.get(provider.providerPluginId);
-      if (!state) return null;
-
-      // Check builtin instances first
-      if (state.builtinServiceInstances?.has(serviceId)) {
-        return (state.builtinServiceInstances.get(serviceId) as T) ?? null;
-      }
-
-      // Check already-loaded services module
-      if (state.servicesModule && state.contract) {
-        const providerServices = readCapabilityServices(state.contract);
-        const cap = providerServices.find(s => s.id === serviceId);
-        if (cap) {
-          return (pickServiceModuleExport(state.servicesModule, cap) as T) ?? null;
-        }
-      }
-
-      return null;
+      return resolveServiceFromRegistry<T>(serviceId, capabilityRegistry, states);
     },
     hasService(serviceId: string): boolean {
       return this.getService(serviceId) !== null;
