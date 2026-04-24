@@ -19,15 +19,28 @@ import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export const CONFIG_SERVICE_PLUGIN_ID = "ghost.shell.config-service";
 
-// @weaver/config-providers removed — stub throws so shell fallback path runs
-function createScopedConfigurationService(..._args: unknown[]): never {
-  throw new Error("@weaver/config-providers is not available");
+/** @deprecated Stub — @weaver/config-providers was removed. Returns a passthrough proxy. */
+function createScopedConfigurationService(
+  configService: ConfigurationService,
+  _namespace: string,
+): ConfigurationService {
+  if (!createScopedConfigurationService._warned) {
+    console.warn("[config-service] createScopedConfigurationService is a no-op stub (@weaver/config-providers removed)");
+    createScopedConfigurationService._warned = true;
+  }
+  return configService;
 }
+createScopedConfigurationService._warned = false;
 
-// @weaver/config-engine removed — stub throws so shell fallback path runs
-function deriveNamespace(..._args: unknown[]): never {
-  throw new Error("@weaver/config-engine is not available");
+/** @deprecated Stub — @weaver/config-engine was removed. Returns the pluginId as-is. */
+function deriveNamespace(pluginId: string): string {
+  if (!deriveNamespace._warned) {
+    console.warn("[config-service] deriveNamespace is a no-op stub (@weaver/config-engine removed)");
+    deriveNamespace._warned = true;
+  }
+  return pluginId;
 }
+deriveNamespace._warned = false;
 
 // ---------------------------------------------------------------------------
 // Registration
@@ -71,7 +84,7 @@ export function registerConfigurationServiceCapability(
 export function createScopedServiceForPlugin(
   configService: ConfigurationService,
   pluginId: string,
-): ReturnType<typeof createScopedConfigurationService> {
+): ConfigurationService {
   const namespace = deriveNamespace(pluginId);
   return createScopedConfigurationService(configService, namespace);
 }

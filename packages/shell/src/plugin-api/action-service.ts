@@ -32,7 +32,7 @@ export interface ActionServiceDependencies {
 
 /**
  * ActionService with an exposed emitter for shell-side wiring.
- * The shell calls fireChanged() when refreshCommandContributions() runs.
+ * The shell calls fireChanged() when refreshActionContributions() runs.
  */
 export interface ActionServiceWithEmitter {
   readonly service: ActionService;

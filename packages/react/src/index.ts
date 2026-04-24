@@ -13,3 +13,12 @@ export {
 } from "./hooks.js";
 
 export { createReactPartRenderer } from "./react-part-renderer.js";
+
+// Re-export React parts detection — canonical import path for React module detection
+export {
+  REACT_PARTS_SYMBOL,
+  isReactPartsModule,
+  containsReactParts,
+  findReactPartsModule,
+} from "@ghost-shell/contracts/parts";
+export type { ReactPartsModule } from "@ghost-shell/contracts/parts";

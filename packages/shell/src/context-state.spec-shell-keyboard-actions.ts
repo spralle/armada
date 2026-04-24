@@ -165,7 +165,7 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
     const target = ensureDomElement();
 
     await root.dispatchKey({ key: "m", altKey: true, shiftKey: true, target });
-    assertTruthy(runtime.commandNotice.includes("no-op"), "mode toggle shortcut should report explicit no-op notice");
+    assertTruthy(runtime.actionNotice.includes("no-op"), "mode toggle shortcut should report explicit no-op notice");
 
     await root.dispatchKey({ key: "q", altKey: true, shiftKey: true, target });
     assertEqual(runtime.contextState.tabs["tab-a"], undefined, "close shortcut should close active tab");
@@ -189,8 +189,8 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
     await root.dispatchKey({ key: "f", altKey: true, shiftKey: true, target });
 
     assertEqual(runtime.contextState.activeTabId, activeBefore, "fullscreen toggle should not change active tab");
-    assertTruthy(runtime.commandNotice.includes("shell.window.fullscreen.toggle"), "fullscreen toggle should be referenced in command notice");
-    assertTruthy(!runtime.commandNotice.includes("action unavailable"), "fullscreen toggle should not report generic unavailable");
+    assertTruthy(runtime.actionNotice.includes("shell.window.fullscreen.toggle"), "fullscreen toggle should be referenced in action notice");
+    assertTruthy(!runtime.actionNotice.includes("action unavailable"), "fullscreen toggle should not report generic unavailable");
 
     dispose();
   });
@@ -280,7 +280,7 @@ function createKeyboardRuntimeFixture(): ShellRuntime {
     bridge: ({ publish: () => true } as unknown) as ShellRuntime["bridge"],
     activeIntentSession: null,
     closeableTabIds: new Set(["tab-a", "tab-b", "tab-c", "tab-d"]),
-    commandNotice: "",
+    actionNotice: "",
     contextPersistence: {
       save() {
         return { warning: null };

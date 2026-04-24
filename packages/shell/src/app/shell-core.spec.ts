@@ -27,7 +27,7 @@ function createTestRuntime(): ShellRuntime {
     notice: "",
     pluginNotice: "",
     intentNotice: "",
-    commandNotice: "",
+    actionNotice: "",
     activeIntentSession: null,
     lastIntentTrace: null,
     contextState: createInitialShellContextState({
@@ -52,7 +52,7 @@ function createTestHandlers(runtime: ShellRuntime): RuntimeEventHandlers {
       runtime.intentNotice = `intent:${intent.type}`;
     },
     executeResolvedAction: async (match) => {
-      runtime.commandNotice = `executed:${match.title}`;
+      runtime.actionNotice = `executed:${match.title}`;
     },
   };
 }
@@ -92,13 +92,13 @@ test("shell core returns snapshot and notifies subscribers", async () => {
     handler: "open",
     intentType: "open-order",
     when: {},
-    loadMode: "eager",
+    loadStrategy: "eager",
     registrationOrder: 0,
     sortKey: "demo.plugin::open::open::0",
   }, null);
 
   const afterExecute = core.getSnapshot();
-  assertEqual(afterExecute.commandNotice, "executed:Open", "snapshot should reflect executed action");
+  assertEqual(afterExecute.actionNotice, "executed:Open", "snapshot should reflect executed action");
 
   unsubscribe();
   core.applySelection({

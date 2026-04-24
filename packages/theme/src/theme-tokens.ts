@@ -2,7 +2,7 @@
 // Derives the default dark palette from plugin-contracts and provides
 // injection/removal functions for applying theme variables to the DOM.
 
-import type { FullThemePalette, PartialThemePalette } from "@ghost-shell/contracts";
+import type { FullThemePalette, PartialThemePalette } from "@ghost-shell/contracts/theme";
 import { deriveFullPalette } from "./derive-palette.js";
 import { GHOST_THEME_CSS_VARS } from "./css-vars.js";
 

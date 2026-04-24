@@ -1,4 +1,5 @@
-import { REACT_PARTS_SYMBOL, type ReactPartsModule, type ExtractPartIds } from "@ghost-shell/contracts";
+import { REACT_PARTS_SYMBOL, type ReactPartsModule } from "@ghost-shell/contracts/parts";
+import type { ExtractPartIds } from "@ghost-shell/contracts/plugin";
 import type { ComponentType } from "react";
 
 /**

@@ -1,4 +1,4 @@
-import type { FocusGrabConfig, LayerSurfaceContext } from "@ghost-shell/contracts";
+import type { FocusGrabConfig, LayerSurfaceContext } from "@ghost-shell/contracts/layer";
 import type { LayerRegistry } from "./registry.js";
 import type { FocusGrabManager } from "./focus-grab.js";
 import { setDynamicOpacity } from "./visual-effects.js";

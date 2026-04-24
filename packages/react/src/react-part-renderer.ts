@@ -1,13 +1,12 @@
 import type {
-  ContextApi,
-  ContextProviderSource,
   PartRenderer,
   PartRenderContext,
   PartRenderHandle,
-  PluginMountContext,
   ReactPartsModule,
-} from "@ghost-shell/contracts";
-import { isReactPartsModule, findReactPartsModule } from "@ghost-shell/contracts";
+} from "@ghost-shell/contracts/parts";
+import { isReactPartsModule, findReactPartsModule } from "@ghost-shell/contracts/parts";
+import type { PluginMountContext } from "@ghost-shell/contracts/plugin";
+import type { ContextApi, ContextProviderSource } from "@ghost-shell/contracts/context";
 import { createElement, type ComponentType, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { GhostContext, type GhostContextValue } from "./ghost-context.js";

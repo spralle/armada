@@ -18,7 +18,7 @@ export interface ShellCoreSnapshot {
   notice: string;
   pluginNotice: string;
   intentNotice: string;
-  commandNotice: string;
+  actionNotice: string;
   activeIntentSession: IntentSession | null;
   lastIntentTrace: IntentResolutionTrace | null;
   tabMetadata: RenderTabMetadata[];

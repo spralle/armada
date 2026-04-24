@@ -2,21 +2,12 @@ import type { PluginContract } from "@ghost-shell/contracts";
 import { createShellPluginRegistry } from "../plugin-registry.js";
 import { activateByStartupEvent } from "../plugin-registry-activation.js";
 import { createThemeRegistry } from "../theme-registry.js";
-import type { ThemeRegistry } from "../theme-registry.js";
 import { readUserThemePreference } from "@ghost-shell/theme";
 import {
   activatePreferredThemePlugin,
   DEFAULT_THEME_PLUGIN_ID,
 } from "../theme-activation.js";
-import { registerThemeServiceCapability } from "../theme-service-registration.js";
-import { registerPluginRegistryServiceCapability } from "../plugin-registry-service-registration.js";
-import { registerPluginManagementServiceCapability } from "../plugin-management-service-registration.js";
-import { registerConfigurationServiceCapability } from "../config-service-registration.js";
-import { registerSyncStatusServiceCapability } from "../sync-status-service-registration.js";
-import { registerActivityStatusServiceCapability } from "../activity-status-service-registration.js";
-import { registerContextServiceCapability } from "../context-service-registration.js";
-import { registerKeybindingServiceCapability } from "../keybinding-service-registration.js";
-import { registerHookRegistryCapability } from "../hook-registry-registration.js";
+import { registerBuiltinServices } from "../builtin-service-descriptors.js";
 import {
   createPluginConfigSyncController,
   deriveNamespace,
@@ -86,7 +77,6 @@ export async function bootstrapShellWithTenantManifest(
 
   let disposePluginConfigSync: (() => void) | null = null;
   if (options.configurationService) {
-    registerConfigurationServiceCapability(registry, options.configurationService);
     const pluginConfigSyncController = createPluginConfigSyncController({
       registry,
       configurationService: options.configurationService,
@@ -110,36 +100,26 @@ export async function bootstrapShellWithTenantManifest(
   const preferredPluginId = themePref?.pluginId || undefined;
   await activatePreferredThemePlugin(registry, preferredPluginId, DEFAULT_THEME_PLUGIN_ID);
 
-  // Initialize theme registry and register the ThemeService builtin so that
-  // plugins depending on ghost.theme.Service pass dependency validation.
+  // Initialize theme registry before builtin service registration so that
+  // the ThemeService adapter can bridge to it.
   const themeRegistry = createThemeRegistry({
     pluginRegistry: registry,
     tenantDefaultThemeId: options.defaultThemeId,
   });
   themeRegistry.discoverThemes();
   themeRegistry.applyInitialTheme();
-  registerThemeServiceCapability(registry, themeRegistry);
-  registerPluginRegistryServiceCapability(registry, {
+
+  // Register all builtin services (config, theme, plugin-registry,
+  // plugin-management, activity-status, sync-status, context, keybinding,
+  // hook-registry) in a single declarative pass.
+  registerBuiltinServices({
     registry,
-    getPluginNotice: () => "",
+    themeRegistry,
+    configurationService: options.configurationService,
+    syncStatusDeps: options.syncStatusDeps,
+    contextServiceDeps: options.contextServiceDeps,
+    keybindingServiceDeps: options.keybindingServiceDeps,
   });
-  registerPluginManagementServiceCapability(registry);
-
-  // Register remaining builtin services before plugin activation so that
-  // plugins depending on these services never see null.
-  registerActivityStatusServiceCapability(registry);
-  if (options.syncStatusDeps) {
-    registerSyncStatusServiceCapability(registry, options.syncStatusDeps);
-  }
-  if (options.contextServiceDeps) {
-    registerContextServiceCapability(registry, options.contextServiceDeps);
-  }
-  if (options.keybindingServiceDeps) {
-    registerKeybindingServiceCapability(registry, options.keybindingServiceDeps);
-  }
-
-  // Register hook registry so plugins can register lifecycle hooks.
-  registerHookRegistryCapability(registry);
 
   // Now activate onStartup plugins — all 7 builtin services are available.
   const activationResult = await activateByStartupEvent(registry, options.onProgress ? () => options.onProgress!(registry) : undefined);

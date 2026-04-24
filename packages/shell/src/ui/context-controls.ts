@@ -1,6 +1,6 @@
-import type { ShellRuntime } from "../app/types.js";
+import type { BridgeHost } from "../app/types.js";
 
-export function updateWindowReadOnlyState(root: HTMLElement, runtime: ShellRuntime): void {
+export function updateWindowReadOnlyState(root: HTMLElement, runtime: BridgeHost): void {
   const shellNode = root.querySelector<HTMLElement>("#shell-root") ?? root.querySelector<HTMLElement>(".popout");
   if (!shellNode) {
     return;

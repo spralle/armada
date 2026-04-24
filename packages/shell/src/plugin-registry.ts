@@ -126,7 +126,7 @@ export function createShellPluginRegistry(
         compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" },
       },
       enabled: true,
-      loadMode: "remote-manifest",
+      loadStrategy: "builtin",
       contract,
       componentsModule: null,
       servicesModule: null,
@@ -165,7 +165,7 @@ export function createShellPluginRegistry(
         states.set(descriptor.id, {
           descriptor,
           enabled: false,
-          loadMode: pluginLoader.loadModeFor(descriptor),
+          loadStrategy: pluginLoader.name,
           contract: null,
           componentsModule: null,
           servicesModule: null,
@@ -213,8 +213,8 @@ export function createShellPluginRegistry(
       transitionLifecycle(state, "registered", null);
       notifyListeners();
     },
-    async activateByCommand(pluginId, commandId) {
-      const result = await ensureActivated(pluginId, { type: "command", id: commandId });
+    async activateByAction(pluginId, actionId) {
+      const result = await ensureActivated(pluginId, { type: "action", id: actionId });
       notifyListeners();
       return result;
     },
@@ -277,7 +277,7 @@ export function createShellPluginRegistry(
         plugins: Array.from(states.entries()).map(([id, state]) => ({
           id,
           enabled: state.enabled,
-          loadMode: state.loadMode,
+          loadStrategy: state.loadStrategy,
           descriptor: state.descriptor,
           contract: state.contract,
           failure: cloneRuntimeFailure(state.failure),

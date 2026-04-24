@@ -1,6 +1,6 @@
 // Plugin schema ingestion bridge — extracts config schemas from plugin contracts
 
-import type { ConfigurationPropertySchema } from "@ghost-shell/contracts";
+import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
 
 // @weaver/config-engine removed — inline stub types and throwing functions
 

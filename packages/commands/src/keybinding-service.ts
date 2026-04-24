@@ -1,11 +1,11 @@
 import type { ContributionPredicateMatcher } from "@ghost-shell/plugin-system";
 import { createEventEmitter } from "@ghost-shell/plugin-system";
+import type { Event } from "@ghost-shell/contracts/plugin";
 import type {
-  Event,
   KeySequencePendingEvent,
   KeySequenceCompletedEvent,
   KeySequenceCancelledEvent,
-} from "@ghost-shell/contracts";
+} from "@ghost-shell/contracts/services";
 import { dispatchAction } from "./action-surface.js";
 import type {
   ActionKeybinding,

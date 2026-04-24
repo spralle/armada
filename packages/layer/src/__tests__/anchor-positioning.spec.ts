@@ -1,5 +1,5 @@
-import { AnchorEdge } from "@ghost-shell/contracts";
-import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts";
+import { AnchorEdge } from "@ghost-shell/contracts/layer";
+import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts/layer";
 import { computeAnchorStyles, computeExclusiveZones, getAnchorKey } from "../anchor-positioning.js";
 
 type TestCase = { name: string; run: () => void };

@@ -1,5 +1,5 @@
 import { composeEnabledPluginContributions } from "@ghost-shell/plugin-system";
-import type { PluginHost, ShellRuntime } from "../app/types.js";
+import type { BridgeHost, PluginHost, StateHost, ShellRuntime } from "../app/types.js";
 import { escapeHtml } from "../app/utils.js";
 import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
@@ -74,11 +74,11 @@ function resolveSlotFromDockContainer(container: string | undefined): PartSlot {
   return "main";
 }
 
-export function getVisiblePartDefinitions(runtime: ShellRuntime): ComposedPartDefinition[] {
+export function getVisiblePartDefinitions(runtime: PluginHost): ComposedPartDefinition[] {
   return composePartDefinitionsFromRegistrySnapshot(runtime.registry.getSnapshot());
 }
 
-export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPart[] {
+export function getVisibleComposedParts(runtime: PluginHost & StateHost): ComposedShellPart[] {
   const definitionsById = new Map(
     getVisiblePartDefinitions(runtime).map((definition) => [definition.definitionId, definition]),
   );
@@ -112,7 +112,7 @@ export function getVisibleComposedParts(runtime: ShellRuntime): ComposedShellPar
 
 export function renderPartCard(
   part: ComposedShellPart,
-  runtime: ShellRuntime,
+  runtime: StateHost & BridgeHost,
   options: { showPopoutButton: boolean; showRestoreButton?: boolean },
 ): string {
   const closeability = getTabCloseability(runtime.contextState, part.instanceId);
@@ -165,7 +165,7 @@ export function updateSelectedStyles(root: HTMLElement, selectedPartId: string |
   }
 }
 
-export function resolvePartTitle(partId: string, runtime: ShellRuntime): string {
+export function resolvePartTitle(partId: string, runtime: PluginHost & StateHost): string {
   return getVisibleComposedParts(runtime).find((part) => part.instanceId === partId)?.title ?? partId;
 }
 
@@ -173,7 +173,7 @@ export function renderTabStrip(
   slot: PartSlot,
   tabs: ComposedShellPart[],
   activeTabId: string,
-  runtime: ShellRuntime,
+  runtime: BridgeHost & StateHost,
   options?: {
     tabScope?: string;
     label?: string;
@@ -264,7 +264,7 @@ function renderDockNode(
   node: DockNode | null,
   partsById: Map<string, ComposedShellPart>,
   fallbackActiveTabId: string | null,
-  runtime: ShellRuntime,
+  runtime: BridgeHost & StateHost,
 ): string {
   if (!node) {
     return "";

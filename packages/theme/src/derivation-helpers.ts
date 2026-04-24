@@ -4,7 +4,7 @@
  * Keeps the main module under the 350-line lint threshold
  * and each function under 50 lines.
  */
-import type { PartialThemePalette, TerminalPalette, ThemeMode } from "@ghost-shell/contracts";
+import type { PartialThemePalette, TerminalPalette, ThemeMode } from "@ghost-shell/contracts/theme";
 import {
   adjustLightness,
   blendWithBackground,

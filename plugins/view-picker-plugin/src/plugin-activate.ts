@@ -1,4 +1,4 @@
-import type { GhostApi, ActivationContext, QuickPickItem } from "@ghost-shell/contracts";
+import type { GhostApi, ActivationContext, QuickPickItem } from "@ghost-shell/contracts/plugin";
 
 interface ViewPickerItem extends QuickPickItem {
   readonly definitionId: string;

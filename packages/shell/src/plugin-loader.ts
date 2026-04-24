@@ -25,7 +25,18 @@ export interface PluginContractLoadResult {
   deactivate: PluginDeactivateExport | null;
 }
 
-export type ShellPluginLoadMode = "remote-manifest";
+/**
+ * Strategy for loading plugin modules from a remote or local source.
+ * Implementations encapsulate the transport mechanism (federation, local, etc.)
+ * while the registry orchestrates lifecycle around the loaded artifacts.
+ */
+export interface PluginLoadStrategy {
+  /** Human-readable identifier for this strategy (used in diagnostics/snapshots). */
+  readonly name: string;
+  loadPluginContract(descriptor: TenantPluginDescriptor): Promise<PluginContractLoadResult>;
+  loadPluginComponents(descriptor: TenantPluginDescriptor): Promise<unknown>;
+  loadPluginServices(descriptor: TenantPluginDescriptor): Promise<unknown>;
+}
 
 export interface PluginLoadDiagnostic {
   pluginId: string;
@@ -45,7 +56,7 @@ export interface PluginLoadDiagnostic {
 
 export interface PluginLoadErrorContext {
   pluginId: string;
-  mode: ShellPluginLoadMode;
+  strategy: string;
   reason:
     | "REMOTE_UNAVAILABLE"
     | "INVALID_CONTRACT"
@@ -67,11 +78,11 @@ export class PluginLoadError extends Error {
   }
 }
 
-export interface RuntimeFirstPluginLoader {
-  loadModeFor(descriptor: TenantPluginDescriptor): ShellPluginLoadMode;
-  loadPluginContract(descriptor: TenantPluginDescriptor): Promise<PluginContractLoadResult>;
-  loadPluginComponents(descriptor: TenantPluginDescriptor): Promise<unknown>;
-  loadPluginServices(descriptor: TenantPluginDescriptor): Promise<unknown>;
+export interface RuntimeFirstPluginLoaderOptions {
+  federationRuntime?: ShellFederationRuntime;
+  remoteLoadMaxAttempts?: number;
+  remoteLoadRetryDelayMs?: number;
+  onDiagnostic?: (diagnostic: PluginLoadDiagnostic) => void;
 }
 
 function resolveContractExport(moduleValue: unknown): unknown {
@@ -91,28 +102,17 @@ function resolveContractExport(moduleValue: unknown): unknown {
   return moduleValue;
 }
 
-export interface RuntimeFirstPluginLoaderOptions {
-  federationRuntime?: ShellFederationRuntime;
-  remoteLoadMaxAttempts?: number;
-  remoteLoadRetryDelayMs?: number;
-  onDiagnostic?: (diagnostic: PluginLoadDiagnostic) => void;
-}
-
 export function createRuntimeFirstPluginLoader(
   options: RuntimeFirstPluginLoaderOptions = {},
-): RuntimeFirstPluginLoader {
+): PluginLoadStrategy {
   const federationRuntime = options.federationRuntime ?? createShellFederationRuntime();
   const remoteLoadMaxAttempts = clampAttempts(options.remoteLoadMaxAttempts ?? 3);
   const remoteLoadRetryDelayMs = Math.max(0, options.remoteLoadRetryDelayMs ?? 300);
   const onDiagnostic = options.onDiagnostic;
 
   return {
-    loadModeFor() {
-      return "remote-manifest";
-    },
+    name: "remote-manifest",
     async loadPluginContract(descriptor) {
-      const mode: ShellPluginLoadMode = "remote-manifest";
-
       federationRuntime.registerRemote({ id: descriptor.id, entry: descriptor.entry });
       const rawContract = await loadRemoteContractWithRetry({
         descriptor,
@@ -137,7 +137,7 @@ export function createRuntimeFirstPluginLoader(
         });
         throw new PluginLoadError({
           pluginId: descriptor.id,
-          mode,
+          strategy: "remote-manifest",
           reason: "INVALID_CONTRACT",
           message,
           attempts: remoteLoadMaxAttempts,
@@ -148,10 +148,9 @@ export function createRuntimeFirstPluginLoader(
       return { contract: parsed.data, activate, deactivate };
     },
     async loadPluginComponents(descriptor) {
-      const mode: ShellPluginLoadMode = "remote-manifest";
       federationRuntime.registerRemote({ id: descriptor.id, entry: descriptor.entry });
       try {
-        return await loadRemoteModuleWithRetry({
+        const mod = await loadRemoteModuleWithRetry({
           descriptor,
           federationRuntime,
           remoteLoadMaxAttempts,
@@ -159,25 +158,16 @@ export function createRuntimeFirstPluginLoader(
           onDiagnostic,
           module: "pluginComponents",
         });
-      } catch (cause) {
-        throw new PluginLoadError({
-          pluginId: descriptor.id,
-          mode,
-          reason: "COMPONENTS_UNAVAILABLE",
-          message:
-            `Plugin '${descriptor.id}' capabilities module './pluginComponents' could not be loaded. `
-            + "Check remote expose configuration and availability.",
-          attempts: remoteLoadMaxAttempts,
-          maxAttempts: remoteLoadMaxAttempts,
-          cause,
-        });
+        return mod ?? {};
+      } catch {
+        // Plugin does not expose components — fall back to empty module
+        return {};
       }
     },
     async loadPluginServices(descriptor) {
-      const mode: ShellPluginLoadMode = "remote-manifest";
       federationRuntime.registerRemote({ id: descriptor.id, entry: descriptor.entry });
       try {
-        return await loadRemoteModuleWithRetry({
+        const mod = await loadRemoteModuleWithRetry({
           descriptor,
           federationRuntime,
           remoteLoadMaxAttempts,
@@ -185,18 +175,10 @@ export function createRuntimeFirstPluginLoader(
           onDiagnostic,
           module: "pluginServices",
         });
-      } catch (cause) {
-        throw new PluginLoadError({
-          pluginId: descriptor.id,
-          mode,
-          reason: "SERVICES_UNAVAILABLE",
-          message:
-            `Plugin '${descriptor.id}' capabilities module './pluginServices' could not be loaded. `
-            + "Check remote expose configuration and availability.",
-          attempts: remoteLoadMaxAttempts,
-          maxAttempts: remoteLoadMaxAttempts,
-          cause,
-        });
+        return mod ?? {};
+      } catch {
+        // Plugin does not expose services — fall back to empty module
+        return {};
       }
     },
   };
@@ -250,7 +232,7 @@ async function loadRemoteContractWithRetry(options: RemoteRetryLoadOptions): Pro
 
   throw new PluginLoadError({
     pluginId: options.descriptor.id,
-    mode: "remote-manifest",
+    strategy: "remote-manifest",
     reason: "REMOTE_UNAVAILABLE",
     message: `Remote plugin '${options.descriptor.id}' could not be loaded. Check remote entry and network availability.`,
     attempts: options.remoteLoadMaxAttempts,

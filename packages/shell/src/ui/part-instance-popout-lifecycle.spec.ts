@@ -317,7 +317,7 @@ function createRuntime(overrides: Partial<ShellRuntime>): ShellRuntime {
       onDidChangeWorkspaces: workspaceEvents.event,
     },
     services: createStubPluginServices(),
-    commandNotice: "",
+    actionNotice: "",
     pluginNotice: "",
     intentNotice: "",
     activeIntentSession: null,

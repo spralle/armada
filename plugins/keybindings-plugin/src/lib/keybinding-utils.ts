@@ -1,6 +1,6 @@
 // keybinding-utils.ts — Shared utilities for keybinding chord handling and file I/O.
 
-import type { KeybindingEntry } from "@ghost-shell/contracts";
+import type { KeybindingEntry } from "@ghost-shell/contracts/services";
 
 export const RESERVED_BROWSER_SHORTCUTS = new Set([
   "ctrl+w", "ctrl+t", "ctrl+n", "ctrl+l", "ctrl+r", "ctrl+tab", "ctrl+shift+tab",

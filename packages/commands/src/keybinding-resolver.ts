@@ -1,4 +1,4 @@
-import type { PluginContributionPredicate } from "@ghost-shell/contracts";
+import type { PluginContributionPredicate } from "@ghost-shell/contracts/plugin";
 import type { ContributionPredicateMatcher } from "@ghost-shell/plugin-system";
 import { createDefaultContributionPredicateMatcher } from "@ghost-shell/plugin-system";
 import type { ActionSurfaceContext, InvokableAction } from "./action-surface.js";

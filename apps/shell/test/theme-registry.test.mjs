@@ -50,7 +50,7 @@ function createMockPluginRegistry(plugins) {
         plugins: plugins.map((p) => ({
           id: p.pluginId,
           enabled: true,
-          loadMode: "remote-manifest",
+          loadStrategy: "remote-manifest",
           descriptor: {
             id: p.pluginId,
             version: "1.0.0",
@@ -291,7 +291,7 @@ test("theme registry excludes themes from disabled plugins", () => {
         plugins: [{
           id: "ghost.disabled",
           enabled: false,
-          loadMode: "remote-manifest",
+          loadStrategy: "remote-manifest",
           descriptor: {
             id: "ghost.disabled",
             version: "1.0.0",
@@ -321,7 +321,7 @@ test("theme registry excludes plugins with null contract", () => {
     plugins: [{
       id: "ghost.no-contract",
       enabled: true,
-      loadMode: "remote-manifest",
+      loadStrategy: "remote-manifest",
       descriptor: {
         id: "ghost.no-contract",
         version: "1.0.0",
@@ -739,7 +739,7 @@ test("loadAllThemes activates unloaded plugins and discovers their themes", asyn
         {
           id: "ghost.plugin-a",
           enabled: true,
-          loadMode: "remote-manifest",
+          loadStrategy: "remote-manifest",
           descriptor: { id: "ghost.plugin-a", version: "1.0.0", entry: "https://example.com/a.json", compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" } },
           contract: contractA,
           failure: null,
@@ -748,7 +748,7 @@ test("loadAllThemes activates unloaded plugins and discovers their themes", asyn
         {
           id: "ghost.plugin-b",
           enabled: true,
-          loadMode: "remote-manifest",
+          loadStrategy: "remote-manifest",
           descriptor: { id: "ghost.plugin-b", version: "1.0.0", entry: "https://example.com/b.json", compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" } },
           contract: state.pluginBActivated ? contractB : null,
           failure: null,

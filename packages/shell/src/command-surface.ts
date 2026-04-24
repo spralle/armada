@@ -7,11 +7,11 @@ import type {
 } from "@ghost-shell/contracts";
 import type { IntentResolutionDelegate, IntentRuntime } from "@ghost-shell/intents";
 
-export interface CommandSurfaceContext {
+export interface ActionSurfaceContext {
   [key: string]: string;
 }
 
-export interface RegisteredCommand {
+export interface RegisteredAction {
   id: string;
   title: string;
   intent: string;
@@ -21,67 +21,67 @@ export interface RegisteredCommand {
 }
 
 export interface RegisteredMenuItem {
-  command: string;
+  action: string;
   menu: string;
   group?: string | undefined;
   when?: PluginContributionPredicate | undefined;
 }
 
 export interface RegisteredKeybinding {
-  command: string;
+  action: string;
   key: string;
   when?: PluginContributionPredicate | undefined;
 }
 
-export interface EvaluatedCommand {
-  command: RegisteredCommand;
+export interface EvaluatedAction {
+  action: RegisteredAction;
   visible: boolean;
   enabled: boolean;
 }
 
-export interface CommandDispatchResult {
+export interface ActionDispatchResult {
   executed: boolean;
-  commandId: string;
+  actionId: string;
   message: string;
 }
 
-export interface ShellCommandSurface {
+export interface ShellActionSurface {
   registerContracts(contracts: readonly PluginContract[]): void;
-  evaluateCommands(context: Readonly<CommandSurfaceContext>): EvaluatedCommand[];
+  evaluateActions(context: Readonly<ActionSurfaceContext>): EvaluatedAction[];
   evaluateMenu(
     menu: string,
-    context: Readonly<CommandSurfaceContext>,
-  ): EvaluatedCommand[];
-  dispatchCommand(
-    commandId: string,
-    context: Readonly<CommandSurfaceContext>,
+    context: Readonly<ActionSurfaceContext>,
+  ): EvaluatedAction[];
+  dispatchAction(
+    actionId: string,
+    context: Readonly<ActionSurfaceContext>,
     args?: unknown,
-  ): Promise<CommandDispatchResult>;
+  ): Promise<ActionDispatchResult>;
   dispatchKeybinding(
     key: string,
-    context: Readonly<CommandSurfaceContext>,
+    context: Readonly<ActionSurfaceContext>,
     args?: unknown,
-  ): Promise<CommandDispatchResult> | null;
+  ): Promise<ActionDispatchResult> | null;
 }
 
 interface RegistryState {
-  commands: RegisteredCommand[];
+  actions: RegisteredAction[];
   menus: RegisteredMenuItem[];
   keybindings: RegisteredKeybinding[];
 }
 
-export function createShellCommandSurface(options: {
+export function createShellActionSurface(options: {
   intentRuntime: IntentRuntime;
-}): ShellCommandSurface {
+}): ShellActionSurface {
   const state: RegistryState = {
-    commands: [],
+    actions: [],
     menus: [],
     keybindings: [],
   };
 
   return {
     registerContracts(contracts) {
-      state.commands = [];
+      state.actions = [];
       state.menus = [];
       state.keybindings = [];
 
@@ -92,13 +92,13 @@ export function createShellCommandSurface(options: {
           continue;
         }
 
-        for (const command of contributions.actions ?? []) {
-          state.commands.push(toRegisteredCommand(command, pluginId));
+        for (const action of contributions.actions ?? []) {
+          state.actions.push(toRegisteredAction(action, pluginId));
         }
 
         for (const menuItem of contributions.menus ?? []) {
           state.menus.push({
-            command: menuItem.action,
+            action: menuItem.action,
             menu: menuItem.menu,
             group: menuItem.group,
             when: menuItem.when,
@@ -107,35 +107,35 @@ export function createShellCommandSurface(options: {
 
         for (const keybinding of contributions.keybindings ?? []) {
           state.keybindings.push({
-            command: keybinding.action,
+            action: keybinding.action,
             key: normalizeKeybinding(keybinding.keybinding),
             when: keybinding.when,
           });
         }
       }
     },
-    evaluateCommands(context) {
-      return state.commands
-        .map((command) => evaluateCommand(command, context))
-        .sort((left, right) => left.command.id.localeCompare(right.command.id));
+    evaluateActions(context) {
+      return state.actions
+        .map((action) => evaluateAction(action, context))
+        .sort((left, right) => left.action.id.localeCompare(right.action.id));
     },
     evaluateMenu(menu, context) {
-      const commandIndex = new Map(state.commands.map((command) => [command.id, command]));
+      const actionIndex = new Map(state.actions.map((action) => [action.id, action]));
 
       const rows = state.menus
         .filter((item) => item.menu === menu)
         .filter((item) => evaluatePredicate(item.when, context))
         .map((item) => {
-          const command = commandIndex.get(item.command);
-          if (!command) {
+          const action = actionIndex.get(item.action);
+          if (!action) {
             return null;
           }
           return {
             item,
-            evaluated: evaluateCommand(command, context),
+            evaluated: evaluateAction(action, context),
           };
         })
-        .filter((row): row is { item: RegisteredMenuItem; evaluated: EvaluatedCommand } =>
+        .filter((row): row is { item: RegisteredMenuItem; evaluated: EvaluatedAction } =>
           row !== null,
         );
 
@@ -147,34 +147,34 @@ export function createShellCommandSurface(options: {
           return groupCompare;
         }
 
-        return left.evaluated.command.id.localeCompare(right.evaluated.command.id);
+        return left.evaluated.action.id.localeCompare(right.evaluated.action.id);
       });
 
       return rows.map((row) => row.evaluated);
     },
-    async dispatchCommand(commandId, context, args) {
-      const command = state.commands.find((item) => item.id === commandId);
-      if (!command) {
+    async dispatchAction(actionId, context, args) {
+      const action = state.actions.find((item) => item.id === actionId);
+      if (!action) {
         return {
           executed: false,
-          commandId,
-          message: `Unknown command '${commandId}'.`,
+          actionId,
+          message: `Unknown action '${actionId}'.`,
         };
       }
 
-      const evaluation = evaluateCommand(command, context);
+      const evaluation = evaluateAction(action, context);
       if (!evaluation.visible) {
         return {
           executed: false,
-          commandId,
-          message: `Command '${commandId}' is not visible in current context.`,
+          actionId,
+          message: `Action '${actionId}' is not visible in current context.`,
         };
       }
       if (!evaluation.enabled) {
         return {
           executed: false,
-          commandId,
-          message: `Command '${commandId}' is disabled in current context.`,
+          actionId,
+          message: `Action '${actionId}' is disabled in current context.`,
         };
       }
 
@@ -185,18 +185,18 @@ export function createShellCommandSurface(options: {
       };
 
       const outcome = await options.intentRuntime.resolve(
-        { type: command.intent, facts: context as Record<string, unknown> },
+        { type: action.intent, facts: context as Record<string, unknown> },
         noopDelegate,
       );
 
       return {
         executed: outcome.kind === "executed",
-        commandId,
+        actionId,
         message: outcome.kind === "executed"
-          ? `Executed '${commandId}'.`
+          ? `Executed '${actionId}'.`
           : outcome.kind === "no-match"
             ? (outcome as { feedback: string }).feedback
-            : `Command '${commandId}' cancelled.`,
+            : `Action '${actionId}' cancelled.`,
       };
     },
     dispatchKeybinding(key, context, args) {
@@ -208,15 +208,15 @@ export function createShellCommandSurface(options: {
         return null;
       }
 
-      return this.dispatchCommand(match.command, context, args);
+      return this.dispatchAction(match.action, context, args);
     },
   };
 }
 
-function toRegisteredCommand(
+function toRegisteredAction(
   contribution: PluginActionContribution,
   pluginId: string,
-): RegisteredCommand {
+): RegisteredAction {
   return {
     id: contribution.id,
     title: contribution.title,
@@ -227,15 +227,15 @@ function toRegisteredCommand(
   };
 }
 
-function evaluateCommand(
-  command: RegisteredCommand,
-  context: Readonly<CommandSurfaceContext>,
-): EvaluatedCommand {
-  const visible = evaluatePredicate(command.when, context);
-  const enabled = visible && evaluatePredicate(command.enablement, context);
+function evaluateAction(
+  action: RegisteredAction,
+  context: Readonly<ActionSurfaceContext>,
+): EvaluatedAction {
+  const visible = evaluatePredicate(action.when, context);
+  const enabled = visible && evaluatePredicate(action.enablement, context);
 
   return {
-    command,
+    action,
     visible,
     enabled,
   };
@@ -243,7 +243,7 @@ function evaluateCommand(
 
 export function evaluatePredicate(
   predicate: PluginContributionPredicate | undefined,
-  context: Readonly<CommandSurfaceContext>,
+  context: Readonly<ActionSurfaceContext>,
 ): boolean {
   if (!predicate) {
     return true;

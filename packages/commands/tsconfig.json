@@ -22,7 +22,6 @@
   "references": [
     { "path": "../plugin-contracts" },
     { "path": "../intents" },
-    { "path": "../persistence" },
     { "path": "../plugin-system" }
   ]
 }

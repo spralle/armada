@@ -131,7 +131,7 @@ export function createShellRuntime(options?: {
       },
       onDidChangeWorkspaces: workspaceChangeEmitter.event,
     },
-    commandNotice: "",
+    actionNotice: "",
     // SAFETY: Deferred init — assigned immediately after object creation (line ~149),
     // before consumers can access the runtime.
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,

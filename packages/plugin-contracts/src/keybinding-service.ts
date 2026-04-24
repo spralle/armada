@@ -37,13 +37,13 @@ export interface KeySequenceCancelledEvent {
 export interface KeybindingEntry {
   id: string;
   key: string;
-  command: string;
+  action: string;
   when?: string | undefined;
 }
 
 /** A keybinding override visible to consumers. */
 export interface KeybindingOverride {
-  command: string;
+  action: string;
   key: string;
 }
 
@@ -58,11 +58,11 @@ export interface KeybindingService {
   /** Get the current user overrides. */
   getOverrides(): KeybindingOverride[];
 
-  /** Add or replace a keybinding override for a command. */
-  addOverride(command: string, key: string): void;
+  /** Add or replace a keybinding override for an action. */
+  addOverride(action: string, key: string): void;
 
-  /** Remove the keybinding override for a command. */
-  removeOverride(command: string): void;
+  /** Remove the keybinding override for an action. */
+  removeOverride(action: string): void;
 
   /** Reset all keybinding overrides to defaults. */
   resetAllOverrides(): void;

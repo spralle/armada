@@ -12,7 +12,7 @@ function createMinimalRuntime(): ShellRuntime {
   return {
     elevatedSession: { active: false, activatedAt: null },
     notice: "",
-    commandNotice: "",
+    actionNotice: "",
     actionSurface: buildActionSurface([createDefaultShellKeybindingContract()]),
   } as unknown as ShellRuntime;
 }

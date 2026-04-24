@@ -1,4 +1,4 @@
-import { definePlugin } from "@ghost-shell/contracts";
+import { definePlugin } from "@ghost-shell/contracts/plugin";
 
 export const pluginManifest = definePlugin({
   "displayName": "View Picker",

@@ -40,7 +40,7 @@ function createPlugins() {
     {
       id: "plugin-conc-orders",
       enabled: true,
-      loadMode: "local-source",
+      loadStrategy: "local-source",
       contract: createContract({
         manifest: { id: "plugin-conc-orders", name: "Conc Orders", version: "0.1.0" },
         contributes: {
@@ -53,7 +53,7 @@ function createPlugins() {
     {
       id: "plugin-conc-vessels",
       enabled: true,
-      loadMode: "local-source",
+      loadStrategy: "local-source",
       contract: createContract({
         manifest: { id: "plugin-conc-vessels", name: "Conc Vessels", version: "0.1.0" },
         contributes: {
@@ -71,7 +71,7 @@ function createMultiMatchPlugins() {
     {
       id: "plugin-conc-a",
       enabled: true,
-      loadMode: "local-source",
+      loadStrategy: "local-source",
       contract: createContract({
         manifest: { id: "plugin-conc-a", name: "Conc A", version: "0.1.0" },
         contributes: {
@@ -84,7 +84,7 @@ function createMultiMatchPlugins() {
     {
       id: "plugin-conc-b",
       enabled: true,
-      loadMode: "local-source",
+      loadStrategy: "local-source",
       contract: createContract({
         manifest: { id: "plugin-conc-b", name: "Conc B", version: "0.1.0" },
         contributes: {

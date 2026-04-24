@@ -1,4 +1,4 @@
-import type { GhostApi, ActivationContext } from "@ghost-shell/contracts";
+import type { GhostApi, ActivationContext } from "@ghost-shell/contracts/plugin";
 
 function activate(_api: GhostApi, _ctx: ActivationContext): void {
   // No activation logic needed — purely a slot widget

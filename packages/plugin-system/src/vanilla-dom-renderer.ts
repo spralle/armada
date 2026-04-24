@@ -3,8 +3,8 @@
  * This is the default fallback renderer for all non-framework-specific plugins.
  */
 
-import type { PartRenderer, PartRenderContext, PartRenderHandle } from "@ghost-shell/contracts";
-import { containsReactParts, resolveModuleMountFn } from "@ghost-shell/contracts";
+import type { PartRenderer, PartRenderContext, PartRenderHandle } from "@ghost-shell/contracts/parts";
+import { containsReactParts, resolveModuleMountFn } from "@ghost-shell/contracts/parts";
 
 /**
  * Resolve a mount function from a vanilla DOM module using the generic resolver.

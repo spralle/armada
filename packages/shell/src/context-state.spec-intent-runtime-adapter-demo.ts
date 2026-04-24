@@ -11,7 +11,7 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
       {
         id: "plugin-adapter",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "plugin-adapter",
@@ -69,7 +69,7 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
       {
         id: "ghost.domain.unplanned-orders",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "ghost.domain.unplanned-orders",
@@ -112,7 +112,7 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
       {
         id: "ghost.domain.unplanned-orders",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "ghost.domain.unplanned-orders",
@@ -137,7 +137,7 @@ export function registerIntentRuntimeAdapterDemoSpecs(harness: SpecHarness): voi
       {
         id: "ghost.domain.vessel-view",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "ghost.domain.vessel-view",

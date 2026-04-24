@@ -10,7 +10,7 @@ export function registerIntentRuntimeTraceOperatorsSpecs(harness: SpecHarness): 
       {
         id: "plugin-operator",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "plugin-operator",
@@ -57,7 +57,7 @@ export function registerIntentRuntimeTraceOperatorsSpecs(harness: SpecHarness): 
       {
         id: "plugin-operator-failure",
         enabled: true,
-        loadMode: "local-source",
+        loadStrategy: "local-source",
         contract: createContract({
           manifest: {
             id: "plugin-operator-failure",

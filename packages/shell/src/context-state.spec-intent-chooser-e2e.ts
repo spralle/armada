@@ -40,7 +40,7 @@ function createMultiMatchPlugins() {
     {
       id: "plugin-alpha",
       enabled: true,
-      loadMode: "local-source",
+      loadStrategy: "local-source",
       contract: createContract({
         manifest: { id: "plugin-alpha", name: "Alpha", version: "0.1.0" },
         contributes: {
@@ -53,7 +53,7 @@ function createMultiMatchPlugins() {
     {
       id: "plugin-beta",
       enabled: true,
-      loadMode: "local-source",
+      loadStrategy: "local-source",
       contract: createContract({
         manifest: { id: "plugin-beta", name: "Beta", version: "0.1.0" },
         contributes: {

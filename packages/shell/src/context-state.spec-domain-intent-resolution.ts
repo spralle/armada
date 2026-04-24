@@ -43,7 +43,7 @@ function createSnapshotDeps(plugins: Parameters<typeof createCatalog>[0]) {
 const domainOrdersPlugin = {
   id: "ghost.domain.unplanned-orders",
   enabled: true,
-  loadMode: "local-source",
+  loadStrategy: "local-source",
   contract: createContract({
     manifest: { id: "ghost.domain.unplanned-orders", name: "Unplanned Orders", version: "0.1.0" },
     contributes: {
@@ -58,7 +58,7 @@ const domainOrdersPlugin = {
 const domainVesselPlugin = {
   id: "ghost.domain.vessel-view",
   enabled: true,
-  loadMode: "local-source",
+  loadStrategy: "local-source",
   contract: createContract({
     manifest: { id: "ghost.domain.vessel-view", name: "Vessel View", version: "0.1.0" },
     contributes: {
@@ -125,7 +125,7 @@ export function registerDomainIntentResolutionSpecs(harness: SpecHarness): void 
     const duplicateOrdersPlugin = {
       id: "ghost.domain.alternate-orders",
       enabled: true,
-      loadMode: "local-source",
+      loadStrategy: "local-source",
       contract: createContract({
         manifest: { id: "ghost.domain.alternate-orders", name: "Alternate Orders", version: "0.1.0" },
         contributes: {

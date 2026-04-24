@@ -1,4 +1,4 @@
-import type { PluginContributionPredicate } from "@ghost-shell/contracts";
+import type { PluginContributionPredicate } from "@ghost-shell/contracts/plugin";
 
 export interface PredicateFactBag {
   [key: string]: unknown;

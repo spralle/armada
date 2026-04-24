@@ -7,7 +7,7 @@ import {
   type GhostApiFactoryDependencies,
 } from "./plugin-api/ghost-api-factory.js";
 import type { LayerRegistry } from "@ghost-shell/layer";
-import type { RuntimeFirstPluginLoader, PluginLoadError } from "./plugin-loader.js";
+import type { PluginLoadStrategy, PluginLoadError } from "./plugin-loader.js";
 import { buildActivationPlan } from "./plugin-activation-plan.js";
 import { pushDiagnostic, transitionLifecycle } from "./plugin-registry-diagnostics.js";
 import type {
@@ -23,7 +23,7 @@ const SHELL_CONTRACT_DECLARATION = "^1.0.0";
 export function createActivationController(
   states: Map<string, PluginRuntimeState>,
   diagnostics: PluginRegistryDiagnostic[],
-  pluginLoader: RuntimeFirstPluginLoader,
+  pluginLoader: PluginLoadStrategy,
   capabilityRegistry: CapabilityRegistry,
   apiDeps?: GhostApiFactoryDependencies,
   layerRegistry?: LayerRegistry | null,
@@ -84,7 +84,7 @@ async function activateState(
   pluginId: string,
   trigger: PluginActivationTrigger,
   diagnostics: PluginRegistryDiagnostic[],
-  pluginLoader: RuntimeFirstPluginLoader,
+  pluginLoader: PluginLoadStrategy,
   capabilityRegistry: CapabilityRegistry,
   apiDeps?: GhostApiFactoryDependencies,
   layerRegistry?: LayerRegistry | null,

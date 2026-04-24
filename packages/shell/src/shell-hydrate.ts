@@ -1,6 +1,6 @@
 /**
  * Plugin registry hydration — bootstraps tenant manifest, config, themes,
- * command contributions, and registry subscription.
+ * action contributions, and registry subscription.
  */
 
 import type { ShellRuntime } from "./app/types.js";
@@ -18,7 +18,7 @@ import { createQuickPickBridge } from "./ui/quick-pick/quick-pick-bridge.js";
 import { createGhostApiDeps } from "./plugin-api/ghost-api-deps-factory.js";
 import {
   createWorkspaceSwitchDeps,
-  refreshCommandContributions,
+  refreshActionContributions,
   renderParts,
 } from "./shell-wiring.js";
 
@@ -109,7 +109,7 @@ function applyHydratedState(
   }
 
   runtime.registry.registerBuiltinPlugin(createDefaultShellKeybindingContract());
-  refreshCommandContributions(runtime);
+  refreshActionContributions(runtime);
 }
 
 function subscribeToRegistryChanges(
@@ -124,7 +124,7 @@ function subscribeToRegistryChanges(
     queueMicrotask(() => {
       renderPending = false;
       if (!isActive()) return;
-      refreshCommandContributions(runtime);
+      refreshActionContributions(runtime);
       runtime.themeRegistry?.pruneDisabledPluginThemes();
       runtime.themeRegistry?.discoverThemes();
       getShellBootstrap(runtime).renderPanels(root, runtime);

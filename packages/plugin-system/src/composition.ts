@@ -8,8 +8,8 @@ import type {
   ShellEdgeSlot,
   ShellEdgeSlotPosition,
   ThemeContribution,
-} from "@ghost-shell/contracts";
-import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts";
+} from "@ghost-shell/contracts/plugin";
+import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts/layer";
 
 export interface ComposedPluginViewContribution {
   pluginId: string;

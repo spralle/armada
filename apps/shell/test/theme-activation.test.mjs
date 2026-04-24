@@ -21,7 +21,7 @@ function createMockPluginRegistry(plugins) {
         plugins: plugins.map((p) => ({
           id: p.id,
           enabled: p.enabled ?? true,
-          loadMode: "remote-manifest",
+          loadStrategy: "remote-manifest",
           descriptor: {
             id: p.id,
             version: "1.0.0",

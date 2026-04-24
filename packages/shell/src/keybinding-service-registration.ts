@@ -69,24 +69,24 @@ export function registerKeybindingServiceCapability(
         .map((kb) => ({
           id: kb.action,
           key: kb.keybinding,
-          command: kb.action,
+          action: kb.action,
           when: undefined,
         }));
     },
 
     getOverrides(): KeybindingOverride[] {
       return deps.getOverrideManager().getOverrides().map((o) => ({
-        command: o.action,
+        action: o.action,
         key: o.keybinding,
       }));
     },
 
-    addOverride(command: string, key: string): void {
-      deps.getOverrideManager().addOverride(command, key);
+    addOverride(action: string, key: string): void {
+      deps.getOverrideManager().addOverride(action, key);
     },
 
-    removeOverride(command: string): void {
-      deps.getOverrideManager().removeOverride(command);
+    removeOverride(action: string): void {
+      deps.getOverrideManager().removeOverride(action);
     },
 
     resetAllOverrides(): void {

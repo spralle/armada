@@ -48,9 +48,7 @@ function consumerContract() {
 test("activation fails with actionable dependency diagnostics and no auto-enable", async () => {
   const registry = createShellPluginRegistry({
     pluginLoader: {
-      loadModeFor() {
-        return "remote-manifest";
-      },
+      name: "remote-manifest",
       async loadPluginContract(target) {
         const contract = target.id === "ghost.provider" ? providerContract() : consumerContract();
         return { contract, activate: null };
@@ -101,9 +99,7 @@ test("resolves component/service capabilities from split plugin modules", async 
 
   const registry = createShellPluginRegistry({
     pluginLoader: {
-      loadModeFor() {
-        return "remote-manifest";
-      },
+      name: "remote-manifest",
       async loadPluginContract(target) {
         const contract = target.id === "ghost.provider" ? providerContract() : consumerContract();
         return { contract, activate: null };

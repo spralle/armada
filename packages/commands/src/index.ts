@@ -40,6 +40,11 @@ export {
 } from "./keybinding-override-manager.js";
 
 export {
+  type KeybindingOverrideEntry,
+  type KeybindingPersistence,
+} from "./keybinding-persistence-contracts.js";
+
+export {
   type KeybindingExportEnvelope,
   type KeybindingImportResult,
   exportKeybindingOverrides,

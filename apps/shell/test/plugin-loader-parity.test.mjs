@@ -43,7 +43,7 @@ test("remote invalid contracts report INVALID_CONTRACT diagnostics", async () =>
     (error) => {
       assert.ok(error instanceof PluginLoadError);
       assert.equal(error.context.reason, "INVALID_CONTRACT");
-      assert.equal(error.context.mode, "remote-manifest");
+      assert.equal(error.context.strategy, "remote-manifest");
       assert.equal(error.context.attempts, 3);
       assert.equal(error.context.maxAttempts, 3);
       assert.match(error.context.message, /^Remote plugin '.+' returned invalid contract:/);

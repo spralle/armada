@@ -1,8 +1,8 @@
 import type { ActionKeybinding } from "./action-surface.js";
 import type {
-  KeybindingOverrideEntryV1,
-  ShellKeybindingPersistence,
-} from "@ghost-shell/persistence";
+  KeybindingOverrideEntry,
+  KeybindingPersistence,
+} from "./keybinding-persistence-contracts.js";
 import type { KeybindingLayer } from "./keybinding-resolver.js";
 import { normalizeConfiguredSequence } from "./keybinding-normalizer.js";
 import type { NormalizedKeybindingSequence } from "./keybinding-normalizer.js";
@@ -32,7 +32,7 @@ export interface KeybindingOverrideManager {
   removeOverride(action: string): KeybindingOverrideResult;
   resetToDefaults(): void;
   listConflicts(keybinding: string): KeybindingConflictInfo[];
-  getOverrides(): KeybindingOverrideEntryV1[];
+  getOverrides(): KeybindingOverrideEntry[];
   getDefaultBindings(): ActionKeybinding[];
   getPluginBindings(): ActionKeybinding[];
   exportOverrides(): KeybindingExportEnvelope;
@@ -40,7 +40,7 @@ export interface KeybindingOverrideManager {
 }
 
 export interface KeybindingOverrideManagerOptions {
-  persistence: ShellKeybindingPersistence;
+  persistence: KeybindingPersistence;
   getDefaultBindings: () => ActionKeybinding[];
   getPluginBindings: () => ActionKeybinding[];
 }
@@ -54,7 +54,7 @@ export function createKeybindingOverrideManager(
 ): KeybindingOverrideManager {
   const { persistence, getDefaultBindings, getPluginBindings } = options;
 
-  let overrides: KeybindingOverrideEntryV1[] = persistence.load();
+  let overrides: KeybindingOverrideEntry[] = persistence.load();
 
   function addOverride(action: string, keybinding: string): KeybindingOverrideResult {
     const normalized = normalizeConfiguredSequence(keybinding);
@@ -65,7 +65,7 @@ export function createKeybindingOverrideManager(
     const conflicts = findConflicts(normalized, action);
 
     const existingIndex = overrides.findIndex((entry) => entry.action === action);
-    const entry: KeybindingOverrideEntryV1 = {
+    const entry: KeybindingOverrideEntry = {
       action,
       keybinding: normalized.value,
     };
@@ -106,7 +106,7 @@ export function createKeybindingOverrideManager(
     return findConflicts(normalized);
   }
 
-  function getOverrides(): KeybindingOverrideEntryV1[] {
+  function getOverrides(): KeybindingOverrideEntry[] {
     return overrides.map((entry) => ({ ...entry }));
   }
 
