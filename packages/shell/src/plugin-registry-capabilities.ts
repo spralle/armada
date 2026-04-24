@@ -9,7 +9,7 @@ import type {
   PluginRuntimeState,
 } from "./plugin-registry-types.js";
 import type { CapabilityRegistry } from "./capability-registry.js";
-import type { RuntimeFirstPluginLoader } from "./plugin-loader.js";
+import type { PluginLoadStrategy } from "./plugin-loader.js";
 
 export async function resolveComponentCapabilityFromStates(
   requesterPluginId: string,
@@ -17,7 +17,7 @@ export async function resolveComponentCapabilityFromStates(
   states: Map<string, PluginRuntimeState>,
   capabilityRegistry: CapabilityRegistry,
   diagnostics: PluginRegistryDiagnostic[],
-  pluginLoader: RuntimeFirstPluginLoader,
+  pluginLoader: PluginLoadStrategy,
 ): Promise<unknown> {
   const provider = capabilityRegistry.resolveComponent(capabilityId, {
     requesterPluginId,
@@ -83,7 +83,7 @@ export async function resolveServiceCapabilityFromStates(
   states: Map<string, PluginRuntimeState>,
   capabilityRegistry: CapabilityRegistry,
   diagnostics: PluginRegistryDiagnostic[],
-  pluginLoader: RuntimeFirstPluginLoader,
+  pluginLoader: PluginLoadStrategy,
 ): Promise<unknown> {
   const provider = capabilityRegistry.resolveService(capabilityId, {
     requesterPluginId,
