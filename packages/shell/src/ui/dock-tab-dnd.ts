@@ -44,194 +44,210 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
 
   if (typeof root.addEventListener === "function") {
     root.addEventListener("dragend", () => {
-      const payload = readActiveDockDragPayload(root);
-      const dropTarget = activeDockDropTargetByRoot.get(root);
-      if (payload && dropTarget && dropTarget.tabId === payload.tabId) {
-        const moved = moveDockTabThroughRuntime(runtime, deps, {
-          tabId: payload.tabId,
-          sourceWindowId: payload.sourceWindowId,
-          targetTabId: dropTarget.targetTabId,
-          zone: dropTarget.zone,
-          transferSessionId: dropTarget.transferSessionId,
-        });
-        if (DEBUG_DND) console.log("[shell:dnd:dock] dragend-fallback", {
-          targetTabId: dropTarget.targetTabId,
-          zone: dropTarget.zone,
-          payload,
-          moved,
-          stack: new Error().stack,
-        });
-      }
-
-      clearActiveDockDragPayload(root);
-      activeDockDropTargetByRoot.delete(root);
-      clearDockDropPreviews(root);
-      removeRootClass(root, "is-dock-dragging");
+      handleDockDragEnd(root, runtime, deps);
     }, listenerOptions);
   }
 
   for (const zoneNode of root.querySelectorAll<HTMLElement>("[data-dock-drop-zone][data-target-tab-id]")) {
     zoneNode.addEventListener("dragover", (event) => {
-      const dataTransfer = event.dataTransfer;
-      if (!dataTransfer) {
-        return;
-      }
-
-      const payload = readTabDragPayload(dataTransfer, runtime, { consumeRef: false })
-        ?? readActiveDockDragPayload(root)
-        ?? null;
-      if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
-        removeRootClass(root, "is-dock-dragging");
-        dataTransfer.dropEffect = "none";
-        if (DEBUG_DND) console.log("[shell:dnd:dock] dragover-ignored", {
-          targetTabId: zoneNode.dataset.targetTabId,
-          zone: zoneNode.dataset.dockDropZone,
-          payload,
-          windowId: runtime.windowId,
-          reason: "splitter-active",
-          stack: new Error().stack,
-        });
-        return;
-      }
-
-      if (!payload) {
-        dataTransfer.dropEffect = "none";
-        return;
-      }
-
-      const isCrossWindow = payload.sourceWindowId !== runtime.windowId;
-      if (isCrossWindow && (runtime.crossWindowDndKillSwitchActive || !runtime.crossWindowDndEnabled)) {
-        dataTransfer.dropEffect = "none";
-        return;
-      }
-
-      if (isCrossWindow && !readTransferSessionId(payload)) {
-        dataTransfer.dropEffect = "none";
-        return;
-      }
-
-      event.preventDefault();
-      if (typeof event.stopPropagation === "function") {
-        event.stopPropagation();
-      }
-      dataTransfer.dropEffect = "move";
-      addRootClass(root, "is-dock-dragging");
-      setActiveDockDragPayload(root, payload);
-      const targetTabId = zoneNode.dataset.targetTabId;
-      const zone = zoneNode.dataset.dockDropZone;
-      if (targetTabId && isDockDropZone(zone)) {
-        activeDockDropTargetByRoot.set(root, {
-          tabId: payload.tabId,
-          targetTabId,
-          zone,
-          transferSessionId: readTransferSessionId(payload),
-        });
-        setDockDropPreview(zoneNode, zone);
-      }
-      if (DEBUG_DND) console.log("[shell:dnd:dock] dragover-armed", {
-        targetTabId: zoneNode.dataset.targetTabId,
-        zone: zoneNode.dataset.dockDropZone,
-        payload,
-        stack: new Error().stack,
-      });
+      handleDockDragOver(event, zoneNode, root, runtime);
     }, listenerOptions);
 
     zoneNode.addEventListener("dragleave", (event) => {
-      const targetTabId = zoneNode.dataset.targetTabId;
-      const zone = zoneNode.dataset.dockDropZone;
-      const active = activeDockDropTargetByRoot.get(root);
-      if (!active || !targetTabId || !isDockDropZone(zone)) {
-        return;
-      }
-
-      const overlay = typeof zoneNode.closest === "function"
-        ? zoneNode.closest<HTMLElement>(".dock-drop-overlay")
-        : null;
-      const relatedTarget = event.relatedTarget as Node | null;
-      if (overlay && relatedTarget && overlay.contains(relatedTarget)) {
-        return;
-      }
-
-      if (active.targetTabId === targetTabId && active.zone === zone) {
-        activeDockDropTargetByRoot.delete(root);
-        clearDockDropPreview(zoneNode);
-      }
+      handleDockDragLeave(event, zoneNode, root);
     }, listenerOptions);
 
     zoneNode.addEventListener("drop", (event) => {
-      event.preventDefault();
-      if (typeof event.stopPropagation === "function") {
-        event.stopPropagation();
-      }
-      if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
-        if (DEBUG_DND) console.log("[shell:dnd:dock] drop-blocked", {
-          targetTabId: zoneNode.dataset.targetTabId,
-          zone: zoneNode.dataset.dockDropZone,
-          reason: "splitter-active",
-          stack: new Error().stack,
-        });
-        activeDockDropTargetByRoot.delete(root);
-        clearDockDropPreviews(root);
-        clearActiveDockDragPayload(root);
-        removeRootClass(root, "is-dock-dragging");
-        return;
-      }
-
-      const dataTransfer = event.dataTransfer;
-      const targetTabId = zoneNode.dataset.targetTabId;
-      const zone = zoneNode.dataset.dockDropZone;
-      if (!targetTabId || !isDockDropZone(zone)) {
-        if (DEBUG_DND) console.log("[shell:dnd:dock] drop-blocked", {
-          targetTabId,
-          zone,
-          stack: new Error().stack,
-        });
-        activeDockDropTargetByRoot.delete(root);
-        clearDockDropPreviews(root);
-        removeRootClass(root, "is-dock-dragging");
-        return;
-      }
-
-      const payload = (dataTransfer
-        ? readTabDragPayload(dataTransfer, runtime, { consumeRef: true })
-        : null)
-        ?? readActiveDockDragPayload(root)
-        ?? null;
-      if (!payload) {
-        if (DEBUG_DND) console.log("[shell:dnd:dock] drop-no-payload", {
-          targetTabId,
-          zone,
-          hasDataTransfer: Boolean(dataTransfer),
-          types: dataTransfer ? Array.from(dataTransfer.types ?? []) : [],
-          stack: new Error().stack,
-        });
-        clearActiveDockDragPayload(root);
-        activeDockDropTargetByRoot.delete(root);
-        clearDockDropPreviews(root);
-        removeRootClass(root, "is-dock-dragging");
-        return;
-      }
-
-      const moved = moveDockTabThroughRuntime(runtime, deps, {
-        tabId: payload.tabId,
-        sourceWindowId: payload.sourceWindowId,
-        targetTabId,
-        zone,
-        transferSessionId: readTransferSessionId(payload),
-      });
-      if (DEBUG_DND) console.log("[shell:dnd:dock] drop", {
-        targetTabId,
-        zone,
-        payload,
-        moved,
-        stack: new Error().stack,
-      });
-      clearActiveDockDragPayload(root);
-      activeDockDropTargetByRoot.delete(root);
-      clearDockDropPreviews(root);
-      removeRootClass(root, "is-dock-dragging");
+      handleDockDrop(event, zoneNode, root, runtime, deps);
     }, listenerOptions);
   }
+}
+
+function handleDockDragEnd(root: HTMLElement, runtime: ShellRuntime, deps: DockDragDeps): void {
+  const payload = readActiveDockDragPayload(root);
+  const dropTarget = activeDockDropTargetByRoot.get(root);
+  if (payload && dropTarget && dropTarget.tabId === payload.tabId) {
+    const moved = moveDockTabThroughRuntime(runtime, deps, {
+      tabId: payload.tabId,
+      sourceWindowId: payload.sourceWindowId,
+      targetTabId: dropTarget.targetTabId,
+      zone: dropTarget.zone,
+      transferSessionId: dropTarget.transferSessionId,
+    });
+    if (DEBUG_DND) console.log("[shell:dnd:dock] dragend-fallback", {
+      targetTabId: dropTarget.targetTabId,
+      zone: dropTarget.zone,
+      payload,
+      moved,
+      stack: new Error().stack,
+    });
+  }
+
+  clearActiveDockDragPayload(root);
+  activeDockDropTargetByRoot.delete(root);
+  clearDockDropPreviews(root);
+  removeRootClass(root, "is-dock-dragging");
+}
+
+function handleDockDragOver(event: DragEvent, zoneNode: HTMLElement, root: HTMLElement, runtime: ShellRuntime): void {
+  const dataTransfer = event.dataTransfer;
+  if (!dataTransfer) {
+    return;
+  }
+
+  const payload = readTabDragPayload(dataTransfer, runtime, { consumeRef: false })
+    ?? readActiveDockDragPayload(root)
+    ?? null;
+  if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
+    removeRootClass(root, "is-dock-dragging");
+    dataTransfer.dropEffect = "none";
+    if (DEBUG_DND) console.log("[shell:dnd:dock] dragover-ignored", {
+      targetTabId: zoneNode.dataset.targetTabId,
+      zone: zoneNode.dataset.dockDropZone,
+      payload,
+      windowId: runtime.windowId,
+      reason: "splitter-active",
+      stack: new Error().stack,
+    });
+    return;
+  }
+
+  if (!payload) {
+    dataTransfer.dropEffect = "none";
+    return;
+  }
+
+  const isCrossWindow = payload.sourceWindowId !== runtime.windowId;
+  if (isCrossWindow && (runtime.crossWindowDndKillSwitchActive || !runtime.crossWindowDndEnabled)) {
+    dataTransfer.dropEffect = "none";
+    return;
+  }
+
+  if (isCrossWindow && !readTransferSessionId(payload)) {
+    dataTransfer.dropEffect = "none";
+    return;
+  }
+
+  event.preventDefault();
+  if (typeof event.stopPropagation === "function") {
+    event.stopPropagation();
+  }
+  dataTransfer.dropEffect = "move";
+  addRootClass(root, "is-dock-dragging");
+  setActiveDockDragPayload(root, payload);
+  const targetTabId = zoneNode.dataset.targetTabId;
+  const zone = zoneNode.dataset.dockDropZone;
+  if (targetTabId && isDockDropZone(zone)) {
+    activeDockDropTargetByRoot.set(root, {
+      tabId: payload.tabId,
+      targetTabId,
+      zone,
+      transferSessionId: readTransferSessionId(payload),
+    });
+    setDockDropPreview(zoneNode, zone);
+  }
+  if (DEBUG_DND) console.log("[shell:dnd:dock] dragover-armed", {
+    targetTabId: zoneNode.dataset.targetTabId,
+    zone: zoneNode.dataset.dockDropZone,
+    payload,
+    stack: new Error().stack,
+  });
+}
+
+function handleDockDragLeave(event: DragEvent, zoneNode: HTMLElement, root: HTMLElement): void {
+  const targetTabId = zoneNode.dataset.targetTabId;
+  const zone = zoneNode.dataset.dockDropZone;
+  const active = activeDockDropTargetByRoot.get(root);
+  if (!active || !targetTabId || !isDockDropZone(zone)) {
+    return;
+  }
+
+  const overlay = typeof zoneNode.closest === "function"
+    ? zoneNode.closest<HTMLElement>(".dock-drop-overlay")
+    : null;
+  const relatedTarget = event.relatedTarget as Node | null;
+  if (overlay && relatedTarget && overlay.contains(relatedTarget)) {
+    return;
+  }
+
+  if (active.targetTabId === targetTabId && active.zone === zone) {
+    activeDockDropTargetByRoot.delete(root);
+    clearDockDropPreview(zoneNode);
+  }
+}
+
+function handleDockDrop(event: DragEvent, zoneNode: HTMLElement, root: HTMLElement, runtime: ShellRuntime, deps: DockDragDeps): void {
+  event.preventDefault();
+  if (typeof event.stopPropagation === "function") {
+    event.stopPropagation();
+  }
+  if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
+    if (DEBUG_DND) console.log("[shell:dnd:dock] drop-blocked", {
+      targetTabId: zoneNode.dataset.targetTabId,
+      zone: zoneNode.dataset.dockDropZone,
+      reason: "splitter-active",
+      stack: new Error().stack,
+    });
+    activeDockDropTargetByRoot.delete(root);
+    clearDockDropPreviews(root);
+    clearActiveDockDragPayload(root);
+    removeRootClass(root, "is-dock-dragging");
+    return;
+  }
+
+  const dataTransfer = event.dataTransfer;
+  const targetTabId = zoneNode.dataset.targetTabId;
+  const zone = zoneNode.dataset.dockDropZone;
+  if (!targetTabId || !isDockDropZone(zone)) {
+    if (DEBUG_DND) console.log("[shell:dnd:dock] drop-blocked", {
+      targetTabId,
+      zone,
+      stack: new Error().stack,
+    });
+    activeDockDropTargetByRoot.delete(root);
+    clearDockDropPreviews(root);
+    removeRootClass(root, "is-dock-dragging");
+    return;
+  }
+
+  const payload = (dataTransfer
+    ? readTabDragPayload(dataTransfer, runtime, { consumeRef: true })
+    : null)
+    ?? readActiveDockDragPayload(root)
+    ?? null;
+  if (!payload) {
+    if (DEBUG_DND) console.log("[shell:dnd:dock] drop-no-payload", {
+      targetTabId,
+      zone,
+      hasDataTransfer: Boolean(dataTransfer),
+      types: dataTransfer ? Array.from(dataTransfer.types ?? []) : [],
+      stack: new Error().stack,
+    });
+    clearActiveDockDragPayload(root);
+    activeDockDropTargetByRoot.delete(root);
+    clearDockDropPreviews(root);
+    removeRootClass(root, "is-dock-dragging");
+    return;
+  }
+
+  const moved = moveDockTabThroughRuntime(runtime, deps, {
+    tabId: payload.tabId,
+    sourceWindowId: payload.sourceWindowId,
+    targetTabId,
+    zone,
+    transferSessionId: readTransferSessionId(payload),
+  });
+  if (DEBUG_DND) console.log("[shell:dnd:dock] drop", {
+    targetTabId,
+    zone,
+    payload,
+    moved,
+    stack: new Error().stack,
+  });
+  clearActiveDockDragPayload(root);
+  activeDockDropTargetByRoot.delete(root);
+  clearDockDropPreviews(root);
+  removeRootClass(root, "is-dock-dragging");
 }
 
 export function moveDockTabThroughRuntime(

@@ -35,6 +35,7 @@ export {
   migrateContextStateEnvelope,
   migrateKeybindingOverridesEnvelope,
   migrateWorkspacePersistenceEnvelope,
+  mergeAndSaveEnvelope,
 } from "./envelope.js";
 
 export { isRecord } from "./utils.js";

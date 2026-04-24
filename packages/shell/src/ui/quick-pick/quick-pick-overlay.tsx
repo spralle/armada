@@ -30,8 +30,8 @@ const dialogStyle: React.CSSProperties = {
   maxHeight: 400,
   display: "flex",
   flexDirection: "column",
-  background: "#14161a",
-  border: "1px solid #334564",
+  background: "var(--ghost-surface)",
+  border: "1px solid var(--ghost-border)",
   borderRadius: 8,
   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.6)",
   overflow: "hidden",
@@ -41,10 +41,10 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   padding: "10px 14px",
-  background: "#1d2635",
+  background: "var(--ghost-surface-inset)",
   border: "none",
-  borderBottom: "1px solid #334564",
-  color: "#e9edf3",
+  borderBottom: "1px solid var(--ghost-border)",
+  color: "var(--ghost-foreground)",
   fontSize: 14,
   outline: "none",
 };
@@ -189,7 +189,7 @@ function QuickPickRow<T extends QuickPickItem>(props: {
       style={{
         padding: "6px 12px",
         cursor: enabled ? "pointer" : "default",
-        background: isSelected ? "#1d2635" : "transparent",
+        background: isSelected ? "var(--ghost-surface-hover)" : "transparent",
         opacity: enabled ? 1 : 0.5,
         display: "flex",
         flexDirection: "column",
@@ -199,17 +199,17 @@ function QuickPickRow<T extends QuickPickItem>(props: {
       <span
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
       >
-        <span style={{ color: enabled ? "#e9edf3" : "#c6d0e0" }}>
+        <span style={{ color: enabled ? "var(--ghost-foreground)" : "var(--ghost-dim-foreground)" }}>
           {item.label}
         </span>
         {item.description ? (
-          <span style={{ fontSize: 12, color: "#8b9cb8", marginLeft: 8 }}>
+          <span style={{ fontSize: 12, color: "var(--ghost-muted-foreground)", marginLeft: 8 }}>
             {item.description}
           </span>
         ) : null}
       </span>
       {item.detail ? (
-        <span style={{ fontSize: 11, color: "#7a8a9e" }}>
+        <span style={{ fontSize: 11, color: "var(--ghost-faint-foreground)" }}>
           {item.detail}
         </span>
       ) : null}

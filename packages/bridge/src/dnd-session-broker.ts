@@ -38,86 +38,7 @@ export function createDragSessionBroker(
   const terminalSessions = new Map<string, number>();
   let disposed = false;
   const unsubscribe = bridge.subscribe((event) => {
-    if (disposed) {
-      return;
-    }
-
-    if (event.sourceWindowId === windowId) {
-      return;
-    }
-
-    if (event.type === "dnd-session-upsert") {
-      if (terminalSessions.has(event.id)) {
-        logProtocol("ignored-late-start-after-terminal", {
-          id: event.id,
-          sourceWindowId: event.sourceWindowId,
-          lifecycle: event.lifecycle ?? "start",
-          correlationId: event.correlationId,
-        });
-        return;
-      }
-
-      const lifecycle = event.lifecycle ?? "start";
-      const existing = sessions.get(event.id);
-      if (lifecycle === "consume") {
-        if (!existing) {
-          logProtocol("ignored-late-consume-missing-session", {
-            id: event.id,
-            sourceWindowId: event.sourceWindowId,
-            consumedByWindowId: event.consumedByWindowId,
-            correlationId: event.correlationId,
-          });
-          return;
-        }
-
-        if (existing.consumedByWindowId) {
-          return;
-        }
-
-        sessions.set(event.id, {
-          ...existing,
-          state: "consume",
-          consumedByWindowId: event.consumedByWindowId ?? event.sourceWindowId,
-        });
-        pruneExpiredSessions(sessions, terminalSessions, Date.now(), windowId, bridge);
-        pruneTerminals(terminalSessions, Date.now());
-        return;
-      }
-
-      if (existing) {
-        return;
-      }
-
-      sessions.set(event.id, {
-        payload: event.payload,
-        expiresAt: event.expiresAt,
-        correlationId: event.correlationId ?? createCorrelationId(event.sourceWindowId, Date.now()),
-        ownerWindowId: event.ownerWindowId ?? event.sourceWindowId,
-        consumedByWindowId: null,
-        state: "start",
-      });
-      pruneExpiredSessions(sessions, terminalSessions, Date.now(), windowId, bridge);
-      pruneTerminals(terminalSessions, Date.now());
-      return;
-    }
-
-    if (event.type === "dnd-session-delete") {
-      const terminal = event.lifecycle ?? "commit";
-      if (!sessions.has(event.id)) {
-        logProtocol("ignored-late-terminal-missing-session", {
-          id: event.id,
-          sourceWindowId: event.sourceWindowId,
-          lifecycle: terminal,
-          correlationId: event.correlationId,
-        });
-        rememberTerminal(terminalSessions, event.id, Date.now());
-        return;
-      }
-
-      sessions.delete(event.id);
-      rememberTerminal(terminalSessions, event.id, Date.now());
-      pruneTerminals(terminalSessions, Date.now());
-    }
+    handleBridgeEvent(event, sessions, terminalSessions, windowId, bridge, disposed);
   });
 
   const isAvailable = (): boolean => bridge.available && !isDegraded();
@@ -127,153 +48,16 @@ export function createDragSessionBroker(
       return isAvailable();
     },
     create(payload, ttlMs = DEFAULT_TTL_MS) {
-      if (!isAvailable() || disposed) {
-        return null;
-      }
-
-      const now = Date.now();
-      const id = createSessionId(windowId, now);
-      const expiresAt = now + Math.max(MIN_TTL_MS, ttlMs);
-      const correlationId = createCorrelationId(windowId, now);
-
-      sessions.set(id, {
-        payload,
-        expiresAt,
-        correlationId,
-        ownerWindowId: windowId,
-        consumedByWindowId: null,
-        state: "start",
-      });
-      pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
-      pruneTerminals(terminalSessions, now);
-
-      const published = bridge.publish({
-        type: "dnd-session-upsert",
-        id,
-        payload,
-        expiresAt,
-        correlationId,
-        lifecycle: "start",
-        ownerWindowId: windowId,
-        sourceWindowId: windowId,
-      });
-
-      if (!published) {
-        sessions.delete(id);
-        return null;
-      }
-
-      return { id };
+      return createSession(sessions, terminalSessions, bridge, windowId, isAvailable, disposed, payload, ttlMs);
     },
     consume(ref, consumedByWindowId = windowId) {
-      if (disposed) {
-        return null;
-      }
-
-      const now = Date.now();
-      pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
-      pruneTerminals(terminalSessions, now);
-
-      const entry = sessions.get(ref.id);
-
-      if (!entry) {
-        return null;
-      }
-
-      if (entry.consumedByWindowId) {
-        logProtocol("ignored-duplicate-consume", {
-          id: ref.id,
-          consumedByWindowId,
-          alreadyConsumedByWindowId: entry.consumedByWindowId,
-          correlationId: entry.correlationId,
-        });
-        return null;
-      }
-
-      sessions.set(ref.id, {
-        ...entry,
-        consumedByWindowId,
-        state: "consume",
-      });
-
-      bridge.publish({
-        type: "dnd-session-upsert",
-        id: ref.id,
-        payload: entry.payload,
-        expiresAt: entry.expiresAt,
-        correlationId: entry.correlationId,
-        lifecycle: "consume",
-        ownerWindowId: entry.ownerWindowId,
-        consumedByWindowId,
-        sourceWindowId: windowId,
-      });
-
-      return entry.payload;
+      return consumeSession(sessions, terminalSessions, bridge, windowId, disposed, ref, consumedByWindowId);
     },
     commit(ref, consumedByWindowId = windowId) {
-      const now = Date.now();
-      pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
-      pruneTerminals(terminalSessions, now);
-
-      const entry = sessions.get(ref.id);
-      if (!entry) {
-        return false;
-      }
-
-      if (!entry.consumedByWindowId) {
-        logProtocol("ignored-commit-before-consume", {
-          id: ref.id,
-          consumedByWindowId,
-          correlationId: entry.correlationId,
-        });
-        return false;
-      }
-
-      if (entry.consumedByWindowId !== consumedByWindowId) {
-        logProtocol("ignored-commit-from-non-consumer", {
-          id: ref.id,
-          consumedByWindowId,
-          expectedConsumedByWindowId: entry.consumedByWindowId,
-          correlationId: entry.correlationId,
-        });
-        return false;
-      }
-
-      finalizeSession(sessions, terminalSessions, bridge, windowId, ref.id, entry, "commit", consumedByWindowId);
-      return true;
+      return commitSession(sessions, terminalSessions, bridge, windowId, ref, consumedByWindowId);
     },
     abort(ref, sourceWindowId = windowId) {
-      const now = Date.now();
-      pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
-      pruneTerminals(terminalSessions, now);
-
-      const entry = sessions.get(ref.id);
-      if (!entry) {
-        return false;
-      }
-
-      if (sourceWindowId !== entry.ownerWindowId && sourceWindowId !== entry.consumedByWindowId) {
-        logProtocol("ignored-abort-from-non-owner", {
-          id: ref.id,
-          sourceWindowId,
-          ownerWindowId: entry.ownerWindowId,
-          consumedByWindowId: entry.consumedByWindowId,
-          correlationId: entry.correlationId,
-        });
-        return false;
-      }
-
-      finalizeSession(
-        sessions,
-        terminalSessions,
-        bridge,
-        windowId,
-        ref.id,
-        entry,
-        "abort",
-        entry.consumedByWindowId,
-      );
-      return true;
+      return abortSession(sessions, terminalSessions, bridge, windowId, ref, sourceWindowId);
     },
     pruneExpired(now = Date.now()) {
       return pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
@@ -297,6 +81,296 @@ export function createDragSessionBroker(
       disposed = true;
     },
   };
+}
+
+function handleBridgeEvent(
+  event: { type: string; sourceWindowId: string; id?: string; payload?: unknown; expiresAt?: number; correlationId?: string; lifecycle?: string; ownerWindowId?: string; consumedByWindowId?: string },
+  sessions: Map<string, SessionEntry>,
+  terminalSessions: Map<string, number>,
+  windowId: string,
+  bridge: WindowBridge,
+  disposed: boolean,
+): void {
+  if (disposed || event.sourceWindowId === windowId) {
+    return;
+  }
+
+  if (event.type === "dnd-session-upsert") {
+    handleUpsertEvent(event, sessions, terminalSessions, windowId, bridge);
+    return;
+  }
+
+  if (event.type === "dnd-session-delete") {
+    handleDeleteEvent(event, sessions, terminalSessions);
+  }
+}
+
+function handleUpsertEvent(
+  event: { id?: string; sourceWindowId: string; payload?: unknown; expiresAt?: number; correlationId?: string; lifecycle?: string; ownerWindowId?: string; consumedByWindowId?: string },
+  sessions: Map<string, SessionEntry>,
+  terminalSessions: Map<string, number>,
+  windowId: string,
+  bridge: WindowBridge,
+): void {
+  const id = event.id!;
+  if (terminalSessions.has(id)) {
+    logProtocol("ignored-late-start-after-terminal", {
+      id,
+      sourceWindowId: event.sourceWindowId,
+      lifecycle: event.lifecycle ?? "start",
+      correlationId: event.correlationId,
+    });
+    return;
+  }
+
+  const lifecycle = event.lifecycle ?? "start";
+  const existing = sessions.get(id);
+  if (lifecycle === "consume") {
+    if (!existing) {
+      logProtocol("ignored-late-consume-missing-session", {
+        id,
+        sourceWindowId: event.sourceWindowId,
+        consumedByWindowId: event.consumedByWindowId,
+        correlationId: event.correlationId,
+      });
+      return;
+    }
+
+    if (existing.consumedByWindowId) {
+      return;
+    }
+
+    sessions.set(id, {
+      ...existing,
+      state: "consume",
+      consumedByWindowId: event.consumedByWindowId ?? event.sourceWindowId,
+    });
+    pruneExpiredSessions(sessions, terminalSessions, Date.now(), windowId, bridge);
+    pruneTerminals(terminalSessions, Date.now());
+    return;
+  }
+
+  if (existing) {
+    return;
+  }
+
+  sessions.set(id, {
+    payload: event.payload,
+    expiresAt: event.expiresAt!,
+    correlationId: event.correlationId ?? createCorrelationId(event.sourceWindowId, Date.now()),
+    ownerWindowId: event.ownerWindowId ?? event.sourceWindowId,
+    consumedByWindowId: null,
+    state: "start",
+  });
+  pruneExpiredSessions(sessions, terminalSessions, Date.now(), windowId, bridge);
+  pruneTerminals(terminalSessions, Date.now());
+}
+
+function handleDeleteEvent(
+  event: { id?: string; sourceWindowId: string; correlationId?: string; lifecycle?: string },
+  sessions: Map<string, SessionEntry>,
+  terminalSessions: Map<string, number>,
+): void {
+  const id = event.id!;
+  const terminal = event.lifecycle ?? "commit";
+  if (!sessions.has(id)) {
+    logProtocol("ignored-late-terminal-missing-session", {
+      id,
+      sourceWindowId: event.sourceWindowId,
+      lifecycle: terminal,
+      correlationId: event.correlationId,
+    });
+    rememberTerminal(terminalSessions, id, Date.now());
+    return;
+  }
+
+  sessions.delete(id);
+  rememberTerminal(terminalSessions, id, Date.now());
+  pruneTerminals(terminalSessions, Date.now());
+}
+
+function createSession(
+  sessions: Map<string, SessionEntry>,
+  terminalSessions: Map<string, number>,
+  bridge: WindowBridge,
+  windowId: string,
+  isAvailable: () => boolean,
+  disposed: boolean,
+  payload: unknown,
+  ttlMs: number,
+): DragSessionRef | null {
+  if (!isAvailable() || disposed) {
+    return null;
+  }
+
+  const now = Date.now();
+  const id = createSessionId(windowId, now);
+  const expiresAt = now + Math.max(MIN_TTL_MS, ttlMs);
+  const correlationId = createCorrelationId(windowId, now);
+
+  sessions.set(id, {
+    payload,
+    expiresAt,
+    correlationId,
+    ownerWindowId: windowId,
+    consumedByWindowId: null,
+    state: "start",
+  });
+  pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
+  pruneTerminals(terminalSessions, now);
+
+  const published = bridge.publish({
+    type: "dnd-session-upsert",
+    id,
+    payload,
+    expiresAt,
+    correlationId,
+    lifecycle: "start",
+    ownerWindowId: windowId,
+    sourceWindowId: windowId,
+  });
+
+  if (!published) {
+    sessions.delete(id);
+    return null;
+  }
+
+  return { id };
+}
+
+function consumeSession(
+  sessions: Map<string, SessionEntry>,
+  terminalSessions: Map<string, number>,
+  bridge: WindowBridge,
+  windowId: string,
+  disposed: boolean,
+  ref: DragSessionRef,
+  consumedByWindowId: string,
+): unknown | null {
+  if (disposed) {
+    return null;
+  }
+
+  const now = Date.now();
+  pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
+  pruneTerminals(terminalSessions, now);
+
+  const entry = sessions.get(ref.id);
+
+  if (!entry) {
+    return null;
+  }
+
+  if (entry.consumedByWindowId) {
+    logProtocol("ignored-duplicate-consume", {
+      id: ref.id,
+      consumedByWindowId,
+      alreadyConsumedByWindowId: entry.consumedByWindowId,
+      correlationId: entry.correlationId,
+    });
+    return null;
+  }
+
+  sessions.set(ref.id, {
+    ...entry,
+    consumedByWindowId,
+    state: "consume",
+  });
+
+  bridge.publish({
+    type: "dnd-session-upsert",
+    id: ref.id,
+    payload: entry.payload,
+    expiresAt: entry.expiresAt,
+    correlationId: entry.correlationId,
+    lifecycle: "consume",
+    ownerWindowId: entry.ownerWindowId,
+    consumedByWindowId,
+    sourceWindowId: windowId,
+  });
+
+  return entry.payload;
+}
+
+function commitSession(
+  sessions: Map<string, SessionEntry>,
+  terminalSessions: Map<string, number>,
+  bridge: WindowBridge,
+  windowId: string,
+  ref: DragSessionRef,
+  consumedByWindowId: string,
+): boolean {
+  const now = Date.now();
+  pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
+  pruneTerminals(terminalSessions, now);
+
+  const entry = sessions.get(ref.id);
+  if (!entry) {
+    return false;
+  }
+
+  if (!entry.consumedByWindowId) {
+    logProtocol("ignored-commit-before-consume", {
+      id: ref.id,
+      consumedByWindowId,
+      correlationId: entry.correlationId,
+    });
+    return false;
+  }
+
+  if (entry.consumedByWindowId !== consumedByWindowId) {
+    logProtocol("ignored-commit-from-non-consumer", {
+      id: ref.id,
+      consumedByWindowId,
+      expectedConsumedByWindowId: entry.consumedByWindowId,
+      correlationId: entry.correlationId,
+    });
+    return false;
+  }
+
+  finalizeSession(sessions, terminalSessions, bridge, windowId, ref.id, entry, "commit", consumedByWindowId);
+  return true;
+}
+
+function abortSession(
+  sessions: Map<string, SessionEntry>,
+  terminalSessions: Map<string, number>,
+  bridge: WindowBridge,
+  windowId: string,
+  ref: DragSessionRef,
+  sourceWindowId: string,
+): boolean {
+  const now = Date.now();
+  pruneExpiredSessions(sessions, terminalSessions, now, windowId, bridge);
+  pruneTerminals(terminalSessions, now);
+
+  const entry = sessions.get(ref.id);
+  if (!entry) {
+    return false;
+  }
+
+  if (sourceWindowId !== entry.ownerWindowId && sourceWindowId !== entry.consumedByWindowId) {
+    logProtocol("ignored-abort-from-non-owner", {
+      id: ref.id,
+      sourceWindowId,
+      ownerWindowId: entry.ownerWindowId,
+      consumedByWindowId: entry.consumedByWindowId,
+      correlationId: entry.correlationId,
+    });
+    return false;
+  }
+
+  finalizeSession(
+    sessions,
+    terminalSessions,
+    bridge,
+    windowId,
+    ref.id,
+    entry,
+    "abort",
+    entry.consumedByWindowId,
+  );
+  return true;
 }
 
 function createSessionId(windowId: string, now: number): string {

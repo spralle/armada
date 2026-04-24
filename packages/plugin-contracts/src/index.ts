@@ -150,6 +150,7 @@ export type {
   JsonFormCapability,
 } from './jsonform-capability.js';
 
+export type { ConfigurationService } from "./config-service.js";
 export { CONFIG_SERVICE_ID } from "./config-service.js";
 
 export {

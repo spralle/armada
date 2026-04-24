@@ -135,54 +135,11 @@ export function createRuntimeEventHandlers(
   }
 
   function resolveIntentFlow(intent: ShellIntent): void {
-    const delegate: IntentResolutionDelegate = {
-      async showChooser(matches, chooserIntent, trace) {
-        return new Promise<IntentActionMatch | null>((resolve) => {
-          runtime._pendingChooserResolve = resolve;
-          runtime.activeIntentSession = {
-            intent: chooserIntent,
-            matches,
-            trace,
-            chooserFocusIndex: 0,
-            returnFocusSelector: resolveEventTargetSelector(root),
-          };
-          runtime.pendingFocusSelector = "button[data-action='choose-intent-action'][data-intent-index='0']";
-          runtime.intentNotice = `Choose an action for intent '${chooserIntent.type}' (${matches.length} matches).`;
-          bindings.announce(`${runtime.intentNotice} Use arrow keys and Enter to choose an action.`);
-          bindings.renderSyncStatus();
-        });
-      },
-      async activatePlugin(pluginId, trigger) {
-        return bindings.activatePluginForBoundary({
-          pluginId,
-          triggerType: trigger.type as PluginActivationTriggerType,
-          triggerId: trigger.id,
-        });
-      },
-      announce(message) {
-        bindings.announce(message);
-      },
-    };
+    const delegate = buildIntentDelegate(root, runtime, bindings);
 
     void runtime.intentRuntime.resolve(intent, delegate).then((outcome) => {
       runtime.lastIntentTrace = outcome.trace;
-      if (outcome.kind === "executed") {
-        const match = outcome.match;
-        writeGroupSelectionContext(runtime, `intent:${intent.type}`);
-        const restoreSelector = resolveChooserFocusRestoration("execute", runtime.activeIntentSession?.returnFocusSelector ?? null);
-        runtime.activeIntentSession = null;
-        runtime._pendingChooserResolve = null;
-        runtime.pendingFocusSelector = restoreSelector;
-        runtime.intentNotice = `Executed '${match.title}' via ${match.pluginId}.${match.handler}.`;
-        bindings.announce(runtime.intentNotice);
-        updateDockTabVisibility(root, runtime);
-      } else if (outcome.kind === "no-match") {
-        runtime.activeIntentSession = null;
-        runtime._pendingChooserResolve = null;
-        runtime.intentNotice = outcome.feedback;
-        bindings.announce(runtime.intentNotice);
-      }
-      // "cancelled" cleanup is handled by dismissIntentChooser
+      handleIntentOutcome(root, runtime, bindings, intent, outcome);
       bindings.renderSyncStatus();
     });
   }
@@ -222,6 +179,66 @@ export function createRuntimeEventHandlers(
     executeResolvedAction,
     resolveIntentFlow,
   };
+}
+
+function buildIntentDelegate(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  bindings: RuntimeEventHandlerBindings,
+): IntentResolutionDelegate {
+  return {
+    async showChooser(matches, chooserIntent, trace) {
+      return new Promise<IntentActionMatch | null>((resolve) => {
+        runtime._pendingChooserResolve = resolve;
+        runtime.activeIntentSession = {
+          intent: chooserIntent,
+          matches,
+          trace,
+          chooserFocusIndex: 0,
+          returnFocusSelector: resolveEventTargetSelector(root),
+        };
+        runtime.pendingFocusSelector = "button[data-action='choose-intent-action'][data-intent-index='0']";
+        runtime.intentNotice = `Choose an action for intent '${chooserIntent.type}' (${matches.length} matches).`;
+        bindings.announce(`${runtime.intentNotice} Use arrow keys and Enter to choose an action.`);
+        bindings.renderSyncStatus();
+      });
+    },
+    async activatePlugin(pluginId, trigger) {
+      return bindings.activatePluginForBoundary({
+        pluginId,
+        triggerType: trigger.type as PluginActivationTriggerType,
+        triggerId: trigger.id,
+      });
+    },
+    announce(message) {
+      bindings.announce(message);
+    },
+  };
+}
+
+function handleIntentOutcome(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  bindings: RuntimeEventHandlerBindings,
+  intent: ShellIntent,
+  outcome: { kind: string; trace: unknown; match?: IntentActionMatch; feedback?: string },
+): void {
+  if (outcome.kind === "executed" && outcome.match) {
+    const match = outcome.match;
+    writeGroupSelectionContext(runtime, `intent:${intent.type}`);
+    const restoreSelector = resolveChooserFocusRestoration("execute", runtime.activeIntentSession?.returnFocusSelector ?? null);
+    runtime.activeIntentSession = null;
+    runtime._pendingChooserResolve = null;
+    runtime.pendingFocusSelector = restoreSelector;
+    runtime.intentNotice = `Executed '${match.title}' via ${match.pluginId}.${match.handler}.`;
+    bindings.announce(runtime.intentNotice);
+    updateDockTabVisibility(root, runtime);
+  } else if (outcome.kind === "no-match") {
+    runtime.activeIntentSession = null;
+    runtime._pendingChooserResolve = null;
+    runtime.intentNotice = outcome.feedback ?? "";
+    bindings.announce(runtime.intentNotice);
+  }
 }
 
 function resolveEventTargetSelector(root: HTMLElement): string | null {

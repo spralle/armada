@@ -172,6 +172,22 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
   let activeThemeId: string | null = null;
   let activeBackground: ActiveBackground | null = null;
 
+  function mergeThemes(
+    existing: ComposedThemeContribution[],
+    incoming: ComposedThemeContribution[],
+  ): ComposedThemeContribution[] {
+    const result = [...existing];
+    for (const theme of incoming) {
+      const idx = result.findIndex((t) => t.id === theme.id);
+      if (idx >= 0) {
+        result[idx] = theme;
+      } else {
+        result.push(theme);
+      }
+    }
+    return result;
+  }
+
   function findTheme(themeId: string): ComposedThemeContribution | undefined {
     return discoveredThemes.find((t) => t.id === themeId);
   }
@@ -234,30 +250,14 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
     discoverThemes() {
       const sources = collectPluginThemeSources(pluginRegistry);
       const newThemes = composeThemeContributions(sources);
-      // Additive merge: update existing themes by ID, append new ones.
-      for (const theme of newThemes) {
-        const existingIndex = discoveredThemes.findIndex((t) => t.id === theme.id);
-        if (existingIndex >= 0) {
-          discoveredThemes[existingIndex] = theme;
-        } else {
-          discoveredThemes.push(theme);
-        }
-      }
+      discoveredThemes = mergeThemes(discoveredThemes, newThemes);
     },
 
     async loadAllThemes() {
       await activateAllThemePlugins(pluginRegistry);
-      // Re-discover additively after activating remaining plugins.
       const sources = collectPluginThemeSources(pluginRegistry);
       const newThemes = composeThemeContributions(sources);
-      for (const theme of newThemes) {
-        const existingIndex = discoveredThemes.findIndex((t) => t.id === theme.id);
-        if (existingIndex >= 0) {
-          discoveredThemes[existingIndex] = theme;
-        } else {
-          discoveredThemes.push(theme);
-        }
-      }
+      discoveredThemes = mergeThemes(discoveredThemes, newThemes);
     },
 
     getAvailableThemes(): AvailableTheme[] {

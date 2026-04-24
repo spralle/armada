@@ -6,12 +6,7 @@
 // @weaver/config-types, @weaver/config-providers, @weaver/config-engine removed.
 // Stub types and throwing stubs preserve the public API.
 
-/** Stub for ConfigurationService (@weaver/config-types removed). */
-interface ConfigurationService {
-  get<T = unknown>(key: string): T | undefined;
-  set(key: string, value: unknown, layer?: string): void;
-  [key: string]: unknown;
-}
+import type { ConfigurationService } from "@ghost-shell/contracts";
 
 import type { PluginContract } from "@ghost-shell/contracts";
 import { CONFIG_SERVICE_ID } from "@ghost-shell/contracts";

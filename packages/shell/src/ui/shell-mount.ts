@@ -2,6 +2,46 @@ import type { ShellRuntime } from "../app/types.js";
 import { DEFAULT_DARK_PALETTE, injectThemeVariables } from "@ghost-shell/theme";
 import { LayerRegistry, BUILTIN_LAYERS } from "@ghost-shell/layer";
 
+/** CSS rules shared between main window and popout mounts. */
+function getSharedStyles(): string {
+  return `
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    html, body, #root { width: 100%; height: 100%; overflow: hidden; }
+    body { margin: 0; background: transparent; color: var(--ghost-foreground); }
+    * { scrollbar-width: thin; scrollbar-color: var(--ghost-muted-foreground) transparent; }
+    .card { border: 1px solid var(--ghost-border-alt); border-radius: 4px; margin-bottom: 6px; padding: 6px; }
+    .part-root { border: 1px solid var(--ghost-border-alt); border-radius: 4px; margin-bottom: 0; padding: 6px; container-type: inline-size; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+    .part-root h2 { margin: 0 0 6px; font-size: 14px; }
+    .part-root.is-selected { border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow-subtle) inset; }
+    .part-actions { display: flex; gap: 6px; margin-bottom: 6px; }
+    .part-actions button { background: var(--ghost-surface-elevated); border: 1px solid var(--ghost-border); border-radius: 3px; color: var(--ghost-foreground); padding: 3px 7px; cursor: pointer; }
+    .bridge-warning { border-left: 3px solid var(--ghost-warning); padding: 6px 8px; background: var(--ghost-warning-background); color: var(--ghost-warning-foreground); margin-bottom: 8px; }
+    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); }
+    .runtime-note { color: var(--ghost-muted-foreground); font-size: 12px; margin: 0; }
+    .dev-inspector { border-color: var(--ghost-border-accent); background: var(--ghost-surface-inset); }
+    .dev-inspector details { margin-bottom: 6px; }
+    .dev-inspector pre { margin: 6px 0; max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; border: 1px solid var(--ghost-border); background: var(--ghost-surface-inset-deep); color: var(--ghost-code-foreground); font-size: 11px; }
+    .dev-inspector ul { margin: 6px 0; padding-left: 18px; }
+    .dev-inspector li { margin: 3px 0; }
+    .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; flex: 1 1 auto; }
+    .domain-panel-host,
+    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; }
+    .domain-hint { margin: 0; color: var(--ghost-dim-foreground); font-size: 12px; }
+    .domain-list { display: grid; gap: 4px; }
+    .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid var(--ghost-border); background: var(--ghost-surface-hover); color: var(--ghost-foreground); border-radius: 4px; padding: 6px; cursor: pointer; }
+    .domain-row:hover { border-color: var(--ghost-primary); }
+    .domain-row.is-selected { border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow) inset; }
+    .intent-chooser { margin-top: 6px; border: 1px solid var(--ghost-border); border-radius: 4px; padding: 6px; background: var(--ghost-surface-overlay); }
+    .intent-chooser button { display: block; width: 100%; text-align: left; margin: 3px 0; background: var(--ghost-surface-elevated); border: 1px solid var(--ghost-border); border-radius: 3px; color: var(--ghost-foreground); padding: 5px; cursor: pointer; }
+    .intent-chooser button:hover { border-color: var(--ghost-primary); }
+    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+    @container (max-width: 420px) {
+      .part-actions { flex-wrap: wrap; }
+      .domain-row { font-size: 12px; padding: 6px; }
+      .domain-row span { white-space: normal; }
+    }`;
+}
+
 type MountDeps = {
   renderParts: () => void;
   updateWindowReadOnlyState: () => void;
@@ -25,10 +65,9 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
 
   root.innerHTML = `
   <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; --ghost-edge-bottom-min-height: 24px; --ghost-edge-left-min-width: auto; --ghost-edge-right-min-width: auto; }
-    html, body, #root { width: 100%; height: 100%; overflow: hidden; }
-    body { margin: 0; background: transparent; color: var(--ghost-foreground); }
-    * { scrollbar-width: thin; scrollbar-color: var(--ghost-muted-foreground) transparent; }
+    ${getSharedStyles()}
+    :root { --ghost-edge-bottom-min-height: 24px; --ghost-edge-left-min-width: auto; --ghost-edge-right-min-width: auto; }
+    .part-actions button:hover { border-color: var(--ghost-primary); }
     #layer-host { position: relative; width: 100%; height: 100%; }
     .shell-layer { position: absolute; inset: 0; pointer-events: none; isolation: isolate; }
     .shell-layer[data-layer="main"] { pointer-events: auto; top: var(--exclusive-top, 0px); right: var(--exclusive-right, 0px); bottom: var(--exclusive-bottom, 0px); left: var(--exclusive-left, 0px); }
@@ -91,13 +130,12 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .part-tab-close:focus-visible { outline: 2px solid var(--ghost-primary); outline-offset: 1px; }
     .splitter { background: var(--ghost-border-muted); cursor: col-resize; user-select: none; touch-action: none; }
     .splitter[data-pane="secondary"] { cursor: row-resize; }
-    .card { border: 1px solid var(--ghost-border-alt); border-radius: 4px; margin-bottom: 6px; padding: 6px; }
-    .part-root { border: 1px solid var(--ghost-border-alt); border-radius: 4px; margin-bottom: 0; padding: 6px; container-type: inline-size; display: flex; flex-direction: column; min-height: 0; height: 100%; }
-    .part-root h2 { margin: 0 0 6px; font-size: 14px; }
-    .part-root.is-selected { border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow-subtle) inset; }
-    .part-actions { display: flex; gap: 6px; margin-bottom: 6px; }
-    .part-actions button { background: var(--ghost-surface-elevated); border: 1px solid var(--ghost-border); border-radius: 3px; color: var(--ghost-foreground); padding: 3px 7px; cursor: pointer; }
-    .part-actions button:hover { border-color: var(--ghost-primary); }
+    .plugin-row { display:block; margin: 6px 0; }
+    .plugin-activate-btn { margin-left: 8px; padding: 2px 8px; font-size: 11px; cursor: pointer; }
+    .plugin-error { margin: 4px 0 0 22px; color: var(--ghost-error-foreground-muted); font-size: 12px; }
+    .plugin-notice { margin:0 0 8px; font-size:12px; color: var(--ghost-warning-foreground); }
+    .plugin-diag-list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--ghost-muted-foreground); }
+    .plugin-diag-list li { margin: 2px 0; }
     .dock-drop-overlay { display: none; position: absolute; inset: 4px; z-index: 8; border-radius: 6px; pointer-events: none; }
     .is-dock-dragging .dock-drop-overlay { display: block; }
     .dock-drop-zone { position: absolute; border: 0; border-radius: 6px; background: transparent; pointer-events: auto; }
@@ -113,37 +151,6 @@ export function mountMainWindow(root: HTMLElement, deps: MountDeps): () => void 
     .dock-drop-overlay.is-preview-top .dock-drop-preview { left: 0; top: 0; right: 0; bottom: auto; height: 50%; background: var(--ghost-primary-overlay); }
     .dock-drop-overlay.is-preview-bottom .dock-drop-preview { left: 0; top: auto; right: 0; bottom: 0; height: 50%; background: var(--ghost-primary-overlay); }
     .dock-drop-overlay.is-preview-center .dock-drop-preview { inset: 8%; background: var(--ghost-primary-overlay); border: 1px solid var(--ghost-primary-border-semi); }
-    .bridge-warning { border-left: 3px solid var(--ghost-warning); padding: 6px 8px; background: var(--ghost-warning-background); color: var(--ghost-warning-foreground); margin-bottom: 8px; }
-    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); }
-    .runtime-note { color: var(--ghost-muted-foreground); font-size: 12px; margin: 0; }
-    .plugin-row { display:block; margin: 6px 0; }
-    .plugin-activate-btn { margin-left: 8px; padding: 2px 8px; font-size: 11px; cursor: pointer; }
-    .plugin-error { margin: 4px 0 0 22px; color: var(--ghost-error-foreground-muted); font-size: 12px; }
-    .plugin-notice { margin:0 0 8px; font-size:12px; color: var(--ghost-warning-foreground); }
-    .plugin-diag-list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--ghost-muted-foreground); }
-    .plugin-diag-list li { margin: 2px 0; }
-    .dev-inspector { border-color: var(--ghost-border-accent); background: var(--ghost-surface-inset); }
-    .dev-inspector details { margin-bottom: 6px; }
-    .dev-inspector pre { margin: 6px 0; max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; border: 1px solid var(--ghost-border); background: var(--ghost-surface-inset-deep); color: var(--ghost-code-foreground); font-size: 11px; }
-    .dev-inspector ul { margin: 6px 0; padding-left: 18px; }
-    .dev-inspector li { margin: 3px 0; }
-    .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; flex: 1 1 auto; }
-    .domain-panel-host,
-    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; }
-    .domain-hint { margin: 0; color: var(--ghost-dim-foreground); font-size: 12px; }
-    .domain-list { display: grid; gap: 4px; }
-    .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid var(--ghost-border); background: var(--ghost-surface-hover); color: var(--ghost-foreground); border-radius: 4px; padding: 6px; cursor: pointer; }
-    .domain-row:hover { border-color: var(--ghost-primary); }
-    .domain-row.is-selected { border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow) inset; }
-    .intent-chooser { margin-top: 6px; border: 1px solid var(--ghost-border); border-radius: 4px; padding: 6px; background: var(--ghost-surface-overlay); }
-    .intent-chooser button { display: block; width: 100%; text-align: left; margin: 3px 0; background: var(--ghost-surface-elevated); border: 1px solid var(--ghost-border); border-radius: 3px; color: var(--ghost-foreground); padding: 5px; cursor: pointer; }
-    .intent-chooser button:hover { border-color: var(--ghost-primary); }
-    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
-    @container (max-width: 420px) {
-      .part-actions { flex-wrap: wrap; }
-      .domain-row { font-size: 12px; padding: 6px; }
-      .domain-row span { white-space: normal; }
-    }
   </style>
   <div id="layer-host">
     <div class="shell-layer" data-layer="background" data-z="0" style="z-index:0" role="presentation"></div>
@@ -188,42 +195,9 @@ export function mountPopout(root: HTMLElement, runtime: ShellRuntime, deps: Moun
 
   root.innerHTML = `
   <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-    html, body, #root { width: 100%; height: 100%; overflow: hidden; }
-    body { margin: 0; background: transparent; color: var(--ghost-foreground); }
-    * { scrollbar-width: thin; scrollbar-color: var(--ghost-muted-foreground) transparent; }
+    ${getSharedStyles()}
     .popout { padding: 8px; min-height: 100%; height: 100%; box-sizing: border-box; overflow: hidden; }
     #popout-slot { height: 100%; min-height: 0; }
-    .card { border: 1px solid var(--ghost-border-alt); border-radius: 4px; margin-bottom: 6px; padding: 6px; }
-    .part-root { border: 1px solid var(--ghost-border-alt); border-radius: 4px; margin-bottom: 0; padding: 6px; container-type: inline-size; display: flex; flex-direction: column; min-height: 0; height: 100%; }
-    .part-root h2 { margin: 0 0 6px; font-size: 14px; }
-    .part-root.is-selected { border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow-subtle) inset; }
-    .part-actions { display: flex; gap: 6px; margin-bottom: 6px; }
-    .part-actions button { background: var(--ghost-surface-elevated); border: 1px solid var(--ghost-border); border-radius: 3px; color: var(--ghost-foreground); padding: 3px 7px; cursor: pointer; }
-    .bridge-warning { border-left: 3px solid var(--ghost-warning); padding: 6px 8px; background: var(--ghost-warning-background); color: var(--ghost-warning-foreground); margin-bottom: 8px; }
-    .sync-degraded { opacity: 0.62; filter: grayscale(0.5); }
-    .runtime-note { color: var(--ghost-muted-foreground); font-size: 12px; margin: 0; }
-    .dev-inspector { border-color: var(--ghost-border-accent); background: var(--ghost-surface-inset); }
-    .dev-inspector details { margin-bottom: 6px; }
-    .dev-inspector pre { margin: 6px 0; max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; border: 1px solid var(--ghost-border); background: var(--ghost-surface-inset-deep); color: var(--ghost-code-foreground); font-size: 11px; }
-    .dev-inspector ul { margin: 6px 0; padding-left: 18px; }
-    .dev-inspector li { margin: 3px 0; }
-    .domain-panel { display: grid; gap: 6px; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; flex: 1 1 auto; }
-    .domain-panel-host,
-    .domain-panel-fallback { min-width: 0; min-height: 0; overflow: auto; }
-    .domain-hint { margin: 0; color: var(--ghost-dim-foreground); font-size: 12px; }
-    .domain-list { display: grid; gap: 4px; }
-    .domain-row { display: grid; gap: 2px; text-align: left; border: 1px solid var(--ghost-border); background: var(--ghost-surface-hover); color: var(--ghost-foreground); border-radius: 4px; padding: 6px; cursor: pointer; }
-    .domain-row:hover { border-color: var(--ghost-primary); }
-    .domain-row.is-selected { border-color: var(--ghost-primary); box-shadow: 0 0 0 1px var(--ghost-primary-glow) inset; }
-    .intent-chooser { margin-top: 6px; border: 1px solid var(--ghost-border); border-radius: 4px; padding: 6px; background: var(--ghost-surface-overlay); }
-    .intent-chooser button { display: block; width: 100%; text-align: left; margin: 3px 0; background: var(--ghost-surface-elevated); border: 1px solid var(--ghost-border); border-radius: 3px; color: var(--ghost-foreground); padding: 5px; cursor: pointer; }
-    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
-    @container (max-width: 420px) {
-      .part-actions { flex-wrap: wrap; }
-      .domain-row { font-size: 12px; padding: 6px; }
-      .domain-row span { white-space: normal; }
-    }
   </style>
   <main class="popout">
     <section id="popout-slot"></section>

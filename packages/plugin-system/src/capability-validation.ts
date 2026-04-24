@@ -113,7 +113,20 @@ export function validateDependenciesAgainstProviders(
 
   const providerById = new Map(providers.map((provider) => [provider.pluginId, provider]));
 
-  for (const requiredPlugin of dependencies.plugins ?? []) {
+  validatePluginDependencies(context, dependencies.plugins ?? [], providerById, failures);
+  validateComponentDependencies(context, dependencies.components ?? [], providers, components, failures);
+  validateServiceDependencies(context, dependencies.services ?? [], providers, services, failures);
+
+  return failures;
+}
+
+function validatePluginDependencies(
+  context: PluginDependencyValidationContext,
+  requiredPlugins: PluginDependencyPluginRequirement[],
+  providerById: Map<string, CapabilityRegistryProviderSnapshot>,
+  failures: CapabilityDependencyFailure[],
+): void {
+  for (const requiredPlugin of requiredPlugins) {
     if (requiredPlugin.pluginId === context.pluginId) {
       const selfCompatible = evaluateShellPluginCompatibility(
         requiredPlugin.versionRange,
@@ -155,8 +168,16 @@ export function validateDependenciesAgainstProviders(
       });
     }
   }
+}
 
-  for (const requiredComponent of dependencies.components ?? []) {
+function validateComponentDependencies(
+  context: PluginDependencyValidationContext,
+  requiredComponents: PluginDependencyComponentRequirement[],
+  providers: CapabilityRegistryProviderSnapshot[],
+  components: Map<string, ComponentProvider>,
+  failures: CapabilityDependencyFailure[],
+): void {
+  for (const requiredComponent of requiredComponents) {
     const selfCapability = readContractShape(context.contract)
       .contributes?.capabilities?.components
       ?.find((component) => component.id === requiredComponent.id);
@@ -200,8 +221,16 @@ export function validateDependenciesAgainstProviders(
       });
     }
   }
+}
 
-  for (const requiredService of dependencies.services ?? []) {
+function validateServiceDependencies(
+  context: PluginDependencyValidationContext,
+  requiredServices: PluginDependencyServiceRequirement[],
+  providers: CapabilityRegistryProviderSnapshot[],
+  services: Map<string, ServiceProvider>,
+  failures: CapabilityDependencyFailure[],
+): void {
+  for (const requiredService of requiredServices) {
     const selfCapability = readContractShape(context.contract)
       .contributes?.capabilities?.services
       ?.find((service) => service.id === requiredService.id);
@@ -245,6 +274,4 @@ export function validateDependenciesAgainstProviders(
       });
     }
   }
-
-  return failures;
 }

@@ -115,6 +115,15 @@ export function createShellPluginRegistry(
   let tenantId = "local";
   const builtinContracts: Array<{ contract: PluginContract; serviceInstances?: Record<string, unknown>; module?: unknown }> = [];
 
+  async function activateByTrigger(
+    pluginId: string,
+    trigger: { type: string; id: string },
+  ): Promise<boolean> {
+    const result = await ensureActivated(pluginId, trigger as PluginActivationTrigger);
+    notifyListeners();
+    return result;
+  }
+
   function seedBuiltinState(contract: PluginContract, serviceInstances?: Record<string, unknown>, module?: unknown): void {
     const pluginId = contract.manifest.id;
     const instanceMap = serviceInstances ? new Map(Object.entries(serviceInstances)) : null;
@@ -216,24 +225,16 @@ export function createShellPluginRegistry(
       notifyListeners();
     },
     async activateByAction(pluginId, actionId) {
-      const result = await ensureActivated(pluginId, { type: "action", id: actionId });
-      notifyListeners();
-      return result;
+      return activateByTrigger(pluginId, { type: "action", id: actionId });
     },
     async activateByView(pluginId, viewId) {
-      const result = await ensureActivated(pluginId, { type: "view", id: viewId });
-      notifyListeners();
-      return result;
+      return activateByTrigger(pluginId, { type: "view", id: viewId });
     },
     async activateByIntent(pluginId, intentId) {
-      const result = await ensureActivated(pluginId, { type: "intent", id: intentId });
-      notifyListeners();
-      return result;
+      return activateByTrigger(pluginId, { type: "intent", id: intentId });
     },
     async activateByEvent(pluginId, eventName) {
-      const result = await ensureActivated(pluginId, { type: "event", id: eventName });
-      notifyListeners();
-      return result;
+      return activateByTrigger(pluginId, { type: "event", id: eventName });
     },
     async preloadContract(pluginId) {
       const state = states.get(pluginId);

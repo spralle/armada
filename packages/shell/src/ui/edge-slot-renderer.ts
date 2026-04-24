@@ -66,10 +66,15 @@ export function createEdgeSlotRenderer(options: EdgeSlotRendererOptions): EdgeSl
     const contributions = gatherSlotContributions(runtime);
     const edgeSlotsLayout = runtime.layout.edgeSlots;
 
-    // Build a set of contribution IDs that should be visible
-    const desiredIds = new Set(contributions.map((c) => c.id));
+    pruneRemovedContributions(contributions);
 
-    // Unmount contributions that are no longer present
+    for (const slotName of EDGE_SLOTS) {
+      renderSingleEdgeSlot(root, slotName, contributions, edgeSlotsLayout, runtime, currentGeneration);
+    }
+  }
+
+  function pruneRemovedContributions(contributions: ComposedPluginSlotContribution[]): void {
+    const desiredIds = new Set(contributions.map((c) => c.id));
     for (const [id, entry] of mounted.entries()) {
       if (!desiredIds.has(id)) {
         safeUnmount(entry.cleanup);
@@ -77,53 +82,50 @@ export function createEdgeSlotRenderer(options: EdgeSlotRendererOptions): EdgeSl
         mounted.delete(id);
       }
     }
+  }
 
-    // Render each edge slot section
-    for (const slotName of EDGE_SLOTS) {
-      const section = root.querySelector<HTMLElement>(`.edge-slot-${slotName}`);
-      if (!section) {
+  function renderSingleEdgeSlot(
+    root: HTMLElement,
+    slotName: ShellEdgeSlot,
+    contributions: ComposedPluginSlotContribution[],
+    edgeSlotsLayout: ShellRuntime["layout"]["edgeSlots"],
+    runtime: ShellRuntime,
+    currentGeneration: number,
+  ): void {
+    const section = root.querySelector<HTMLElement>(`.edge-slot-${slotName}`);
+    if (!section) {
+      return;
+    }
+
+    const slotContributions = contributions.filter((c) => c.slot === slotName);
+    const slotState = edgeSlotsLayout?.[slotName];
+    const isVisible = slotState ? slotState.visible : slotContributions.length > 0;
+
+    if (!isVisible || slotContributions.length === 0) {
+      section.style.display = "none";
+      section.innerHTML = "";
+      for (const c of slotContributions) {
+        const entry = mounted.get(c.id);
+        if (entry) {
+          safeUnmount(entry.cleanup);
+          mounted.delete(c.id);
+        }
+      }
+      return;
+    }
+
+    section.style.display = "";
+    ensurePositionContainers(section, slotName);
+
+    for (const position of POSITIONS) {
+      const container = section.querySelector<HTMLElement>(`.edge-slot-${position}`);
+      if (!container) {
         continue;
       }
-
-      const slotContributions = contributions.filter((c) => c.slot === slotName);
-
-      // Visibility: hide if layout says not visible, or if no contributions
-      const slotState = edgeSlotsLayout?.[slotName];
-      const isVisible = slotState ? slotState.visible : slotContributions.length > 0;
-
-      if (!isVisible || slotContributions.length === 0) {
-        section.style.display = "none";
-        section.innerHTML = "";
-        // Unmount all previously mounted contributions in this slot
-        for (const c of slotContributions) {
-          const entry = mounted.get(c.id);
-          if (entry) {
-            safeUnmount(entry.cleanup);
-            mounted.delete(c.id);
-          }
-        }
-        continue;
-      }
-
-      section.style.display = "";
-
-      // Ensure inner position containers exist
-      ensurePositionContainers(section, slotName);
-
-      // Mount contributions into position groups
-      for (const position of POSITIONS) {
-        const container = section.querySelector<HTMLElement>(`.edge-slot-${position}`);
-        if (!container) {
-          continue;
-        }
-
-        const positionContributions = slotContributions
-          .filter((c) => c.position === position)
-          .sort((a, b) => a.order - b.order);
-
-        // Reconcile mount targets within this container
-        reconcilePositionContainer(container, positionContributions, runtime, currentGeneration);
-      }
+      const positionContributions = slotContributions
+        .filter((c) => c.position === position)
+        .sort((a, b) => a.order - b.order);
+      reconcilePositionContainer(container, positionContributions, runtime, currentGeneration);
     }
   }
 
@@ -156,9 +158,21 @@ export function createEdgeSlotRenderer(options: EdgeSlotRendererOptions): EdgeSl
     runtime: ShellRuntime,
     currentGeneration: number,
   ): void {
-    const desiredIds = new Set(contributions.map((c) => c.id));
+    pruneStaleChildren(container, contributions);
 
-    // Remove mount targets for contributions no longer in this position
+    let previousElement: Element | null = null;
+    for (const contribution of contributions) {
+      const target = ensureMountTarget(container, contribution, previousElement);
+      previousElement = target;
+      reconcileSingleMount(target, contribution, runtime, currentGeneration);
+    }
+  }
+
+  function pruneStaleChildren(
+    container: HTMLElement,
+    contributions: ComposedPluginSlotContribution[],
+  ): void {
+    const desiredIds = new Set(contributions.map((c) => c.id));
     for (const child of Array.from(container.children) as HTMLElement[]) {
       const contentId = child.dataset.slotContentFor;
       if (contentId && !desiredIds.has(contentId)) {
@@ -170,45 +184,46 @@ export function createEdgeSlotRenderer(options: EdgeSlotRendererOptions): EdgeSl
         child.remove();
       }
     }
+  }
 
-    // Ensure mount targets exist in correct order
-    let previousElement: Element | null = null;
-    for (const contribution of contributions) {
-      let target = container.querySelector<HTMLElement>(
-        `[data-slot-content-for="${contribution.id}"]`,
-      );
-
-      if (!target) {
-        target = document.createElement("div");
-        target.dataset.slotContentFor = contribution.id;
-
-        if (previousElement && previousElement.nextSibling) {
-          container.insertBefore(target, previousElement.nextSibling);
-        } else if (!previousElement && container.firstChild) {
-          container.insertBefore(target, container.firstChild);
-        } else {
-          container.appendChild(target);
-        }
+  function ensureMountTarget(
+    container: HTMLElement,
+    contribution: ComposedPluginSlotContribution,
+    previousElement: Element | null,
+  ): HTMLElement {
+    let target = container.querySelector<HTMLElement>(
+      `[data-slot-content-for="${contribution.id}"]`,
+    );
+    if (!target) {
+      target = document.createElement("div");
+      target.dataset.slotContentFor = contribution.id;
+      if (previousElement && previousElement.nextSibling) {
+        container.insertBefore(target, previousElement.nextSibling);
+      } else if (!previousElement && container.firstChild) {
+        container.insertBefore(target, container.firstChild);
+      } else {
+        container.appendChild(target);
       }
-
-      previousElement = target;
-
-      // Mount if not already mounted
-      const existing = mounted.get(contribution.id);
-      const mountKey = createSlotMountKey(contribution, runtime);
-
-      if (existing && existing.target === target && existing.mountKey === mountKey) {
-        continue;
-      }
-
-      if (existing) {
-        safeUnmount(existing.cleanup);
-        mounted.delete(contribution.id);
-      }
-
-      // Fire and forget — async mount, same as part-module-host
-      void mountSlotComponent(target, contribution, runtime, mountKey, currentGeneration);
     }
+    return target;
+  }
+
+  function reconcileSingleMount(
+    target: HTMLElement,
+    contribution: ComposedPluginSlotContribution,
+    runtime: ShellRuntime,
+    currentGeneration: number,
+  ): void {
+    const existing = mounted.get(contribution.id);
+    const mountKey = createSlotMountKey(contribution, runtime);
+    if (existing && existing.target === target && existing.mountKey === mountKey) {
+      return;
+    }
+    if (existing) {
+      safeUnmount(existing.cleanup);
+      mounted.delete(contribution.id);
+    }
+    void mountSlotComponent(target, contribution, runtime, mountKey, currentGeneration);
   }
 
   // ---------------------------------------------------------------------------
@@ -222,30 +237,45 @@ export function createEdgeSlotRenderer(options: EdgeSlotRendererOptions): EdgeSl
     mountKey: string,
     expectedGeneration: number,
   ): Promise<void> {
-    // --- Built-in fast path: skip Module Federation entirely ----------------
     const builtInMount = builtInSlotMounts.get(contribution.component);
     if (builtInMount) {
-      try {
-        const cleanupResult = await builtInMount(target, { contribution, runtime });
-        const cleanup = normalizeCleanup(cleanupResult);
-
-        if (generation !== expectedGeneration) {
-          safeUnmount(cleanup);
-          return;
-        }
-
-        mounted.set(contribution.id, { target, cleanup, mountKey });
-      } catch {
-        // Built-in mount failed — slot stays empty, no crash.
-      }
+      await mountBuiltInSlot(target, contribution, runtime, mountKey, expectedGeneration, builtInMount);
       return;
     }
+    await mountFederatedSlot(target, contribution, runtime, mountKey, expectedGeneration);
+  }
 
-    // --- Module Federation path (remote plugins) ---------------------------
+  async function mountBuiltInSlot(
+    target: HTMLElement,
+    contribution: ComposedPluginSlotContribution,
+    runtime: ShellRuntime,
+    mountKey: string,
+    expectedGeneration: number,
+    builtInMount: BuiltInSlotMountFn,
+  ): Promise<void> {
+    try {
+      const cleanupResult = await builtInMount(target, { contribution, runtime });
+      const cleanup = normalizeCleanup(cleanupResult);
+      if (generation !== expectedGeneration) {
+        safeUnmount(cleanup);
+        return;
+      }
+      mounted.set(contribution.id, { target, cleanup, mountKey });
+    } catch {
+      // Built-in mount failed — slot stays empty, no crash.
+    }
+  }
+
+  async function mountFederatedSlot(
+    target: HTMLElement,
+    contribution: ComposedPluginSlotContribution,
+    runtime: ShellRuntime,
+    mountKey: string,
+    expectedGeneration: number,
+  ): Promise<void> {
     const snapshot = runtime.registry.getSnapshot();
     const pluginSnapshot = snapshot.plugins.find((p) => p.id === contribution.pluginId);
 
-    // Register remote if needed
     ensureRemoteRegistered(
       contribution.pluginId,
       registeredRemoteIds,
@@ -258,24 +288,19 @@ export function createEdgeSlotRenderer(options: EdgeSlotRendererOptions): EdgeSl
         contribution.pluginId,
         "./pluginSlots",
       );
-
       if (generation !== expectedGeneration) {
         return;
       }
-
       const mountFn = resolveSlotMount(remoteModule, contribution);
       if (!mountFn) {
         return;
       }
-
       const cleanupResult = await mountFn(target, { contribution, runtime });
       const cleanup = normalizeCleanup(cleanupResult);
-
       if (generation !== expectedGeneration) {
         safeUnmount(cleanup);
         return;
       }
-
       mounted.set(contribution.id, { target, cleanup, mountKey });
     } catch {
       // Mount failed — slot stays empty, no crash.

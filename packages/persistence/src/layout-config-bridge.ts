@@ -8,13 +8,7 @@
  */
 
 import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
-
-/** Stub for ConfigurationService (@weaver/config-types removed). */
-interface ConfigurationService {
-  get<T = unknown>(key: string): T | undefined;
-  set(key: string, value: unknown, layer?: string): void;
-  [key: string]: unknown;
-}
+import type { ConfigurationService } from "@ghost-shell/contracts";
 import {
   createDefaultLayoutState,
   sanitizeLayoutState,
@@ -25,6 +19,7 @@ import type { ShellLayoutPersistence, StorageLike } from "./contracts.js";
 import {
   getUnifiedStorageKey,
   loadUnifiedEnvelope,
+  mergeAndSaveEnvelope,
   migrateLayoutSectionEnvelope,
 } from "./envelope.js";
 
@@ -218,21 +213,7 @@ function saveToStorage(
     return;
   }
 
-  // Read existing envelope to preserve other sections
-  const existing = loadUnifiedEnvelope(storage, storageKey);
-  const envelope = {
-    version: 1 as const,
-    ...(existing.ok
-      ? {
-          layout: existing.value.layout,
-          context: existing.value.context,
-          keybindings: existing.value.keybindings,
-        }
-      : {}),
-    layout: { version: 1 as const, state },
-  };
-
-  storage.setItem(storageKey, JSON.stringify(envelope));
+  mergeAndSaveEnvelope(storage, storageKey, "layout", { version: 1 as const, state });
 }
 
 function setMigrationFlag(storage: StorageLike | undefined): void {

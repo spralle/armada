@@ -10,6 +10,7 @@ import type { ContextApi, ContextProviderSource } from "@ghost-shell/contracts/c
 import { createElement, type ComponentType, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { GhostContext, type GhostContextValue } from "./ghost-context.js";
+import { PluginErrorBoundary } from "./PluginErrorBoundary.js";
 
 /**
  * Create a PartRenderer that mounts React components from ReactPartsModule.
@@ -34,6 +35,7 @@ function buildRenderTree(
   let tree: ReactElement = createElement(Component, {
     context: ghostValue.mountContext,
   });
+  tree = createElement(PluginErrorBoundary, { pluginId: ghostValue.pluginId }, tree);
   tree = createElement(GhostContext.Provider, { value: ghostValue }, tree);
 
   // Wrap with contributed providers: lowest order = outermost,
