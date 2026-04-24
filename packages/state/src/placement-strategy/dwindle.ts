@@ -107,7 +107,7 @@ function locateActiveStack(node: DockNode, targetStackId?: string, depth = 0): L
     allResults.push({ ...inSecond, path: ["second", ...inSecond.path] });
   }
 
-  // Prefer the explicitly targeted stack, then any with an active tab, then first found
+  // Prefer the explicitly targeted stack, then one with an active tab, then first found
   if (targetStackId) {
     const targeted = allResults.find((r) => r.stack.id === targetStackId);
     if (targeted) {

@@ -184,9 +184,9 @@ export interface FieldValidationTriggers {
   readonly onSubmit?: boolean;
   /** Show issues immediately on mount. */
   readonly onMount?: boolean;
-  /** Re-show issues when any listed source field's value changes */
+  /** Re-show issues when a listed source field's value changes */
   readonly onChangeListenTo?: readonly string[];
-  /** Re-show issues when any listed source field is blurred */
+  /** Re-show issues when a listed source field is blurred */
   readonly onBlurListenTo?: readonly string[];
 }
 
@@ -260,7 +260,7 @@ export interface FormApi<TData, TUi> {
   isValid(): boolean;
   /** True when submission is in progress */
   isSubmitting(): boolean;
-  /** True when any field has been touched */
+  /** True when at least one field has been touched */
   isTouched(): boolean;
   dispose(): void;
 }

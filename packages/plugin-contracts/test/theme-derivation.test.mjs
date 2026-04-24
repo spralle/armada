@@ -2,14 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   deriveFullPalette,
-  partialThemePaletteSchema,
-  GHOST_THEME_CSS_VARS,
   adjustLightness,
   desaturate,
   contrastSafe,
   blendWithBackground,
   contrastRatio,
   isValidHex,
+  GHOST_THEME_CSS_VARS,
+} from "../../theme/src/index.ts";
+import {
+  partialThemePaletteSchema,
 } from "../dist/index.js";
 
 // ---------------------------------------------------------------------------

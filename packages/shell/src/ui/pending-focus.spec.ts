@@ -54,6 +54,11 @@ test("close click flow persists context and applies/clears pending focus", () =>
         return { warning: null };
       },
     },
+    workspacePersistence: {
+      save() { return { warning: null }; },
+      load() { return { warning: null }; },
+    },
+    workspaceManager: {},
     registry: {
       getSnapshot() {
         return {
@@ -121,6 +126,11 @@ test("reopen most recently closed tab restores tab and pending focus", () => {
         return { warning: null };
       },
     },
+    workspacePersistence: {
+      save() { return { warning: null }; },
+      load() { return { warning: null }; },
+    },
+    workspaceManager: {},
     registry: {
       getSnapshot() {
         return {

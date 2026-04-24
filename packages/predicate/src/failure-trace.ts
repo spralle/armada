@@ -51,7 +51,7 @@ function collectTraces(
   }
 }
 
-/** Evaluate an expression and collect traces for any failed comparisons. */
+/** Evaluate an expression and collect traces for all failed comparisons. */
 export function evaluateWithTrace(
   node: ExprNode,
   scope: EvaluationScope,

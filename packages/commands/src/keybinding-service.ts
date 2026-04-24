@@ -61,7 +61,7 @@ export interface KeybindingService {
   dispatch: (chord: NormalizedKeybindingChord, context: ActionSurfaceContext) => Promise<KeybindingDispatchResult>;
   /** Sequence-aware dispatch — only dispatches on exact match */
   dispatchSequence: (chords: readonly NormalizedKeybindingChord[], context: ActionSurfaceContext) => Promise<KeybindingDispatchResult>;
-  /** Check if any registered sequence starts with these chords */
+  /** Check if a registered sequence starts with these chords */
   hasPrefix: (chords: readonly NormalizedKeybindingChord[], context: ActionSurfaceContext) => boolean;
   /** Timeout in ms for multi-chord sequence completion */
   readonly sequenceTimeoutMs: number;

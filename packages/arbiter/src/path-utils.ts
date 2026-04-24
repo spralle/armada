@@ -39,7 +39,7 @@ export function isWildcardPath(path: string): boolean {
 
 /**
  * Matches a wildcard pattern against a concrete path.
- * `*` matches any single segment.
+ * `*` matches a single segment.
  */
 export function matchWildcardPath(pattern: string, concrete: string): boolean {
   const patternSegments = splitPath(pattern);

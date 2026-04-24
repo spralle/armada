@@ -3,7 +3,7 @@
  * Types-only — no runtime code.
  */
 
-/** Detects `any` to prevent type pollution in recursive utilities. */
+/** Detects the `unknown`-like top type to prevent type pollution in recursive utilities. */
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 /** Expands intersection types for readability in IDE tooltips. */

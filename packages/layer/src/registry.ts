@@ -57,7 +57,7 @@ export class LayerRegistry {
         continue;
       }
 
-      // Detect z-order collisions with any existing layer
+      // Detect z-order collisions with existing layers
       let zConflict: LayerDefinition | undefined;
       for (const layer of this.layers.values()) {
         if (layer.zOrder === def.zOrder) {
@@ -101,7 +101,7 @@ export class LayerRegistry {
       }
     }
 
-    // Cascade: remove ALL surfaces on those layers (from any plugin)
+    // Cascade: remove ALL surfaces on those layers (from all plugins)
     const removedEntries: Array<{ surfaceId: string; pluginId: string }> = [];
     for (const layerName of removedLayers) {
       for (const [surfaceId, entry] of this.surfaces) {

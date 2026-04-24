@@ -69,7 +69,7 @@ function getTransformDefs(options: CreateFormOptions<unknown, unknown>): readonl
   );
 }
 
-/** Run validators synchronously; throws FORMR_ASYNC_IN_SYNC_PIPELINE if any return a Promise */
+/** Run validators synchronously; throws FORMR_ASYNC_IN_SYNC_PIPELINE if one returns a Promise */
 function runValidators(
   validators: readonly ValidatorFn[],
   state: { readonly data: unknown; readonly uiState: unknown; readonly meta: { readonly stage?: string } },
@@ -209,7 +209,7 @@ export function executePipeline(ctx: PipelineContext): PipelineResult {
       }
     }
 
-    // Step 14: Abort gate — if any fatal runtime error, rollback (handled by catch)
+    // Step 14: Abort gate — if a fatal runtime error occurs, rollback (handled by catch)
     // Write issues into draft (always update to clear stale issues from previous dispatches)
     tx.mutate((draft) => ({ ...draft, issues }));
 

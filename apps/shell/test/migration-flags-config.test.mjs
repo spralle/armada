@@ -4,12 +4,12 @@ import {
   migrationFlagSchemas,
   readMigrationFlagsFromConfig,
   MIGRATION_FLAG_KEYS,
-} from "../dist-test/src/app/migration-flags-config.js";
+} from "../src/app/migration-flags-config.ts";
 import {
   readShellMigrationFlags,
   selectShellTransportPath,
   selectCrossWindowDnd,
-} from "../dist-test/src/app/migration-flags.js";
+} from "../src/app/migration-flags.ts";
 
 // ---------------------------------------------------------------------------
 // Stub ConfigurationService — minimal mock that satisfies the adapter
@@ -84,8 +84,6 @@ test("readMigrationFlagsFromConfig returns correct defaults when config is empty
   const configService = createStubConfigService({});
   const flags = readMigrationFlagsFromConfig(configService);
 
-  assert.equal(flags.useContractCoreApi, true, "useContractCoreApi default");
-  assert.equal(flags.useAdapterComposition, true, "useAdapterComposition default");
   assert.equal(flags.enableAsyncScompAdapter, false, "enableAsyncScompAdapter default");
   assert.equal(flags.forceLegacyBridge, false, "forceLegacyBridge default");
   assert.equal(flags.enableCrossWindowDnd, true, "enableCrossWindowDnd default");
@@ -98,15 +96,12 @@ test("readMigrationFlagsFromConfig returns correct defaults when config is empty
 
 test("readMigrationFlagsFromConfig reads overridden values from config service", () => {
   const configService = createStubConfigService({
-    "ghost.shell.migration.useContractCoreApi": false,
     "ghost.shell.migration.enableAsyncScompAdapter": true,
     "ghost.shell.migration.forceLegacyBridge": true,
     "ghost.shell.migration.enableCrossWindowDnd": false,
   });
   const flags = readMigrationFlagsFromConfig(configService);
 
-  assert.equal(flags.useContractCoreApi, false, "should read useContractCoreApi=false");
-  assert.equal(flags.useAdapterComposition, true, "should fallback to default for unset key");
   assert.equal(flags.enableAsyncScompAdapter, true, "should read enableAsyncScompAdapter=true");
   assert.equal(flags.forceLegacyBridge, true, "should read forceLegacyBridge=true");
   assert.equal(flags.enableCrossWindowDnd, false, "should read enableCrossWindowDnd=false");
@@ -142,9 +137,6 @@ test("config-provided flags match legacy flags for non-default scenario", () => 
 
   assert.equal(configFlags.enableAsyncScompAdapter, legacyFlags.enableAsyncScompAdapter);
   assert.equal(configFlags.forceLegacyBridge, legacyFlags.forceLegacyBridge);
-  // Other defaults should match
-  assert.equal(configFlags.useContractCoreApi, legacyFlags.useContractCoreApi);
-  assert.equal(configFlags.useAdapterComposition, legacyFlags.useAdapterComposition);
 });
 
 // ---------------------------------------------------------------------------

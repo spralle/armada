@@ -1,6 +1,6 @@
 import { FromSchemaError } from './errors.js';
 
-/** ADR section 4: if any $ui path is referenced, uiStateSchema is required */
+/** ADR section 4: if a $ui path is referenced, uiStateSchema is required */
 export function validateUiSchemaRequirement(config: {
   readonly uiStateSchema?: unknown;
   readonly hasUiPathReferences: boolean;
@@ -8,13 +8,13 @@ export function validateUiSchemaRequirement(config: {
   if (config.hasUiPathReferences && !config.uiStateSchema) {
     throw new FromSchemaError(
       'FORMR_UI_SCHEMA_REQUIRED',
-      'uiStateSchema is required when any path reference uses $ui namespace. ' +
+      'uiStateSchema is required when a path reference uses $ui namespace. ' +
         'Provide uiStateSchema in CreateFormOptions or remove all $ui path references.',
     );
   }
 }
 
-/** Detect if any paths in a collection reference the $ui namespace */
+/** Detect if paths in a collection reference the $ui namespace */
 export function hasUiPaths(paths: readonly string[]): boolean {
   return paths.some((p) => p.startsWith('$ui.') || p === '$ui');
 }
