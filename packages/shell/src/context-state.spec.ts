@@ -23,7 +23,6 @@ import { registerKeybindingServiceSpecs } from "./shell-runtime/keybinding-servi
 import { registerShellKeyboardActionSpecs } from "./context-state.spec-shell-keyboard-actions.js";
 import { registerKeyboardHandlersSpecs } from "./shell-runtime/keyboard-handlers.spec.js";
 import { registerWorkspaceRuntimeActionSpecs } from "./shell-runtime/workspace-runtime-actions.spec.js";
-import { registerKeybindingPersistenceSpecs } from "./persistence/keybinding-persistence.spec.js";
 import { registerKeybindingNormalizerSpecs } from "./shell-runtime/keybinding-normalizer.spec.js";
 import { registerKeybindingResolverSpecs } from "./shell-runtime/keybinding-resolver.spec.js";
 import { registerKeybindingOverrideManagerSpecs } from "./shell-runtime/keybinding-override-manager.spec.js";
@@ -63,7 +62,6 @@ registerKeybindingServiceSpecs(harness);
 registerShellKeyboardActionSpecs(harness);
 registerKeyboardHandlersSpecs(harness);
 registerWorkspaceRuntimeActionSpecs(harness);
-registerKeybindingPersistenceSpecs(harness);
 registerKeybindingOverrideManagerSpecs(harness);
 registerKeybindingNormalizerSpecs(harness);
 registerKeybindingResolverSpecs(harness);

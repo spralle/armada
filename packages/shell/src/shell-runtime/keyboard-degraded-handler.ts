@@ -1,5 +1,5 @@
 import { resolveDegradedKeyboardInteraction } from "../keyboard-a11y.js";
-import type { KeybindingService } from "./keybinding-service.js";
+import type { KeybindingService } from "@ghost-shell/commands";
 import type { ShellRuntime } from "../app/types.js";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
 import { handleTabLifecycleShortcut } from "./keyboard-tab-navigation.js";

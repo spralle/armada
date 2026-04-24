@@ -1,10 +1,10 @@
-import { createKeybindingService, type KeybindingService } from "./keybinding-service.js";
+import { createKeybindingService, type KeybindingService } from "@ghost-shell/commands";
 import type { ActionKeybinding, ActionSurface } from "../action-surface.js";
 import { DEFAULT_SHELL_KEYBINDING_PLUGIN_ID } from "./default-shell-keybindings.js";
 import type { BridgeHost, ShellRuntime } from "../app/types.js";
 import type { IntentActionMatch, ShellIntent } from "@ghost-shell/intents";
 import type { PluginActivationTriggerType } from "../plugin-registry.js";
-import type { NormalizedKeybindingChord } from "./keybinding-normalizer.js";
+import type { NormalizedKeybindingChord } from "@ghost-shell/commands";
 import type { WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
 import {
   readSequenceTimeoutMs,
