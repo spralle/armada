@@ -43,7 +43,7 @@ export type InferRouteParams<T extends ResolvedRoute> = z.infer<T["schema"]>;
  * @example
  * ```ts
  * import { z } from "zod";
- * import { defineRoutes } from "@ghost/router";
+ * import { defineRoutes } from "@ghost-shell/router";
  *
  * const routes = defineRoutes({
  *   "vessel.list": {

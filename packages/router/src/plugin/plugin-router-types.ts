@@ -7,7 +7,7 @@ import type { AnyRouteMap, RouteId, RouteParams, RouteRefUnion } from "../core/r
  *
  * @example
  * ```ts
- * import { defineRoutes } from "@ghost/router";
+ * import { defineRoutes } from "@ghost-shell/router";
  * import { z } from "zod";
  *
  * const routes = defineRoutes({

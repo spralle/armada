@@ -57,7 +57,7 @@ import type { ContextServiceDeps } from "../context-service-registration.js";
 import type { KeybindingServiceDeps } from "../keybinding-service-registration.js";
 import type { PlacementStrategyRegistry } from "@ghost-shell/state";
 import type { PlacementConfig } from "@ghost-shell/state";
-import type { ShellStateObserver } from "@ghost/router";
+import type { ShellStateObserver } from "@ghost-shell/router";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";

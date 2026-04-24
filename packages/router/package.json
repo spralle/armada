@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/router",
+  "name": "@ghost-shell/router",
   "version": "0.0.0",
   "private": true,
   "type": "module",

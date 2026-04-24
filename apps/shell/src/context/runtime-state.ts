@@ -15,7 +15,7 @@ import {
   DEFAULT_GROUP_ID,
 } from "../app/constants.js";
 import type { DevLaneMetadata, RenderTabMetadata, ShellRuntime } from "../app/types.js";
-import type { StateChangeHint } from "@ghost/router";
+import type { StateChangeHint } from "@ghost-shell/router";
 
 export const CORE_GROUP_CONTEXT_KEY = "shell.group-context";
 export const CORE_GLOBAL_SELECTION_KEY = "shell.selection";

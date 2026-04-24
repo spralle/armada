@@ -202,7 +202,7 @@ export interface InputBoxOptions {
 export interface PluginRouterServiceApi {
   /**
    * Create a type-safe plugin router scoped to the given route definitions.
-   * Route definitions should be created via defineRoutes() from @ghost/router.
+   * Route definitions should be created via defineRoutes() from @ghost-shell/router.
    */
   createPluginRouter<T extends Record<string, { readonly id: string; readonly schema: unknown }>>(routes: T): unknown;
 }
