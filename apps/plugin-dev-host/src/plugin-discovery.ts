@@ -104,7 +104,12 @@ function discoverPluginsInDir(pluginsDir: string): DiscoveredPluginDefinition[] 
 
     let parsed: PluginPackageJson;
     try {
-      parsed = JSON.parse(raw) as PluginPackageJson;
+      const raw_parsed: unknown = JSON.parse(raw);
+      if (!raw_parsed || typeof raw_parsed !== "object" || Array.isArray(raw_parsed)) {
+        console.warn(`[plugin-discovery] skipping ${folderName}: package.json is not an object`);
+        continue;
+      }
+      parsed = raw_parsed as PluginPackageJson;
     } catch {
       console.warn(`[plugin-discovery] skipping ${folderName}: invalid package.json`);
       continue;

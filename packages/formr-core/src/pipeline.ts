@@ -169,9 +169,10 @@ export function executePipeline(ctx: PipelineContext): PipelineResult {
 
     // Step 7: Evaluate expressions and rules
     if (ctx.arbiterAdapter) {
+      const arbiter = ctx.arbiterAdapter;
       const actionPath = action.path;
       tx.mutate((draft) => {
-        const writes = ctx.arbiterAdapter!.syncAndFire(draft);
+        const writes = arbiter.syncAndFire(draft);
         const filtered = (action.type === 'set-value' && actionPath)
           ? writes.filter((w) => w.path !== actionPath)
           : writes;

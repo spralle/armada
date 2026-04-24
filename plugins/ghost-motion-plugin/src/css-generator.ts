@@ -28,8 +28,11 @@ function buildTransitionBlock(
   durationMs: number,
   easing: string,
 ): string {
-  const props = node.transitionProps!.join(", ");
-  const transitionValue = node.transitionProps!
+  if (!node.transitionProps || node.transitionProps.length === 0) {
+    return "";
+  }
+  const props = node.transitionProps.join(", ");
+  const transitionValue = node.transitionProps
     .map(p => `${p} ${durationMs}ms ${easing}`)
     .join(", ");
   let block = `${selector} {\n  transition: ${transitionValue};\n`;

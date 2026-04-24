@@ -34,7 +34,10 @@ export function parseNavigationTarget(element: Element): NavigationTarget | null
     let params: Record<string, string> = {};
     if (rawParams) {
       try {
-        params = JSON.parse(rawParams);
+        const parsed: unknown = JSON.parse(rawParams);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          params = parsed as Record<string, string>;
+        }
       } catch {
         console.warn(`[delegated-navigation] Failed to parse data-params: ${rawParams}`);
         return null;
@@ -49,7 +52,10 @@ export function parseNavigationTarget(element: Element): NavigationTarget | null
     let facts: Record<string, unknown> = {};
     if (rawFacts) {
       try {
-        facts = JSON.parse(rawFacts);
+        const parsed: unknown = JSON.parse(rawFacts);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          facts = parsed as Record<string, unknown>;
+        }
       } catch {
         console.warn(`[delegated-navigation] Failed to parse data-facts: ${rawFacts}`);
         return null;

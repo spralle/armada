@@ -185,7 +185,10 @@ function handleRoutedRequest(
         }
         const body = Buffer.concat(chunks).toString("utf-8");
         try {
-          const manifest = JSON.parse(body) as Record<string, unknown>;
+          const parsed: unknown = JSON.parse(body);
+          const manifest = (parsed && typeof parsed === "object" && !Array.isArray(parsed))
+            ? parsed as Record<string, unknown>
+            : {};
           const absoluteBase = `http://127.0.0.1:${port}/${routeResult.pluginId}/`;
           const rewritten = rewriteManifestPublicPath(manifest, absoluteBase);
           const rewrittenBody = JSON.stringify(rewritten);
@@ -236,7 +239,10 @@ function handleRoutedRequest(
     if (pathWithoutQuery === "/mf-manifest.json") {
       try {
         const raw = readFileSync(normalizedFilePath, "utf-8");
-        const manifest = JSON.parse(raw) as Record<string, unknown>;
+        const parsed: unknown = JSON.parse(raw);
+        const manifest = (parsed && typeof parsed === "object" && !Array.isArray(parsed))
+          ? parsed as Record<string, unknown>
+          : {};
         const absoluteBase = `http://127.0.0.1:${port}/${routeResult.pluginId}/`;
         const rewritten = rewriteManifestPublicPath(manifest, absoluteBase);
         res.statusCode = 200;

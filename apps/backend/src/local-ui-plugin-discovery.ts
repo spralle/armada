@@ -83,7 +83,12 @@ export function discoverPluginDefinitions(
 
     let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(raw) as Record<string, unknown>;
+      const raw_parsed: unknown = JSON.parse(raw);
+      if (!raw_parsed || typeof raw_parsed !== "object" || Array.isArray(raw_parsed)) {
+        console.warn(`[plugin-discovery] skipping ${folderName}: package.json is not an object`);
+        continue;
+      }
+      parsed = raw_parsed as Record<string, unknown>;
     } catch {
       console.warn(`[plugin-discovery] skipping ${folderName}: invalid package.json`);
       continue;

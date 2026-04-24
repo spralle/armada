@@ -7,7 +7,8 @@ import {
   type GhostApiFactoryDependencies,
 } from "./plugin-api/ghost-api-factory.js";
 import type { LayerRegistry } from "@ghost-shell/layer";
-import type { PluginLoadStrategy, PluginLoadError } from "./plugin-loader.js";
+import { PluginLoadError } from "./plugin-loader.js";
+import type { PluginLoadStrategy } from "./plugin-loader.js";
 import { buildActivationPlan } from "./plugin-activation-plan.js";
 import { pushDiagnostic, transitionLifecycle } from "./plugin-registry-diagnostics.js";
 import type {
@@ -252,7 +253,7 @@ function isPluginLoadError(error: unknown): error is PluginLoadError {
     return false;
   }
 
-  return "context" in error;
+  return error instanceof PluginLoadError;
 }
 
 // ---------------------------------------------------------------------------

@@ -84,7 +84,7 @@ export function createActionService(
     async executeAction<T = void>(
       id: string,
       ...args: unknown[]
-    ): Promise<T> {
+    ): Promise<T | undefined> {
       // Check runtime-registered actions first
       const runtimeHandler = readRuntimeHandler(id, runtimeActions, deps.runtimeActionRegistry);
       if (runtimeHandler) {
@@ -127,7 +127,7 @@ export function createActionService(
         );
       }
 
-      return undefined as T;
+      return undefined;
     },
 
     async getActions(): Promise<ActionDescriptor[]> {

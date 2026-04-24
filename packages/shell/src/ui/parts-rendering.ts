@@ -332,5 +332,9 @@ function resolveStackActiveTabId(
     return fallbackActiveTabId;
   }
 
+  if (tabs.length === 0) {
+    return "";
+  }
+
   return tabs[0]!.id;
 }
