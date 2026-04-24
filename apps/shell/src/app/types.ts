@@ -57,6 +57,7 @@ import type { ContextServiceDeps } from "../context-service-registration.js";
 import type { KeybindingServiceDeps } from "../keybinding-service-registration.js";
 import type { PlacementStrategyRegistry } from "../context-state/placement-strategy/registry.js";
 import type { PlacementConfig } from "../context-state/placement-strategy/types.js";
+import type { ShellStateObserver } from "@ghost/router";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";
@@ -145,6 +146,7 @@ export interface ShellRuntime extends DndDiagnosticRuntime {
   lastDndDiagnostic: DndDiagnosticEnvelope | null;
   placementRegistry: PlacementStrategyRegistry;
   placementConfig: PlacementConfig;
+  stateObserver?: ShellStateObserver | undefined;
   elevatedSession: {
     active: boolean;
     activatedAt: number | null;

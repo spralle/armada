@@ -15,6 +15,7 @@ import {
   DEFAULT_GROUP_ID,
 } from "../app/constants.js";
 import type { DevLaneMetadata, RenderTabMetadata, ShellRuntime } from "../app/types.js";
+import type { StateChangeHint } from "@ghost/router";
 
 export const CORE_GROUP_CONTEXT_KEY = "shell.group-context";
 export const CORE_GLOBAL_SELECTION_KEY = "shell.selection";
@@ -98,12 +99,14 @@ export function writeGlobalSelectionLane(
   }));
 }
 
-export function updateContextState(runtime: ShellRuntime, nextState: ShellContextState): void {
+export function updateContextState(runtime: ShellRuntime, nextState: ShellContextState, hint?: StateChangeHint): void {
+  const prevState = runtime.contextState;
   runtime.contextState = nextState;
   const result = runtime.workspacePersistence.save(runtime.workspaceManager, nextState);
   if (result.warning) {
     runtime.notice = result.warning;
   }
+  runtime.stateObserver?.onContextStateChanged(prevState, nextState, hint ?? "unknown");
 }
 
 export function collectLaneMetadata(state: ShellContextState): DevLaneMetadata[] {

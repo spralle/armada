@@ -15,6 +15,8 @@ export interface GhostApi {
   readonly views: ViewService;
   /** Workspace management. */
   readonly workspaces: WorkspaceService;
+  /** Router service for type-safe plugin navigation. */
+  readonly router?: PluginRouterServiceApi | undefined;
 }
 
 // ─── ActionService ───
@@ -188,6 +190,20 @@ export interface InputBoxOptions {
   readonly value?: string;
   /** Prompt text above the input. */
   readonly prompt?: string;
+}
+
+// ─── PluginRouterServiceApi ───
+
+/**
+ * Router service API exposed to plugins via GhostApi.
+ * Provides factory method for creating type-safe plugin routers.
+ */
+export interface PluginRouterServiceApi {
+  /**
+   * Create a type-safe plugin router scoped to the given route definitions.
+   * Route definitions should be created via defineRoutes() from @ghost/router.
+   */
+  createPluginRouter<T extends Record<string, { readonly id: string; readonly schema: unknown }>>(routes: T): unknown;
 }
 
 // ─── ActivationContext ───

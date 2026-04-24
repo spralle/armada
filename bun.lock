@@ -51,6 +51,7 @@
       "dependencies": {
         "@ghost/config-plugin-runtime": "workspace:*",
         "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
+        "@ghost/router": "workspace:*",
         "@module-federation/enhanced": "^2.3.1",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
@@ -131,6 +132,16 @@
       "version": "0.0.0",
       "devDependencies": {
         "kuery": "0.6.0",
+      },
+    },
+    "packages/router": {
+      "name": "@ghost/router",
+      "version": "0.0.0",
+      "devDependencies": {
+        "zod": "^3.24.2",
+      },
+      "peerDependencies": {
+        "zod": "^3.24.2",
       },
     },
     "packages/ui": {
@@ -615,6 +626,8 @@
     "@ghost/plugin-dev-host": ["@ghost/plugin-dev-host@workspace:apps/plugin-dev-host"],
 
     "@ghost/predicate": ["@ghost/predicate@workspace:packages/predicate"],
+
+    "@ghost/router": ["@ghost/router@workspace:packages/router"],
 
     "@ghost/shell-app": ["@ghost/shell-app@workspace:apps/shell"],
 
@@ -1297,6 +1310,8 @@
     "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
     "@ghost/backend-app/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
+
+    "@ghost/config-plugin-runtime/@ghost/plugin-contracts": ["@ghost/plugin-contracts@file:packages/plugin-contracts", { "dependencies": { "@ghost/predicate": "workspace:*", "zod": "^3.24.2" } }],
 
     "@ghost/formr-react/@types/react": ["@types/react@19.2.14", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
 
