@@ -29,8 +29,8 @@ export interface RuntimeRenderBindings {
   applySelection: (event: import("@ghost-shell/bridge").SelectionSyncEvent) => void;
   dismissIntentChooser: () => void;
   executeResolvedAction: (
-    match: import("../intent-runtime.js").IntentActionMatch,
-    intent: import("../intent-runtime.js").ShellIntent | null,
+    match: import("@ghost-shell/intents").IntentActionMatch,
+    intent: import("@ghost-shell/intents").ShellIntent | null,
   ) => Promise<void>;
   primeEnabledPluginActivations: () => Promise<void>;
   publishWithDegrade: (event: Parameters<BridgeHost["bridge"]["publish"]>[0]) => void;

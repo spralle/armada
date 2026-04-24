@@ -105,6 +105,9 @@
     },
     {
       "path": "./packages/react"
+    },
+    {
+      "path": "./packages/shell"
     }
   ]
 }

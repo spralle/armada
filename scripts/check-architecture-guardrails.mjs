@@ -7,12 +7,12 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
 
 const guardRoots = [
-  "apps/shell/src/index.ts",
-  "apps/shell/src/context",
-  "apps/shell/src/domain",
-  "apps/shell/src/sync",
-  "apps/shell/src/ui",
-  "apps/shell/src/app",
+  "packages/shell/src/index.ts",
+  "packages/shell/src/context",
+  "packages/shell/src/domain",
+  "packages/shell/src/sync",
+  "packages/shell/src/ui",
+  "packages/shell/src/app",
 ];
 
 const importRegex = /^\s*import\s+[^;]*from\s+["']([^"']+)["']/gm;
@@ -106,7 +106,7 @@ function isScriptFile(relativePath) {
 async function safeStat(targetPath) {
   try {
     const fs = await import("node:fs/promises");
-    return fs.stat(targetPath);
+    return await fs.stat(targetPath);
   } catch {
     return null;
   }

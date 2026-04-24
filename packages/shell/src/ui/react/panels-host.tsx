@@ -8,7 +8,7 @@ import {
   readGroupSelectionContext,
 } from "../../context/runtime-state.js";
 import { getBridgeWarningMessage } from "../../sync/bridge-degraded.js";
-import type { IntentActionMatch } from "../../intent-runtime.js";
+import type { IntentActionMatch } from "@ghost-shell/intents";
 import type { ShellRuntime } from "../../app/types.js";
 import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";

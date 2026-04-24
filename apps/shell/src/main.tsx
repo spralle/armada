@@ -1,12 +1,17 @@
-import { createRoot } from "react-dom/client";
-import { App } from "./App.js";
+import { createGhostShell } from "@ghost-shell/shell";
 
-const rootElement = document.getElementById("root");
+const root = document.getElementById("root");
 
-if (!rootElement) {
+if (!root) {
   throw new Error("Shell root element '#root' not found.");
 }
 
-createRoot(rootElement).render(
-  <App />,
-);
+const shell = createGhostShell({
+  root,
+  tenant: { id: "demo" },
+  theme: "ghost.theme.tokyo-night",
+  debug: true,
+  hmr: true,
+});
+
+shell.start().catch(console.error);

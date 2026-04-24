@@ -50,23 +50,13 @@
     "apps/shell": {
       "name": "@ghost-shell/shell-app",
       "dependencies": {
-        "@ghost-shell/bridge": "workspace:*",
-        "@ghost-shell/commands": "workspace:*",
-        "@ghost-shell/config-plugin-runtime": "workspace:*",
-        "@ghost-shell/contracts": "file:../../packages/plugin-contracts",
-        "@ghost-shell/federation": "workspace:*",
-        "@ghost-shell/intents": "workspace:*",
-        "@ghost-shell/layer": "workspace:*",
-        "@ghost-shell/persistence": "workspace:*",
-        "@ghost-shell/plugin-system": "workspace:*",
-        "@ghost-shell/router": "workspace:*",
-        "@ghost-shell/state": "workspace:*",
-        "@ghost-shell/theme": "workspace:*",
+        "@ghost-shell/shell": "workspace:*",
         "@module-federation/enhanced": "^2.3.1",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
       },
       "devDependencies": {
+        "@ghost-shell/config-plugin-runtime": "workspace:*",
         "@types/react": "^18.3.12",
         "@types/react-dom": "^18.3.1",
         "@vitejs/plugin-react": "^4.7.0",
@@ -227,6 +217,34 @@
       },
       "peerDependencies": {
         "zod": "^3.24.2",
+      },
+    },
+    "packages/shell": {
+      "name": "@ghost-shell/shell",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost-shell/bridge": "workspace:*",
+        "@ghost-shell/commands": "workspace:*",
+        "@ghost-shell/contracts": "workspace:*",
+        "@ghost-shell/federation": "workspace:*",
+        "@ghost-shell/intents": "workspace:*",
+        "@ghost-shell/layer": "workspace:*",
+        "@ghost-shell/persistence": "workspace:*",
+        "@ghost-shell/plugin-system": "workspace:*",
+        "@ghost-shell/react": "workspace:*",
+        "@ghost-shell/router": "workspace:*",
+        "@ghost-shell/state": "workspace:*",
+        "@ghost-shell/theme": "workspace:*",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+      },
+      "devDependencies": {
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1",
+      },
+      "peerDependencies": {
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
       },
     },
     "packages/state": {
@@ -750,6 +768,8 @@
     "@ghost-shell/react": ["@ghost-shell/react@workspace:packages/react"],
 
     "@ghost-shell/router": ["@ghost-shell/router@workspace:packages/router"],
+
+    "@ghost-shell/shell": ["@ghost-shell/shell@workspace:packages/shell"],
 
     "@ghost-shell/shell-app": ["@ghost-shell/shell-app@workspace:apps/shell"],
 
@@ -1495,25 +1515,9 @@
 
     "@ghost-shell/backend-app/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
-    "@ghost-shell/commands/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/config-plugin-runtime/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/federation/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
     "@ghost-shell/formr-react/@types/react": ["@types/react@19.2.14", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
 
     "@ghost-shell/formr-react/react": ["react@19.2.5", "", {}, "sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA=="],
-
-    "@ghost-shell/intents/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/layer/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/persistence/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/plugin-system/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/react/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost-shell/react/@types/react": ["@types/react@19.2.14", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
 
@@ -1522,10 +1526,6 @@
     "@ghost-shell/react/react": ["react@19.2.5", "", {}, "sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA=="],
 
     "@ghost-shell/react/react-dom": ["react-dom@19.2.5", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.5" } }, "sha512-J5bAZz+DXMMwW/wV3xzKke59Af6CHY7G4uYLN1OvBcKEsWOs4pQExj86BBKamxl/Ik5bx9whOrvBlSDfWzgSag=="],
-
-    "@ghost-shell/shell-app/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
-
-    "@ghost-shell/theme/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost-shell/typecheck-fixture/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 

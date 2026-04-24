@@ -8,10 +8,10 @@
 
 ## The composition API
 
-Ghost Shell exports a `createGhostShell()` factory from `@ghost-shell/shell-app` that wires all subsystems and returns a clean handle. This lets you embed the full plugin shell inside any web application.
+Ghost Shell exports a `createGhostShell()` factory from `@ghost-shell/shell` that wires all subsystems and returns a clean handle. This lets you embed the full plugin shell inside any web application.
 
 ```ts
-import { createGhostShell } from "@ghost-shell/shell-app";
+import { createGhostShell } from "@ghost-shell/shell";
 ```
 
 ## Basic embedding
@@ -43,7 +43,7 @@ import { createGhostShell } from "@ghost-shell/shell-app";
 
 ```ts
 // main.ts
-import { createGhostShell } from "@ghost-shell/shell-app";
+import { createGhostShell } from "@ghost-shell/shell";
 
 const root = document.getElementById("shell-root")!;
 
@@ -101,7 +101,7 @@ interface GhostShellOptions {
 Pass additional renderers to handle non-React plugin modules:
 
 ```ts
-import { createGhostShell } from "@ghost-shell/shell-app";
+import { createGhostShell } from "@ghost-shell/shell";
 import { createSvelteRenderer } from "./svelte-renderer.js";
 
 const shell = createGhostShell({
@@ -166,7 +166,7 @@ If your host app is React-based, mount the shell inside a `useEffect`:
 
 ```tsx
 import { useEffect, useRef } from "react";
-import { createGhostShell, type GhostShell } from "@ghost-shell/shell-app";
+import { createGhostShell, type GhostShell } from "@ghost-shell/shell";
 
 export function GhostShellEmbed() {
   const containerRef = useRef<HTMLDivElement>(null);

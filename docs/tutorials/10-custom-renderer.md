@@ -145,7 +145,7 @@ export function createSvelteRenderer(): PartRenderer {
 When embedding the shell (see Tutorial 09):
 
 ```ts
-import { createGhostShell } from "@ghost-shell/shell-app";
+import { createGhostShell } from "@ghost-shell/shell";
 import { createSvelteRenderer } from "./svelte-renderer.js";
 
 const shell = createGhostShell({

@@ -3,11 +3,11 @@ import type {
   LayerSurfaceContext,
   ElementTransitionHook,
 } from "@ghost-shell/contracts";
+import { evaluateContributionPredicate } from "@ghost-shell/plugin-system";
 import {
-  evaluateContributionPredicate,
   HOOK_REGISTRY_SERVICE_ID,
   ELEMENT_TRANSITION_HOOK_ID,
-} from "@ghost-shell/plugin-system";
+} from "@ghost-shell/contracts";
 import type { LayerRegistry } from "@ghost-shell/layer";
 import type { ShellRuntime } from "../app/types.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";

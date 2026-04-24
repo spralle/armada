@@ -27,8 +27,6 @@ import type { ShellBootstrapDeps } from "./bootstrap-shell.js";
 import {
   activatePluginForBoundary,
   announce,
-  bindBridgeSync,
-  bindKeyboardShortcuts,
   createBridgeBindings,
   createWorkspaceSwitchDeps,
   dismissIntentChooser,
@@ -41,6 +39,9 @@ import {
 } from "./shell-wiring.js";
 import { registerWorkspaceRuntimeActions } from "./shell-runtime/workspace-runtime-actions.js";
 import { publishWithDegrade } from "./shell-runtime/bridge-sync-handlers.js";
+import { mountShell, registerRuntimeTeardown } from "./shell-mount.js";
+import { hydratePluginRegistry } from "./shell-hydrate.js";
+import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 
 // ---------------------------------------------------------------------------
 // Options
@@ -49,10 +50,18 @@ import { publishWithDegrade } from "./shell-runtime/bridge-sync-handlers.js";
 export interface GhostShellOptions {
   /** DOM element to mount the shell into. */
   readonly root: HTMLElement;
-  /** Additional renderers registered after the built-in vanilla DOM + React renderers. */
+  /** Additional renderers registered after the built-in React renderer. */
   readonly renderers?: readonly PartRenderer[];
   /** Migration flags override (default: read from localStorage). */
   readonly migrationFlags?: ShellMigrationFlags;
+  /** Tenant info for plugin discovery. If omitted, skips plugin hydration. */
+  readonly tenant?: { readonly id: string };
+  /** Default theme ID (e.g. 'ghost.theme.tokyo-night'). */
+  readonly theme?: string;
+  /** Expose `window.__g` debug namespace. Default: false. */
+  readonly debug?: boolean;
+  /** Register with HMR window registry for Vite hot reload. Default: false. */
+  readonly hmr?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,10 +72,24 @@ export interface GhostShell {
   readonly runtime: ShellRuntime;
   readonly rendererRegistry: PartRendererRegistry;
   readonly contextRegistry: ContextContributionRegistry;
-  /** Start the shell — register bootstrap, bind keyboard/bridge, prime plugins. */
+  /** Start the shell — mount, register bootstrap, bind keyboard/bridge, prime plugins. */
   start(): Promise<void>;
   /** Dispose all resources. */
   dispose(): void;
+}
+
+// ---------------------------------------------------------------------------
+// Debug namespace type
+// ---------------------------------------------------------------------------
+
+declare global {
+  interface Window {
+    __g?: {
+      runtime: ShellRuntime;
+      services: ShellRuntime["services"];
+      registry: ShellRuntime["registry"];
+    };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -122,23 +145,37 @@ export function createGhostShell(options: GhostShellOptions): GhostShell {
 
       bootstrap.initialize(root, runtime);
 
-      const disposers: Array<() => void> = [];
+      // Mount shell (popout vs main window, bridge sync, keyboard shortcuts)
+      const disposeShellMount = mountShell(root, runtime, bootstrap);
 
-      disposers.push(
-        bindBridgeSync(root, runtime, {
-          applyContext: bootstrap.core.applyContext,
-          applySelection: bootstrap.core.applySelection,
-        }),
-      );
-      disposers.push(bindKeyboardShortcuts(root, runtime));
+      // Register beforeunload teardown
+      registerRuntimeTeardown(runtime);
+
+      // Debug namespace
+      if (options.debug) {
+        exposeDebugNamespace(runtime);
+      }
+
+      // HMR window registry
+      if (options.hmr) {
+        registerHmr(root, runtime);
+      }
 
       disposeMount = () => {
-        for (const d of disposers) {
-          d();
-        }
+        disposeShellMount();
+        cleanupHmr(root, runtime, options);
+        cleanupDebug(runtime, options);
       };
 
       await primeEnabledPluginActivations(root, runtime);
+
+      // Plugin hydration (tenant manifest, config, themes)
+      if (options.tenant && !runtime.isPopout) {
+        await hydratePluginRegistry(root, runtime, () => !disposed, {
+          tenantId: options.tenant.id,
+          defaultThemeId: options.theme ?? "ghost.theme.tokyo-night",
+        });
+      }
     },
 
     dispose(): void {
@@ -173,4 +210,35 @@ function buildBootstrapDeps(root: HTMLElement, runtime: ShellRuntime): ShellBoot
     renderSyncStatus: () => renderSyncStatus(root, runtime),
     summarizeSelectionPriorities: () => summarizeSelectionPriorities(runtime),
   };
+}
+
+function exposeDebugNamespace(runtime: ShellRuntime): void {
+  window.__g = {
+    runtime,
+    get services() { return runtime.services; },
+    get registry() { return runtime.registry; },
+  };
+  console.debug("[shell] __g namespace available — try: __g.runtime, __g.services, __g.registry");
+}
+
+function registerHmr(root: HTMLElement, runtime: ShellRuntime): void {
+  const hmrRegistry = getShellHmrRegistry();
+  hmrRegistry.windowIds.add(runtime.windowId);
+  hmrRegistry.byRoot.set(root, { windowId: runtime.windowId, dispose: () => {} });
+}
+
+function cleanupHmr(root: HTMLElement, runtime: ShellRuntime, options: GhostShellOptions): void {
+  if (!options.hmr) return;
+  const hmrRegistry = getShellHmrRegistry();
+  hmrRegistry.windowIds.delete(runtime.windowId);
+  if (hmrRegistry.byRoot.get(root)?.windowId === runtime.windowId) {
+    hmrRegistry.byRoot.delete(root);
+  }
+}
+
+function cleanupDebug(runtime: ShellRuntime, options: GhostShellOptions): void {
+  if (!options.debug) return;
+  if (window.__g?.runtime === runtime) {
+    delete window.__g;
+  }
 }

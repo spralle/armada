@@ -362,7 +362,7 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
       }
       const full = deriveFullPalette(theme.palette, theme.terminal);
       const result: Record<string, string> = {};
-      for (const [key, cssVar] of Object.entries(GHOST_THEME_CSS_VARS)) {
+      for (const [key, cssVar] of Object.entries(GHOST_THEME_CSS_VARS) as [string, string][]) {
         const value = full[key as keyof FullThemePalette];
         result[cssVar] = String(value);
       }
