@@ -1,7 +1,7 @@
 import type { RuleWriteIntent } from './contracts.js';
 import type { FormState } from './state.js';
 import { setNestedValue, deleteNestedValue } from './nested-utils.js';
-import { assertSafeSegment } from '@ghost/predicate';
+import { assertSafeSegment } from '@ghost-shell/predicate';
 
 /** Arbiter-internal namespace prefixes that should not be written to FormState */
 const ARBITER_INTERNAL_PREFIXES = ['$state.', '$meta.', '$contributions.'] as const;

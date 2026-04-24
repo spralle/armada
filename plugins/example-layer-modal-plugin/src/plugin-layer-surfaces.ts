@@ -1,4 +1,4 @@
-import type { LayerSurfaceContext } from "@ghost/plugin-contracts";
+import type { LayerSurfaceContext } from "@ghost-shell/contracts";
 
 /**
  * Modal surface mount — centered dialog with focus grab and backdrop.

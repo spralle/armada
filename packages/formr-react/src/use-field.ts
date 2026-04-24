@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import type { FormApi, FieldApi, FieldConfig, FieldMetaEntry } from '@ghost/formr-core';
+import type { FormApi, FieldApi, FieldConfig, FieldMetaEntry } from '@ghost-shell/formr-core';
 import { useFormSelector } from './use-form-selector.js';
 
 interface FieldSnapshot {

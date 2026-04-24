@@ -1,13 +1,13 @@
 import type {
   PluginRegistryDiagnosticEntry,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
   Badge,
-} from "@ghost/ui";
+} from "@ghost-shell/ui";
 
 interface DiagnosticsSectionProps {
   diagnostics: PluginRegistryDiagnosticEntry[];

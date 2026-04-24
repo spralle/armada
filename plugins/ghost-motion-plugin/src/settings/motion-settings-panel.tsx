@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
   Separator,
-} from "@ghost/ui";
+} from "@ghost-shell/ui";
 import { getCurrentConfig, updateConfig } from "../activate.js";
 import type { GhostMotionConfig, AnimationName, AnimationEntry } from "../config-types.js";
 import { resolveEntry } from "../config-resolver.js";

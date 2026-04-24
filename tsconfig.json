@@ -5,6 +5,12 @@
       "path": "./packages/plugin-contracts"
     },
     {
+      "path": "./packages/theme"
+    },
+    {
+      "path": "./packages/plugin-system"
+    },
+    {
       "path": "./packages/config-plugin-runtime"
     },
     {
@@ -30,6 +36,27 @@
     },
     {
       "path": "./packages/predicate"
+    },
+    {
+      "path": "./packages/intents"
+    },
+    {
+      "path": "./packages/bridge"
+    },
+    {
+      "path": "./packages/layer"
+    },
+    {
+      "path": "./packages/state"
+    },
+    {
+      "path": "./packages/persistence"
+    },
+    {
+      "path": "./packages/commands"
+    },
+    {
+      "path": "./packages/federation"
     },
     {
       "path": "./packages/formr-react"
@@ -75,6 +102,12 @@
     },
     {
       "path": "./packages/router"
+    },
+    {
+      "path": "./packages/react"
+    },
+    {
+      "path": "./packages/shell"
     }
   ]
 }

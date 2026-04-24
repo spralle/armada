@@ -1,8 +1,8 @@
 {
-  "name": "@ghost/backend-app",
+  "name": "@ghost-shell/backend-app",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@ghost-shell/contracts": "file:../../packages/plugin-contracts"
   }
 }

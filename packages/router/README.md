@@ -1,4 +1,4 @@
-# @ghost/router
+# @ghost-shell/router
 
 Type-safe URL routing for the Ghost desktop-like shell. Ghost is not a page-based app — it's a workspace shell where plugins render inside tabs, splits, and pop-out windows. The router bridges shell state to browser URLs so that deep links, back/forward navigation, and bookmarks work naturally.
 
@@ -41,7 +41,7 @@ The router uses a two-layer model:
 ### Defining routes in a plugin
 
 ```typescript
-import { defineRoutes } from "@ghost/router";
+import { defineRoutes } from "@ghost-shell/router";
 import { z } from "zod";
 
 export const vesselRoutes = defineRoutes({
@@ -57,7 +57,7 @@ export const vesselRoutes = defineRoutes({
 ### Using PluginRouter in a mount function
 
 ```typescript
-import { createPluginRouter } from "@ghost/router";
+import { createPluginRouter } from "@ghost-shell/router";
 import { vesselRoutes } from "./routes";
 
 function mount(target: HTMLElement, ctx: PluginMountContext) {
@@ -93,7 +93,7 @@ function mount(target: HTMLElement, ctx: PluginMountContext) {
 ```
 
 ```typescript
-import { attachNavigation } from "@ghost/router";
+import { attachNavigation } from "@ghost-shell/router";
 
 const { dispose } = attachNavigation(element, {
   target: router.buildTarget("vessel.detail", { vesselId: "v123" }),

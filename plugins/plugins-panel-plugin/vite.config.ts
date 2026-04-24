@@ -18,11 +18,15 @@ export default defineConfig({
         "./pluginParts": "./src/plugin-parts.ts",
       },
       shared: {
-        "@ghost/plugin-contracts": {
+        "@ghost-shell/contracts": {
           singleton: true,
           requiredVersion: "^0.0.0",
         },
-        "@ghost/ui": {
+        "@ghost-shell/react": {
+          singleton: true,
+          requiredVersion: "^0.0.0",
+        },
+        "@ghost-shell/ui": {
           singleton: true,
           import: false,
           requiredVersion: "^0.0.0",

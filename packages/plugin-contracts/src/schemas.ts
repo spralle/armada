@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   partialThemePaletteSchema,
   terminalPaletteSchema,
-} from "./theme-derivation.js";
+} from "./theme-types.js";
 
 /** Configuration property schema validator (JSON Schema subset). */
 const configurationPropertySchemaSchema: z.ZodType<Record<string, unknown>> = z.lazy(

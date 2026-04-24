@@ -81,8 +81,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts",
-    "@ghost/ui": "file:../../packages/ui",
+    "@ghost-shell/contracts": "workspace:*",
+    "@ghost-shell/ui": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

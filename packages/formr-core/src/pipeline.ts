@@ -8,7 +8,7 @@ import type {
 import type { FormStore } from './store.js';
 import type { TransformDefinition } from './transforms.js';
 import { parsePath } from './path-parser.js';
-import { assertSafeSegment } from '@ghost/predicate';
+import { assertSafeSegment } from '@ghost-shell/predicate';
 import { applyRuleWrites } from './expression-integration.js';
 import type { ArbiterFormAdapter } from './arbiter-integration.js';
 import { normalizeIssues } from './validation.js';

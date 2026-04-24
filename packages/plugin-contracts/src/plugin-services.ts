@@ -5,8 +5,8 @@
 //
 // Usage in a plugin mount function:
 //
-//   import type { PluginServices, ThemeService } from "@ghost/plugin-contracts";
-//   import { THEME_SERVICE_ID } from "@ghost/plugin-contracts";
+//   import type { PluginServices, ThemeService } from "@ghost-shell/contracts";
+//   import { THEME_SERVICE_ID } from "@ghost-shell/contracts";
 //
 //   export function mount(target: HTMLElement, context: PluginMountContext) {
 //     const theme = context.runtime.services.getService<ThemeService>(THEME_SERVICE_ID);
@@ -52,3 +52,18 @@ export interface PluginMountContext {
     services: PluginServices;
   };
 }
+
+// ---------------------------------------------------------------------------
+// Plugin mount function types
+// ---------------------------------------------------------------------------
+
+/** Cleanup handle returned by a plugin part mount function. */
+export interface PartMountCleanup {
+  unmount: () => void;
+}
+
+/** Standard mount function signature for plugin parts. */
+export type MountPartFn = (
+  target: HTMLElement,
+  context: PluginMountContext,
+) => Promise<PartMountCleanup>;

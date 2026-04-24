@@ -1,6 +1,6 @@
 import type { CanonicalPath } from './path.js';
 import type { FormState, ValidationIssue, SubmitContext } from './state.js';
-import type { ExprNode, ExpressionDefinition, EvaluationScope } from '@ghost/predicate';
+import type { ExprNode, ExpressionDefinition, EvaluationScope } from '@ghost-shell/predicate';
 import type { TransformDefinition } from './transforms.js';
 import type { DeepKeys, DeepValue, ArrayElement } from './type-utils.js';
 import type { StandardSchemaLike } from './standard-schema.js';
@@ -8,7 +8,7 @@ import type { StandardSchemaLike } from './standard-schema.js';
 export type { ExprNode, ExpressionDefinition, EvaluationScope };
 
 // Re-export arbiter types for consumers
-export type { ProductionRule, RuleSession, SessionConfig as ArbiterSessionConfig } from '@ghost/arbiter';
+export type { ProductionRule, RuleSession, SessionConfig as ArbiterSessionConfig } from '@ghost-shell/arbiter';
 
 /**
  * ADR section 10 — Transform is the config-time type alias.

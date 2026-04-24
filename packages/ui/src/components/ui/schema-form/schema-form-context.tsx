@@ -1,9 +1,9 @@
 "use client"
 
 import { createContext, useContext } from "react"
-import type { FormApi } from "@ghost/formr-core"
-import type { SchemaFieldInfo } from "@ghost/formr-from-schema"
-import type { RendererRegistry } from "@ghost/formr-react"
+import type { FormApi } from "@ghost-shell/formr-core"
+import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema"
+import type { RendererRegistry } from "@ghost-shell/formr-react"
 import type { WidgetOverrides } from "./widget-overrides"
 
 export interface SchemaFormContextValue {

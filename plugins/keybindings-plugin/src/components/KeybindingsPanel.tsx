@@ -2,9 +2,9 @@ import { useState, useCallback, useMemo } from "react";
 import type {
   PluginMountContext,
   KeybindingService,
-} from "@ghost/plugin-contracts";
-import { KEYBINDING_SERVICE_ID } from "@ghost/plugin-contracts";
-import { ScrollArea, Alert, Button, Separator } from "@ghost/ui";
+} from "@ghost-shell/contracts";
+import { KEYBINDING_SERVICE_ID } from "@ghost-shell/contracts";
+import { ScrollArea, Alert, Button, Separator } from "@ghost-shell/ui";
 import { findConflicts } from "../lib/keybinding-utils.js";
 import { KeybindingsErrorBoundary } from "./ErrorBoundary.js";
 import { OverridesSection } from "./OverridesSection.js";

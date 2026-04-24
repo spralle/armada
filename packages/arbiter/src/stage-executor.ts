@@ -1,8 +1,8 @@
 import type { CompiledStage, StateChange, ThenOperatorRegistry } from './contracts.js';
 import type { ScopeManager } from './scope.js';
 import type { Agenda } from './agenda.js';
-import { evaluate } from '@ghost/predicate/evaluate';
-import type { ExprNode } from '@ghost/predicate/ast';
+import { evaluate } from '@ghost-shell/predicate/evaluate';
+import type { ExprNode } from '@ghost-shell/predicate/ast';
 import { ArbiterError, ArbiterErrorCode } from './errors.js';
 import { isExpression } from './path-utils.js';
 

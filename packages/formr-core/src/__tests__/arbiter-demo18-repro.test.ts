@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { createForm } from '../create-form.js';
-import type { ProductionRule } from '@ghost/arbiter';
+import type { ProductionRule } from '@ghost-shell/arbiter';
 
 /**
  * Reproduction test for demo 18 (arbiter visibility).

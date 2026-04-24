@@ -1,4 +1,4 @@
-// @ts-expect-error @ghost/plugin-contracts must not expose internal paths
-import type { __internalOnly } from "@ghost/plugin-contracts/internal";
+// @ts-expect-error @ghost-shell/contracts must not expose internal paths
+import type { PartRenderer } from "@ghost-shell/contracts/part-renderer";
 
-void (0 as unknown as typeof __internalOnly);
+void (0 as unknown as typeof PartRenderer);

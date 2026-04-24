@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "skipLibCheck": true,
+    "composite": true,
+    "jsx": "react-jsx"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/__tests__", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.spec-*.ts"],
+  "references": [
+    { "path": "../plugin-contracts" },
+    { "path": "../bridge" },
+    { "path": "../commands" },
+    { "path": "../federation" },
+    { "path": "../intents" },
+    { "path": "../layer" },
+    { "path": "../persistence" },
+    { "path": "../plugin-system" },
+    { "path": "../react" },
+    { "path": "../router" },
+    { "path": "../state" },
+    { "path": "../theme" }
+  ]
+}

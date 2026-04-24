@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { KeybindingService } from "@ghost/plugin-contracts";
-import { Button } from "@ghost/ui";
+import type { KeybindingService } from "@ghost-shell/contracts";
+import { Button } from "@ghost-shell/ui";
 import { downloadJson, pickJsonFile } from "../lib/keybinding-utils.js";
 
 interface ImportExportSectionProps {

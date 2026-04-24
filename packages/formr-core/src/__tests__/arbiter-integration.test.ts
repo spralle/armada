@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { createForm } from '../create-form.js';
-import type { ProductionRule } from '@ghost/arbiter';
-import { createSession } from '@ghost/arbiter';
+import type { ProductionRule } from '@ghost-shell/arbiter';
+import { createSession } from '@ghost-shell/arbiter';
 import { createArbiterAdapter, createArbiterAdapterFromSession } from '../arbiter-integration.js';
 import type { FormState } from '../state.js';
 

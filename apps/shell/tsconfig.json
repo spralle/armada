@@ -5,23 +5,11 @@
     "moduleResolution": "NodeNext",
     "jsx": "react-jsx",
     "strict": true,
-    "noEmit": false,
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
-    "outDir": "dist",
-    "rootDir": "src",
+    "noEmit": true,
     "skipLibCheck": true
   },
   "references": [
-    {
-      "path": "../../packages/plugin-contracts"
-    },
-    {
-      "path": "../../packages/router"
-    }
+    { "path": "../../packages/shell" }
   ],
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

@@ -61,11 +61,11 @@ async function findNextPort(pluginsDir) {
 }
 
 function buildSharedConfig(tier) {
-  const contracts = `        "@ghost/plugin-contracts": {\n          singleton: true,\n          requiredVersion: "^0.0.0",\n        },`;
+  const contracts = `        "@ghost-shell/contracts": {\n          singleton: true,\n          requiredVersion: "^0.0.0",\n        },\n        "@ghost-shell/react": {\n          singleton: true,\n          requiredVersion: "^0.0.0",\n        },`;
   if (tier === "minimal") return contracts;
 
   const importFlag = tier === "provider" ? "eager: true" : "import: false";
-  const extra = `        "@ghost/ui": {
+  const extra = `        "@ghost-shell/ui": {
           singleton: true,
           ${importFlag},
           requiredVersion: "^0.0.0",
@@ -84,9 +84,9 @@ function buildSharedConfig(tier) {
 }
 
 function buildDependencies(tier) {
-  const base = `    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"`;
+  const base = `    "@ghost-shell/contracts": "file:../../packages/plugin-contracts",\n    "@ghost-shell/react": "file:../../packages/react"`;
   if (tier === "minimal") return base;
-  return `${base},\n    "@ghost/ui": "file:../../packages/ui"`;
+  return `${base},\n    "@ghost-shell/ui": "file:../../packages/ui"`;
 }
 
 async function main() {
@@ -115,7 +115,7 @@ async function main() {
   const templateRoot = path.join(root, "templates", "plugin-app");
   const targetRoot = path.join(pluginsDir, pluginName);
 
-  await mkdir(path.join(targetRoot, "src"), { recursive: true });
+  await mkdir(path.join(targetRoot, "src", "components"), { recursive: true });
 
   const replacements = {
     __PLUGIN_NAME__: pluginName,
@@ -135,10 +135,11 @@ async function main() {
     ["README.md.template", "README.md"],
     ["vite.config.ts.template", "vite.config.ts"],
     ["src/index.ts.template", "src/index.ts"],
+    ["src/manifest.ts.template", "src/manifest.ts"],
     ["src/plugin-contract-expose.ts.template", "src/plugin-contract-expose.ts"],
     ["src/plugin-parts-expose.ts.template", "src/plugin-parts-expose.ts"],
-    ["src/plugin-components-expose.ts.template", "src/plugin-components-expose.ts"],
     ["src/plugin-services-expose.ts.template", "src/plugin-services-expose.ts"],
+    ["src/components/MainPanel.tsx.template", "src/components/MainPanel.tsx"],
   ];
 
   for (const [templateRelative, targetRelative] of files) {

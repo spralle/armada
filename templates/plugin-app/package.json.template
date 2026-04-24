@@ -3,21 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "ghost": {
-    "displayName": "__PLUGIN_TITLE__",
-    "contributes": {
-      "parts": [
-        {
-          "id": "__PART_ID__",
-          "title": "__PLUGIN_TITLE__",
-          "dock": {
-            "container": "main"
-          },
-          "component": "__PLUGIN_COMPONENT__"
-        }
-      ]
-    }
-  },
   "scripts": {
     "dev": "vite"
   },

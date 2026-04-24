@@ -1,34 +1,7 @@
-type PartMountContext = {
-  part: {
-    id: string;
-    title: string;
-  };
-};
+import { defineReactParts } from "@ghost-shell/react";
+import { pluginManifest } from "./manifest.js";
+import { MainPanel } from "./components/MainPanel.js";
 
-type PartMountFn = (target: HTMLElement, context: PartMountContext) => void;
-
-const __PLUGIN_PASCAL__Mount: PartMountFn = (target, context) => {
-  target.innerHTML = `
-    <section style="
-      background-color: var(--ghost-surface);
-      color: var(--ghost-foreground);
-      border: 1px solid var(--ghost-border);
-      border-radius: var(--ghost-radius);
-      padding: 1rem;
-    ">
-      <h3 style="color: var(--ghost-primary);">${context.part.title}</h3>
-      <p>__PLUGIN_TITLE__ part mounted.</p>
-    </section>`;
-};
-
-export const parts: Record<string, PartMountFn> = {
-  "__PART_ID__": __PLUGIN_PASCAL__Mount,
-  "__PLUGIN_COMPONENT__": __PLUGIN_PASCAL__Mount,
-};
-
-export function mountPart(target: HTMLElement, context: PartMountContext): void {
-  const mount = parts[context.part.id];
-  if (mount) {
-    mount(target, context);
-  }
-}
+export const pluginParts = defineReactParts(pluginManifest, {
+  "__PART_ID__": MainPanel,
+});

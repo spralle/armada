@@ -2,8 +2,8 @@ import { describe, expect, it } from 'bun:test';
 import { createElement } from 'react';
 import { renderLayoutTree } from '../render-tree.js';
 import { RendererRegistry } from '../renderer-registry.js';
-import type { LayoutNode } from '@ghost/formr-from-schema';
-import type { ValidationIssue } from '@ghost/formr-core';
+import type { LayoutNode } from '@ghost-shell/formr-from-schema';
+import type { ValidationIssue } from '@ghost-shell/formr-core';
 
 function makeIssue(path: string, severity: 'error' | 'warning' = 'error'): ValidationIssue {
   return {

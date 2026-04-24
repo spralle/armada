@@ -1,14 +1,7 @@
 // plugin-parts.ts — Mount function for the group context plugin.
 
-import type { ContextService, SyncStatusService, PluginMountContext } from "@ghost/plugin-contracts";
-import { CONTEXT_SERVICE_ID, SYNC_STATUS_SERVICE_ID } from "@ghost/plugin-contracts";
-
-type PartMountCleanup = { unmount: () => void };
-
-type MountPartFn = (
-  target: HTMLElement,
-  context: PluginMountContext,
-) => Promise<PartMountCleanup>;
+import type { ContextService, SyncStatusService, PluginMountContext, PartMountCleanup, MountPartFn } from "@ghost-shell/contracts";
+import { CONTEXT_SERVICE_ID, SYNC_STATUS_SERVICE_ID } from "@ghost-shell/contracts";
 
 // ---------------------------------------------------------------------------
 // Mount implementation

@@ -2,8 +2,8 @@
 
 import type { ComponentType } from "react"
 import type { ReactNode } from "react"
-import type { FormApi, ValidationIssue } from "@ghost/formr-core"
-import type { SchemaFieldInfo } from "@ghost/formr-from-schema"
+import type { FormApi, ValidationIssue } from "@ghost-shell/formr-core"
+import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema"
 import type { FieldMapping } from "./field-mapping"
 
 import { Input } from "@/components/ui/input"

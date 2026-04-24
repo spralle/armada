@@ -1,4 +1,4 @@
-import type { JsonFormCapability, JsonFormController, JsonFormLayoutNode, JsonFormSchema } from '@ghost/plugin-contracts';
+import type { JsonFormCapability, JsonFormController, JsonFormLayoutNode, JsonFormSchema } from '@ghost-shell/contracts';
 
 const REQUESTER_PLUGIN_ID = "ghost.domain.vessel-view";
 const JSONFORM_COMPONENT_CAPABILITY = "ghost.component.jsonform.control";

@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { createJsonSchemaValidator } from '../adapters/json-schema-validator.js';
 import type { JsonSchema } from '../adapters/json-schema-types.js';
-import type { ValidatorFn, ValidationIssue } from '@ghost/formr-core';
+import type { ValidatorFn, ValidationIssue } from '@ghost-shell/formr-core';
 
 /**
  * Call the sync validator function directly.

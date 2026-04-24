@@ -1,3 +1,4 @@
+import type { ContextApi } from "./context-contribution-registry.js";
 import type { Disposable } from "./disposable.js";
 import type { Event } from "./event.js";
 import type { PluginServices } from "./plugin-services.js";
@@ -201,7 +202,7 @@ export interface InputBoxOptions {
 export interface PluginRouterServiceApi {
   /**
    * Create a type-safe plugin router scoped to the given route definitions.
-   * Route definitions should be created via defineRoutes() from @ghost/router.
+   * Route definitions should be created via defineRoutes() from @ghost-shell/router.
    */
   createPluginRouter<T extends Record<string, { readonly id: string; readonly schema: unknown }>>(routes: T): unknown;
 }
@@ -222,6 +223,8 @@ export interface ActivationContext {
   readonly pluginId: string;
   /** Optional service accessor — available when the shell provides services. */
   readonly services?: PluginServices;
+  /** Context contribution API for reactive state sharing between plugins. */
+  readonly context?: ContextApi;
 }
 
 // ─── DeactivationContext ───

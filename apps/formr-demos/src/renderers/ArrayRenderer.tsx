@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { LayoutNode, SchemaFieldInfo } from '@ghost/formr-from-schema';
-import type { FormApi } from '@ghost/formr-core';
+import type { LayoutNode, SchemaFieldInfo } from '@ghost-shell/formr-from-schema';
+import type { FormApi } from '@ghost-shell/formr-core';
 import {
   Button,
   Input,
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
-} from '@ghost/ui';
+} from '@ghost-shell/ui';
 
 export interface ArrayRendererProps {
   readonly node: LayoutNode;

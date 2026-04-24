@@ -5,13 +5,13 @@ import type {
   PluginManagementService,
   SyncStatusService,
   PluginRegistryEntry,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/contracts";
 import {
   PLUGIN_REGISTRY_SERVICE_ID,
   PLUGIN_MANAGEMENT_SERVICE_ID,
   SYNC_STATUS_SERVICE_ID,
-} from "@ghost/plugin-contracts";
-import { Input, Tabs, TabsList, TabsTrigger, ScrollArea, Badge } from "@ghost/ui";
+} from "@ghost-shell/contracts";
+import { Input, Tabs, TabsList, TabsTrigger, ScrollArea, Badge } from "@ghost-shell/ui";
 import { PluginCard } from "./PluginCard.js";
 import { DiagnosticsSection } from "./DiagnosticsSection.js";
 import { PluginsProvider } from "./PluginsContext.js";

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import type { KeybindingService } from "@ghost/plugin-contracts";
-import { Button, Input } from "@ghost/ui";
+import type { KeybindingService } from "@ghost-shell/contracts";
+import { Button, Input } from "@ghost-shell/ui";
 import { normalizeKeyboardEventChord, isBrowserSafe } from "../lib/keybinding-utils.js";
 
 const RECORD_TIMEOUT_MS = 1500;

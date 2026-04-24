@@ -5,13 +5,17 @@ import type {
   PluginMountContext,
   PluginContract,
   ActivityStatusService,
-  ComposedPluginSectionContribution,
-} from "@ghost/plugin-contracts";
+  PartMountCleanup,
+  MountPartFn,
+} from "@ghost-shell/contracts";
+import type { ComposedPluginSectionContribution } from "@ghost-shell/plugin-system";
 import {
   THEME_SERVICE_ID,
   ACTIVITY_STATUS_SERVICE_ID,
+} from "@ghost-shell/contracts";
+import {
   composeEnabledPluginContributions,
-} from "@ghost/plugin-contracts";
+} from "@ghost-shell/plugin-system";
 import {
   injectAppearanceStyles,
   renderThemePicker,
@@ -21,13 +25,6 @@ import {
   renderSectionContainer,
 } from "./appearance-dom.js";
 import { pluginContract, APPEARANCE_SECTION_TARGET } from "./plugin-contract-expose.js";
-
-type PartMountCleanup = { unmount: () => void };
-
-type MountPartFn = (
-  target: HTMLElement,
-  context: PluginMountContext,
-) => Promise<PartMountCleanup>;
 
 const APPEARANCE_PLUGIN_ID = pluginContract.manifest.id;
 

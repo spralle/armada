@@ -1,5 +1,5 @@
 import { createContext, useContext, useCallback, useRef } from "react";
-import type { PluginRegistryEntry } from "@ghost/plugin-contracts";
+import type { PluginRegistryEntry } from "@ghost-shell/contracts";
 
 interface PluginsContextValue {
   readonly plugins: ReadonlyArray<PluginRegistryEntry>;

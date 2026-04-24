@@ -1,4 +1,4 @@
-import type { LayerSurfaceContext } from "@ghost/plugin-contracts";
+import type { LayerSurfaceContext } from "@ghost-shell/contracts";
 
 /**
  * Notification surface mount — auto-stacking corner notifications.

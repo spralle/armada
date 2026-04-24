@@ -1,4 +1,4 @@
-import type { LayerSurfaceContext } from "@ghost/plugin-contracts";
+import type { LayerSurfaceContext } from "@ghost-shell/contracts";
 
 /**
  * Anchor showcase surface — renders a colored label showing the anchor combination.

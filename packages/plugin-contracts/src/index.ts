@@ -16,7 +16,6 @@ export type {
 } from "./layer-types.js";
 
 export type { Event, EventEmitter } from "./event.js";
-export { createEventEmitter } from "./event.js";
 
 export type {
   ConfigurationPropertySchema,
@@ -98,47 +97,12 @@ export {
 } from "./schemas.js";
 
 export type {
-  ComposedPluginViewContribution,
-  ComposedPluginPartContribution,
-  ComposedPluginSlotContribution,
-  ComposedPluginSectionContribution,
-  ComposedPluginLayerSurfaceContribution,
-  ComposedPluginContributions,
-  ComposedThemeContribution,
-  PluginContributionSource,
-} from "./composition.js";
-
-export {
-  composeEnabledPluginContributions,
-  composeThemeContributions,
-} from "./composition.js";
-
-export type {
   PluginContractValidationIssue,
   ParsePluginContractResult,
   ParseTenantPluginManifestResult,
 } from "./parsing.js";
 
 export { parsePluginContract, parseTenantPluginManifest } from "./parsing.js";
-
-export type {
-  PredicateFactBag,
-  PredicateFailureTrace,
-  PredicateEvaluationResult,
-  ContributionPredicateMatcher,
-} from "./predicate.js";
-
-export {
-  createDefaultContributionPredicateMatcher,
-  evaluateContributionPredicate,
-} from "./predicate.js";
-
-export type {
-  CompatibilityReasonCode,
-  ShellPluginCompatibilityResult,
-} from "./compatibility.js";
-
-export { evaluateShellPluginCompatibility } from "./compatibility.js";
 
 export type {
   GhostApi,
@@ -162,31 +126,17 @@ export type {
   TerminalPalette,
   PartialThemePalette,
   FullThemePalette,
-} from "./theme-derivation.js";
+} from "./theme-types.js";
 
 export {
   partialThemePaletteSchema,
   terminalPaletteSchema,
-  deriveFullPalette,
-} from "./theme-derivation.js";
-
-export { GHOST_THEME_CSS_VARS, THEME_TOKEN_GROUPS } from "./theme-css-vars.js";
-
-export {
-  adjustLightness,
-  desaturate,
-  contrastSafe,
-  blendWithBackground,
-  contrastRatio,
-  relativeLuminance,
-  isValidHex,
-  withAlpha,
-} from "./theme-color-utils.js";
+} from "./theme-types.js";
 
 export type { ThemeService, ThemeInfo, BackgroundInfo } from "./theme-service.js";
 export { THEME_SERVICE_ID } from "./theme-service.js";
 
-export type { PluginServices, PluginMountContext } from "./plugin-services.js";
+export type { PluginServices, PluginMountContext, PartMountCleanup, MountPartFn } from "./plugin-services.js";
 
 export type { HookService, TransitionContext, ElementTransitionHook } from "./hooks.js";
 export { HOOK_REGISTRY_SERVICE_ID, ELEMENT_TRANSITION_HOOK_ID } from "./hooks.js";
@@ -250,5 +200,19 @@ export type {
 } from "./keybinding-service.js";
 export { KEYBINDING_SERVICE_ID } from "./keybinding-service.js";
 
-export { MF_SHARED_SINGLETONS } from "./shared-dependencies.js";
-export type { MfSharedSingleton } from "./shared-dependencies.js";
+export type { PartRenderer, PartRenderHandle, PartRenderContext, PartRendererRegistry } from "./part-renderer.js";
+
+export { REACT_PARTS_SYMBOL, isReactPartsModule, containsReactParts, findReactPartsModule } from "./define-parts.js";
+export type { ReactPartsModule } from "./define-parts.js";
+
+
+
+export { resolveModuleMountFn } from "./resolve-mount.js";
+export type { ResolveMountOptions } from "./resolve-mount.js";
+
+export type { ContextContribution, ProviderContribution } from "./context-contribution.js";
+
+export type { ContextApi, ContextProviderSource, ContextContributionRegistry } from "./context-contribution-registry.js";
+
+export { definePlugin } from "./define-plugin.js";
+export type { ExtractPartIds, ExtractActionIds } from "./define-plugin.js";

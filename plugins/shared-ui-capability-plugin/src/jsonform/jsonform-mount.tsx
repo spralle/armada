@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
-import type { JsonFormCapability, JsonFormOptions, JsonFormController } from '@ghost/plugin-contracts';
+import type { JsonFormCapability, JsonFormOptions, JsonFormController } from '@ghost-shell/contracts';
 import { ErrorBoundary } from './ErrorBoundary.js';
 import { JsonFormRoot } from './JsonFormRoot.js';
 

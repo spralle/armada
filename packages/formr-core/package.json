@@ -1,22 +1,30 @@
 {
-  "name": "@ghost/formr-core",
+  "name": "@ghost-shell/formr-core",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "import": "./src/index.ts"
-    }
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./*": null
   },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
   "dependencies": {
-    "@ghost/predicate": "workspace:*",
-    "@ghost/arbiter": "workspace:*"
+    "@ghost-shell/predicate": "workspace:*",
+    "@ghost-shell/arbiter": "workspace:*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "bun test"
+    "test": "bun test",
+    "build:dist": "tsup"
   }
 }

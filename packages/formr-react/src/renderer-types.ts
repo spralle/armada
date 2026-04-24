@@ -1,6 +1,6 @@
-import type { LayoutNode } from '@ghost/formr-from-schema';
+import type { LayoutNode } from '@ghost-shell/formr-from-schema';
 import type { ComponentType, ReactNode } from 'react';
-import type { ValidationIssue } from '@ghost/formr-core';
+import type { ValidationIssue } from '@ghost-shell/formr-core';
 import type { FieldA11yProps } from './a11y.js';
 
 /** ARIA attributes derived from field state — alias for FieldA11yProps */

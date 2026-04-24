@@ -1,0 +1,261 @@
+import {
+  CORE_GROUP_CONTEXT_KEY,
+  createRevision,
+  resolveActiveTabId,
+} from "../context/runtime-state.js";
+import {
+  formatSelectionAnnouncement,
+} from "../keyboard-a11y.js";
+import {
+  handleBridgeHealth as handleBridgeHealthState,
+  handleSyncAck as handleSyncAckState,
+  handleSyncProbe as handleSyncProbeState,
+  publishWithDegrade as publishWithDegradeState,
+  requestSyncProbe as requestSyncProbeState,
+} from "../sync/bridge-degraded.js";
+import { updateWindowReadOnlyState } from "../ui/context-controls.js";
+import { restorePart } from "../ui/parts-controller.js";
+import type { ShellRuntime } from "../app/types.js";
+import type { AsyncWindowBridgeHealth } from "@ghost-shell/bridge";
+import { getTabGroupId } from "../context-state.js";
+import { buildGroupContextSyncEvent } from "@ghost-shell/bridge";
+import {
+  applySourceTabTransferTerminal,
+  beginSourceTabTransferPending,
+} from "./source-tab-transfer.js";
+import type {
+  ContextSyncEvent,
+  SelectionSyncEvent,
+  WindowBridgeEvent,
+} from "@ghost-shell/bridge";
+
+export interface BridgeSyncBindings {
+  announce: (message: string) => void;
+  applyContext: (event: ContextSyncEvent) => void;
+  applySelection: (event: SelectionSyncEvent) => void;
+  createWindowId: () => string;
+  renderContextControlsPanel: () => void;
+  renderParts: () => void;
+  renderSyncStatus: () => void;
+  summarizeSelectionPriorities: () => string;
+}
+
+export function bindBridgeSync(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  bindings: BridgeSyncBindings,
+): () => void {
+  let lastProcessedHealthSequence = 0;
+  let fallbackHealthSequence = 0;
+
+  const compatRuntime = runtime as ShellRuntime & {
+    asyncBridge?: {
+      subscribeHealth(listener: (health: AsyncWindowBridgeHealth) => void): () => void;
+    };
+  };
+
+  const subscribeHealth = compatRuntime.asyncBridge
+    ? (listener: (health: AsyncWindowBridgeHealth) => void) => compatRuntime.asyncBridge!.subscribeHealth(listener)
+    : (listener: (health: AsyncWindowBridgeHealth) => void) =>
+      runtime.bridge.subscribeHealth((health) => {
+        fallbackHealthSequence += 1;
+        listener({
+          sequence: fallbackHealthSequence,
+          state: health.reason === "unavailable"
+            ? "unavailable"
+            : health.degraded
+              ? "degraded"
+              : "healthy",
+          reason: health.reason,
+        });
+      });
+
+  const subscribeEvents = compatRuntime.asyncBridge
+    ? (listener: (event: WindowBridgeEvent) => void) => compatRuntime.asyncBridge!.subscribe(listener)
+    : (listener: (event: WindowBridgeEvent) => void) => runtime.bridge.subscribe(listener);
+
+  const unsubscribeHealth = subscribeHealth((health) => {
+    if (health.sequence <= lastProcessedHealthSequence) {
+      return;
+    }
+    lastProcessedHealthSequence = health.sequence;
+
+    handleBridgeHealth(root, runtime, health, bindings);
+  });
+
+  const unsubscribeEvents = subscribeEvents((event) => {
+    if (event.sourceWindowId === runtime.windowId) {
+      return;
+    }
+
+    if (event.type === "sync-probe") {
+      handleSyncProbe(root, runtime, event, bindings);
+      return;
+    }
+
+    if (event.type === "sync-ack") {
+      if (handleSyncAck(root, runtime, event, bindings)) {
+        return;
+      }
+    }
+
+    if (event.type === "dnd-session-upsert") {
+      beginSourceTabTransferPending(runtime, event);
+      return;
+    }
+
+    if (event.type === "dnd-session-delete") {
+      applySourceTabTransferTerminal(runtime, event);
+      return;
+    }
+
+    if (runtime.syncDegraded) {
+      return;
+    }
+
+    if (event.type === "selection") {
+      bindings.applySelection(event);
+      return;
+    }
+
+    if (event.type === "context") {
+      bindings.applyContext(event);
+      return;
+    }
+
+    if (event.type === "popout-restore-request" && !runtime.isPopout) {
+      if (event.hostWindowId !== runtime.windowId) {
+        return;
+      }
+
+      const restoreTabId = event.tabId ?? event.partId;
+      if (!restoreTabId) {
+        return;
+      }
+
+      restorePart(restoreTabId, runtime, {
+        renderParts: () => bindings.renderParts(),
+        renderSyncStatus: () => bindings.renderSyncStatus(),
+      });
+      return;
+    }
+  });
+
+  return () => {
+    unsubscribeEvents();
+    unsubscribeHealth();
+  };
+}
+
+export function announce(root: HTMLElement, runtime: ShellRuntime, message: string): void {
+  runtime.announcement = message;
+  const node = root.querySelector<HTMLElement>("#live-announcer");
+  if (!node) {
+    return;
+  }
+  node.textContent = message;
+}
+
+export function applySelectionAnnouncement(runtime: ShellRuntime, bindings: BridgeSyncBindings): void {
+  bindings.announce(formatSelectionAnnouncement({
+    selectedPartTitle: runtime.selectedPartTitle,
+    selectedEntitySummary: bindings.summarizeSelectionPriorities(),
+  }));
+}
+
+export function publishWithDegrade(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  event: WindowBridgeEvent,
+  bindings: BridgeSyncBindings,
+): void {
+  publishWithDegradeState(runtime, event, {
+    announce: (message) => bindings.announce(message),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+    renderSyncStatus: () => bindings.renderSyncStatus(),
+    renderContextControls: () => bindings.renderContextControlsPanel(),
+  });
+}
+
+export function requestSyncProbe(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  bindings: BridgeSyncBindings,
+): void {
+  requestSyncProbeState(runtime, {
+    announce: (message) => bindings.announce(message),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+    renderSyncStatus: () => bindings.renderSyncStatus(),
+    renderContextControls: () => bindings.renderContextControlsPanel(),
+  }, bindings.createWindowId);
+}
+
+function handleSyncProbe(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  event: WindowBridgeEvent,
+  bindings: BridgeSyncBindings,
+): void {
+  if (event.type !== "sync-probe") {
+    return;
+  }
+  handleSyncProbeState(runtime, event, {
+    announce: (message) => bindings.announce(message),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+    renderSyncStatus: () => bindings.renderSyncStatus(),
+    renderContextControls: () => bindings.renderContextControlsPanel(),
+  });
+}
+
+function handleSyncAck(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  event: WindowBridgeEvent,
+  bindings: BridgeSyncBindings,
+): boolean {
+  if (event.type !== "sync-ack") {
+    return false;
+  }
+  return handleSyncAckState(runtime, event, {
+    announce: (message) => bindings.announce(message),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+    renderSyncStatus: () => bindings.renderSyncStatus(),
+    renderContextControls: () => bindings.renderContextControlsPanel(),
+  });
+}
+
+export function buildContextSyncEvent(
+  runtime: ShellRuntime,
+  contextValue: string,
+): ContextSyncEvent {
+  const activeTabId = resolveActiveTabId(runtime);
+  const activeGroupId = activeTabId
+    ? (getTabGroupId(runtime.contextState, activeTabId) ?? undefined)
+    : undefined;
+
+  // Keep tab-scoped fields for migration compatibility while preferring group-targeted sync.
+  return buildGroupContextSyncEvent({
+    tabId: activeTabId ?? undefined,
+    groupId: activeGroupId,
+    contextKey: CORE_GROUP_CONTEXT_KEY,
+    contextValue,
+    revision: createRevision(runtime.windowId),
+    sourceWindowId: runtime.windowId,
+  });
+}
+
+function handleBridgeHealth(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  health: AsyncWindowBridgeHealth,
+  bindings: BridgeSyncBindings,
+): void {
+  handleBridgeHealthState(runtime, health, {
+    announce: (message) => bindings.announce(message),
+    updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+    renderSyncStatus: () => bindings.renderSyncStatus(),
+    renderContextControls: () => bindings.renderContextControlsPanel(),
+  }, () => {
+    requestSyncProbe(root, runtime, bindings);
+  });
+}

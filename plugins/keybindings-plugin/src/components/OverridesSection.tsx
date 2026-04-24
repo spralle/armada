@@ -1,4 +1,4 @@
-import type { KeybindingService, KeybindingOverride } from "@ghost/plugin-contracts";
+import type { KeybindingService, KeybindingOverride } from "@ghost-shell/contracts";
 import {
   Button,
   Table,
@@ -7,7 +7,7 @@ import {
   TableHead,
   TableBody,
   TableCell,
-} from "@ghost/ui";
+} from "@ghost-shell/ui";
 import { ChordDisplay } from "./ChordDisplay.js";
 import { RecordButton } from "./RecordButton.js";
 

@@ -1,0 +1,48 @@
+{
+  "name": "@ghost-shell/shell",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./*": null
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:dist": "tsup"
+  },
+  "dependencies": {
+    "@ghost-shell/contracts": "workspace:*",
+    "@ghost-shell/bridge": "workspace:*",
+    "@ghost-shell/commands": "workspace:*",
+    "@ghost-shell/federation": "workspace:*",
+    "@ghost-shell/intents": "workspace:*",
+    "@ghost-shell/layer": "workspace:*",
+    "@ghost-shell/persistence": "workspace:*",
+    "@ghost-shell/plugin-system": "workspace:*",
+    "@ghost-shell/react": "workspace:*",
+    "@ghost-shell/router": "workspace:*",
+    "@ghost-shell/state": "workspace:*",
+    "@ghost-shell/theme": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

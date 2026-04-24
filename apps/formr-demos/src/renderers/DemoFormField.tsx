@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
-import type { FormApi } from '@ghost/formr-core';
-import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
+import type { FormApi } from '@ghost-shell/formr-core';
+import type { SchemaFieldInfo } from '@ghost-shell/formr-from-schema';
 import {
   Input,
   Switch,
@@ -16,7 +16,7 @@ import {
   Label,
   Badge,
   cn,
-} from '@ghost/ui';
+} from '@ghost-shell/ui';
 
 interface FieldMeta {
   readonly widget: string | undefined;

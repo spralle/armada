@@ -8,12 +8,12 @@
     "noEmit": true,
     "skipLibCheck": true,
     "paths": {
-      "@ghost/formr-core": ["../../packages/formr-core/src/index.ts"],
-      "@ghost/formr-from-schema": ["../../packages/formr-from-schema/src/index.ts"],
-      "@ghost/formr-react": ["../../packages/formr-react/src/index.ts"],
-      "@ghost/ui": ["../../packages/ui/src/index.ts"],
-      "@ghost/plugin-contracts": ["../../packages/plugin-contracts/src/index.ts"],
-      "@ghost/predicate": ["../../packages/predicate/src/index.ts"],
+      "@ghost-shell/formr-core": ["../../packages/formr-core/src/index.ts"],
+      "@ghost-shell/formr-from-schema": ["../../packages/formr-from-schema/src/index.ts"],
+      "@ghost-shell/formr-react": ["../../packages/formr-react/src/index.ts"],
+      "@ghost-shell/ui": ["../../packages/ui/src/index.ts"],
+      "@ghost-shell/contracts": ["../../packages/plugin-contracts/src/index.ts"],
+      "@ghost-shell/predicate": ["../../packages/predicate/src/index.ts"],
       "@/*": ["../../packages/ui/src/*"]
     }
   },

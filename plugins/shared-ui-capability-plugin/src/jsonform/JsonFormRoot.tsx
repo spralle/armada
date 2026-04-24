@@ -1,11 +1,11 @@
 import type { ReactElement } from 'react';
 import { useMemo } from 'react';
-import { useForm } from '@ghost/formr-react';
-import type { FormApi } from '@ghost/formr-core';
-import { ingestSchema, compileLayout } from '@ghost/formr-from-schema';
-import type { LayoutNode, SchemaFieldInfo } from '@ghost/formr-from-schema';
-import type { JsonFormSchema, JsonFormLayoutNode } from '@ghost/plugin-contracts';
-import { FieldGroup } from '@ghost/ui';
+import { useForm } from '@ghost-shell/formr-react';
+import type { FormApi } from '@ghost-shell/formr-core';
+import { ingestSchema, compileLayout } from '@ghost-shell/formr-from-schema';
+import type { LayoutNode, SchemaFieldInfo } from '@ghost-shell/formr-from-schema';
+import type { JsonFormSchema, JsonFormLayoutNode } from '@ghost-shell/contracts';
+import { FieldGroup } from '@ghost-shell/ui';
 import { FormField } from './FormField.js';
 
 interface JsonFormRootProps {

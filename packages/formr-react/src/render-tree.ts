@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import type { ReactElement } from 'react';
-import type { LayoutNode } from '@ghost/formr-from-schema';
-import type { ValidationIssue } from '@ghost/formr-core';
+import type { LayoutNode } from '@ghost-shell/formr-from-schema';
+import type { ValidationIssue } from '@ghost-shell/formr-core';
 import type { RendererRegistry } from './renderer-registry.js';
 import { getFieldProps } from './a11y.js';
 

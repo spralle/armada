@@ -1,4 +1,4 @@
-import { Kbd, KbdGroup } from "@ghost/ui";
+import { Kbd, KbdGroup } from "@ghost-shell/ui";
 
 interface ChordDisplayProps {
   keybinding: string;

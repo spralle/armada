@@ -1,15 +1,15 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSchemaForm } from '@ghost/formr-react';
-import { isSectionNode } from '@ghost/formr-from-schema';
-import type { SchemaFieldInfo } from '@ghost/formr-from-schema';
-import type { LayoutNode } from '@ghost/formr-from-schema';
-import type { FormApi } from '@ghost/formr-core';
+import { useSchemaForm } from '@ghost-shell/formr-react';
+import { isSectionNode } from '@ghost-shell/formr-from-schema';
+import type { SchemaFieldInfo } from '@ghost-shell/formr-from-schema';
+import type { LayoutNode } from '@ghost-shell/formr-from-schema';
+import type { FormApi } from '@ghost-shell/formr-core';
 import {
   Card, CardContent, CardHeader, CardTitle,
   Tabs, TabsContent, TabsList, TabsTrigger,
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
   Button,
-} from '@ghost/ui';
+} from '@ghost-shell/ui';
 import { DemoShell } from '../renderers/DemoShell';
 import { DemoFormField } from '../renderers/DemoFormField';
 

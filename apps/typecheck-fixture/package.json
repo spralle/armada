@@ -1,8 +1,8 @@
 {
-  "name": "@ghost/typecheck-fixture",
+  "name": "@ghost-shell/typecheck-fixture",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@ghost/plugin-contracts": "file:../../packages/plugin-contracts"
+    "@ghost-shell/contracts": "file:../../packages/plugin-contracts"
   }
 }

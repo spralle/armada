@@ -24,13 +24,13 @@ export default defineConfig({
         "./pluginContract": "./src/index.ts",
       },
       shared: {
-        "@ghost/plugin-contracts": {
+        "@ghost-shell/contracts": {
           singleton: true,
           requiredVersion: "^0.0.0",
         },
-        "@ghost/ui": {
+        "@ghost-shell/ui": {
           singleton: true,
-          // eager bundles @ghost/ui into the entry chunk so it's always available
+          // eager bundles @ghost-shell/ui into the entry chunk so it's always available
           eager: true,
           requiredVersion: "^0.0.0",
         } as Record<string, unknown>,
