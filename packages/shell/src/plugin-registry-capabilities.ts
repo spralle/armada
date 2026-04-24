@@ -9,7 +9,9 @@ import type {
   PluginRuntimeState,
 } from "./plugin-registry-types.js";
 import type { CapabilityRegistry } from "./capability-registry.js";
-import type { RuntimeFirstPluginLoader } from "./plugin-loader.js";
+import type { createRuntimeFirstPluginLoader } from "./plugin-loader.js";
+
+type RuntimeFirstPluginLoader = ReturnType<typeof createRuntimeFirstPluginLoader>;
 
 export async function resolveComponentCapabilityFromStates(
   requesterPluginId: string,
