@@ -52,7 +52,7 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
         ],
     };
 
-    assertEqual(canReopenClosedTab(state, "main"), true, "any closed tab should contribute reopen eligibility");
+    assertEqual(canReopenClosedTab(state, "main"), true, "a closed tab should contribute reopen eligibility");
     const reopened = reopenMostRecentlyClosedTab(state, "main");
     assertEqual(reopened.tabs["utility.sync"]?.closePolicy, "closeable", "reopened tab should be closeable");
     assertEqual(reopened.closedTabHistory.length, 0, "history should be drained after reopen");

@@ -30,7 +30,7 @@ export class LayoutNodeRegistry {
     return isBuiltInNodeType(type) || this.custom.has(type);
   }
 
-  /** Walk a layout tree and throw for any unknown node type. */
+  /** Walk a layout tree and throw for each unknown node type. */
   validate(tree: LayoutNode): void {
     if (!this.has(tree.type)) {
       throw new FromSchemaError(

@@ -6,19 +6,19 @@ import type { FormApi, ValidationIssue } from "@ghost-shell/formr-core"
 import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema"
 import type { FieldMapping } from "./field-mapping"
 
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Input } from "../input"
+import { Textarea } from "../textarea"
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from "@/components/ui/select"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Switch } from "@/components/ui/switch"
-import { Slider } from "@/components/ui/slider"
-import { Label } from "@/components/ui/label"
+} from "../select"
+import { RadioGroup, RadioGroupItem } from "../radio-group"
+import { Switch } from "../switch"
+import { Slider } from "../slider"
+import { Label } from "../label"
 
 export interface WidgetProps {
   readonly field: ReturnType<FormApi<unknown, unknown>["field"]>
@@ -71,7 +71,7 @@ export function GhostInputWidget({ field, mapping, aria }: WidgetProps): ReactNo
       type={mapping.inputType ?? "text"}
       step={mapping.inputStep}
       value={value == null ? "" : String(value)}
-      onChange={(e) => {
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
         const raw = e.target.value
         const parsed = mapping.inputType === "number" ? (raw === "" ? "" : Number(raw)) : raw
         field.handleChange(parsed as never)
@@ -90,7 +90,7 @@ export function GhostTextareaWidget({ field, mapping, aria }: WidgetProps): Reac
     <Textarea
       {...aria}
       value={value == null ? "" : String(value)}
-      onChange={(e) => field.handleChange(e.target.value as never)}
+      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => field.handleChange(e.target.value as never)}
       onBlur={() => field.handleBlur()}
       {...htmlAttrs}
     />
@@ -104,7 +104,7 @@ export function GhostSwitchWidget({ field, aria }: WidgetProps): ReactNode {
     <Switch
       {...aria}
       checked={!!value}
-      onCheckedChange={(val) => field.handleChange(val as never)}
+      onCheckedChange={(val: boolean) => field.handleChange(val as never)}
     />
   )
 }
@@ -117,7 +117,7 @@ export function GhostSliderWidget({ field, mapping, aria }: WidgetProps): ReactN
     <Slider
       {...aria}
       value={[typeof value === "number" ? value : 0]}
-      onValueChange={([v]) => field.handleChange(v as never)}
+      onValueChange={([v]: number[]) => field.handleChange(v as never)}
       min={typeof htmlAttrs.min === "number" ? htmlAttrs.min : 0}
       max={typeof htmlAttrs.max === "number" ? htmlAttrs.max : 100}
       step={mapping.inputStep === "1" ? 1 : 0.01}
@@ -131,7 +131,7 @@ export function GhostSelectWidget({ field, fieldInfo, aria }: WidgetProps): Reac
   return (
     <Select
       value={field.get() == null ? "" : String(field.get())}
-      onValueChange={(v) => field.handleChange(v as never)}
+      onValueChange={(v: string) => field.handleChange(v as never)}
     >
       <SelectTrigger {...aria}>
         <SelectValue />
@@ -154,7 +154,7 @@ export function GhostRadioGroupWidget({ field, fieldInfo, aria }: WidgetProps): 
     <RadioGroup
       {...aria}
       value={field.get() == null ? "" : String(field.get())}
-      onValueChange={(v) => field.handleChange(v as never)}
+      onValueChange={(v: string) => field.handleChange(v as never)}
     >
       {values.map((v) => (
         <div key={String(v)} className="flex items-center gap-2">

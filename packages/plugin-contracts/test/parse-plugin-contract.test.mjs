@@ -3,12 +3,14 @@ import assert from "node:assert/strict";
 import {
   composeEnabledPluginContributions,
   composeThemeContributions,
-  createDefaultContributionPredicateMatcher,
-  evaluateContributionPredicate,
   evaluateShellPluginCompatibility,
   parsePluginContract,
   parseTenantPluginManifest,
 } from "../dist/index.js";
+import {
+  createDefaultContributionPredicateMatcher,
+  evaluateContributionPredicate,
+} from "../../plugin-system/src/predicate.ts";
 import {
   buildActionSurface,
   dispatchAction,

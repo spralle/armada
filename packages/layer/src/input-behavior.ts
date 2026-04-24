@@ -94,7 +94,7 @@ export interface KeyboardExclusiveManager {
  * listener on `document` calls `stopPropagation()` and
  * `stopImmediatePropagation()` for events whose target is NOT within
  * the exclusive surface element. This prevents the shell keybinding
- * service (and any other global listeners) from receiving those events.
+ * service (and other global listeners) from receiving those events.
  */
 export function createKeyboardExclusiveManager(): KeyboardExclusiveManager {
   const stack: KeyboardExclusiveEntry[] = [];

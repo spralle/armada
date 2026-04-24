@@ -1,14 +1,14 @@
 import type { PluginContract, PluginServices } from "@ghost-shell/contracts";
 import {
   createCapabilityRegistry,
-  pickComponentModuleExport,
   pickServiceModuleExport,
 } from "./capability-registry.js";
 import {
   createRuntimeFirstPluginLoader,
 } from "./plugin-loader.js";
 import { createActivationController } from "./plugin-registry-activation.js";
-import { readCapabilityComponents, readCapabilityServices } from "./plugin-registry-contract.js";
+import { resolveComponentCapabilityFromStates, resolveServiceCapabilityFromStates } from "./plugin-registry-capabilities.js";
+import { readCapabilityServices } from "./plugin-registry-contract.js";
 import { cascadeDisableDependents, disposeActivationSubscriptions, resetRuntimeState, safeCallDeactivate } from "./plugin-registry-lifecycle.js";
 import {
   cloneLifecycle,
@@ -251,125 +251,14 @@ export function createShellPluginRegistry(
       }
     },
     async resolveComponentCapability(requesterPluginId, capabilityId) {
-      const provider = capabilityRegistry.resolveComponent(capabilityId, {
-        requesterPluginId,
-      });
-      if (!provider) {
-        pushDiagnostic(diagnostics, {
-          at: new Date().toISOString(),
-          pluginId: requesterPluginId,
-          level: "warn",
-          code: "COMPONENT_CAPABILITY_UNRESOLVED",
-          message:
-            `Plugin '${requesterPluginId}' requested component capability '${capabilityId}', `
-            + "but no explicitly enabled provider is active.",
-        });
-        return null;
-      }
-
-      const providerState = states.get(provider.providerPluginId);
-      if (!providerState) {
-        return null;
-      }
-
-      const providerContract = providerState.contract;
-      const providerComponents = readCapabilityComponents(providerContract);
-      const capability = providerComponents.find((component) => component.id === capabilityId);
-      if (!capability) {
-        pushDiagnostic(diagnostics, {
-          at: new Date().toISOString(),
-          pluginId: requesterPluginId,
-          level: "warn",
-          code: "COMPONENT_CAPABILITY_UNRESOLVED",
-          message:
-            `Plugin '${requesterPluginId}' requested component capability '${capabilityId}', `
-            + `but provider '${provider.providerPluginId}' no longer declares it in contract.`,
-        });
-        return null;
-      }
-
-      if (!providerState.componentsModule) {
-        providerState.componentsModule = await pluginLoader.loadPluginComponents(providerState.descriptor);
-      }
-
-      const resolved = pickComponentModuleExport(providerState.componentsModule, capability);
-      if (resolved === null || resolved === undefined) {
-        pushDiagnostic(diagnostics, {
-          at: new Date().toISOString(),
-          pluginId: requesterPluginId,
-          level: "warn",
-          code: "COMPONENT_EXPORT_MISSING",
-          message:
-            `Provider '${provider.providerPluginId}' does not export component capability '${capabilityId}' `
-            + "from './pluginComponents'.",
-        });
-        return null;
-      }
-
-      return resolved;
+      return resolveComponentCapabilityFromStates(
+        requesterPluginId, capabilityId, states, capabilityRegistry, diagnostics, pluginLoader,
+      );
     },
     async resolveServiceCapability(requesterPluginId, capabilityId) {
-      const provider = capabilityRegistry.resolveService(capabilityId, {
-        requesterPluginId,
-      });
-      if (!provider) {
-        pushDiagnostic(diagnostics, {
-          at: new Date().toISOString(),
-          pluginId: requesterPluginId,
-          level: "warn",
-          code: "SERVICE_CAPABILITY_UNRESOLVED",
-          message:
-            `Plugin '${requesterPluginId}' requested service capability '${capabilityId}', `
-            + "but no explicitly enabled provider is active.",
-        });
-        return null;
-      }
-
-      const providerState = states.get(provider.providerPluginId);
-      if (!providerState) {
-        return null;
-      }
-
-      const providerContract = providerState.contract;
-      const providerServices = readCapabilityServices(providerContract);
-      const capability = providerServices.find((service) => service.id === capabilityId);
-      if (!capability) {
-        pushDiagnostic(diagnostics, {
-          at: new Date().toISOString(),
-          pluginId: requesterPluginId,
-          level: "warn",
-          code: "SERVICE_CAPABILITY_UNRESOLVED",
-          message:
-            `Plugin '${requesterPluginId}' requested service capability '${capabilityId}', `
-            + `but provider '${provider.providerPluginId}' no longer declares it in contract.`,
-        });
-        return null;
-      }
-
-      // Short-circuit for builtin plugins with pre-registered instances
-      if (providerState.builtinServiceInstances?.has(capabilityId)) {
-        return providerState.builtinServiceInstances.get(capabilityId) ?? null;
-      }
-
-      if (!providerState.servicesModule) {
-        providerState.servicesModule = await pluginLoader.loadPluginServices(providerState.descriptor);
-      }
-
-      const resolved = pickServiceModuleExport(providerState.servicesModule, capability);
-      if (resolved === null || resolved === undefined) {
-        pushDiagnostic(diagnostics, {
-          at: new Date().toISOString(),
-          pluginId: requesterPluginId,
-          level: "warn",
-          code: "SERVICE_EXPORT_MISSING",
-          message:
-            `Provider '${provider.providerPluginId}' does not export service capability '${capabilityId}' `
-            + "from './pluginServices'.",
-        });
-        return null;
-      }
-
-      return resolved;
+      return resolveServiceCapabilityFromStates(
+        requesterPluginId, capabilityId, states, capabilityRegistry, diagnostics, pluginLoader,
+      );
     },
     getService<T = unknown>(serviceId: string): T | null {
       return resolveServiceFromRegistry<T>(serviceId, capabilityRegistry, states);

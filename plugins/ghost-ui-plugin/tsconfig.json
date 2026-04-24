@@ -1,14 +1,19 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "strict": true,
     "noEmit": true,
     "composite": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@ghost-shell/ui": ["../../packages/ui/dist/index.d.ts"],
+      "@ghost-shell/ui/*": ["../../packages/ui/dist/*"]
+    }
   },
   "references": [
     {
@@ -20,5 +25,8 @@
   ],
   "include": [
     "src"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }

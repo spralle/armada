@@ -5,8 +5,8 @@ import { useSchemaForm } from "@ghost-shell/formr-react"
 import type { UseSchemaFormOptions } from "@ghost-shell/formr-react"
 import { renderLayoutTree } from "@ghost-shell/formr-react"
 import type { RendererRegistry } from "@ghost-shell/formr-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { cn } from "../../../lib/utils"
+import { Button } from "../button"
 import { SchemaFormProvider } from "./schema-form-context"
 import { createGhostRegistry } from "./ghost-renderers"
 import type { WidgetOverrides } from "./widget-overrides"
@@ -53,7 +53,7 @@ export function SchemaForm({
   return (
     <SchemaFormProvider value={{ form, fields, overrides, registry: resolvedRegistry }}>
       <form onSubmit={handleSubmit} className={cn("flex flex-col gap-6", className)} noValidate>
-        {layout.children?.map((node) => renderLayoutTree(node, resolvedRegistry))}
+        {(layout.children?.map((node) => renderLayoutTree(node, resolvedRegistry)) ?? []) as React.ReactNode}
         {children ?? (
           <Button type="submit" disabled={!form.canSubmit()}>
             Submit

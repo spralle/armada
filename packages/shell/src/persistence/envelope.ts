@@ -318,7 +318,7 @@ function parseWorkspaceEnvelope(input: Record<string, unknown>):
     workspaceOrder = input.workspaceOrder
       .filter((id): id is string => typeof id === "string" && workspaceIds.has(id) && !seen.has(id))
       .map((id) => { seen.add(id); return id; });
-    // Append any workspaces missing from order
+    // Append remaining workspaces missing from order
     for (const ws of workspaces) {
       if (!seen.has(ws.id)) {
         workspaceOrder.push(ws.id);

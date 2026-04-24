@@ -186,14 +186,14 @@ for (const [qName, query] of Object.entries(QUERIES)) {
             const row = runComparison(`${qName}/${docSize[0]!.toUpperCase()}/${size}`, query, col, 'cold');
             allRows.cold.push(row);
             console.log(`  COLD ${row[0]}: pred=${row[1]} kuery=${row[2]} → ${row[3]}`);
-          });
+          }, { timeout: 60_000 });
 
           test(`${size.toLocaleString()} items — hot`, () => {
             const col = generateCollection(factory, size);
             const row = runComparison(`${qName}/${docSize[0]!.toUpperCase()}/${size}`, query, col, 'hot');
             allRows.hot.push(row);
             console.log(`  HOT  ${row[0]}: pred=${row[1]} kuery=${row[2]} → ${row[3]}`);
-          });
+          }, { timeout: 60_000 });
         }
       });
     }
@@ -207,14 +207,14 @@ describe('query: $elemMatch', () => {
       const row = runComparison(`$elemMatch/L/${size}`, ELEMATCH_QUERY, col, 'cold');
       allRows.cold.push(row);
       console.log(`  COLD ${row[0]}: pred=${row[1]} kuery=${row[2]} → ${row[3]}`);
-    });
+    }, { timeout: 60_000 });
 
     test(`large/${size.toLocaleString()} items — hot`, () => {
       const col = generateCollection(makeLarge, size);
       const row = runComparison(`$elemMatch/L/${size}`, ELEMATCH_QUERY, col, 'hot');
       allRows.hot.push(row);
       console.log(`  HOT  ${row[0]}: pred=${row[1]} kuery=${row[2]} → ${row[3]}`);
-    });
+    }, { timeout: 60_000 });
   }
 });
 

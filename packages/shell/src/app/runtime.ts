@@ -119,7 +119,7 @@ export function createShellRuntime(options?: {
     pendingFocusSelector: null,
     actionSurface: buildActionSurface([createDefaultShellKeybindingContract()]),
     // SAFETY: Deferred init — assigned immediately after object creation (line ~150),
-    // before any consumer can access the runtime. The cast avoids making 30+ consumer
+    // before a consumer can access the runtime. The cast avoids making 30+ consumer
     // sites handle a null that is never observable in practice.
     keybindingOverrideManager: null as unknown as ShellRuntime["keybindingOverrideManager"],
     themeRegistry: null,
@@ -133,7 +133,7 @@ export function createShellRuntime(options?: {
     },
     commandNotice: "",
     // SAFETY: Deferred init — assigned immediately after object creation (line ~149),
-    // before any consumer can access the runtime.
+    // before consumers can access the runtime.
     partHost: null as unknown as ReturnType<typeof createShellPartHostAdapter>,
     pluginConfigSyncDispose: null,
     registrySubscriptionDispose: null,
@@ -143,7 +143,7 @@ export function createShellRuntime(options?: {
     activeDndReason: crossWindowDnd.reason,
     lastDndDiagnostic: null,
     // SAFETY: Deferred init — assigned immediately after object creation (line ~167),
-    // before any consumer can access the runtime.
+    // before consumers can access the runtime.
     workspaceManager: null as unknown as ShellRuntime["workspaceManager"],
     placementRegistry,
     placementConfig,

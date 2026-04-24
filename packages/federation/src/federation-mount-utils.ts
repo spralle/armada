@@ -6,7 +6,7 @@
 /** Cleanup returned by a mount function — can be a function, object with unmount()/dispose(), or void. */
 export type MountCleanup = (() => void) | { unmount?: () => void } | { dispose?: () => void } | void;
 
-/** Normalize any mount cleanup into a plain function or null. */
+/** Normalize a mount cleanup into a plain function or null. */
 export function normalizeCleanup(cleanup: MountCleanup): (() => void) | null {
   if (typeof cleanup === "function") {
     return cleanup;

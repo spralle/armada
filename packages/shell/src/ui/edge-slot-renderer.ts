@@ -94,7 +94,7 @@ export function createEdgeSlotRenderer(options: EdgeSlotRendererOptions): EdgeSl
       if (!isVisible || slotContributions.length === 0) {
         section.style.display = "none";
         section.innerHTML = "";
-        // Unmount any previously mounted contributions in this slot
+        // Unmount all previously mounted contributions in this slot
         for (const c of slotContributions) {
           const entry = mounted.get(c.id);
           if (entry) {

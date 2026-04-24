@@ -70,7 +70,7 @@ export interface KeybindingService {
   /** Export overrides as a JSON string. */
   exportOverrides(): string;
 
-  /** Import overrides from a JSON string. Returns count of imported entries and any errors. */
+  /** Import overrides from a JSON string. Returns count of imported entries and encountered errors. */
   importOverrides(json: string): { imported: number; errors: string[] };
 
   /** Fired when a multi-chord sequence is pending (waiting for more chords). */

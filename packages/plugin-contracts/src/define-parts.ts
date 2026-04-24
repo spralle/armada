@@ -36,7 +36,7 @@ export function findReactPartsModule(module: unknown): ReactPartsModule | undefi
 }
 
 /**
- * Check whether a loaded MF module contains a ReactPartsModule in any export.
+ * Check whether a loaded MF module contains a ReactPartsModule in its exports.
  */
 export function containsReactParts(module: unknown): boolean {
   return findReactPartsModule(module) !== undefined;

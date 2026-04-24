@@ -6,8 +6,8 @@ import { Slot } from "@radix-ui/react-slot"
 import type { FormApi, FieldApi, FieldConfig, ValidationIssue } from "@ghost-shell/formr-core"
 import { useField } from "@ghost-shell/formr-react"
 
-import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
+import { cn } from "../../lib/utils"
+import { Label } from "./label"
 
 const FormContext = React.createContext<FormApi<unknown, unknown> | null>(null)
 

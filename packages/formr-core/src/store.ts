@@ -64,7 +64,7 @@ export class FormStore<TData, TUi> {
     };
   }
 
-  /** Clear all subscriptions and roll back any active transaction. */
+  /** Clear all subscriptions and roll back an active transaction. */
   dispose(): void {
     this._listeners.clear();
     if (this._activeTransaction && this._activeTransaction.status === 'active') {

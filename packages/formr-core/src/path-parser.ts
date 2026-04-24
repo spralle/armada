@@ -26,7 +26,7 @@ export interface ParsePathOptions {
 }
 
 /**
- * Parse any supported path notation into a CanonicalPath.
+ * Parse a supported path notation into a CanonicalPath.
  * Accepts dot paths, namespace dot paths, and JSON Pointers (RFC 6901).
  * Results are cached by input string for repeated lookups.
  */
@@ -84,7 +84,7 @@ function encodePointerSegment(seg: CanonicalSegment): string {
 
 /**
  * Serialize a canonical path to dot notation.
- * Throws FORMR_PATH_NOT_DOT_SAFE if any segment contains characters
+ * Throws FORMR_PATH_NOT_DOT_SAFE if a segment contains characters
  * that cannot be represented unambiguously in dot notation.
  */
 export function toDot(path: CanonicalPath): string {

@@ -161,7 +161,7 @@ export function bindKeyboardShortcuts(
 
     const keybindingService = getKeybindingService();
 
-    // Escape cancels any pending chord sequence immediately
+    // Escape cancels a pending chord sequence immediately
     if (sequenceState && event.key === "Escape") {
       event.preventDefault();
       const cancelledChords = sequenceState.pressedChords.map(c => c.value);

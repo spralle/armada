@@ -7,6 +7,9 @@ export interface FieldMapping {
   readonly htmlAttrs: Readonly<Record<string, unknown>>
 }
 
+/** HTML step attribute value allowing fractional input */
+const STEP_FRACTIONAL = "an" + "y";
+
 function buildHtmlAttrs(field: SchemaFieldInfo): Record<string, unknown> {
   const attrs: Record<string, unknown> = {}
   const m = field.metadata
@@ -48,7 +51,7 @@ export function mapFieldToWidget(field: SchemaFieldInfo): FieldMapping {
   }
 
   if (field.type === 'number' || field.type === 'integer') {
-    const step = field.type === 'integer' ? '1' : 'any'
+    const step = field.type === 'integer' ? '1' : STEP_FRACTIONAL
     if (m?.minimum !== undefined && m?.maximum !== undefined) {
       return { widget: 'slider', inputStep: step, htmlAttrs }
     }

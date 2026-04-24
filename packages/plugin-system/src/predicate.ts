@@ -1,5 +1,3 @@
-import type { ExprNode, EvaluationScope } from "@ghost-shell/predicate";
-import { evaluate as evaluateExpr, PredicateError } from "@ghost-shell/predicate";
 import type { PluginContributionPredicate } from "@ghost-shell/contracts";
 
 export interface PredicateFactBag {
@@ -49,7 +47,7 @@ function evaluatePredicateWithDefaultMatcher(
 
   for (const [path, condition] of Object.entries(predicate)) {
     const actual = getFactValue(facts, path);
-    if (!matchesCondition(actual, path, condition, facts)) {
+    if (!matchesCondition(actual, condition)) {
       failedPredicates.push({
         path,
         actual,
@@ -94,10 +92,10 @@ function getFactValue(facts: PredicateFactBag, path: string): unknown {
  * to @ghost-shell/predicate's evaluator while preserving deep equality semantics
  * for $eq/$ne/$in/$nin.
  */
-function matchesCondition(actual: unknown, path: string, condition: unknown, facts: PredicateFactBag): boolean {
+function matchesCondition(actual: unknown, condition: unknown): boolean {
   if (isOperatorCondition(condition)) {
     return Object.entries(condition).every(([operator, expected]) =>
-      applyOperator(operator, actual, expected, path, facts),
+      applyOperator(operator, actual, expected),
     );
   }
 
@@ -112,20 +110,11 @@ function isOperatorCondition(value: unknown): value is Record<string, unknown> {
   return Object.keys(value).some((key) => key.startsWith("$"));
 }
 
-/** Operators that @ghost-shell/predicate handles via its evaluator. */
-const DELEGATED_OPERATORS = new Set(["$gt", "$gte", "$lt", "$lte", "$exists"]);
-
 function applyOperator(
   operator: string,
   actual: unknown,
   expected: unknown,
-  path: string,
-  facts: PredicateFactBag,
 ): boolean {
-  if (DELEGATED_OPERATORS.has(operator)) {
-    return evaluateWithPredicateEngine(operator, path, expected, facts);
-  }
-
   switch (operator) {
     case "$eq":
       return isDeepEqual(actual, expected);
@@ -135,52 +124,26 @@ function applyOperator(
       return Array.isArray(expected) && expected.some((candidate) => isDeepEqual(actual, candidate));
     case "$nin":
       return Array.isArray(expected) && expected.every((candidate) => !isDeepEqual(actual, candidate));
+    case "$exists":
+      return expected ? actual !== undefined : actual === undefined;
+    case "$gt":
+      return isComparable(actual, expected) && (actual as number | string) > (expected as number | string);
+    case "$gte":
+      return isComparable(actual, expected) && (actual as number | string) >= (expected as number | string);
+    case "$lt":
+      return isComparable(actual, expected) && (actual as number | string) < (expected as number | string);
+    case "$lte":
+      return isComparable(actual, expected) && (actual as number | string) <= (expected as number | string);
     default:
       return false;
   }
 }
 
-/**
- * Build an ExprNode AST and delegate evaluation to @ghost-shell/predicate.
- * Catches PredicateError (e.g. type mismatch) and returns false for
- * backward compatibility — the old implementation returned NaN comparisons
- * which always yielded false.
- */
-function evaluateWithPredicateEngine(
-  operator: string,
-  path: string,
-  expected: unknown,
-  facts: PredicateFactBag,
-): boolean {
-  const pathNode: ExprNode = { kind: "path", path };
-  const literalNode = toLiteralNode(expected);
-
-  const astNode: ExprNode = operator === "$exists"
-    ? { kind: "op", op: "$exists", args: [pathNode, literalNode] }
-    : { kind: "op", op: operator, args: [pathNode, literalNode] };
-
-  const scope: EvaluationScope = { data: facts, uiState: {}, meta: {} };
-
-  try {
-    return Boolean(evaluateExpr(astNode, scope));
-  } catch (error: unknown) {
-    if (error instanceof PredicateError) {
-      return false;
-    }
-    throw error;
-  }
-}
-
-function toLiteralNode(value: unknown): ExprNode {
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return { kind: "literal", value };
-  }
-  if (value === null) {
-    return { kind: "literal", value: null };
-  }
-  // For non-primitive values (arrays for $in/$nin handled separately),
-  // fall back to boolean coercion for $exists
-  return { kind: "literal", value: Boolean(value) };
+/** Returns true when both values are the same comparable type (number or string). */
+function isComparable(a: unknown, b: unknown): boolean {
+  const ta = typeof a;
+  const tb = typeof b;
+  return ta === tb && (ta === "number" || ta === "string");
 }
 
 function isDeepEqual(left: unknown, right: unknown): boolean {

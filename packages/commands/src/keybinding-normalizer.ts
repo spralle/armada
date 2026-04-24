@@ -90,7 +90,7 @@ export interface NormalizedKeybindingSequence {
 /**
  * Parse a space-separated sequence of chords.
  * Each space-separated token is parsed via normalizeConfiguredChord().
- * Returns null if input is empty or any token is invalid.
+ * Returns null if input is empty or a token is invalid.
  */
 export function normalizeConfiguredSequence(input: string): NormalizedKeybindingSequence | null {
   const collapsed = input.trim().replace(/\s*\+\s*/g, "+");

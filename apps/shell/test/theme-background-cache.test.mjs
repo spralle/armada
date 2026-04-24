@@ -54,15 +54,21 @@ function makeFakeResponse(body = "image-data") {
 }
 
 // ---------------------------------------------------------------------------
+// Import once — bun runs .ts natively, no cache-busting needed.
+// Module-level state (currentBlobUrl) is shared across tests, which is
+// acceptable because the revocation test explicitly depends on it.
+// ---------------------------------------------------------------------------
+
+const { resolveBackgroundUrl, preloadBackgroundUrls } = await import(
+  "../../packages/theme/src/theme-background-cache.ts"
+);
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 test("resolveBackgroundUrl returns original URL when Cache API unavailable", async () => {
-  // Ensure caches is NOT defined.
   clearGlobals();
-  const { resolveBackgroundUrl } = await import(
-    `../dist-test/src/theme-background-cache.js?v=${Date.now()}-1`
-  );
   const url = "https://example.com/bg.png";
   const result = await resolveBackgroundUrl(url);
   assert.equal(result, url);
@@ -72,9 +78,6 @@ test("resolveBackgroundUrl caches and returns blob URL on miss", async () => {
   clearGlobals();
   installGlobals();
   fetchFn = async () => makeFakeResponse();
-  const { resolveBackgroundUrl } = await import(
-    `../dist-test/src/theme-background-cache.js?v=${Date.now()}-2`
-  );
 
   const url = "https://example.com/bg.png";
   const result = await resolveBackgroundUrl(url);
@@ -92,10 +95,6 @@ test("resolveBackgroundUrl returns blob URL from cache on hit", async () => {
   let fetchCalled = false;
   fetchFn = async () => { fetchCalled = true; return makeFakeResponse(); };
 
-  const { resolveBackgroundUrl } = await import(
-    `../dist-test/src/theme-background-cache.js?v=${Date.now()}-3`
-  );
-
   const result = await resolveBackgroundUrl("https://example.com/cached.png");
   assert.ok(result.startsWith("blob:"));
   assert.equal(fetchCalled, false, "Should not fetch on cache hit");
@@ -109,10 +108,6 @@ test("preloadBackgroundUrls fetches and caches uncached URLs", async () => {
   fetchFn = async (url) => { fetched.push(url); return makeFakeResponse(); };
   // Pre-populate one URL.
   cacheStore.set("https://example.com/a.png", makeFakeResponse());
-
-  const { preloadBackgroundUrls } = await import(
-    `../dist-test/src/theme-background-cache.js?v=${Date.now()}-4`
-  );
 
   preloadBackgroundUrls([
     "https://example.com/a.png",
@@ -133,10 +128,6 @@ test("previous blob URLs are revoked when new ones are created", async () => {
   installGlobals();
   fetchFn = async () => makeFakeResponse();
 
-  const { resolveBackgroundUrl } = await import(
-    `../dist-test/src/theme-background-cache.js?v=${Date.now()}-5`
-  );
-
   const first = await resolveBackgroundUrl("https://example.com/1.png");
   assert.ok(first.startsWith("blob:"));
 
@@ -150,10 +141,6 @@ test("fetch failure gracefully falls back to original URL", async () => {
   clearGlobals();
   installGlobals();
   fetchFn = async () => { throw new Error("Network error"); };
-
-  const { resolveBackgroundUrl } = await import(
-    `../dist-test/src/theme-background-cache.js?v=${Date.now()}-6`
-  );
 
   const url = "https://example.com/fail.png";
   const result = await resolveBackgroundUrl(url);

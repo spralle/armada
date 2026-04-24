@@ -1,4 +1,4 @@
-import type { AnimationEntry, AnimationName, GhostMotionConfig } from "./config-types.js";
+import type { AnimationEntry, AnimationName, AnimationTreeNode, GhostMotionConfig } from "./config-types.js";
 import { ANIMATION_TREE } from "./animation-tree.js";
 
 /** Fallback when no overrides exist at a given level. */
@@ -26,7 +26,7 @@ export function resolveEntry(
     if (override !== undefined) {
       chain.push(override);
     }
-    const node = ANIMATION_TREE[current];
+    const node: AnimationTreeNode | undefined = ANIMATION_TREE[current];
     current = node ? node.parent : null;
   }
 
