@@ -160,15 +160,19 @@ async function mountPart(options: MountPartOptions): Promise<void> {
     target,
   } = options;
 
-  ensureRemoteRegistered(
-    part.pluginId,
-    registeredRemoteIds,
-    () => pluginSnapshot?.descriptor,
-    (desc) => federationRuntime.registerRemote(desc),
-  );
+  const builtinModule = runtime.registry.getBuiltinModule(part.pluginId);
+
+  if (!builtinModule) {
+    ensureRemoteRegistered(
+      part.pluginId,
+      registeredRemoteIds,
+      () => pluginSnapshot?.descriptor,
+      (desc) => federationRuntime.registerRemote(desc),
+    );
+  }
 
   try {
-    const remoteModule = await federationRuntime.loadRemoteModule(part.pluginId, "./pluginParts");
+    const remoteModule = builtinModule ?? await federationRuntime.loadRemoteModule(part.pluginId, "./pluginParts");
 
     if (!isCurrent()) {
       return;

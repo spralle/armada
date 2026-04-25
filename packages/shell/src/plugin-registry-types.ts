@@ -69,6 +69,8 @@ export interface PluginRuntimeState {
   /** The plugin's optional deactivate() export, called before disposal. */
   deactivate: PluginDeactivateFunction | null;
   builtinServiceInstances: Map<string, unknown> | null;
+  /** Module reference for builtin plugins — used by part-module-host to skip federation loading. */
+  builtinModule: unknown | null;
 }
 
 export interface PluginRegistryDiagnostic {
@@ -94,7 +96,7 @@ export interface PluginRegistrySnapshot {
 }
 
 export interface ShellPluginRegistry {
-  registerBuiltinPlugin(contract: PluginContract, serviceInstances?: Record<string, unknown>): void;
+  registerBuiltinPlugin(contract: PluginContract, serviceInstances?: Record<string, unknown>, module?: unknown): void;
   registerManifestDescriptors(tenantId: string, descriptors: TenantPluginDescriptor[]): void;
   setEnabled(pluginId: string, enabled: boolean): Promise<void>;
   activateByAction(pluginId: string, actionId: string): Promise<boolean>;
@@ -107,6 +109,8 @@ export interface ShellPluginRegistry {
   resolveServiceCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
   getService<T = unknown>(serviceId: string): T | null;
   hasService(serviceId: string): boolean;
+  /** Retrieve a builtin plugin's module reference, or null if not registered. */
+  getBuiltinModule(pluginId: string): unknown | null;
   getSnapshot(): PluginRegistrySnapshot;
   subscribe(callback: () => void): { dispose(): void };
 }

@@ -113,9 +113,9 @@ export function createShellPluginRegistry(
   }
 
   let tenantId = "local";
-  const builtinContracts: Array<{ contract: PluginContract; serviceInstances?: Record<string, unknown> }> = [];
+  const builtinContracts: Array<{ contract: PluginContract; serviceInstances?: Record<string, unknown>; module?: unknown }> = [];
 
-  function seedBuiltinState(contract: PluginContract, serviceInstances?: Record<string, unknown>): void {
+  function seedBuiltinState(contract: PluginContract, serviceInstances?: Record<string, unknown>, module?: unknown): void {
     const pluginId = contract.manifest.id;
     const instanceMap = serviceInstances ? new Map(Object.entries(serviceInstances)) : null;
     states.set(pluginId, {
@@ -142,13 +142,14 @@ export function createShellPluginRegistry(
       ghostApiInstance: null,
       deactivate: null,
       builtinServiceInstances: instanceMap,
+      builtinModule: module ?? null,
     });
   }
 
   return {
-    registerBuiltinPlugin(contract: PluginContract, serviceInstances?: Record<string, unknown>) {
-      builtinContracts.push({ contract, serviceInstances });
-      seedBuiltinState(contract, serviceInstances);
+    registerBuiltinPlugin(contract: PluginContract, serviceInstances?: Record<string, unknown>, module?: unknown) {
+      builtinContracts.push({ contract, serviceInstances, module });
+      seedBuiltinState(contract, serviceInstances, module);
       capabilityRegistry.registerPlugin(contract.manifest.id, contract);
       notifyListeners();
     },
@@ -158,7 +159,7 @@ export function createShellPluginRegistry(
       capabilityRegistry.clear();
       // Re-register builtin plugins after clear
       for (const entry of builtinContracts) {
-        seedBuiltinState(entry.contract, entry.serviceInstances);
+        seedBuiltinState(entry.contract, entry.serviceInstances, entry.module);
         capabilityRegistry.registerPlugin(entry.contract.manifest.id, entry.contract);
       }
       for (const descriptor of descriptors) {
@@ -181,6 +182,7 @@ export function createShellPluginRegistry(
           ghostApiInstance: null,
           deactivate: null,
           builtinServiceInstances: null,
+          builtinModule: null,
         });
       }
       notifyListeners();
@@ -265,6 +267,9 @@ export function createShellPluginRegistry(
     },
     hasService(serviceId: string): boolean {
       return this.getService(serviceId) !== null;
+    },
+    getBuiltinModule(pluginId: string): unknown | null {
+      return states.get(pluginId)?.builtinModule ?? null;
     },
     subscribe(callback: () => void) {
       listeners.add(callback);
