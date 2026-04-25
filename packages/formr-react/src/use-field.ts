@@ -27,7 +27,7 @@ export function useField<TData, TUi, P extends string>(
     return config;
   }, [config]);
 
-  const field = useMemo(() => form.field(path as never, stableConfig), [form, path, stableConfig]);
+  const field = useMemo(() => form.fieldDynamic(path, stableConfig), [form, path, stableConfig]);
 
   // Subscribe to field value and touched state to trigger re-renders
   useFormSelector(form, () => {

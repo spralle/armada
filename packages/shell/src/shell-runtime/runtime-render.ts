@@ -125,7 +125,7 @@ function seedTabsFromPartDefinitions(runtime: ShellRuntime): void {
   // Collect definition IDs that were explicitly closed by the user
   const closedDefinitionIds = new Set<string>();
   for (const entry of runtime.contextState.closedTabHistory) {
-    closedDefinitionIds.add(entry.definitionId);
+    if (entry.definitionId) closedDefinitionIds.add(entry.definitionId);
     if (entry.partDefinitionId) {
       closedDefinitionIds.add(entry.partDefinitionId);
     }

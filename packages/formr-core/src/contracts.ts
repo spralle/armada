@@ -67,11 +67,14 @@ export type MiddlewareDecision =
   | { readonly action: 'continue' }
   | { readonly action: 'veto'; readonly reason: string };
 
-/** Context for beforeAction hook */
-export interface BeforeActionContext<TData = unknown, TUi = unknown> {
+/** Shared middleware context — action + current state snapshot */
+export interface ActionStateContext<TData = unknown, TUi = unknown> {
   readonly action: FormAction;
   readonly state: FormState<TData, TUi>;
 }
+
+/** Context for beforeAction hook */
+export type BeforeActionContext<TData = unknown, TUi = unknown> = ActionStateContext<TData, TUi>;
 
 /** Context for afterAction hook */
 export interface AfterActionContext<TData = unknown, TUi = unknown> {
@@ -81,16 +84,10 @@ export interface AfterActionContext<TData = unknown, TUi = unknown> {
 }
 
 /** Context for beforeEvaluate hook */
-export interface BeforeEvaluateContext<TData = unknown, TUi = unknown> {
-  readonly action: FormAction;
-  readonly state: FormState<TData, TUi>;
-}
+export type BeforeEvaluateContext<TData = unknown, TUi = unknown> = ActionStateContext<TData, TUi>;
 
 /** Context for afterEvaluate hook */
-export interface AfterEvaluateContext<TData = unknown, TUi = unknown> {
-  readonly action: FormAction;
-  readonly state: FormState<TData, TUi>;
-}
+export type AfterEvaluateContext<TData = unknown, TUi = unknown> = ActionStateContext<TData, TUi>;
 
 /** Context for beforeValidate hook */
 export interface BeforeValidateContext<TData = unknown, TUi = unknown> {
@@ -139,6 +136,22 @@ export interface Middleware<TData = unknown, TUi = unknown> {
   afterSubmit?(ctx: AfterSubmitContext<TData, TUi>): void;
   onDispose?(): void;
 }
+
+/** Maps veto-capable hook names to their context types */
+export type VetoHookContextMap<TData = unknown, TUi = unknown> = {
+  readonly beforeAction: BeforeActionContext<TData, TUi>;
+  readonly beforeSubmit: BeforeSubmitContext<TData, TUi>;
+};
+
+/** Maps notification hook names to their context types */
+export type NotifyHookContextMap<TData = unknown, TUi = unknown> = {
+  readonly beforeEvaluate: BeforeEvaluateContext<TData, TUi>;
+  readonly afterEvaluate: AfterEvaluateContext<TData, TUi>;
+  readonly beforeValidate: BeforeValidateContext<TData, TUi>;
+  readonly afterValidate: AfterValidateContext<TData, TUi>;
+  readonly afterAction: AfterActionContext<TData, TUi>;
+  readonly afterSubmit: AfterSubmitContext<TData, TUi>;
+};
 
 /** ADR section 9 — SubmitExecutionContext */
 export interface SubmitExecutionContext<TData, TUi> {
@@ -247,6 +260,8 @@ export interface FormApi<TData, TUi> {
   validate(stage?: string): readonly ValidationIssue[];
   submit(context?: Partial<SubmitContext>): Promise<SubmitResult>;
   field<P extends string & DeepKeys<TData>>(path: P, config?: FieldConfig): FieldApiWithArray<TData, TUi, P>;
+  /** Get a FieldApi for a dynamic (runtime) path — skips deep keypath validation */
+  fieldDynamic(path: string, config?: FieldConfig): FieldApiWithArray<TData, TUi, string>;
   subscribe(listener: (state: FormState<TData, TUi>) => void): () => void;
   /** Reset form to initial or provided state */
   reset(nextInitial?: { readonly data?: TData; readonly uiState?: TUi }): void;

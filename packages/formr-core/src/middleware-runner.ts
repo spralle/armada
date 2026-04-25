@@ -1,22 +1,24 @@
-import type { Middleware, MiddlewareDecision, MiddlewareInitContext } from './contracts.js';
+import type { Middleware, MiddlewareDecision, MiddlewareInitContext, VetoHookContextMap, NotifyHookContextMap } from './contracts.js';
 import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './timeout.js';
 import { FormrError } from './errors.js';
 
 /** Run veto-capable hooks synchronously (for non-submit pipeline path) */
-export function runVetoHooksSync(
+export function runVetoHooksSync<K extends keyof VetoHookContextMap>(
   middlewares: readonly Middleware[],
-  hookName: 'beforeAction' | 'beforeSubmit',
-  context: unknown,
+  hookName: K,
+  context: VetoHookContextMap[K],
 ): MiddlewareDecision {
   for (const mw of middlewares) {
     const hook = mw[hookName];
     if (!hook) continue;
     try {
-      const result = hook(context as never);
+      // Justified: TS cannot correlate generic K between hook and context in a loop;
+      // callers are type-safe via the generic constraint on K
+      const result = (hook as (ctx: VetoHookContextMap[K]) => MiddlewareDecision | Promise<MiddlewareDecision>)(context);
       if (isPromiseLike(result)) {
         throw new FormrError(
           'FORMR_ASYNC_IN_SYNC_PIPELINE',
-          `Middleware "${mw.id}" returned a Promise from ${hookName}. Use the async pipeline path for async middleware.`,
+          `Middleware "${mw.id}" returned a Promise from ${String(hookName)}. Use the async pipeline path for async middleware.`,
         );
       }
       if (result && typeof result === 'object' && 'action' in result) {
@@ -26,23 +28,24 @@ export function runVetoHooksSync(
       }
     } catch (err) {
       if (err instanceof FormrError) throw err;
-      return { action: 'veto', reason: `Middleware "${mw.id}" threw in ${hookName}` };
+      return { action: 'veto', reason: `Middleware "${mw.id}" threw in ${String(hookName)}` };
     }
   }
   return { action: 'continue' };
 }
 
 /** Run notification hooks synchronously (for non-submit pipeline path) */
-export function runNotifyHooksSync(
+export function runNotifyHooksSync<K extends keyof NotifyHookContextMap>(
   middlewares: readonly Middleware[],
-  hookName: 'beforeEvaluate' | 'afterEvaluate' | 'beforeValidate' | 'afterValidate' | 'afterAction' | 'afterSubmit',
-  context: unknown,
+  hookName: K,
+  context: NotifyHookContextMap[K],
 ): void {
   for (const mw of middlewares) {
     const hook = mw[hookName];
     if (!hook) continue;
     try {
-      (hook as (c: unknown) => void)(context);
+      // Justified: TS correlated-types limitation — callers are type-safe via generic K
+      (hook as (ctx: NotifyHookContextMap[K]) => void)(context);
     } catch {
       // Swallow errors in sync notify hooks to match async variant behavior
     }
@@ -50,22 +53,23 @@ export function runNotifyHooksSync(
 }
 
 /** Run veto-capable hooks with async support and timeout */
-export async function runVetoHooksAsync(
+export async function runVetoHooksAsync<K extends keyof VetoHookContextMap>(
   middlewares: readonly Middleware[],
-  hookName: 'beforeAction' | 'beforeSubmit',
-  context: unknown,
+  hookName: K,
+  context: VetoHookContextMap[K],
   timeoutMs: number = DEFAULT_RUNTIME_CONSTRAINTS.middlewareTimeout,
 ): Promise<MiddlewareDecision> {
   for (const mw of middlewares) {
     const hook = mw[hookName];
     if (!hook) continue;
     try {
-      const result = hook(context as never);
+      // Justified: TS correlated-types limitation — callers are type-safe via generic K
+      const result = (hook as (ctx: VetoHookContextMap[K]) => MiddlewareDecision | Promise<MiddlewareDecision>)(context);
       const decision = isPromiseLike(result)
         ? await withTimeout(
             result as Promise<MiddlewareDecision>,
             timeoutMs,
-            `Middleware "${mw.id}" timed out in ${hookName}`,
+            `Middleware "${mw.id}" timed out in ${String(hookName)}`,
           )
         : (result as MiddlewareDecision);
       if (decision?.action === 'veto') return decision;
@@ -78,22 +82,23 @@ export async function runVetoHooksAsync(
 }
 
 /** Run notification hooks with async support and timeout */
-export async function runNotifyHooksAsync(
+export async function runNotifyHooksAsync<K extends keyof NotifyHookContextMap>(
   middlewares: readonly Middleware[],
-  hookName: 'beforeEvaluate' | 'afterEvaluate' | 'beforeValidate' | 'afterValidate' | 'afterAction' | 'afterSubmit',
-  context: unknown,
+  hookName: K,
+  context: NotifyHookContextMap[K],
   timeoutMs: number = DEFAULT_RUNTIME_CONSTRAINTS.middlewareTimeout,
 ): Promise<void> {
   for (const mw of middlewares) {
     const hook = mw[hookName];
     if (!hook) continue;
     try {
-      const result = (hook as (c: unknown) => unknown)(context);
+      // Justified: TS correlated-types limitation — callers are type-safe via generic K
+      const result = (hook as (ctx: NotifyHookContextMap[K]) => unknown)(context);
       if (isPromiseLike(result)) {
         await withTimeout(
           result as Promise<unknown>,
           timeoutMs,
-          `Middleware "${mw.id}" timed out in ${hookName}`,
+          `Middleware "${mw.id}" timed out in ${String(hookName)}`,
         );
       }
     } catch {
