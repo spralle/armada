@@ -39,6 +39,7 @@ import {
 } from "./shell-wiring.js";
 import { registerWorkspaceRuntimeActions } from "./shell-runtime/workspace-runtime-actions.js";
 import { publishWithDegrade } from "./shell-runtime/bridge-sync-handlers.js";
+import { createShellPartHostAdapter } from "./part-module-host.js";
 import { mountShell, registerRuntimeTeardown } from "./shell-mount.js";
 import { hydratePluginRegistry } from "./shell-hydrate.js";
 import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
@@ -118,6 +119,11 @@ export function createGhostShell(options: GhostShellOptions): GhostShell {
   const runtime = createShellRuntime({
     transportPath: transportDecision.path,
   });
+
+  // Re-wire partHost to use the shell's renderer registry (includes React renderer).
+  // createShellRuntime creates a default partHost with vanilla-DOM-only renderer;
+  // we replace it with one that shares the registry configured above.
+  runtime.partHost = createShellPartHostAdapter(runtime, { rendererRegistry });
 
   let disposed = false;
   let disposeMount: (() => void) | null = null;
