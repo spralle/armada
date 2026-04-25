@@ -10,7 +10,7 @@ import { getTabGroupId } from "../context-state.js";
 import type { BridgeHost, ShellRuntime } from "../app/types.js";
 import { buildGroupContextSyncEvent } from "@ghost-shell/bridge";
 import { createReactPanelsHost } from "../ui/react/panels-host.js";
-import { getVisibleComposedParts } from "../ui/parts-rendering.js";
+import { getVisibleComposedParts, getVisiblePartDefinitions } from "../ui/parts-rendering.js";
 import { renderParts as renderPartsView } from "../ui/parts-controller.js";
 import { updateWindowReadOnlyState } from "../ui/context-controls.js";
 import { deriveCloseableTabIds } from "./runtime-render-transition.js";
@@ -106,8 +106,48 @@ export function renderPanels(root: HTMLElement, runtime: ShellRuntime): void {
   updateWindowReadOnlyState(root, runtime);
 }
 
+function seedTabsFromPartDefinitions(runtime: ShellRuntime): void {
+  const definitions = getVisiblePartDefinitions(runtime);
+  if (definitions.length === 0) return;
+
+  // Collect definition IDs that already have a tab
+  const existingDefinitionIds = new Set<string>();
+  for (const tabId of runtime.contextState.tabOrder) {
+    const tab = runtime.contextState.tabs[tabId];
+    if (tab) {
+      existingDefinitionIds.add(tab.definitionId);
+      if (tab.partDefinitionId) {
+        existingDefinitionIds.add(tab.partDefinitionId);
+      }
+    }
+  }
+
+  // Collect definition IDs that were explicitly closed by the user
+  const closedDefinitionIds = new Set<string>();
+  for (const entry of runtime.contextState.closedTabHistory) {
+    closedDefinitionIds.add(entry.definitionId);
+    if (entry.partDefinitionId) {
+      closedDefinitionIds.add(entry.partDefinitionId);
+    }
+  }
+
+  // Seed tabs for definitions missing both an existing tab and a close history entry
+  const newDefinitions = definitions.filter(
+    (def) => !existingDefinitionIds.has(def.definitionId) && !closedDefinitionIds.has(def.definitionId),
+  );
+  if (newDefinitions.length === 0) return;
+
+  const tabRefs = newDefinitions.map((def) => ({
+    instanceId: def.definitionId,
+    definitionId: def.definitionId,
+    title: def.title,
+  }));
+  updateContextState(runtime, ensureTabsRegistered(runtime.contextState, tabRefs));
+}
+
 export function renderParts(root: HTMLElement, runtime: ShellRuntime, bindings: RuntimeRenderBindings): void {
   void bindings.primeEnabledPluginActivations();
+  seedTabsFromPartDefinitions(runtime);
   const visibleParts = getVisibleComposedParts(runtime);
   runtime.closeableTabIds = deriveCloseableTabIds(visibleParts);
   updateContextState(runtime, ensureTabsRegistered(runtime.contextState, visibleParts));
