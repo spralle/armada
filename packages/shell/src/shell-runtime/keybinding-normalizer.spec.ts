@@ -1,5 +1,5 @@
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import { normalizeConfiguredChord, normalizeConfiguredSequence } from "./keybinding-normalizer.js";
+import { normalizeConfiguredChord, normalizeConfiguredSequence } from "@ghost-shell/commands";
 
 export function registerKeybindingNormalizerSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;

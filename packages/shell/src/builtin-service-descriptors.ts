@@ -17,13 +17,8 @@ import { registerActivityStatusServiceCapability } from "./activity-status-servi
 import { registerContextServiceCapability } from "./context-service-registration.js";
 import { registerKeybindingServiceCapability } from "./keybinding-service-registration.js";
 import { registerHookRegistryCapability } from "./hook-registry-registration.js";
+import type { ConfigurationService } from "@ghost-shell/contracts";
 
-/** Stub for ConfigurationService (@weaver/config-types removed). */
-interface ConfigurationService {
-  get<T = unknown>(key: string): T | undefined;
-  set(key: string, value: unknown, layer?: string): void;
-  [key: string]: unknown;
-}
 
 /**
  * Dependencies needed by the builtin service registration phase.

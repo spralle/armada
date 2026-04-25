@@ -31,7 +31,7 @@ export interface ActionService {
   ): Disposable;
 
   /** Execute an action by ID. Shell handles plugin activation transparently. */
-  executeAction<T = void>(id: string, ...args: unknown[]): Promise<T>;
+  executeAction<T = void>(id: string, ...args: unknown[]): Promise<T | undefined>;
 
   /** Get all registered actions with current enabled state and keybinding hints. */
   getActions(): Promise<ActionDescriptor[]>;

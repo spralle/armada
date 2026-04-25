@@ -15,6 +15,32 @@ export const CONTEXT_STATE_SCHEMA_VERSION = 2;
 export const WORKSPACE_SCHEMA_VERSION = 3;
 export const KEYBINDING_OVERRIDES_SCHEMA_VERSION = 1;
 
+/**
+ * Read the existing unified envelope from storage, overwrite one section,
+ * and write back. Returns the serialized envelope for callers that need
+ * custom error handling.
+ */
+export function mergeAndSaveEnvelope(
+  storage: StorageLike,
+  storageKey: string,
+  sectionName: "layout" | "context" | "keybindings",
+  sectionData: unknown,
+): void {
+  const existing = loadUnifiedEnvelope(storage, storageKey);
+  const envelope = {
+    version: SHELL_PERSISTENCE_SCHEMA_VERSION as 1,
+    ...(existing.ok
+      ? {
+          layout: existing.value.layout,
+          context: existing.value.context,
+          keybindings: existing.value.keybindings,
+        }
+      : {}),
+    [sectionName]: sectionData,
+  };
+  storage.setItem(storageKey, JSON.stringify(envelope));
+}
+
 export function getUnifiedStorageKey(userId: string): string {
   return `${SHELL_PERSISTENCE_STORAGE_KEY}.v${SHELL_PERSISTENCE_SCHEMA_VERSION}.${userId}`;
 }

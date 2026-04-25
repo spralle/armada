@@ -172,16 +172,16 @@ const mountAppearancePart: MountPartFn = async (target, context) => {
   // Re-render after all themes have loaded (may discover additional themes).
   loadPromise.then(() => {
     renderPanel(target, themeService, activityService);
-  }).catch(() => {
-    // Silently degrade — gallery shows whatever was already available.
+  }).catch((err) => {
+    console.warn("[appearance-settings] Theme loading failed:", err);
   });
 
   // Mount contributed sections and subscribe to registry changes.
   let registrySub: { dispose(): void } | undefined;
   if (runtime.registry) {
-    mountDiscoveredSections(target, runtime).catch(() => {});
+    mountDiscoveredSections(target, runtime).catch((err) => console.warn("[appearance-settings] Mount failed:", err));
     registrySub = runtime.registry.subscribe(() => {
-      mountDiscoveredSections(target, runtime).catch(() => {});
+      mountDiscoveredSections(target, runtime).catch((err) => console.warn("[appearance-settings] Mount failed:", err));
     });
   }
 

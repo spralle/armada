@@ -43,7 +43,9 @@ export function mountShell(
       renderParts: () => renderParts(root, runtime),
       updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
       setupResize: () => setupResize(root, runtime),
-      publishRestoreRequestOnUnload: () => {},
+      publishRestoreRequestOnUnload: () => {
+        console.debug("[shell] Restore request on unload not yet implemented for main window");
+      },
     }));
     applyLayout(root, runtime.layout);
     disposers.push(startPopoutWatchdog(root, runtime, {

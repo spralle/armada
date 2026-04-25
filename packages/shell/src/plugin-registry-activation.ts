@@ -7,7 +7,8 @@ import {
   type GhostApiFactoryDependencies,
 } from "./plugin-api/ghost-api-factory.js";
 import type { LayerRegistry } from "@ghost-shell/layer";
-import type { PluginLoadStrategy, PluginLoadError } from "./plugin-loader.js";
+import { PluginLoadError } from "./plugin-loader.js";
+import type { PluginLoadStrategy } from "./plugin-loader.js";
 import { buildActivationPlan } from "./plugin-activation-plan.js";
 import { pushDiagnostic, transitionLifecycle } from "./plugin-registry-diagnostics.js";
 import type {
@@ -93,6 +94,42 @@ async function activateState(
   state.failure = null;
   transitionLifecycle(state, "activating", trigger);
 
+  if (!checkActivationCompatibility(state, pluginId, trigger, diagnostics)) {
+    return;
+  }
+
+  try {
+    if (!state.contract) {
+      const loadResult = await pluginLoader.loadPluginContract(state.descriptor);
+      state.contract = loadResult.contract;
+      state.activate = loadResult.activate;
+      state.deactivate = loadResult.deactivate ?? null;
+    }
+
+    if (!validateAndRegisterCapabilities(state, pluginId, trigger, diagnostics, capabilityRegistry)) {
+      return;
+    }
+
+    if (!await runActivateHook(state, pluginId, trigger, diagnostics, capabilityRegistry, apiDeps, pluginServices)) {
+      return;
+    }
+
+    state.failure = null;
+    transitionLifecycle(state, "active", trigger);
+    registerLayerContributions(state, pluginId, layerRegistry);
+  } catch (error) {
+    handleActivationError(state, pluginId, trigger, diagnostics, capabilityRegistry, error);
+  }
+
+  state.activationPromise = null;
+}
+
+function checkActivationCompatibility(
+  state: PluginRuntimeState,
+  pluginId: string,
+  trigger: PluginActivationTrigger,
+  diagnostics: PluginRegistryDiagnostic[],
+): boolean {
   const compatibility = evaluateShellPluginCompatibility(
     SHELL_CONTRACT_DECLARATION,
     state.descriptor.compatibility.pluginContract,
@@ -114,121 +151,143 @@ async function activateState(
       message: state.failure.message,
     });
     state.activationPromise = null;
-    return;
+    return false;
   }
+  return true;
+}
 
-  try {
-    // Reuse contract if already preloaded; otherwise load via federation.
-    if (!state.contract) {
-      const loadResult = await pluginLoader.loadPluginContract(state.descriptor);
-      state.contract = loadResult.contract;
-      state.activate = loadResult.activate;
-      state.deactivate = loadResult.deactivate ?? null;
-    }
-
-    const dependencyFailures = capabilityRegistry.validateDependencies({
-      pluginId,
-      pluginVersion: state.descriptor.version,
-      contract: state.contract,
-    });
-    if (dependencyFailures.length > 0) {
-      const firstFailure = dependencyFailures[0];
-      if (firstFailure) {
-        state.failure = {
-          code: firstFailure.code,
-          message: firstFailure.message,
-          retryable: false,
-        };
-        state.contract = null;
-        state.activate = null;
-        capabilityRegistry.unregisterPlugin(pluginId);
-        transitionLifecycle(state, "failed", trigger);
-        for (const failure of dependencyFailures) {
-          pushDiagnostic(diagnostics, {
-            at: new Date().toISOString(),
-            pluginId,
-            level: "warn",
-            code: failure.code,
-            message: failure.message,
-          });
-        }
-        state.activationPromise = null;
-        return;
-      }
-    }
-
-    capabilityRegistry.registerPlugin(pluginId, state.contract);
-
-    // Call the plugin's activate() lifecycle hook if present
-    if (state.activate && apiDeps) {
-      const ghostApiInstance = createGhostApi(apiDeps);
-      const ctx = createActivationContext(pluginId, pluginServices ?? undefined);
-
-      try {
-        await state.activate(ghostApiInstance.api, ctx);
-        state.activationSubscriptions = ctx.subscriptions;
-        state.ghostApiInstance = ghostApiInstance;
-      } catch (activateError) {
-        const message = activateError instanceof Error
-          ? activateError.message
-          : String(activateError);
-        state.failure = {
-          code: "ACTIVATE_FAILED",
-          message: `Plugin '${pluginId}' activate() failed: ${message}`,
-          retryable: false,
-        };
-        state.contract = null;
-        state.activate = null;
-        capabilityRegistry.unregisterPlugin(pluginId);
-        transitionLifecycle(state, "failed", trigger);
+function validateAndRegisterCapabilities(
+  state: PluginRuntimeState,
+  pluginId: string,
+  trigger: PluginActivationTrigger,
+  diagnostics: PluginRegistryDiagnostic[],
+  capabilityRegistry: CapabilityRegistry,
+): boolean {
+  const dependencyFailures = capabilityRegistry.validateDependencies({
+    pluginId,
+    pluginVersion: state.descriptor.version,
+    contract: state.contract!,
+  });
+  if (dependencyFailures.length > 0) {
+    const firstFailure = dependencyFailures[0];
+    if (firstFailure) {
+      state.failure = {
+        code: firstFailure.code,
+        message: firstFailure.message,
+        retryable: false,
+      };
+      state.contract = null;
+      state.activate = null;
+      capabilityRegistry.unregisterPlugin(pluginId);
+      transitionLifecycle(state, "failed", trigger);
+      for (const failure of dependencyFailures) {
         pushDiagnostic(diagnostics, {
           at: new Date().toISOString(),
           pluginId,
           level: "warn",
-          code: "ACTIVATE_FAILED",
-          message: state.failure.message,
+          code: failure.code,
+          message: failure.message,
         });
-        state.activationPromise = null;
-        return;
       }
+      state.activationPromise = null;
+      return false;
     }
+  }
 
-    state.failure = null;
-    transitionLifecycle(state, "active", trigger);
+  capabilityRegistry.registerPlugin(pluginId, state.contract!);
+  return true;
+}
 
-    // Register plugin layers and surfaces in the layer registry
-    if (layerRegistry && state.contract) {
-      const contributes = state.contract.contributes;
-      const pluginLayers = contributes?.layers;
-      if (pluginLayers && pluginLayers.length > 0) {
-        layerRegistry.registerPluginLayers(pluginId, pluginLayers);
-      }
-      const pluginSurfaces = contributes?.layerSurfaces;
-      if (pluginSurfaces) {
-        for (const surface of pluginSurfaces) {
-          layerRegistry.registerSurface(pluginId, surface);
-        }
-      }
-    }
-  } catch (error) {
-    const failure = mapPluginLoadFailure(error);
-    capabilityRegistry.unregisterPlugin(pluginId);
+async function runActivateHook(
+  state: PluginRuntimeState,
+  pluginId: string,
+  trigger: PluginActivationTrigger,
+  diagnostics: PluginRegistryDiagnostic[],
+  capabilityRegistry: CapabilityRegistry,
+  apiDeps?: GhostApiFactoryDependencies,
+  pluginServices?: PluginServices | null,
+): Promise<boolean> {
+  if (!state.activate || !apiDeps) {
+    return true;
+  }
+
+  const ghostApiInstance = createGhostApi(apiDeps);
+  const ctx = createActivationContext(pluginId, pluginServices ?? undefined);
+
+  try {
+    await state.activate(ghostApiInstance.api, ctx);
+    state.activationSubscriptions = ctx.subscriptions;
+    state.ghostApiInstance = ghostApiInstance;
+    return true;
+  } catch (activateError) {
+    const message = activateError instanceof Error
+      ? activateError.message
+      : String(activateError);
+    state.failure = {
+      code: "ACTIVATE_FAILED",
+      message: `Plugin '${pluginId}' activate() failed: ${message}`,
+      retryable: false,
+    };
     state.contract = null;
     state.activate = null;
-    state.componentsModule = null;
-    state.servicesModule = null;
-    state.failure = failure;
+    capabilityRegistry.unregisterPlugin(pluginId);
     transitionLifecycle(state, "failed", trigger);
     pushDiagnostic(diagnostics, {
       at: new Date().toISOString(),
       pluginId,
       level: "warn",
-      code: failure.code,
-      message: failure.message,
+      code: "ACTIVATE_FAILED",
+      message: state.failure.message,
     });
+    state.activationPromise = null;
+    return false;
   }
+}
 
-  state.activationPromise = null;
+function registerLayerContributions(
+  state: PluginRuntimeState,
+  pluginId: string,
+  layerRegistry?: LayerRegistry | null,
+): void {
+  if (!layerRegistry || !state.contract) {
+    return;
+  }
+  const contributes = state.contract.contributes;
+  const pluginLayers = contributes?.layers;
+  if (pluginLayers && pluginLayers.length > 0) {
+    layerRegistry.registerPluginLayers(pluginId, pluginLayers);
+  }
+  const pluginSurfaces = contributes?.layerSurfaces;
+  if (pluginSurfaces) {
+    for (const surface of pluginSurfaces) {
+      layerRegistry.registerSurface(pluginId, surface);
+    }
+  }
+}
+
+function handleActivationError(
+  state: PluginRuntimeState,
+  pluginId: string,
+  trigger: PluginActivationTrigger,
+  diagnostics: PluginRegistryDiagnostic[],
+  capabilityRegistry: CapabilityRegistry,
+  error: unknown,
+): void {
+  const failure = mapPluginLoadFailure(error);
+  capabilityRegistry.unregisterPlugin(pluginId);
+  state.contract = null;
+  state.activate = null;
+  state.componentsModule = null;
+  state.servicesModule = null;
+  state.failure = failure;
+  transitionLifecycle(state, "failed", trigger);
+  pushDiagnostic(diagnostics, {
+    at: new Date().toISOString(),
+    pluginId,
+    level: "warn",
+    code: failure.code,
+    message: failure.message,
+  });
 }
 
 function mapPluginLoadFailure(error: unknown): PluginRuntimeFailure {
@@ -252,7 +311,7 @@ function isPluginLoadError(error: unknown): error is PluginLoadError {
     return false;
   }
 
-  return "context" in error;
+  return error instanceof PluginLoadError;
 }
 
 // ---------------------------------------------------------------------------

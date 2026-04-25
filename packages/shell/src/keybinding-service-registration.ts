@@ -13,7 +13,7 @@ import type {
 import { KEYBINDING_SERVICE_ID } from "@ghost-shell/contracts";
 import { createEventEmitter } from "@ghost-shell/plugin-system";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
-import type { KeybindingOverrideManager } from "./shell-runtime/keybinding-override-manager.js";
+import type { KeybindingOverrideManager } from "@ghost-shell/commands";
 import type { ActionKeybinding } from "./action-surface.js";
 
 export const KEYBINDING_SERVICE_PLUGIN_ID = "ghost.shell.keybinding-service";
@@ -26,7 +26,7 @@ export interface KeybindingServiceDeps {
   getOverrideManager: () => KeybindingOverrideManager;
   getKeybindings: () => ActionKeybinding[];
   /** Optional: provide the internal keybinding service to wire up sequence lifecycle events. */
-  getInternalKeybindingService?: () => import("./shell-runtime/keybinding-service.js").KeybindingService | null;
+  getInternalKeybindingService?: () => import("@ghost-shell/commands").KeybindingService | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -44,7 +44,7 @@ export function registerKeybindingServiceCapability(
   // Wire internal keybinding service events to the plugin-facing emitters.
   // The internal service can be recreated (e.g. when override fingerprint changes),
   // so we track the last wired instance and re-wire when it changes.
-  let lastWiredInternal: import("./shell-runtime/keybinding-service.js").KeybindingService | null = null;
+  let lastWiredInternal: import("@ghost-shell/commands").KeybindingService | null = null;
   const bridgeDisposers: Array<{ dispose(): void }> = [];
 
   function ensureEventBridgeWired(): void {

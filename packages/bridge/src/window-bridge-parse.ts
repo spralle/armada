@@ -15,152 +15,163 @@ export function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
     return null;
   }
 
-  const event = value as Partial<WindowBridgeEvent>;
-  if (event.type === "selection") {
-    const selectedPartId =
-      typeof event.selectedPartId === "string"
-        ? event.selectedPartId
-        : (typeof (event as { selectedPartInstanceId?: unknown }).selectedPartInstanceId === "string"
-            ? (event as { selectedPartInstanceId: string }).selectedPartInstanceId
-            : null);
-    const selectedPartInstanceId =
-      typeof (event as { selectedPartInstanceId?: unknown }).selectedPartInstanceId === "string"
-        ? (event as { selectedPartInstanceId: string }).selectedPartInstanceId
-        : selectedPartId;
-    const selectedPartDefinitionId =
-      typeof (event as { selectedPartDefinitionId?: unknown }).selectedPartDefinitionId === "string"
-        ? (event as { selectedPartDefinitionId: string }).selectedPartDefinitionId
-        : (typeof event.selectedPartId === "string" ? event.selectedPartId : undefined);
+  const event = value as Record<string, unknown>;
 
-    if (
-      typeof selectedPartId === "string" &&
-      typeof event.selectedPartTitle === "string" &&
-      isSelectionByEntityType(event.selectionByEntityType) &&
-      isOptionalRevision(event.revision) &&
-      typeof event.sourceWindowId === "string"
-    ) {
-      return {
-        ...event,
-        selectedPartId,
-        selectedPartInstanceId,
-        selectedPartDefinitionId,
-      } as SelectionSyncEvent;
-    }
-    return null;
+  switch (event.type) {
+    case "selection": return parseSelectionEvent(event);
+    case "context": return parseContextEvent(event);
+    case "popout-restore-request": return parsePopoutRestoreEvent(event);
+    case "tab-close": return parseTabCloseEvent(event);
+    case "dnd-session-upsert": return parseDndSessionUpsertEvent(event);
+    case "dnd-session-delete": return parseDndSessionDeleteEvent(event);
+    case "sync-probe": return parseSyncProbeEvent(event);
+    case "sync-ack": return parseSyncAckEvent(event);
+    default: return null;
+  }
+}
+
+function parseSelectionEvent(event: Record<string, unknown>): SelectionSyncEvent | null {
+  const selectedPartId =
+    typeof event.selectedPartId === "string"
+      ? event.selectedPartId
+      : (typeof (event as { selectedPartInstanceId?: unknown }).selectedPartInstanceId === "string"
+          ? (event as { selectedPartInstanceId: string }).selectedPartInstanceId
+          : null);
+  const selectedPartInstanceId =
+    typeof (event as { selectedPartInstanceId?: unknown }).selectedPartInstanceId === "string"
+      ? (event as { selectedPartInstanceId: string }).selectedPartInstanceId
+      : selectedPartId;
+  const selectedPartDefinitionId =
+    typeof (event as { selectedPartDefinitionId?: unknown }).selectedPartDefinitionId === "string"
+      ? (event as { selectedPartDefinitionId: string }).selectedPartDefinitionId
+      : (typeof event.selectedPartId === "string" ? event.selectedPartId : undefined);
+
+  if (
+    typeof selectedPartId === "string" &&
+    typeof event.selectedPartTitle === "string" &&
+    isSelectionByEntityType(event.selectionByEntityType) &&
+    isOptionalRevision(event.revision) &&
+    typeof event.sourceWindowId === "string"
+  ) {
+    return {
+      ...event,
+      selectedPartId,
+      selectedPartInstanceId,
+      selectedPartDefinitionId,
+    } as SelectionSyncEvent;
+  }
+  return null;
+}
+
+function parseContextEvent(event: Record<string, unknown>): ContextSyncEvent | null {
+  const tabId =
+    typeof event.tabId === "string"
+      ? event.tabId
+      : (typeof (event as { tabInstanceId?: unknown }).tabInstanceId === "string"
+          ? (event as { tabInstanceId: string }).tabInstanceId
+          : undefined);
+  const tabInstanceId =
+    typeof (event as { tabInstanceId?: unknown }).tabInstanceId === "string"
+      ? (event as { tabInstanceId: string }).tabInstanceId
+      : tabId;
+
+  if (
+    isOptionalContextScope(event.scope) &&
+    isOptionalString(tabId) &&
+    isOptionalString(tabInstanceId) &&
+    isOptionalString((event as { partInstanceId?: unknown }).partInstanceId) &&
+    isOptionalString((event as { partDefinitionId?: unknown }).partDefinitionId) &&
+    isOptionalString(event.groupId) &&
+    typeof event.contextKey === "string" &&
+    typeof event.contextValue === "string" &&
+    isOptionalRevision(event.revision) &&
+    typeof event.sourceWindowId === "string"
+  ) {
+    return {
+      ...event,
+      tabId,
+      tabInstanceId,
+    } as ContextSyncEvent;
+  }
+  return null;
+}
+
+function parsePopoutRestoreEvent(event: Record<string, unknown>): PopoutRestoreRequestEvent | null {
+  const tabId =
+    typeof event.tabId === "string"
+      ? event.tabId
+      : typeof event.partId === "string"
+        ? event.partId
+        : null;
+
+  if (
+    tabId &&
+    typeof event.hostWindowId === "string" &&
+    typeof event.sourceWindowId === "string"
+  ) {
+    return {
+      type: "popout-restore-request",
+      tabId,
+      partId: typeof event.partId === "string" ? event.partId : undefined,
+      hostWindowId: event.hostWindowId,
+      sourceWindowId: event.sourceWindowId,
+    } as PopoutRestoreRequestEvent;
   }
 
-  if (event.type === "context") {
-    const tabId =
-      typeof event.tabId === "string"
-        ? event.tabId
-        : (typeof (event as { tabInstanceId?: unknown }).tabInstanceId === "string"
-            ? (event as { tabInstanceId: string }).tabInstanceId
-            : undefined);
-    const tabInstanceId =
-      typeof (event as { tabInstanceId?: unknown }).tabInstanceId === "string"
-        ? (event as { tabInstanceId: string }).tabInstanceId
-        : tabId;
+  return null;
+}
 
-    if (
-      isOptionalContextScope(event.scope) &&
-      isOptionalString(tabId) &&
-      isOptionalString(tabInstanceId) &&
-      isOptionalString((event as { partInstanceId?: unknown }).partInstanceId) &&
-      isOptionalString((event as { partDefinitionId?: unknown }).partDefinitionId) &&
-      isOptionalString(event.groupId) &&
-      typeof event.contextKey === "string" &&
-      typeof event.contextValue === "string" &&
-      isOptionalRevision(event.revision) &&
-      typeof event.sourceWindowId === "string"
-    ) {
-      return {
-        ...event,
-        tabId,
-        tabInstanceId,
-      } as ContextSyncEvent;
-    }
-    return null;
+function parseTabCloseEvent(event: Record<string, unknown>): TabCloseSyncEvent | null {
+  if (typeof event.tabId === "string" && typeof event.sourceWindowId === "string") {
+    return event as unknown as TabCloseSyncEvent;
   }
+  return null;
+}
 
-  if (event.type === "popout-restore-request") {
-    const tabId =
-      typeof event.tabId === "string"
-        ? event.tabId
-        : typeof event.partId === "string"
-          ? event.partId
-          : null;
-
-    if (
-      tabId &&
-      typeof event.hostWindowId === "string" &&
-      typeof event.sourceWindowId === "string"
-    ) {
-      return {
-        type: "popout-restore-request",
-        tabId,
-        partId: typeof event.partId === "string" ? event.partId : undefined,
-        hostWindowId: event.hostWindowId,
-        sourceWindowId: event.sourceWindowId,
-      } as PopoutRestoreRequestEvent;
-    }
-
-    return null;
+function parseDndSessionUpsertEvent(event: Record<string, unknown>): DndSessionUpsertEvent | null {
+  if (
+    typeof event.id === "string" &&
+    typeof event.expiresAt === "number" &&
+    isOptionalString((event as { correlationId?: unknown }).correlationId) &&
+    isOptionalDndSessionUpsertLifecycle((event as { lifecycle?: unknown }).lifecycle) &&
+    isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId) &&
+    isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId) &&
+    typeof event.sourceWindowId === "string"
+  ) {
+    return event as unknown as DndSessionUpsertEvent;
   }
+  return null;
+}
 
-  if (event.type === "tab-close") {
-    if (typeof event.tabId === "string" && typeof event.sourceWindowId === "string") {
-      return event as TabCloseSyncEvent;
-    }
-    return null;
+function parseDndSessionDeleteEvent(event: Record<string, unknown>): DndSessionDeleteEvent | null {
+  if (
+    typeof event.id === "string"
+    && isOptionalString((event as { correlationId?: unknown }).correlationId)
+    && isOptionalDndSessionDeleteLifecycle((event as { lifecycle?: unknown }).lifecycle)
+    && isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId)
+    && isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId)
+    && typeof event.sourceWindowId === "string"
+  ) {
+    return event as unknown as DndSessionDeleteEvent;
   }
+  return null;
+}
 
-  if (event.type === "dnd-session-upsert") {
-    if (
-      typeof event.id === "string" &&
-      typeof event.expiresAt === "number" &&
-      isOptionalString((event as { correlationId?: unknown }).correlationId) &&
-      isOptionalDndSessionUpsertLifecycle((event as { lifecycle?: unknown }).lifecycle) &&
-      isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId) &&
-      isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId) &&
-      typeof event.sourceWindowId === "string"
-    ) {
-      return event as DndSessionUpsertEvent;
-    }
-    return null;
+function parseSyncProbeEvent(event: Record<string, unknown>): SyncProbeEvent | null {
+  if (typeof event.probeId === "string" && typeof event.sourceWindowId === "string") {
+    return event as unknown as SyncProbeEvent;
   }
+  return null;
+}
 
-  if (event.type === "dnd-session-delete") {
-    if (
-      typeof event.id === "string"
-      && isOptionalString((event as { correlationId?: unknown }).correlationId)
-      && isOptionalDndSessionDeleteLifecycle((event as { lifecycle?: unknown }).lifecycle)
-      && isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId)
-      && isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId)
-      && typeof event.sourceWindowId === "string"
-    ) {
-      return event as DndSessionDeleteEvent;
-    }
-    return null;
+function parseSyncAckEvent(event: Record<string, unknown>): SyncAckEvent | null {
+  if (
+    typeof event.probeId === "string" &&
+    typeof event.targetWindowId === "string" &&
+    typeof event.sourceWindowId === "string"
+  ) {
+    return event as unknown as SyncAckEvent;
   }
-
-  if (event.type === "sync-probe") {
-    if (typeof event.probeId === "string" && typeof event.sourceWindowId === "string") {
-      return event as SyncProbeEvent;
-    }
-    return null;
-  }
-
-  if (event.type === "sync-ack") {
-    if (
-      typeof event.probeId === "string" &&
-      typeof event.targetWindowId === "string" &&
-      typeof event.sourceWindowId === "string"
-    ) {
-      return event as SyncAckEvent;
-    }
-    return null;
-  }
-
   return null;
 }
 

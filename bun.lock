@@ -86,7 +86,6 @@
       "dependencies": {
         "@ghost-shell/contracts": "workspace:*",
         "@ghost-shell/intents": "workspace:*",
-        "@ghost-shell/persistence": "workspace:*",
         "@ghost-shell/plugin-system": "workspace:*",
       },
     },

@@ -8,6 +8,9 @@ import {
   ShellContextState,
 } from "./types.js";
 
+type PropagationRule = NonNullable<SelectionUpdateOptions["propagationRules"]>[number];
+type DerivedLane = NonNullable<SelectionUpdateOptions["derivedLanes"]>[number];
+
 export function applySelectionUpdate(
   state: ShellContextState,
   input: SelectionWriteInput,
@@ -20,6 +23,28 @@ export function applySelectionUpdate(
     compareDeterministicKeys(`${a.scope}:${a.key}`, `${b.scope}:${b.key}`),
   );
 
+  const { next: propagatedState, changedEntityTypes, revisionByEntityType } =
+    propagateSelections(state, input, propagationRules);
+
+  const { next: finalState, derivedLaneFailures } =
+    applyDerivedLanes(propagatedState, derivedLanes, revisionByEntityType, options?.derivedGroupId);
+
+  return {
+    state: finalState,
+    changedEntityTypes,
+    derivedLaneFailures,
+  };
+}
+
+function propagateSelections(
+  state: ShellContextState,
+  input: SelectionWriteInput,
+  propagationRules: PropagationRule[],
+): {
+  next: ShellContextState;
+  changedEntityTypes: string[];
+  revisionByEntityType: Map<string, SelectionWriteInput["revision"]>;
+} {
   const queue: string[] = [input.entityType];
   const pendingByEntityType = new Map<string, SelectionWriteInput>([
     [
@@ -61,58 +86,79 @@ export function applySelectionUpdate(
     }
     revisionByEntityType.set(item.entityType, item.revision);
 
-    const sourceSelection = readEntityTypeSelection(next, item.entityType);
-    for (const rule of propagationRules) {
-      if (rule.sourceEntityType !== item.entityType) {
-        continue;
-      }
-
-      let propagated: Omit<SelectionWriteInput, "revision"> | null = null;
-      try {
-        propagated = rule.propagate({
-          state: next,
-          sourceEntityType: item.entityType,
-          sourceSelection,
-          sourceRevision: item.revision,
-        });
-      } catch {
-        propagated = null;
-      }
-
-      if (!propagated) {
-        continue;
-      }
-
-      const targetCurrent = readEntityTypeSelection(next, propagated.entityType);
-      const targetNext = {
-        selectedIds: normalizeSelectionIds(propagated.selectedIds),
-        priorityId: normalizePriorityId(
-          normalizeSelectionIds(propagated.selectedIds),
-          propagated.priorityId ?? null,
-        ),
-      };
-
-      if (
-        targetCurrent.priorityId === targetNext.priorityId &&
-        targetCurrent.selectedIds.length === targetNext.selectedIds.length &&
-        targetCurrent.selectedIds.every((id, idx) => id === targetNext.selectedIds[idx])
-      ) {
-        continue;
-      }
-
-      if (!pendingByEntityType.has(propagated.entityType)) {
-        queue.push(propagated.entityType);
-      }
-      pendingByEntityType.set(propagated.entityType, {
-        entityType: propagated.entityType,
-        selectedIds: targetNext.selectedIds,
-        priorityId: targetNext.priorityId,
-        revision: item.revision,
-      });
-    }
+    enqueuePropagatedSelections(next, item, propagationRules, pendingByEntityType, queue);
   }
 
+  return { next, changedEntityTypes, revisionByEntityType };
+}
+
+function enqueuePropagatedSelections(
+  state: ShellContextState,
+  item: SelectionWriteInput,
+  propagationRules: readonly PropagationRule[],
+  pendingByEntityType: Map<string, SelectionWriteInput>,
+  queue: string[],
+): void {
+  const sourceSelection = readEntityTypeSelection(state, item.entityType);
+  for (const rule of propagationRules) {
+    if (rule.sourceEntityType !== item.entityType) {
+      continue;
+    }
+
+    let propagated: Omit<SelectionWriteInput, "revision"> | null = null;
+    try {
+      propagated = rule.propagate({
+        state,
+        sourceEntityType: item.entityType,
+        sourceSelection,
+        sourceRevision: item.revision,
+      });
+    } catch {
+      propagated = null;
+    }
+
+    if (!propagated) {
+      continue;
+    }
+
+    const targetCurrent = readEntityTypeSelection(state, propagated.entityType);
+    const targetNext = {
+      selectedIds: normalizeSelectionIds(propagated.selectedIds),
+      priorityId: normalizePriorityId(
+        normalizeSelectionIds(propagated.selectedIds),
+        propagated.priorityId ?? null,
+      ),
+    };
+
+    if (
+      targetCurrent.priorityId === targetNext.priorityId &&
+      targetCurrent.selectedIds.length === targetNext.selectedIds.length &&
+      targetCurrent.selectedIds.every((id, idx) => id === targetNext.selectedIds[idx])
+    ) {
+      continue;
+    }
+
+    if (!pendingByEntityType.has(propagated.entityType)) {
+      queue.push(propagated.entityType);
+    }
+    pendingByEntityType.set(propagated.entityType, {
+      entityType: propagated.entityType,
+      selectedIds: targetNext.selectedIds,
+      priorityId: targetNext.priorityId,
+      revision: item.revision,
+    });
+  }
+}
+
+function applyDerivedLanes(
+  state: ShellContextState,
+  derivedLanes: readonly DerivedLane[],
+  revisionByEntityType: Map<string, SelectionWriteInput["revision"]>,
+  derivedGroupId: string | undefined,
+): { next: ShellContextState; derivedLaneFailures: string[] } {
   const derivedLaneFailures: string[] = [];
+  let next = state;
+
   for (const lane of derivedLanes) {
     const sourceRevision = revisionByEntityType.get(lane.sourceEntityType);
     if (!sourceRevision) {
@@ -147,7 +193,7 @@ export function applySelectionUpdate(
       continue;
     }
 
-    const groupId = options?.derivedGroupId;
+    const groupId = derivedGroupId;
     if (!groupId) {
       continue;
     }
@@ -165,9 +211,5 @@ export function applySelectionUpdate(
     });
   }
 
-  return {
-    state: next,
-    changedEntityTypes,
-    derivedLaneFailures,
-  };
+  return { next, derivedLaneFailures };
 }

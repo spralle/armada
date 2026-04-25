@@ -140,19 +140,16 @@ export function createWindowService(
       return createQuickPickController<T>();
     },
 
-    // Stub: showInputBox is not yet implemented.
-    // Will be wired to an InputBox overlay component in a future bead.
-    showInputBox(_options?: InputBoxOptions): Promise<string | undefined> {
-      return Promise.resolve(undefined);
+    async showInputBox(_options?: InputBoxOptions): Promise<string | undefined> {
+      console.warn("[GhostShell] showInputBox is not yet implemented");
+      return undefined;
     },
 
-    // Stub: showNotification is not yet implemented.
-    // Will be wired to a notification toast component in a future bead.
     showNotification(
       message: string,
-      severity: "info" | "warning" | "error",
+      type?: "info" | "warning" | "error",
     ): void {
-      console.log(`[${severity}] ${message}`);
+      console.warn(`[GhostShell] showNotification is not yet implemented: [${type ?? "info"}] ${message}`);
     },
   };
 

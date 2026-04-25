@@ -3,8 +3,8 @@ import type { ActionKeybinding } from "../action-surface.js";
 import type {
   KeybindingOverrideEntryV1,
   ShellKeybindingPersistence,
-} from "../persistence/contracts.js";
-import { createKeybindingOverrideManager } from "./keybinding-override-manager.js";
+} from "@ghost-shell/persistence";
+import { createKeybindingOverrideManager } from "@ghost-shell/commands";
 
 function createMockPersistence(): ShellKeybindingPersistence & { saved: KeybindingOverrideEntryV1[][] } {
   const saved: KeybindingOverrideEntryV1[][] = [];

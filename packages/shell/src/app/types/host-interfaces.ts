@@ -26,7 +26,7 @@ import type {
   ShellContextState,
 } from "../../context-state.js";
 import type { ActionSurface } from "../../action-surface.js";
-import type { KeybindingOverrideManager } from "../../shell-runtime/keybinding-override-manager.js";
+import type { KeybindingOverrideManager } from "@ghost-shell/commands";
 import type { ShellTransportPath } from "../migration-flags.js";
 import type { DndDiagnosticPath } from "../dnd-diagnostics.js";
 import type { SourceTabTransferPendingState } from "./dnd-types.js";

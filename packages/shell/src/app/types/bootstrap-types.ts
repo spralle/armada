@@ -1,4 +1,4 @@
-import type { PluginContract } from "@ghost-shell/contracts";
+import type { PluginContract, ConfigurationService } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "../../plugin-registry.js";
 import type { ThemeRegistry } from "../../theme-registry.js";
 import type { PluginConfigSyncConfigurationService } from "../../plugin-config-sync-controller.js";
@@ -7,12 +7,7 @@ import type { SyncStatusServiceDeps } from "../../sync-status-service-registrati
 import type { ContextServiceDeps } from "../../context-service-registration.js";
 import type { KeybindingServiceDeps } from "../../keybinding-service-registration.js";
 
-/** Stub for ConfigurationService (@weaver/config-types removed). */
-export interface ConfigurationService {
-  get<T = unknown>(key: string): T | undefined;
-  set(key: string, value: unknown, layer?: string): void;
-  [key: string]: unknown;
-}
+export type { ConfigurationService } from "@ghost-shell/contracts";
 
 export interface ShellBootstrapState {
   mode: "inner-loop" | "integration";

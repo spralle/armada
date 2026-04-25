@@ -126,7 +126,14 @@ function startBackendDevServer(): void {
       return router({
         method: request.method,
         pathname: url.pathname,
-        body: () => request.json().catch(() => null),
+        body: async () => {
+          try {
+            return await request.json();
+          } catch (err) {
+            console.warn("[backend] Invalid JSON body:", err);
+            return null;
+          }
+        },
         headers,
         search: url.search,
       });

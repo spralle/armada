@@ -1,14 +1,14 @@
 import { createDefaultContributionPredicateMatcher } from "@ghost-shell/plugin-system";
 import type { SpecHarness } from "../context-state.spec-harness.js";
 import type { InvokableAction } from "../action-surface.js";
-import { normalizeConfiguredChord } from "./keybinding-normalizer.js";
-import type { NormalizedKeybindingChord, NormalizedKeybindingSequence } from "./keybinding-normalizer.js";
+import { normalizeConfiguredChord } from "@ghost-shell/commands";
+import type { NormalizedKeybindingChord, NormalizedKeybindingSequence } from "@ghost-shell/commands";
 import {
   resolveKeybindingMatch,
   resolveKeybindingSequence,
   type KeybindingLayer,
   type RegisteredKeybindingRecord,
-} from "./keybinding-resolver.js";
+} from "@ghost-shell/commands";
 
 function chord(input: string): NormalizedKeybindingChord {
   const c = normalizeConfiguredChord(input);

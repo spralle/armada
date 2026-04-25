@@ -235,6 +235,7 @@ export function createForm<TData, TUi>(
     dispatch, setValue: dispatchSetValue, validate, submit,
     // Justified: runtime path validation ensures P constraint; cast bridges generic method signature
     field: field as FormApi<TData, TUi>['field'],
+    fieldDynamic: field as FormApi<TData, TUi>['fieldDynamic'],
     subscribe: (listener) => store.subscribe(listener),
     reset,
     canSubmit: () => !computeIsSubmitting(store.getState()) && computeIsValid(store.getState()),

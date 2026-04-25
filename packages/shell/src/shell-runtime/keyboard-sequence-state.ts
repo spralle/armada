@@ -1,5 +1,5 @@
-import type { KeybindingService } from "./keybinding-service.js";
-import type { NormalizedKeybindingChord } from "./keybinding-normalizer.js";
+import type { KeybindingService } from "@ghost-shell/commands";
+import type { NormalizedKeybindingChord } from "@ghost-shell/commands";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
 
 const SEQUENCE_TIMEOUT_KEY = "ghost.keybindings.sequenceTimeoutMs";

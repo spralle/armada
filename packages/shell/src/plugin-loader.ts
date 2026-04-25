@@ -184,6 +184,36 @@ export function createRuntimeFirstPluginLoader(
   };
 }
 
+interface RetryOptions {
+  maxAttempts: number;
+  delayMs: number;
+  onRetry?: (attempt: number, error: unknown) => void;
+  onExhausted?: (attempt: number, error: unknown) => void;
+}
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions,
+): Promise<T> {
+  let latestError: unknown;
+
+  for (let attempt = 1; attempt <= options.maxAttempts; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      latestError = error;
+      if (attempt < options.maxAttempts) {
+        options.onRetry?.(attempt, error);
+        await delay(options.delayMs);
+        continue;
+      }
+      options.onExhausted?.(attempt, error);
+    }
+  }
+
+  throw latestError;
+}
+
 interface RemoteRetryLoadOptions {
   descriptor: TenantPluginDescriptor;
   federationRuntime: ShellFederationRuntime;
@@ -194,69 +224,68 @@ interface RemoteRetryLoadOptions {
 }
 
 async function loadRemoteContractWithRetry(options: RemoteRetryLoadOptions): Promise<unknown> {
-  let latestError: unknown;
-
-  for (let attempt = 1; attempt <= options.remoteLoadMaxAttempts; attempt += 1) {
-    try {
-      return await options.federationRuntime.loadPluginContract(options.descriptor.id);
-    } catch (error) {
-      latestError = error;
-      if (attempt < options.remoteLoadMaxAttempts) {
-        emitDiagnostic(options.onDiagnostic, {
-          pluginId: options.descriptor.id,
-          level: "info",
-          code: "REMOTE_LOAD_RETRY",
-          message: `Retrying remote load for plugin '${options.descriptor.id}' (attempt ${attempt + 1}/${options.remoteLoadMaxAttempts}).`,
-          attempt,
-          maxAttempts: options.remoteLoadMaxAttempts,
-          module: "pluginContract",
-          cause: error,
-        });
-        await delay(options.remoteLoadRetryDelayMs);
-        continue;
-      }
-
-      const message = `Remote plugin '${options.descriptor.id}' is unavailable after ${options.remoteLoadMaxAttempts} attempt(s).`;
-        emitDiagnostic(options.onDiagnostic, {
-          pluginId: options.descriptor.id,
-          level: "warn",
-          code: "REMOTE_LOAD_EXHAUSTED",
-          message,
-          attempt,
-          maxAttempts: options.remoteLoadMaxAttempts,
-          module: "pluginContract",
-          cause: error,
-        });
-    }
+  try {
+    return await withRetry(
+      () => options.federationRuntime.loadPluginContract(options.descriptor.id),
+      {
+        maxAttempts: options.remoteLoadMaxAttempts,
+        delayMs: options.remoteLoadRetryDelayMs,
+        onRetry(attempt, error) {
+          emitDiagnostic(options.onDiagnostic, {
+            pluginId: options.descriptor.id,
+            level: "info",
+            code: "REMOTE_LOAD_RETRY",
+            message: `Retrying remote load for plugin '${options.descriptor.id}' (attempt ${attempt + 1}/${options.remoteLoadMaxAttempts}).`,
+            attempt,
+            maxAttempts: options.remoteLoadMaxAttempts,
+            module: "pluginContract",
+            cause: error,
+          });
+        },
+        onExhausted(attempt, error) {
+          emitDiagnostic(options.onDiagnostic, {
+            pluginId: options.descriptor.id,
+            level: "warn",
+            code: "REMOTE_LOAD_EXHAUSTED",
+            message: `Remote plugin '${options.descriptor.id}' is unavailable after ${options.remoteLoadMaxAttempts} attempt(s).`,
+            attempt,
+            maxAttempts: options.remoteLoadMaxAttempts,
+            module: "pluginContract",
+            cause: error,
+          });
+        },
+      },
+    );
+  } catch (latestError) {
+    throw new PluginLoadError({
+      pluginId: options.descriptor.id,
+      strategy: "remote-manifest",
+      reason: "REMOTE_UNAVAILABLE",
+      message: `Remote plugin '${options.descriptor.id}' could not be loaded. Check remote entry and network availability.`,
+      attempts: options.remoteLoadMaxAttempts,
+      maxAttempts: options.remoteLoadMaxAttempts,
+      cause: latestError,
+    });
   }
-
-  throw new PluginLoadError({
-    pluginId: options.descriptor.id,
-    strategy: "remote-manifest",
-    reason: "REMOTE_UNAVAILABLE",
-    message: `Remote plugin '${options.descriptor.id}' could not be loaded. Check remote entry and network availability.`,
-    attempts: options.remoteLoadMaxAttempts,
-    maxAttempts: options.remoteLoadMaxAttempts,
-    cause: latestError,
-  });
 }
 
 async function loadRemoteModuleWithRetry(options: RemoteRetryLoadOptions): Promise<unknown> {
   const moduleName = options.module ?? "pluginContract";
-  let latestError: unknown;
 
-  for (let attempt = 1; attempt <= options.remoteLoadMaxAttempts; attempt += 1) {
-    try {
+  return withRetry(
+    () => {
       if (moduleName === "pluginComponents") {
-        return await options.federationRuntime.loadPluginComponents(options.descriptor.id);
+        return options.federationRuntime.loadPluginComponents(options.descriptor.id);
       }
       if (moduleName === "pluginServices") {
-        return await options.federationRuntime.loadPluginServices(options.descriptor.id);
+        return options.federationRuntime.loadPluginServices(options.descriptor.id);
       }
-      return await options.federationRuntime.loadPluginContract(options.descriptor.id);
-    } catch (error) {
-      latestError = error;
-      if (attempt < options.remoteLoadMaxAttempts) {
+      return options.federationRuntime.loadPluginContract(options.descriptor.id);
+    },
+    {
+      maxAttempts: options.remoteLoadMaxAttempts,
+      delayMs: options.remoteLoadRetryDelayMs,
+      onRetry(attempt, error) {
         emitDiagnostic(options.onDiagnostic, {
           pluginId: options.descriptor.id,
           level: "info",
@@ -269,26 +298,23 @@ async function loadRemoteModuleWithRetry(options: RemoteRetryLoadOptions): Promi
           module: moduleName,
           cause: error,
         });
-        await delay(options.remoteLoadRetryDelayMs);
-        continue;
-      }
-
-      emitDiagnostic(options.onDiagnostic, {
-        pluginId: options.descriptor.id,
-        level: "warn",
-        code: "REMOTE_MODULE_LOAD_EXHAUSTED",
-        message:
-          `Remote plugin '${options.descriptor.id}' module './${moduleName}' is unavailable after `
-          + `${options.remoteLoadMaxAttempts} attempt(s).`,
-        attempt,
-        maxAttempts: options.remoteLoadMaxAttempts,
-        module: moduleName,
-        cause: error,
-      });
-    }
-  }
-
-  throw latestError;
+      },
+      onExhausted(attempt, error) {
+        emitDiagnostic(options.onDiagnostic, {
+          pluginId: options.descriptor.id,
+          level: "warn",
+          code: "REMOTE_MODULE_LOAD_EXHAUSTED",
+          message:
+            `Remote plugin '${options.descriptor.id}' module './${moduleName}' is unavailable after `
+            + `${options.remoteLoadMaxAttempts} attempt(s).`,
+          attempt,
+          maxAttempts: options.remoteLoadMaxAttempts,
+          module: moduleName,
+          cause: error,
+        });
+      },
+    },
+  );
 }
 
 function clampAttempts(value: number): number {

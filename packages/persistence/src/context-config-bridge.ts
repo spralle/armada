@@ -9,13 +9,7 @@
  */
 
 import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
-
-/** Stub for ConfigurationService (@weaver/config-types removed). */
-interface ConfigurationService {
-  get<T = unknown>(key: string): T | undefined;
-  set(key: string, value: unknown, layer?: string): void;
-  [key: string]: unknown;
-}
+import type { ConfigurationService } from "@ghost-shell/contracts";
 import { createInitialShellContextState, type ShellContextState } from "@ghost-shell/state";
 import type {
   ContextStateLoadResult,
@@ -26,6 +20,7 @@ import type {
 import {
   getUnifiedStorageKey,
   loadUnifiedEnvelope,
+  mergeAndSaveEnvelope,
   migrateContextStateEnvelope,
 } from "./envelope.js";
 import { isRecord } from "./utils.js";
@@ -220,21 +215,8 @@ function saveToStorage(
     return { warning: null };
   }
 
-  const existing = loadUnifiedEnvelope(storage, storageKey);
-  const nextEnvelope = {
-    version: 1 as const,
-    ...(existing.ok
-      ? {
-          layout: existing.value.layout,
-          context: existing.value.context,
-          keybindings: existing.value.keybindings,
-        }
-      : {}),
-    context: { version: 2 as const, contextState: state },
-  };
-
   try {
-    storage.setItem(storageKey, JSON.stringify(nextEnvelope));
+    mergeAndSaveEnvelope(storage, storageKey, "context", { version: 2 as const, contextState: state });
     return { warning: null };
   } catch {
     return { warning: "Unable to persist context state locally." };

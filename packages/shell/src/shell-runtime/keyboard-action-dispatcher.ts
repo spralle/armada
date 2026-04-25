@@ -1,5 +1,5 @@
-import type { KeybindingService } from "./keybinding-service.js";
-import type { NormalizedKeybindingChord } from "./keybinding-normalizer.js";
+import type { KeybindingService } from "@ghost-shell/commands";
+import type { NormalizedKeybindingChord } from "@ghost-shell/commands";
 import type { ShellRuntime } from "../app/types.js";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
 import { handleShellKeyboardAction } from "./shell-keyboard-actions.js";

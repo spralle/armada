@@ -60,131 +60,168 @@ export function wireTabStripDragDrop(
     }
 
     tabButton.draggable = true;
-
-    tabButton.addEventListener("dragstart", (event) => {
-      cancelPendingDragCleanup(root);
-
-      if (isSplitterDragActive(root)) {
-        event.preventDefault();
-        return;
-      }
-
-      const dataTransfer = event.dataTransfer;
-      if (!dataTransfer || !tabId || runtime.syncDegraded) {
-        if (DEBUG_DND) console.log("[shell:dnd:tab] dragstart-blocked", {
-          hasDataTransfer: Boolean(dataTransfer),
-          tabId,
-          syncDegraded: runtime.syncDegraded,
-          stack: new Error().stack,
-        });
-        return;
-      }
-
-      const payload: TabDragPayload = {
-        kind: "shell-tab-dnd",
-        tabId,
-        sourceWindowId: runtime.windowId,
-      };
-
-      dataTransfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({
-        tabId,
-        sourceWindowId: runtime.windowId,
-      }));
-      setActiveDockDragPayload(root, {
-        tabId,
-        sourceWindowId: runtime.windowId,
-      });
-
-      if (runtime.dragSessionBroker.available) {
-        const ref = runtime.dragSessionBroker.create(payload);
-        dataTransfer.setData(
-          "text/plain",
-          ref ? `${DRAG_REF_PREFIX}${ref.id}` : `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`,
-        );
-      } else {
-        dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
-      }
-
-      dataTransfer.effectAllowed = "move";
-      if (typeof dataTransfer.setDragImage === "function") {
-        dataTransfer.setDragImage(tabButton ?? tabItem, 16, 12);
-      }
-    }, listenerOptions);
-
-    tabButton.addEventListener("drag", () => {
-      const activePayload = readActiveDockDragPayload(root);
-      if (activePayload?.tabId !== tabId) {
-        return;
-      }
-      addRootClass(root, "is-dock-dragging");
-    }, listenerOptions);
-
-    tabButton.addEventListener("dragend", () => {
-      scheduleDragCleanup(root);
-    }, listenerOptions);
-
-    tabItem.addEventListener("dragover", (event) => {
-      if (!event.dataTransfer || runtime.syncDegraded) {
-        return;
-      }
-
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "move";
-    }, listenerOptions);
-
-    tabItem.addEventListener("drop", (event) => {
-      event.preventDefault();
-      cancelPendingDragCleanup(root);
-      const dataTransfer = event.dataTransfer;
-      if (runtime.syncDegraded || !dataTransfer) {
-        clearDragState(root);
-        if (DEBUG_DND) console.log("[shell:dnd:tab] drop-blocked", {
-          hasDataTransfer: Boolean(dataTransfer),
-          syncDegraded: runtime.syncDegraded,
-          targetTabId: tabId,
-          stack: new Error().stack,
-        });
-        return;
-      }
-
-      const targetTabId = tabId;
-      const resolved = readDraggedTabPayload(runtime, dataTransfer, root);
-      clearDragState(root);
-      if (!targetTabId || !resolved || resolved.payload.tabId === targetTabId) {
-        return;
-      }
-
-      const payload = resolved.payload;
-      const isCrossWindow = payload.sourceWindowId !== runtime.windowId;
-      if (isCrossWindow) {
-        handleCrossWindowTabStripDrop(runtime, {
-          tabId: payload.tabId,
-          sourceWindowId: payload.sourceWindowId,
-          targetTabId,
-          transferSessionId: resolved.transferSessionId,
-        }, {
-          onTabMoved: deps.onTabMoved,
-          onStateChange: deps.onStateChange,
-        });
-        return;
-      }
-
-      const reordered = moveTabBeforeTab(runtime.contextState, {
-        tabId: payload.tabId,
-        beforeTabId: targetTabId,
-      });
-      if (reordered === runtime.contextState) {
-        return;
-      }
-
-      updateContextState(runtime, reordered);
-      updateContextState(runtime, setActiveTab(runtime.contextState, payload.tabId));
-      if (resolved.transferSessionId) {
-        runtime.dragSessionBroker.commit({ id: resolved.transferSessionId }, runtime.windowId);
-      }
-      deps.onTabMoved(payload.tabId);
-    }, listenerOptions);
+    wireTabDragStartHandler(tabButton, tabItem, tabId, root, runtime, listenerOptions);
+    wireTabDragFeedbackHandlers(tabButton, tabId, root, listenerOptions);
+    wireTabDropHandler(tabItem, tabId, root, runtime, deps, listenerOptions);
   }
+}
+
+function wireTabDragStartHandler(
+  tabButton: HTMLButtonElement,
+  tabItem: HTMLElement,
+  tabId: string,
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  listenerOptions: AddEventListenerOptions,
+): void {
+  tabButton.addEventListener("dragstart", (event) => {
+    cancelPendingDragCleanup(root);
+
+    if (isSplitterDragActive(root)) {
+      event.preventDefault();
+      return;
+    }
+
+    const dataTransfer = event.dataTransfer;
+    if (!dataTransfer || !tabId || runtime.syncDegraded) {
+      if (DEBUG_DND) console.log("[shell:dnd:tab] dragstart-blocked", {
+        hasDataTransfer: Boolean(dataTransfer),
+        tabId,
+        syncDegraded: runtime.syncDegraded,
+        stack: new Error().stack,
+      });
+      return;
+    }
+
+    const payload: TabDragPayload = {
+      kind: "shell-tab-dnd",
+      tabId,
+      sourceWindowId: runtime.windowId,
+    };
+
+    dataTransfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({
+      tabId,
+      sourceWindowId: runtime.windowId,
+    }));
+    setActiveDockDragPayload(root, {
+      tabId,
+      sourceWindowId: runtime.windowId,
+    });
+
+    if (runtime.dragSessionBroker.available) {
+      const ref = runtime.dragSessionBroker.create(payload);
+      dataTransfer.setData(
+        "text/plain",
+        ref ? `${DRAG_REF_PREFIX}${ref.id}` : `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`,
+      );
+    } else {
+      dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
+    }
+
+    dataTransfer.effectAllowed = "move";
+    if (typeof dataTransfer.setDragImage === "function") {
+      dataTransfer.setDragImage(tabButton ?? tabItem, 16, 12);
+    }
+  }, listenerOptions);
+}
+
+function wireTabDragFeedbackHandlers(
+  tabButton: HTMLButtonElement,
+  tabId: string,
+  root: HTMLElement,
+  listenerOptions: AddEventListenerOptions,
+): void {
+  tabButton.addEventListener("drag", () => {
+    const activePayload = readActiveDockDragPayload(root);
+    if (activePayload?.tabId !== tabId) {
+      return;
+    }
+    addRootClass(root, "is-dock-dragging");
+  }, listenerOptions);
+
+  tabButton.addEventListener("dragend", () => {
+    scheduleDragCleanup(root);
+  }, listenerOptions);
+}
+
+function wireTabDropHandler(
+  tabItem: HTMLElement,
+  tabId: string,
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  deps: TabDragDropDeps,
+  listenerOptions: AddEventListenerOptions,
+): void {
+  tabItem.addEventListener("dragover", (event) => {
+    if (!event.dataTransfer || runtime.syncDegraded) {
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, listenerOptions);
+
+  tabItem.addEventListener("drop", (event) => {
+    handleTabDrop(event, tabId, root, runtime, deps);
+  }, listenerOptions);
+}
+
+function handleTabDrop(
+  event: DragEvent,
+  targetTabId: string,
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  deps: TabDragDropDeps,
+): void {
+  event.preventDefault();
+  cancelPendingDragCleanup(root);
+  const dataTransfer = event.dataTransfer;
+  if (runtime.syncDegraded || !dataTransfer) {
+    clearDragState(root);
+    if (DEBUG_DND) console.log("[shell:dnd:tab] drop-blocked", {
+      hasDataTransfer: Boolean(dataTransfer),
+      syncDegraded: runtime.syncDegraded,
+      targetTabId,
+      stack: new Error().stack,
+    });
+    return;
+  }
+
+  const resolved = readDraggedTabPayload(runtime, dataTransfer, root);
+  clearDragState(root);
+  if (!targetTabId || !resolved || resolved.payload.tabId === targetTabId) {
+    return;
+  }
+
+  const payload = resolved.payload;
+  const isCrossWindow = payload.sourceWindowId !== runtime.windowId;
+  if (isCrossWindow) {
+    handleCrossWindowTabStripDrop(runtime, {
+      tabId: payload.tabId,
+      sourceWindowId: payload.sourceWindowId,
+      targetTabId,
+      transferSessionId: resolved.transferSessionId,
+    }, {
+      onTabMoved: deps.onTabMoved,
+      onStateChange: deps.onStateChange,
+    });
+    return;
+  }
+
+  const reordered = moveTabBeforeTab(runtime.contextState, {
+    tabId: payload.tabId,
+    beforeTabId: targetTabId,
+  });
+  if (reordered === runtime.contextState) {
+    return;
+  }
+
+  updateContextState(runtime, reordered);
+  updateContextState(runtime, setActiveTab(runtime.contextState, payload.tabId));
+  if (resolved.transferSessionId) {
+    runtime.dragSessionBroker.commit({ id: resolved.transferSessionId }, runtime.windowId);
+  }
+  deps.onTabMoved(payload.tabId);
 }
 
 function getTabDragItems(root: HTMLElement): HTMLElement[] {

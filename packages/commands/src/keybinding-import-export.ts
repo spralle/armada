@@ -145,7 +145,8 @@ export function readKeybindingImportFile(): Promise<unknown> {
       }
       try {
         const text = await file.text();
-        resolve(JSON.parse(text));
+        const parsed: unknown = JSON.parse(text);
+        resolve(parsed);
       } catch {
         reject(new Error("Could not read file as JSON"));
       }

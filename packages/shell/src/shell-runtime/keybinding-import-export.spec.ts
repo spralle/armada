@@ -1,9 +1,9 @@
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import type { KeybindingOverrideEntryV1 } from "../persistence/contracts.js";
+import type { KeybindingOverrideEntryV1 } from "@ghost-shell/persistence";
 import {
   exportKeybindingOverrides,
   validateKeybindingImport,
-} from "./keybinding-import-export.js";
+} from "@ghost-shell/commands";
 
 export function registerKeybindingImportExportSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;

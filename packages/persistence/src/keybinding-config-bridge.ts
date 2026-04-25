@@ -9,26 +9,19 @@
  */
 
 import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
-
-/** Stub for ConfigurationService (@weaver/config-types removed). */
-interface ConfigurationService {
-  get<T = unknown>(key: string): T | undefined;
-  set(key: string, value: unknown, layer?: string): void;
-  [key: string]: unknown;
-}
+import type { ConfigurationService } from "@ghost-shell/contracts";
 import type {
   KeybindingOverrideEntryV1,
   KeybindingOverridesEnvelopeV1,
   ShellKeybindingPersistence,
   StorageLike,
-  UnifiedShellPersistenceEnvelopeV1,
 } from "./contracts.js";
 import {
   getUnifiedStorageKey,
   KEYBINDING_OVERRIDES_SCHEMA_VERSION,
   loadUnifiedEnvelope,
+  mergeAndSaveEnvelope,
   migrateKeybindingOverridesEnvelope,
-  SHELL_PERSISTENCE_SCHEMA_VERSION,
 } from "./envelope.js";
 
 // ---------------------------------------------------------------------------
@@ -209,21 +202,9 @@ function saveToStorage(
     version: KEYBINDING_OVERRIDES_SCHEMA_VERSION,
     overrides,
   };
-  const existing = loadUnifiedEnvelope(storage, storageKey);
-  const nextEnvelope: UnifiedShellPersistenceEnvelopeV1 = {
-    version: SHELL_PERSISTENCE_SCHEMA_VERSION,
-    ...(existing.ok
-      ? {
-          layout: existing.value.layout,
-          context: existing.value.context,
-          keybindings: existing.value.keybindings,
-        }
-      : {}),
-    keybindings: keybindingsEnvelope,
-  };
 
   try {
-    storage.setItem(storageKey, JSON.stringify(nextEnvelope));
+    mergeAndSaveEnvelope(storage, storageKey, "keybindings", keybindingsEnvelope);
     return { warning: null };
   } catch {
     return { warning: "Unable to persist keybinding overrides locally." };

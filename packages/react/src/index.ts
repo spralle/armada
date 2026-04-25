@@ -14,6 +14,8 @@ export {
 
 export { createReactPartRenderer } from "./react-part-renderer.js";
 
+export { PluginErrorBoundary } from "./PluginErrorBoundary.js";
+
 // Re-export React parts detection — canonical import path for React module detection
 export {
   REACT_PARTS_SYMBOL,

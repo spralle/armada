@@ -10,13 +10,7 @@
 // @weaver/config-types, @weaver/config-providers, @weaver/config-sessions removed.
 // Stub types preserve the public API so downstream TypeScript is happy.
 
-/** Stub for ConfigurationService (@weaver/config-types removed). */
-interface ConfigurationService {
-  get<T = unknown>(key: string): T | undefined;
-  set(key: string, value: unknown, layer?: string): void;
-  onChange(key: string, listener: (value: unknown) => void): () => void;
-  [key: string]: unknown;
-}
+import type { ConfigurationService } from "@ghost-shell/contracts";
 
 /** Stub for OverrideSessionController (@weaver/config-sessions removed). */
 interface OverrideSessionController {
