@@ -23,6 +23,10 @@ import {
   type WorkspaceServiceDependencies,
   type WorkspaceServiceWithEmitter,
 } from "./workspace-service-impl.js";
+import {
+  createMenuService,
+  type MenuServiceDependencies,
+} from "./menu-service.js";
 
 /**
  * Dependencies needed to create a scoped GhostApi for a plugin.
@@ -32,6 +36,7 @@ export interface GhostApiFactoryDependencies
   extends ActionServiceDependencies, WindowServiceDependencies {
   readonly viewServiceDeps: ViewServiceDeps;
   readonly workspaceServiceDeps: WorkspaceServiceDependencies;
+  readonly menuServiceDeps: MenuServiceDependencies;
 }
 
 /** Result of creating a scoped GhostApi, including shell-side handles. */
@@ -51,12 +56,14 @@ export function createGhostApi(deps: GhostApiFactoryDependencies): GhostApiInsta
   const windowServiceHandle = createWindowService(deps);
   const viewService = createViewService(deps.viewServiceDeps);
   const workspaceServiceHandle = createWorkspaceService(deps.workspaceServiceDeps);
+  const menuService = createMenuService(deps.menuServiceDeps);
 
   const api: GhostApi = {
     actions: actionServiceHandle.service,
     window: windowServiceHandle.service,
     views: viewService,
     workspaces: workspaceServiceHandle.service,
+    menus: menuService,
   };
 
   return { api, actionServiceHandle, windowServiceHandle, workspaceServiceHandle };

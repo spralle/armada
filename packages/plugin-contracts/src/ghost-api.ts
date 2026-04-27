@@ -18,6 +18,8 @@ export interface GhostApi {
   readonly workspaces: WorkspaceService;
   /** Router service for type-safe plugin navigation. */
   readonly router?: PluginRouterServiceApi | undefined;
+  /** Menu contribution resolution and dispatch. */
+  readonly menus?: MenuService | undefined;
 }
 
 // ─── ActionService ───
@@ -205,6 +207,42 @@ export interface PluginRouterServiceApi {
    * Route definitions should be created via defineRoutes() from @ghost-shell/router.
    */
   createPluginRouter<T extends Record<string, { readonly id: string; readonly schema: unknown }>>(routes: T): unknown;
+}
+
+// ─── MenuService ───
+
+/** Resolved menu action returned to plugins. */
+export interface ResolvedMenuAction {
+  /** The action ID (pass to dispatch). */
+  readonly id: string;
+  /** Human-readable title for the menu item. */
+  readonly title: string;
+  /** Group name for visual grouping (separator between groups). */
+  readonly group?: string;
+  /** Sort order within group. */
+  readonly order?: number;
+}
+
+/** Service for resolving and dispatching menu contributions. */
+export interface MenuService {
+  /**
+   * Resolve menu contributions for a given menu point and context.
+   * Returns actions that are visible in the current context (predicates evaluated).
+   *
+   * @param menuId - The menu contribution point (e.g., 'entityTable/row')
+   * @param context - Context bag for predicate evaluation
+   * @returns Resolved actions, sorted by group+order, filtered by 'when' predicates
+   */
+  resolve(menuId: string, context: Record<string, unknown>): ResolvedMenuAction[];
+
+  /**
+   * Dispatch an action by ID with the given context.
+   *
+   * @param actionId - The action to dispatch
+   * @param context - Context passed to the intent resolution
+   * @returns true if the action was executed, false if blocked by predicate or not found
+   */
+  dispatch(actionId: string, context: Record<string, unknown>): Promise<boolean>;
 }
 
 // ─── ActivationContext ───

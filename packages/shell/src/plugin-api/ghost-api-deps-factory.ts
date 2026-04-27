@@ -60,5 +60,10 @@ export function createGhostApiDeps(
         throw new Error("WorkspaceSwitchDeps not configured — workspace switching unavailable");
       }),
     },
+
+    menuServiceDeps: {
+      getActionSurface: () => runtime.actionSurface,
+      getIntentRuntime: () => runtime.intentRuntime,
+    },
   };
 }
