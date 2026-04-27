@@ -40,6 +40,9 @@ export {
 
 export { createEntityTable } from "./create-entity-table.js";
 export { EntityList } from "./entity-list.js";
+export { RowActionsCell } from "./row-actions-cell.js";
+export { useMenuOperations } from "./use-menu-operations.js";
+export type { MenuOperationItem } from "./use-menu-operations.js";
 export { useRenderedColumns } from "./use-cell-renderer.js";
 export type {
   EntityTableResult,

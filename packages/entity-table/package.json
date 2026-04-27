@@ -20,6 +20,7 @@
     "build:dist": "tsup"
   },
   "dependencies": {
+    "@ghost-shell/contracts": "workspace:*",
     "@ghost-shell/data-table": "workspace:*",
     "@ghost-shell/formr-from-schema": "workspace:*",
     "@ghost-shell/ui": "workspace:*",

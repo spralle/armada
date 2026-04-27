@@ -11,6 +11,7 @@ import type {
 } from "./column-types.js";
 import type { CellRendererRegistry } from "./cell-registry.js";
 import type { ReactNode } from "react";
+import type { MenuService } from "@ghost-shell/contracts";
 
 /** Result from createEntityTable — all config needed to render */
 export interface EntityTableResult<TData> {
@@ -95,4 +96,6 @@ export interface EntityListProps<TData> {
   pageSizeOptions?: number[];
   /** Enable row selection */
   enableRowSelection?: boolean;
+  /** Optional Ghost menu service for contributed operations */
+  menuService?: MenuService;
 }
