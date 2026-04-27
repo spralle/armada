@@ -53,6 +53,9 @@
       "path": "./packages/commands"
     },
     {
+      "path": "./packages/data-table"
+    },
+    {
       "path": "./packages/federation"
     },
     {
@@ -105,6 +108,9 @@
     },
     {
       "path": "./packages/shell"
+    },
+    {
+      "path": "./packages/entity-table"
     }
   ]
 }
