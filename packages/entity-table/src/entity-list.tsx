@@ -85,8 +85,8 @@ export function EntityList<TData>({
     data,
     columns: finalColumns,
     enableRowSelection: enableRowSelection ?? (batchOperations?.length ?? 0) > 0,
-    columnVisibility: tableConfig?.defaultColumnVisibility,
-    sorting: defaultSort ?? tableConfig?.defaultSorting,
+    initialColumnVisibility: tableConfig?.defaultColumnVisibility,
+    initialSorting: defaultSort ?? tableConfig?.defaultSorting,
   });
 
   // 6. Resolve Ghost menu contributions for toolbar and batch

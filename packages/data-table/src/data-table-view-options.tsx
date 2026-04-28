@@ -1,4 +1,4 @@
-import type { Table } from "@tanstack/react-table";
+import type { Column, Table } from "@tanstack/react-table";
 import {
   Button,
   DropdownMenu,
@@ -9,6 +9,14 @@ import {
   DropdownMenuTrigger,
 } from "@ghost-shell/ui";
 import { SlidersHorizontal } from "lucide-react";
+
+function getColumnLabel(column: Column<unknown, unknown>): string {
+  const meta = column.columnDef.meta as Record<string, unknown> | undefined;
+  if (typeof meta?.label === "string") return meta.label;
+  const header = column.columnDef.header;
+  if (typeof header === "string") return header;
+  return column.id;
+}
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
@@ -52,7 +60,7 @@ export function DataTableViewOptions<TData>({
             checked={column.getIsVisible()}
             onCheckedChange={(value: boolean) => column.toggleVisibility(!!value)}
           >
-            {column.id}
+            {getColumnLabel(column as Column<unknown, unknown>)}
           </DropdownMenuCheckboxItem>
         ))}
       </DropdownMenuContent>

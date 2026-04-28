@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { TableFieldDescriptor } from '@ghost-shell/table-from-schema';
+import { DataTableColumnHeader } from '@ghost-shell/data-table';
 
 /** EntityColumnMeta stored in ColumnDef.meta — kept for backward compat */
 export interface EntityColumnMeta {
@@ -12,6 +13,8 @@ export interface EntityColumnMeta {
   readonly cellRenderer?: string;
   readonly cellProps?: Record<string, unknown>;
   readonly pinned?: 'left' | 'right' | false;
+  readonly hasExplicitWidth?: boolean;
+  readonly label?: string;
 }
 
 /**
@@ -31,12 +34,16 @@ export function toColumnDefs<TData>(
       cellRenderer: desc.format,
       cellProps: desc.formatOptions as Record<string, unknown> | undefined,
       pinned: desc.pinned,
+      hasExplicitWidth: desc.width !== undefined,
+      label: desc.label,
     };
 
     const col: ColumnDef<TData, unknown> = {
       id: desc.field,
       accessorKey: desc.field,
-      header: desc.label,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={desc.label} />
+      ),
       enableSorting: desc.sortable,
       enableColumnFilter: desc.filter !== undefined,
       meta,

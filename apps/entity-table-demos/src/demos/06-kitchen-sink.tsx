@@ -108,11 +108,11 @@ export function KitchenSinkDemo() {
         schema={UserSchema}
         data={users}
         exclude={['id']}
-        defaultVisible={['avatar', 'name', 'email', 'role', 'department', 'salary', 'active', 'skills']}
+        defaultVisible={['avatar', 'name', 'email', 'role', 'salary', 'skills']}
         overrides={{
-          avatar: { format: 'avatar' },
+          avatar: { format: 'avatar', width: 60 },
           email: { format: 'link' },
-          salary: { format: 'currency' },
+          salary: { format: 'currency', width: 120 },
           skills: { format: 'tags' },
           bio: { hidden: true },
         }}

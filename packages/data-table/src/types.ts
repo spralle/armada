@@ -30,7 +30,17 @@ export interface GhostTableOptions<TData> extends GhostTableFeatures {
   onRowSelectionChange?: (selection: RowSelectionState) => void;
   columnVisibility?: VisibilityState;
   onColumnVisibilityChange?: (visibility: VisibilityState) => void;
+  initialColumnVisibility?: VisibilityState;
+  initialSorting?: SortingState;
   pageSizeOptions?: number[];
+  /** When true, sorting is handled externally (server-side). Disables client-side sort. */
+  manualSorting?: boolean;
+  /** When true, filtering is handled externally (server-side). Disables client-side filter. */
+  manualFiltering?: boolean;
+  /** When true, pagination is handled externally (server-side). Disables client-side pagination. */
+  manualPagination?: boolean;
+  /** Total row count known by server — required for server-side pagination. */
+  rowCount?: number;
 }
 
 export interface GhostTableResult<TData> {

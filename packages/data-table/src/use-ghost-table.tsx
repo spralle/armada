@@ -54,16 +54,20 @@ export function useGhostTable<TData>(
     enableRowSelection = false,
     enableColumnVisibility = true,
     enableGlobalFilter = true,
+    manualSorting = false,
+    manualFiltering = false,
+    manualPagination = false,
+    rowCount,
   } = options;
 
-  const [internalSorting, setInternalSorting] = useState<SortingState>([]);
+  const [internalSorting, setInternalSorting] = useState<SortingState>(options.initialSorting ?? []);
   const [internalFilters, setInternalFilters] = useState<ColumnFiltersState>([]);
   const [internalPagination, setInternalPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: DEFAULT_PAGE_SIZE,
   });
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
-  const [internalVisibility, setInternalVisibility] = useState<VisibilityState>({});
+  const [internalVisibility, setInternalVisibility] = useState<VisibilityState>(options.initialColumnVisibility ?? {});
   const [globalFilter, setGlobalFilter] = useState("");
 
   const allColumns = useMemo(() => {
@@ -77,9 +81,13 @@ export function useGhostTable<TData>(
     data,
     columns: allColumns,
     getCoreRowModel: getCoreRowModel(),
-    ...(enableSorting && { getSortedRowModel: getSortedRowModel() }),
-    ...(enableFiltering && { getFilteredRowModel: getFilteredRowModel() }),
-    ...(enablePagination && { getPaginationRowModel: getPaginationRowModel() }),
+    ...(enableSorting && !manualSorting && { getSortedRowModel: getSortedRowModel() }),
+    ...(enableFiltering && !manualFiltering && { getFilteredRowModel: getFilteredRowModel() }),
+    ...(enablePagination && !manualPagination && { getPaginationRowModel: getPaginationRowModel() }),
+    ...(manualPagination && rowCount !== undefined && { rowCount }),
+    manualSorting,
+    manualFiltering,
+    manualPagination,
     enableSorting,
     enableColumnFilters: enableFiltering,
     enableRowSelection,
