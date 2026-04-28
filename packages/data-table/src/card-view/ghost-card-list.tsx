@@ -1,6 +1,7 @@
 import type { Table as TanStackTable } from "@tanstack/react-table";
 import { Skeleton } from "@ghost-shell/ui";
 import { GhostCardItem } from "./ghost-card-item.js";
+import type { CardIndicatorResult } from "./ghost-card-item.js";
 
 export interface GhostCardListProps<TData> {
   table: TanStackTable<TData>;
@@ -9,6 +10,8 @@ export interface GhostCardListProps<TData> {
   /** Loading state */
   loading?: boolean;
   loadingRows?: number;
+  /** Row status indicator (colored edge strip) */
+  cardIndicator?: (row: TData) => CardIndicatorResult | null;
 }
 
 function CardSkeleton() {
@@ -29,6 +32,7 @@ export function GhostCardList<TData>({
   emptyMessage = "No results.",
   loading = false,
   loadingRows = 5,
+  cardIndicator,
 }: GhostCardListProps<TData>) {
   if (loading) {
     return (
@@ -53,7 +57,7 @@ export function GhostCardList<TData>({
   return (
     <div className="flex flex-col gap-3">
       {rows.map((row) => (
-        <GhostCardItem key={row.id} row={row} />
+        <GhostCardItem key={row.id} row={row} indicator={cardIndicator?.(row.original) ?? null} />
       ))}
     </div>
   );

@@ -18,6 +18,7 @@ export interface EntityColumnMeta {
   readonly priority?: 'essential' | 'default' | 'optional';
   readonly minWidth?: number;
   readonly wrap?: boolean;
+  readonly cardSlot?: 'header' | 'leading' | 'body' | 'trailing' | 'footer';
 }
 
 /**
@@ -42,6 +43,7 @@ export function toColumnDefs<TData>(
       priority: desc.priority,
       minWidth: desc.minWidth,
       wrap: desc.wrap,
+      cardSlot: desc.cardSlot,
     };
 
     const col: ColumnDef<TData, unknown> = {

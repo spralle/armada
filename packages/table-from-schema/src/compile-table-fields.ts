@@ -62,6 +62,7 @@ export function compileTableFields(
       ...(derived.filterMax !== undefined ? { filterMax: derived.filterMax } : {}),
       ...(override?.minWidth !== undefined ? { minWidth: override.minWidth } : {}),
       ...(override?.wrap !== undefined ? { wrap: override.wrap } : {}),
+      ...(override?.cardSlot !== undefined ? { cardSlot: override.cardSlot } : {}),
     };
   });
 }

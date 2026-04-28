@@ -100,9 +100,18 @@ const configSource = `<EntityList
     name: { format: 'avatar', priority: 'essential' },
     email: { priority: 'default' },
     role: { format: 'badge', priority: 'default' },
+    salary: { priority: 'default', cardSlot: 'trailing' },
+    department: { priority: 'default' },
+    location: { priority: 'default' },
     phone: { priority: 'optional' },
     bio: { priority: 'optional', wrap: true, minWidth: 150 },
     notes: { priority: 'optional', wrap: true, minWidth: 120 },
+  }}
+  cardIndicator={(row) => {
+    if (!row.active) return { color: '#ef4444', edge: 'left' }
+    if (row.role === 'Director' || row.role === 'VP')
+      return { color: '#8b5cf6', edge: 'left' }
+    return { color: '#22c55e', edge: 'left' }
   }}
   responsive={{
     enabled: true,
@@ -220,7 +229,7 @@ export function ResponsiveDemo() {
     <DemoShell
       title="Responsive Columns"
       description="Columns automatically show/hide based on container width using a priority-based budget algorithm. Essential columns always stay visible, default columns fill remaining space narrowest-first, and optional columns appear only when there's room. Drag the bottom-right resize handle to see it in action."
-      features={['Priority Budget', 'Pretext Measurement', 'Resize Handle', 'Card View Fallback']}
+      features={['Priority Budget', 'Pretext Measurement', 'Resize Handle', 'Card View Fallback', 'Card Dock Layout', 'Status Indicator']}
       schema={schemaSource}
       codeBlocks={[{ title: 'Usage', code: configSource, defaultOpen: true }]}
     >
@@ -233,9 +242,17 @@ export function ResponsiveDemo() {
             name: { format: 'avatar', priority: 'essential' },
             email: { priority: 'default' },
             role: { format: 'badge', priority: 'default' },
+            salary: { priority: 'default', cardSlot: 'trailing' },
+            department: { priority: 'default' },
+            location: { priority: 'default' },
             phone: { priority: 'optional' },
             bio: { priority: 'optional', wrap: true, minWidth: 150 },
             notes: { priority: 'optional', wrap: true, minWidth: 120 },
+          }}
+          cardIndicator={(row: Employee) => {
+            if (!row.active) return { color: '#ef4444', edge: 'left' as const }
+            if (row.role === 'Director' || row.role === 'VP') return { color: '#8b5cf6', edge: 'left' as const }
+            return { color: '#22c55e', edge: 'left' as const }
           }}
           responsive={responsiveWithRef}
           exclude={['id']}

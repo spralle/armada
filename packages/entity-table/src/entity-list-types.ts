@@ -10,6 +10,7 @@ import type { FilterVariant } from "@ghost-shell/table-from-schema";
 import type { CellRendererRegistry } from "./cell-registry.js";
 import type { ReactNode } from "react";
 import type { MenuService } from "@ghost-shell/contracts";
+import type { CardIndicatorResult } from "@ghost-shell/data-table";
 
 /** Result from createEntityTable — all config needed to render */
 export interface EntityTableResult<TData> {
@@ -104,6 +105,8 @@ export interface EntityListProps<TData> {
   enableColumnFilters?: boolean;
   /** Responsive column hiding and card view configuration */
   responsive?: import("@ghost-shell/data-table").ResponsiveConfig;
+  /** Card view: row status indicator (colored edge strip) */
+  cardIndicator?: (row: TData) => CardIndicatorResult | null;
   /** Optional Ghost menu service for contributed operations */
   menuService?: MenuService;
 

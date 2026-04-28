@@ -55,6 +55,8 @@ export interface TableFieldDescriptor {
   readonly minWidth?: number;
   /** Allow text wrapping in this column. Default: false (text truncates). */
   readonly wrap?: boolean;
+  /** Card view: which dock slot this column renders in */
+  readonly cardSlot?: 'header' | 'leading' | 'body' | 'trailing' | 'footer';
 }
 
 /** Info about a filterable field */
@@ -92,6 +94,8 @@ export interface TableFieldOverride {
   readonly minWidth?: number;
   /** Allow text wrapping in this column. Default: false (text truncates). */
   readonly wrap?: boolean;
+  /** Card view: which dock slot this column renders in */
+  readonly cardSlot?: 'header' | 'leading' | 'body' | 'trailing' | 'footer';
 }
 
 /** Options for compileTableFields */

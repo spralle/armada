@@ -40,6 +40,7 @@ function GhostDataTableImpl<TData>({
   errorRender,
   isRefetching = false,
   rowCountEstimated,
+  cardIndicator,
 }: GhostDataTableProps<TData>) {
   const columnCount = table.getAllColumns().length;
   const [showFilters, setShowFilters] = useState(false);
@@ -282,7 +283,7 @@ function GhostDataTableImpl<TData>({
       {errorCard ? errorCard : (
       <div ref={responsive?.enabled && !responsive?.containerRef ? responsiveResult.containerRef as React.RefObject<HTMLDivElement> : undefined}>
         {responsiveResult.shouldUseCardView ? (
-          <GhostCardList table={table} emptyMessage={emptyMessage} loading={loading} loadingRows={loadingRows} />
+          <GhostCardList table={table} emptyMessage={emptyMessage} loading={loading} loadingRows={loadingRows} cardIndicator={cardIndicator} />
         ) : (
           <div className="relative">
           {isRefetching && !loading && (

@@ -40,7 +40,8 @@ export function EntityList<TData>({
   enableDensityToggle,
   enableColumnFilters,
   responsive,
-  // Server-side mode
+    cardIndicator,
+    // Server-side mode
   manualSorting,
   manualFiltering,
   manualPagination,
@@ -261,6 +262,7 @@ export function EntityList<TData>({
         enableDensityToggle={enableDensityToggle}
         enableColumnFilters={enableColumnFilters}
         responsive={responsive}
+        cardIndicator={cardIndicator}
       />
     </div>
   );
