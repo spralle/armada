@@ -1,4 +1,4 @@
-import { useRef, useState, useLayoutEffect, useCallback, useMemo, useEffect } from "react"
+import { useRef, useState, useLayoutEffect, useMemo, useEffect } from "react"
 import type { ColumnMeasurer } from "./column-measurer.js"
 import type { ColumnPriority, BudgetDebugInfo } from "./budget-algorithm.js"
 import { createFallbackMeasurer } from "./column-measurer.js"
@@ -74,7 +74,6 @@ export function useResponsiveColumns<TData>(
   const internalRef = useRef<HTMLDivElement>(null)
   const containerRef = externalRef ?? internalRef
   const [containerWidth, setContainerWidth] = useState(0)
-  const rafRef = useRef(0)
 
   const activeMeasurer = useMemo(() => measurer ?? createFallbackMeasurer(), [measurer])
 
@@ -95,24 +94,20 @@ export function useResponsiveColumns<TData>(
     const el = containerRef.current
     if (!el) return
 
+    // Read initial width synchronously
+    setContainerWidth(Math.round(el.clientWidth))
+
+    // ResizeObserver already batches — no RAF needed
     const observer = new ResizeObserver((entries) => {
-      cancelAnimationFrame(rafRef.current)
-      rafRef.current = requestAnimationFrame(() => {
-        const entry = entries[0]
-        if (entry) {
-          setContainerWidth(entry.contentRect.width)
-        }
-      })
+      const entry = entries[0]
+      if (entry) {
+        setContainerWidth(Math.round(entry.contentRect.width))
+      }
     })
-
     observer.observe(el)
-    setContainerWidth(el.clientWidth)
 
-    return () => {
-      cancelAnimationFrame(rafRef.current)
-      observer.disconnect()
-    }
-  }, [enabled])
+    return () => observer.disconnect()
+  }, [enabled, containerRef])
 
   const budgetResult = useMemo(() => {
     if (!enabled || containerWidth === 0) {
