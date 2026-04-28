@@ -32,3 +32,5 @@ export {
 } from './extractor-registry.js';
 export type { SchemaExtractor } from './extractor-registry.js';
 export { isObject, checkType } from './utils.js';
+export { applySchemaMiddleware } from './middleware.js';
+export type { SchemaMiddleware } from './middleware.js';
