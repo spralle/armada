@@ -23,7 +23,7 @@ export function createPretextMeasurer(defaultFont = '14px sans-serif'): ColumnMe
       const p90Index = Math.floor(widths.length * 0.9)
       const p90Width = widths[p90Index] ?? widths[widths.length - 1] ?? 80
 
-      return Math.ceil(p90Width) + 24
+      return Math.ceil(p90Width)
     },
   }
 }

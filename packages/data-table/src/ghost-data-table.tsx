@@ -196,7 +196,7 @@ export function GhostDataTable<TData>({
           toolbarActions={combinedToolbarActions}
         />
       )}
-      <div ref={responsive?.enabled ? responsiveResult.containerRef as React.RefObject<HTMLDivElement> : undefined}>
+      <div ref={responsive?.enabled && !responsive?.containerRef ? responsiveResult.containerRef as React.RefObject<HTMLDivElement> : undefined}>
         {responsiveResult.shouldUseCardView ? (
           <GhostCardList table={table} emptyMessage={emptyMessage} loading={loading} loadingRows={loadingRows} />
         ) : (

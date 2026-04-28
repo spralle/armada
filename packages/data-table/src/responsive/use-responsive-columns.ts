@@ -6,6 +6,8 @@ import { computeColumnBudget, type BudgetColumn } from "./budget-algorithm.js"
 
 const MAX_SAMPLE_ROWS = 50
 const DEFAULT_FONT = "14px sans-serif"
+/** Cell padding (32px for px-4 both sides) + sort header chrome (16px) */
+const CELL_OVERHEAD = 48
 
 export interface ResponsiveColumnDef {
   id: string
@@ -82,7 +84,8 @@ export function useResponsiveColumns<TData>(
     return columns.map((col) => {
       const values = sampleRows.map((row) => getCellValue(row, col.id))
       if (col.label) values.push(col.label)
-      const measuredWidth = activeMeasurer.measureColumn(values, font)
+      const contentWidth = activeMeasurer.measureColumn(values, font)
+      const measuredWidth = contentWidth + CELL_OVERHEAD
       return { id: col.id, priority: col.priority, measuredWidth }
     })
   }, [data, columns, activeMeasurer, font, getCellValue])

@@ -14,7 +14,7 @@ export interface BudgetColumnDebug {
   measuredWidth: number
   visible: boolean
   /** Why this column is visible or hidden */
-  reason: 'essential-always' | 'fits-budget' | 'exceeds-budget' | 'card-view-active'
+  reason: 'essential-always' | 'fits-budget' | 'exceeds-budget' | 'card-view-active' | 'defaults-have-priority'
 }
 
 export interface BudgetDebugInfo {
@@ -91,7 +91,15 @@ export function computeColumnBudget(options: BudgetOptions): BudgetResult {
 
   let remaining = containerWidth - essentialCost
   remaining = fillBudgetTracked(defaults, remaining, columnGap, visibility, reasons)
-  remaining = fillBudgetTracked(optionals, remaining, columnGap, visibility, reasons)
+
+  const allDefaultsVisible = defaults.every(d => visibility[d.id])
+  if (allDefaultsVisible) {
+    remaining = fillBudgetTracked(optionals, remaining, columnGap, visibility, reasons)
+  } else {
+    for (const col of optionals) {
+      reasons.set(col.id, 'defaults-have-priority')
+    }
+  }
 
   const visibleCount = Object.values(visibility).filter(Boolean).length
   if (visibleCount <= MIN_VISIBLE_COLUMNS) {

@@ -21,7 +21,7 @@ export function createFallbackMeasurer(avgCharWidth = 8): ColumnMeasurer {
       const p90Length =
         lengths[p90Index] ?? lengths[lengths.length - 1] ?? 10
 
-      return Math.max(60, Math.ceil(p90Length * avgCharWidth) + 16)
+      return Math.max(40, Math.ceil(p90Length * avgCharWidth))
     },
   }
 }
