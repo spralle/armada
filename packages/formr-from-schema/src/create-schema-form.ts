@@ -5,12 +5,16 @@ import type { SchemaFieldInfo, SchemaMetadata, JsonSchema } from '@ghost-shell/s
 import type { LayoutNode } from './layout/layout-types.js';
 import { compileLayout } from './layout/layout-compiler.js';
 import { createJsonSchemaValidator } from './adapters/json-schema-validator.js';
+import type { LayoutMiddleware } from './layout-middleware.js';
+import { applyLayoutMiddleware } from './layout-middleware.js';
 
 export interface CreateSchemaFormOptions {
   /** Additional validators to include beyond the auto-detected schema validator */
   readonly validators?: readonly ValidatorFn[] | undefined;
   /** Override the auto-compiled layout with a custom LayoutNode tree */
   readonly layoutOverride?: LayoutNode | undefined;
+  /** Middleware pipeline applied to the compiled layout tree */
+  readonly layoutMiddleware?: readonly LayoutMiddleware[] | undefined;
 }
 
 export interface SchemaFormResult {
@@ -29,7 +33,15 @@ export function createSchemaForm(
   options?: CreateSchemaFormOptions,
 ): SchemaFormResult {
   const result = ingestSchema(schema);
-  const layout = options?.layoutOverride ?? compileLayout(result);
+  let layout = options?.layoutOverride ?? compileLayout(result);
+
+  if (options?.layoutMiddleware?.length) {
+    const fieldInfoMap = new Map<string, SchemaFieldInfo>(
+      result.fields.map((f: SchemaFieldInfo) => [f.path, f]),
+    );
+    layout = applyLayoutMiddleware(layout, options.layoutMiddleware, fieldInfoMap);
+  }
+
   const validators: ValidatorFn[] = [];
   if (isJsonSchema(schema)) {
     validators.push(createJsonSchemaValidator(schema as JsonSchema));
