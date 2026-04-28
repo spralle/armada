@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
   cn,
 } from "@ghost-shell/ui";
-import { ArrowDown, ArrowUp, ArrowUpDown, EyeOff } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, EyeOff, X } from "lucide-react";
 
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -55,6 +55,12 @@ export function DataTableColumnHeader<TData, TValue>({
             <ArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
             Desc
           </DropdownMenuItem>
+          {sorted && (
+            <DropdownMenuItem onClick={() => column.clearSorting()}>
+              <X className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+              Clear
+            </DropdownMenuItem>
+          )}
           {column.getCanHide() && (
             <>
               <DropdownMenuSeparator />
