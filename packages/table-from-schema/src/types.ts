@@ -51,6 +51,10 @@ export interface TableFieldDescriptor {
   readonly filterMin?: number;
   /** Filter max for range filters */
   readonly filterMax?: number;
+  /** Minimum width in pixels (column can grow). Used with wrap to prevent too-narrow columns. */
+  readonly minWidth?: number;
+  /** Allow text wrapping in this column. Default: false (text truncates). */
+  readonly wrap?: boolean;
 }
 
 /** Info about a filterable field */
@@ -84,6 +88,10 @@ export interface TableFieldOverride {
   readonly align?: 'left' | 'center' | 'right';
   readonly order?: number;
   readonly priority?: ColumnPriority;
+  /** Minimum width in pixels (column can grow). Used with wrap to prevent too-narrow columns. */
+  readonly minWidth?: number;
+  /** Allow text wrapping in this column. Default: false (text truncates). */
+  readonly wrap?: boolean;
 }
 
 /** Options for compileTableFields */

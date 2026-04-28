@@ -16,6 +16,8 @@ export interface EntityColumnMeta {
   readonly hasExplicitWidth?: boolean;
   readonly label?: string;
   readonly priority?: 'essential' | 'default' | 'optional';
+  readonly minWidth?: number;
+  readonly wrap?: boolean;
 }
 
 /**
@@ -38,6 +40,8 @@ export function toColumnDefs<TData>(
       hasExplicitWidth: desc.width !== undefined,
       label: desc.label,
       priority: desc.priority,
+      minWidth: desc.minWidth,
+      wrap: desc.wrap,
     };
 
     const col: ColumnDef<TData, unknown> = {

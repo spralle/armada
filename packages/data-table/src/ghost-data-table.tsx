@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { flexRender } from "@tanstack/react-table";
 import {
   Table,
@@ -45,6 +45,7 @@ export function GhostDataTable<TData>({
       id: col.id,
       priority: ((col.columnDef.meta as Record<string, unknown>)?.priority as ColumnPriority) ?? "default",
       label: ((col.columnDef.meta as Record<string, unknown>)?.label as string) ?? col.id,
+      minWidth: (col.columnDef.meta as Record<string, unknown>)?.minWidth as number | undefined,
     })),
     [table],
   );
@@ -62,19 +63,15 @@ export function GhostDataTable<TData>({
     font: responsive?.font,
     enabled: responsive?.enabled ?? false,
     cardViewThreshold: responsive?.cardViewThreshold,
-    userVisibility: table.getState().columnVisibility,
     containerRef: responsive?.containerRef,
     onBudgetChange: responsive?.onBudgetChange,
   });
 
-  const prevWidthRef = useRef<number>(0);
-
   useEffect(() => {
     if (!responsive?.enabled) return;
-    if (responsiveResult.containerWidth === prevWidthRef.current) return;
-    prevWidthRef.current = responsiveResult.containerWidth;
+    if (responsiveResult.containerWidth === 0) return;
     table.setColumnVisibility(responsiveResult.columnVisibility);
-  }, [responsive?.enabled, responsiveResult.containerWidth, responsiveResult.columnVisibility, table]);
+  }, [responsive?.enabled, responsiveResult.columnVisibility, table]);
 
   const filterToggle = enableColumnFilters ? (
     <Button
@@ -101,13 +98,15 @@ export function GhostDataTable<TData>({
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>
             {headerGroup.headers.map((header) => {
-              const hasExplicitWidth = !!(header.column.columnDef.meta as Record<string, unknown>)?.hasExplicitWidth;
+              const meta = header.column.columnDef.meta as Record<string, unknown> | undefined;
+              const hasExplicitWidth = !!meta?.hasExplicitWidth;
+              const headerMinWidth = meta?.minWidth as number | undefined;
               const widthStyle = isResizable || hasExplicitWidth ? { width: header.getSize() } : undefined;
               return (
                 <TableHead
                   key={header.id}
                   colSpan={header.colSpan}
-                  style={{ ...widthStyle, position: isResizable ? "relative" : undefined }}
+                  style={{ ...widthStyle, position: isResizable ? "relative" : undefined, minWidth: headerMinWidth ? `${headerMinWidth}px` : undefined }}
                 >
                   {header.isPlaceholder
                     ? null
@@ -162,12 +161,16 @@ export function GhostDataTable<TData>({
               data-state={row.getIsSelected() ? "selected" : undefined}
             >
               {row.getVisibleCells().map((cell) => {
-                const hasExplicitWidth = !!(cell.column.columnDef.meta as Record<string, unknown>)?.hasExplicitWidth;
+                const meta = cell.column.columnDef.meta as Record<string, unknown> | undefined;
+                const hasExplicitWidth = !!meta?.hasExplicitWidth;
+                const wrap = meta?.wrap as boolean | undefined;
+                const cellMinWidth = meta?.minWidth as number | undefined;
                 const widthStyle = isResizable || hasExplicitWidth ? { width: cell.column.getSize() } : undefined;
                 return (
                   <TableCell
                     key={cell.id}
-                    style={widthStyle}
+                    style={{ ...widthStyle, minWidth: cellMinWidth ? `${cellMinWidth}px` : undefined }}
+                    className={cn(!wrap && "whitespace-nowrap", wrap && "break-words")}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>

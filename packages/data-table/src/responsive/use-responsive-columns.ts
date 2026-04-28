@@ -14,6 +14,8 @@ export interface ResponsiveColumnDef {
   priority: ColumnPriority
   /** Header label for measurement */
   label?: string
+  /** If set, budget uses this instead of measured width (column wraps) */
+  minWidth?: number
 }
 
 export interface UseResponsiveColumnsOptions<TData> {
@@ -30,8 +32,6 @@ export interface UseResponsiveColumnsOptions<TData> {
   enabled?: boolean
   /** Container width below which card view is forced */
   cardViewThreshold?: number
-  /** User's manually toggled column visibility (takes precedence over budget) */
-  userVisibility?: Record<string, boolean>
   /** External container ref to observe instead of creating a new one */
   containerRef?: React.RefObject<HTMLDivElement | null>
   /** Callback with debug info on every budget recalculation */
@@ -66,7 +66,6 @@ export function useResponsiveColumns<TData>(
     font = DEFAULT_FONT,
     enabled = true,
     cardViewThreshold,
-    userVisibility,
     containerRef: externalRef,
     onBudgetChange,
   } = options
@@ -84,8 +83,10 @@ export function useResponsiveColumns<TData>(
       const values = sampleRows.map((row) => getCellValue(row, col.id))
       if (col.label) values.push(col.label)
       const contentWidth = activeMeasurer.measureColumn(values, font)
-      const measuredWidth = contentWidth + CELL_OVERHEAD
-      return { id: col.id, priority: col.priority, measuredWidth }
+      const measuredWidth = col.minWidth
+        ? col.minWidth + CELL_OVERHEAD
+        : contentWidth + CELL_OVERHEAD
+      return { id: col.id, priority: col.priority, measuredWidth, minWidth: col.minWidth }
     })
   }, [data, columns, activeMeasurer, font, getCellValue])
 
@@ -125,8 +126,8 @@ export function useResponsiveColumns<TData>(
 
   const columnVisibility = useMemo(() => {
     if (!enabled) return {}
-    return mergeUserVisibility(budgetResult.visibility, userVisibility)
-  }, [enabled, budgetResult.visibility, userVisibility])
+    return budgetResult.visibility
+  }, [enabled, budgetResult.visibility])
 
   return {
     containerRef,
@@ -135,16 +136,4 @@ export function useResponsiveColumns<TData>(
     containerWidth,
     debug: budgetResult.debug,
   }
-}
-
-function mergeUserVisibility(
-  budget: Record<string, boolean>,
-  user: Record<string, boolean> | undefined,
-): Record<string, boolean> {
-  if (!user) return budget
-  const merged = { ...budget }
-  for (const [id, visible] of Object.entries(user)) {
-    merged[id] = visible
-  }
-  return merged
 }

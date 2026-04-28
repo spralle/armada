@@ -18,5 +18,5 @@ export default defineConfig({
       { find: /^@\//, replacement: resolve("../../packages/ui/src") + "/" },
     ],
   },
-  server: { port: 5175, host: "127.0.0.1" },
+  server: { port: 5175, host: true },
 });

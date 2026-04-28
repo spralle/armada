@@ -60,6 +60,8 @@ export function compileTableFields(
       ...(override?.width !== undefined ? { width: override.width } : {}),
       ...(derived.filterMin !== undefined ? { filterMin: derived.filterMin } : {}),
       ...(derived.filterMax !== undefined ? { filterMax: derived.filterMax } : {}),
+      ...(override?.minWidth !== undefined ? { minWidth: override.minWidth } : {}),
+      ...(override?.wrap !== undefined ? { wrap: override.wrap } : {}),
     };
   });
 }
