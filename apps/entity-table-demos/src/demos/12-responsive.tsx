@@ -78,6 +78,21 @@ function generateEmployees(count: number): Employee[] {
 
 const employees = generateEmployees(35);
 
+const schemaSource = `z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  role: z.enum([...7 roles]),
+  department: z.string(),
+  location: z.string(),
+  salary: z.number(),
+  startDate: z.coerce.date(),
+  active: z.boolean(),
+  phone: z.string(),
+  bio: z.string(),
+  notes: z.string(),
+})`;
+
 const configSource = `<EntityList
   schema={EmployeeSchema}
   data={employees}
