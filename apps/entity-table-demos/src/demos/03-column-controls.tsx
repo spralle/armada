@@ -50,6 +50,18 @@ overrides={{
   margin: { label: 'Margin %', align: 'right' },
 }}`;
 
+const usageSource = `<EntityList
+  entityType="product"
+  schema={ProductSchema}
+  data={products}
+  exclude={['id']}
+  defaultVisible={['sku', 'name', 'price', 'stock', 'category']}
+  overrides={overrides}
+  enableColumnResizing
+  enableDensityToggle
+  getRowId={(row) => row.id}
+/>`;
+
 const products = [
   { id: '1', sku: 'ELEC-001', name: 'Wireless Headphones', description: 'Noise-cancelling over-ear headphones', price: 299.99, cost: 120.00, margin: 60, stock: 145, category: 'Electronics' as const, weight: 0.35, dimensions: '20x18x8cm', created: new Date('2024-01-15'), updated: new Date('2024-06-01') },
   { id: '2', sku: 'CLTH-042', name: 'Merino Wool Sweater', description: 'Lightweight crew neck sweater', price: 89.00, cost: 32.00, margin: 64, stock: 230, category: 'Clothing' as const, weight: 0.4, dimensions: '30x25x5cm', created: new Date('2024-02-20'), updated: new Date('2024-05-15') },
@@ -66,9 +78,12 @@ export function ColumnControlsDemo() {
     <DemoShell
       title="Column Controls"
       description="Control which columns appear, their labels, visibility defaults, and formatting — all via props."
-      features={['Include/Exclude', 'Default Visible', 'Overrides', 'Custom Labels']}
+      features={['Include/Exclude', 'Default Visible', 'Overrides', 'Custom Labels', 'Column Resize', 'Density Toggle']}
       schema={schemaSource}
-      codeBlocks={[{ title: 'Column Config', code: configSource, defaultOpen: true }]}
+      codeBlocks={[
+        { title: 'Column Config', code: configSource, defaultOpen: true },
+        { title: 'Usage', code: usageSource, defaultOpen: true },
+      ]}
     >
       <EntityList
         entityType="product"
@@ -81,6 +96,8 @@ export function ColumnControlsDemo() {
           cost: { label: 'Unit Cost', format: 'currency' },
           margin: { label: 'Margin %', align: 'right' },
         }}
+        enableColumnResizing
+        enableDensityToggle
         getRowId={(row) => row.id}
       />
     </DemoShell>

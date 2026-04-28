@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useGhostTable, GhostDataTable, DataTableColumnHeader } from '@ghost-shell/data-table';
+import { useGhostTable, GhostDataTable, DataTableColumnHeader, ExportButton } from '@ghost-shell/data-table';
 import type { ColumnDef, SortingState, PaginationState } from '@tanstack/react-table';
 import { Badge } from '@ghost-shell/ui';
 import { DemoShell } from '../components/DemoShell';
@@ -84,6 +84,32 @@ useGhostTable({
   onPaginationChange: setPagination,
 })`;
 
+const usageSource = `const { table } = useGhostTable<Employee>({
+  data: pageData,
+  columns,
+  manualSorting: true,
+  manualFiltering: true,
+  manualPagination: true,
+  rowCount: totalRows,
+  sorting,
+  onSortingChange: setSorting,
+  pagination,
+  onPaginationChange: setPagination,
+  enableRowSelection: false,
+  enableGlobalFilter: false,
+});
+
+<GhostDataTable
+  table={table}
+  globalFilter={searchInput}
+  onGlobalFilterChange={handleFilterChange}
+  loading={loading}
+  toolbarActions={
+    <ExportButton table={table} options={{ filename: 'employees' }} />
+  }
+  pageSizeOptions={[10, 25, 50]}
+/>`;
+
 export function AsyncServerDemo() {
   const allData = useRef(generateEmployees(200));
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -157,8 +183,9 @@ export function AsyncServerDemo() {
     <DemoShell
       title="Async / Server-Side Mode"
       description="Simulates server-side sorting, filtering, and pagination with a 300ms delay. All data processing happens outside the table — the hook just displays pre-fetched page data."
-      features={['Server-Side Sort', 'Server-Side Filter', 'Server-Side Pagination', '300ms Latency', '200 Rows']}
+      features={['Server-Side Sort', 'Server-Side Filter', 'Server-Side Pagination', '300ms Latency', '200 Rows', 'CSV Export']}
       schema={SCHEMA_SOURCE}
+      codeBlocks={[{ title: 'Usage', code: usageSource, defaultOpen: true }]}
     >
       <GhostDataTable
         table={table}
@@ -168,6 +195,7 @@ export function AsyncServerDemo() {
           setPagination(prev => ({ ...prev, pageIndex: 0 }));
         }}
         loading={loading}
+        toolbarActions={<ExportButton table={table} options={{ filename: 'employees' }} />}
         pageSizeOptions={[10, 25, 50]}
       />
     </DemoShell>

@@ -34,6 +34,16 @@ const overridesSource = `overrides={{
   skills: { format: 'tags' },
 }}`;
 
+const usageSource = `<EntityList
+  entityType="employee"
+  schema={EmployeeSchema}
+  data={employees}
+  exclude={['id']}
+  overrides={overrides}
+  enableColumnFilters
+  getRowId={(row) => row.id}
+/>`;
+
 const employees = [
   { id: '1', name: 'Alice Johnson', email: 'alice@company.com', department: 'Engineering' as const, salary: 145000, startDate: new Date('2021-03-15'), active: true, skills: ['React', 'TypeScript', 'Node.js'] },
   { id: '2', name: 'Bob Martinez', email: 'bob@company.com', department: 'Design' as const, salary: 125000, startDate: new Date('2020-07-01'), active: true, skills: ['Figma', 'CSS', 'Illustration'] },
@@ -54,9 +64,12 @@ export function CellRenderersDemo() {
     <DemoShell
       title="Cell Renderers Showcase"
       description="All built-in cell renderers: avatar, link, currency, date, boolean, badge (enum), and tags — configured via the overrides prop."
-      features={['Date', 'Currency', 'Badge', 'Boolean', 'Link', 'Avatar', 'Tags']}
+      features={['Date', 'Currency', 'Badge', 'Boolean', 'Link', 'Avatar', 'Tags', 'Column Filters']}
       schema={schemaSource}
-      codeBlocks={[{ title: 'Overrides', code: overridesSource, defaultOpen: true }]}
+      codeBlocks={[
+        { title: 'Overrides', code: overridesSource, defaultOpen: true },
+        { title: 'Usage', code: usageSource, defaultOpen: true },
+      ]}
     >
       <EntityList
         entityType="employee"
@@ -69,6 +82,7 @@ export function CellRenderersDemo() {
           salary: { format: 'currency' },
           skills: { format: 'tags' },
         }}
+        enableColumnFilters
         getRowId={(row) => row.id}
       />
     </DemoShell>

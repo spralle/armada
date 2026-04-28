@@ -92,6 +92,14 @@ export interface EntityListProps<TData> {
   pageSizeOptions?: number[];
   /** Enable row selection */
   enableRowSelection?: boolean;
+  /** Enable column resizing */
+  enableColumnResizing?: boolean;
+  /** Enable sticky header with scrollable container */
+  enableStickyHeader?: boolean;
+  /** Enable density toggle in toolbar */
+  enableDensityToggle?: boolean;
+  /** Enable per-column filter UI */
+  enableColumnFilters?: boolean;
   /** Optional Ghost menu service for contributed operations */
   menuService?: MenuService;
 }

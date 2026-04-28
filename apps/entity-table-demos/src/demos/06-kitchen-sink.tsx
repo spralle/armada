@@ -47,6 +47,23 @@ const overridesSource = `overrides={{
   bio:    { hidden: true },
 }}`;
 
+const usageSource = `<EntityList
+  entityType="user"
+  schema={UserSchema}
+  data={users}
+  exclude={['id']}
+  defaultVisible={['avatar', 'name', 'email', 'role', 'salary', 'skills']}
+  overrides={overrides}
+  rowOperations={rowOps}
+  enableColumnFilters
+  enableColumnResizing
+  enableStickyHeader
+  enableDensityToggle
+  enableRowSelection
+  pageSizeOptions={[10, 25, 50]}
+  getRowId={(row) => row.id}
+/>`;
+
 const firstNames = ['Alice', 'Bob', 'Carol', 'David', 'Eva', 'Frank', 'Grace', 'Hiro', 'Isla', 'James', 'Keiko', 'Liam', 'Mia', 'Noah', 'Olivia', 'Priya', 'Quinn', 'Raj', 'Sofia', 'Tomas', 'Uma', 'Victor', 'Wendy', 'Xander', 'Yuki', 'Zara'];
 const lastNames = ['Johnson', 'Martinez', 'Chen', 'Kim', 'Rossi', 'Okafor', 'Liu', 'Tanaka', 'Patel', 'Wright', 'Sato', "O'Brien", 'Fernandez', 'Andersen', 'Brown', 'Singh', 'Murphy', 'Gupta', 'Garcia', 'Müller'];
 const roles = ['admin', 'editor', 'viewer', 'guest'] as const;
@@ -98,10 +115,13 @@ export function KitchenSinkDemo() {
   return (
     <DemoShell
       title="Kitchen Sink"
-      description="Everything combined: all renderers, operations, overrides, sorting, selection, and pagination with 55 rows."
-      features={['All Renderers', 'Operations', 'Overrides', 'Sorting', 'Selection', 'Pagination']}
+      description="Everything combined: all renderers, operations, overrides, sorting, selection, pagination, column filters, resize, sticky header, and density toggle with 55 rows."
+      features={['All Renderers', 'Operations', 'Overrides', 'Sorting', 'Selection', 'Pagination', 'Column Filters', 'Column Resize', 'Sticky Header', 'Density Toggle']}
       schema={schemaSource}
-      codeBlocks={[{ title: 'Overrides', code: overridesSource, defaultOpen: true }]}
+      codeBlocks={[
+        { title: 'Overrides', code: overridesSource, defaultOpen: true },
+        { title: 'Usage', code: usageSource, defaultOpen: true },
+      ]}
     >
       <EntityList
         entityType="user"
@@ -115,8 +135,18 @@ export function KitchenSinkDemo() {
           salary: { format: 'currency', width: 120 },
           skills: { format: 'tags' },
           bio: { hidden: true },
+          role: {
+            format: 'badge',
+            formatOptions: {
+              colorMap: { admin: 'red', editor: 'blue', viewer: 'green', guest: 'amber' },
+            },
+          },
         }}
         rowOperations={rowOps}
+        enableColumnFilters
+        enableColumnResizing
+        enableStickyHeader
+        enableDensityToggle
         enableRowSelection
         pageSizeOptions={[10, 25, 50]}
         getRowId={(row) => row.id}

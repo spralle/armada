@@ -53,6 +53,18 @@ toolbarOperations={[
     handler: () => alert('Refreshing...') },
 ]}`;
 
+const usageSource = `<EntityList
+  entityType="order"
+  schema={OrderSchema}
+  data={orders}
+  overrides={{ total: { format: 'currency' } }}
+  rowOperations={rowOperations}
+  batchOperations={batchOperations}
+  toolbarOperations={toolbarOperations}
+  enableRowSelection
+  getRowId={(row) => row.id}
+/>`;
+
 const orders: Order[] = [
   { id: 'ORD-1001', customer: 'Alice Johnson', total: 234.50, status: 'delivered', date: new Date('2024-08-15') },
   { id: 'ORD-1002', customer: 'Bob Martinez', total: 89.99, status: 'shipped', date: new Date('2024-09-02') },
@@ -89,7 +101,10 @@ export function OperationsDemo() {
       description="Row actions (per-row dropdown), batch operations (shown when rows selected), and toolbar actions — with conditional guards."
       features={['Row Actions', 'Batch Select', 'Toolbar Actions', 'Action Guards']}
       schema={schemaSource}
-      codeBlocks={[{ title: 'Operations Config', code: opsSource, defaultOpen: true }]}
+      codeBlocks={[
+        { title: 'Operations Config', code: opsSource, defaultOpen: true },
+        { title: 'Usage', code: usageSource, defaultOpen: true },
+      ]}
     >
       <EntityList
         entityType="order"

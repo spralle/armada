@@ -1,6 +1,6 @@
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, FilterFn } from '@tanstack/react-table';
 import type { TableFieldDescriptor } from '@ghost-shell/table-from-schema';
-import { DataTableColumnHeader } from '@ghost-shell/data-table';
+import { DataTableColumnHeader, inNumberRange } from '@ghost-shell/data-table';
 
 /** EntityColumnMeta stored in ColumnDef.meta — kept for backward compat */
 export interface EntityColumnMeta {
@@ -48,6 +48,10 @@ export function toColumnDefs<TData>(
       enableColumnFilter: desc.filter !== undefined,
       meta,
     };
+
+    if (desc.filter === 'range') {
+      col.filterFn = inNumberRange as FilterFn<TData>;
+    }
 
     if (typeof desc.width === 'number') {
       col.size = desc.width;

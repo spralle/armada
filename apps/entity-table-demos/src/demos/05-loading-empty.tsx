@@ -20,6 +20,16 @@ const schemaSource = `z.object({
   done: z.boolean(),
 })`;
 
+const usageSource = `<EntityList
+  entityType="task"
+  schema={TaskSchema}
+  data={data}
+  loading={loading}
+  exclude={['id']}
+  emptyMessage="No tasks found. Create one to get started!"
+  getRowId={(row) => row.id}
+/>`;
+
 const sampleTasks = [
   { id: '1', title: 'Set up CI pipeline', assignee: 'Alice', priority: 'high' as const, done: true },
   { id: '2', title: 'Write unit tests', assignee: 'Bob', priority: 'medium' as const, done: false },
@@ -42,6 +52,7 @@ export function LoadingEmptyDemo() {
       description="Toggle between data, loading skeleton, and empty state to see how EntityList handles each case."
       features={['Skeleton Loading', 'Empty Message', 'Dynamic Data']}
       schema={schemaSource}
+      codeBlocks={[{ title: 'Usage', code: usageSource, defaultOpen: true }]}
     >
       <div className="space-y-4">
         <div className="flex gap-2">

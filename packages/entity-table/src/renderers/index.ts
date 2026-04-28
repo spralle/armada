@@ -2,6 +2,7 @@ import type { CellRendererRegistry } from "../cell-registry.js";
 
 export { textRenderer } from "./text-renderer.js";
 export { badgeRenderer } from "./badge-renderer.js";
+export { resolveColorClass, stableHash, COLOR_PALETTE, NAMED_COLORS } from "./badge-colors.js";
 export { currencyRenderer } from "./currency-renderer.js";
 export { dateRenderer, datetimeRenderer } from "./date-renderer.js";
 export { booleanRenderer } from "./boolean-renderer.js";

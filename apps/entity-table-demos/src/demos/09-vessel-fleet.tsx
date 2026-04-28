@@ -77,6 +77,21 @@ const overridesSource = `overrides={{
   'specs.deadweight': { label: 'DWT' },
 }}`;
 
+const usageSource = `<EntityList
+  entityType="vessel"
+  schema={VesselSchema}
+  data={vessels}
+  exclude={['id']}
+  defaultVisible={[
+    'vesselName', 'imoNumber', 'flag', 'vesselType',
+    'position.port', 'position.status', 'position.eta',
+    'commercial.dailyRate', 'isActive', 'cargoCount',
+  ]}
+  overrides={overrides}
+  rowOperations={rowOps}
+  getRowId={(row) => row.id}
+/>`;
+
 const vessels: Vessel[] = [
   { id: 'v-001', vesselName: 'Nordic Pioneer', imoNumber: '9434567', flag: 'Norway', vesselType: 'bulk_carrier', specs: { deadweight: 82000, grossTonnage: 43500, lengthOverall: 229, beam: 32.3, yearBuilt: 2015 }, position: { port: 'Rotterdam', status: 'loading', eta: new Date('2024-09-20') }, commercial: { charterer: 'Cargill Ocean Transport', dailyRate: 18500, currency: 'USD', contractEnd: new Date('2025-03-15') }, isActive: true, cargoCount: 3, lastInspection: new Date('2024-06-10') },
   { id: 'v-002', vesselName: 'Star Athena', imoNumber: '9512345', flag: 'Greece', vesselType: 'tanker', specs: { deadweight: 115000, grossTonnage: 62800, lengthOverall: 250, beam: 44.0, yearBuilt: 2018 }, position: { port: 'Singapore', status: 'at_berth', eta: new Date('2024-09-18') }, commercial: { charterer: 'Trafigura Maritime', dailyRate: 32000, currency: 'USD', contractEnd: new Date('2025-06-30') }, isActive: true, cargoCount: 1, lastInspection: new Date('2024-04-22') },
@@ -103,7 +118,10 @@ export function VesselFleetDemo() {
       description="A maritime domain model with 3+ levels of nesting: vessel specs, position tracking, and commercial terms. Deep nested fields are flattened to dot-path columns. Use the column toggle to reveal hidden spec and commercial details."
       features={['Maritime Domain', 'Deep Nesting', 'Multiple Entity Types', 'Mixed Renderers', 'Domain-Specific Data']}
       schema={schemaSource}
-      codeBlocks={[{ title: 'Overrides', code: overridesSource, defaultOpen: true }]}
+      codeBlocks={[
+        { title: 'Overrides', code: overridesSource, defaultOpen: true },
+        { title: 'Usage', code: usageSource, defaultOpen: true },
+      ]}
     >
       <EntityList
         entityType="vessel"

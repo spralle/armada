@@ -55,6 +55,22 @@ const overridesSource = `overrides={{
   'billing.creditLimit': { format: 'currency', label: 'Credit Limit' },
 }}`;
 
+const usageSource = `<EntityList
+  entityType="customer"
+  schema={CustomerSchema}
+  data={customers}
+  exclude={['id']}
+  defaultVisible={[
+    'name', 'status',
+    'address.city', 'address.country',
+    'contact.email', 'contact.preferredChannel',
+    'billing.creditLimit', 'billing.currency',
+    'createdAt',
+  ]}
+  overrides={overrides}
+  getRowId={(row) => row.id}
+/>`;
+
 type Customer = z.infer<typeof CustomerSchema>;
 
 const customers: Customer[] = [
@@ -79,7 +95,10 @@ export function NestedObjectsDemo() {
       description="Nested z.object() fields are automatically flattened into dot-path columns (e.g. address.city, contact.email). The schema pipeline walks the Zod tree and produces one column per leaf field."
       features={['Nested Objects', 'Dot-Path Columns', 'Value Objects', 'Flattened Display']}
       schema={schemaSource}
-      codeBlocks={[{ title: 'Overrides', code: overridesSource, defaultOpen: true }]}
+      codeBlocks={[
+        { title: 'Overrides', code: overridesSource, defaultOpen: true },
+        { title: 'Usage', code: usageSource, defaultOpen: true },
+      ]}
     >
       <EntityList
         entityType="customer"

@@ -15,6 +15,7 @@ export interface GhostTableFeatures {
   enableRowSelection?: boolean;
   enableColumnVisibility?: boolean;
   enableGlobalFilter?: boolean;
+  enableColumnResizing?: boolean;
 }
 
 export interface GhostTableOptions<TData> extends GhostTableFeatures {
@@ -60,4 +61,7 @@ export interface GhostDataTableProps<TData> {
   showPagination?: boolean;
   pageSizeOptions?: number[];
   toolbarActions?: React.ReactNode;
+  stickyHeader?: boolean;
+  enableDensityToggle?: boolean;
+  enableColumnFilters?: boolean;
 }

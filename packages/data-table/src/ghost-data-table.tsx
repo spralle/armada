@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { flexRender } from "@tanstack/react-table";
 import {
   Table,
@@ -7,9 +8,12 @@ import {
   TableHeader,
   TableRow,
   Skeleton,
+  Button,
 } from "@ghost-shell/ui";
+import { Filter } from "lucide-react";
 import { DataTablePagination } from "./data-table-pagination.js";
 import { DataTableToolbar } from "./data-table-toolbar.js";
+import { resolveColumnFilter } from "./column-filters/index.js";
 import type { GhostDataTableProps } from "./types.js";
 
 export function GhostDataTable<TData>({
@@ -23,8 +27,29 @@ export function GhostDataTable<TData>({
   showPagination = true,
   pageSizeOptions,
   toolbarActions,
+  enableColumnFilters = false,
 }: GhostDataTableProps<TData>) {
   const columnCount = table.getAllColumns().length;
+  const [showFilters, setShowFilters] = useState(false);
+
+  const filterToggle = enableColumnFilters ? (
+    <Button
+      variant={showFilters ? "secondary" : "ghost"}
+      size="sm"
+      onClick={() => setShowFilters((prev) => !prev)}
+      className="h-8"
+    >
+      <Filter className="mr-1 h-4 w-4" />
+      Filter
+    </Button>
+  ) : null;
+
+  const combinedToolbarActions = (filterToggle || toolbarActions) ? (
+    <>
+      {toolbarActions}
+      {filterToggle}
+    </>
+  ) : undefined;
 
   return (
     <div className="space-y-4">
@@ -33,7 +58,7 @@ export function GhostDataTable<TData>({
           table={table}
           globalFilter={globalFilter}
           onGlobalFilterChange={onGlobalFilterChange}
-          toolbarActions={toolbarActions}
+          toolbarActions={combinedToolbarActions}
         />
       )}
       <div className="rounded-md border">
@@ -54,6 +79,22 @@ export function GhostDataTable<TData>({
                 ))}
               </TableRow>
             ))}
+            {showFilters && (
+              <TableRow>
+                {table.getHeaderGroups()[0]?.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as Record<string, unknown> | undefined;
+                  const filterVariant = meta?.filterVariant as string | undefined;
+                  const FilterComponent = header.column.getCanFilter()
+                    ? resolveColumnFilter<TData>(filterVariant)
+                    : undefined;
+                  return (
+                    <TableHead key={`filter-${header.id}`} className="p-1">
+                      {FilterComponent ? <FilterComponent column={header.column} /> : null}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            )}
           </TableHeader>
           <TableBody>
             {loading ? (

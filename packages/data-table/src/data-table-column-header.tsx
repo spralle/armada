@@ -26,6 +26,7 @@ export function DataTableColumnHeader<TData, TValue>({
   }
 
   const sorted = column.getIsSorted();
+  const sortIndex = column.getSortIndex();
 
   return (
     <div className={cn("flex items-center space-x-2", className)}>
@@ -43,6 +44,9 @@ export function DataTableColumnHeader<TData, TValue>({
               <ArrowUp />
             ) : (
               <ArrowUpDown />
+            )}
+            {sorted && sortIndex > 0 && (
+              <span className="ml-0.5 text-[10px] text-muted-foreground align-super">{sortIndex + 1}</span>
             )}
           </Button>
         </DropdownMenuTrigger>

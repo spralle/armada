@@ -35,6 +35,10 @@ export function EntityList<TData>({
   emptyMessage,
   pageSizeOptions,
   enableRowSelection,
+  enableColumnResizing,
+  enableStickyHeader,
+  enableDensityToggle,
+  enableColumnFilters,
 }: EntityListProps<TData>) {
   // 1. Schema → table config (memoized; skipped if columnOverride provided)
   const tableConfig = useMemo(() => {
@@ -85,6 +89,7 @@ export function EntityList<TData>({
     data,
     columns: finalColumns,
     enableRowSelection: enableRowSelection ?? (batchOperations?.length ?? 0) > 0,
+    enableColumnResizing,
     initialColumnVisibility: tableConfig?.defaultColumnVisibility,
     initialSorting: defaultSort ?? tableConfig?.defaultSorting,
   });
@@ -218,6 +223,9 @@ export function EntityList<TData>({
         emptyMessage={emptyMessage}
         toolbarActions={toolbarActions}
         pageSizeOptions={pageSizeOptions}
+        stickyHeader={enableStickyHeader}
+        enableDensityToggle={enableDensityToggle}
+        enableColumnFilters={enableColumnFilters}
       />
     </div>
   );

@@ -9,6 +9,7 @@ import { NestedObjectsDemo } from './07-nested-objects';
 import { OrderAggregateDemo } from './08-order-aggregate';
 import { VesselFleetDemo } from './09-vessel-fleet';
 import { AsyncServerDemo } from './10-async-server';
+import { EnterpriseFeaturesDemo } from './11-enterprise-features';
 
 export interface DemoRegistration {
   readonly id: string;
@@ -29,4 +30,5 @@ export const demos: readonly DemoRegistration[] = [
   { id: 'order-aggregate', title: '8. Order Aggregate (CQRS Style)', subtitle: 'Master-detail with command operations', category: 'advanced', component: OrderAggregateDemo },
   { id: 'vessel-fleet', title: '9. Vessel Fleet (Maritime Domain)', subtitle: 'Deep nesting with maritime data', category: 'advanced', component: VesselFleetDemo },
   { id: 'async-server', title: '10. Async / Server-Side', subtitle: 'Simulated 300ms server roundtrip', category: 'advanced', component: AsyncServerDemo },
+  { id: 'enterprise-features', title: '11. Enterprise Features', subtitle: 'Filters, resize, sticky, density, multi-sort', category: 'advanced', component: EnterpriseFeaturesDemo },
 ];

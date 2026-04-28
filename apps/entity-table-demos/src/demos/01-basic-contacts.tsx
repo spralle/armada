@@ -18,6 +18,14 @@ const schemaSource = `z.object({
   company: z.string(),
 })`;
 
+const usageSource = `<EntityList
+  entityType="contact"
+  schema={ContactSchema}
+  data={contacts}
+  exclude={['id']}
+  getRowId={(row) => row.id}
+/>`;
+
 const contacts = [
   { id: '1', name: 'Alice Johnson', email: 'alice@acmecorp.com', phone: '(555) 123-4567', company: 'Acme Corp' },
   { id: '2', name: 'Bob Martinez', email: 'bob@globex.io', phone: '(555) 234-5678', company: 'Globex Inc' },
@@ -43,6 +51,7 @@ export function BasicContactsDemo() {
       description="The simplest usage: define a Zod schema, provide data, get a fully-featured table with sorting and pagination."
       features={['Zero Config', 'Auto Columns', 'Sorting', 'Pagination']}
       schema={schemaSource}
+      codeBlocks={[{ title: 'Usage', code: usageSource, defaultOpen: true }]}
     >
       <EntityList
         entityType="contact"

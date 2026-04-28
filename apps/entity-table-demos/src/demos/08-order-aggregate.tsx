@@ -60,6 +60,39 @@ const lineSchemaSource = `z.object({
   status: z.enum(['pending', 'allocated', 'shipped', 'cancelled']),
 })`;
 
+const usageSource = `{/* Orders (Master) */}
+<EntityList
+  entityType="order"
+  schema={OrderSchema}
+  data={orders}
+  exclude={['id']}
+  defaultVisible={[
+    'customer.name', 'customer.email', 'status',
+    'lineCount', 'totalAmount', 'currency', 'placedAt',
+  ]}
+  overrides={{
+    'customer.email': { format: 'link' },
+    totalAmount: { format: 'currency' },
+  }}
+  rowOperations={orderOps}
+  getRowId={(row) => row.id}
+/>
+
+{/* Order Lines (Detail) */}
+<EntityList
+  entityType="order-line"
+  schema={OrderLineSchema}
+  data={orderLines}
+  exclude={['id']}
+  overrides={{
+    unitPrice: { format: 'currency' },
+    lineTotal: { format: 'currency' },
+  }}
+  rowOperations={lineOps}
+  pageSizeOptions={[10, 25]}
+  getRowId={(row) => row.id}
+/>`;
+
 const orders: Order[] = [
   { id: 'ORD-2401', customer: { name: 'Nordström Shipping AB', email: 'orders@nordstrom-shipping.se' }, status: 'delivered', lineCount: 3, totalAmount: 24500, currency: 'SEK', placedAt: new Date('2024-07-10'), updatedAt: new Date('2024-08-02') },
   { id: 'ORD-2402', customer: { name: 'Gulf Maritime LLC', email: 'procurement@gulfmaritime.com' }, status: 'shipped', lineCount: 5, totalAmount: 18750, currency: 'USD', placedAt: new Date('2024-08-15'), updatedAt: new Date('2024-09-01') },
@@ -118,7 +151,10 @@ export function OrderAggregateDemo() {
       description="A CQRS read-model projection pattern: domain aggregates emit events, projections build flat read models for display. Here we show two related tables — an Order master view and an OrderLine detail view — as a query-side projection would produce them."
       features={['Entity List', 'Order Lines', 'Computed Display', 'Row Actions as Commands', 'Nested Entities']}
       schema={orderSchemaSource}
-      codeBlocks={[{ title: 'OrderLine Schema', code: lineSchemaSource, defaultOpen: false }]}
+      codeBlocks={[
+        { title: 'OrderLine Schema', code: lineSchemaSource, defaultOpen: false },
+        { title: 'Usage', code: usageSource, defaultOpen: true },
+      ]}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         <div>
