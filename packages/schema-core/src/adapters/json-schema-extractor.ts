@@ -2,50 +2,38 @@ import type { SchemaFieldInfo, SchemaFieldMetadata, SchemaFieldType, SchemaInges
 import type { JsonSchema } from './json-schema-types.js';
 import { dereferenceSchema } from './json-schema-deref.js';
 
-/** Named keys on SchemaFieldMetadata (excluding extra) */
-const KNOWN_META_KEYS = new Set([
-  'title', 'description', 'enum', 'default',
-  'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
-  'minLength', 'maxLength', 'format', 'pattern',
-  'minItems', 'maxItems', 'uniqueItems',
-  'readOnly', 'writeOnly', 'deprecated', 'dependentRequired',
-  'widget', 'options', 'label', 'placeholder',
-]);
-
-function buildMetadata(standardMeta: Record<string, unknown>, formrMeta?: Record<string, unknown>): SchemaFieldMetadata | undefined {
-  const result: Record<string, unknown> = { ...standardMeta };
-  const extra: Record<string, unknown> = {};
-
-  if (formrMeta) {
-    for (const [key, value] of Object.entries(formrMeta)) {
-      if (KNOWN_META_KEYS.has(key)) {
-        result[key] = value;
-      } else {
-        extra[key] = value;
-      }
-    }
+/** Extract x-* object keys into an extensions record */
+function extractExtensions(schema: JsonSchema): Readonly<Record<string, Readonly<Record<string, unknown>>>> | undefined {
+  const extensions: Record<string, Readonly<Record<string, unknown>>> = {};
+  for (const key of Object.keys(schema)) {
+    const match = /^x-(.+)$/.exec(key);
+    if (!match) continue;
+    const value = schema[key as `x-${string}`];
+    if (typeof value !== 'object' || value === null) continue;
+    extensions[match[1]] = value as Readonly<Record<string, unknown>>;
   }
+  return Object.keys(extensions).length > 0 ? extensions : undefined;
+}
 
-  const hasContent = Object.keys(result).length > 0 || Object.keys(extra).length > 0;
+function buildMetadata(standardMeta: Record<string, unknown>, schema: JsonSchema): SchemaFieldMetadata | undefined {
+  const extensions = extractExtensions(schema);
+  const hasContent = Object.keys(standardMeta).length > 0 || extensions !== undefined;
   if (!hasContent) return undefined;
 
-  if (Object.keys(extra).length > 0) {
-    result.extra = extra;
-  }
-
-  return result as SchemaFieldMetadata;
+  return {
+    ...standardMeta,
+    ...(extensions ? { extensions } : {}),
+  } as SchemaFieldMetadata;
 }
 
 export function extractFromJsonSchema(rawSchema: JsonSchema): SchemaIngestionResult {
   const schema = dereferenceSchema(rawSchema);
   const fields: SchemaFieldInfo[] = [];
 
-  const rootFormr = schema['x-formr'] as Record<string, unknown> | undefined;
   const metadata: SchemaMetadata = {
     vendor: 'json-schema',
     ...(schema.title !== undefined ? { title: schema.title } : {}),
     ...(schema.description !== undefined ? { description: schema.description } : {}),
-    ...(rootFormr ? { extra: rootFormr } : {}),
   };
 
   walkJsonSchema(schema, '', fields);
@@ -113,7 +101,6 @@ function walkJsonSchema(
 
   if (resolvedType === 'array') {
     const isRequired = fieldName !== undefined && parentRequired?.includes(fieldName) === true;
-    const arrayFormrMeta = effective['x-formr'] as Record<string, unknown> | undefined;
     const arrayStandardMeta: Record<string, unknown> = {};
     if (effective.title !== undefined) arrayStandardMeta.title = effective.title;
     if (effective.description !== undefined) arrayStandardMeta.description = effective.description;
@@ -122,7 +109,7 @@ function walkJsonSchema(
     if (effective.maxItems !== undefined) arrayStandardMeta.maxItems = effective.maxItems;
     if (effective.uniqueItems !== undefined) arrayStandardMeta.uniqueItems = effective.uniqueItems;
 
-    const arrayMetadata = buildMetadata(arrayStandardMeta, arrayFormrMeta ?? undefined);
+    const arrayMetadata = buildMetadata(arrayStandardMeta, effective);
     fields.push({
       path: prefix,
       type: 'array',
@@ -148,11 +135,10 @@ function walkJsonSchema(
   if (effective.oneOf ?? effective.anyOf) {
     if (prefix) {
       const isRequired = fieldName !== undefined && parentRequired?.includes(fieldName) === true;
-      const formrMeta = effective['x-formr'] as Record<string, unknown> | undefined;
       const standardMeta: Record<string, unknown> = {};
       if (effective.title !== undefined) standardMeta.title = effective.title;
       if (effective.description !== undefined) standardMeta.description = effective.description;
-      const metadata = buildMetadata(standardMeta, formrMeta ?? undefined);
+      const metadata = buildMetadata(standardMeta, effective);
       fields.push({
         path: prefix,
         type: 'union',
@@ -174,7 +160,6 @@ function walkJsonSchema(
   const isRequired = fieldName !== undefined && parentRequired?.includes(fieldName) === true;
   const fieldType = mapJsonSchemaType(effective);
 
-  const formrMeta = effective['x-formr'] as Record<string, unknown> | undefined;
   const standardMeta: Record<string, unknown> = {};
   if (effective.title !== undefined) standardMeta.title = effective.title;
   if (effective.description !== undefined) standardMeta.description = effective.description;
@@ -193,7 +178,7 @@ function walkJsonSchema(
   if (effective.deprecated !== undefined) standardMeta.deprecated = effective.deprecated;
   if (effective.dependentRequired !== undefined) standardMeta.dependentRequired = effective.dependentRequired;
 
-  const metadata = buildMetadata(standardMeta, formrMeta ?? undefined);
+  const metadata = buildMetadata(standardMeta, effective);
 
   fields.push({
     path: prefix,

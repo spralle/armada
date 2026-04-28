@@ -18,6 +18,9 @@
       "path": "../../packages/formr-core"
     },
     {
+      "path": "../../packages/schema-core"
+    },
+    {
       "path": "../../packages/formr-from-schema"
     },
     {

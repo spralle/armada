@@ -1,5 +1,5 @@
 import type { SchemaFieldInfo, SchemaFieldMetadata, SchemaFieldType, SchemaIngestionResult, SchemaMetadata } from '../types.js';
-import { FromSchemaError } from '../errors.js';
+import { SchemaError } from '../errors.js';
 
 // Zod internal types for duck-typed traversal (Zod has no formal traversal API)
 interface ZodTypeDef {
@@ -16,7 +16,7 @@ interface ZodLike {
 export function extractFromZod(schema: unknown): SchemaIngestionResult {
   const zodSchema = schema as ZodLike;
   if (!zodSchema._def) {
-    throw new FromSchemaError('FORMR_SCHEMA_PARSE_FAILED', 'Schema does not appear to be a Zod schema');
+    throw new SchemaError('SCHEMA_PARSE_FAILED', 'Schema does not appear to be a Zod schema');
   }
 
   const fields: SchemaFieldInfo[] = [];
@@ -244,8 +244,8 @@ function extractFormrMetadata(schema: ZodLike): SchemaFieldMetadata | undefined 
 
   const rawMeta = def['metadata'] as Record<string, unknown> | undefined;
   if (rawMeta && ('x-formr' in rawMeta)) {
-    throw new FromSchemaError(
-      'FORMR_ZOD_XFORMR_FORBIDDEN',
+    throw new SchemaError(
+      'SCHEMA_ZOD_TRANSFORM_FORBIDDEN',
       'x-formr is not allowed in Zod metadata. Use .meta({ formr: { ... } }) instead.',
     );
   }

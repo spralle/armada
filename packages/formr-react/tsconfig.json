@@ -19,6 +19,7 @@
   "exclude": ["src/**/__tests__", "src/**/*.test.ts", "src/**/*.test.tsx"],
   "references": [
     { "path": "../formr-core" },
-    { "path": "../formr-from-schema" }
+    { "path": "../formr-from-schema" },
+    { "path": "../schema-core" }
   ]
 }

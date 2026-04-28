@@ -22,3 +22,7 @@ worktrees/
 .opencode/package-lock.json
 .opencode/bun.lock
 .opencode/.gitignore
+# bd worktree
+trees\fix-master-build/
+# bd worktree
+trees\audit-remediation/

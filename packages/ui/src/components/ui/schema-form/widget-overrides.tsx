@@ -1,5 +1,5 @@
 import type { ComponentType } from "react"
-import type { SchemaFieldType } from "@ghost-shell/formr-from-schema"
+import type { SchemaFieldType } from "@ghost-shell/schema-core"
 import type { WidgetProps } from "./ghost-widgets"
 import { GHOST_DEFAULT_WIDGETS } from "./ghost-widgets"
 

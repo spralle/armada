@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { createSchemaForm } from '@ghost-shell/formr-from-schema';
-import type { LayoutNode, SchemaFieldInfo, SchemaMetadata } from '@ghost-shell/formr-from-schema';
+import type { LayoutNode } from '@ghost-shell/formr-from-schema';
+import type { SchemaFieldInfo, SchemaMetadata } from '@ghost-shell/schema-core';
 import { useForm } from './use-form.js';
 import type { UseFormOptions } from './use-form.js';
 import type { FormApi, ValidatorFn } from '@ghost-shell/formr-core';

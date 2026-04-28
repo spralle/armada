@@ -1,4 +1,4 @@
-import type { SchemaFieldInfo, SchemaIngestionResult } from '../types.js';
+import type { SchemaFieldInfo, SchemaIngestionResult } from '@ghost-shell/schema-core';
 import type { LayoutNode } from './layout-types.js';
 
 export interface LayoutCompileOptions {

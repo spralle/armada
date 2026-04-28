@@ -1,6 +1,7 @@
 import type { ValidationIssue } from '@ghost-shell/formr-core';
-import type { JsonSchema } from './adapters/json-schema-types.js';
-import { makeIssue, isObject, checkType } from './utils.js';
+import type { JsonSchema } from '@ghost-shell/schema-core';
+import { isObject, checkType } from '@ghost-shell/schema-core';
+import { makeIssue } from './utils.js';
 
 /**
  * ADR section 6.4 — Conditional required field resolution.

@@ -17,6 +17,31 @@
         "@ghost-shell/contracts": "file:../../packages/plugin-contracts",
       },
     },
+    "apps/entity-table-demos": {
+      "name": "@ghost-shell/entity-table-demos",
+      "version": "0.0.0",
+      "dependencies": {
+        "@chenglou/pretext": "0.0.6",
+        "@ghost-shell/data-table": "workspace:*",
+        "@ghost-shell/entity-table": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
+        "@ghost-shell/table-from-schema": "workspace:*",
+        "@ghost-shell/ui": "workspace:*",
+        "@tanstack/react-table": "^8.21.3",
+        "lucide-react": "^0.475.0",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "zod": "^3.24.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1",
+        "@vitejs/plugin-react": "^4.3.4",
+        "tailwindcss": "^4.0.0",
+        "vite": "^5.4.19",
+      },
+    },
     "apps/formr-demos": {
       "name": "@ghost-shell/formr-demos",
       "version": "0.0.0",
@@ -24,6 +49,7 @@
         "@ghost-shell/formr-core": "workspace:*",
         "@ghost-shell/formr-from-schema": "workspace:*",
         "@ghost-shell/formr-react": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
         "@ghost-shell/ui": "workspace:*",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
@@ -96,6 +122,47 @@
         "@ghost-shell/contracts": "workspace:*",
       },
     },
+    "packages/data-table": {
+      "name": "@ghost-shell/data-table",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost-shell/ui": "workspace:*",
+        "@tanstack/react-table": "^8.21.3",
+      },
+      "devDependencies": {
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1",
+      },
+      "peerDependencies": {
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+      },
+    },
+    "packages/entity-table": {
+      "name": "@ghost-shell/entity-table",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost-shell/contracts": "workspace:*",
+        "@ghost-shell/data-table": "workspace:*",
+        "@ghost-shell/table-from-schema": "workspace:*",
+        "@ghost-shell/ui": "workspace:*",
+        "lucide-react": "^0.475.0",
+      },
+      "devDependencies": {
+        "@chenglou/pretext": "0.0.6",
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1",
+      },
+      "peerDependencies": {
+        "@chenglou/pretext": ">=0.0.6",
+        "@tanstack/react-table": "^8.21.3",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+      },
+      "optionalPeers": [
+        "@chenglou/pretext",
+      ],
+    },
     "packages/federation": {
       "name": "@ghost-shell/federation",
       "version": "0.0.0",
@@ -123,6 +190,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@ghost-shell/formr-core": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
       },
       "peerDependencies": {
         "zod": "^3.24.0",
@@ -137,6 +205,7 @@
       "dependencies": {
         "@ghost-shell/formr-core": "workspace:*",
         "@ghost-shell/formr-from-schema": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
       },
       "devDependencies": {
         "@types/react": "^19.0.0",
@@ -218,6 +287,10 @@
         "zod": "^3.24.2",
       },
     },
+    "packages/schema-core": {
+      "name": "@ghost-shell/schema-core",
+      "version": "0.0.0",
+    },
     "packages/shell": {
       "name": "@ghost-shell/shell",
       "version": "0.0.0",
@@ -250,6 +323,13 @@
       "name": "@ghost-shell/state",
       "version": "0.0.0",
     },
+    "packages/table-from-schema": {
+      "name": "@ghost-shell/table-from-schema",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost-shell/schema-core": "workspace:*",
+      },
+    },
     "packages/theme": {
       "name": "@ghost-shell/theme",
       "version": "0.0.0",
@@ -264,6 +344,7 @@
         "@ghost-shell/formr-core": "workspace:*",
         "@ghost-shell/formr-from-schema": "workspace:*",
         "@ghost-shell/formr-react": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
         "@radix-ui/react-accordion": "1.2.12",
         "@radix-ui/react-alert-dialog": "1.1.15",
         "@radix-ui/react-avatar": "1.1.11",
@@ -575,6 +656,7 @@
         "@ghost-shell/formr-core": "workspace:*",
         "@ghost-shell/formr-from-schema": "workspace:*",
         "@ghost-shell/formr-react": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
         "@ghost-shell/ui": "workspace:*",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
@@ -662,6 +744,8 @@
 
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
 
+    "@chenglou/pretext": ["@chenglou/pretext@0.0.6", "", {}, "sha512-U10s4tFeyu3oVHfXuNWwZSKqHXefhaigpcBkGj60qQFRJ+yUoQ+ez3cGJelP7BWDAB58HCgjcTSmOcg+77afBQ=="],
+
     "@date-fns/tz": ["@date-fns/tz@1.4.1", "", {}, "sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA=="],
 
     "@emnapi/core": ["@emnapi/core@1.9.2", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.1", "tslib": "^2.4.0" } }, "sha512-UC+ZhH3XtczQYfOlu3lNEkdW/p4dsJ1r/bP7H8+rhao3TTTMO1ATq/4DdIi23XuGoFY+Cz0JmCbdVl0hz9jZcA=="],
@@ -742,6 +826,12 @@
 
     "@ghost-shell/contracts": ["@ghost-shell/contracts@workspace:packages/plugin-contracts"],
 
+    "@ghost-shell/data-table": ["@ghost-shell/data-table@workspace:packages/data-table"],
+
+    "@ghost-shell/entity-table": ["@ghost-shell/entity-table@workspace:packages/entity-table"],
+
+    "@ghost-shell/entity-table-demos": ["@ghost-shell/entity-table-demos@workspace:apps/entity-table-demos"],
+
     "@ghost-shell/federation": ["@ghost-shell/federation@workspace:packages/federation"],
 
     "@ghost-shell/formr-core": ["@ghost-shell/formr-core@workspace:packages/formr-core"],
@@ -768,11 +858,15 @@
 
     "@ghost-shell/router": ["@ghost-shell/router@workspace:packages/router"],
 
+    "@ghost-shell/schema-core": ["@ghost-shell/schema-core@workspace:packages/schema-core"],
+
     "@ghost-shell/shell": ["@ghost-shell/shell@workspace:packages/shell"],
 
     "@ghost-shell/shell-app": ["@ghost-shell/shell-app@workspace:apps/shell"],
 
     "@ghost-shell/state": ["@ghost-shell/state@workspace:packages/state"],
+
+    "@ghost-shell/table-from-schema": ["@ghost-shell/table-from-schema@workspace:packages/table-from-schema"],
 
     "@ghost-shell/theme": ["@ghost-shell/theme@workspace:packages/theme"],
 
@@ -1041,6 +1135,10 @@
     "@tailwindcss/oxide-win32-x64-msvc": ["@tailwindcss/oxide-win32-x64-msvc@4.2.2", "", { "os": "win32", "cpu": "x64" }, "sha512-1T/37VvI7WyH66b+vqHj/cLwnCxt7Qt3WFu5Q8hk65aOvlwAhs7rAp1VkulBJw/N4tMirXjVnylTR72uI0HGcA=="],
 
     "@tailwindcss/vite": ["@tailwindcss/vite@4.2.2", "", { "dependencies": { "@tailwindcss/node": "4.2.2", "@tailwindcss/oxide": "4.2.2", "tailwindcss": "4.2.2" }, "peerDependencies": { "vite": "^5.2.0 || ^6 || ^7 || ^8" } }, "sha512-mEiF5HO1QqCLXoNEfXVA1Tzo+cYsrqV7w9Juj2wdUFyW07JRenqMG225MvPwr3ZD9N1bFQj46X7r33iHxLUW0w=="],
+
+    "@tanstack/react-table": ["@tanstack/react-table@8.21.3", "", { "dependencies": { "@tanstack/table-core": "8.21.3" }, "peerDependencies": { "react": ">=16.8", "react-dom": ">=16.8" } }, "sha512-5nNMTSETP4ykGegmVkhjcS8tTLW6Vl4axfEGQN3v0zdHYbK4UfoqfPChclTrJ4EoK9QynqAu9oUf8VEmrpZ5Ww=="],
+
+    "@tanstack/table-core": ["@tanstack/table-core@8.21.3", "", {}, "sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 
@@ -1426,7 +1524,7 @@
 
     "schema-utils": ["schema-utils@4.3.3", "", { "dependencies": { "@types/json-schema": "^7.0.9", "ajv": "^8.9.0", "ajv-formats": "^2.1.1", "ajv-keywords": "^5.1.0" } }, "sha512-eflK8wEtyOE6+hsaRVPxvUKYCpRgzLqDTb8krvAsRIwOGlHoSgYLgBXoubGgLd2fT41/OUYdb48v4k4WWHQurA=="],
 
-    "semver": ["semver@7.6.3", "", { "bin": "bin/semver.js" }, "sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A=="],
+    "semver": ["semver@6.3.1", "", { "bin": "bin/semver.js" }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
 
     "shell-quote": ["shell-quote@1.8.3", "", {}, "sha512-ObmnIF4hXNg1BqhnHmgbDETF8dLPCggZWBjkQfhZpbszZnYur5DUljTcCHii5LC3J5E0yeO/1LIMyH+UvHQgyw=="],
 
@@ -1508,10 +1606,6 @@
 
     "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
-    "@babel/core/semver": ["semver@6.3.1", "", { "bin": "bin/semver.js" }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
-
-    "@babel/helper-compilation-targets/semver": ["semver@6.3.1", "", { "bin": "bin/semver.js" }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
-
     "@ghost-shell/backend-app/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost-shell/formr-react/@types/react": ["@types/react@19.2.14", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
@@ -1529,6 +1623,8 @@
     "@ghost-shell/typecheck-fixture/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost-shell/ui/zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
+
+    "@module-federation/bridge-react-webpack-plugin/semver": ["semver@7.6.3", "", { "bin": "bin/semver.js" }, "sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A=="],
 
     "@module-federation/cli/chalk": ["chalk@3.0.0", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-4D3B6Wf41KOYRFdszmDqMCGq5VV/uMAB273JILmO+3jAlh8X4qDtdtgCR3fxtbLEMzSx22QdhnDcJvu2u1fVwg=="],
 

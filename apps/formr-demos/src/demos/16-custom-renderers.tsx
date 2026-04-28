@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSchemaForm } from '@ghost-shell/formr-react';
-import type { SchemaFieldInfo } from '@ghost-shell/formr-from-schema';
+import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
 import type { FormApi } from '@ghost-shell/formr-core';
 import {
   Card, CardContent, CardHeader, CardTitle,

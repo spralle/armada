@@ -29,6 +29,9 @@
       "path": "./packages/formr-core"
     },
     {
+      "path": "./packages/schema-core"
+    },
+    {
       "path": "./packages/formr-from-schema"
     },
     {
@@ -51,6 +54,9 @@
     },
     {
       "path": "./packages/commands"
+    },
+    {
+      "path": "./packages/data-table"
     },
     {
       "path": "./packages/federation"
@@ -105,6 +111,12 @@
     },
     {
       "path": "./packages/shell"
+    },
+    {
+      "path": "./packages/table-from-schema"
+    },
+    {
+      "path": "./packages/entity-table"
     }
   ]
 }

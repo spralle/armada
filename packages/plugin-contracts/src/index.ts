@@ -120,6 +120,8 @@ export type {
   ViewService,
   ViewDescriptor,
   OpenViewOptions,
+  MenuService,
+  ResolvedMenuAction,
 } from "./ghost-api.js";
 
 export type {
