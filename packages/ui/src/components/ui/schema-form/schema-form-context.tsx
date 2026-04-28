@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react"
 import type { FormApi } from "@ghost-shell/formr-core"
-import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema"
+import type { SchemaFieldInfo } from "@ghost-shell/schema-core"
 import type { RendererRegistry } from "@ghost-shell/formr-react"
 import type { WidgetOverrides } from "./widget-overrides"
 

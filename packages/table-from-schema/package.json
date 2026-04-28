@@ -1,5 +1,5 @@
 {
-  "name": "@ghost-shell/formr-react",
+  "name": "@ghost-shell/table-from-schema",
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -14,24 +14,14 @@
     "./*": null
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "sideEffects": false,
-  "peerDependencies": {
-    "react": ">=18.0.0"
-  },
-  "dependencies": {
-    "@ghost-shell/formr-core": "workspace:*",
-    "@ghost-shell/formr-from-schema": "workspace:*",
-    "@ghost-shell/schema-core": "workspace:*"
-  },
   "scripts": {
-    "test": "bun test",
+    "build": "tsc -p tsconfig.json",
     "build:dist": "tsup"
   },
-  "devDependencies": {
-    "@types/react": "^19.0.0",
-    "react": "^19.0.0"
+  "dependencies": {
+    "@ghost-shell/schema-core": "workspace:*"
   }
 }

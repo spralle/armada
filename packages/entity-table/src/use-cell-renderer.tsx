@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { ColumnDef, CellContext } from "@tanstack/react-table";
 import type { CellRendererRegistry } from "./cell-registry.js";
-import type { EntityColumnMeta } from "./column-types.js";
+import type { EntityColumnMeta } from "./to-column-defs.js";
 import { defaultCellRegistry } from "./cell-registry.js";
 
 /**

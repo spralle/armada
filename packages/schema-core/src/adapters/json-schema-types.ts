@@ -1,4 +1,4 @@
-/** JSON Schema subset supported by formr */
+/** JSON Schema subset supported by schema-core */
 export interface JsonSchema {
   readonly type?: string | readonly string[];
   readonly properties?: Readonly<Record<string, JsonSchema>>;

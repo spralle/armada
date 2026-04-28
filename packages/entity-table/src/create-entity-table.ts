@@ -1,11 +1,11 @@
-import type { SortingState, VisibilityState } from "@tanstack/react-table";
-import { ingestSchema } from "@ghost-shell/formr-from-schema";
-import { compileColumns } from "./compile-columns.js";
-import type { CompileColumnsOptions, EntityColumnMeta } from "./column-types.js";
+import type { SortingState, VisibilityState } from '@tanstack/react-table';
+import { createTableConfig } from '@ghost-shell/table-from-schema';
+import type { CompileTableFieldsOptions, TableFieldDescriptor } from '@ghost-shell/table-from-schema';
+import { toColumnDefs } from './to-column-defs.js';
 import type {
   EntityTableResult,
   FilterableColumnInfo,
-} from "./entity-list-types.js";
+} from './entity-list-types.js';
 
 /**
  * Creates the full entity table configuration from a schema.
@@ -14,82 +14,33 @@ import type {
  */
 export function createEntityTable<TData>(
   schema: unknown,
-  options?: CompileColumnsOptions<TData>,
+  options?: CompileTableFieldsOptions,
 ): EntityTableResult<TData> {
-  const { fields, metadata } = ingestSchema(schema);
-  const columns = compileColumns<TData>(fields, options);
+  const config = createTableConfig(schema, options);
+  const columns = toColumnDefs<TData>(config.fields);
 
-  const defaultColumnVisibility = deriveVisibility(columns, options);
+  const defaultColumnVisibility = deriveVisibility(config.fields);
   const defaultSorting: SortingState = [];
-  const searchableFields = deriveSearchableFields(columns);
-  const filterableColumns = deriveFilterableColumns(columns);
 
   return {
     columns,
     defaultColumnVisibility,
     defaultSorting,
-    searchableFields,
-    filterableColumns,
-    metadata,
+    searchableFields: config.searchableFields as string[],
+    filterableColumns: config.filterableFields as FilterableColumnInfo[],
+    metadata: config.metadata,
   };
 }
 
-/** Build visibility state: hidden columns or those not in defaultVisible → false */
+/** Build visibility state: hidden fields → false */
 function deriveVisibility(
-  columns: { id?: string; meta?: unknown }[],
-  options?: CompileColumnsOptions<unknown>,
+  fields: readonly TableFieldDescriptor[],
 ): VisibilityState {
   const visibility: VisibilityState = {};
-  const defaultVisible = options?.defaultVisible
-    ? new Set(options.defaultVisible)
-    : undefined;
-
-  for (const col of columns) {
-    const id = col.id;
-    if (!id) continue;
-    const meta = col.meta as EntityColumnMeta | undefined;
-    if (meta?.pinned === false) {
-      // explicitly unpinned, not hidden
-    }
-    if (defaultVisible && !defaultVisible.has(id)) {
-      visibility[id] = false;
+  for (const field of fields) {
+    if (!field.visible) {
+      visibility[field.field] = false;
     }
   }
   return visibility;
-}
-
-/** String and enum fields are searchable via global filter */
-function deriveSearchableFields(
-  columns: { id?: string; meta?: unknown }[],
-): string[] {
-  const result: string[] = [];
-  for (const col of columns) {
-    if (!col.id) continue;
-    const meta = col.meta as EntityColumnMeta | undefined;
-    const ft = meta?.fieldType;
-    if (ft === "string" || ft === "enum") {
-      result.push(col.id);
-    }
-  }
-  return result;
-}
-
-/** Extract filterable column info from column meta */
-function deriveFilterableColumns(
-  columns: { id?: string; meta?: unknown }[],
-): FilterableColumnInfo[] {
-  const result: FilterableColumnInfo[] = [];
-  for (const col of columns) {
-    if (!col.id) continue;
-    const meta = col.meta as EntityColumnMeta | undefined;
-    if (!meta?.filterVariant) continue;
-    result.push({
-      id: col.id,
-      variant: meta.filterVariant,
-      options: meta.filterOptions,
-      min: meta.filterMin,
-      max: meta.filterMax,
-    });
-  }
-  return result;
 }

@@ -3,9 +3,10 @@
  *
  * Schema-driven entity table for the Ghost shell ecosystem.
  * Transforms Zod schemas into fully-configured TanStack Table instances
- * using a 3-stage pipeline: ingestSchema → compileColumns → createEntityTable.
+ * using a pipeline: schema → table-from-schema → toColumnDefs → TanStack.
  *
- * Built on top of @ghost-shell/data-table (headless engine layer).
+ * Built on top of @ghost-shell/data-table (headless engine layer)
+ * and @ghost-shell/table-from-schema (framework-agnostic field compilation).
  *
  * Features:
  * - Schema-to-column compilation with smart type inference
@@ -14,15 +15,22 @@
  * - Schema annotations via .meta({ table: {} })
  */
 
-export { compileColumns } from "./compile-columns.js";
-export { humanize } from "./humanize.js";
+// Re-exports from table-from-schema for convenience
+export { compileTableFields, createTableConfig, humanize } from '@ghost-shell/table-from-schema';
 export type {
+  TableFieldDescriptor,
+  TableConfig,
   FilterVariant,
-  EntityColumnMeta,
-  EntityColumnOverride,
-  CompileColumnsOptions,
-} from "./column-types.js";
+  FilterableFieldInfo,
+  TableFieldOverride,
+  CompileTableFieldsOptions,
+  CreateTableConfigOptions,
+} from '@ghost-shell/table-from-schema';
 
+// Bridge layer
+export { toColumnDefs, type EntityColumnMeta } from './to-column-defs.js';
+
+// Cell renderer system
 export { CellRendererRegistry, defaultCellRegistry } from "./cell-registry.js";
 export type { CellRendererFn } from "./cell-renderer-types.js";
 export { registerBuiltins } from "./renderers/index.js";
@@ -38,6 +46,7 @@ export {
   avatarRenderer,
 } from "./renderers/index.js";
 
+// Entity table pipeline
 export { createEntityTable } from "./create-entity-table.js";
 export { EntityList } from "./entity-list.js";
 export { RowActionsCell } from "./row-actions-cell.js";
@@ -46,7 +55,7 @@ export type { MenuOperationItem } from "./use-menu-operations.js";
 export { useRenderedColumns } from "./use-cell-renderer.js";
 export type {
   EntityTableResult,
-  FilterableColumnInfo,
+  FilterableColumnInfo as FilterableColumnInfoLegacy,
   EntityOperation,
   OperationContext,
   EntityListProps,

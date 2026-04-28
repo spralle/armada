@@ -8,11 +8,11 @@ import { defaultCellRegistry } from "./cell-registry.js";
 import { RowActionsCell } from "./row-actions-cell.js";
 import { useMenuOperations } from "./use-menu-operations.js";
 import type { EntityListProps } from "./entity-list-types.js";
-import type { CompileColumnsOptions } from "./column-types.js";
+import type { CompileTableFieldsOptions } from "@ghost-shell/table-from-schema";
 
 /**
  * Opinionated, schema-driven entity list component.
- * Combines the full pipeline: ingestSchema → compileColumns → useGhostTable → GhostDataTable.
+ * Combines the full pipeline: ingestSchema → compileTableFields → toColumnDefs → useGhostTable → GhostDataTable.
  */
 export function EntityList<TData>({
   entityType,
@@ -43,8 +43,8 @@ export function EntityList<TData>({
       include,
       exclude,
       defaultVisible,
-      overrides: overrides as CompileColumnsOptions<TData>["overrides"],
-    });
+      overrides: overrides as CompileTableFieldsOptions["overrides"],
+    } as CompileTableFieldsOptions);
   }, [schema, include, exclude, defaultVisible, overrides, columnOverride]);
 
   // 2. Resolve columns

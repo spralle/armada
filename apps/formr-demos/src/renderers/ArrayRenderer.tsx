@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { LayoutNode, SchemaFieldInfo } from '@ghost-shell/formr-from-schema';
+import type { LayoutNode } from '@ghost-shell/formr-from-schema';
+import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
 import type { FormApi } from '@ghost-shell/formr-core';
 import {
   Button,

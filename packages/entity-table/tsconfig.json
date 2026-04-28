@@ -20,6 +20,6 @@
   "exclude": ["src/**/__tests__", "src/**/*.test.ts", "src/**/*.spec.ts"],
   "references": [
     { "path": "../data-table" },
-    { "path": "../formr-from-schema" }
+    { "path": "../table-from-schema" }
   ]
 }

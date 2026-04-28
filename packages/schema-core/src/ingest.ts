@@ -3,8 +3,8 @@ import { isStandardSchema, isZodSchema, isZodV4Schema } from './detect.js';
 import { extractFromZod } from './adapters/zod-extractor.js';
 import { extractFromZodV4 } from './adapters/zod4-extractor.js';
 import { extractFromJsonSchema } from './adapters/json-schema-extractor.js';
-import { isJsonSchema } from './adapters/json-schema-validator.js';
-import { FromSchemaError } from './errors.js';
+import { isJsonSchema } from './adapters/json-schema-detect.js';
+import { SchemaError } from './errors.js';
 import type { JsonSchema } from './adapters/json-schema-types.js';
 import { findExtractor, createValidationOnlyResult } from './extractor-registry.js';
 
@@ -26,5 +26,5 @@ export function ingestSchema(schema: unknown): SchemaIngestionResult {
     return extractFromJsonSchema(schema as JsonSchema);
   }
 
-  throw new FromSchemaError('FORMR_SCHEMA_UNSUPPORTED', 'Schema does not conform to Standard Schema v1 or JSON Schema');
+  throw new SchemaError('SCHEMA_UNSUPPORTED', 'Schema does not conform to Standard Schema v1 or JSON Schema');
 }

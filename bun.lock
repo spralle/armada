@@ -24,6 +24,7 @@
         "@ghost-shell/formr-core": "workspace:*",
         "@ghost-shell/formr-from-schema": "workspace:*",
         "@ghost-shell/formr-react": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
         "@ghost-shell/ui": "workspace:*",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
@@ -118,7 +119,7 @@
       "dependencies": {
         "@ghost-shell/contracts": "workspace:*",
         "@ghost-shell/data-table": "workspace:*",
-        "@ghost-shell/formr-from-schema": "workspace:*",
+        "@ghost-shell/table-from-schema": "workspace:*",
         "@ghost-shell/ui": "workspace:*",
         "lucide-react": "^0.475.0",
       },
@@ -159,6 +160,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@ghost-shell/formr-core": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
       },
       "peerDependencies": {
         "zod": "^3.24.0",
@@ -173,6 +175,7 @@
       "dependencies": {
         "@ghost-shell/formr-core": "workspace:*",
         "@ghost-shell/formr-from-schema": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
       },
       "devDependencies": {
         "@types/react": "^19.0.0",
@@ -254,6 +257,10 @@
         "zod": "^3.24.2",
       },
     },
+    "packages/schema-core": {
+      "name": "@ghost-shell/schema-core",
+      "version": "0.0.0",
+    },
     "packages/shell": {
       "name": "@ghost-shell/shell",
       "version": "0.0.0",
@@ -286,6 +293,13 @@
       "name": "@ghost-shell/state",
       "version": "0.0.0",
     },
+    "packages/table-from-schema": {
+      "name": "@ghost-shell/table-from-schema",
+      "version": "0.0.0",
+      "dependencies": {
+        "@ghost-shell/schema-core": "workspace:*",
+      },
+    },
     "packages/theme": {
       "name": "@ghost-shell/theme",
       "version": "0.0.0",
@@ -300,6 +314,7 @@
         "@ghost-shell/formr-core": "workspace:*",
         "@ghost-shell/formr-from-schema": "workspace:*",
         "@ghost-shell/formr-react": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
         "@radix-ui/react-accordion": "1.2.12",
         "@radix-ui/react-alert-dialog": "1.1.15",
         "@radix-ui/react-avatar": "1.1.11",
@@ -611,6 +626,7 @@
         "@ghost-shell/formr-core": "workspace:*",
         "@ghost-shell/formr-from-schema": "workspace:*",
         "@ghost-shell/formr-react": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
         "@ghost-shell/ui": "workspace:*",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
@@ -808,11 +824,15 @@
 
     "@ghost-shell/router": ["@ghost-shell/router@workspace:packages/router"],
 
+    "@ghost-shell/schema-core": ["@ghost-shell/schema-core@workspace:packages/schema-core"],
+
     "@ghost-shell/shell": ["@ghost-shell/shell@workspace:packages/shell"],
 
     "@ghost-shell/shell-app": ["@ghost-shell/shell-app@workspace:apps/shell"],
 
     "@ghost-shell/state": ["@ghost-shell/state@workspace:packages/state"],
+
+    "@ghost-shell/table-from-schema": ["@ghost-shell/table-from-schema@workspace:packages/table-from-schema"],
 
     "@ghost-shell/theme": ["@ghost-shell/theme@workspace:packages/theme"],
 

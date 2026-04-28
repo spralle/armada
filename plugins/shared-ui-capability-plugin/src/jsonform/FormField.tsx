@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import type { FormApi } from '@ghost-shell/formr-core';
-import type { SchemaFieldInfo } from '@ghost-shell/formr-from-schema';
+import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
 import {
   Input,
   Switch,

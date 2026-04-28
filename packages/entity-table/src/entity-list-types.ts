@@ -3,12 +3,8 @@ import type {
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
-import type { SchemaMetadata } from "@ghost-shell/formr-from-schema";
-import type {
-  CompileColumnsOptions,
-  EntityColumnOverride,
-  FilterVariant,
-} from "./column-types.js";
+import type { SchemaMetadata } from "@ghost-shell/table-from-schema";
+import type { FilterVariant } from "@ghost-shell/table-from-schema";
 import type { CellRendererRegistry } from "./cell-registry.js";
 import type { ReactNode } from "react";
 import type { MenuService } from "@ghost-shell/contracts";
@@ -65,7 +61,7 @@ export interface EntityListProps<TData> {
   /** Loading state */
   loading?: boolean;
   /** Per-column overrides by field path */
-  overrides?: Partial<Record<string, EntityColumnOverride>>;
+  overrides?: Partial<Record<string, import("@ghost-shell/table-from-schema").TableFieldOverride>>;
   /** Only include these fields */
   include?: string[];
   /** Exclude these fields */
