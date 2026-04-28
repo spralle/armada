@@ -15,6 +15,7 @@ node_modules/
 
 # Local worktrees
 worktrees/
+trees/
 
 # Local OpenCode runtime files
 .opencode/node_modules/
@@ -26,3 +27,11 @@ worktrees/
 trees\fix-master-build/
 # bd worktree
 trees\audit-remediation/
+# bd worktree
+trees\scaffold-plugin-mf2/
+# bd worktree
+trees\ghost-motion-plugin/
+# bd worktree
+trees\ghost-motion-phase3-4/
+# bd worktree
+trees\fix-surface-mount/

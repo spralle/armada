@@ -32,7 +32,7 @@ export function SchemaForm({
   registry,
   overrides,
 }: SchemaFormProps) {
-  const { form, fields, layout } = useSchemaForm(schema, {
+  const { form, fields, layout, fieldStates } = useSchemaForm(schema, {
     ...options,
     initialData: initialData as never,
   })
@@ -51,7 +51,7 @@ export function SchemaForm({
   )
 
   return (
-    <SchemaFormProvider value={{ form, fields, overrides, registry: resolvedRegistry }}>
+    <SchemaFormProvider value={{ form, fields, overrides, registry: resolvedRegistry, fieldStates }}>
       <form onSubmit={handleSubmit} className={cn("flex flex-col gap-6", className)} noValidate>
         {(layout.children?.map((node) => renderLayoutTree(node, resolvedRegistry)) ?? []) as React.ReactNode}
         {children ?? (

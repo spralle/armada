@@ -1,6 +1,6 @@
 export { SchemaForm } from "./schema-form"
 export type { SchemaFormProps } from "./schema-form"
-export { useSchemaFormContext } from "./schema-form-context"
+export { useSchemaFormContext, useFieldState } from "./schema-form-context"
 export type { SchemaFormContextValue } from "./schema-form-context"
 export { createGhostRegistry } from "./ghost-renderers"
 export type { WidgetProps, TypedWidgetProps, FieldAriaAttributes } from "./ghost-widgets"

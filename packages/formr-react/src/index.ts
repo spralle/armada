@@ -14,6 +14,12 @@ export {
 } from './a11y.js';
 export { useForm, type UseFormOptions } from './use-form.js';
 export { useSchemaForm, type UseSchemaFormOptions, type UseSchemaFormResult } from './use-schema-form.js';
+export {
+  type ResolvedFieldState,
+  DEFAULT_FIELD_STATE,
+  resolveFieldStates,
+  pruneHiddenFields,
+} from './resolve-field-state.js';
 export { useFormSelector } from './use-form-selector.js';
 export { useField } from './use-field.js';
 

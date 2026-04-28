@@ -18,7 +18,7 @@ import {
 } from "../field"
 import { Button } from "../button"
 
-import { useSchemaFormContext } from "./schema-form-context"
+import { useSchemaFormContext, useFieldState } from "./schema-form-context"
 import { mapFieldToWidget } from "./field-mapping"
 import { resolveWidget } from "./widget-overrides"
 
@@ -33,6 +33,8 @@ function capitalize(s: string): string {
 
 function GhostFieldRenderer({ node }: LayoutRendererProps): ReactNode {
   const { form, fields, overrides } = useSchemaFormContext()
+  // Hook must be called before early returns to satisfy React rules of hooks
+  const resolvedState = useFieldState(node.path ?? "")
   const fieldInfo = fields.find((f) => f.path === node.path)
   if (!fieldInfo || !node.path) return null
 
@@ -40,6 +42,9 @@ function GhostFieldRenderer({ node }: LayoutRendererProps): ReactNode {
   const mapping = mapFieldToWidget(fieldInfo)
   const Widget = resolveWidget(node.path, fieldInfo.type, mapping.widget, overrides)
   if (!Widget) return null
+
+  const isReadOnly = resolvedState.readOnly || !!fieldInfo.metadata?.readOnly
+  const isDisabled = resolvedState.disabled
 
   const issues = fieldApi.issues()
   const errorIssues = issues.filter((i) => i.severity === "error")
@@ -63,7 +68,14 @@ function GhostFieldRenderer({ node }: LayoutRendererProps): ReactNode {
   return (
     <Field data-invalid={hasErrors || undefined}>
       <FieldLabel htmlFor={id}>{title}</FieldLabel>
-      <Widget field={fieldApi} fieldInfo={fieldInfo} mapping={mapping} aria={aria} />
+      <Widget
+        field={fieldApi}
+        fieldInfo={fieldInfo}
+        mapping={mapping}
+        aria={aria}
+        readOnly={isReadOnly}
+        disabled={isDisabled}
+      />
       {hasDescription && (
         <FieldDescription id={descriptionId(node.path)}>
           {fieldInfo.metadata?.description}
