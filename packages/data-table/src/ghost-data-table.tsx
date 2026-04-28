@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import type React from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { flexRender } from "@tanstack/react-table";
 import {
   Table,
@@ -20,7 +21,7 @@ import { GhostCardList } from "./card-view/ghost-card-list.js";
 import type { ColumnPriority } from "./responsive/budget-algorithm.js";
 import type { GhostDataTableProps } from "./types.js";
 
-export function GhostDataTable<TData>({
+function GhostDataTableImpl<TData>({
   table,
   globalFilter,
   onGlobalFilterChange,
@@ -310,3 +311,9 @@ export function GhostDataTable<TData>({
     </div>
   );
 }
+
+// Memoize to prevent parent re-renders from cascading into the table.
+// Cast preserves the generic type parameter that memo() would erase.
+export const GhostDataTable = memo(GhostDataTableImpl) as <TData>(
+  props: GhostDataTableProps<TData>,
+) => React.ReactElement | null
