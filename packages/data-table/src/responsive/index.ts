@@ -4,6 +4,8 @@ export {
   type BudgetColumn,
   type BudgetResult,
   type BudgetOptions,
+  type BudgetColumnDebug,
+  type BudgetDebugInfo,
   computeColumnBudget,
 } from "./budget-algorithm.js"
 export {

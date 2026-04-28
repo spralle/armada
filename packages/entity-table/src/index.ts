@@ -48,7 +48,7 @@ export {
 
 // Responsive — pretext measurer (optional, tree-shakeable)
 export { createPretextMeasurer } from "./responsive/index.js";
-export type { ResponsiveConfig } from "@ghost-shell/data-table";
+export type { ResponsiveConfig, BudgetDebugInfo, BudgetColumnDebug } from "@ghost-shell/data-table";
 
 // Entity table pipeline
 export { createEntityTable } from "./create-entity-table.js";

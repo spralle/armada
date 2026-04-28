@@ -23,5 +23,6 @@ export type { ColumnFilterProps } from "./column-filters/index.js";
 export { ExportButton } from "./export-button.js";
 export { exportTableToCsv, type ExportCsvOptions } from "./export-csv.js";
 export { type ColumnMeasurer, createFallbackMeasurer } from "./responsive/index.js";
+export type { BudgetDebugInfo, BudgetColumnDebug } from "./responsive/index.js";
 export { GhostCardList, GhostCardItem } from "./card-view/index.js";
 export type { GhostCardListProps, GhostCardItemProps } from "./card-view/index.js";

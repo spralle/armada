@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { z } from 'zod';
 import { EntityList, createPretextMeasurer } from '@ghost-shell/entity-table';
-import type { ResponsiveConfig } from '@ghost-shell/entity-table';
+import type { ResponsiveConfig, BudgetDebugInfo } from '@ghost-shell/entity-table';
+import { cn } from '@ghost-shell/ui';
 import { DemoShell } from '../components/DemoShell';
 
 const EmployeeSchema = z.object({
@@ -77,26 +78,6 @@ function generateEmployees(count: number): Employee[] {
 
 const employees = generateEmployees(35);
 
-const responsiveConfig: ResponsiveConfig = {
-  enabled: true,
-  measurer: createPretextMeasurer('14px Inter, sans-serif'),
-};
-
-const schemaSource = `z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string().email(),
-  role: z.enum([...7 roles]),
-  department: z.string(),
-  location: z.string(),
-  salary: z.number(),
-  startDate: z.coerce.date(),
-  active: z.boolean(),
-  phone: z.string(),
-  bio: z.string(),
-  notes: z.string(),
-})`;
-
 const configSource = `<EntityList
   schema={EmployeeSchema}
   data={employees}
@@ -114,20 +95,6 @@ const configSource = `<EntityList
   }}
 />`;
 
-const columnPriorities = [
-  { name: 'Name', priority: 'essential' as const },
-  { name: 'Email', priority: 'default' as const },
-  { name: 'Role', priority: 'default' as const },
-  { name: 'Department', priority: 'default' as const },
-  { name: 'Location', priority: 'default' as const },
-  { name: 'Salary', priority: 'default' as const },
-  { name: 'Start Date', priority: 'default' as const },
-  { name: 'Active', priority: 'default' as const },
-  { name: 'Phone', priority: 'optional' as const },
-  { name: 'Bio', priority: 'optional' as const },
-  { name: 'Notes', priority: 'optional' as const },
-];
-
 const priorityColor: Record<string, string> = {
   essential: 'oklch(0.72 0.15 155)',
   default: 'oklch(0.75 0 0)',
@@ -140,57 +107,75 @@ const priorityIcon: Record<string, string> = {
   optional: '○',
 };
 
-function ResponsiveStatus({ containerRef }: { containerRef: React.RefObject<HTMLDivElement | null> }) {
-  const [width, setWidth] = useState(0);
+function formatReason(reason: string): string {
+  switch (reason) {
+    case 'essential-always': return 'Essential — always shown'
+    case 'fits-budget': return 'Fits within remaining budget'
+    case 'exceeds-budget': return 'Not enough space'
+    case 'card-view-active': return 'Card view active'
+    default: return reason
+  }
+}
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(entries => {
-      const entry = entries[0];
-      if (entry) setWidth(Math.round(entry.contentRect.width));
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [containerRef]);
+function ResponsiveDebugPanel({ debug }: { debug: BudgetDebugInfo | null }) {
+  if (!debug) return <div className="text-muted-foreground text-sm">Waiting for measurement...</div>
 
   return (
     <div className="rounded-lg border bg-card p-4 text-sm space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground">Container width:</span>
-        <span className="font-mono font-bold">{width}px</span>
+      {/* Summary bar */}
+      <div className="flex items-center gap-4 font-mono text-xs">
+        <span>Container: <strong>{debug.containerWidth}px</strong></span>
+        <span>Used: <strong>{Math.round(debug.totalBudgetUsed)}px</strong></span>
+        <span>Remaining: <strong>{Math.round(debug.remainingBudget)}px</strong></span>
+        <span>Mode: <strong>{debug.shouldUseCardView ? '📱 Card' : '📊 Table'}</strong></span>
       </div>
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <span style={{ color: priorityColor.essential }}>★</span> Essential — always visible
-        </span>
-        <span className="flex items-center gap-1">
-          <span>●</span> Default — visible when space allows
-        </span>
-        <span className="flex items-center gap-1">
-          <span style={{ color: priorityColor.optional }}>○</span> Optional — first to hide
-        </span>
+
+      {/* Budget bar visualization */}
+      <div className="h-3 rounded-full bg-muted overflow-hidden flex">
+        {debug.columns
+          .filter(c => c.visible)
+          .map(col => (
+            <div
+              key={col.id}
+              style={{
+                width: `${(col.measuredWidth / debug.containerWidth) * 100}%`,
+                backgroundColor: priorityColor[col.priority],
+              }}
+              className="h-full border-r border-background"
+              title={`${col.id}: ${Math.round(col.measuredWidth)}px`}
+            />
+          ))}
       </div>
-      <div className="flex flex-wrap gap-2">
-        {columnPriorities.map(col => (
-          <span
-            key={col.name}
-            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs"
-            style={{
-              color: priorityColor[col.priority],
-              backgroundColor: `color-mix(in oklch, ${priorityColor[col.priority]} 10%, transparent)`,
-            }}
-          >
-            <span>{priorityIcon[col.priority]}</span>
-            {col.name}
-          </span>
-        ))}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        ↔ Drag the right edge of the container to resize. Columns auto-hide based on priority and measured content width.
-      </p>
+
+      {/* Column detail table */}
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-muted-foreground border-b">
+            <th className="text-left py-1 pr-4">Column</th>
+            <th className="text-left py-1 pr-4">Priority</th>
+            <th className="text-right py-1 pr-4">Measured</th>
+            <th className="text-center py-1 pr-4">Visible</th>
+            <th className="text-left py-1">Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          {debug.columns.map(col => (
+            <tr key={col.id} className={cn("border-b border-border/50", !col.visible && "opacity-40")}>
+              <td className="py-1 pr-4 font-medium">{col.id}</td>
+              <td className="py-1 pr-4">
+                <span style={{ color: priorityColor[col.priority] }}>
+                  {priorityIcon[col.priority]} {col.priority}
+                </span>
+              </td>
+              <td className="py-1 pr-4 text-right font-mono">{Math.round(col.measuredWidth)}px</td>
+              <td className="py-1 pr-4 text-center">{col.visible ? '✓' : '✗'}</td>
+              <td className="py-1 text-muted-foreground">{formatReason(col.reason)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-  );
+  )
 }
 
 function ResizableContainer({ children, containerRef }: { children: React.ReactNode; containerRef: React.RefObject<HTMLDivElement | null> }) {
@@ -207,6 +192,14 @@ function ResizableContainer({ children, containerRef }: { children: React.ReactN
 
 export function ResponsiveDemo() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [debugInfo, setDebugInfo] = useState<BudgetDebugInfo | null>(null);
+
+  const responsiveWithRef: ResponsiveConfig = {
+    enabled: true,
+    measurer: createPretextMeasurer('14px Inter, sans-serif'),
+    containerRef,
+    onBudgetChange: setDebugInfo,
+  };
 
   return (
     <DemoShell
@@ -229,13 +222,13 @@ export function ResponsiveDemo() {
             bio: { priority: 'optional' },
             notes: { priority: 'optional' },
           }}
-          responsive={responsiveConfig}
+          responsive={responsiveWithRef}
           exclude={['id']}
           pageSizeOptions={[10, 25]}
           getRowId={(row) => row.id}
         />
       </ResizableContainer>
-      <ResponsiveStatus containerRef={containerRef} />
+      <ResponsiveDebugPanel debug={debugInfo} />
     </DemoShell>
   );
 }

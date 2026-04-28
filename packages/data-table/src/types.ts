@@ -8,6 +8,7 @@ import type {
   VisibilityState,
 } from "@tanstack/react-table";
 import type { ColumnMeasurer } from "./responsive/column-measurer.js";
+import type { BudgetDebugInfo } from "./responsive/budget-algorithm.js";
 
 export interface ResponsiveConfig {
   /** Enable responsive column hiding. Default: false */
@@ -18,6 +19,10 @@ export interface ResponsiveConfig {
   font?: string;
   /** Container width below which card view is forced. Default: 480 */
   cardViewThreshold?: number;
+  /** External container ref to observe. If not provided, observes an internal wrapper. */
+  containerRef?: React.RefObject<HTMLDivElement | null>;
+  /** Callback with debug info on every budget recalculation */
+  onBudgetChange?: (debug: BudgetDebugInfo) => void;
 }
 
 export interface GhostTableFeatures {

@@ -8,11 +8,31 @@ export interface BudgetColumn {
   minWidth?: number
 }
 
+export interface BudgetColumnDebug {
+  id: string
+  priority: ColumnPriority
+  measuredWidth: number
+  visible: boolean
+  /** Why this column is visible or hidden */
+  reason: 'essential-always' | 'fits-budget' | 'exceeds-budget' | 'card-view-active'
+}
+
+export interface BudgetDebugInfo {
+  containerWidth: number
+  shouldUseCardView: boolean
+  totalBudgetUsed: number
+  totalBudgetAvailable: number
+  remainingBudget: number
+  columns: BudgetColumnDebug[]
+}
+
 export interface BudgetResult {
   /** Column visibility map: { columnId: true/false } */
   visibility: Record<string, boolean>
   /** True when table should switch to card view */
   shouldUseCardView: boolean
+  /** Debug info for development/tuning. Always populated. */
+  debug: BudgetDebugInfo
 }
 
 export interface BudgetOptions {
@@ -43,31 +63,66 @@ export function computeColumnBudget(options: BudgetOptions): BudgetResult {
   const allVisible = buildVisibilityMap(columns, true)
 
   if (containerWidth < cardViewThreshold) {
-    return { visibility: allVisible, shouldUseCardView: true }
+    return {
+      visibility: allVisible,
+      shouldUseCardView: true,
+      debug: buildDebug(columns, containerWidth, true, 'card-view-active'),
+    }
   }
 
   const { essentials, defaults, optionals } = groupByPriority(columns)
 
   const essentialCost = sumWidths(essentials, columnGap)
   if (essentialCost > containerWidth) {
-    return { visibility: allVisible, shouldUseCardView: true }
+    return {
+      visibility: allVisible,
+      shouldUseCardView: true,
+      debug: buildDebug(columns, containerWidth, true, 'card-view-active'),
+    }
   }
 
   const visibility = buildVisibilityMap(columns, false)
+  const reasons = new Map<string, BudgetColumnDebug['reason']>()
+
   for (const col of essentials) {
     visibility[col.id] = true
+    reasons.set(col.id, 'essential-always')
   }
 
   let remaining = containerWidth - essentialCost
-  remaining = fillBudget(defaults, remaining, columnGap, visibility)
-  fillBudget(optionals, remaining, columnGap, visibility)
+  remaining = fillBudgetTracked(defaults, remaining, columnGap, visibility, reasons)
+  remaining = fillBudgetTracked(optionals, remaining, columnGap, visibility, reasons)
 
   const visibleCount = Object.values(visibility).filter(Boolean).length
   if (visibleCount <= MIN_VISIBLE_COLUMNS) {
-    return { visibility: allVisible, shouldUseCardView: true }
+    return {
+      visibility: allVisible,
+      shouldUseCardView: true,
+      debug: buildDebug(columns, containerWidth, true, 'card-view-active'),
+    }
   }
 
-  return { visibility, shouldUseCardView: false }
+  const budgetUsed = containerWidth - remaining
+  const debugColumns: BudgetColumnDebug[] = columns.map(col => ({
+    id: col.id,
+    priority: col.priority,
+    measuredWidth: col.measuredWidth,
+    visible: visibility[col.id],
+    reason: reasons.get(col.id) ?? 'exceeds-budget',
+  }))
+
+  return {
+    visibility,
+    shouldUseCardView: false,
+    debug: {
+      containerWidth,
+      shouldUseCardView: false,
+      totalBudgetUsed: budgetUsed,
+      totalBudgetAvailable: containerWidth,
+      remainingBudget: remaining,
+      columns: debugColumns,
+    },
+  }
 }
 
 function groupByPriority(columns: BudgetColumn[]) {
@@ -108,6 +163,54 @@ function fillBudget(
   }
 
   return remaining
+}
+
+/** Like fillBudget but also tracks reasons for debug output. */
+function fillBudgetTracked(
+  columns: BudgetColumn[],
+  budget: number,
+  gap: number,
+  visibility: Record<string, boolean>,
+  reasons: Map<string, BudgetColumnDebug['reason']>,
+): number {
+  const sorted = [...columns].sort((a, b) => a.measuredWidth - b.measuredWidth)
+  let remaining = budget
+
+  for (const col of sorted) {
+    const cost = col.measuredWidth + gap
+    if (cost <= remaining) {
+      visibility[col.id] = true
+      reasons.set(col.id, 'fits-budget')
+      remaining -= cost
+    } else {
+      reasons.set(col.id, 'exceeds-budget')
+    }
+  }
+
+  return remaining
+}
+
+function buildDebug(
+  columns: BudgetColumn[],
+  containerWidth: number,
+  shouldUseCardView: boolean,
+  reason: BudgetColumnDebug['reason'],
+): BudgetDebugInfo {
+  const totalUsed = sumWidths(columns, DEFAULT_COLUMN_GAP)
+  return {
+    containerWidth,
+    shouldUseCardView,
+    totalBudgetUsed: totalUsed,
+    totalBudgetAvailable: containerWidth,
+    remainingBudget: containerWidth - totalUsed,
+    columns: columns.map(col => ({
+      id: col.id,
+      priority: col.priority,
+      measuredWidth: col.measuredWidth,
+      visible: true,
+      reason,
+    })),
+  }
 }
 
 function buildVisibilityMap(columns: BudgetColumn[], value: boolean): Record<string, boolean> {

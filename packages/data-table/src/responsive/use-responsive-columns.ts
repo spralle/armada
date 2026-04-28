@@ -1,6 +1,6 @@
-import { useRef, useState, useLayoutEffect, useCallback, useMemo } from "react"
+import { useRef, useState, useLayoutEffect, useCallback, useMemo, useEffect } from "react"
 import type { ColumnMeasurer } from "./column-measurer.js"
-import type { ColumnPriority } from "./budget-algorithm.js"
+import type { ColumnPriority, BudgetDebugInfo } from "./budget-algorithm.js"
 import { createFallbackMeasurer } from "./column-measurer.js"
 import { computeColumnBudget, type BudgetColumn } from "./budget-algorithm.js"
 
@@ -30,6 +30,10 @@ export interface UseResponsiveColumnsOptions<TData> {
   cardViewThreshold?: number
   /** User's manually toggled column visibility (takes precedence over budget) */
   userVisibility?: Record<string, boolean>
+  /** External container ref to observe instead of creating a new one */
+  containerRef?: React.RefObject<HTMLDivElement | null>
+  /** Callback with debug info on every budget recalculation */
+  onBudgetChange?: (debug: BudgetDebugInfo) => void
 }
 
 export interface UseResponsiveColumnsResult {
@@ -41,6 +45,8 @@ export interface UseResponsiveColumnsResult {
   shouldUseCardView: boolean
   /** Current container width */
   containerWidth: number
+  /** Debug info for development tooling */
+  debug: BudgetDebugInfo | null
 }
 
 /**
@@ -59,9 +65,12 @@ export function useResponsiveColumns<TData>(
     enabled = true,
     cardViewThreshold,
     userVisibility,
+    containerRef: externalRef,
+    onBudgetChange,
   } = options
 
-  const containerRef = useRef<HTMLDivElement>(null)
+  const internalRef = useRef<HTMLDivElement>(null)
+  const containerRef = externalRef ?? internalRef
   const [containerWidth, setContainerWidth] = useState(0)
   const rafRef = useRef(0)
 
@@ -104,10 +113,17 @@ export function useResponsiveColumns<TData>(
 
   const budgetResult = useMemo(() => {
     if (!enabled || containerWidth === 0) {
-      return { visibility: {} as Record<string, boolean>, shouldUseCardView: false }
+      return { visibility: {} as Record<string, boolean>, shouldUseCardView: false, debug: null }
     }
-    return computeColumnBudget({ columns: measuredColumns, containerWidth, cardViewThreshold })
+    const result = computeColumnBudget({ columns: measuredColumns, containerWidth, cardViewThreshold })
+    return { visibility: result.visibility, shouldUseCardView: result.shouldUseCardView, debug: result.debug }
   }, [enabled, containerWidth, measuredColumns, cardViewThreshold])
+
+  useEffect(() => {
+    if (budgetResult.debug && onBudgetChange) {
+      onBudgetChange(budgetResult.debug)
+    }
+  }, [budgetResult.debug, onBudgetChange])
 
   const columnVisibility = useMemo(() => {
     if (!enabled) return {}
@@ -119,6 +135,7 @@ export function useResponsiveColumns<TData>(
     columnVisibility,
     shouldUseCardView: enabled ? budgetResult.shouldUseCardView : false,
     containerWidth,
+    debug: budgetResult.debug,
   }
 }
 

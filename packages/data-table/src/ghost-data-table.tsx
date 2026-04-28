@@ -63,6 +63,8 @@ export function GhostDataTable<TData>({
     enabled: responsive?.enabled ?? false,
     cardViewThreshold: responsive?.cardViewThreshold,
     userVisibility: table.getState().columnVisibility,
+    containerRef: responsive?.containerRef,
+    onBudgetChange: responsive?.onBudgetChange,
   });
 
   const prevWidthRef = useRef<number>(0);
