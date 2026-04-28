@@ -154,10 +154,14 @@
         "@types/react-dom": "^18.3.1",
       },
       "peerDependencies": {
+        "@chenglou/pretext": ">=0.0.6",
         "@tanstack/react-table": "^8.21.3",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
       },
+      "optionalPeers": [
+        "@chenglou/pretext",
+      ],
     },
     "packages/federation": {
       "name": "@ghost-shell/federation",

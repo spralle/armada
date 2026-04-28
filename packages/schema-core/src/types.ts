@@ -50,14 +50,8 @@ export interface SchemaFieldMetadata {
   readonly tuple?: boolean;
   readonly const?: unknown;
   readonly variants?: readonly unknown[];
-  // Renderer hints (from x-formr in JSON Schema, formr in Zod)
-  readonly widget?: string;
-  readonly options?: readonly unknown[];
-  readonly label?: string;
-  readonly placeholder?: string;
-  readonly extra?: Readonly<Record<string, unknown>>;
-  // Allow additional keys from checks/extractors
-  readonly [key: string]: unknown;
+  // Extension data from x-* keys (e.g., x-formr → extensions.formr)
+  readonly extensions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 }
 
 // Extracted field info from schema ingestion

@@ -9,7 +9,8 @@ export interface JsonSchema {
   readonly description?: string;
   readonly title?: string;
   readonly default?: unknown;
-  readonly 'x-formr'?: Readonly<Record<string, unknown>>;
+  // Arbitrary x-* extension keys
+  readonly [key: `x-${string}`]: Readonly<Record<string, unknown>> | undefined;
   // Conditional schemas
   readonly if?: JsonSchema;
   readonly then?: JsonSchema;
