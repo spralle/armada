@@ -50,6 +50,7 @@ function createInMemoryConfigService(): ConfigurationService {
       return store.get(key) as T | undefined;
     },
     set(key: string, value: unknown): void {
+      // Note: layer parameter ignored in in-memory fallback — single-layer store
       store.set(key, value);
       const keyListeners = listeners.get(key);
       if (keyListeners) {

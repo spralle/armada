@@ -237,8 +237,12 @@ function SettingsEditorForm({
 
   const form = useForm({
     schema: processedSchema,
+    // Cast: useForm<TData> requires a static TData type but schema is dynamic;
+    // the runtime value is used regardless of the compile-time assertion.
     initialData: initialData as unknown as undefined,
     validators: prepared.validators,
+    // Cast: bridge governance rules → formr-core ProductionRule[] at adapter boundary.
+    // Shapes are structurally compatible; bridge intentionally produces this shape.
     arbiterRules: governanceRules as unknown as readonly ProductionRule[],
   });
 
