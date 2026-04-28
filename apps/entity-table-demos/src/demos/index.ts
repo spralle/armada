@@ -11,6 +11,7 @@ import { VesselFleetDemo } from './09-vessel-fleet';
 import { AsyncServerDemo } from './10-async-server';
 import { EnterpriseFeaturesDemo } from './11-enterprise-features';
 import { ResponsiveDemo } from './12-responsive';
+import { ServerSideProDemo } from './13-server-side-pro';
 
 export interface DemoRegistration {
   readonly id: string;
@@ -33,4 +34,5 @@ export const demos: readonly DemoRegistration[] = [
   { id: 'async-server', title: '10. Async / Server-Side', subtitle: 'Simulated 300ms server roundtrip', category: 'advanced', component: AsyncServerDemo },
   { id: 'enterprise-features', title: '11. Enterprise Features', subtitle: 'Filters, resize, sticky, density, multi-sort', category: 'advanced', component: EnterpriseFeaturesDemo },
   { id: 'responsive', title: '12. Responsive Columns', subtitle: 'Priority-based column budget with resize', category: 'advanced', component: ResponsiveDemo },
+  { id: 'server-side-pro', title: '13. Server-Side Pro', subtitle: 'useServerTable + error/loading/estimated count', category: 'advanced', component: ServerSideProDemo },
 ];
