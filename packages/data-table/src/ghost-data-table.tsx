@@ -9,6 +9,7 @@ import {
   TableRow,
   Skeleton,
   Button,
+  cn,
 } from "@ghost-shell/ui";
 import { Filter } from "lucide-react";
 import { DataTablePagination } from "./data-table-pagination.js";
@@ -27,10 +28,12 @@ export function GhostDataTable<TData>({
   showPagination = true,
   pageSizeOptions,
   toolbarActions,
+  stickyHeader = false,
   enableColumnFilters = false,
 }: GhostDataTableProps<TData>) {
   const columnCount = table.getAllColumns().length;
   const [showFilters, setShowFilters] = useState(false);
+  const isResizable = !!table.options.enableColumnResizing;
 
   const filterToggle = enableColumnFilters ? (
     <Button
@@ -61,22 +64,36 @@ export function GhostDataTable<TData>({
           toolbarActions={combinedToolbarActions}
         />
       )}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+      <div className={cn("rounded-md border", stickyHeader && "max-h-[500px] overflow-auto")}>
+        <Table style={isResizable ? { width: table.getCenterTotalSize(), tableLayout: "fixed" } : undefined}>
+          <TableHeader className={cn(stickyHeader && "sticky top-0 z-10 bg-background")}>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    style={(header.column.columnDef.meta as Record<string, unknown>)?.hasExplicitWidth ? { width: header.getSize() } : undefined}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const hasExplicitWidth = !!(header.column.columnDef.meta as Record<string, unknown>)?.hasExplicitWidth;
+                  const widthStyle = isResizable || hasExplicitWidth ? { width: header.getSize() } : undefined;
+                  return (
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      style={{ ...widthStyle, position: isResizable ? "relative" : undefined }}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                      {isResizable && header.column.getCanResize() && (
+                        <div
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
+                          className={cn(
+                            "absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none",
+                            header.column.getIsResizing() ? "bg-primary" : "hover:bg-primary/50",
+                          )}
+                        />
+                      )}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             ))}
             {showFilters && (
@@ -113,14 +130,18 @@ export function GhostDataTable<TData>({
                   key={row.id}
                   data-state={row.getIsSelected() ? "selected" : undefined}
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map((cell) => {
+                    const hasExplicitWidth = !!(cell.column.columnDef.meta as Record<string, unknown>)?.hasExplicitWidth;
+                    const widthStyle = isResizable || hasExplicitWidth ? { width: cell.column.getSize() } : undefined;
+                    return (
                     <TableCell
                       key={cell.id}
-                      style={(cell.column.columnDef.meta as Record<string, unknown>)?.hasExplicitWidth ? { width: cell.column.getSize() } : undefined}
+                      style={widthStyle}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
-                  ))}
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (

@@ -4,6 +4,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   cn,
@@ -51,11 +52,11 @@ export function DataTableColumnHeader<TData, TValue>({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
+          <DropdownMenuItem onClick={(e: React.MouseEvent) => column.toggleSorting(false, e.shiftKey)}>
             <ArrowUp className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
             Asc
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
+          <DropdownMenuItem onClick={(e: React.MouseEvent) => column.toggleSorting(true, e.shiftKey)}>
             <ArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
             Desc
           </DropdownMenuItem>
@@ -65,6 +66,10 @@ export function DataTableColumnHeader<TData, TValue>({
               Clear
             </DropdownMenuItem>
           )}
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+            Hold Shift for multi-sort
+          </DropdownMenuLabel>
           {column.getCanHide() && (
             <>
               <DropdownMenuSeparator />

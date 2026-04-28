@@ -37,7 +37,9 @@ export function exportTableToCsv<TData>(
     rows.push(headers.join(separator));
   }
 
-  const dataRows = table.getFilteredRowModel().rows;
+  // Export ALL filtered+sorted rows before pagination slicing.
+  // Note: for manualPagination mode, only the current page's data is available.
+  const dataRows = table.getPrePaginationRowModel().rows;
   for (const row of dataRows) {
     const cells = columns.map((col) => {
       const value = row.getValue(col.id);

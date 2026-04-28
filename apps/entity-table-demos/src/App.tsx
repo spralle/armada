@@ -45,7 +45,7 @@ export function App() {
           </nav>
         </ScrollArea>
       </aside>
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 min-h-0 overflow-y-auto">
         {Demo ? <Demo /> : <div className="p-8 text-muted-foreground">No demos available</div>}
       </main>
     </div>
