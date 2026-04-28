@@ -9,6 +9,8 @@ interface DataTableToolbarProps<TData> {
   onGlobalFilterChange?: (value: string) => void;
   toolbarActions?: React.ReactNode;
   trailingActions?: React.ReactNode;
+  onColumnToggle?: (columnId: string, visible: boolean) => void;
+  onToggleAll?: (visible: boolean) => void;
 }
 
 export function DataTableToolbar<TData>({
@@ -17,6 +19,8 @@ export function DataTableToolbar<TData>({
   onGlobalFilterChange,
   toolbarActions,
   trailingActions,
+  onColumnToggle,
+  onToggleAll,
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
     table.getState().columnFilters.length > 0 || (globalFilter && globalFilter.length > 0);
@@ -52,7 +56,7 @@ export function DataTableToolbar<TData>({
       </div>
       <div className="flex items-center space-x-2">
         {trailingActions}
-        <DataTableViewOptions table={table} />
+        <DataTableViewOptions table={table} onColumnToggle={onColumnToggle} onToggleAll={onToggleAll} />
       </div>
     </div>
   );

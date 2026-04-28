@@ -46,10 +46,16 @@ const priorityIcons: Record<string, string> = {
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
+  /** Custom column toggle handler (for responsive mode) */
+  onColumnToggle?: (columnId: string, visible: boolean) => void;
+  /** Custom toggle-all handler (for responsive mode) */
+  onToggleAll?: (visible: boolean) => void;
 }
 
 export function DataTableViewOptions<TData>({
   table,
+  onColumnToggle,
+  onToggleAll,
 }: DataTableViewOptionsProps<TData>) {
   const allColumns = table
     .getAllColumns()
@@ -71,8 +77,12 @@ export function DataTableViewOptions<TData>({
         <DropdownMenuCheckboxItem
           checked={allVisible}
           onCheckedChange={(value: boolean) => {
-            for (const col of allColumns) {
-              col.toggleVisibility(!!value);
+            if (onToggleAll) {
+              onToggleAll(!!value);
+            } else {
+              for (const col of allColumns) {
+                col.toggleVisibility(!!value);
+              }
             }
           }}
         >
@@ -84,7 +94,13 @@ export function DataTableViewOptions<TData>({
             key={column.id}
             className="capitalize"
             checked={column.getIsVisible()}
-            onCheckedChange={(value: boolean) => column.toggleVisibility(!!value)}
+            onCheckedChange={(value: boolean) => {
+              if (onColumnToggle) {
+                onColumnToggle(column.id, !!value);
+              } else {
+                column.toggleVisibility(!!value);
+              }
+            }}
           >
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               {getColumnLabel(column as Column<unknown, unknown>)}

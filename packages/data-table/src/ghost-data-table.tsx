@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, memo } from "react";
 import { flexRender } from "@tanstack/react-table";
 import {
   Table,
@@ -44,6 +44,8 @@ function GhostDataTableImpl<TData>({
 }: GhostDataTableProps<TData>) {
   const columnCount = table.getAllColumns().length;
   const [showFilters, setShowFilters] = useState(false);
+  const [userOverrides, setUserOverrides] = useState<Record<string, boolean>>({});
+  const latestBudgetVisRef = useRef<Record<string, boolean>>({});
   const isResizable = !!table.options.enableColumnResizing;
 
   // --- Responsive column hiding ---
@@ -106,7 +108,34 @@ function GhostDataTableImpl<TData>({
   )
 
   const handleVisibilityChange = useCallback((vis: Record<string, boolean>) => {
-    table.setColumnVisibility(vis)
+    latestBudgetVisRef.current = vis
+    const merged = { ...vis, ...userOverrides }
+    table.setColumnVisibility(merged)
+  }, [table, userOverrides])
+
+  // When userOverrides change, re-merge with latest budget result
+  useEffect(() => {
+    if (!responsive?.enabled) return
+    const budget = latestBudgetVisRef.current
+    if (Object.keys(budget).length === 0) return
+    const merged = { ...budget, ...userOverrides }
+    table.setColumnVisibility(merged)
+  }, [userOverrides, responsive?.enabled, table])
+
+  const handleUserColumnToggle = useCallback((columnId: string, visible: boolean) => {
+    setUserOverrides(prev => ({ ...prev, [columnId]: visible }))
+    table.setColumnVisibility(prev => ({ ...prev, [columnId]: visible }))
+  }, [table])
+
+  const handleUserToggleAll = useCallback((visible: boolean) => {
+    const allCols = table.getAllColumns()
+      .filter(col => typeof col.accessorFn !== 'undefined' && col.getCanHide())
+    const overrides: Record<string, boolean> = {}
+    for (const col of allCols) {
+      overrides[col.id] = visible
+    }
+    setUserOverrides(prev => ({ ...prev, ...overrides }))
+    table.setColumnVisibility(prev => ({ ...prev, ...overrides }))
   }, [table])
 
   const responsiveResult = useResponsiveColumns({
@@ -277,6 +306,8 @@ function GhostDataTableImpl<TData>({
           globalFilter={globalFilter}
           onGlobalFilterChange={onGlobalFilterChange}
           toolbarActions={combinedToolbarActions}
+          onColumnToggle={responsive?.enabled ? handleUserColumnToggle : undefined}
+          onToggleAll={responsive?.enabled ? handleUserToggleAll : undefined}
         />
       )}
       {errorBanner}
