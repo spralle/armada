@@ -185,6 +185,8 @@ function ConfigEntryRow({ entry }: { readonly entry: ConfigEntry }) {
           </div>
           <div>
             <strong>Source:</strong>{" "}
+            {/* TODO: Use service.inspect(key) for per-layer provenance once
+                the extended ConfigurationService interface exposes it. */}
             <span style={{ color: "var(--ghost-text-info, var(--ghost-foreground))" }}>
               resolved (service.get)
             </span>

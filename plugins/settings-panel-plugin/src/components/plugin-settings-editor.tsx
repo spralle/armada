@@ -26,8 +26,17 @@ import type {
   WeaverSchemaEntry,
   GovernanceRuleContext,
 } from "@ghost-shell/weaver-formr-bridge";
-import { useSchemaForm, renderLayoutTree, RendererRegistry } from "@ghost-shell/formr-react";
+import {
+  renderLayoutTree,
+  RendererRegistry,
+  useForm,
+  useFormSelector,
+  resolveFieldStates,
+  pruneHiddenFields,
+} from "@ghost-shell/formr-react";
 import type { LayoutRendererProps, NodeRenderer } from "@ghost-shell/formr-react";
+import { createSchemaForm } from "@ghost-shell/formr-from-schema";
+import type { ProductionRule } from "@ghost-shell/formr-core";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -52,18 +61,29 @@ const DEFAULT_LAYER_RANKS: ReadonlyMap<string, number> = new Map([
   ["user", 4],
 ]);
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function extractWeaverEntries(schema: JsonSchema): WeaverSchemaEntry[] {
   const entries: WeaverSchemaEntry[] = [];
   const props = schema.properties;
   if (!props) return entries;
 
   for (const [key, prop] of Object.entries(props)) {
-    const weaver = (prop as Record<string, unknown>)["x-weaver"] as
-      | WeaverSchemaEntry["weaver"]
-      | undefined;
-    if (weaver) {
-      entries.push({ path: key, weaver });
-    }
+    if (!isRecord(prop)) continue;
+    const weaver = prop["x-weaver"];
+    if (!isRecord(weaver)) continue;
+    entries.push({
+      path: key,
+      weaver: {
+        changePolicy: typeof weaver.changePolicy === "string" ? weaver.changePolicy : undefined,
+        maxOverrideLayer: typeof weaver.maxOverrideLayer === "string" ? weaver.maxOverrideLayer : undefined,
+        visibility: typeof weaver.visibility === "string" ? weaver.visibility : undefined,
+        sessionMode: typeof weaver.sessionMode === "string" ? weaver.sessionMode : undefined,
+        sensitive: typeof weaver.sensitive === "boolean" ? weaver.sensitive : undefined,
+      },
+    });
   }
   return entries;
 }
@@ -173,7 +193,7 @@ function SettingsEditorForm({
     [editingLayer, layerRank],
   );
 
-  const _rules = useMemo(
+  const governanceRules = useMemo(
     () => buildGovernanceRules(weaverEntries, ruleContext),
     [weaverEntries, ruleContext],
   );
@@ -186,8 +206,8 @@ function SettingsEditorForm({
   const registry = useMemo(() => {
     const reg = new RendererRegistry();
     const GOVERNANCE_TYPE = "governance-field";
-    // Adapter: LayoutRendererProps → GovernanceFieldRendererProps
-    // Cast needed due to React 18/19 type boundary between plugin and packages.
+    // Adapter: LayoutRendererProps → GovernanceFieldRendererProps.
+    // Cast via unknown needed due to React 18/19 type boundary between plugin and packages.
     const adapter = (props: LayoutRendererProps) => {
       const nodeProps = props.node.props ?? {};
       return GovernanceFieldRenderer({
@@ -205,9 +225,44 @@ function SettingsEditorForm({
     return reg;
   }, []);
 
-  const { form, layout, fieldStates } = useSchemaForm(processedSchema, {
-    initialData: initialData as never,
+  // Wire the full pipeline: schema → layout (with governance middleware) → arbiter rules.
+  // useSchemaForm doesn't expose layoutMiddleware, so we call createSchemaForm + useForm directly.
+  const prepared = useMemo(
+    () =>
+      createSchemaForm(processedSchema, {
+        layoutMiddleware: [governanceMiddleware],
+      }),
+    [processedSchema, governanceMiddleware],
+  );
+
+  const form = useForm({
+    schema: processedSchema,
+    initialData: initialData as unknown as undefined,
+    validators: prepared.validators,
+    arbiterRules: governanceRules as unknown as readonly ProductionRule[],
   });
+
+  const fieldPaths = useMemo(
+    () => prepared.fields.map((f) => f.path),
+    [prepared.fields],
+  );
+
+  const EMPTY_UI: Readonly<Record<string, unknown>> = useMemo(() => Object.freeze({}), []);
+
+  const uiState = useFormSelector(
+    form,
+    (state) => (state.uiState ?? EMPTY_UI) as Readonly<Record<string, unknown>>,
+  );
+
+  const fieldStates = useMemo(
+    () => resolveFieldStates(uiState, fieldPaths),
+    [uiState, fieldPaths],
+  );
+
+  const layout = useMemo(
+    () => pruneHiddenFields(prepared.layout, fieldStates) ?? { ...prepared.layout, children: [] },
+    [prepared.layout, fieldStates],
+  );
 
   const [submitting, setSubmitting] = useState(false);
 
