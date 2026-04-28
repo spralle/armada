@@ -1,0 +1,26 @@
+import { definePlugin } from "@ghost-shell/contracts/plugin";
+
+export const pluginManifest = definePlugin({
+  displayName: "Settings Panel",
+  contributes: {
+    parts: [
+      {
+        id: "ghost.shell.settings",
+        title: "Settings",
+      },
+      {
+        id: "ghost.shell.settings.diagnostics",
+        title: "Config Diagnostics",
+      },
+    ],
+  },
+  dependsOn: {
+    services: [
+      {
+        id: "ghost.configuration.Service",
+        versionRange: "^1.0.0",
+        optional: true,
+      },
+    ],
+  },
+});
