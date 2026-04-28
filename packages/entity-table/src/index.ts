@@ -48,7 +48,15 @@ export {
 
 // Responsive — pretext measurer (optional, tree-shakeable)
 export { createPretextMeasurer } from "./responsive/index.js";
-export type { ResponsiveConfig, BudgetDebugInfo, BudgetColumnDebug, CardIndicatorResult, CardSlot } from "@ghost-shell/data-table";
+export type { ResponsiveConfig, BudgetDebugInfo, BudgetColumnDebug } from "@ghost-shell/data-table";
+
+// EntityCardList — standalone card rendering from schema+data
+export { EntityCardList } from './entity-card-list.js'
+export type { EntityCardListProps, CardIndicatorResult, CardSlot } from './entity-card-list.js'
+
+// ResponsiveEntity — auto-switches between table and card view
+export { ResponsiveEntity } from './responsive-entity.js'
+export type { ResponsiveEntityProps } from './responsive-entity.js'
 
 // Entity table pipeline
 export { createEntityTable } from "./create-entity-table.js";

@@ -17,7 +17,6 @@ import { DataTablePagination } from "./data-table-pagination.js";
 import { DataTableToolbar } from "./data-table-toolbar.js";
 import { resolveColumnFilter } from "./column-filters/index.js";
 import { useResponsiveColumns } from "./responsive/use-responsive-columns.js";
-import { GhostCardList } from "./card-view/ghost-card-list.js";
 import type { ColumnPriority } from "./responsive/budget-algorithm.js";
 import type { GhostDataTableProps } from "./types.js";
 
@@ -40,7 +39,6 @@ function GhostDataTableImpl<TData>({
   errorRender,
   isRefetching = false,
   rowCountEstimated,
-  cardIndicator,
 }: GhostDataTableProps<TData>) {
   const columnCount = table.getAllColumns().length;
   const [showFilters, setShowFilters] = useState(false);
@@ -154,7 +152,6 @@ function GhostDataTableImpl<TData>({
     measurer: responsive?.measurer,
     font: responsive?.font,
     enabled: responsive?.enabled ?? false,
-    cardViewThreshold: responsive?.cardViewThreshold,
     containerRef: responsive?.containerRef,
     onVisibilityChange: handleVisibilityChange,
     onBudgetChange: responsive?.onBudgetChange,
@@ -322,9 +319,6 @@ function GhostDataTableImpl<TData>({
       {errorBanner}
       {errorCard ? errorCard : (
       <div ref={responsive?.enabled && !responsive?.containerRef ? responsiveResult.containerRef as React.RefObject<HTMLDivElement> : undefined}>
-        {responsiveResult.shouldUseCardView ? (
-          <GhostCardList table={table} emptyMessage={emptyMessage} loading={loading} loadingRows={loadingRows} cardIndicator={cardIndicator} />
-        ) : (
           <div className="relative">
           {isRefetching && !loading && (
             <div className="absolute inset-x-0 top-0 z-20 h-0.5 overflow-hidden rounded-t-md">
@@ -343,7 +337,6 @@ function GhostDataTableImpl<TData>({
             )}
           </div>
           </div>
-        )}
       </div>
       )}
       {showPagination && (

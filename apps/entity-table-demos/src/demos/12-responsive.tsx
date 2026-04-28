@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { z } from 'zod';
-import { EntityList, createPretextMeasurer } from '@ghost-shell/entity-table';
-import type { ResponsiveConfig, BudgetDebugInfo } from '@ghost-shell/entity-table';
+import { ResponsiveEntity, createPretextMeasurer } from '@ghost-shell/entity-table';
+import type { BudgetDebugInfo } from '@ghost-shell/entity-table';
 import { cn } from '@ghost-shell/ui';
 import { DemoShell } from '../components/DemoShell';
 
@@ -93,7 +93,7 @@ const schemaSource = `z.object({
   notes: z.string(),
 })`;
 
-const configSource = `<EntityList
+const configSource = `<ResponsiveEntity
   schema={EmployeeSchema}
   data={employees}
   overrides={{
@@ -101,21 +101,14 @@ const configSource = `<EntityList
     email: { priority: 'default' },
     role: { format: 'badge', priority: 'default' },
     salary: { priority: 'default', cardSlot: 'trailing' },
-    department: { priority: 'default' },
-    location: { priority: 'default' },
-    phone: { priority: 'optional' },
-    bio: { priority: 'optional', wrap: true, minWidth: 150 },
-    notes: { priority: 'optional', wrap: true, minWidth: 120 },
   }}
-  cardIndicator={(row) => {
-    if (!row.active) return { color: '#ef4444', edge: 'left' }
-    if (row.role === 'Director' || row.role === 'VP')
-      return { color: '#8b5cf6', edge: 'left' }
-    return { color: '#22c55e', edge: 'left' }
+  containerRef={containerRef}
+  cardThreshold={480}
+  tableProps={{
+    responsive: { enabled: true, measurer: ... },
   }}
-  responsive={{
-    enabled: true,
-    measurer: createPretextMeasurer('14px Inter, sans-serif'),
+  cardProps={{
+    indicator: (row) => ({ color: '...', edge: 'left' }),
   }}
 />`;
 
@@ -136,7 +129,6 @@ function formatReason(reason: string): string {
     case 'essential-always': return 'Essential — always shown'
     case 'fits-budget': return 'Fits within remaining budget'
     case 'exceeds-budget': return 'Not enough space'
-    case 'card-view-active': return 'Card view active'
     default: return reason
   }
 }
@@ -146,15 +138,12 @@ function ResponsiveDebugPanel({ debug }: { debug: BudgetDebugInfo | null }) {
 
   return (
     <div className="rounded-lg border bg-card p-4 text-sm space-y-3">
-      {/* Summary bar */}
       <div className="flex items-center gap-4 font-mono text-xs">
         <span>Container: <strong>{debug.containerWidth}px</strong></span>
         <span>Used: <strong>{Math.round(debug.totalBudgetUsed)}px</strong></span>
         <span>Remaining: <strong>{Math.round(debug.remainingBudget)}px</strong></span>
-        <span>Mode: <strong>{debug.shouldUseCardView ? '📱 Card' : '📊 Table'}</strong></span>
       </div>
 
-      {/* Budget bar visualization */}
       <div className="h-3 rounded-full bg-muted overflow-hidden flex">
         {debug.columns
           .filter(c => c.visible)
@@ -171,7 +160,6 @@ function ResponsiveDebugPanel({ debug }: { debug: BudgetDebugInfo | null }) {
           ))}
       </div>
 
-      {/* Column detail table */}
       <table className="w-full text-xs">
         <thead>
           <tr className="text-muted-foreground border-b">
@@ -218,24 +206,16 @@ export function ResponsiveDemo() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [debugInfo, setDebugInfo] = useState<BudgetDebugInfo | null>(null);
 
-  const responsiveWithRef: ResponsiveConfig = {
-    enabled: true,
-    measurer: createPretextMeasurer('14px Inter, sans-serif'),
-    containerRef,
-    onBudgetChange: setDebugInfo,
-  };
-
   return (
     <DemoShell
-      title="Responsive Columns"
-      description="Columns automatically show/hide based on container width using a priority-based budget algorithm. Essential columns always stay visible, default columns fill remaining space narrowest-first, and optional columns appear only when there's room. Drag the bottom-right resize handle to see it in action."
-      features={['Priority Budget', 'Pretext Measurement', 'Resize Handle', 'Card View Fallback', 'Card Dock Layout', 'Status Indicator']}
+      title="Responsive Entity (Table ↔ Card)"
+      description="ResponsiveEntity automatically switches between table and card view based on container width. The table uses priority-based column budgeting, while the card view uses schema-driven slot layout. Drag the resize handle to see the transition."
+      features={['ResponsiveEntity Wrapper', 'Priority Budget', 'Pretext Measurement', 'EntityCardList', 'Card Dock Layout', 'Status Indicator']}
       schema={schemaSource}
       codeBlocks={[{ title: 'Usage', code: configSource, defaultOpen: true }]}
     >
       <ResizableContainer containerRef={containerRef}>
-        <EntityList
-          entityType="employee"
+        <ResponsiveEntity
           schema={EmployeeSchema}
           data={employees}
           overrides={{
@@ -249,14 +229,22 @@ export function ResponsiveDemo() {
             bio: { priority: 'optional', wrap: true, minWidth: 150 },
             notes: { priority: 'optional', wrap: true, minWidth: 120 },
           }}
-          cardIndicator={(row: Employee) => {
-            if (!row.active) return { color: '#ef4444', edge: 'left' as const }
-            if (row.role === 'Director' || row.role === 'VP') return { color: '#8b5cf6', edge: 'left' as const }
-            return { color: '#22c55e', edge: 'left' as const }
+          containerRef={containerRef}
+          cardThreshold={480}
+          tableProps={{
+            responsive: { enabled: true, measurer: createPretextMeasurer('14px Inter, sans-serif'), onBudgetChange: setDebugInfo },
+            exclude: ['id'],
+            pageSizeOptions: [10, 25],
           }}
-          responsive={responsiveWithRef}
+          cardProps={{
+            indicator: (row: Employee) => {
+              if (!row.active) return { color: '#ef4444', edge: 'left' as const }
+              if (row.role === 'Director' || row.role === 'VP') return { color: '#8b5cf6', edge: 'left' as const }
+              return { color: '#22c55e', edge: 'left' as const }
+            },
+            exclude: ['id'],
+          }}
           exclude={['id']}
-          pageSizeOptions={[10, 25]}
           getRowId={(row) => row.id}
         />
       </ResizableContainer>

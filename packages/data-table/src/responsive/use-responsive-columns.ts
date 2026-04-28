@@ -1,4 +1,4 @@
-import { useRef, useState, useLayoutEffect, useMemo, useEffect, useCallback } from "react"
+import { useRef, useLayoutEffect, useMemo, useEffect, useCallback } from "react"
 import type { RefObject } from "react"
 import type { ColumnMeasurer } from "./column-measurer.js"
 import type { ColumnPriority, BudgetDebugInfo } from "./budget-algorithm.js"
@@ -55,8 +55,6 @@ export interface UseResponsiveColumnsOptions<TData> {
   font?: string
   /** Enable/disable responsive behavior */
   enabled?: boolean
-  /** Container width below which card view is forced */
-  cardViewThreshold?: number
   /** External container ref to observe instead of creating a new one */
   containerRef?: RefObject<HTMLDivElement | null>
   /** Called directly (not via state) when column visibility changes */
@@ -68,8 +66,6 @@ export interface UseResponsiveColumnsOptions<TData> {
 export interface UseResponsiveColumnsResult {
   /** Ref to attach to the table container div */
   containerRef: RefObject<HTMLDivElement | null>
-  /** Whether card view should be active */
-  shouldUseCardView: boolean
   /** Current container width */
   containerWidth: number
 }
@@ -92,7 +88,6 @@ export function useResponsiveColumns<TData>(
     measurer,
     font = DEFAULT_FONT,
     enabled = true,
-    cardViewThreshold,
     containerRef: externalRef,
     onVisibilityChange,
     onBudgetChange,
@@ -126,9 +121,6 @@ export function useResponsiveColumns<TData>(
   const containerWidthRef = useRef(0)
   const prevVisibilityRef = useRef<Record<string, boolean>>({})
 
-  // Only card-view toggle needs React state (controls JSX branching)
-  const [shouldUseCardView, setShouldUseCardView] = useState(false)
-
   // Compute budget and call callbacks directly — no intermediate state for visibility
   const computeAndUpdate = useCallback((width: number) => {
     if (!enabled || width === 0) return
@@ -136,7 +128,6 @@ export function useResponsiveColumns<TData>(
     const result = computeColumnBudget({
       columns: measuredColumnsRef.current,
       containerWidth: width,
-      cardViewThreshold,
     })
 
     const changed = visibilityChanged(prevVisibilityRef.current, result.visibility)
@@ -144,21 +135,14 @@ export function useResponsiveColumns<TData>(
 
     if (changed) {
       prevVisibilityRef.current = result.visibility
-      // Apply visibility directly via callback — no intermediate state
       if (onVisibilityChange) {
         onVisibilityChange(result.visibility)
       }
-      // Notify parent with debug info (React 18 batches both setState calls)
       if (result.debug && onBudgetChange) {
         onBudgetChange(result.debug)
       }
     }
-
-    // Only set state when card-view status actually changes
-    setShouldUseCardView(prev => {
-      return prev === result.shouldUseCardView ? prev : result.shouldUseCardView
-    })
-  }, [enabled, onVisibilityChange, onBudgetChange, cardViewThreshold])
+  }, [enabled, onVisibilityChange, onBudgetChange])
 
   // Recompute when measured columns change (columns/data change, not resize)
   useEffect(() => {
@@ -188,14 +172,13 @@ export function useResponsiveColumns<TData>(
     observer.observe(el)
 
     return () => observer.disconnect()
-    // computeAndUpdate is stable for a given enabled/onVisibilityChange/onBudgetChange/cardViewThreshold.
+    // computeAndUpdate is stable for a given enabled/onVisibilityChange/onBudgetChange.
     // containerRef identity is stable (external ref or our internalRef).
     // eslint-disable-next-line react-hooks/exhaustive-deps -- containerRef is a stable ref object
   }, [enabled, containerRef, computeAndUpdate])
 
   return {
     containerRef,
-    shouldUseCardView: enabled ? shouldUseCardView : false,
     containerWidth: containerWidthRef.current,
   }
 }

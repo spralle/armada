@@ -9,8 +9,6 @@ import type {
 } from "@tanstack/react-table";
 import type { ColumnMeasurer } from "./responsive/column-measurer.js";
 import type { BudgetDebugInfo } from "./responsive/budget-algorithm.js";
-import type { CardIndicatorResult } from "./card-view/ghost-card-item.js";
-
 export interface ResponsiveConfig {
   /** Enable responsive column hiding. Default: false */
   enabled?: boolean;
@@ -18,8 +16,6 @@ export interface ResponsiveConfig {
   measurer?: ColumnMeasurer;
   /** CSS font string for measurement. Default: '14px sans-serif' */
   font?: string;
-  /** Container width below which card view is forced. Default: 480 */
-  cardViewThreshold?: number;
   /** External container ref to observe. If not provided, observes an internal wrapper. */
   containerRef?: React.RefObject<HTMLDivElement | null>;
   /** Callback with debug info on every budget recalculation */
@@ -94,6 +90,4 @@ export interface GhostDataTableProps<TData> {
   rowCountEstimated?: boolean;
   /** True when background refetch is in progress — shows overlay on stale data */
   isRefetching?: boolean;
-  /** Card view: row status indicator (colored edge strip) */
-  cardIndicator?: (row: TData) => CardIndicatorResult | null;
 }
