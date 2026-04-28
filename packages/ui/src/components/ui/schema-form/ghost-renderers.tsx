@@ -33,6 +33,7 @@ function capitalize(s: string): string {
 
 function GhostFieldRenderer({ node }: LayoutRendererProps): ReactNode {
   const { form, fields, overrides } = useSchemaFormContext()
+  // Hook must be called before early returns to satisfy React rules of hooks
   const resolvedState = useFieldState(node.path ?? "")
   const fieldInfo = fields.find((f) => f.path === node.path)
   if (!fieldInfo || !node.path) return null
