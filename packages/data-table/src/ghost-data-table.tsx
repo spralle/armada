@@ -54,17 +54,26 @@ function GhostDataTableImpl<TData>({
   // eslint-disable-next-line react-hooks/exhaustive-deps -- deps on columnIdKey (derived string) instead of getAllColumns() array identity
   const columnIdKey = table.getAllColumns().map(c => c.id).join(',')
 
+  // Stable key for user-hidden columns so memo updates when overrides change
+  const userHiddenKey = Object.entries(userOverrides)
+    .filter(([, v]) => v === false)
+    .map(([k]) => k)
+    .sort()
+    .join(',')
+
   const responsiveColumns = useMemo(() =>
-    table.getAllColumns().map(col => ({
-      id: col.id,
-      priority: ((col.columnDef.meta as Record<string, unknown>)?.priority as ColumnPriority) ?? "default",
-      label: ((col.columnDef.meta as Record<string, unknown>)?.label as string) ?? col.id,
-      minWidth: (col.columnDef.meta as Record<string, unknown>)?.minWidth as number | undefined,
-      format: ((col.columnDef.meta as Record<string, unknown>)?.cellRenderer as string | undefined)
-        ?? ((col.columnDef.meta as Record<string, unknown>)?.format as string | undefined),
-    })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps on columnIdKey (derived string) instead of getAllColumns() array identity
-    [columnIdKey, table],
+    table.getAllColumns()
+      .filter(col => userOverrides[col.id] !== false)
+      .map(col => ({
+        id: col.id,
+        priority: ((col.columnDef.meta as Record<string, unknown>)?.priority as ColumnPriority) ?? "default",
+        label: ((col.columnDef.meta as Record<string, unknown>)?.label as string) ?? col.id,
+        minWidth: (col.columnDef.meta as Record<string, unknown>)?.minWidth as number | undefined,
+        format: ((col.columnDef.meta as Record<string, unknown>)?.cellRenderer as string | undefined)
+          ?? ((col.columnDef.meta as Record<string, unknown>)?.format as string | undefined),
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable string keys instead of array/object identity
+    [columnIdKey, userHiddenKey, table],
   );
 
   const formatMap = useMemo(() => {
