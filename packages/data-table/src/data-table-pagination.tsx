@@ -19,12 +19,16 @@ const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
   pageSizeOptions?: number[];
+  /** When true, shows "~N" for approximate total */
+  rowCountEstimated?: boolean;
 }
 
 export function DataTablePagination<TData>({
   table,
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+  rowCountEstimated = false,
 }: DataTablePaginationProps<TData>) {
+  const approx = rowCountEstimated ? "~" : "";
   const hasSelection = table.getFilteredSelectedRowModel().rows.length > 0 ||
     table.options.enableRowSelection;
 
@@ -59,7 +63,7 @@ export function DataTablePagination<TData>({
         </div>
         <div className="flex w-[100px] items-center justify-center text-sm font-medium">
           Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
+          {approx}{table.getPageCount()}
         </div>
         <div className="flex items-center space-x-2">
           <Button

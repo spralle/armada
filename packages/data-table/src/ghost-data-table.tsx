@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { flexRender } from "@tanstack/react-table";
 import {
   Table,
@@ -34,15 +34,24 @@ export function GhostDataTable<TData>({
   stickyHeader = false,
   enableColumnFilters = false,
   responsive,
+  error,
+  onRetry,
+  errorRender,
+  isRefetching = false,
+  rowCountEstimated,
 }: GhostDataTableProps<TData>) {
   const columnCount = table.getAllColumns().length;
   const [showFilters, setShowFilters] = useState(false);
   const isResizable = !!table.options.enableColumnResizing;
 
   // --- Responsive column hiding ---
-  const allColumns = table.getAllColumns()
+  // Stable string key: column IDs don't change during table lifetime,
+  // avoids busting memos on every render (getAllColumns() returns new arrays).
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- deps on columnIdKey (derived string) instead of getAllColumns() array identity
+  const columnIdKey = table.getAllColumns().map(c => c.id).join(',')
+
   const responsiveColumns = useMemo(() =>
-    allColumns.map(col => ({
+    table.getAllColumns().map(col => ({
       id: col.id,
       priority: ((col.columnDef.meta as Record<string, unknown>)?.priority as ColumnPriority) ?? "default",
       label: ((col.columnDef.meta as Record<string, unknown>)?.label as string) ?? col.id,
@@ -50,17 +59,19 @@ export function GhostDataTable<TData>({
       format: ((col.columnDef.meta as Record<string, unknown>)?.cellRenderer as string | undefined)
         ?? ((col.columnDef.meta as Record<string, unknown>)?.format as string | undefined),
     })),
-    [allColumns],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps on columnIdKey (derived string) instead of getAllColumns() array identity
+    [columnIdKey, table],
   );
 
   const formatMap = useMemo(() => {
     const map: Record<string, string | undefined> = {}
-    for (const col of allColumns) {
+    for (const col of table.getAllColumns()) {
       map[col.id] = ((col.columnDef.meta as Record<string, unknown>)?.cellRenderer as string | undefined)
         ?? ((col.columnDef.meta as Record<string, unknown>)?.format as string | undefined)
     }
     return map
-  }, [allColumns])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps on columnIdKey (derived string) instead of getAllColumns() array identity
+  }, [columnIdKey, table])
 
   const getCellValue = useCallback((row: TData, columnId: string): string => {
     const value = (row as Record<string, unknown>)[columnId];
@@ -82,11 +93,19 @@ export function GhostDataTable<TData>({
     return String(value);
   }, [formatMap]);
 
-  const coreRows = table.getCoreRowModel().rows
+  // Use row count as stability proxy — getCoreRowModel().rows is a new array each render.
+  // Measurement assumes data is immutable-per-fetch; in-place row edits won't trigger
+  // re-measurement. Acceptable because responsive measurement is a layout heuristic.
+  const rowCount = table.getCoreRowModel().rows.length
   const responsiveData = useMemo(
-    () => coreRows.map(r => r.original),
-    [coreRows],
+    () => table.getCoreRowModel().rows.map(r => r.original),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps on rowCount (derived number) instead of rows array identity
+    [rowCount, table],
   )
+
+  const handleVisibilityChange = useCallback((vis: Record<string, boolean>) => {
+    table.setColumnVisibility(vis)
+  }, [table])
 
   const responsiveResult = useResponsiveColumns({
     columns: responsiveColumns,
@@ -97,22 +116,9 @@ export function GhostDataTable<TData>({
     enabled: responsive?.enabled ?? false,
     cardViewThreshold: responsive?.cardViewThreshold,
     containerRef: responsive?.containerRef,
+    onVisibilityChange: handleVisibilityChange,
     onBudgetChange: responsive?.onBudgetChange,
   });
-
-  useEffect(() => {
-    if (!responsive?.enabled) return;
-    if (responsiveResult.containerWidth === 0) return;
-
-    // Avoid re-setting identical visibility (prevents re-render loop)
-    const current = table.getState().columnVisibility
-    const next = responsiveResult.columnVisibility
-    const changed = Object.keys(next).some(k => current[k] !== next[k])
-      || Object.keys(current).some(k => next[k] !== current[k])
-    if (!changed) return
-
-    table.setColumnVisibility(next);
-  }, [responsive?.enabled, responsiveResult.columnVisibility, table]);
 
   const filterToggle = enableColumnFilters ? (
     <Button
@@ -230,6 +236,37 @@ export function GhostDataTable<TData>({
     </>
   );
 
+  const hasData = table.getRowModel().rows.length > 0;
+  const hasError = !!error;
+
+  const errorCard = hasError && !hasData ? (
+    errorRender ? errorRender(error, onRetry) : (
+      <div className="flex flex-col items-center justify-center rounded-md border p-8 text-center">
+        <div className="text-destructive mb-2 text-sm font-medium">
+          {error.message || "An error occurred"}
+        </div>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            Retry
+          </Button>
+        )}
+      </div>
+    )
+  ) : null;
+
+  const errorBanner = hasError && hasData ? (
+    errorRender ? errorRender(error, onRetry) : (
+      <div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <span>{error.message || "An error occurred"}</span>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry} className="ml-auto h-7">
+            Retry
+          </Button>
+        )}
+      </div>
+    )
+  ) : null;
+
   return (
     <div className="space-y-4">
       {showToolbar && (
@@ -240,11 +277,19 @@ export function GhostDataTable<TData>({
           toolbarActions={combinedToolbarActions}
         />
       )}
+      {errorBanner}
+      {errorCard ? errorCard : (
       <div ref={responsive?.enabled && !responsive?.containerRef ? responsiveResult.containerRef as React.RefObject<HTMLDivElement> : undefined}>
         {responsiveResult.shouldUseCardView ? (
           <GhostCardList table={table} emptyMessage={emptyMessage} loading={loading} loadingRows={loadingRows} />
         ) : (
-          <div className={cn("rounded-md border", stickyHeader && "max-h-[500px] overflow-auto")}>
+          <div className="relative">
+          {isRefetching && !loading && (
+            <div className="absolute inset-x-0 top-0 z-20 h-0.5 overflow-hidden rounded-t-md">
+              <div className="h-full w-full animate-pulse bg-primary/40" />
+            </div>
+          )}
+          <div className={cn("rounded-md border", stickyHeader && "max-h-[500px] overflow-auto", isRefetching && !loading && "opacity-60 pointer-events-none")}>
             {stickyHeader ? (
               <table className={cn("min-w-full caption-bottom text-sm", isResizable && "table-fixed")}>
                 {tableContent}
@@ -255,10 +300,12 @@ export function GhostDataTable<TData>({
               </Table>
             )}
           </div>
+          </div>
         )}
       </div>
+      )}
       {showPagination && (
-        <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
+        <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} rowCountEstimated={rowCountEstimated} />
       )}
     </div>
   );

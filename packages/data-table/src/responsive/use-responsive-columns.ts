@@ -1,4 +1,5 @@
-import { useRef, useState, useLayoutEffect, useMemo, useEffect } from "react"
+import { useRef, useState, useLayoutEffect, useMemo, useEffect, useCallback } from "react"
+import type { RefObject } from "react"
 import type { ColumnMeasurer } from "./column-measurer.js"
 import type { ColumnPriority, BudgetDebugInfo } from "./budget-algorithm.js"
 import { createFallbackMeasurer } from "./column-measurer.js"
@@ -18,6 +19,17 @@ const FORMAT_CHROME: Record<string, number> = {
 function getColumnOverhead(col: ResponsiveColumnDef): number {
   const formatExtra = col.format ? (FORMAT_CHROME[col.format] ?? 0) : 0
   return CELL_PADDING + SORT_CHROME + formatExtra
+}
+
+/** Compare two visibility maps for shallow equality */
+function visibilityChanged(
+  prev: Record<string, boolean>,
+  next: Record<string, boolean>,
+): boolean {
+  const prevKeys = Object.keys(prev)
+  const nextKeys = Object.keys(next)
+  if (prevKeys.length !== nextKeys.length) return true
+  return nextKeys.some(k => prev[k] !== next[k])
 }
 
 export interface ResponsiveColumnDef {
@@ -46,27 +58,29 @@ export interface UseResponsiveColumnsOptions<TData> {
   /** Container width below which card view is forced */
   cardViewThreshold?: number
   /** External container ref to observe instead of creating a new one */
-  containerRef?: React.RefObject<HTMLDivElement | null>
+  containerRef?: RefObject<HTMLDivElement | null>
+  /** Called directly (not via state) when column visibility changes */
+  onVisibilityChange?: (visibility: Record<string, boolean>) => void
   /** Callback with debug info on every budget recalculation */
   onBudgetChange?: (debug: BudgetDebugInfo) => void
 }
 
 export interface UseResponsiveColumnsResult {
   /** Ref to attach to the table container div */
-  containerRef: React.RefObject<HTMLDivElement | null>
-  /** Computed column visibility (budget + user overrides merged) */
-  columnVisibility: Record<string, boolean>
+  containerRef: RefObject<HTMLDivElement | null>
   /** Whether card view should be active */
   shouldUseCardView: boolean
   /** Current container width */
   containerWidth: number
-  /** Debug info for development tooling */
-  debug: BudgetDebugInfo | null
 }
 
 /**
  * Hook that observes container width and computes which columns
  * fit within the available budget, switching to card view when needed.
+ *
+ * Optimization: the ResizeObserver callback computes the budget inline
+ * and only triggers a React state update when column visibility actually
+ * changes, avoiding re-renders on every resize pixel.
  */
 export function useResponsiveColumns<TData>(
   options: UseResponsiveColumnsOptions<TData>,
@@ -80,15 +94,16 @@ export function useResponsiveColumns<TData>(
     enabled = true,
     cardViewThreshold,
     containerRef: externalRef,
+    onVisibilityChange,
     onBudgetChange,
   } = options
 
   const internalRef = useRef<HTMLDivElement>(null)
   const containerRef = externalRef ?? internalRef
-  const [containerWidth, setContainerWidth] = useState(0)
 
   const activeMeasurer = useMemo(() => measurer ?? createFallbackMeasurer(), [measurer])
 
+  // Measurement only depends on columns/data/measurer/font — NOT containerWidth.
   const measuredColumns: BudgetColumn[] = useMemo(() => {
     const sampleRows = data.slice(0, MAX_SAMPLE_ROWS)
 
@@ -104,50 +119,83 @@ export function useResponsiveColumns<TData>(
     })
   }, [data, columns, activeMeasurer, font, getCellValue])
 
+  // Keep measuredColumns accessible in the observer callback without stale closures
+  const measuredColumnsRef = useRef(measuredColumns)
+  measuredColumnsRef.current = measuredColumns
+
+  const containerWidthRef = useRef(0)
+  const prevVisibilityRef = useRef<Record<string, boolean>>({})
+
+  // Only card-view toggle needs React state (controls JSX branching)
+  const [shouldUseCardView, setShouldUseCardView] = useState(false)
+
+  // Compute budget and call callbacks directly — no intermediate state for visibility
+  const computeAndUpdate = useCallback((width: number) => {
+    if (!enabled || width === 0) return
+
+    const result = computeColumnBudget({
+      columns: measuredColumnsRef.current,
+      containerWidth: width,
+      cardViewThreshold,
+    })
+
+    const changed = visibilityChanged(prevVisibilityRef.current, result.visibility)
+      || prevVisibilityRef.current === undefined
+
+    if (changed) {
+      prevVisibilityRef.current = result.visibility
+      // Apply visibility directly via callback — no intermediate state
+      if (onVisibilityChange) {
+        onVisibilityChange(result.visibility)
+      }
+      // Notify parent with debug info (React 18 batches both setState calls)
+      if (result.debug && onBudgetChange) {
+        onBudgetChange(result.debug)
+      }
+    }
+
+    // Only set state when card-view status actually changes
+    setShouldUseCardView(prev => {
+      return prev === result.shouldUseCardView ? prev : result.shouldUseCardView
+    })
+  }, [enabled, onVisibilityChange, onBudgetChange, cardViewThreshold])
+
+  // Recompute when measured columns change (columns/data change, not resize)
+  useEffect(() => {
+    if (containerWidthRef.current > 0) {
+      computeAndUpdate(containerWidthRef.current)
+    }
+  }, [measuredColumns, computeAndUpdate])
+
+  // ResizeObserver — computes budget inline, only sets state on visibility change
   useLayoutEffect(() => {
     if (!enabled) return
     const el = containerRef.current
     if (!el) return
 
-    // Read initial width synchronously
-    setContainerWidth(Math.round(el.clientWidth))
+    // Synchronous initial read
+    const initialWidth = Math.round(el.clientWidth)
+    containerWidthRef.current = initialWidth
+    computeAndUpdate(initialWidth)
 
-    // ResizeObserver already batches — no RAF needed
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
-      if (entry) {
-        setContainerWidth(Math.round(entry.contentRect.width))
-      }
+      if (!entry) return
+      const width = Math.round(entry.contentRect.width)
+      containerWidthRef.current = width
+      computeAndUpdate(width)
     })
     observer.observe(el)
 
     return () => observer.disconnect()
-  }, [enabled, containerRef])
-
-  const budgetResult = useMemo(() => {
-    if (!enabled || containerWidth === 0) {
-      return { visibility: {} as Record<string, boolean>, shouldUseCardView: false, debug: null }
-    }
-    const result = computeColumnBudget({ columns: measuredColumns, containerWidth, cardViewThreshold })
-    return { visibility: result.visibility, shouldUseCardView: result.shouldUseCardView, debug: result.debug }
-  }, [enabled, containerWidth, measuredColumns, cardViewThreshold])
-
-  useEffect(() => {
-    if (budgetResult.debug && onBudgetChange) {
-      onBudgetChange(budgetResult.debug)
-    }
-  }, [budgetResult.debug, onBudgetChange])
-
-  const columnVisibility = useMemo(() => {
-    if (!enabled) return {}
-    return budgetResult.visibility
-  }, [enabled, budgetResult.visibility])
+    // computeAndUpdate is stable for a given enabled/onVisibilityChange/onBudgetChange/cardViewThreshold.
+    // containerRef identity is stable (external ref or our internalRef).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- containerRef is a stable ref object
+  }, [enabled, containerRef, computeAndUpdate])
 
   return {
     containerRef,
-    columnVisibility,
-    shouldUseCardView: enabled ? budgetResult.shouldUseCardView : false,
-    containerWidth,
-    debug: budgetResult.debug,
+    shouldUseCardView: enabled ? shouldUseCardView : false,
+    containerWidth: containerWidthRef.current,
   }
 }

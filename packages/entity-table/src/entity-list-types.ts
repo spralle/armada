@@ -1,5 +1,7 @@
 import type {
   ColumnDef,
+  ColumnFiltersState,
+  PaginationState,
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
@@ -104,4 +106,42 @@ export interface EntityListProps<TData> {
   responsive?: import("@ghost-shell/data-table").ResponsiveConfig;
   /** Optional Ghost menu service for contributed operations */
   menuService?: MenuService;
+
+  // --- Server-side mode ---
+  /** When true, sorting is handled externally (server-side) */
+  manualSorting?: boolean;
+  /** When true, filtering is handled externally (server-side) */
+  manualFiltering?: boolean;
+  /** When true, pagination is handled externally (server-side) */
+  manualPagination?: boolean;
+  /** Total row count known by server — required for server-side pagination */
+  rowCount?: number;
+  /** Whether rowCount is an estimate (for UI display hints) */
+  rowCountEstimated?: boolean;
+
+  // --- Controlled state ---
+  /** Controlled global filter value (for server-side search) */
+  globalFilter?: string;
+  /** Called when search input changes (for server-side search) */
+  onGlobalFilterChange?: (value: string) => void;
+  /** Controlled sorting state */
+  sorting?: SortingState;
+  /** Callback when sorting changes */
+  onSortingChange?: (sorting: SortingState) => void;
+  /** Controlled column filters state */
+  columnFilters?: ColumnFiltersState;
+  /** Callback when column filters change */
+  onColumnFiltersChange?: (filters: ColumnFiltersState) => void;
+  /** Controlled pagination state */
+  pagination?: PaginationState;
+  /** Callback when pagination changes */
+  onPaginationChange?: (pagination: PaginationState) => void;
+
+  // --- Async UX ---
+  /** Whether data is being refetched (shows subtle loading indicator) */
+  isRefetching?: boolean;
+  /** Error from data fetching */
+  error?: Error | null;
+  /** Retry callback for error recovery */
+  onRetry?: () => void;
 }

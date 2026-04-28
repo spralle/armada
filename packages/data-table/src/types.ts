@@ -83,4 +83,14 @@ export interface GhostDataTableProps<TData> {
   enableColumnFilters?: boolean;
   /** Responsive column hiding and card view configuration */
   responsive?: ResponsiveConfig;
+  /** Error object — renders error state */
+  error?: Error | null;
+  /** Called when user clicks retry in error state */
+  onRetry?: () => void;
+  /** Custom error renderer (slot) */
+  errorRender?: (error: Error, retry?: () => void) => React.ReactNode;
+  /** When true, pagination shows approximate row count indicator */
+  rowCountEstimated?: boolean;
+  /** True when background refetch is in progress — shows overlay on stale data */
+  isRefetching?: boolean;
 }

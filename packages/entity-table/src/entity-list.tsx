@@ -40,6 +40,25 @@ export function EntityList<TData>({
   enableDensityToggle,
   enableColumnFilters,
   responsive,
+  // Server-side mode
+  manualSorting,
+  manualFiltering,
+  manualPagination,
+  rowCount,
+  rowCountEstimated,
+  // Controlled state
+  globalFilter: controlledGlobalFilter,
+  onGlobalFilterChange: controlledOnGlobalFilterChange,
+  sorting,
+  onSortingChange,
+  columnFilters,
+  onColumnFiltersChange,
+  pagination,
+  onPaginationChange,
+  // Async UX
+  isRefetching,
+  error,
+  onRetry,
 }: EntityListProps<TData>) {
   // 1. Schema → table config (memoized; skipped if columnOverride provided)
   const tableConfig = useMemo(() => {
@@ -86,14 +105,28 @@ export function EntityList<TData>({
   }, [renderedColumns, rowOperations, data, entityType, menuService, hasRowActions]);
 
   // 5. Ghost table hook
-  const { table, globalFilter, setGlobalFilter } = useGhostTable<TData>({
+  const { table, globalFilter: internalGlobalFilter, setGlobalFilter: setInternalGlobalFilter } = useGhostTable<TData>({
     data,
     columns: finalColumns,
     enableRowSelection: enableRowSelection ?? (batchOperations?.length ?? 0) > 0,
     enableColumnResizing,
     initialColumnVisibility: tableConfig?.defaultColumnVisibility,
     initialSorting: defaultSort ?? tableConfig?.defaultSorting,
+    manualSorting,
+    manualFiltering,
+    manualPagination,
+    rowCount,
+    sorting,
+    onSortingChange,
+    columnFilters,
+    onColumnFiltersChange,
+    pagination,
+    onPaginationChange,
   });
+
+  // Resolve controlled vs internal globalFilter
+  const effectiveGlobalFilter = controlledGlobalFilter ?? internalGlobalFilter;
+  const effectiveOnGlobalFilterChange = controlledOnGlobalFilterChange ?? setInternalGlobalFilter;
 
   // 6. Resolve Ghost menu contributions for toolbar and batch
   const toolbarMenuContext = useMemo(
@@ -218,8 +251,8 @@ export function EntityList<TData>({
     <div className={cn("space-y-4", className)}>
       <GhostDataTable
         table={table}
-        globalFilter={globalFilter}
-        onGlobalFilterChange={setGlobalFilter}
+        globalFilter={effectiveGlobalFilter}
+        onGlobalFilterChange={effectiveOnGlobalFilterChange}
         loading={loading}
         emptyMessage={emptyMessage}
         toolbarActions={toolbarActions}
