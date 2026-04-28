@@ -100,6 +100,8 @@ export interface EntityListProps<TData> {
   enableDensityToggle?: boolean;
   /** Enable per-column filter UI */
   enableColumnFilters?: boolean;
+  /** Responsive column hiding and card view configuration */
+  responsive?: import("@ghost-shell/data-table").ResponsiveConfig;
   /** Optional Ghost menu service for contributed operations */
   menuService?: MenuService;
 }

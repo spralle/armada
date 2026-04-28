@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chenglou/pretext": "0.0.6",
     "@ghost-shell/data-table": "workspace:*",
     "@ghost-shell/entity-table": "workspace:*",
     "@ghost-shell/schema-core": "workspace:*",

@@ -6,6 +6,7 @@ import type {
   TableFieldOverride,
 } from './types.js';
 import { humanize } from './humanize.js';
+import { inferPriority } from './priority.js';
 
 /**
  * Compile an array of schema fields into framework-agnostic TableFieldDescriptor[].
@@ -34,6 +35,7 @@ export function compileTableFields(
     const searchable = deriveSearchable(field.type);
     const filter = resolveFilter(derived, override, annotation);
     const format = override?.format ?? annotation?.cell ?? derived.cellRenderer;
+    const priority = override?.priority ?? inferPriority(field, index);
 
     const resolvedPinned = override?.pinned ?? annotation?.pinned;
 
@@ -50,6 +52,7 @@ export function compileTableFields(
         : {}),
       sortable,
       searchable,
+      priority,
       ...(filter !== undefined ? { filter } : {}),
       ...(derived.filterOptions !== undefined ? { options: derived.filterOptions } : {}),
       ...(field.metadata?.description !== undefined ? { headerTooltip: field.metadata.description } : {}),

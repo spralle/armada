@@ -10,6 +10,7 @@ import { OrderAggregateDemo } from './08-order-aggregate';
 import { VesselFleetDemo } from './09-vessel-fleet';
 import { AsyncServerDemo } from './10-async-server';
 import { EnterpriseFeaturesDemo } from './11-enterprise-features';
+import { ResponsiveDemo } from './12-responsive';
 
 export interface DemoRegistration {
   readonly id: string;
@@ -31,4 +32,5 @@ export const demos: readonly DemoRegistration[] = [
   { id: 'vessel-fleet', title: '9. Vessel Fleet (Maritime Domain)', subtitle: 'Deep nesting with maritime data', category: 'advanced', component: VesselFleetDemo },
   { id: 'async-server', title: '10. Async / Server-Side', subtitle: 'Simulated 300ms server roundtrip', category: 'advanced', component: AsyncServerDemo },
   { id: 'enterprise-features', title: '11. Enterprise Features', subtitle: 'Filters, resize, sticky, density, multi-sort', category: 'advanced', component: EnterpriseFeaturesDemo },
+  { id: 'responsive', title: '12. Responsive Columns', subtitle: 'Priority-based column budget with resize', category: 'advanced', component: ResponsiveDemo },
 ];

@@ -15,6 +15,7 @@ export interface EntityColumnMeta {
   readonly pinned?: 'left' | 'right' | false;
   readonly hasExplicitWidth?: boolean;
   readonly label?: string;
+  readonly priority?: 'essential' | 'default' | 'optional';
 }
 
 /**
@@ -36,6 +37,7 @@ export function toColumnDefs<TData>(
       pinned: desc.pinned,
       hasExplicitWidth: desc.width !== undefined,
       label: desc.label,
+      priority: desc.priority,
     };
 
     const col: ColumnDef<TData, unknown> = {

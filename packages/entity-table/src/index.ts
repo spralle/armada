@@ -46,6 +46,10 @@ export {
   avatarRenderer,
 } from "./renderers/index.js";
 
+// Responsive — pretext measurer (optional, tree-shakeable)
+export { createPretextMeasurer } from "./responsive/index.js";
+export type { ResponsiveConfig } from "@ghost-shell/data-table";
+
 // Entity table pipeline
 export { createEntityTable } from "./create-entity-table.js";
 export { EntityList } from "./entity-list.js";

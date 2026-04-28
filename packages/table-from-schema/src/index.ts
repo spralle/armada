@@ -3,8 +3,10 @@ export { compileTableFields } from './compile-table-fields.js';
 export { createTableConfig } from './create-table-config.js';
 // Utility
 export { humanize } from './humanize.js';
+export { inferPriority } from './priority.js';
 // Types
 export type {
+  ColumnPriority,
   TableFieldDescriptor,
   TableConfig,
   FilterVariant,

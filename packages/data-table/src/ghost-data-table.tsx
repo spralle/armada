@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { flexRender } from "@tanstack/react-table";
 import {
   Table,
@@ -15,6 +15,9 @@ import { Filter } from "lucide-react";
 import { DataTablePagination } from "./data-table-pagination.js";
 import { DataTableToolbar } from "./data-table-toolbar.js";
 import { resolveColumnFilter } from "./column-filters/index.js";
+import { useResponsiveColumns } from "./responsive/use-responsive-columns.js";
+import { GhostCardList } from "./card-view/ghost-card-list.js";
+import type { ColumnPriority } from "./responsive/budget-algorithm.js";
 import type { GhostDataTableProps } from "./types.js";
 
 export function GhostDataTable<TData>({
@@ -30,10 +33,46 @@ export function GhostDataTable<TData>({
   toolbarActions,
   stickyHeader = false,
   enableColumnFilters = false,
+  responsive,
 }: GhostDataTableProps<TData>) {
   const columnCount = table.getAllColumns().length;
   const [showFilters, setShowFilters] = useState(false);
   const isResizable = !!table.options.enableColumnResizing;
+
+  // --- Responsive column hiding ---
+  const responsiveColumns = useMemo(() =>
+    table.getAllColumns().map(col => ({
+      id: col.id,
+      priority: ((col.columnDef.meta as Record<string, unknown>)?.priority as ColumnPriority) ?? "default",
+      label: ((col.columnDef.meta as Record<string, unknown>)?.label as string) ?? col.id,
+    })),
+    [table],
+  );
+
+  const getCellValue = useCallback((row: TData, columnId: string): string => {
+    const value = (row as Record<string, unknown>)[columnId];
+    return value == null ? "" : String(value);
+  }, []);
+
+  const responsiveResult = useResponsiveColumns({
+    columns: responsiveColumns,
+    data: table.getCoreRowModel().rows.map(r => r.original),
+    getCellValue,
+    measurer: responsive?.measurer,
+    font: responsive?.font,
+    enabled: responsive?.enabled ?? false,
+    cardViewThreshold: responsive?.cardViewThreshold,
+    userVisibility: table.getState().columnVisibility,
+  });
+
+  const prevWidthRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!responsive?.enabled) return;
+    if (responsiveResult.containerWidth === prevWidthRef.current) return;
+    prevWidthRef.current = responsiveResult.containerWidth;
+    table.setColumnVisibility(responsiveResult.columnVisibility);
+  }, [responsive?.enabled, responsiveResult.containerWidth, responsiveResult.columnVisibility, table]);
 
   const filterToggle = enableColumnFilters ? (
     <Button
@@ -155,15 +194,21 @@ export function GhostDataTable<TData>({
           toolbarActions={combinedToolbarActions}
         />
       )}
-      <div className={cn("rounded-md border", stickyHeader && "max-h-[500px] overflow-auto")}>
-        {stickyHeader ? (
-          <table className={cn("min-w-full caption-bottom text-sm", isResizable && "table-fixed")}>
-            {tableContent}
-          </table>
+      <div ref={responsive?.enabled ? responsiveResult.containerRef as React.RefObject<HTMLDivElement> : undefined}>
+        {responsiveResult.shouldUseCardView ? (
+          <GhostCardList table={table} emptyMessage={emptyMessage} loading={loading} loadingRows={loadingRows} />
         ) : (
-          <Table className={cn("min-w-full", isResizable && "table-fixed")}>
-            {tableContent}
-          </Table>
+          <div className={cn("rounded-md border", stickyHeader && "max-h-[500px] overflow-auto")}>
+            {stickyHeader ? (
+              <table className={cn("min-w-full caption-bottom text-sm", isResizable && "table-fixed")}>
+                {tableContent}
+              </table>
+            ) : (
+              <Table className={cn("min-w-full", isResizable && "table-fixed")}>
+                {tableContent}
+              </Table>
+            )}
+          </div>
         )}
       </div>
       {showPagination && (

@@ -39,6 +39,7 @@ export function EntityList<TData>({
   enableStickyHeader,
   enableDensityToggle,
   enableColumnFilters,
+  responsive,
 }: EntityListProps<TData>) {
   // 1. Schema → table config (memoized; skipped if columnOverride provided)
   const tableConfig = useMemo(() => {
@@ -226,6 +227,7 @@ export function EntityList<TData>({
         stickyHeader={enableStickyHeader}
         enableDensityToggle={enableDensityToggle}
         enableColumnFilters={enableColumnFilters}
+        responsive={responsive}
       />
     </div>
   );

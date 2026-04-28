@@ -7,6 +7,18 @@ import type {
   Table,
   VisibilityState,
 } from "@tanstack/react-table";
+import type { ColumnMeasurer } from "./responsive/column-measurer.js";
+
+export interface ResponsiveConfig {
+  /** Enable responsive column hiding. Default: false */
+  enabled?: boolean;
+  /** Pluggable column measurer (e.g. pretext). Falls back to char-count heuristic. */
+  measurer?: ColumnMeasurer;
+  /** CSS font string for measurement. Default: '14px sans-serif' */
+  font?: string;
+  /** Container width below which card view is forced. Default: 480 */
+  cardViewThreshold?: number;
+}
 
 export interface GhostTableFeatures {
   enableSorting?: boolean;
@@ -64,4 +76,6 @@ export interface GhostDataTableProps<TData> {
   stickyHeader?: boolean;
   enableDensityToggle?: boolean;
   enableColumnFilters?: boolean;
+  /** Responsive column hiding and card view configuration */
+  responsive?: ResponsiveConfig;
 }

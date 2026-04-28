@@ -1,5 +1,8 @@
 import type { SchemaFieldType, SchemaMetadata } from '@ghost-shell/schema-core';
 
+/** Responsive column visibility tier */
+export type ColumnPriority = 'essential' | 'default' | 'optional';
+
 /** Filter variant hints for table fields */
 export type FilterVariant =
   | 'text'
@@ -38,6 +41,8 @@ export interface TableFieldDescriptor {
   readonly options?: readonly unknown[];
   /** Header tooltip from schema description */
   readonly headerTooltip?: string;
+  /** Responsive column visibility tier */
+  readonly priority: ColumnPriority;
   /** Pinned position */
   readonly pinned?: 'left' | 'right' | false;
   /** Width hint */
@@ -78,6 +83,7 @@ export interface TableFieldOverride {
   readonly width?: number | string;
   readonly align?: 'left' | 'center' | 'right';
   readonly order?: number;
+  readonly priority?: ColumnPriority;
 }
 
 /** Options for compileTableFields */

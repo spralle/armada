@@ -1,3 +1,4 @@
+import type React from "react";
 import type { Column, Table } from "@tanstack/react-table";
 import {
   Button,
@@ -17,6 +18,31 @@ function getColumnLabel(column: Column<unknown, unknown>): string {
   if (typeof header === "string") return header;
   return column.id;
 }
+
+function getColumnPriority(column: Column<unknown, unknown>): string | undefined {
+  const meta = column.columnDef.meta as Record<string, unknown> | undefined;
+  const priority = meta?.priority;
+  return typeof priority === "string" ? priority : undefined;
+}
+
+const priorityStyles: Record<string, React.CSSProperties> = {
+  essential: {
+    color: "oklch(0.72 0.15 155)",
+    fontSize: "10px",
+    lineHeight: 1,
+  },
+  optional: {
+    color: "oklch(0.65 0.03 250)",
+    fontSize: "10px",
+    lineHeight: 1,
+    opacity: 0.7,
+  },
+};
+
+const priorityIcons: Record<string, string> = {
+  essential: "★",
+  optional: "○",
+};
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
@@ -60,7 +86,18 @@ export function DataTableViewOptions<TData>({
             checked={column.getIsVisible()}
             onCheckedChange={(value: boolean) => column.toggleVisibility(!!value)}
           >
-            {getColumnLabel(column as Column<unknown, unknown>)}
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              {getColumnLabel(column as Column<unknown, unknown>)}
+              {(() => {
+                const priority = getColumnPriority(column as Column<unknown, unknown>);
+                if (!priority || priority === "default") return null;
+                return (
+                  <span style={priorityStyles[priority]}>
+                    {priorityIcons[priority]}
+                  </span>
+                );
+              })()}
+            </span>
           </DropdownMenuCheckboxItem>
         ))}
       </DropdownMenuContent>
