@@ -33,3 +33,8 @@ export {
   resolveExpressionRequired,
   resolveAllConditionalRequired,
 } from './conditional-required.js';
+export {
+  applyLayoutMiddleware,
+  type LayoutMiddleware,
+  type LayoutMiddlewareContext,
+} from './layout-middleware.js';
