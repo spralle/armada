@@ -126,7 +126,7 @@ export function GhostSliderWidget({ field, mapping, aria }: WidgetProps): ReactN
 }
 
 export function GhostSelectWidget({ field, fieldInfo, aria }: WidgetProps): ReactNode {
-  const values = (fieldInfo.metadata?.enum ?? fieldInfo.metadata?.options ?? []) as readonly unknown[]
+  const values = (fieldInfo.metadata?.enum ?? fieldInfo.metadata?.extensions?.formr?.options ?? []) as readonly unknown[]
 
   return (
     <Select
@@ -148,7 +148,7 @@ export function GhostSelectWidget({ field, fieldInfo, aria }: WidgetProps): Reac
 }
 
 export function GhostRadioGroupWidget({ field, fieldInfo, aria }: WidgetProps): ReactNode {
-  const values = (fieldInfo.metadata?.enum ?? fieldInfo.metadata?.options ?? []) as readonly unknown[]
+  const values = (fieldInfo.metadata?.enum ?? fieldInfo.metadata?.extensions?.formr?.options ?? []) as readonly unknown[]
 
   return (
     <RadioGroup

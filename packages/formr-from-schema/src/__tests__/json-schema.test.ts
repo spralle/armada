@@ -37,7 +37,7 @@ describe('extractFromJsonSchema', () => {
       },
     };
     const result = extractFromJsonSchema(schema);
-    expect(result.fields[0]?.metadata).toEqual({ widget: 'email-input' });
+    expect(result.fields[0]?.metadata?.extensions?.formr).toEqual({ widget: 'email-input' });
   });
 
   test('handles nested objects with dot paths', () => {

@@ -20,9 +20,10 @@ function buildHtmlAttrs(field: SchemaFieldInfo): Record<string, unknown> {
   if (m.minLength !== undefined) attrs.minLength = m.minLength
   if (m.maxLength !== undefined) attrs.maxLength = m.maxLength
   if (m.pattern !== undefined) attrs.pattern = m.pattern
-  if (m.placeholder !== undefined) attrs.placeholder = m.placeholder
+  const formr = m.extensions?.formr
+  if (formr?.placeholder !== undefined) attrs.placeholder = formr.placeholder
   if (field.required) attrs.required = true
-  if (m.readOnly) attrs.readOnly = true
+  if (m.readOnly || formr?.readOnly) attrs.readOnly = true
 
   return attrs
 }
@@ -36,7 +37,7 @@ export function mapFieldToWidget(field: SchemaFieldInfo): FieldMapping {
   }
 
   if (field.type === 'enum') {
-    const values = m?.enum ?? m?.options ?? []
+    const values = m?.enum ?? m?.extensions?.formr?.options as readonly unknown[] ?? []
     return values.length <= 5
       ? { widget: 'radio-group', htmlAttrs }
       : { widget: 'select', htmlAttrs }
@@ -59,7 +60,7 @@ export function mapFieldToWidget(field: SchemaFieldInfo): FieldMapping {
   }
 
   if (field.type === 'string') {
-    if (m?.widget === 'textarea' || (m?.maxLength !== undefined && m.maxLength > 200)) {
+    if (m?.extensions?.formr?.widget === 'textarea' || (m?.maxLength !== undefined && m.maxLength > 200)) {
       return { widget: 'textarea', htmlAttrs }
     }
     const format = m?.format
