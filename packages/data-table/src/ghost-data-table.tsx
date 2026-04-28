@@ -65,7 +65,7 @@ export function GhostDataTable<TData>({
         />
       )}
       <div className={cn("rounded-md border", stickyHeader && "max-h-[500px] overflow-auto")}>
-        <Table style={isResizable ? { width: table.getCenterTotalSize(), tableLayout: "fixed" } : undefined}>
+        <Table className={cn("min-w-full", isResizable && "table-fixed")}>
           <TableHeader className={cn(stickyHeader && "sticky top-0 z-10 bg-background")}>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

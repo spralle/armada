@@ -15,7 +15,7 @@ import {
 import { Checkbox } from "@ghost-shell/ui";
 import type { GhostTableOptions, GhostTableResult } from "./types.js";
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 10;
 
 function makeSelectionColumn<TData>(): ColumnDef<TData, unknown> {
   return {
