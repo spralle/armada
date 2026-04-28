@@ -6,8 +6,19 @@ import { computeColumnBudget, type BudgetColumn } from "./budget-algorithm.js"
 
 const MAX_SAMPLE_ROWS = 50
 const DEFAULT_FONT = "14px sans-serif"
-/** Cell padding (32px for px-4 both sides) + sort header chrome (16px) */
-const CELL_OVERHEAD = 48
+const CELL_PADDING = 32      // px-4 both sides
+const SORT_CHROME = 20        // sort dropdown trigger
+/** Per-format rendering chrome overhead in pixels */
+const FORMAT_CHROME: Record<string, number> = {
+  avatar: 32,   // 24px circle + 8px gap
+  badge: 16,    // pill padding + border
+  tags: 24,     // badge chrome + inter-tag gap
+}
+
+function getColumnOverhead(col: ResponsiveColumnDef): number {
+  const formatExtra = col.format ? (FORMAT_CHROME[col.format] ?? 0) : 0
+  return CELL_PADDING + SORT_CHROME + formatExtra
+}
 
 export interface ResponsiveColumnDef {
   id: string
@@ -16,6 +27,8 @@ export interface ResponsiveColumnDef {
   label?: string
   /** If set, budget uses this instead of measured width (column wraps) */
   minWidth?: number
+  /** Column renderer format (e.g. 'avatar', 'badge') for overhead calculation */
+  format?: string
 }
 
 export interface UseResponsiveColumnsOptions<TData> {
@@ -80,12 +93,13 @@ export function useResponsiveColumns<TData>(
     const sampleRows = data.slice(0, MAX_SAMPLE_ROWS)
 
     return columns.map((col) => {
+      const overhead = getColumnOverhead(col)
       const values = sampleRows.map((row) => getCellValue(row, col.id))
       if (col.label) values.push(col.label)
       const contentWidth = activeMeasurer.measureColumn(values, font)
       const measuredWidth = col.minWidth
-        ? col.minWidth + CELL_OVERHEAD
-        : contentWidth + CELL_OVERHEAD
+        ? col.minWidth + overhead
+        : contentWidth + overhead
       return { id: col.id, priority: col.priority, measuredWidth, minWidth: col.minWidth }
     })
   }, [data, columns, activeMeasurer, font, getCellValue])

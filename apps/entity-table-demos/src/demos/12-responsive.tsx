@@ -101,8 +101,8 @@ const configSource = `<EntityList
     email: { priority: 'default' },
     role: { format: 'badge', priority: 'default' },
     phone: { priority: 'optional' },
-    bio: { priority: 'optional' },
-    notes: { priority: 'optional' },
+    bio: { priority: 'optional', wrap: true, minWidth: 150 },
+    notes: { priority: 'optional', wrap: true, minWidth: 120 },
   }}
   responsive={{
     enabled: true,

@@ -40,24 +40,57 @@ export function GhostDataTable<TData>({
   const isResizable = !!table.options.enableColumnResizing;
 
   // --- Responsive column hiding ---
+  const allColumns = table.getAllColumns()
   const responsiveColumns = useMemo(() =>
-    table.getAllColumns().map(col => ({
+    allColumns.map(col => ({
       id: col.id,
       priority: ((col.columnDef.meta as Record<string, unknown>)?.priority as ColumnPriority) ?? "default",
       label: ((col.columnDef.meta as Record<string, unknown>)?.label as string) ?? col.id,
       minWidth: (col.columnDef.meta as Record<string, unknown>)?.minWidth as number | undefined,
+      format: ((col.columnDef.meta as Record<string, unknown>)?.cellRenderer as string | undefined)
+        ?? ((col.columnDef.meta as Record<string, unknown>)?.format as string | undefined),
     })),
-    [table],
+    [allColumns],
   );
+
+  const formatMap = useMemo(() => {
+    const map: Record<string, string | undefined> = {}
+    for (const col of allColumns) {
+      map[col.id] = ((col.columnDef.meta as Record<string, unknown>)?.cellRenderer as string | undefined)
+        ?? ((col.columnDef.meta as Record<string, unknown>)?.format as string | undefined)
+    }
+    return map
+  }, [allColumns])
 
   const getCellValue = useCallback((row: TData, columnId: string): string => {
     const value = (row as Record<string, unknown>)[columnId];
-    return value == null ? "" : String(value);
-  }, []);
+    if (value == null) return "—"
+
+    if (value instanceof Date) {
+      return value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    }
+    if (typeof value === 'boolean') {
+      return value ? "Yes" : "No"
+    }
+    const format = formatMap[columnId]
+    if (format === 'currency' && typeof value === 'number') {
+      return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+    }
+    if (Array.isArray(value)) {
+      return value.join(', ')
+    }
+    return String(value);
+  }, [formatMap]);
+
+  const coreRows = table.getCoreRowModel().rows
+  const responsiveData = useMemo(
+    () => coreRows.map(r => r.original),
+    [coreRows],
+  )
 
   const responsiveResult = useResponsiveColumns({
     columns: responsiveColumns,
-    data: table.getCoreRowModel().rows.map(r => r.original),
+    data: responsiveData,
     getCellValue,
     measurer: responsive?.measurer,
     font: responsive?.font,
@@ -70,7 +103,15 @@ export function GhostDataTable<TData>({
   useEffect(() => {
     if (!responsive?.enabled) return;
     if (responsiveResult.containerWidth === 0) return;
-    table.setColumnVisibility(responsiveResult.columnVisibility);
+
+    // Avoid re-setting identical visibility (prevents re-render loop)
+    const current = table.getState().columnVisibility
+    const next = responsiveResult.columnVisibility
+    const changed = Object.keys(next).some(k => current[k] !== next[k])
+      || Object.keys(current).some(k => next[k] !== current[k])
+    if (!changed) return
+
+    table.setColumnVisibility(next);
   }, [responsive?.enabled, responsiveResult.columnVisibility, table]);
 
   const filterToggle = enableColumnFilters ? (
