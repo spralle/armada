@@ -103,34 +103,64 @@ export function useGhostTable<TData>(
       globalFilter,
     },
     onSortingChange: (updater) => {
-      const next = typeof updater === "function"
-        ? updater(options.sorting ?? internalSorting)
-        : updater;
-      options.onSortingChange ? options.onSortingChange(next) : setInternalSorting(next);
+      if (options.onSortingChange) {
+        const next = typeof updater === "function"
+          ? updater(options.sorting ?? internalSorting)
+          : updater;
+        options.onSortingChange(next);
+      } else {
+        setInternalSorting(prev =>
+          typeof updater === "function" ? updater(prev) : updater
+        );
+      }
     },
     onColumnFiltersChange: (updater) => {
-      const next = typeof updater === "function"
-        ? updater(options.columnFilters ?? internalFilters)
-        : updater;
-      options.onColumnFiltersChange ? options.onColumnFiltersChange(next) : setInternalFilters(next);
+      if (options.onColumnFiltersChange) {
+        const next = typeof updater === "function"
+          ? updater(options.columnFilters ?? internalFilters)
+          : updater;
+        options.onColumnFiltersChange(next);
+      } else {
+        setInternalFilters(prev =>
+          typeof updater === "function" ? updater(prev) : updater
+        );
+      }
     },
     onPaginationChange: (updater) => {
-      const next = typeof updater === "function"
-        ? updater(options.pagination ?? internalPagination)
-        : updater;
-      options.onPaginationChange ? options.onPaginationChange(next) : setInternalPagination(next);
+      if (options.onPaginationChange) {
+        const next = typeof updater === "function"
+          ? updater(options.pagination ?? internalPagination)
+          : updater;
+        options.onPaginationChange(next);
+      } else {
+        setInternalPagination(prev =>
+          typeof updater === "function" ? updater(prev) : updater
+        );
+      }
     },
     onRowSelectionChange: (updater) => {
-      const next = typeof updater === "function"
-        ? updater(options.rowSelection ?? internalRowSelection)
-        : updater;
-      options.onRowSelectionChange ? options.onRowSelectionChange(next) : setInternalRowSelection(next);
+      if (options.onRowSelectionChange) {
+        const next = typeof updater === "function"
+          ? updater(options.rowSelection ?? internalRowSelection)
+          : updater;
+        options.onRowSelectionChange(next);
+      } else {
+        setInternalRowSelection(prev =>
+          typeof updater === "function" ? updater(prev) : updater
+        );
+      }
     },
     onColumnVisibilityChange: (updater) => {
-      const next = typeof updater === "function"
-        ? updater(options.columnVisibility ?? internalVisibility)
-        : updater;
-      options.onColumnVisibilityChange ? options.onColumnVisibilityChange(next) : setInternalVisibility(next);
+      if (options.onColumnVisibilityChange) {
+        const next = typeof updater === "function"
+          ? updater(options.columnVisibility ?? internalVisibility)
+          : updater;
+        options.onColumnVisibilityChange(next);
+      } else {
+        setInternalVisibility(prev =>
+          typeof updater === "function" ? updater(prev) : updater
+        );
+      }
     },
     onGlobalFilterChange: setGlobalFilter,
   });
