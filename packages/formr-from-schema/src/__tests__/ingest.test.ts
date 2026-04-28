@@ -90,8 +90,8 @@ describe('extractFromZod', () => {
     const result = extractFromZod(schema);
     const nameField = result.fields.find(f => f.path === 'name');
     expect(nameField?.metadata).toBeDefined();
-    expect(nameField?.metadata?.label).toBe('Full Name');
-    expect(nameField?.metadata?.placeholder).toBe('Enter name');
+    expect(nameField?.metadata?.extensions?.formr?.label).toBe('Full Name');
+    expect(nameField?.metadata?.extensions?.formr?.placeholder).toBe('Enter name');
   });
 
   test('rejects x-formr in Zod metadata', () => {

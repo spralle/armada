@@ -45,7 +45,7 @@ function GhostFieldRenderer({ node }: LayoutRendererProps): ReactNode {
   const errorIssues = issues.filter((i) => i.severity === "error")
   const hasErrors = errorIssues.length > 0
   const hasDescription = !!fieldInfo.metadata?.description
-  const title = fieldInfo.metadata?.title ?? fieldInfo.metadata?.label ?? capitalize(node.path)
+  const title = fieldInfo.metadata?.title ?? (fieldInfo.metadata?.extensions?.formr?.label as string | undefined) ?? capitalize(node.path)
   const id = fieldId(node.path)
 
   const describedByParts: string[] = []

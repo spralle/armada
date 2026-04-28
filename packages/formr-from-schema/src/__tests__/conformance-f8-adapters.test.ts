@@ -105,7 +105,7 @@ describe('F8: Zod metadata rules', () => {
     };
     const result = extractFromZod(fakeZod);
     expect(result.fields).toHaveLength(1);
-    expect(result.fields[0].metadata).toEqual({ widget: 'text-input' });
+    expect(result.fields[0].metadata?.extensions?.formr).toEqual({ widget: 'text-input' });
   });
 });
 

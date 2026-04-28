@@ -231,14 +231,7 @@ function mapZodType(typeName: string): SchemaFieldType {
   }
 }
 
-const KNOWN_META_KEYS = new Set([
-  'title', 'description', 'enum', 'default',
-  'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
-  'minLength', 'maxLength', 'format', 'pattern',
-  'widget', 'options', 'label', 'placeholder',
-]);
-
-function extractFormrMetadata(schema: ZodLike): SchemaFieldMetadata | undefined {
+function extractFormrMetadata(schema: ZodLike): Readonly<Record<string, Readonly<Record<string, unknown>>>> | undefined {
   const def = schema._def;
   if (!def) return undefined;
 
@@ -251,23 +244,8 @@ function extractFormrMetadata(schema: ZodLike): SchemaFieldMetadata | undefined 
   }
 
   if (rawMeta && typeof rawMeta === 'object' && 'formr' in rawMeta) {
-    const formr = rawMeta['formr'] as Record<string, unknown>;
-    const result: Record<string, unknown> = {};
-    const extra: Record<string, unknown> = {};
-
-    for (const [key, value] of Object.entries(formr)) {
-      if (KNOWN_META_KEYS.has(key)) {
-        result[key] = value;
-      } else {
-        extra[key] = value;
-      }
-    }
-
-    if (Object.keys(extra).length > 0) {
-      result.extra = extra;
-    }
-
-    return Object.keys(result).length > 0 ? (result as SchemaFieldMetadata) : undefined;
+    const formr = rawMeta['formr'] as Readonly<Record<string, unknown>>;
+    return { formr };
   }
 
   return undefined;
@@ -330,9 +308,12 @@ function mergeZodMetadata(
   // Extra type-specific metadata
   if (extra) Object.assign(result, extra);
 
-  // Formr metadata (from .meta({ formr: {...} }))
-  const formrMeta = extractFormrMetadata(schema);
-  if (formrMeta) Object.assign(result, formrMeta);
+  // Formr metadata (from .meta({ formr: {...} })) → extensions.formr
+  const formrExtensions = extractFormrMetadata(schema);
+  if (formrExtensions) {
+    const existing = result.extensions as Record<string, Readonly<Record<string, unknown>>> | undefined;
+    result.extensions = { ...existing, ...formrExtensions };
+  }
 
   return Object.keys(result).length > 0 ? (result as SchemaFieldMetadata) : undefined;
 }
