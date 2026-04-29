@@ -11,6 +11,9 @@ const sourceRoots = ["apps", "packages", "plugins"];
 // Paths that legitimately define or manipulate raw color values
 const colorWhitelistPaths = ["packages/theme/src/", "plugins/theme-default-plugin/src/", "plugins/example-layer-"];
 
+// Demo apps are excluded — they intentionally use hardcoded colors for demonstration
+const excludedPaths = ["apps/entity-table-demos/", "apps/formr-demos/"];
+
 // Matches hex color patterns: #fff, #ffff, #ffffff, #ffffffff (3, 4, 6, or 8 hex digits)
 const hexColorRegex = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})\b/;
 
@@ -19,6 +22,9 @@ const colorFuncRegex = /\b(?:rgba?|hsla?)\s*\(/;
 
 // Matches inline style props in JSX
 const inlineStyleRegex = /\bstyle\s*=\s*\{/;
+
+// Suppression comment pattern
+const suppressionRegex = /ghost-tokens-ignore/;
 
 async function main() {
   const files = await collectSourceFiles();
@@ -44,13 +50,17 @@ async function main() {
       // Skip type-only lines
       if (/^[\w<>,\s|&:?[\](){}]+;?\s*$/.test(trimmed) && trimmed.includes(": string")) continue;
 
+      // Check for suppression: current line or previous line contains ghost-tokens-ignore
+      if (suppressionRegex.test(trimmed)) continue;
+      if (i > 0 && suppressionRegex.test(lines[i - 1])) continue;
+
       // Check hardcoded colors (skip whitelisted theme/example paths)
       if (!isColorWhitelisted && (hexColorRegex.test(trimmed) || colorFuncRegex.test(trimmed))) {
         colorViolations.push({ file: relativePath, line: i + 1, content: trimmed });
       }
 
-      // Check inline styles (TSX only)
-      if (isTsx && inlineStyleRegex.test(trimmed)) {
+      // Check inline styles that contain hardcoded colors (TSX only)
+      if (isTsx && inlineStyleRegex.test(trimmed) && (hexColorRegex.test(trimmed) || colorFuncRegex.test(trimmed))) {
         styleViolations.push({ file: relativePath, line: i + 1, content: trimmed });
       }
     }
@@ -79,8 +89,8 @@ async function main() {
     return;
   }
 
-  // TODO: change to process.exitCode = 1 once existing violations are fixed
-  console.error(`[ghost-tokens] ${colorViolations.length + styleViolations.length} violation(s) found (warn-only).`);
+  console.error(`[ghost-tokens] ${colorViolations.length + styleViolations.length} violation(s) found.`);
+  process.exitCode = 1;
 }
 
 function isTargetFile(relativePath) {
@@ -91,6 +101,8 @@ function isTargetFile(relativePath) {
   // Skip config files
   const basename = path.basename(relativePath);
   if (basename === "vite.config.ts" || basename === "tsup.config.ts") return false;
+  // Skip excluded paths (demo apps)
+  if (excludedPaths.some((p) => relativePath.startsWith(p))) return false;
   return true;
 }
 

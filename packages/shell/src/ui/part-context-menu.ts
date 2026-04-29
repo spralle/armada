@@ -235,7 +235,7 @@ export function showPartContextMenu(
     padding: 4px 0;
     pointer-events: auto;
     min-width: 180px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: var(--ghost-shadow-md);
     z-index: 1000;
   `;
 

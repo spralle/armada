@@ -16,7 +16,7 @@ export interface QuickPickOverlayProps<T extends QuickPickItem> {
 const backdropStyle: React.CSSProperties = {
   position: "absolute",
   inset: 0,
-  background: "rgba(0, 0, 0, 0.5)",
+  background: "var(--ghost-backdrop)",
   display: "flex",
   justifyContent: "center",
   alignItems: "flex-start",
@@ -33,7 +33,7 @@ const dialogStyle: React.CSSProperties = {
   background: "var(--ghost-surface)",
   border: "1px solid var(--ghost-border)",
   borderRadius: 8,
-  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.6)",
+  boxShadow: "var(--ghost-shadow-lg)",
   overflow: "hidden",
 };
 

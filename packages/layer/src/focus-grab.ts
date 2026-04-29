@@ -5,7 +5,7 @@ import type { KeyboardExclusiveManager } from "./input-behavior.js";
 // Focus grab manager
 // ---------------------------------------------------------------------------
 
-const DEFAULT_BACKDROP_COLOR = "rgba(0,0,0,0.4)";
+const DEFAULT_BACKDROP_COLOR = "var(--ghost-backdrop)";
 
 export interface FocusGrabOptions {
   surfaceId: string;

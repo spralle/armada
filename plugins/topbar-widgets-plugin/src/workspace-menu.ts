@@ -38,7 +38,7 @@ export function showWorkspaceContextMenu(
     padding: 4px 0;
     pointer-events: auto;
     min-width: 120px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: var(--ghost-shadow-md);
   `;
 
   const renameItem = createMenuItem("Rename", () => {

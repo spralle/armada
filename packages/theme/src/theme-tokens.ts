@@ -61,8 +61,15 @@ export function injectThemeVariables(palette: FullThemePalette, target?: HTMLEle
     .map(([key, cssVar]) => `  ${cssVar}: ${String(palette[key])};`)
     .join("\n");
 
+  // Derived utility tokens not in the palette contract
+  const utilityTokens = [
+    "  --ghost-backdrop: rgba(0, 0, 0, 0.5);",
+    "  --ghost-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);",
+    "  --ghost-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);",
+  ].join("\n");
+
   const selector = rootElement === ownerDoc.documentElement ? ":root" : `#${rootElement.id}`;
-  styleEl.textContent = `${selector} {\n${declarations}\n}`;
+  styleEl.textContent = `${selector} {\n${declarations}\n${utilityTokens}\n}`;
 }
 
 /**
