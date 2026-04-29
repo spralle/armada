@@ -136,6 +136,24 @@ export {
   tenantPluginManifestResponseSchema,
   themeContributionSchema,
 } from "./schemas.js";
+export type { ServiceToken } from "./service-token.js";
+export { createServiceToken } from "./service-token.js";
+export * as ServiceTokens from "./service-tokens.js";
+export {
+  Action,
+  ActivityStatus,
+  Configuration,
+  Context,
+  Keybinding,
+  Menu,
+  PluginManagement,
+  PluginRegistry,
+  SyncStatus,
+  Theme,
+  View,
+  Window,
+  Workspace,
+} from "./service-tokens.js";
 export type { SyncStatusService } from "./sync-status-service.js";
 export { SYNC_STATUS_SERVICE_ID } from "./sync-status-service.js";
 export type { BackgroundInfo, ThemeInfo, ThemeService } from "./theme-service.js";

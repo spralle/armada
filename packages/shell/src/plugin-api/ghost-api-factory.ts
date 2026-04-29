@@ -1,4 +1,5 @@
-import type { ActivationContext, Disposable, GhostApi, PluginServices } from "@ghost-shell/contracts";
+import type { ActivationContext, Disposable, GhostApi, PluginServices, ServiceToken } from "@ghost-shell/contracts";
+import { createState, disposeState } from "../reactive-state.js";
 import {
   type ActionServiceDependencies,
   type ActionServiceWithEmitter,
@@ -61,7 +62,29 @@ export function createGhostApi(deps: GhostApiFactoryDependencies): GhostApiInsta
  * Create an ActivationContext for a plugin.
  * The subscriptions array collects Disposables that are auto-disposed on deactivation.
  */
-export function createActivationContext(pluginId: string, services?: PluginServices): ActivationContext {
+export function createActivationContext(
+  pluginId: string,
+  services: PluginServices,
+  serviceRegistrar?: (tokenId: string, implementation: unknown) => Disposable,
+): ActivationContext {
   const subscriptions: Disposable[] = [];
-  return services ? { pluginId, subscriptions, services } : { pluginId, subscriptions };
+
+  return {
+    pluginId,
+    subscriptions,
+    services,
+    createState<S extends object>(initial: S): S {
+      const state = createState(initial);
+      subscriptions.push({ dispose: () => disposeState(state) });
+      return state;
+    },
+    registerService<T>(token: ServiceToken<T>, implementation: T): Disposable {
+      if (!serviceRegistrar) {
+        throw new Error(`Service registration not available during activation of '${pluginId}'`);
+      }
+      const disposable = serviceRegistrar(token.id, implementation);
+      subscriptions.push(disposable);
+      return disposable;
+    },
+  };
 }
