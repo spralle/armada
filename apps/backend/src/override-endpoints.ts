@@ -1,7 +1,7 @@
 // Override status and audit query endpoints
 
 import { validateTenantId } from "./config-loader.js";
-import type { ConfigAuditLog, OverrideTracker } from "./config-stubs.js";
+import type { ConfigAuditEntry, ConfigAuditLog, OverrideTracker } from "./config-stubs.js";
 import type { Route } from "./router.js";
 import { jsonResponse } from "./router.js";
 
@@ -89,7 +89,7 @@ export function createOverrideRoutes(options: OverrideRouteOptions): Route[] {
         const limitStr = searchParams.get("limit");
         const limit = limitStr !== null ? parseInt(limitStr, 10) : undefined;
 
-        let entries: unknown;
+        let entries: ConfigAuditEntry[];
         if (key !== undefined) {
           entries = await auditLog.queryByKey(key);
         } else if (from !== undefined && to !== undefined) {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { extractFromZod } from "../adapters/zod-extractor.js";
+import { extractFromZod } from "@ghost-shell/schema-core";
 
 /** Helper to create a mock Zod-like schema */
 function _mockZod(typeName: string, extra: Record<string, unknown> = {}) {

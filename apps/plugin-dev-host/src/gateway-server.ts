@@ -45,7 +45,7 @@ export function createPluginGateway(options: PluginGatewayOptions): PluginGatewa
 
     httpServer = createHttpServer(handleRequest);
 
-    const allDefinitions = discoverPlugins(pluginsDirs);
+    const allDefinitions = discoverPlugins(_pluginsDirs);
     const definitionMap = new Map(allDefinitions.map((d) => [d.id, d]));
 
     const liveSet = new Set(livePluginIds);

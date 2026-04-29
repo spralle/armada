@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import { Button } from "../button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "../field";
 import { mapFieldToWidget } from "./field-mapping";
-import { useSchemaFormContext } from "./schema-form-context";
+import { useFieldState, useSchemaFormContext } from "./schema-form-context";
 import { resolveWidget } from "./widget-overrides";
 
 function getNodeProp(node: LayoutNode, key: string): unknown {
@@ -22,7 +22,11 @@ function capitalize(s: string): string {
 function GhostFieldRenderer({ node }: LayoutRendererProps): ReactNode {
   const { form, fields, overrides } = useSchemaFormContext();
   const fieldInfo = fields.find((f) => f.path === node.path);
+  const fieldState = useFieldState(node.path ?? "");
   if (!fieldInfo || !node.path) return null;
+
+  const isReadOnly = fieldInfo.metadata?.readOnly === true || fieldState.readOnly;
+  const isDisabled = fieldState.disabled;
 
   const fieldApi = form.field(node.path as never);
   const mapping = mapFieldToWidget(fieldInfo);

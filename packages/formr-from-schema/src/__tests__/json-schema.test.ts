@@ -1,8 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { extractFromJsonSchema } from "../adapters/json-schema-extractor.js";
-import type { JsonSchema } from "../adapters/json-schema-types.js";
+import type { JsonSchema } from "@ghost-shell/schema-core";
+import { extractFromJsonSchema, ingestSchema } from "@ghost-shell/schema-core";
 import { createJsonSchemaValidator, isJsonSchema } from "../adapters/json-schema-validator.js";
-import { ingestSchema } from "../ingest.js";
 
 const simpleSchema: JsonSchema = {
   type: "object",
@@ -37,7 +36,7 @@ describe("extractFromJsonSchema", () => {
       },
     };
     const result = extractFromJsonSchema(schema);
-    expect(result.fields[0]?.metadata).toEqual({ widget: "email-input" });
+    expect(result.fields[0]?.metadata).toEqual({ extensions: { formr: { widget: "email-input" } } });
   });
 
   test("handles nested objects with dot paths", () => {

@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { dereferenceSchema } from "../adapters/json-schema-deref.js";
-import { extractFromJsonSchema } from "../adapters/json-schema-extractor.js";
-import type { JsonSchema } from "../adapters/json-schema-types.js";
+import type { JsonSchema } from "@ghost-shell/schema-core";
+import { dereferenceSchema, extractFromJsonSchema } from "@ghost-shell/schema-core";
 import { createJsonSchemaValidator } from "../adapters/json-schema-validator.js";
 
 describe("dereferenceSchema", () => {

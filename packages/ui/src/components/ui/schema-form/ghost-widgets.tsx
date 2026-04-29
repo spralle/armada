@@ -17,6 +17,8 @@ export interface WidgetProps {
   readonly fieldInfo: SchemaFieldInfo;
   readonly mapping: FieldMapping;
   readonly aria: FieldAriaAttributes;
+  readonly readOnly?: boolean;
+  readonly disabled?: boolean;
 }
 
 /** Aria attributes passed to widget components */

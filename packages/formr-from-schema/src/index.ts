@@ -1,8 +1,34 @@
-export { extractFromJsonSchema } from "./adapters/json-schema-extractor.js";
-export type { JsonSchema } from "./adapters/json-schema-types.js";
+// Re-export schema-core types and functions that consumers previously imported from formr-from-schema
+export {
+  clearExtractorRegistry,
+  createValidationOnlyResult,
+  extractFromJsonSchema,
+  extractFromZod,
+  extractFromZodV4,
+  findExtractor,
+  ingestSchema,
+  isStandardSchema,
+  isZodSchema,
+  isZodV4Schema,
+  type JsonSchema,
+  type MergeInput,
+  type MetadataSource,
+  mergeMetadata,
+  mergeSamePrecedence,
+  registerExtractor,
+  SchemaError,
+  type SchemaErrorCode,
+  type SchemaExtractor,
+  type SchemaFieldInfo,
+  type SchemaFieldMetadata,
+  type SchemaFieldType,
+  type SchemaIngestionResult,
+  type SchemaMetadata,
+  type StandardSchemaV1,
+  structuralEqual,
+} from "@ghost-shell/schema-core";
 export { createJsonSchemaValidator, isJsonSchema } from "./adapters/json-schema-validator.js";
-export { extractFromZod } from "./adapters/zod-extractor.js";
-export { extractFromZodV4 } from "./adapters/zod4-extractor.js";
+// Local exports that remain in formr-from-schema
 export {
   resolveAllConditionalRequired,
   resolveDependentRequired,
@@ -15,16 +41,7 @@ export {
   createSchemaForm,
   type SchemaFormResult,
 } from "./create-schema-form.js";
-export { isStandardSchema, isZodSchema, isZodV4Schema } from "./detect.js";
 export { FromSchemaError, type FromSchemaErrorCode } from "./errors.js";
-export {
-  clearExtractorRegistry,
-  createValidationOnlyResult,
-  findExtractor,
-  registerExtractor,
-  type SchemaExtractor,
-} from "./extractor-registry.js";
-export { ingestSchema } from "./ingest.js";
 export { compileLayout, type LayoutCompileOptions } from "./layout/layout-compiler.js";
 export { type LayoutNodeDefinition, LayoutNodeRegistry } from "./layout/layout-registry.js";
 export {
@@ -50,19 +67,4 @@ export {
   type LayoutMiddleware,
   type LayoutMiddlewareContext,
 } from "./layout-middleware.js";
-export {
-  type MergeInput,
-  type MetadataSource,
-  mergeMetadata,
-  mergeSamePrecedence,
-  structuralEqual,
-} from "./metadata-merge.js";
-export type {
-  SchemaFieldInfo,
-  SchemaFieldMetadata,
-  SchemaFieldType,
-  SchemaIngestionResult,
-  SchemaMetadata,
-  StandardSchemaV1,
-} from "./types.js";
 export { hasUiPaths, isValidUiSchema, validateUiSchemaRequirement } from "./ui-schema-check.js";

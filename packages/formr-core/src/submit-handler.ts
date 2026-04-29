@@ -116,8 +116,12 @@ export function createSubmitHandler<TData, TUi>(deps: SubmitHandlerDeps<TData, T
           : rawData
       ) as TData;
 
+      const submitPromise = options.onSubmit?.({ form: deps.getApi(), submitContext, payload });
+      if (!submitPromise) {
+        throw new Error("onSubmit handler is not defined");
+      }
       const result = await withTimeout(
-        options.onSubmit?.({ form: deps.getApi(), submitContext, payload }),
+        submitPromise,
         options.timeouts?.submit ?? DEFAULT_RUNTIME_CONSTRAINTS.submitTimeout,
         "onSubmit callback timed out",
       );

@@ -8,6 +8,25 @@ import type {
 import { dereferenceSchema } from "./json-schema-deref.js";
 import type { JsonSchema } from "./json-schema-types.js";
 
+/** Extract x-* extension keys from a JSON Schema into a grouped record (e.g., x-formr → extensions.formr) */
+function extractExtensions(
+  schema: JsonSchema,
+): Readonly<Record<string, Readonly<Record<string, unknown>>>> | undefined {
+  const extensions: Record<string, Readonly<Record<string, unknown>>> = {};
+  let found = false;
+  for (const key of Object.keys(schema)) {
+    if (key.startsWith("x-")) {
+      const name = key.slice(2);
+      const value = schema[key as `x-${string}`];
+      if (value !== undefined && typeof value === "object" && value !== null && !Array.isArray(value)) {
+        extensions[name] = value as Readonly<Record<string, unknown>>;
+        found = true;
+      }
+    }
+  }
+  return found ? extensions : undefined;
+}
+
 function buildMetadata(standardMeta: Record<string, unknown>, schema: JsonSchema): SchemaFieldMetadata | undefined {
   const extensions = extractExtensions(schema);
   const hasContent = Object.keys(standardMeta).length > 0 || extensions !== undefined;

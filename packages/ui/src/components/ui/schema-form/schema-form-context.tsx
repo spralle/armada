@@ -2,7 +2,8 @@
 
 import type { FormApi } from "@ghost-shell/formr-core";
 import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema";
-import type { RendererRegistry } from "@ghost-shell/formr-react";
+import type { RendererRegistry, ResolvedFieldState } from "@ghost-shell/formr-react";
+import { DEFAULT_FIELD_STATE } from "@ghost-shell/formr-react";
 import { createContext, useContext } from "react";
 import type { WidgetOverrides } from "./widget-overrides";
 
@@ -11,6 +12,7 @@ export interface SchemaFormContextValue {
   readonly fields: readonly SchemaFieldInfo[];
   readonly overrides?: WidgetOverrides | undefined;
   readonly registry: RendererRegistry;
+  readonly fieldStates?: ReadonlyMap<string, ResolvedFieldState> | undefined;
 }
 
 const SchemaFormContext = createContext<SchemaFormContextValue | null>(null);
@@ -36,5 +38,5 @@ export function useSchemaFormContext(): SchemaFormContextValue {
 /** Convenience hook to get resolved field state for a specific path */
 export function useFieldState(path: string): ResolvedFieldState {
   const { fieldStates } = useSchemaFormContext();
-  return fieldStates.get(path) ?? DEFAULT_FIELD_STATE;
+  return fieldStates?.get(path) ?? DEFAULT_FIELD_STATE;
 }

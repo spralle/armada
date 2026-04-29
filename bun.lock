@@ -18,6 +18,9 @@
       "dependencies": {
         "@ghost-shell/contracts": "file:../../packages/plugin-contracts",
       },
+      "devDependencies": {
+        "@types/node": "^22.0.0",
+      },
     },
     "apps/entity-table-demos": {
       "name": "@ghost-shell/entity-table-demos",
@@ -132,6 +135,7 @@
       "dependencies": {
         "@ghost-shell/ui": "workspace:*",
         "@tanstack/react-table": "^8.21.3",
+        "lucide-react": "^0.475.0",
       },
       "devDependencies": {
         "@types/react": "^18.3.12",
@@ -148,6 +152,7 @@
       "dependencies": {
         "@ghost-shell/contracts": "workspace:*",
         "@ghost-shell/data-table": "workspace:*",
+        "@ghost-shell/schema-core": "workspace:*",
         "@ghost-shell/table-from-schema": "workspace:*",
         "@ghost-shell/ui": "workspace:*",
         "lucide-react": "^0.475.0",
@@ -162,9 +167,11 @@
         "@tanstack/react-table": "^8.21.3",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
+        "zod": "^3.24.0",
       },
       "optionalPeers": [
         "@chenglou/pretext",
+        "zod",
       ],
     },
     "packages/federation": {
@@ -174,6 +181,10 @@
         "@ghost-shell/contracts": "workspace:*",
         "@ghost-shell/react": "workspace:*",
         "@ghost-shell/ui": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1",
       },
       "peerDependencies": {
         "@module-federation/enhanced": "^2.3.1",
@@ -1733,9 +1744,19 @@
 
     "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
+    "@ghost-shell/backend-app/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost-shell/entity-table/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost-shell/federation/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
     "@ghost-shell/formr-react/@types/react": ["@types/react@19.2.14", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
 
     "@ghost-shell/formr-react/react": ["react@19.2.5", "", {}, "sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA=="],
+
+    "@ghost-shell/plugin-system/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost-shell/react/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost-shell/react/@types/react": ["@types/react@19.2.14", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w=="],
 
@@ -1744,6 +1765,10 @@
     "@ghost-shell/react/react": ["react@19.2.5", "", {}, "sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA=="],
 
     "@ghost-shell/react/react-dom": ["react-dom@19.2.5", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.5" } }, "sha512-J5bAZz+DXMMwW/wV3xzKke59Af6CHY7G4uYLN1OvBcKEsWOs4pQExj86BBKamxl/Ik5bx9whOrvBlSDfWzgSag=="],
+
+    "@ghost-shell/theme/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "@ghost-shell/typecheck-fixture/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "@ghost-shell/ui/zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
 
@@ -1842,6 +1867,54 @@
     "cmdk/@radix-ui/react-primitive": ["@radix-ui/react-primitive@2.1.4", "", { "dependencies": { "@radix-ui/react-slot": "1.2.4" }, "peerDependencies": { "@types/react": "*", "@types/react-dom": "*", "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react", "@types/react-dom"] }, "sha512-9hQc4+GNVtJAIEPEqlYqW5RiYdrr8ea5XQ0ZOnD6fgru+83kqT15mq2OCcbe8KnjRZl5vF3ks69AKz3kh1jrhg=="],
 
     "enhanced-resolve/tapable": ["tapable@2.3.3", "", {}, "sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A=="],
+
+    "ghost.action-palette/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.appearance-settings/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.domain.unplanned-orders/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.domain.vessel-view/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.example-layer-anchor-showcase/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.example-layer-background/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.example-layer-custom/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.example-layer-modal/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.example-layer-notification/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.example-layer-overlay/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.example-layer-panel/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.group-context/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.keybindings/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.pending-chord-indicator/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.plugin-starter/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.plugins-panel/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.sample.contract-consumer/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.settings-panel/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.shadcn.theme-bridge/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.shared.ui-capabilities/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.theme.default/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.topbar-widgets/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.ui/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
+
+    "ghost.view-picker/@ghost-shell/contracts": ["@ghost-shell/contracts@file:packages/plugin-contracts", { "dependencies": { "zod": "^3.24.2" } }],
 
     "knip/zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
 

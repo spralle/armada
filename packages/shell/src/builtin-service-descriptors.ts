@@ -49,7 +49,7 @@ export interface BuiltinServiceDescriptor {
   readonly pluginId: string;
   readonly phase: BuiltinServicePhase;
   /** Return `false` to skip registration (e.g. when optional deps are missing). */
-  readonly register: (deps: BuiltinServiceDeps) => undefined | false;
+  readonly register: (deps: BuiltinServiceDeps) => void | false;
 }
 
 /**

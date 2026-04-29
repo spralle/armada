@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import type { SchemaIngestionResult } from "@ghost-shell/schema-core";
 import { FromSchemaError } from "../errors.js";
 import { compileLayout } from "../layout/layout-compiler.js";
 import { LayoutNodeRegistry } from "../layout/layout-registry.js";
 import { isArrayNode, isFieldNode, isGroupNode, isSectionNode, type LayoutNode } from "../layout/layout-types.js";
-import type { SchemaIngestionResult } from "../types.js";
 
 // --- Type guards ---
 

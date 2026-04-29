@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { FromSchemaError } from "../errors.js";
-import { mergeMetadata, mergeSamePrecedence, structuralEqual } from "../metadata-merge.js";
+import { mergeMetadata, mergeSamePrecedence, SchemaError, structuralEqual } from "@ghost-shell/schema-core";
 
 describe("mergeMetadata (cross-precedence)", () => {
   test("external overrides embedded overrides kernel for scalars", () => {
@@ -72,11 +71,11 @@ describe("mergeSamePrecedence (conflict detection)", () => {
   });
 
   test("different scalars conflict", () => {
-    expect(() => mergeSamePrecedence({ a: 1 }, { a: 2 })).toThrow(FromSchemaError);
+    expect(() => mergeSamePrecedence({ a: 1 }, { a: 2 })).toThrow(SchemaError);
     try {
       mergeSamePrecedence({ a: 1 }, { a: 2 });
     } catch (e) {
-      expect((e as FromSchemaError).code).toBe("FORMR_META_CONFLICT");
+      expect((e as SchemaError).code).toBe("SCHEMA_META_CONFLICT");
     }
   });
 
@@ -87,15 +86,15 @@ describe("mergeSamePrecedence (conflict detection)", () => {
   });
 
   test("different arrays conflict", () => {
-    expect(() => mergeSamePrecedence({ a: [1] }, { a: [2] })).toThrow(FromSchemaError);
+    expect(() => mergeSamePrecedence({ a: [1] }, { a: [2] })).toThrow(SchemaError);
   });
 
   test("object vs non-object conflicts", () => {
-    expect(() => mergeSamePrecedence({ a: { x: 1 } }, { a: "string" })).toThrow(FromSchemaError);
+    expect(() => mergeSamePrecedence({ a: { x: 1 } }, { a: "string" })).toThrow(SchemaError);
   });
 
   test("object vs object merges recursively, conflict at child level", () => {
-    expect(() => mergeSamePrecedence({ a: { x: 1 } }, { a: { x: 2 } })).toThrow(FromSchemaError);
+    expect(() => mergeSamePrecedence({ a: { x: 1 } }, { a: { x: 2 } })).toThrow(SchemaError);
 
     // Compatible nested merge
     expect(mergeSamePrecedence({ a: { x: 1 } }, { a: { y: 2 } })).toEqual({ a: { x: 1, y: 2 } });

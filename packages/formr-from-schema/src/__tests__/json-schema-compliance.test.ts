@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { extractFromJsonSchema } from "../adapters/json-schema-extractor.js";
-import type { JsonSchema } from "../adapters/json-schema-types.js";
+import type { JsonSchema } from "@ghost-shell/schema-core";
+import { extractFromJsonSchema } from "@ghost-shell/schema-core";
 import { createJsonSchemaValidator, isJsonSchema } from "../adapters/json-schema-validator.js";
 import { resolveIfThenElseRequired } from "../conditional-required.js";
 

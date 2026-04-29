@@ -71,7 +71,10 @@ async function handleChordResolution(
   if (resolution.kind === "exact") {
     sequenceManager.clear();
     event.preventDefault();
-    await dispatchExactMatch(root, runtime, bindings, keybindingService, chords, context, resolution.match?.action);
+    const action = resolution.match?.action;
+    if (action) {
+      await dispatchExactMatch(root, runtime, bindings, keybindingService, chords, context, action);
+    }
     return true;
   }
 

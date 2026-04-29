@@ -1,10 +1,10 @@
 import type { ValidatorFn } from "@ghost-shell/formr-core";
 import { createStandardSchemaValidator, isStandardSchemaLike } from "@ghost-shell/formr-core";
+import { ingestSchema, type JsonSchema, type SchemaFieldInfo, type SchemaMetadata } from "@ghost-shell/schema-core";
 import { createJsonSchemaValidator, isJsonSchema } from "./adapters/json-schema-validator.js";
-import { ingestSchema } from "./ingest.js";
 import { compileLayout } from "./layout/layout-compiler.js";
 import type { LayoutNode } from "./layout/layout-types.js";
-import type { SchemaFieldInfo, SchemaMetadata } from "./types.js";
+import { applyLayoutMiddleware, type LayoutMiddleware } from "./layout-middleware.js";
 
 export interface CreateSchemaFormOptions {
   /** Additional validators to include beyond the auto-detected schema validator */

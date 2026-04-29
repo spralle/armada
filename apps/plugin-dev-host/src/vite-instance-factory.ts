@@ -34,7 +34,7 @@ export async function createPluginViteInstance(options: ViteInstanceOptions): Pr
     server: {
       middlewareMode: true,
       hmr: {
-        server: httpServer,
+        server: _httpServer,
         path: `/__vite_hmr/${pluginId}`,
       },
       cors: true,

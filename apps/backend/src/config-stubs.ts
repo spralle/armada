@@ -118,8 +118,18 @@ function warnOnce(name: string): void {
   }
 }
 
+export interface FileSystemStorageProviderOptions {
+  id: string;
+  layer: string;
+  filePath: string;
+  writable?: boolean;
+  environmentOverlayPath?: string;
+}
+
 /** @deprecated No-op stub — @weaver/config-providers removed. Always returns empty data. */
 export class FileSystemStorageProvider {
+  constructor(_options?: FileSystemStorageProviderOptions) {}
+
   async load(): Promise<StorageLoadResult> {
     warnOnce("FileSystemStorageProvider.load");
     return { entries: {} };

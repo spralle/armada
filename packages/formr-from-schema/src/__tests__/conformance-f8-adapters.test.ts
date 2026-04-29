@@ -1,10 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import type { JsonSchema } from "../adapters/json-schema-types.js";
+import type { JsonSchema } from "@ghost-shell/schema-core";
+import { extractFromZod, ingestSchema, isStandardSchema, SchemaError } from "@ghost-shell/schema-core";
 import { createJsonSchemaValidator, isJsonSchema } from "../adapters/json-schema-validator.js";
-import { extractFromZod } from "../adapters/zod-extractor.js";
-import { isStandardSchema } from "../detect.js";
-import { FromSchemaError } from "../errors.js";
-import { ingestSchema } from "../ingest.js";
 
 /**
  * F8: Schema adapters conformance fixtures.
@@ -76,7 +73,7 @@ describe("F8: Standard Schema detection", () => {
 });
 
 describe("F8: Zod metadata rules", () => {
-  test("x-formr in Zod metadata throws FORMR_ZOD_XFORMR_FORBIDDEN", () => {
+  test("x-formr in Zod metadata throws SCHEMA_ZOD_TRANSFORM_FORBIDDEN", () => {
     const fakeZod = {
       _def: {
         typeName: "ZodObject",
@@ -88,8 +85,8 @@ describe("F8: Zod metadata rules", () => {
       extractFromZod(fakeZod);
       expect(true).toBe(false); // should not reach
     } catch (e) {
-      expect(e).toBeInstanceOf(FromSchemaError);
-      expect((e as FromSchemaError).code).toBe("FORMR_ZOD_XFORMR_FORBIDDEN");
+      expect(e).toBeInstanceOf(SchemaError);
+      expect((e as SchemaError).code).toBe("SCHEMA_ZOD_TRANSFORM_FORBIDDEN");
     }
   });
 
@@ -109,13 +106,13 @@ describe("F8: Zod metadata rules", () => {
     };
     const result = extractFromZod(fakeZod);
     expect(result.fields).toHaveLength(1);
-    expect(result.fields[0].metadata).toEqual({ widget: "text-input" });
+    expect(result.fields[0].metadata).toEqual({ extensions: { widget: "text-input" } });
   });
 });
 
 describe("F8: Unsupported schema rejection", () => {
   test("ingestSchema throws for unknown schema type", () => {
-    expect(() => ingestSchema({ random: true })).toThrow(FromSchemaError);
+    expect(() => ingestSchema({ random: true })).toThrow(SchemaError);
   });
 
   test("ingestSchema returns validation-only result for non-Zod Standard Schema vendor", () => {

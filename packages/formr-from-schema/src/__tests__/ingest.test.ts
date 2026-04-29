@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { z } from "zod";
-import { extractFromZod, FromSchemaError, ingestSchema, isStandardSchema, isZodSchema } from "../index.js";
+import { extractFromZod, ingestSchema, isStandardSchema, isZodSchema, SchemaError } from "../index.js";
 
 describe("isStandardSchema", () => {
   test("detects Zod schema as Standard Schema", () => {
@@ -90,8 +90,8 @@ describe("extractFromZod", () => {
     const result = extractFromZod(schema);
     const nameField = result.fields.find((f) => f.path === "name");
     expect(nameField?.metadata).toBeDefined();
-    expect(nameField?.metadata?.label).toBe("Full Name");
-    expect(nameField?.metadata?.placeholder).toBe("Enter name");
+    expect(nameField?.metadata?.extensions?.label).toBe("Full Name");
+    expect(nameField?.metadata?.extensions?.placeholder).toBe("Enter name");
   });
 
   test("rejects x-formr in Zod metadata", () => {
@@ -102,11 +102,11 @@ describe("extractFromZod", () => {
       },
     };
 
-    expect(() => extractFromZod(badSchema)).toThrow(FromSchemaError);
+    expect(() => extractFromZod(badSchema)).toThrow(SchemaError);
     try {
       extractFromZod(badSchema);
     } catch (e) {
-      expect((e as FromSchemaError).code).toBe("FORMR_ZOD_XFORMR_FORBIDDEN");
+      expect((e as SchemaError).code).toBe("SCHEMA_ZOD_TRANSFORM_FORBIDDEN");
     }
   });
 
@@ -141,6 +141,6 @@ describe("ingestSchema", () => {
   });
 
   test("rejects non-Standard-Schema", () => {
-    expect(() => ingestSchema({})).toThrow(FromSchemaError);
+    expect(() => ingestSchema({})).toThrow(SchemaError);
   });
 });

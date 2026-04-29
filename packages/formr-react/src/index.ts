@@ -39,6 +39,8 @@ export {
   GroupRenderer,
   SectionRenderer,
 } from "./renderers/index.js";
+export type { ResolvedFieldState } from "./resolve-field-state.js";
+export { DEFAULT_FIELD_STATE, pruneHiddenFields, resolveFieldStates } from "./resolve-field-state.js";
 export { useField } from "./use-field.js";
 export { type UseFormOptions, useForm } from "./use-form.js";
 export { useFormSelector } from "./use-form-selector.js";

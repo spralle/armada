@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { FromSchemaError } from "../errors.js";
-import { mergeMetadata, mergeSamePrecedence, structuralEqual } from "../metadata-merge.js";
+import { mergeMetadata, mergeSamePrecedence, SchemaError, structuralEqual } from "@ghost-shell/schema-core";
 
 /**
  * F5: Metadata merge conformance fixtures.
@@ -102,18 +101,18 @@ describe("F5: Metadata merge — conflict detection (same precedence)", () => {
     expect(result).toEqual({ config: { x: 1, y: [2, 3] } });
   });
 
-  test("different values at same precedence throw FORMR_META_CONFLICT", () => {
+  test("different values at same precedence throw SCHEMA_META_CONFLICT", () => {
     try {
       mergeSamePrecedence({ a: 1 }, { a: 2 });
       expect(true).toBe(false); // should not reach
     } catch (e) {
-      expect(e).toBeInstanceOf(FromSchemaError);
-      expect((e as FromSchemaError).code).toBe("FORMR_META_CONFLICT");
+      expect(e).toBeInstanceOf(SchemaError);
+      expect((e as SchemaError).code).toBe("SCHEMA_META_CONFLICT");
     }
   });
 
-  test("different arrays at same precedence throw FORMR_META_CONFLICT", () => {
-    expect(() => mergeSamePrecedence({ a: [1] }, { a: [2] })).toThrow(FromSchemaError);
+  test("different arrays at same precedence throw SCHEMA_META_CONFLICT", () => {
+    expect(() => mergeSamePrecedence({ a: [1] }, { a: [2] })).toThrow(SchemaError);
   });
 
   test("non-overlapping keys merge without conflict", () => {

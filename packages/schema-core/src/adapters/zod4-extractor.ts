@@ -1,4 +1,4 @@
-import { FromSchemaError } from "../errors.js";
+import { SchemaError } from "../errors.js";
 import type {
   SchemaFieldInfo,
   SchemaFieldMetadata,
@@ -289,8 +289,8 @@ function buildV4Metadata(
   // Formr metadata
   const rawMeta = def["metadata"] as Record<string, unknown> | undefined;
   if (rawMeta && "x-formr" in rawMeta) {
-    throw new FromSchemaError(
-      "FORMR_ZOD_XFORMR_FORBIDDEN",
+    throw new SchemaError(
+      "SCHEMA_ZOD_TRANSFORM_FORBIDDEN",
       "x-formr is not allowed in Zod metadata. Use .meta({ formr: { ... } }) instead.",
     );
   }

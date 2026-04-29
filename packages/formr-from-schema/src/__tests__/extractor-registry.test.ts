@@ -3,11 +3,12 @@ import {
   clearExtractorRegistry,
   createValidationOnlyResult,
   findExtractor,
+  ingestSchema,
   registerExtractor,
   type SchemaExtractor,
-} from "../extractor-registry.js";
-import { ingestSchema } from "../ingest.js";
-import type { SchemaFieldInfo, StandardSchemaV1 } from "../types.js";
+  type SchemaFieldInfo,
+  type StandardSchemaV1,
+} from "@ghost-shell/schema-core";
 
 function makeStandardSchema(vendor: string): StandardSchemaV1 {
   return {

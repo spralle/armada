@@ -4,5 +4,8 @@
   "type": "module",
   "dependencies": {
     "@ghost-shell/contracts": "file:../../packages/plugin-contracts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
   }
 }

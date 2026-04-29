@@ -1,4 +1,4 @@
-import { FromSchemaError } from "./errors.js";
+import { SchemaError } from "./errors.js";
 
 export type MetadataSource = Readonly<Record<string, unknown>>;
 
@@ -102,8 +102,8 @@ function deepMergeSamePrecedence(
       continue;
     }
 
-    throw new FromSchemaError(
-      "FORMR_META_CONFLICT",
+    throw new SchemaError(
+      "SCHEMA_META_CONFLICT",
       `Metadata conflict at key "${key}": incompatible values at same precedence`,
     );
   }

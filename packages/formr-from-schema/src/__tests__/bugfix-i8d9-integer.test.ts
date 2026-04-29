@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { extractFromJsonSchema } from "../adapters/json-schema-extractor.js";
-import type { JsonSchema } from "../adapters/json-schema-types.js";
+import type { JsonSchema } from "@ghost-shell/schema-core";
+import { extractFromJsonSchema } from "@ghost-shell/schema-core";
 
 describe("i8d9: integer type mapping", () => {
   test("maps JSON Schema integer to integer field type", () => {

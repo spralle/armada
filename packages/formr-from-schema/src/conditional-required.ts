@@ -1,5 +1,5 @@
 import type { ValidationIssue } from "@ghost-shell/formr-core";
-import type { JsonSchema } from "./adapters/json-schema-types.js";
+import type { JsonSchema } from "@ghost-shell/schema-core";
 import { checkType, isObject, makeIssue } from "./utils.js";
 
 /**
@@ -34,7 +34,8 @@ function evaluateIfSchema(ifSchema: JsonSchema, data: Record<string, unknown>): 
   }
 
   if (ifSchema.properties && isObject(data)) {
-    for (const [key, propSchema] of Object.entries(ifSchema.properties)) {
+    for (const [key, rawPropSchema] of Object.entries(ifSchema.properties)) {
+      const propSchema = rawPropSchema as JsonSchema;
       const value = data[key];
       if (value === undefined || value === null) continue;
 
@@ -99,7 +100,8 @@ export function resolveDependentRequired(input: ConditionalRequiredInput): reado
   const issues: ValidationIssue[] = [];
   for (const [trigger, deps] of Object.entries(schema.dependentRequired)) {
     if (!isEmpty(data[trigger])) {
-      for (const dep of deps) {
+      if (!Array.isArray(deps)) continue;
+      for (const dep of deps as readonly string[]) {
         if (isEmpty(data[dep])) {
           issues.push(
             makeIssue(
@@ -124,7 +126,8 @@ export function resolveDependentRequired(input: ConditionalRequiredInput): reado
 function matchesOneOfBranch(branch: JsonSchema, data: Record<string, unknown>): boolean {
   if (!branch.properties) return false;
 
-  for (const [key, propSchema] of Object.entries(branch.properties)) {
+  for (const [key, rawPropSchema] of Object.entries(branch.properties)) {
+    const propSchema = rawPropSchema as JsonSchema;
     const value = data[key];
     if (value === undefined || value === null) continue;
     if (propSchema.enum && !propSchema.enum.includes(value)) return false;

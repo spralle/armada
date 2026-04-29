@@ -1,7 +1,6 @@
 import type { ValidationIssue, ValidatorFn } from "@ghost-shell/formr-core";
+import { dereferenceSchema, type JsonSchema } from "@ghost-shell/schema-core";
 import { checkType, isObject, makeIssue as makeIssueBase } from "../utils.js";
-import { dereferenceSchema } from "./json-schema-deref.js";
-import type { JsonSchema } from "./json-schema-types.js";
 
 const ADAPTER_ORIGIN = "json-schema-adapter" as const;
 
@@ -268,7 +267,8 @@ function validateDependentRequired(
 
   for (const [trigger, deps] of Object.entries(schema.dependentRequired)) {
     if (trigger in data && data[trigger] !== undefined) {
-      for (const dep of deps) {
+      if (!Array.isArray(deps)) continue;
+      for (const dep of deps as readonly string[]) {
         if (!(dep in data) || data[dep] === undefined) {
           issues.push(
             makeIssue(

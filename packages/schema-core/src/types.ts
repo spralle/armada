@@ -52,6 +52,14 @@ export interface SchemaFieldMetadata {
   readonly variants?: readonly unknown[];
   // Extension data from x-* keys (e.g., x-formr → extensions.formr)
   readonly extensions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+  // Display label (from x-* extensions or schema extractors)
+  readonly label?: string;
+  // Extra vendor-specific metadata
+  readonly extra?: Readonly<Record<string, unknown>>;
+  // UI hints (from x-* extensions)
+  readonly placeholder?: string;
+  readonly options?: readonly unknown[];
+  readonly widget?: string;
 }
 
 // Extracted field info from schema ingestion
