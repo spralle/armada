@@ -22,6 +22,8 @@
     "build:dist": "tsup"
   },
   "dependencies": {
-    "@ghost-shell/contracts": "workspace:*"
+    "@ghost-shell/contracts": "workspace:*",
+    "@weaver/config-engine": "link:@weaver/config-engine",
+    "@weaver/config-types": "link:@weaver/config-types"
   }
 }

@@ -36,16 +36,40 @@ export interface ShellConfigServiceResult {
 // ---------------------------------------------------------------------------
 
 /**
- * Stub ConfigurationService for degraded operation.
- * Returns undefined for all config reads and silently drops writes.
- * Replace with a real implementation when a config backend is available.
+ * In-memory ConfigurationService for degraded operation.
+ * Stores values in a Map and notifies listeners on changes.
+ * Replace with a persistent backend when available.
  * @see armada-1g3r for the broader config service roadmap
  */
-const noopConfigService: ConfigurationService = {
-  get: () => undefined,
-  set: () => {},
-  onChange: () => () => {},
-};
+function createInMemoryConfigService(): ConfigurationService {
+  const store = new Map<string, unknown>();
+  const listeners = new Map<string, Set<(value: unknown) => void>>();
+
+  return {
+    get<T = unknown>(key: string): T | undefined {
+      return store.get(key) as T | undefined;
+    },
+    set(key: string, value: unknown): void {
+      // Note: layer parameter ignored in in-memory fallback — single-layer store
+      store.set(key, value);
+      const keyListeners = listeners.get(key);
+      if (keyListeners) {
+        for (const listener of keyListeners) {
+          listener(value);
+        }
+      }
+    },
+    onChange(key: string, listener: (value: unknown) => void): () => void {
+      let keyListeners = listeners.get(key);
+      if (!keyListeners) {
+        keyListeners = new Set();
+        listeners.set(key, keyListeners);
+      }
+      keyListeners.add(listener);
+      return () => { keyListeners.delete(listener); };
+    },
+  };
+}
 
 /**
  * Create the shell's ConfigurationService.
@@ -53,7 +77,7 @@ const noopConfigService: ConfigurationService = {
  * Hydration continues normally; config-dependent features degrade gracefully.
  */
 export async function createShellConfigService(): Promise<ShellConfigServiceResult> {
-  return { configService: noopConfigService, sessionController: {} };
+  return { configService: createInMemoryConfigService(), sessionController: {} };
 }
 
 // ---------------------------------------------------------------------------
