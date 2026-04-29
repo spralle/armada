@@ -47,13 +47,16 @@ interface PluginSettingsEditorInternalProps {
   readonly editingLayer: string;
   readonly schema: JsonSchema;
   readonly configService: ConfigurationService;
+  readonly layerRanks?: ReadonlyMap<string, number> | undefined;
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const DEFAULT_LAYER_RANKS: ReadonlyMap<string, number> = new Map([
+/** Fallback layer ranking when caller doesn't provide one.
+ *  Production callers should inject the actual layer stack from weaver's configuration. */
+const FALLBACK_LAYER_RANKS: ReadonlyMap<string, number> = new Map([
   ["default", 0],
   ["system", 1],
   ["organization", 2],
@@ -65,6 +68,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Extract weaver governance entries from raw JSON Schema.
+ * Uses 'x-weaver' (with prefix) because this runs BEFORE schema-core ingestion
+ * which would move extensions to metadata.extensions.weaver (without prefix).
+ */
 function extractWeaverEntries(schema: JsonSchema): WeaverSchemaEntry[] {
   const entries: WeaverSchemaEntry[] = [];
   const props = schema.properties;
@@ -160,17 +168,19 @@ function SettingsEditorForm({
   editingLayer,
   schema,
   configService,
+  layerRanks,
 }: PluginSettingsEditorInternalProps) {
-  const layerRank = DEFAULT_LAYER_RANKS.get(editingLayer) ?? 4;
+  const effectiveLayerRanks = layerRanks ?? FALLBACK_LAYER_RANKS;
+  const layerRank = effectiveLayerRanks.get(editingLayer) ?? 4;
 
   const weaverContext: WeaverFormrContext = useMemo(
     () => ({
       layer: editingLayer,
       layerRank,
-      layerRanks: DEFAULT_LAYER_RANKS,
+      layerRanks: effectiveLayerRanks,
       authRoles: ["admin"],
     }),
-    [editingLayer, layerRank],
+    [editingLayer, layerRank, effectiveLayerRanks],
   );
 
   const processedSchema = useMemo(
@@ -187,10 +197,10 @@ function SettingsEditorForm({
     () => ({
       layer: editingLayer,
       layerRank,
-      layerRanks: DEFAULT_LAYER_RANKS,
+      layerRanks: effectiveLayerRanks,
       authRoles: ["admin"],
     }),
-    [editingLayer, layerRank],
+    [editingLayer, layerRank, effectiveLayerRanks],
   );
 
   const governanceRules = useMemo(

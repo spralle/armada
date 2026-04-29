@@ -10,7 +10,7 @@ export const pluginManifest = definePlugin({
       },
       {
         id: "ghost.shell.settings.diagnostics",
-        title: "Config Diagnostics",
+        title: "Configuration Diagnostics",
       },
     ],
   },
