@@ -46,6 +46,11 @@ export {
   type SectionNodeProps,
 } from "./layout/layout-types.js";
 export {
+  applyLayoutMiddleware,
+  type LayoutMiddleware,
+  type LayoutMiddlewareContext,
+} from "./layout-middleware.js";
+export {
   type MergeInput,
   type MetadataSource,
   mergeMetadata,

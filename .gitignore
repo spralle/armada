@@ -35,3 +35,6 @@ trees\ghost-motion-plugin/
 trees\ghost-motion-phase3-4/
 # bd worktree
 trees\fix-surface-mount/
+
+# Vite hot-reload temp files
+*.timestamp-*.mjs
