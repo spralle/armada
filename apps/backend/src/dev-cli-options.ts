@@ -1,8 +1,5 @@
-import {
-  getDefaultLocalPluginEntryUrlMap,
-  normalizeSelectedPluginIds,
-} from "./tenant-manifest.js";
 import { normalizeAndAssertValidLocalPluginId } from "./local-ui-plugin-discovery.js";
+import { getDefaultLocalPluginEntryUrlMap, normalizeSelectedPluginIds } from "./tenant-manifest.js";
 
 export interface BackendDevCliOptions {
   selectedLocalPluginIds: string[];
@@ -11,20 +8,12 @@ export interface BackendDevCliOptions {
   pluginDirs: string[];
 }
 
-export function parseBackendDevCliOptions(
-  argv: readonly string[],
-): BackendDevCliOptions {
-  const collectedPluginIds = collectRepeatableOptionValues(argv, "--local-plugin").map(
-    (pluginId) =>
-      normalizeAndAssertValidLocalPluginId(
-        pluginId,
-        "from --local-plugin argument",
-      ),
+export function parseBackendDevCliOptions(argv: readonly string[]): BackendDevCliOptions {
+  const collectedPluginIds = collectRepeatableOptionValues(argv, "--local-plugin").map((pluginId) =>
+    normalizeAndAssertValidLocalPluginId(pluginId, "from --local-plugin argument"),
   );
   const duplicateSelectedLocalPluginIds = getDuplicatePluginIds(collectedPluginIds);
-  const selectedLocalPluginIds = normalizeSelectedPluginIds(
-    collectedPluginIds,
-  );
+  const selectedLocalPluginIds = normalizeSelectedPluginIds(collectedPluginIds);
 
   validateSelectedLocalPluginIds(selectedLocalPluginIds);
 
@@ -55,10 +44,7 @@ function getDuplicatePluginIds(selectedPluginIds: readonly string[]): string[] {
   return Array.from(duplicates).sort((left, right) => left.localeCompare(right));
 }
 
-function collectRepeatableOptionValues(
-  argv: readonly string[],
-  optionName: string,
-): string[] {
+function collectRepeatableOptionValues(argv: readonly string[], optionName: string): string[] {
   const values: string[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -68,9 +54,7 @@ function collectRepeatableOptionValues(
 
     const value = argv[index + 1];
     if (typeof value !== "string" || value.startsWith("--")) {
-      throw new Error(
-        `Missing value for ${optionName}. Use ${optionName} <pluginId>.`,
-      );
+      throw new Error(`Missing value for ${optionName}. Use ${optionName} <pluginId>.`);
     }
 
     values.push(value);
@@ -80,10 +64,7 @@ function collectRepeatableOptionValues(
   return values;
 }
 
-function parseSingleNumericOption(
-  argv: readonly string[],
-  optionName: string,
-): number | undefined {
+function parseSingleNumericOption(argv: readonly string[], optionName: string): number | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] !== optionName) {
       continue;
@@ -91,16 +72,12 @@ function parseSingleNumericOption(
 
     const value = argv[index + 1];
     if (typeof value !== "string" || value.startsWith("--")) {
-      throw new Error(
-        `Missing value for ${optionName}. Use ${optionName} <number>.`,
-      );
+      throw new Error(`Missing value for ${optionName}. Use ${optionName} <number>.`);
     }
 
     const parsed = Number(value);
     if (!Number.isFinite(parsed) || parsed <= 0 || !Number.isInteger(parsed)) {
-      throw new Error(
-        `Invalid value '${value}' for ${optionName}. Expected a positive integer.`,
-      );
+      throw new Error(`Invalid value '${value}' for ${optionName}. Expected a positive integer.`);
     }
 
     return parsed;
@@ -109,21 +86,17 @@ function parseSingleNumericOption(
   return undefined;
 }
 
-function validateSelectedLocalPluginIds(
-  selectedLocalPluginIds: readonly string[],
-): void {
+function validateSelectedLocalPluginIds(selectedLocalPluginIds: readonly string[]): void {
   if (selectedLocalPluginIds.length === 0) {
     return;
   }
 
-  const discoveredPluginIds = Array.from(
-    getDefaultLocalPluginEntryUrlMap().keys(),
-  ).sort((left, right) => left.localeCompare(right));
+  const discoveredPluginIds = Array.from(getDefaultLocalPluginEntryUrlMap().keys()).sort((left, right) =>
+    left.localeCompare(right),
+  );
   const discoveredPluginIdSet = new Set(discoveredPluginIds);
 
-  const unknownPluginIds = selectedLocalPluginIds.filter(
-    (pluginId) => !discoveredPluginIdSet.has(pluginId),
-  );
+  const unknownPluginIds = selectedLocalPluginIds.filter((pluginId) => !discoveredPluginIdSet.has(pluginId));
 
   if (unknownPluginIds.length > 0) {
     throw new Error(
@@ -140,9 +113,7 @@ export function formatLocalPluginOverrideStartupSummary(
   selectedLocalPluginIds: readonly string[],
   entryOverridesByPluginId: ReadonlyMap<string, string>,
 ): string {
-  const normalizedSelectedPluginIds = normalizeSelectedPluginIds(
-    selectedLocalPluginIds,
-  );
+  const normalizedSelectedPluginIds = normalizeSelectedPluginIds(selectedLocalPluginIds);
 
   if (normalizedSelectedPluginIds.length === 0) {
     return "[backend] local plugin overrides: none selected";

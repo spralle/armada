@@ -9,9 +9,7 @@ interface PluginContractCapabilityShape {
   };
 }
 
-export function readCapabilityComponents(
-  contract: PluginContract | null,
-): Array<{ id: string; version: string }> {
+export function readCapabilityComponents(contract: PluginContract | null): Array<{ id: string; version: string }> {
   if (!contract || !("contributes" in contract)) {
     return [];
   }
@@ -20,9 +18,7 @@ export function readCapabilityComponents(
   return contributes?.capabilities?.components ?? [];
 }
 
-export function readCapabilityServices(
-  contract: PluginContract | null,
-): Array<{ id: string; version: string }> {
+export function readCapabilityServices(contract: PluginContract | null): Array<{ id: string; version: string }> {
   if (!contract || !("contributes" in contract)) {
     return [];
   }

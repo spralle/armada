@@ -1,7 +1,5 @@
-import {
-  evaluateShellPluginCompatibility,
-} from "./compatibility.js";
 import type { PluginContract } from "@ghost-shell/contracts/plugin";
+import { evaluateShellPluginCompatibility } from "./compatibility.js";
 
 interface PluginCapabilityComponentContribution {
   id: string;
@@ -128,28 +126,25 @@ function validatePluginDependencies(
 ): void {
   for (const requiredPlugin of requiredPlugins) {
     if (requiredPlugin.pluginId === context.pluginId) {
-      const selfCompatible = evaluateShellPluginCompatibility(
-        requiredPlugin.versionRange,
-        context.pluginVersion,
-      );
+      const selfCompatible = evaluateShellPluginCompatibility(requiredPlugin.versionRange, context.pluginVersion);
       if (!selfCompatible.compatible) {
         failures.push({
           code: "INCOMPATIBLE_DEPENDENCY_PLUGIN",
           message:
-            `Plugin '${context.pluginId}' requires plugin '${requiredPlugin.pluginId}' version `
-            + `'${requiredPlugin.versionRange}', but active version is '${context.pluginVersion}'.`,
+            `Plugin '${context.pluginId}' requires plugin '${requiredPlugin.pluginId}' version ` +
+            `'${requiredPlugin.versionRange}', but active version is '${context.pluginVersion}'.`,
         });
       }
       continue;
     }
 
     const provider = providerById.get(requiredPlugin.pluginId);
-    if (!provider || !provider.enabled || !provider.contract) {
+    if (!provider?.enabled || !provider.contract) {
       failures.push({
         code: "MISSING_DEPENDENCY_PLUGIN",
         message:
-          `Plugin '${context.pluginId}' depends on plugin '${requiredPlugin.pluginId}' `
-          + `(${requiredPlugin.versionRange}), but it is not explicitly enabled and active.`,
+          `Plugin '${context.pluginId}' depends on plugin '${requiredPlugin.pluginId}' ` +
+          `(${requiredPlugin.versionRange}), but it is not explicitly enabled and active.`,
       });
       continue;
     }
@@ -162,9 +157,9 @@ function validatePluginDependencies(
       failures.push({
         code: "INCOMPATIBLE_DEPENDENCY_PLUGIN",
         message:
-          `Plugin '${context.pluginId}' requires plugin '${requiredPlugin.pluginId}' version `
-          + `'${requiredPlugin.versionRange}', but active version is `
-          + `'${provider.contract.manifest.version}'.`,
+          `Plugin '${context.pluginId}' requires plugin '${requiredPlugin.pluginId}' version ` +
+          `'${requiredPlugin.versionRange}', but active version is ` +
+          `'${provider.contract.manifest.version}'.`,
       });
     }
   }
@@ -178,20 +173,17 @@ function validateComponentDependencies(
   failures: CapabilityDependencyFailure[],
 ): void {
   for (const requiredComponent of requiredComponents) {
-    const selfCapability = readContractShape(context.contract)
-      .contributes?.capabilities?.components
-      ?.find((component) => component.id === requiredComponent.id);
+    const selfCapability = readContractShape(context.contract).contributes?.capabilities?.components?.find(
+      (component) => component.id === requiredComponent.id,
+    );
     if (selfCapability) {
-      const selfCompatible = evaluateShellPluginCompatibility(
-        requiredComponent.versionRange,
-        selfCapability.version,
-      );
+      const selfCompatible = evaluateShellPluginCompatibility(requiredComponent.versionRange, selfCapability.version);
       if (!selfCompatible.compatible && !requiredComponent.optional) {
         failures.push({
           code: "INCOMPATIBLE_DEPENDENCY_COMPONENT",
           message:
-            `Plugin '${context.pluginId}' requires component capability '${requiredComponent.id}' version `
-            + `'${requiredComponent.versionRange}', but self-provided version is '${selfCapability.version}'.`,
+            `Plugin '${context.pluginId}' requires component capability '${requiredComponent.id}' version ` +
+            `'${requiredComponent.versionRange}', but self-provided version is '${selfCapability.version}'.`,
         });
       }
       continue;
@@ -203,8 +195,8 @@ function validateComponentDependencies(
         failures.push({
           code: "MISSING_DEPENDENCY_COMPONENT",
           message:
-            `Plugin '${context.pluginId}' depends on component capability '${requiredComponent.id}' `
-            + `(${requiredComponent.versionRange}), but no explicitly enabled provider is active.`,
+            `Plugin '${context.pluginId}' depends on component capability '${requiredComponent.id}' ` +
+            `(${requiredComponent.versionRange}), but no explicitly enabled provider is active.`,
         });
       }
       continue;
@@ -215,9 +207,9 @@ function validateComponentDependencies(
       failures.push({
         code: "INCOMPATIBLE_DEPENDENCY_COMPONENT",
         message:
-          `Plugin '${context.pluginId}' requires component capability '${requiredComponent.id}' version `
-          + `'${requiredComponent.versionRange}', but provider '${provider.pluginId}' exposes `
-          + `'${provider.version}'.`,
+          `Plugin '${context.pluginId}' requires component capability '${requiredComponent.id}' version ` +
+          `'${requiredComponent.versionRange}', but provider '${provider.pluginId}' exposes ` +
+          `'${provider.version}'.`,
       });
     }
   }
@@ -231,20 +223,17 @@ function validateServiceDependencies(
   failures: CapabilityDependencyFailure[],
 ): void {
   for (const requiredService of requiredServices) {
-    const selfCapability = readContractShape(context.contract)
-      .contributes?.capabilities?.services
-      ?.find((service) => service.id === requiredService.id);
+    const selfCapability = readContractShape(context.contract).contributes?.capabilities?.services?.find(
+      (service) => service.id === requiredService.id,
+    );
     if (selfCapability) {
-      const selfCompatible = evaluateShellPluginCompatibility(
-        requiredService.versionRange,
-        selfCapability.version,
-      );
+      const selfCompatible = evaluateShellPluginCompatibility(requiredService.versionRange, selfCapability.version);
       if (!selfCompatible.compatible && !requiredService.optional) {
         failures.push({
           code: "INCOMPATIBLE_DEPENDENCY_SERVICE",
           message:
-            `Plugin '${context.pluginId}' requires service capability '${requiredService.id}' version `
-            + `'${requiredService.versionRange}', but self-provided version is '${selfCapability.version}'.`,
+            `Plugin '${context.pluginId}' requires service capability '${requiredService.id}' version ` +
+            `'${requiredService.versionRange}', but self-provided version is '${selfCapability.version}'.`,
         });
       }
       continue;
@@ -256,8 +245,8 @@ function validateServiceDependencies(
         failures.push({
           code: "MISSING_DEPENDENCY_SERVICE",
           message:
-            `Plugin '${context.pluginId}' depends on service capability '${requiredService.id}' `
-            + `(${requiredService.versionRange}), but no explicitly enabled provider is active.`,
+            `Plugin '${context.pluginId}' depends on service capability '${requiredService.id}' ` +
+            `(${requiredService.versionRange}), but no explicitly enabled provider is active.`,
         });
       }
       continue;
@@ -268,9 +257,9 @@ function validateServiceDependencies(
       failures.push({
         code: "INCOMPATIBLE_DEPENDENCY_SERVICE",
         message:
-          `Plugin '${context.pluginId}' requires service capability '${requiredService.id}' version `
-          + `'${requiredService.versionRange}', but provider '${provider.pluginId}' exposes `
-          + `'${provider.version}'.`,
+          `Plugin '${context.pluginId}' requires service capability '${requiredService.id}' version ` +
+          `'${requiredService.versionRange}', but provider '${provider.pluginId}' exposes ` +
+          `'${provider.version}'.`,
       });
     }
   }

@@ -1,6 +1,4 @@
-import {
-  deriveDeterministicActiveTabId,
-} from "./dock-tree.js";
+import { deriveDeterministicActiveTabId } from "./dock-tree.js";
 import { cloneDockNode, collapseDockNode, createUniqueNodeId, replaceNodeAtPath } from "./dock-tree-helpers.js";
 import type { DockNode, DockOrientation, DockStackNode, DockTreeState } from "./dock-tree-types.js";
 import {
@@ -29,7 +27,7 @@ export function focusDockStackInDirection(
   }
 
   const target = findDirectionalFocusTarget(tree.root, source.path, source.stack.id, direction);
-  if (!target || !target.stack.activeTabId || target.stack.activeTabId === activeTabId) {
+  if (!target?.stack.activeTabId || target.stack.activeTabId === activeTabId) {
     return { tree, activeTabId, changed: false };
   }
 
@@ -215,7 +213,7 @@ export function detachActiveTabInDirection(
     activeTabId,
   };
 
-  const orientation = direction === "left" || direction === "right" ? "horizontal" as const : "vertical" as const;
+  const orientation = direction === "left" || direction === "right" ? ("horizontal" as const) : ("vertical" as const);
   const movedFirst = direction === "left" || direction === "up";
   const splitNode: DockNode = {
     kind: "split",

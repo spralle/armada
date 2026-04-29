@@ -68,9 +68,7 @@ export function resolveModuleMountFn(
 }
 
 /** Resolve a candidate value: if it's a function return it, if it has .mount return that. */
-function resolveCandidate(
-  candidate: unknown,
-): ((...args: unknown[]) => unknown) | undefined {
+function resolveCandidate(candidate: unknown): ((...args: unknown[]) => unknown) | undefined {
   if (typeof candidate === "function") {
     return candidate as (...args: unknown[]) => unknown;
   }

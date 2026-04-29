@@ -1,5 +1,5 @@
-import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
-import type { LayoutNode } from './layout/layout-types.js';
+import type { SchemaFieldInfo } from "@ghost-shell/schema-core";
+import type { LayoutNode } from "./layout/layout-types.js";
 
 export interface LayoutMiddlewareContext {
   readonly fieldInfo?: SchemaFieldInfo;
@@ -7,10 +7,7 @@ export interface LayoutMiddlewareContext {
   readonly depth: number;
 }
 
-export type LayoutMiddleware = (
-  node: LayoutNode,
-  context: LayoutMiddlewareContext,
-) => LayoutNode;
+export type LayoutMiddleware = (node: LayoutNode, context: LayoutMiddlewareContext) => LayoutNode;
 
 /**
  * Apply a pipeline of layout middlewares to a tree.

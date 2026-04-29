@@ -1,15 +1,12 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-
-import { createOverrideRoutes } from "../dist-test/src/override-endpoints.js";
-import { createInMemoryAuditLog } from "@weaver/config-server";
+import test from "node:test";
 import { createInMemoryOverrideTracker } from "@weaver/config-policy";
+import { createInMemoryAuditLog } from "@weaver/config-server";
+import { createOverrideRoutes } from "../dist-test/src/override-endpoints.js";
 
 /** Helper to invoke a route handler by matching against the route list. */
 async function callRoute(routes, method, pathname, bodyValue, headers = {}, search = "") {
-  const body = bodyValue !== undefined
-    ? () => Promise.resolve(bodyValue)
-    : () => Promise.resolve(null);
+  const body = bodyValue !== undefined ? () => Promise.resolve(bodyValue) : () => Promise.resolve(null);
   for (const route of routes) {
     const match = pathname.match(route.pattern);
     if (!match || route.method !== method) continue;
@@ -119,12 +116,9 @@ test("POST /overrides/{id}/regularize marks override as regularized", async () =
   await seedOverrides(overrideTracker);
 
   const routes = createOverrideRoutes({ auditLog, overrideTracker });
-  const res = await callRoute(
-    routes,
-    "POST",
-    "/api/tenants/demo/overrides/override-1/regularize",
-    { regularizedBy: "review-user" },
-  );
+  const res = await callRoute(routes, "POST", "/api/tenants/demo/overrides/override-1/regularize", {
+    regularizedBy: "review-user",
+  });
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.regularizedBy, "review-user");
@@ -141,12 +135,9 @@ test("POST /overrides/{id}/regularize with invalid ID returns 404", async () => 
   const auditLog = createInMemoryAuditLog();
 
   const routes = createOverrideRoutes({ auditLog, overrideTracker });
-  const res = await callRoute(
-    routes,
-    "POST",
-    "/api/tenants/demo/overrides/nonexistent-id/regularize",
-    { regularizedBy: "review-user" },
-  );
+  const res = await callRoute(routes, "POST", "/api/tenants/demo/overrides/nonexistent-id/regularize", {
+    regularizedBy: "review-user",
+  });
   assert.equal(res.status, 404);
   const body = await res.json();
   assert.equal(body.error, "not_found");
@@ -170,14 +161,7 @@ test("GET /audit with key filter returns filtered entries", async () => {
   await seedAudit(auditLog);
 
   const routes = createOverrideRoutes({ auditLog, overrideTracker });
-  const res = await callRoute(
-    routes,
-    "GET",
-    "/api/tenants/demo/audit",
-    undefined,
-    {},
-    "?key=app.feature.flag",
-  );
+  const res = await callRoute(routes, "GET", "/api/tenants/demo/audit", undefined, {}, "?key=app.feature.flag");
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.length, 1);

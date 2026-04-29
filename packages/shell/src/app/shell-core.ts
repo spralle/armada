@@ -1,19 +1,9 @@
-import {
-  collectLaneMetadata,
-  collectRenderTabMetadata,
-  resolveActiveTabId,
-} from "../context/runtime-state.js";
+import { collectLaneMetadata, collectRenderTabMetadata, resolveActiveTabId } from "../context/runtime-state.js";
 import type { RuntimeEventHandlers } from "../shell-runtime/runtime-event-handlers.js";
-import type {
-  ShellCoreApi,
-  ShellCoreSnapshot,
-} from "./contracts.js";
+import type { ShellCoreApi, ShellCoreSnapshot } from "./contracts.js";
 import type { ShellRuntime } from "./types.js";
 
-export function createShellCoreApi(
-  runtime: ShellRuntime,
-  handlers: RuntimeEventHandlers,
-): ShellCoreApi {
+export function createShellCoreApi(runtime: ShellRuntime, handlers: RuntimeEventHandlers): ShellCoreApi {
   const listeners = new Set<(snapshot: ShellCoreSnapshot) => void>();
 
   function getSnapshot(): ShellCoreSnapshot {

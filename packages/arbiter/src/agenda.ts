@@ -1,4 +1,4 @@
-import type { CompiledRule } from './contracts.js';
+import type { CompiledRule } from "./contracts.js";
 
 export interface Activation {
   readonly rule: CompiledRule;
@@ -20,7 +20,7 @@ export interface Agenda {
 
 function computeSpecificity(rule: CompiledRule): number {
   const source = rule.source;
-  if (source.when && typeof source.when === 'object') {
+  if (source.when && typeof source.when === "object") {
     return Object.keys(source.when).length;
   }
   return 1;
@@ -70,10 +70,7 @@ export function createAgenda(): Agenda {
   const isEligible = (activation: Activation): boolean => {
     if (focusStack.length === 0) return true;
     const topGroup = focusStack[focusStack.length - 1];
-    return (
-      activation.rule.activationGroup === undefined ||
-      activation.rule.activationGroup === topGroup
-    );
+    return activation.rule.activationGroup === undefined || activation.rule.activationGroup === topGroup;
   };
 
   const selectNext = (): CompiledRule | undefined => {

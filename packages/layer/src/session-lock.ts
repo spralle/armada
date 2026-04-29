@@ -44,9 +44,7 @@ export interface SessionLockManagerOptions {
  *
  * Only the lock surface's own `releaseLock()` call restores normal state.
  */
-export function createSessionLockManager(
-  options: SessionLockManagerOptions,
-): SessionLockManager {
+export function createSessionLockManager(options: SessionLockManagerOptions): SessionLockManager {
   const { layerHost, keyboardExclusiveManager } = options;
   let activeLock: LockState | null = null;
 

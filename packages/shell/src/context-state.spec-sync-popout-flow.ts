@@ -1,11 +1,11 @@
 import type { SpecHarness } from "./context-state.spec-harness.js";
-import { bindBridgeSync } from "./shell-runtime/bridge-sync-handlers.js";
-import { requestSyncProbe } from "./sync/bridge-degraded.js";
 import {
   createReadOnlySafeRoot,
   createRuntime,
   TestBridge,
 } from "./context-state.spec-sync-popout-degraded-fixtures.js";
+import { bindBridgeSync } from "./shell-runtime/bridge-sync-handlers.js";
+import { requestSyncProbe } from "./sync/bridge-degraded.js";
 
 export function registerSyncPopoutFlowSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
@@ -30,12 +30,16 @@ export function registerSyncPopoutFlowSpecs(harness: SpecHarness): void {
       },
     });
 
-    requestSyncProbe(runtime, {
-      announce() {},
-      updateWindowReadOnlyState() {},
-      renderSyncStatus() {},
-      renderContextControls() {},
-    }, () => "probe-123");
+    requestSyncProbe(
+      runtime,
+      {
+        announce() {},
+        updateWindowReadOnlyState() {},
+        renderSyncStatus() {},
+        renderContextControls() {},
+      },
+      () => "probe-123",
+    );
 
     assertEqual(runtime.pendingProbeId, "probe-123", "sync probe should track pending probe id");
     assertEqual(bridge.publishedEvents[0]?.type, "sync-probe", "sync probe should publish probe event");

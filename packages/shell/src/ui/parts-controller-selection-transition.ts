@@ -1,5 +1,5 @@
-import { readEntityTypeSelection, type ShellContextState } from "../context-state.js";
 import type { SelectionSyncEvent } from "@ghost-shell/bridge";
+import { readEntityTypeSelection, type ShellContextState } from "../context-state.js";
 
 interface SelectionEnvelopeInput {
   selectedPartId: string;
@@ -9,9 +9,7 @@ interface SelectionEnvelopeInput {
   selectedPartDefinitionId?: string;
 }
 
-export function buildSelectionByEntityType(
-  state: ShellContextState,
-): SelectionSyncEvent["selectionByEntityType"] {
+export function buildSelectionByEntityType(state: ShellContextState): SelectionSyncEvent["selectionByEntityType"] {
   return Object.fromEntries(
     Object.keys(state.selectionByEntityType).map((entityType) => [
       entityType,
@@ -20,10 +18,7 @@ export function buildSelectionByEntityType(
   );
 }
 
-export function buildSelectionEnvelope(
-  state: ShellContextState,
-  input: SelectionEnvelopeInput,
-): SelectionSyncEvent {
+export function buildSelectionEnvelope(state: ShellContextState, input: SelectionEnvelopeInput): SelectionSyncEvent {
   return {
     type: "selection",
     selectedPartId: input.selectedPartId,

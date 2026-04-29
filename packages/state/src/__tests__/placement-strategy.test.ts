@@ -1,8 +1,8 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import type { DockSplitNode, DockStackNode, DockTreeState } from "../dock-tree-types.js";
+import { createDwindlePlacementStrategy } from "../placement-strategy/dwindle.js";
 import { createStackPlacementStrategy } from "../placement-strategy/stack.js";
 import { createTabsPlacementStrategy } from "../placement-strategy/tabs.js";
-import { createDwindlePlacementStrategy } from "../placement-strategy/dwindle.js";
-import type { DockTreeState, DockStackNode, DockSplitNode } from "../dock-tree-types.js";
 import type { PlacementContext } from "../placement-strategy/types.js";
 
 describe("createTabsPlacementStrategy", () => {
@@ -70,8 +70,8 @@ describe("createStackPlacementStrategy", () => {
     const stack = result.tree.root as DockStackNode;
     expect(stack.activeTabId).toBe("tab-2");
     expect(stack.tabIds).toContain("tab-2");
-    expect(stack.navHistory!.back).toContain("tab-1");
-    expect(stack.navHistory!.forward).toEqual([]);
+    expect(stack.navHistory?.back).toContain("tab-1");
+    expect(stack.navHistory?.forward).toEqual([]);
   });
 
   test("navigateBack returns to previous tab", () => {
@@ -84,9 +84,9 @@ describe("createStackPlacementStrategy", () => {
         navHistory: { back: ["tab-1"], forward: [] },
       },
     };
-    const result = strategy.navigateBack!("s1", tree);
+    const result = strategy.navigateBack?.("s1", tree);
     expect(result).not.toBeNull();
-    expect(result!.activatedTabId).toBe("tab-1");
+    expect(result?.activatedTabId).toBe("tab-1");
   });
 
   test("navigateBack returns null when no history", () => {
@@ -99,7 +99,7 @@ describe("createStackPlacementStrategy", () => {
         navHistory: { back: [], forward: [] },
       },
     };
-    const result = strategy.navigateBack!("s1", tree);
+    const result = strategy.navigateBack?.("s1", tree);
     expect(result).toBeNull();
   });
 
@@ -113,9 +113,9 @@ describe("createStackPlacementStrategy", () => {
         navHistory: { back: [], forward: ["tab-2"] },
       },
     };
-    const result = strategy.navigateForward!("s1", tree);
+    const result = strategy.navigateForward?.("s1", tree);
     expect(result).not.toBeNull();
-    expect(result!.activatedTabId).toBe("tab-2");
+    expect(result?.activatedTabId).toBe("tab-2");
   });
 
   test("onTabClosed removes tab from nav history", () => {
@@ -128,10 +128,10 @@ describe("createStackPlacementStrategy", () => {
         navHistory: { back: ["tab-2"], forward: ["tab-2"] },
       },
     };
-    const result = strategy.onTabClosed!({ tabId: "tab-2", stackId: "s1", tree });
+    const result = strategy.onTabClosed?.({ tabId: "tab-2", stackId: "s1", tree });
     const stack = result.root as DockStackNode;
-    expect(stack.navHistory!.back).not.toContain("tab-2");
-    expect(stack.navHistory!.forward).not.toContain("tab-2");
+    expect(stack.navHistory?.back).not.toContain("tab-2");
+    expect(stack.navHistory?.forward).not.toContain("tab-2");
   });
 });
 
@@ -153,7 +153,7 @@ describe("createDwindlePlacementStrategy", () => {
       root: { kind: "stack", id: "s1", tabIds: ["tab-1"], activeTabId: "tab-1" },
     };
     const result = strategy.place({ tabId: "tab-2", tree });
-    expect(result.tree.root!.kind).toBe("split");
+    expect(result.tree.root?.kind).toBe("split");
     const split = result.tree.root as DockSplitNode;
     // First child is original stack, second is new
     expect(split.first.kind).toBe("stack");
@@ -171,7 +171,12 @@ describe("createDwindlePlacementStrategy", () => {
     expect(split1.orientation).toBe("horizontal");
 
     // Depth 1 → vertical (split into the second child which is at depth 1)
-    const r2 = strategy.place({ tabId: "tab-3", tree: r1.tree, activeStackId: r1.targetStackId, dwindleDirection: "alternate" });
+    const r2 = strategy.place({
+      tabId: "tab-3",
+      tree: r1.tree,
+      activeStackId: r1.targetStackId,
+      dwindleDirection: "alternate",
+    });
     // The new split should be vertical
     const split2 = r2.tree.root as DockSplitNode;
     const innerSplit = split2.second as DockSplitNode;

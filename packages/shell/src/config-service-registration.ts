@@ -6,9 +6,7 @@
 // @weaver/config-types, @weaver/config-providers, @weaver/config-engine removed.
 // Stub types and throwing stubs preserve the public API.
 
-import type { ConfigurationService } from "@ghost-shell/contracts";
-
-import type { PluginContract } from "@ghost-shell/contracts";
+import type { ConfigurationService, PluginContract } from "@ghost-shell/contracts";
 import { CONFIG_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
@@ -20,7 +18,9 @@ function createScopedConfigurationService(
   _namespace: string,
 ): ConfigurationService {
   if (!createScopedConfigurationService._warned) {
-    console.warn("[config-service] createScopedConfigurationService is a no-op stub (@weaver/config-providers removed)");
+    console.warn(
+      "[config-service] createScopedConfigurationService is a no-op stub (@weaver/config-providers removed)",
+    );
     createScopedConfigurationService._warned = true;
   }
   return configService;
@@ -57,9 +57,7 @@ export function registerConfigurationServiceCapability(
     },
     contributes: {
       capabilities: {
-        services: [
-          { id: CONFIG_SERVICE_ID, version: "1.0.0" },
-        ],
+        services: [{ id: CONFIG_SERVICE_ID, version: "1.0.0" }],
       },
     },
   };

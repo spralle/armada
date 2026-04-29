@@ -4,10 +4,7 @@ export function deriveCloseableTabIds(parts: ReadonlyArray<ComposedShellPart>): 
   return new Set(parts.map((part) => part.id));
 }
 
-export function rerenderAfterPluginToggle(
-  renderParts: () => void,
-  renderPanels: () => void,
-): void {
+export function rerenderAfterPluginToggle(renderParts: () => void, renderPanels: () => void): void {
   renderParts();
   renderPanels();
 }

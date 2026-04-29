@@ -1,7 +1,7 @@
-import type { ShellRuntime, SourceTabTransferPendingState } from "../app/types.js";
-import { closeTab, setActiveTab } from "../context-state.js";
-import { updateContextState } from "../context/runtime-state.js";
 import type { DndSessionDeleteEvent, DndSessionUpsertEvent } from "@ghost-shell/bridge";
+import type { ShellRuntime, SourceTabTransferPendingState } from "../app/types.js";
+import { updateContextState } from "../context/runtime-state.js";
+import { closeTab, setActiveTab } from "../context-state.js";
 
 type TabDragPayload = {
   tabId: string;
@@ -110,7 +110,9 @@ function applyRollback(runtime: ShellRuntime, pending: SourceTabTransferPendingS
       ? pending.restoreSelectedPartId
       : runtime.contextState.activeTabId;
   runtime.selectedPartTitle = runtime.selectedPartId
-    ? runtime.contextState.tabs[runtime.selectedPartId]?.label ?? pending.restoreSelectedPartTitle ?? runtime.selectedPartId
+    ? (runtime.contextState.tabs[runtime.selectedPartId]?.label ??
+      pending.restoreSelectedPartTitle ??
+      runtime.selectedPartId)
     : null;
 }
 

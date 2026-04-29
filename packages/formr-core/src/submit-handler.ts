@@ -1,22 +1,22 @@
-import type { FormState, CreateFormOptions, ValidationIssue, SubmitContext, FieldMetaEntry } from './state.js';
-import type { FormApi, FormAction, SubmitResult, Middleware } from './contracts.js';
-import type { FormStore } from './store.js';
-import { applySubmitOutcome } from './submit.js';
-import { executePipeline } from './pipeline.js';
-import { runNotifyHooksAsync } from './middleware-runner.js';
-import { FormrError } from './errors.js';
-import { parsePath } from './path-parser.js';
-import { runTransforms, type TransformDefinition } from './transforms.js';
-import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './timeout.js';
-import type { ArbiterFormAdapter } from './arbiter-integration.js';
+import type { ArbiterFormAdapter } from "./arbiter-integration.js";
+import type { FormAction, FormApi, Middleware, SubmitResult } from "./contracts.js";
+import { FormrError } from "./errors.js";
+import { runNotifyHooksAsync } from "./middleware-runner.js";
+import { parsePath } from "./path-parser.js";
+import { executePipeline } from "./pipeline.js";
+import type { CreateFormOptions, SubmitContext, ValidationIssue } from "./state.js";
+import type { FormStore } from "./store.js";
+import { applySubmitOutcome } from "./submit.js";
+import { DEFAULT_RUNTIME_CONSTRAINTS, withTimeout } from "./timeout.js";
+import { runTransforms, type TransformDefinition } from "./transforms.js";
 
 function normalizeFieldErrors(fieldErrors: Readonly<Record<string, string>>): ValidationIssue[] {
   return Object.entries(fieldErrors).map(([path, message]) => ({
-    code: 'SUBMIT_ERROR',
+    code: "SUBMIT_ERROR",
     message,
-    severity: 'error' as const,
+    severity: "error" as const,
     path: parsePath(`data.${path}`),
-    source: { origin: 'submit' as const, validatorId: 'onSubmit' },
+    source: { origin: "submit" as const, validatorId: "onSubmit" },
   }));
 }
 
@@ -27,7 +27,7 @@ function generateSubmitId(): string {
 function getEgressTransforms(options: CreateFormOptions<unknown, unknown>): readonly TransformDefinition[] {
   if (!options.transforms?.length) return [];
   return options.transforms.filter(
-    (t): t is TransformDefinition => 'transform' in t && typeof (t as TransformDefinition).transform === 'function',
+    (t): t is TransformDefinition => "transform" in t && typeof (t as TransformDefinition).transform === "function",
   );
 }
 
@@ -59,8 +59,9 @@ export function createSubmitHandler<TData, TUi>(deps: SubmitHandlerDeps<TData, T
     tx.mutate((draft) => ({
       ...draft,
       meta: {
-        ...draft.meta, submitted: true,
-        submission: { status: 'running' as const, submitId, lastAttemptAt: new Date().toISOString() },
+        ...draft.meta,
+        submitted: true,
+        submission: { status: "running" as const, submitId, lastAttemptAt: new Date().toISOString() },
       },
     }));
     store.commitTransaction(tx);
@@ -68,22 +69,31 @@ export function createSubmitHandler<TData, TUi>(deps: SubmitHandlerDeps<TData, T
 
   function runSubmitPipeline(submitContext: SubmitContext) {
     return executePipeline({
-      action: { type: 'submit' } as FormAction,
-      store: pipelineStore, options: pipelineOptions,
-      submitContext, isSubmit: true, arbiterAdapter,
+      action: { type: "submit" } as FormAction,
+      store: pipelineStore,
+      options: pipelineOptions,
+      submitContext,
+      isSubmit: true,
+      arbiterAdapter,
     });
   }
 
   function handlePipelineFailure(
-    pipelineResult: { readonly ok: boolean; readonly vetoReason?: string; readonly error?: string; readonly issues?: readonly ValidationIssue[] },
+    pipelineResult: {
+      readonly ok: boolean;
+      readonly vetoReason?: string;
+      readonly error?: string;
+      readonly issues?: readonly ValidationIssue[];
+    },
     submitId: string,
   ): SubmitResult {
     const tx = store.beginTransaction();
     tx.mutate((draft) => ({ ...draft, meta: applySubmitOutcome(draft.meta, false, submitId) }));
     store.commitTransaction(tx);
     return {
-      ok: false, submitId,
-      message: pipelineResult.vetoReason ?? pipelineResult.error ?? 'Pipeline failed',
+      ok: false,
+      submitId,
+      message: pipelineResult.vetoReason ?? pipelineResult.error ?? "Pipeline failed",
       ...(pipelineResult.issues !== undefined ? { fieldIssues: pipelineResult.issues } : {}),
     };
   }
@@ -92,22 +102,24 @@ export function createSubmitHandler<TData, TUi>(deps: SubmitHandlerDeps<TData, T
     const tx = store.beginTransaction();
     tx.mutate((draft) => ({ ...draft, meta: applySubmitOutcome(draft.meta, false, submitId) }));
     store.commitTransaction(tx);
-    return { ok: false, submitId, message: 'Validation failed', fieldIssues: currentIssues };
+    return { ok: false, submitId, message: "Validation failed", fieldIssues: currentIssues };
   }
 
   async function executeOnSubmit(submitContext: SubmitContext, submitId: string): Promise<SubmitResult> {
-    const submitAction: FormAction = { type: 'submit' };
+    const submitAction: FormAction = { type: "submit" };
     try {
       const rawData = store.getState().data;
       const transformDefs = getEgressTransforms(pipelineOptions);
-      const payload = (transformDefs.length > 0
-        ? runTransforms(transformDefs, 'egress', rawData, { state: store.getState() })
-        : rawData) as TData;
+      const payload = (
+        transformDefs.length > 0
+          ? runTransforms(transformDefs, "egress", rawData, { state: store.getState() })
+          : rawData
+      ) as TData;
 
       const result = await withTimeout(
-        options.onSubmit!({ form: deps.getApi(), submitContext, payload }),
+        options.onSubmit?.({ form: deps.getApi(), submitContext, payload }),
         options.timeouts?.submit ?? DEFAULT_RUNTIME_CONSTRAINTS.submitTimeout,
-        'onSubmit callback timed out',
+        "onSubmit callback timed out",
       );
 
       const normalizedFieldErrors = result.fieldErrors ? normalizeFieldErrors(result.fieldErrors) : [];
@@ -115,13 +127,18 @@ export function createSubmitHandler<TData, TUi>(deps: SubmitHandlerDeps<TData, T
       txResult.mutate((draft) => ({
         ...draft,
         meta: applySubmitOutcome(draft.meta, result.ok, submitId),
-        issues: [...draft.issues, ...normalizedFieldErrors, ...(result.fieldIssues ?? []), ...(result.globalIssues ?? [])],
+        issues: [
+          ...draft.issues,
+          ...normalizedFieldErrors,
+          ...(result.fieldIssues ?? []),
+          ...(result.globalIssues ?? []),
+        ],
       }));
       store.commitTransaction(txResult);
 
       await runNotifyHooksAsync(
         (options.middleware ?? []) as readonly Middleware[],
-        'afterSubmit',
+        "afterSubmit",
         { action: submitAction, state: store.getState(), result },
         options.timeouts?.middleware ?? DEFAULT_RUNTIME_CONSTRAINTS.middlewareTimeout,
       );
@@ -136,8 +153,10 @@ export function createSubmitHandler<TData, TUi>(deps: SubmitHandlerDeps<TData, T
 
   return async function submit(context?: Partial<SubmitContext>): Promise<SubmitResult> {
     const state = store.getState();
-    if (state.meta.submission?.status === 'running') {
-      return Promise.reject(new FormrError('FORMR_SUBMIT_CONCURRENT', 'Submit rejected: a submission is already in progress'));
+    if (state.meta.submission?.status === "running") {
+      return Promise.reject(
+        new FormrError("FORMR_SUBMIT_CONCURRENT", "Submit rejected: a submission is already in progress"),
+      );
     }
     const submitId = generateSubmitId();
     const submitContext = buildSubmitContext(context, submitId);
@@ -156,7 +175,7 @@ export function createSubmitHandler<TData, TUi>(deps: SubmitHandlerDeps<TData, T
     }
 
     const currentIssues = store.getState().issues;
-    if (currentIssues.some((i) => i.severity === 'error')) return handleValidationFailure(currentIssues, submitId);
+    if (currentIssues.some((i) => i.severity === "error")) return handleValidationFailure(currentIssues, submitId);
     if (options.onSubmit) return executeOnSubmit(submitContext, submitId);
     // No onSubmit — succeed as no-op
     const txDone = store.beginTransaction();

@@ -35,7 +35,7 @@ export interface ProductionRule {
   readonly else?: readonly ThenStage[] | undefined;
   readonly salience?: number | undefined;
   readonly activationGroup?: string | undefined;
-  readonly onConflict?: 'override' | 'warn' | 'error' | undefined;
+  readonly onConflict?: "override" | "warn" | "error" | undefined;
   readonly enabled?: boolean | undefined;
   readonly description?: string | undefined;
 }
@@ -44,10 +44,7 @@ export interface ProductionRule {
 // Session configuration (ADR §3)
 // ---------------------------------------------------------------------------
 
-export type OperatorFunction = (
-  args: readonly unknown[],
-  scope: Readonly<Record<string, unknown>>,
-) => unknown;
+export type OperatorFunction = (args: readonly unknown[], scope: Readonly<Record<string, unknown>>) => unknown;
 
 export interface OperatorRegistryConfig {
   readonly custom?: Readonly<Record<string, OperatorFunction>> | undefined;
@@ -61,7 +58,7 @@ export interface SessionLimits {
 }
 
 export interface TmsConfig {
-  readonly autoRetract?: 'ui-contributions' | 'all' | undefined;
+  readonly autoRetract?: "ui-contributions" | "all" | undefined;
 }
 
 export interface SessionConfig {
@@ -70,8 +67,8 @@ export interface SessionConfig {
   readonly operators?: OperatorRegistryConfig | undefined;
   readonly limits?: SessionLimits | undefined;
   readonly tms?: TmsConfig | undefined;
-  readonly validation?: 'strict' | 'syntax' | 'none' | undefined;
-  readonly errorHandling?: 'strict' | 'lenient' | undefined;
+  readonly validation?: "strict" | "syntax" | "none" | undefined;
+  readonly errorHandling?: "strict" | "lenient" | undefined;
   readonly thenOperators?: ThenOperatorRegistry | undefined;
 }
 
@@ -79,7 +76,7 @@ export interface SessionConfig {
 // Firing result & diagnostics (ADR §3)
 // ---------------------------------------------------------------------------
 
-import type { ArbiterErrorCode } from './errors.js';
+import type { ArbiterErrorCode } from "./errors.js";
 
 export interface StateChange {
   readonly path: string;
@@ -148,7 +145,7 @@ export interface CompiledRule {
   readonly elseActions?: readonly CompiledStage[] | undefined;
   readonly salience: number;
   readonly activationGroup?: string | undefined;
-  readonly onConflict: 'override' | 'warn' | 'error';
+  readonly onConflict: "override" | "warn" | "error";
   readonly enabled: boolean;
   readonly hasTms: boolean;
   readonly source: ProductionRule;

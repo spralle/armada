@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { z } from "zod";
 
 import { pluginContractSchema, tenantPluginManifestResponseSchema } from "./schemas.js";
 import type { PluginContract, TenantPluginManifestResponse } from "./types.js";
@@ -45,9 +45,7 @@ export function parsePluginContract(input: unknown): ParsePluginContractResult {
   };
 }
 
-export function parseTenantPluginManifest(
-  input: unknown,
-): ParseTenantPluginManifestResult {
+export function parseTenantPluginManifest(input: unknown): ParseTenantPluginManifestResult {
   const result = tenantPluginManifestResponseSchema.safeParse(input);
 
   if (result.success) {

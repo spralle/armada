@@ -40,9 +40,10 @@ export class FakeDockZone {
   }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const normalized = typeof listener === "function"
-      ? (listener as DragListener)
-      : ((event: DragEvent) => listener.handleEvent(event as unknown as Event));
+    const normalized =
+      typeof listener === "function"
+        ? (listener as DragListener)
+        : (event: DragEvent) => listener.handleEvent(event as unknown as Event);
     const existing = this.listeners.get(type) ?? [];
     existing.push(normalized);
     this.listeners.set(type, existing);
@@ -79,9 +80,7 @@ export class FakeDockRoot {
 
   private readonly listeners = new Map<string, DragListener[]>();
 
-  constructor(
-    private readonly zones: FakeDockZone[],
-  ) {}
+  constructor(private readonly zones: FakeDockZone[]) {}
 
   setAttribute(name: string, value: string): void {
     this.attributes.set(name, value);
@@ -96,9 +95,10 @@ export class FakeDockRoot {
   }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const normalized = typeof listener === "function"
-      ? (listener as DragListener)
-      : ((event: DragEvent) => listener.handleEvent(event as unknown as Event));
+    const normalized =
+      typeof listener === "function"
+        ? (listener as DragListener)
+        : (event: DragEvent) => listener.handleEvent(event as unknown as Event);
     const existing = this.listeners.get(type) ?? [];
     existing.push(normalized);
     this.listeners.set(type, existing);
@@ -174,7 +174,10 @@ export function createDragEventWithOptions(options: {
   } as DragEvent;
 }
 
-export function createDockZone(targetTabId: string, zone: "left" | "right" | "top" | "bottom" | "center"): FakeDockZone {
+export function createDockZone(
+  targetTabId: string,
+  zone: "left" | "right" | "top" | "bottom" | "center",
+): FakeDockZone {
   return new FakeDockZone(targetTabId, zone, new FakeOverlay());
 }
 

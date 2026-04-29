@@ -1,8 +1,8 @@
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import { z } from "zod";
 import { defineRoutes } from "../dist/core/define-routes.js";
 import { createPluginRouter } from "../dist/plugin/plugin-router.js";
-import { z } from "zod";
 
 const routes = defineRoutes({
   "vessel.list": { params: z.object({ filter: z.string().optional() }) },

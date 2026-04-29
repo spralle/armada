@@ -1,17 +1,14 @@
-import type { ShellRuntime } from "../app/types.js";
 import { createWorkspace, deleteWorkspace } from "@ghost-shell/state";
-import { performWorkspaceSwitch } from "../ui/workspace-switch.js";
+import type { ShellRuntime } from "../app/types.js";
 import type { WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
+import { performWorkspaceSwitch } from "../ui/workspace-switch.js";
 
 interface WorkspaceRuntimeActionDeps {
   getWorkspaceSwitchDeps(): WorkspaceSwitchDeps;
   performSwitch?: (targetWorkspaceId: string, deps: WorkspaceSwitchDeps) => boolean;
 }
 
-export function registerWorkspaceRuntimeActions(
-  runtime: ShellRuntime,
-  deps: WorkspaceRuntimeActionDeps,
-): void {
+export function registerWorkspaceRuntimeActions(runtime: ShellRuntime, deps: WorkspaceRuntimeActionDeps): void {
   for (let index = 1; index <= 9; index += 1) {
     const actionId = `shell.workspace.switch.${index}`;
     runtime.runtimeActionRegistry.set(actionId, () => executeWorkspaceSwitchByIndex(runtime, deps, index));
@@ -47,10 +44,7 @@ function executeWorkspaceSwitchByIndex(
   return true;
 }
 
-function executeWorkspaceCreate(
-  runtime: ShellRuntime,
-  deps: WorkspaceRuntimeActionDeps,
-): boolean {
+function executeWorkspaceCreate(runtime: ShellRuntime, deps: WorkspaceRuntimeActionDeps): boolean {
   const manager = runtime.workspaceManager;
   const result = createWorkspace(manager);
   if (!result.changed) {
@@ -68,10 +62,7 @@ function executeWorkspaceCreate(
   return true;
 }
 
-function executeWorkspaceDelete(
-  runtime: ShellRuntime,
-  deps: WorkspaceRuntimeActionDeps,
-): boolean {
+function executeWorkspaceDelete(runtime: ShellRuntime, deps: WorkspaceRuntimeActionDeps): boolean {
   const manager = runtime.workspaceManager;
   const wasActive = manager.activeWorkspaceId;
   const result = deleteWorkspace(manager, manager.activeWorkspaceId);
@@ -108,9 +99,8 @@ function executeWorkspaceRelativeSwitch(
     return false;
   }
 
-  const nextIndex = direction === 1
-    ? (currentIndex + 1) % order.length
-    : (currentIndex - 1 + order.length) % order.length;
+  const nextIndex =
+    direction === 1 ? (currentIndex + 1) % order.length : (currentIndex - 1 + order.length) % order.length;
   const targetId = order[nextIndex];
   const switched = runWorkspaceSwitch(targetId, runtime, deps);
   if (!switched) {
@@ -131,7 +121,7 @@ function persistAndSignal(runtime: ShellRuntime): void {
 
 function runWorkspaceSwitch(
   targetWorkspaceId: string,
-  runtime: ShellRuntime,
+  _runtime: ShellRuntime,
   deps: WorkspaceRuntimeActionDeps,
 ): boolean {
   const switchDeps = deps.getWorkspaceSwitchDeps();

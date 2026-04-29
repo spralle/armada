@@ -1,5 +1,5 @@
-import { Badge } from '@ghost-shell/ui';
-import { CodeBlock } from './CodeBlock';
+import { Badge } from "@ghost-shell/ui";
+import { CodeBlock } from "./CodeBlock";
 
 interface CodeBlockEntry {
   readonly title: string;
@@ -18,16 +18,23 @@ interface DemoShellProps {
   readonly children: React.ReactNode;
 }
 
-export function DemoShell({ title, description, motivation, features, schema, layout, codeBlocks, children }: DemoShellProps) {
+export function DemoShell({
+  title,
+  description,
+  motivation,
+  features,
+  schema,
+  layout,
+  codeBlocks,
+  children,
+}: DemoShellProps) {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <header className="mb-6">
         <h2 className="text-2xl font-bold text-foreground">{title}</h2>
         <p className="text-sm text-muted-foreground mt-1">{description}</p>
         {motivation && (
-          <p className="text-sm italic text-muted-foreground mt-2 border-l-2 border-muted pl-3">
-            {motivation}
-          </p>
+          <p className="text-sm italic text-muted-foreground mt-2 border-l-2 border-muted pl-3">{motivation}</p>
         )}
         <div className="flex flex-wrap gap-2 mt-3">
           {features.map((f) => (

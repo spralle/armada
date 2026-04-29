@@ -31,9 +31,7 @@ export function ChordDisplay({ keybinding }: ChordDisplayProps) {
     <span className="inline-flex items-center gap-1">
       {chords.map((chord, i) => (
         <span key={i} className="inline-flex items-center gap-1">
-          {i > 0 && (
-            <span className="text-muted-foreground text-[10px]">→</span>
-          )}
+          {i > 0 && <span className="text-muted-foreground text-[10px]">→</span>}
           <SingleChord chord={chord} />
         </span>
       ))}

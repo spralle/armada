@@ -1,3 +1,5 @@
+import { ensureTabRegisteredInDockTree, removeTabFromDockTree } from "./dock-tree.js";
+import { cloneContextState } from "./helpers.js";
 import type { ShellContextState } from "./types.js";
 import type {
   Workspace,
@@ -5,8 +7,6 @@ import type {
   WorkspaceOperationResult,
   WorkspaceSwitchResult,
 } from "./workspace-types.js";
-import { cloneContextState } from "./helpers.js";
-import { ensureTabRegisteredInDockTree, removeTabFromDockTree } from "./dock-tree.js";
 
 function createEmptyContextState(): ShellContextState {
   return {
@@ -40,9 +40,7 @@ function cloneWorkspaceManagerState(state: WorkspaceManagerState): WorkspaceMana
   };
 }
 
-export function createInitialWorkspaceManagerState(
-  contextState: ShellContextState,
-): WorkspaceManagerState {
+export function createInitialWorkspaceManagerState(contextState: ShellContextState): WorkspaceManagerState {
   return {
     workspaces: {
       "1": {
@@ -56,10 +54,7 @@ export function createInitialWorkspaceManagerState(
   };
 }
 
-export function createWorkspace(
-  state: WorkspaceManagerState,
-  name?: string,
-): WorkspaceOperationResult {
+export function createWorkspace(state: WorkspaceManagerState, name?: string): WorkspaceOperationResult {
   const next = cloneWorkspaceManagerState(state);
 
   const id = crypto.randomUUID();
@@ -89,10 +84,7 @@ export function createWorkspace(
   return { state: next, changed: true };
 }
 
-export function deleteWorkspace(
-  state: WorkspaceManagerState,
-  workspaceId: string,
-): WorkspaceOperationResult {
+export function deleteWorkspace(state: WorkspaceManagerState, workspaceId: string): WorkspaceOperationResult {
   if (Object.keys(state.workspaces).length <= 1) {
     return { state, changed: false };
   }
@@ -109,11 +101,8 @@ export function deleteWorkspace(
 
   if (next.activeWorkspaceId === workspaceId) {
     const nextAdjacentId =
-      state.workspaceOrder[orderIndex + 1] !== workspaceId
-        ? state.workspaceOrder[orderIndex + 1]
-        : undefined;
-    const prevAdjacentId =
-      orderIndex > 0 ? state.workspaceOrder[orderIndex - 1] : undefined;
+      state.workspaceOrder[orderIndex + 1] !== workspaceId ? state.workspaceOrder[orderIndex + 1] : undefined;
+    const prevAdjacentId = orderIndex > 0 ? state.workspaceOrder[orderIndex - 1] : undefined;
     next.activeWorkspaceId =
       (nextAdjacentId && next.workspaces[nextAdjacentId] ? nextAdjacentId : undefined) ??
       (prevAdjacentId && next.workspaces[prevAdjacentId] ? prevAdjacentId : undefined) ??

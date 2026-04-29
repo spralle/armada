@@ -46,9 +46,7 @@ export type QuickPickAction<T extends QuickPickItem> =
 // Initial state
 // ---------------------------------------------------------------------------
 
-export function createInitialQuickPickState<
-  T extends QuickPickItem,
->(): QuickPickState<T> {
+export function createInitialQuickPickState<T extends QuickPickItem>(): QuickPickState<T> {
   return {
     phase: "closed",
     filter: "",
@@ -84,11 +82,7 @@ export function reduceQuickPickState<T extends QuickPickItem>(
       return createInitialQuickPickState();
 
     case "setItems": {
-      const filtered = scoreQuickPickItems(
-        action.items,
-        state.filter,
-        state.scoringOptions,
-      );
+      const filtered = scoreQuickPickItems(action.items, state.filter, state.scoringOptions);
       return {
         ...state,
         items: action.items,
@@ -98,11 +92,7 @@ export function reduceQuickPickState<T extends QuickPickItem>(
     }
 
     case "updateFilter": {
-      const filtered = scoreQuickPickItems(
-        state.items,
-        action.filter,
-        state.scoringOptions,
-      );
+      const filtered = scoreQuickPickItems(state.items, action.filter, state.scoringOptions);
       return {
         ...state,
         filter: action.filter,
@@ -115,8 +105,7 @@ export function reduceQuickPickState<T extends QuickPickItem>(
       const maxIndex = Math.max(0, state.filteredItems.length - 1);
       return {
         ...state,
-        selectedIndex:
-          state.selectedIndex >= maxIndex ? 0 : state.selectedIndex + 1,
+        selectedIndex: state.selectedIndex >= maxIndex ? 0 : state.selectedIndex + 1,
       };
     }
 
@@ -124,18 +113,14 @@ export function reduceQuickPickState<T extends QuickPickItem>(
       const maxIndex = Math.max(0, state.filteredItems.length - 1);
       return {
         ...state,
-        selectedIndex:
-          state.selectedIndex <= 0 ? maxIndex : state.selectedIndex - 1,
+        selectedIndex: state.selectedIndex <= 0 ? maxIndex : state.selectedIndex - 1,
       };
     }
 
     case "selectIndex":
       return {
         ...state,
-        selectedIndex: Math.max(
-          0,
-          Math.min(action.index, state.filteredItems.length - 1),
-        ),
+        selectedIndex: Math.max(0, Math.min(action.index, state.filteredItems.length - 1)),
       };
   }
 }
@@ -144,9 +129,7 @@ export function reduceQuickPickState<T extends QuickPickItem>(
 // Selected item accessor
 // ---------------------------------------------------------------------------
 
-export function getSelectedItem<T extends QuickPickItem>(
-  state: QuickPickState<T>,
-): T | null {
+export function getSelectedItem<T extends QuickPickItem>(state: QuickPickState<T>): T | null {
   return state.filteredItems[state.selectedIndex]?.item ?? null;
 }
 
@@ -237,10 +220,7 @@ export function computeFuzzyScore<T extends QuickPickItem>(
 
   // Description/detail subsequence match
   if (options?.matchOnDescription && item.description) {
-    const descSubScore = subsequenceScore(
-      item.description.toLowerCase(),
-      needle,
-    );
+    const descSubScore = subsequenceScore(item.description.toLowerCase(), needle);
     if (descSubScore > 0) {
       return 30;
     }

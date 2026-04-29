@@ -1,10 +1,6 @@
+import type { WindowBridge, WindowBridgeEvent, WindowBridgeHealth } from "@ghost-shell/bridge";
 import { createDragSessionBroker } from "@ghost-shell/bridge";
 import type { SpecHarness } from "./context-state.spec-harness.js";
-import type {
-  WindowBridge,
-  WindowBridgeEvent,
-  WindowBridgeHealth,
-} from "@ghost-shell/bridge";
 
 class TestBridgeHub implements WindowBridge {
   available = true;
@@ -85,8 +81,16 @@ export function registerDndSessionProtocolSpecs(harness: SpecHarness): void {
     assertEqual(committed, true, "first commit after consume should succeed");
     assertEqual(duplicateCommit, false, "duplicate commit after terminal should be ignored");
     assertEqual(duplicateAbort, false, "abort after commit should be ignored");
-    assertEqual(countLifecycle(bridge.publishedEvents, "dnd-session-upsert", "consume"), 1, "consume lifecycle should publish once");
-    assertEqual(countLifecycle(bridge.publishedEvents, "dnd-session-delete", "commit"), 1, "commit lifecycle should publish once");
+    assertEqual(
+      countLifecycle(bridge.publishedEvents, "dnd-session-upsert", "consume"),
+      1,
+      "consume lifecycle should publish once",
+    );
+    assertEqual(
+      countLifecycle(bridge.publishedEvents, "dnd-session-delete", "commit"),
+      1,
+      "commit lifecycle should publish once",
+    );
 
     sourceBroker.dispose();
     targetBroker.dispose();
@@ -109,7 +113,11 @@ export function registerDndSessionProtocolSpecs(harness: SpecHarness): void {
     assertEqual(expired, 1, "timeout pruning should remove one expired session");
     assertEqual(lateConsume, null, "late consume after timeout should be ignored");
     assertEqual(lateCommit, false, "late commit after timeout should be ignored");
-    assertEqual(countLifecycle(bridge.publishedEvents, "dnd-session-delete", "timeout"), 1, "timeout lifecycle should publish once");
+    assertEqual(
+      countLifecycle(bridge.publishedEvents, "dnd-session-delete", "timeout"),
+      1,
+      "timeout lifecycle should publish once",
+    );
 
     sourceBroker.dispose();
     targetBroker.dispose();

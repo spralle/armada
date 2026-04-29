@@ -2,7 +2,7 @@
 // Pure aggregate functions for accumulate nodes (L2 infrastructure).
 // ---------------------------------------------------------------------------
 
-import { ArbiterError, ArbiterErrorCode } from './errors.js';
+import { ArbiterError, ArbiterErrorCode } from "./errors.js";
 
 export type AccumulateFn = (values: readonly number[]) => number | null;
 
@@ -54,11 +54,9 @@ export const ACCUMULATE_FUNCTIONS: Readonly<Record<string, AccumulateFn>> = {
 export function getAccumulateFn(name: string): AccumulateFn {
   const fn = ACCUMULATE_FUNCTIONS[name];
   if (!fn) {
-    throw new ArbiterError(
-      ArbiterErrorCode.INVALID_OPERATOR,
-      `Unknown accumulate function: ${name}`,
-      { details: { name } },
-    );
+    throw new ArbiterError(ArbiterErrorCode.INVALID_OPERATOR, `Unknown accumulate function: ${name}`, {
+      details: { name },
+    });
   }
   return fn;
 }

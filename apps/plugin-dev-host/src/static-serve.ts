@@ -6,8 +6,8 @@
  */
 
 import { createReadStream, statSync } from "node:fs";
-import { extname } from "node:path";
 import type { ServerResponse } from "node:http";
+import { extname } from "node:path";
 
 const MIME_TYPES: Readonly<Record<string, string>> = {
   ".html": "text/html; charset=utf-8",
@@ -35,10 +35,7 @@ const DEFAULT_MIME = "application/octet-stream";
  * - Returns 500 on unexpected read errors.
  * - Sets Cache-Control: no-cache (dev-mode parity with live Vite).
  */
-export function serveStaticFile(
-  res: ServerResponse,
-  filePath: string,
-): void {
+export function serveStaticFile(res: ServerResponse, filePath: string): void {
   let stat: ReturnType<typeof statSync> | undefined;
   try {
     stat = statSync(filePath);
@@ -46,7 +43,7 @@ export function serveStaticFile(
     // File not found
   }
 
-  if (!stat || !stat.isFile()) {
+  if (!stat?.isFile()) {
     res.statusCode = 404;
     res.setHeader("content-type", "text/plain");
     res.end("Not found");

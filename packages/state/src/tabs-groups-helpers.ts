@@ -7,15 +7,13 @@ export function clampClosedTabHistory(entries: ClosedTabHistoryEntry[]): ClosedT
   return entries.slice(0, CLOSED_TAB_HISTORY_LIMIT);
 }
 
-export function isClosedTabEntryRestorable(
-  entry: ClosedTabHistoryEntry,
-): entry is ClosedTabHistoryEntry {
+export function isClosedTabEntryRestorable(entry: ClosedTabHistoryEntry): entry is ClosedTabHistoryEntry {
   return Boolean(
-    entry.tabId
-      && entry.groupId
-      && entry.label
-      && (entry.closePolicy === "fixed" || entry.closePolicy === "closeable")
-      && (entry.slot === "main" || entry.slot === "secondary" || entry.slot === "side"),
+    entry.tabId &&
+      entry.groupId &&
+      entry.label &&
+      (entry.closePolicy === "fixed" || entry.closePolicy === "closeable") &&
+      (entry.slot === "main" || entry.slot === "secondary" || entry.slot === "side"),
   );
 }
 

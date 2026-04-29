@@ -1,11 +1,11 @@
-import type { FormState } from './state.js';
+import type { FormState } from "./state.js";
 
 /** Apply submit outcome to meta — tracks submission status only */
 export function applySubmitOutcome(
-  meta: FormState<unknown, unknown>['meta'],
+  meta: FormState<unknown, unknown>["meta"],
   success: boolean,
   submitId: string,
-): FormState<unknown, unknown>['meta'] {
+): FormState<unknown, unknown>["meta"] {
   const now = new Date().toISOString();
   return {
     ...meta,
@@ -14,7 +14,7 @@ export function applySubmitOutcome(
       lastValidatedAt: now,
     },
     submission: {
-      status: success ? 'succeeded' : 'failed',
+      status: success ? "succeeded" : "failed",
       submitId,
       lastAttemptAt: now,
       lastResultAt: now,

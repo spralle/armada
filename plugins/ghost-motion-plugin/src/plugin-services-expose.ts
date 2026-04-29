@@ -1,6 +1,12 @@
-import type { AnimationEntry, AnimationName, BezierPoints, GhostMotionConfig, NamedBezierCurve } from "./config-types.js";
-import { resolveEntry } from "./config-resolver.js";
 import { activateMotion, deactivateMotion, getCurrentConfig, updateConfig } from "./activate.js";
+import { resolveEntry } from "./config-resolver.js";
+import type {
+  AnimationEntry,
+  AnimationName,
+  BezierPoints,
+  GhostMotionConfig,
+  NamedBezierCurve,
+} from "./config-types.js";
 
 function inject(config?: GhostMotionConfig): void {
   const cfg = config ?? getCurrentConfig();
@@ -26,24 +32,20 @@ function updateEntry(name: AnimationName, patch: Partial<AnimationEntry>): void 
 
 function updateCurve(name: string, points: BezierPoints): void {
   const config = getCurrentConfig();
-  const curves = config.curves.map(c =>
-    c.name === name ? { ...c, points } : c,
-  );
+  const curves = config.curves.map((c) => (c.name === name ? { ...c, points } : c));
   updateConfig({ ...config, curves });
 }
 
 function addCurve(curve: NamedBezierCurve): void {
   const config = getCurrentConfig();
-  const exists = config.curves.some(c => c.name === curve.name);
-  const curves = exists
-    ? config.curves.map(c => c.name === curve.name ? curve : c)
-    : [...config.curves, curve];
+  const exists = config.curves.some((c) => c.name === curve.name);
+  const curves = exists ? config.curves.map((c) => (c.name === curve.name ? curve : c)) : [...config.curves, curve];
   updateConfig({ ...config, curves });
 }
 
 function removeCurve(name: string): void {
   const config = getCurrentConfig();
-  const curves = config.curves.filter(c => c.name !== name);
+  const curves = config.curves.filter((c) => c.name !== name);
   updateConfig({ ...config, curves });
 }
 

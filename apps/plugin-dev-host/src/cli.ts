@@ -1,8 +1,5 @@
 import { resolve } from "node:path";
-import {
-  discoverPlugins,
-  type DiscoveredPluginDefinition,
-} from "./plugin-discovery.js";
+import { type DiscoveredPluginDefinition, discoverPlugins } from "./plugin-discovery.js";
 
 export const DEFAULT_GATEWAY_PORT = 41337;
 
@@ -18,10 +15,7 @@ export interface PluginDevHostCliOptions {
   extraPluginDirs: string[];
 }
 
-export function parsePluginDevHostArgs(
-  argv: readonly string[],
-  pluginsDirs: string[],
-): PluginDevHostCliOptions {
+export function parsePluginDevHostArgs(argv: readonly string[], pluginsDirs: string[]): PluginDevHostCliOptions {
   const definitions = discoverPlugins(pluginsDirs);
   const discoveredIds = definitions.map((d) => d.id);
   const hasLive = argv.includes("--live");
@@ -46,23 +40,17 @@ export function parsePluginDevHostArgs(
 
   // --all: serve all plugins as static (no live Vite instances)
   // --live / --only <ids>: specified plugins get live Vite, all discovered are served
-  const livePluginIds = hasAll
-    ? []
-    : parseLiveFlag(argv, hasLive ? "--live" : "--only", discoveredIds);
+  const livePluginIds = hasAll ? [] : parseLiveFlag(argv, hasLive ? "--live" : "--only", discoveredIds);
   const allPluginIds = discoveredIds.slice();
 
   return { allPluginIds, livePluginIds, buildBeforeStart, port, extraPluginDirs };
 }
 
-export function resolvePluginDir(
-  definition: DiscoveredPluginDefinition,
-): string {
+export function resolvePluginDir(definition: DiscoveredPluginDefinition): string {
   return definition.dir;
 }
 
-export function resolvePluginConfigPath(
-  definition: DiscoveredPluginDefinition,
-): string {
+export function resolvePluginConfigPath(definition: DiscoveredPluginDefinition): string {
   return `${definition.dir}/vite.config.ts`;
 }
 
@@ -75,12 +63,13 @@ function parseLiveFlag(
   const value = argv[flagIndex + 1];
 
   if (!value || value.startsWith("--")) {
-    exitWithError(
-      `Missing value for ${flagName}. Use ${flagName} <pluginId1>,<pluginId2>`,
-    );
+    exitWithError(`Missing value for ${flagName}. Use ${flagName} <pluginId1>,<pluginId2>`);
   }
 
-  const requestedIds = value.split(",").map((s) => s.trim()).filter(Boolean);
+  const requestedIds = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   if (requestedIds.length === 0) {
     exitWithError(`${flagName} value is empty. Provide comma-separated plugin FQDNs.`);
   }

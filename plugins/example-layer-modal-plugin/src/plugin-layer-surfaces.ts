@@ -11,10 +11,7 @@ import type { LayerSurfaceContext } from "@ghost-shell/contracts/layer";
  * - dismissOnOutsideClick
  * - grabFocus() called on mount
  */
-export function mount(
-  target: HTMLDivElement,
-  context: LayerSurfaceContext,
-): (() => void) | void {
+export function mount(target: HTMLDivElement, context: LayerSurfaceContext): (() => void) | undefined {
   const container = document.createElement("div");
   Object.assign(container.style, {
     width: "100%",

@@ -1,13 +1,5 @@
-import type {
-  PluginRegistryDiagnosticEntry,
-} from "@ghost-shell/contracts";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-  Badge,
-} from "@ghost-shell/ui";
+import type { PluginRegistryDiagnosticEntry } from "@ghost-shell/contracts";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Badge } from "@ghost-shell/ui";
 
 interface DiagnosticsSectionProps {
   diagnostics: PluginRegistryDiagnosticEntry[];

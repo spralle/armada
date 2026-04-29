@@ -1,9 +1,9 @@
-import { createRoot, type Root } from "react-dom/client";
 import type { QuickPickItem } from "@ghost-shell/contracts";
+import { useCallback, useEffect, useState } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import type { QuickPickController } from "./quick-pick-controller.js";
-import type { QuickPickState } from "./quick-pick-state.js";
 import { QuickPickOverlay } from "./quick-pick-overlay.js";
-import { useState, useEffect, useCallback } from "react";
+import type { QuickPickState } from "./quick-pick-state.js";
 
 export interface QuickPickBridge {
   render<T extends QuickPickItem>(controller: QuickPickController<T>): void;
@@ -50,12 +50,7 @@ export function createQuickPickBridge(modalContainer?: HTMLElement): QuickPickBr
       clearRendering();
       const { root: reactRoot } = ensureRoot();
       activeController = controller as unknown as QuickPickController<QuickPickItem>;
-      reactRoot.render(
-        <QuickPickBridgeHost
-          controller={controller}
-          onDismiss={() => clearRendering()}
-        />,
-      );
+      reactRoot.render(<QuickPickBridgeHost controller={controller} onDismiss={() => clearRendering()} />);
     },
 
     dismiss(): void {
@@ -78,9 +73,9 @@ function QuickPickBridgeHost<T extends QuickPickItem>(props: {
   const { controller, onDismiss } = props;
   const [state, setState] = useState<QuickPickState<T>>(() => controller.getState());
 
-  function syncState(): void {
+  const syncState = useCallback((): void => {
     setState(controller.getState());
-  }
+  }, [controller]);
 
   useEffect(() => {
     const valueSub = controller.onDidChangeValue(() => syncState());
@@ -89,26 +84,32 @@ function QuickPickBridgeHost<T extends QuickPickItem>(props: {
       valueSub.dispose();
       activeSub.dispose();
     };
-  }, [controller]);
+  }, [controller, syncState]);
 
-  const onFilterChange = useCallback((filter: string) => {
-    controller.dispatch({ type: "updateFilter", filter });
-    syncState();
-  }, [controller]);
+  const onFilterChange = useCallback(
+    (filter: string) => {
+      controller.dispatch({ type: "updateFilter", filter });
+      syncState();
+    },
+    [controller, syncState],
+  );
 
   const onSelectNext = useCallback(() => {
     controller.dispatch({ type: "selectNext" });
     syncState();
-  }, [controller]);
+  }, [controller, syncState]);
 
   const onSelectPrevious = useCallback(() => {
     controller.dispatch({ type: "selectPrevious" });
     syncState();
-  }, [controller]);
+  }, [controller, syncState]);
 
-  const onAccept = useCallback((_item: T) => {
-    controller.fireAccept();
-  }, [controller]);
+  const onAccept = useCallback(
+    (_item: T) => {
+      controller.fireAccept();
+    },
+    [controller],
+  );
 
   const onClose = useCallback(() => {
     controller.hide();

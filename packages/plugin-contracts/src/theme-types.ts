@@ -170,7 +170,9 @@ export interface FullThemePalette {
 const hexColorString = z
   .string()
   .trim()
-  .refine((v) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v), { message: "Must be a valid hex color (#RGB or #RRGGBB)" });
+  .refine((v) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v), {
+    message: "Must be a valid hex color (#RGB or #RRGGBB)",
+  });
 
 export const terminalPaletteSchema = z.object({
   color0: hexColorString.optional(),

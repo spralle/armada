@@ -1,10 +1,10 @@
-import { validateAndSplitPath, resolveSegments } from './path-utils.js';
+import { resolveSegments, validateAndSplitPath } from "./path-utils.js";
 
 /** Compare two values for sorting: numbers numerically, strings lexicographically, Dates by epoch. */
 export function compareValues(a: unknown, b: unknown): number {
   if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
-  if (typeof a === 'number' && typeof b === 'number') return a - b;
-  if (typeof a === 'string' && typeof b === 'string') return a < b ? -1 : a > b ? 1 : 0;
+  if (typeof a === "number" && typeof b === "number") return a - b;
+  if (typeof a === "string" && typeof b === "string") return a < b ? -1 : a > b ? 1 : 0;
   if (a === undefined && b !== undefined) return -1;
   if (a !== undefined && b === undefined) return 1;
   return 0;

@@ -15,9 +15,7 @@ const BRIDGE_STYLE_ID = "ghost-shadcn-theme-bridge";
  * and toggle the `.dark` class on document.documentElement accordingly.
  */
 function syncDarkClass(): void {
-  const mode = getComputedStyle(document.documentElement)
-    .getPropertyValue("--ghost-mode")
-    .trim();
+  const mode = getComputedStyle(document.documentElement).getPropertyValue("--ghost-mode").trim();
 
   if (mode === "dark") {
     document.documentElement.classList.add("dark");
@@ -36,9 +34,9 @@ function syncDarkClass(): void {
  * Ghost theme changes, shadcn variables update automatically.
  */
 function buildBridgeCss(): string {
-  const declarations = GHOST_TO_SHADCN_MAP.map(
-    ([ghostVar, shadcnVar]) => `  ${shadcnVar}: var(${ghostVar});`,
-  ).join("\n");
+  const declarations = GHOST_TO_SHADCN_MAP.map(([ghostVar, shadcnVar]) => `  ${shadcnVar}: var(${ghostVar});`).join(
+    "\n",
+  );
 
   return `:root {\n${declarations}\n}`;
 }

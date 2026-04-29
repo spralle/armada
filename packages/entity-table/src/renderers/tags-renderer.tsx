@@ -21,9 +21,7 @@ export const tagsRenderer: CellRendererFn = (value, _row, props) => {
           </Badge>
         );
       })}
-      {remaining > 0 && (
-        <span className="text-xs text-muted-foreground">+{remaining} more</span>
-      )}
+      {remaining > 0 && <span className="text-xs text-muted-foreground">+{remaining} more</span>}
     </span>
   );
 };

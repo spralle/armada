@@ -1,14 +1,8 @@
 import { describe, expect, it } from "bun:test";
-import {
-  createDefaultContributionPredicateMatcher,
-  evaluateContributionPredicate,
-} from "../predicate.js";
 import type { PredicateEvaluationResult } from "../predicate.js";
+import { createDefaultContributionPredicateMatcher, evaluateContributionPredicate } from "../predicate.js";
 
-function evalPredicate(
-  predicate: Record<string, unknown>,
-  facts: Record<string, unknown>,
-): PredicateEvaluationResult {
+function evalPredicate(predicate: Record<string, unknown>, facts: Record<string, unknown>): PredicateEvaluationResult {
   const matcher = createDefaultContributionPredicateMatcher();
   return matcher.evaluate(predicate, facts);
 }

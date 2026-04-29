@@ -1,5 +1,4 @@
-import { moveTabToGroup, moveTabInDockTree, setActiveTab } from "./tabs-groups.js";
-import { setDockSplitRatioById, readDockSplitRatio } from "./dock-tree.js";
+import { readDockSplitRatio, setDockSplitRatioById } from "./dock-tree.js";
 import {
   resolveDirectionalTargetTabId,
   resolveNearestDirectionalSplit,
@@ -7,6 +6,7 @@ import {
   swapTabsInDockTree,
 } from "./dock-tree-directional.js";
 import type { DockDirection } from "./dock-tree-types.js";
+import { moveTabInDockTree, moveTabToGroup, setActiveTab } from "./tabs-groups.js";
 import type { ShellContextState } from "./types.js";
 
 const DEFAULT_RESIZE_DELTA = 0.05;
@@ -82,7 +82,7 @@ export function resizeNearestSplitInDirection(
   }
 
   const sign = resolveResizeSign(split.branch, input.direction);
-  const nextRatio = readDockSplitRatio({ ratio: split.ratio }) + (delta * sign);
+  const nextRatio = readDockSplitRatio({ ratio: split.ratio }) + delta * sign;
   const nextDockTree = setDockSplitRatioById(state.dockTree, split.splitId, nextRatio);
   if (nextDockTree === state.dockTree) {
     return state;
@@ -122,10 +122,7 @@ export function focusAdjacentTabInActiveStack(
   return setActiveTab(state, nextTabId);
 }
 
-export function moveActiveTabToDirectionalGroup(
-  state: ShellContextState,
-  direction: DockDirection,
-): ShellContextState {
+export function moveActiveTabToDirectionalGroup(state: ShellContextState, direction: DockDirection): ShellContextState {
   if (!state.activeTabId) {
     return state;
   }

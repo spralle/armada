@@ -5,10 +5,7 @@ export interface RouteParams {
 export interface Route {
   method: "GET" | "POST" | "PUT" | "DELETE";
   pattern: RegExp;
-  handler: (
-    params: RouteParams,
-    request: RequestInfo,
-  ) => Response | Promise<Response>;
+  handler: (params: RouteParams, request: RequestInfo) => Response | Promise<Response>;
 }
 
 export interface RequestInfo {
@@ -28,9 +25,7 @@ export function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-export function createRouter(
-  routes: Route[],
-): (info: RequestInfo) => Response | Promise<Response> {
+export function createRouter(routes: Route[]): (info: RequestInfo) => Response | Promise<Response> {
   return (info: RequestInfo): Response | Promise<Response> => {
     let methodMismatch = false;
 

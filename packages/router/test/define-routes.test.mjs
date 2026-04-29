@@ -1,12 +1,16 @@
-import test, { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { defineRoutes } from "../dist/core/define-routes.js";
 
 // Minimal Zod-like schema stubs for testing without importing zod
 function fakeSchema(shape) {
   return {
-    parse(input) { return input; },
-    safeParse(input) { return { success: true, data: input }; },
+    parse(input) {
+      return input;
+    },
+    safeParse(input) {
+      return { success: true, data: input };
+    },
     _shape: shape,
   };
 }

@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode } from "react";
 
 export interface GovernanceFieldRendererProps {
   readonly changePolicy?: string;
@@ -10,54 +10,54 @@ export interface GovernanceFieldRendererProps {
 }
 
 const wrapperStyle: React.CSSProperties = {
-  border: '1px solid var(--ghost-border-subtle)',
-  borderRadius: 'var(--ghost-radius-sm)',
-  padding: 'var(--ghost-spacing-sm)',
-  position: 'relative',
+  border: "1px solid var(--ghost-border-subtle)",
+  borderRadius: "var(--ghost-radius-sm)",
+  padding: "var(--ghost-spacing-sm)",
+  position: "relative",
 };
 
 const badgeContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: 'var(--ghost-spacing-xs)',
-  flexWrap: 'wrap',
-  marginBottom: 'var(--ghost-spacing-xs)',
+  display: "flex",
+  gap: "var(--ghost-spacing-xs)",
+  flexWrap: "wrap",
+  marginBottom: "var(--ghost-spacing-xs)",
 };
 
 const badgeBaseStyle: React.CSSProperties = {
-  fontSize: 'var(--ghost-font-size-xs)',
-  padding: '2px 6px',
-  borderRadius: 'var(--ghost-radius-xs)',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '4px',
+  fontSize: "var(--ghost-font-size-xs)",
+  padding: "2px 6px",
+  borderRadius: "var(--ghost-radius-xs)",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "4px",
 };
 
 const policyBadgeStyle: React.CSSProperties = {
   ...badgeBaseStyle,
-  backgroundColor: 'var(--ghost-surface-warning)',
-  color: 'var(--ghost-text-warning)',
+  backgroundColor: "var(--ghost-surface-warning)",
+  color: "var(--ghost-text-warning)",
 };
 
 const lockBadgeStyle: React.CSSProperties = {
   ...badgeBaseStyle,
-  backgroundColor: 'var(--ghost-surface-info)',
-  color: 'var(--ghost-text-info)',
+  backgroundColor: "var(--ghost-surface-info)",
+  color: "var(--ghost-text-info)",
 };
 
 const reloadBadgeStyle: React.CSSProperties = {
   ...badgeBaseStyle,
-  backgroundColor: 'var(--ghost-surface-caution)',
-  color: 'var(--ghost-text-caution)',
+  backgroundColor: "var(--ghost-surface-caution)",
+  color: "var(--ghost-text-caution)",
 };
 
 const sensitiveBadgeStyle: React.CSSProperties = {
   ...badgeBaseStyle,
-  backgroundColor: 'var(--ghost-surface-danger)',
-  color: 'var(--ghost-text-danger)',
+  backgroundColor: "var(--ghost-surface-danger)",
+  color: "var(--ghost-text-danger)",
 };
 
 function formatPolicyLabel(policy: string): string {
-  return policy.replace(/-/g, ' ');
+  return policy.replace(/-/g, " ");
 }
 
 /**
@@ -69,14 +69,14 @@ export function GovernanceFieldRenderer(props: GovernanceFieldRendererProps): Re
   const hasBadges =
     changePolicy !== undefined ||
     maxOverrideLayer !== undefined ||
-    (reloadBehavior !== undefined && reloadBehavior !== 'none') ||
+    (reloadBehavior !== undefined && reloadBehavior !== "none") ||
     sensitive === true;
 
   return (
     <div style={wrapperStyle} data-testid="governance-field">
       {hasBadges && (
         <div style={badgeContainerStyle} data-testid="governance-badges">
-          {changePolicy !== undefined && changePolicy !== 'direct-allowed' && (
+          {changePolicy !== undefined && changePolicy !== "direct-allowed" && (
             <span style={policyBadgeStyle} data-testid="policy-badge">
               {formatPolicyLabel(changePolicy)}
             </span>
@@ -86,7 +86,7 @@ export function GovernanceFieldRenderer(props: GovernanceFieldRendererProps): Re
               🔒 ceiling: {maxOverrideLayer}
             </span>
           )}
-          {reloadBehavior !== undefined && reloadBehavior !== 'none' && (
+          {reloadBehavior !== undefined && reloadBehavior !== "none" && (
             <span style={reloadBadgeStyle} data-testid="reload-badge">
               ⚠ {formatPolicyLabel(reloadBehavior)}
             </span>
@@ -104,6 +104,6 @@ export function GovernanceFieldRenderer(props: GovernanceFieldRendererProps): Re
 }
 
 export const governanceFieldEntry = {
-  type: 'governance-field' as const,
+  type: "governance-field" as const,
   component: GovernanceFieldRenderer,
 };

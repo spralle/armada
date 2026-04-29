@@ -1,11 +1,11 @@
-import { formatDegradedModeAnnouncement } from "../keyboard-a11y.js";
 import type { SyncAckEvent, SyncProbeEvent, WindowBridge } from "@ghost-shell/bridge";
-import type { BridgeHost, DndHost } from "../app/types.js";
 import {
-  normalizeBridgePublishRejectionReason,
   type AsyncWindowBridgeHealth,
   type AsyncWindowBridgeRejectReason,
+  normalizeBridgePublishRejectionReason,
 } from "@ghost-shell/bridge";
+import type { BridgeHost, DndHost } from "../app/types.js";
+import { formatDegradedModeAnnouncement } from "../keyboard-a11y.js";
 
 export interface BridgeRenderBindings {
   announce: (message: string) => void;
@@ -44,7 +44,11 @@ export function publishWithDegrade(
   });
 }
 
-export function requestSyncProbe(runtime: BridgeHost, bindings: BridgeRenderBindings, createWindowId: () => string): void {
+export function requestSyncProbe(
+  runtime: BridgeHost,
+  bindings: BridgeRenderBindings,
+  createWindowId: () => string,
+): void {
   if (!runtime.bridge.available && runtime.activeTransportPath !== "async-scomp-adapter") {
     return;
   }
@@ -55,13 +59,17 @@ export function requestSyncProbe(runtime: BridgeHost, bindings: BridgeRenderBind
 
   const probeId = createWindowId();
   runtime.pendingProbeId = probeId;
-  publishBridgeEvent(runtime, {
-    type: "sync-probe",
-    probeId,
-    sourceWindowId: runtime.windowId,
-  }, {
-    onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
-  });
+  publishBridgeEvent(
+    runtime,
+    {
+      type: "sync-probe",
+      probeId,
+      sourceWindowId: runtime.windowId,
+    },
+    {
+      onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
+    },
+  );
 }
 
 export function handleSyncProbe(runtime: BridgeHost, event: SyncProbeEvent, bindings: BridgeRenderBindings): void {
@@ -69,14 +77,18 @@ export function handleSyncProbe(runtime: BridgeHost, event: SyncProbeEvent, bind
     return;
   }
 
-  publishBridgeEvent(runtime, {
-    type: "sync-ack",
-    probeId: event.probeId,
-    targetWindowId: event.sourceWindowId,
-    sourceWindowId: runtime.windowId,
-  }, {
-    onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
-  });
+  publishBridgeEvent(
+    runtime,
+    {
+      type: "sync-ack",
+      probeId: event.probeId,
+      targetWindowId: event.sourceWindowId,
+      sourceWindowId: runtime.windowId,
+    },
+    {
+      onRejected: (reason) => enterDegradedMode(runtime, reason, bindings),
+    },
+  );
 }
 
 function publishBridgeEvent(
@@ -87,15 +99,18 @@ function publishBridgeEvent(
   },
 ): boolean {
   if (runtime.activeTransportPath === "async-scomp-adapter") {
-    void runtime.asyncBridge.publish(event).then((result) => {
-      if (result.status === "rejected") {
-        options?.onRejected?.(result.reason);
-      }
-    }).catch(() => {
-      options?.onRejected?.(
-        normalizeBridgePublishRejectionReason(runtime.syncDegradedReason, runtime.bridge.available),
-      );
-    });
+    void runtime.asyncBridge
+      .publish(event)
+      .then((result) => {
+        if (result.status === "rejected") {
+          options?.onRejected?.(result.reason);
+        }
+      })
+      .catch(() => {
+        options?.onRejected?.(
+          normalizeBridgePublishRejectionReason(runtime.syncDegradedReason, runtime.bridge.available),
+        );
+      });
 
     return true;
   }
@@ -105,20 +120,11 @@ function publishBridgeEvent(
     return true;
   }
 
-  options?.onRejected?.(
-    normalizeBridgePublishRejectionReason(
-      runtime.syncDegradedReason,
-      runtime.bridge.available,
-    ),
-  );
+  options?.onRejected?.(normalizeBridgePublishRejectionReason(runtime.syncDegradedReason, runtime.bridge.available));
   return false;
 }
 
-export function handleSyncAck(
-  runtime: BridgeHost,
-  event: SyncAckEvent,
-  bindings: BridgeRenderBindings,
-): boolean {
+export function handleSyncAck(runtime: BridgeHost, event: SyncAckEvent, bindings: BridgeRenderBindings): boolean {
   if (event.targetWindowId !== runtime.windowId) {
     return false;
   }
@@ -174,10 +180,10 @@ function enterDegradedMode(
   state: "degraded" | "unavailable" = reason === "unavailable" ? "unavailable" : "degraded",
 ): void {
   const changed =
-    !runtime.syncDegraded
-    || runtime.syncDegradedReason !== reason
-    || runtime.pendingProbeId !== null
-    || runtime.syncHealthState !== state;
+    !runtime.syncDegraded ||
+    runtime.syncDegradedReason !== reason ||
+    runtime.pendingProbeId !== null ||
+    runtime.syncHealthState !== state;
 
   runtime.syncDegraded = true;
   runtime.syncHealthState = state;
@@ -194,15 +200,12 @@ function enterDegradedMode(
   bindings.renderContextControls();
 }
 
-function leaveDegradedMode(
-  runtime: BridgeHost,
-  bindings: BridgeRenderBindings,
-): void {
+function leaveDegradedMode(runtime: BridgeHost, bindings: BridgeRenderBindings): void {
   const changed =
-    runtime.syncDegraded
-    || runtime.syncDegradedReason !== null
-    || runtime.syncHealthState !== "healthy"
-    || runtime.pendingProbeId !== null;
+    runtime.syncDegraded ||
+    runtime.syncDegradedReason !== null ||
+    runtime.syncHealthState !== "healthy" ||
+    runtime.pendingProbeId !== null;
 
   runtime.pendingProbeId = null;
   runtime.syncDegraded = false;

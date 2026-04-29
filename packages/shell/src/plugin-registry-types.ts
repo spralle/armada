@@ -1,17 +1,11 @@
-import type {
-  Disposable,
-  PluginContract,
-  TenantPluginDescriptor,
-} from "@ghost-shell/contracts";
+import type { DeactivationContext, Disposable, PluginContract, TenantPluginDescriptor } from "@ghost-shell/contracts";
 import type { CompatibilityReasonCode } from "@ghost-shell/plugin-system";
-import type { DeactivationContext } from "@ghost-shell/contracts";
 import type { CapabilityDependencyFailureCode } from "./capability-registry.js";
 import type { GhostApiInstance } from "./plugin-api/ghost-api-factory.js";
 import type { PluginActivateFunction, PluginLoadStrategy } from "./plugin-loader.js";
 
 /** The deactivate() function signature optionally exported by a plugin module. */
-export type PluginDeactivateFunction =
-  (context: DeactivationContext) => void | Promise<void>;
+export type PluginDeactivateFunction = (context: DeactivationContext) => void | Promise<void>;
 
 export interface PluginRuntimeFailure {
   code:
@@ -32,12 +26,7 @@ export interface PluginRuntimeFailure {
 
 export type PluginActivationTriggerType = "action" | "view" | "intent" | "event";
 
-export type PluginLifecycleState =
-  | "disabled"
-  | "registered"
-  | "activating"
-  | "active"
-  | "failed";
+export type PluginLifecycleState = "disabled" | "registered" | "activating" | "active" | "failed";
 
 export interface PluginActivationTrigger {
   type: PluginActivationTriggerType;

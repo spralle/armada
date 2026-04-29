@@ -1,8 +1,8 @@
 import { DRAG_INLINE_PREFIX, DRAG_REF_PREFIX, TAB_DOCK_DRAG_MIME } from "../app/constants.js";
 import type { ShellRuntime } from "../app/types.js";
-import { moveTabBeforeTab, setActiveTab } from "../context-state.js";
-import { updateContextState } from "../context/runtime-state.js";
 import { safeParse } from "../app/utils.js";
+import { updateContextState } from "../context/runtime-state.js";
+import { moveTabBeforeTab, setActiveTab } from "../context-state.js";
 import {
   clearActiveDockDragPayload,
   readActiveDockDragPayload,
@@ -11,7 +11,8 @@ import {
 import { readTabDragPayload as readDockTabDragPayload } from "./dock-tab-dnd-payload.js";
 import { handleCrossWindowTabStripDrop } from "./tab-drag-drop-cross-window.js";
 
-const DEBUG_DND = typeof globalThis !== "undefined" && (globalThis as Record<string, unknown>).__GHOST_DEBUG_DND === true;
+const DEBUG_DND =
+  typeof globalThis !== "undefined" && (globalThis as Record<string, unknown>).__GHOST_DEBUG_DND === true;
 
 interface TabDragPayload {
   kind: "shell-tab-dnd";
@@ -32,23 +33,27 @@ const pendingDragCleanupByRoot = new WeakMap<HTMLElement, ReturnType<typeof setT
 const tabDragBindingsByRoot = new WeakMap<HTMLElement, AbortController>();
 const SPLITTER_DRAG_ACTIVE_ATTR = "data-dock-splitter-drag-active";
 
-export function wireTabStripDragDrop(
-  root: HTMLElement,
-  runtime: ShellRuntime,
-  deps: TabDragDropDeps,
-): void {
+export function wireTabStripDragDrop(root: HTMLElement, runtime: ShellRuntime, deps: TabDragDropDeps): void {
   tabDragBindingsByRoot.get(root)?.abort();
   const bindings = new AbortController();
   tabDragBindingsByRoot.set(root, bindings);
   const listenerOptions = { signal: bindings.signal };
 
-  root.addEventListener("dragend", () => {
-    scheduleDragCleanup(root);
-  }, listenerOptions);
+  root.addEventListener(
+    "dragend",
+    () => {
+      scheduleDragCleanup(root);
+    },
+    listenerOptions,
+  );
 
-  root.addEventListener("drop", () => {
-    scheduleDragCleanup(root);
-  }, listenerOptions);
+  root.addEventListener(
+    "drop",
+    () => {
+      scheduleDragCleanup(root);
+    },
+    listenerOptions,
+  );
 
   const tabItems = getTabDragItems(root);
 
@@ -74,55 +79,63 @@ function wireTabDragStartHandler(
   runtime: ShellRuntime,
   listenerOptions: AddEventListenerOptions,
 ): void {
-  tabButton.addEventListener("dragstart", (event) => {
-    cancelPendingDragCleanup(root);
+  tabButton.addEventListener(
+    "dragstart",
+    (event) => {
+      cancelPendingDragCleanup(root);
 
-    if (isSplitterDragActive(root)) {
-      event.preventDefault();
-      return;
-    }
+      if (isSplitterDragActive(root)) {
+        event.preventDefault();
+        return;
+      }
 
-    const dataTransfer = event.dataTransfer;
-    if (!dataTransfer || !tabId || runtime.syncDegraded) {
-      if (DEBUG_DND) console.log("[shell:dnd:tab] dragstart-blocked", {
-        hasDataTransfer: Boolean(dataTransfer),
+      const dataTransfer = event.dataTransfer;
+      if (!dataTransfer || !tabId || runtime.syncDegraded) {
+        if (DEBUG_DND)
+          console.log("[shell:dnd:tab] dragstart-blocked", {
+            hasDataTransfer: Boolean(dataTransfer),
+            tabId,
+            syncDegraded: runtime.syncDegraded,
+            stack: new Error().stack,
+          });
+        return;
+      }
+
+      const payload: TabDragPayload = {
+        kind: "shell-tab-dnd",
         tabId,
-        syncDegraded: runtime.syncDegraded,
-        stack: new Error().stack,
-      });
-      return;
-    }
+        sourceWindowId: runtime.windowId,
+      };
 
-    const payload: TabDragPayload = {
-      kind: "shell-tab-dnd",
-      tabId,
-      sourceWindowId: runtime.windowId,
-    };
-
-    dataTransfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({
-      tabId,
-      sourceWindowId: runtime.windowId,
-    }));
-    setActiveDockDragPayload(root, {
-      tabId,
-      sourceWindowId: runtime.windowId,
-    });
-
-    if (runtime.dragSessionBroker.available) {
-      const ref = runtime.dragSessionBroker.create(payload);
       dataTransfer.setData(
-        "text/plain",
-        ref ? `${DRAG_REF_PREFIX}${ref.id}` : `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`,
+        TAB_DOCK_DRAG_MIME,
+        JSON.stringify({
+          tabId,
+          sourceWindowId: runtime.windowId,
+        }),
       );
-    } else {
-      dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
-    }
+      setActiveDockDragPayload(root, {
+        tabId,
+        sourceWindowId: runtime.windowId,
+      });
 
-    dataTransfer.effectAllowed = "move";
-    if (typeof dataTransfer.setDragImage === "function") {
-      dataTransfer.setDragImage(tabButton ?? tabItem, 16, 12);
-    }
-  }, listenerOptions);
+      if (runtime.dragSessionBroker.available) {
+        const ref = runtime.dragSessionBroker.create(payload);
+        dataTransfer.setData(
+          "text/plain",
+          ref ? `${DRAG_REF_PREFIX}${ref.id}` : `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`,
+        );
+      } else {
+        dataTransfer.setData("text/plain", `${DRAG_INLINE_PREFIX}${JSON.stringify(payload)}`);
+      }
+
+      dataTransfer.effectAllowed = "move";
+      if (typeof dataTransfer.setDragImage === "function") {
+        dataTransfer.setDragImage(tabButton ?? tabItem, 16, 12);
+      }
+    },
+    listenerOptions,
+  );
 }
 
 function wireTabDragFeedbackHandlers(
@@ -131,17 +144,25 @@ function wireTabDragFeedbackHandlers(
   root: HTMLElement,
   listenerOptions: AddEventListenerOptions,
 ): void {
-  tabButton.addEventListener("drag", () => {
-    const activePayload = readActiveDockDragPayload(root);
-    if (activePayload?.tabId !== tabId) {
-      return;
-    }
-    addRootClass(root, "is-dock-dragging");
-  }, listenerOptions);
+  tabButton.addEventListener(
+    "drag",
+    () => {
+      const activePayload = readActiveDockDragPayload(root);
+      if (activePayload?.tabId !== tabId) {
+        return;
+      }
+      addRootClass(root, "is-dock-dragging");
+    },
+    listenerOptions,
+  );
 
-  tabButton.addEventListener("dragend", () => {
-    scheduleDragCleanup(root);
-  }, listenerOptions);
+  tabButton.addEventListener(
+    "dragend",
+    () => {
+      scheduleDragCleanup(root);
+    },
+    listenerOptions,
+  );
 }
 
 function wireTabDropHandler(
@@ -152,18 +173,26 @@ function wireTabDropHandler(
   deps: TabDragDropDeps,
   listenerOptions: AddEventListenerOptions,
 ): void {
-  tabItem.addEventListener("dragover", (event) => {
-    if (!event.dataTransfer || runtime.syncDegraded) {
-      return;
-    }
+  tabItem.addEventListener(
+    "dragover",
+    (event) => {
+      if (!event.dataTransfer || runtime.syncDegraded) {
+        return;
+      }
 
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, listenerOptions);
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+    },
+    listenerOptions,
+  );
 
-  tabItem.addEventListener("drop", (event) => {
-    handleTabDrop(event, tabId, root, runtime, deps);
-  }, listenerOptions);
+  tabItem.addEventListener(
+    "drop",
+    (event) => {
+      handleTabDrop(event, tabId, root, runtime, deps);
+    },
+    listenerOptions,
+  );
 }
 
 function handleTabDrop(
@@ -178,12 +207,13 @@ function handleTabDrop(
   const dataTransfer = event.dataTransfer;
   if (runtime.syncDegraded || !dataTransfer) {
     clearDragState(root);
-    if (DEBUG_DND) console.log("[shell:dnd:tab] drop-blocked", {
-      hasDataTransfer: Boolean(dataTransfer),
-      syncDegraded: runtime.syncDegraded,
-      targetTabId,
-      stack: new Error().stack,
-    });
+    if (DEBUG_DND)
+      console.log("[shell:dnd:tab] drop-blocked", {
+        hasDataTransfer: Boolean(dataTransfer),
+        syncDegraded: runtime.syncDegraded,
+        targetTabId,
+        stack: new Error().stack,
+      });
     return;
   }
 
@@ -196,15 +226,19 @@ function handleTabDrop(
   const payload = resolved.payload;
   const isCrossWindow = payload.sourceWindowId !== runtime.windowId;
   if (isCrossWindow) {
-    handleCrossWindowTabStripDrop(runtime, {
-      tabId: payload.tabId,
-      sourceWindowId: payload.sourceWindowId,
-      targetTabId,
-      transferSessionId: resolved.transferSessionId,
-    }, {
-      onTabMoved: deps.onTabMoved,
-      onStateChange: deps.onStateChange,
-    });
+    handleCrossWindowTabStripDrop(
+      runtime,
+      {
+        tabId: payload.tabId,
+        sourceWindowId: payload.sourceWindowId,
+        targetTabId,
+        transferSessionId: resolved.transferSessionId,
+      },
+      {
+        onTabMoved: deps.onTabMoved,
+        onStateChange: deps.onStateChange,
+      },
+    );
     return;
   }
 
@@ -266,14 +300,13 @@ function resolveTabButton(tabItem: HTMLElement): HTMLButtonElement | null {
 
 function readTabItemId(tabItem: HTMLElement, tabButton: HTMLButtonElement | null): string | undefined {
   const itemDataset = (tabItem as Partial<HTMLElement>).dataset;
-  return itemDataset && typeof itemDataset.tabItem === "string"
-    ? itemDataset.tabItem
-    : tabButton?.dataset.partId;
+  return itemDataset && typeof itemDataset.tabItem === "string" ? itemDataset.tabItem : tabButton?.dataset.partId;
 }
 
 function isSplitterDragActive(root: HTMLElement): boolean {
-  return typeof (root as Partial<HTMLElement>).hasAttribute === "function"
-    && root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR);
+  return (
+    typeof (root as Partial<HTMLElement>).hasAttribute === "function" && root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)
+  );
 }
 
 function addRootClass(root: HTMLElement, className: string): void {
@@ -355,9 +388,9 @@ function asTabDragPayload(value: unknown): TabDragPayload | null {
   }
   const payload = value as Record<string, unknown>;
   if (
-    payload.kind !== "shell-tab-dnd"
-    || typeof payload.tabId !== "string"
-    || typeof payload.sourceWindowId !== "string"
+    payload.kind !== "shell-tab-dnd" ||
+    typeof payload.tabId !== "string" ||
+    typeof payload.sourceWindowId !== "string"
   ) {
     return null;
   }

@@ -13,7 +13,7 @@ export class MemoryStorage {
   private readonly map = new Map<string, string>();
 
   getItem(key: string): string | null {
-    return this.map.has(key) ? this.map.get(key) ?? null : null;
+    return this.map.has(key) ? (this.map.get(key) ?? null) : null;
   }
 
   setItem(key: string, value: string): void {
@@ -23,7 +23,7 @@ export class MemoryStorage {
 
 export function createSpecHarness(): {
   harness: SpecHarness;
-    runAll: () => Promise<{ passed: number; total: number }>;
+  runAll: () => Promise<{ passed: number; total: number }>;
 } {
   const tests: TestCase[] = [];
 

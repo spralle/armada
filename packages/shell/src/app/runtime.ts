@@ -1,7 +1,17 @@
-import { createDragSessionBroker } from "@ghost-shell/bridge";
-import { createInitialShellContextState } from "../context-state.js";
-import { createIncomingTransferJournal } from "../context-state.js";
+import {
+  createAsyncScompWindowBridge,
+  createAsyncWindowBridgeCompatibilityShim,
+  createDragSessionBroker,
+  createWindowBridge,
+} from "@ghost-shell/bridge";
+import { createKeybindingOverrideManager } from "@ghost-shell/commands";
+import { createIntentRuntime } from "@ghost-shell/intents";
+import { createEventEmitter } from "@ghost-shell/plugin-system";
+import { initPlacementStrategy } from "@ghost-shell/state";
+import { buildActionSurface } from "../action-surface.js";
+import { createIncomingTransferJournal, createInitialShellContextState } from "../context-state.js";
 import { createDefaultLayoutState } from "../layout.js";
+import { createShellPartHostAdapter } from "../part-module-host.js";
 import {
   createLocalStorageContextStatePersistence,
   createLocalStorageKeybindingPersistence,
@@ -10,52 +20,28 @@ import {
 } from "../persistence.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
 import { createPluginServicesBridge } from "../plugin-service-bridge.js";
-import { buildActionSurface } from "../action-surface.js";
 import {
   createDefaultShellKeybindingContract,
-  DEFAULT_SHELL_KEYBINDINGS,
   DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+  DEFAULT_SHELL_KEYBINDINGS,
 } from "../shell-runtime/default-shell-keybindings.js";
-import { createKeybindingOverrideManager } from "@ghost-shell/commands";
-import { createIntentRuntime } from "@ghost-shell/intents";
-import { createShellPartHostAdapter } from "../part-module-host.js";
-import { initPlacementStrategy } from "@ghost-shell/state";
-import { createEventEmitter } from "@ghost-shell/plugin-system";
-
-import { createWindowBridge } from "@ghost-shell/bridge";
-import { createAsyncWindowBridgeCompatibilityShim } from "@ghost-shell/bridge";
-import { createAsyncScompWindowBridge } from "@ghost-shell/bridge";
-import {
-  readShellMigrationFlags,
-  selectCrossWindowDnd,
-  type ShellTransportPath,
-} from "./migration-flags.js";
-import {
-  BRIDGE_CHANNEL,
-  DEFAULT_GROUP_COLOR,
-  DEFAULT_GROUP_ID,
-} from "./constants.js";
+import { BRIDGE_CHANNEL, DEFAULT_GROUP_COLOR, DEFAULT_GROUP_ID } from "./constants.js";
+import { readShellMigrationFlags, type ShellTransportPath, selectCrossWindowDnd } from "./migration-flags.js";
 import type { ShellRuntime, SourceTabTransferPendingState } from "./types.js";
-import {
-  createWindowId,
-  getCurrentUserId,
-  getStorage,
-  readPopoutParams,
-} from "./utils.js";
+import { createWindowId, getCurrentUserId, getStorage, readPopoutParams } from "./utils.js";
 
-export function createShellRuntime(options?: {
-  transportPath?: ShellTransportPath;
-}): ShellRuntime {
+export function createShellRuntime(options?: { transportPath?: ShellTransportPath }): ShellRuntime {
   const migrationFlags = readShellMigrationFlags();
   const crossWindowDnd = selectCrossWindowDnd(migrationFlags);
   const popoutParams = readPopoutParams();
   const windowId = createWindowId();
   const bridge = createWindowBridge(BRIDGE_CHANNEL);
-  const asyncBridge = options?.transportPath === "async-scomp-adapter"
-    ? createAsyncScompWindowBridge({
-      channelName: BRIDGE_CHANNEL,
-    })
-    : createAsyncWindowBridgeCompatibilityShim(bridge);
+  const asyncBridge =
+    options?.transportPath === "async-scomp-adapter"
+      ? createAsyncScompWindowBridge({
+          channelName: BRIDGE_CHANNEL,
+        })
+      : createAsyncWindowBridgeCompatibilityShim(bridge);
 
   const intentRuntime = createIntentRuntime({
     getRegistrySnapshot: () => registry.getSnapshot(),
@@ -156,14 +142,14 @@ export function createShellRuntime(options?: {
   runtime.partHost = createShellPartHostAdapter(runtime);
   runtime.keybindingOverrideManager = createKeybindingOverrideManager({
     persistence: runtime.keybindingPersistence,
-    getDefaultBindings: () => DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
-      action: entry.action,
-      keybinding: entry.keybinding,
-      pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
-    })),
-    getPluginBindings: () => runtime.actionSurface.keybindings.filter(
-      (b) => b.pluginId !== DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
-    ),
+    getDefaultBindings: () =>
+      DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
+        action: entry.action,
+        keybinding: entry.keybinding,
+        pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+      })),
+    getPluginBindings: () =>
+      runtime.actionSurface.keybindings.filter((b) => b.pluginId !== DEFAULT_SHELL_KEYBINDING_PLUGIN_ID),
   });
 
   runtime.registry.registerManifestDescriptors("local", []);

@@ -1,7 +1,7 @@
-import type { NavigationHints, NavigationTarget } from "../core/types.js";
 import type { AnyRouteMap } from "../core/route-map.js";
-import type { PluginRouter, PluginRouterService } from "./plugin-router-types.js";
+import type { NavigationHints, NavigationTarget } from "../core/types.js";
 import { createPluginRouter } from "./plugin-router.js";
+import type { PluginRouter, PluginRouterService } from "./plugin-router-types.js";
 
 /**
  * Dependencies for creating a PluginRouterService factory.
@@ -22,10 +22,7 @@ export interface PluginRouterServiceDeps {
  * Create a PluginRouterService factory scoped to a specific tab.
  * The shell calls this once per tab mount, providing tab-specific deps.
  */
-export function createPluginRouterService(
-  tabId: string,
-  deps: PluginRouterServiceDeps,
-): PluginRouterService {
+export function createPluginRouterService(tabId: string, deps: PluginRouterServiceDeps): PluginRouterService {
   return {
     createPluginRouter<T extends AnyRouteMap>(routes: T): PluginRouter<T> {
       return createPluginRouter<T>({

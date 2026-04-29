@@ -3,22 +3,21 @@
 // Replaces 9 individual registration calls in bootstrap.ts with a single
 // `registerBuiltinServices()` invocation driven by a descriptor array.
 
-import type { ShellPluginRegistry } from "./plugin-registry-types.js";
-import type { ThemeRegistry } from "./theme-registry.js";
-import type { SyncStatusServiceDeps } from "./sync-status-service-registration.js";
-import type { ContextServiceDeps } from "./context-service-registration.js";
-import type { KeybindingServiceDeps } from "./keybinding-service-registration.js";
-import { registerThemeServiceCapability } from "./theme-service-registration.js";
-import { registerPluginRegistryServiceCapability } from "./plugin-registry-service-registration.js";
-import { registerPluginManagementServiceCapability } from "./plugin-management-service-registration.js";
-import { registerConfigurationServiceCapability } from "./config-service-registration.js";
-import { registerSyncStatusServiceCapability } from "./sync-status-service-registration.js";
-import { registerActivityStatusServiceCapability } from "./activity-status-service-registration.js";
-import { registerContextServiceCapability } from "./context-service-registration.js";
-import { registerKeybindingServiceCapability } from "./keybinding-service-registration.js";
-import { registerHookRegistryCapability } from "./hook-registry-registration.js";
 import type { ConfigurationService } from "@ghost-shell/contracts";
-
+import { registerActivityStatusServiceCapability } from "./activity-status-service-registration.js";
+import { registerConfigurationServiceCapability } from "./config-service-registration.js";
+import type { ContextServiceDeps } from "./context-service-registration.js";
+import { registerContextServiceCapability } from "./context-service-registration.js";
+import { registerHookRegistryCapability } from "./hook-registry-registration.js";
+import type { KeybindingServiceDeps } from "./keybinding-service-registration.js";
+import { registerKeybindingServiceCapability } from "./keybinding-service-registration.js";
+import { registerPluginManagementServiceCapability } from "./plugin-management-service-registration.js";
+import { registerPluginRegistryServiceCapability } from "./plugin-registry-service-registration.js";
+import type { ShellPluginRegistry } from "./plugin-registry-types.js";
+import type { SyncStatusServiceDeps } from "./sync-status-service-registration.js";
+import { registerSyncStatusServiceCapability } from "./sync-status-service-registration.js";
+import type { ThemeRegistry } from "./theme-registry.js";
+import { registerThemeServiceCapability } from "./theme-service-registration.js";
 
 /**
  * Dependencies needed by the builtin service registration phase.
@@ -50,7 +49,7 @@ export interface BuiltinServiceDescriptor {
   readonly pluginId: string;
   readonly phase: BuiltinServicePhase;
   /** Return `false` to skip registration (e.g. when optional deps are missing). */
-  readonly register: (deps: BuiltinServiceDeps) => void | false;
+  readonly register: (deps: BuiltinServiceDeps) => undefined | false;
 }
 
 /**
@@ -145,10 +144,7 @@ export const BUILTIN_SERVICES: readonly BuiltinServiceDescriptor[] = [
  * Register all builtin services for the given phase.
  * When `phase` is omitted, registers all services regardless of phase.
  */
-export function registerBuiltinServices(
-  deps: BuiltinServiceDeps,
-  phase?: BuiltinServicePhase,
-): void {
+export function registerBuiltinServices(deps: BuiltinServiceDeps, phase?: BuiltinServicePhase): void {
   for (const descriptor of BUILTIN_SERVICES) {
     if (phase !== undefined && descriptor.phase !== phase) continue;
     descriptor.register(deps);

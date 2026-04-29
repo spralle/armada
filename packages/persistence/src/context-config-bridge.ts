@@ -8,8 +8,8 @@
  * Fallback: if config service is unavailable, falls back to localStorage.
  */
 
-import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
 import type { ConfigurationService } from "@ghost-shell/contracts";
+import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
 import { createInitialShellContextState, type ShellContextState } from "@ghost-shell/state";
 import type {
   ContextStateLoadResult,
@@ -23,9 +23,9 @@ import {
   mergeAndSaveEnvelope,
   migrateContextStateEnvelope,
 } from "./envelope.js";
-import { isRecord } from "./utils.js";
-import { sanitizeDockTreeStateWithReport } from "./sanitize-dock-tree.js";
 import { sanitizeContextState } from "./sanitize.js";
+import { sanitizeDockTreeStateWithReport } from "./sanitize-dock-tree.js";
+import { isRecord } from "./utils.js";
 
 // ---------------------------------------------------------------------------
 // Config key & schema
@@ -73,9 +73,7 @@ export interface ContextConfigBridgeOptions {
 // Factory
 // ---------------------------------------------------------------------------
 
-export function createContextConfigBridge(
-  options: ContextConfigBridgeOptions,
-): ContextConfigBridge {
+export function createContextConfigBridge(options: ContextConfigBridgeOptions): ContextConfigBridge {
   const { configService, storage, userId } = options;
   const configKey = options.configKey ?? CONTEXT_STATE_CONFIG_KEY;
   const storageKey = getUnifiedStorageKey(userId);
@@ -223,10 +221,7 @@ function saveToStorage(
   }
 }
 
-function isDefaultContextState(
-  state: ShellContextState,
-  defaults: ShellContextState,
-): boolean {
+function isDefaultContextState(state: ShellContextState, defaults: ShellContextState): boolean {
   // Compare tab counts — a default state has exactly one tab
   const tabIds = Object.keys(state.tabs);
   const defaultTabIds = Object.keys(defaults.tabs);
@@ -267,4 +262,3 @@ function setMigrationFlag(storage: StorageLike | undefined): void {
     }
   }
 }
-

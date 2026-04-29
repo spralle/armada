@@ -1,8 +1,8 @@
-import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 function parseArgs(argv) {
-  const idx = argv.findIndex((t) => t === "--name");
+  const idx = argv.indexOf("--name");
   if (idx === -1 || idx === argv.length - 1) {
     throw new Error("Missing required --name argument (example: --name my-plugin)");
   }
@@ -10,7 +10,7 @@ function parseArgs(argv) {
 }
 
 function parseOptionalArg(argv, flag) {
-  const idx = argv.findIndex((t) => t === flag);
+  const idx = argv.indexOf(flag);
   if (idx === -1 || idx === argv.length - 1) return undefined;
   return argv[idx + 1];
 }

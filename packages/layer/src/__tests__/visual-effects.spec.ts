@@ -34,11 +34,7 @@ test("applyVisualEffects with backdropFilter only", () => {
   applyVisualEffects(el, undefined, "blur(12px)");
   assertEqual(el.style.opacity, "", "opacity default");
   assertEqual(el.style.backdropFilter, "blur(12px)", "backdropFilter set");
-  assertEqual(
-    (el.style as unknown as Record<string, string>).webkitBackdropFilter,
-    "blur(12px)",
-    "webkit prefix set",
-  );
+  assertEqual((el.style as unknown as Record<string, string>).webkitBackdropFilter, "blur(12px)", "webkit prefix set");
 });
 
 test("applyVisualEffects with both", () => {
@@ -46,11 +42,7 @@ test("applyVisualEffects with both", () => {
   applyVisualEffects(el, 0.8, "blur(8px)");
   assertEqual(el.style.opacity, "0.8", "opacity");
   assertEqual(el.style.backdropFilter, "blur(8px)", "backdropFilter");
-  assertEqual(
-    (el.style as unknown as Record<string, string>).webkitBackdropFilter,
-    "blur(8px)",
-    "webkit prefix",
-  );
+  assertEqual((el.style as unknown as Record<string, string>).webkitBackdropFilter, "blur(8px)", "webkit prefix");
 });
 
 test("applyVisualEffects with defaults (no opacity, no filter)", () => {
@@ -63,11 +55,7 @@ test("applyVisualEffects with defaults (no opacity, no filter)", () => {
   applyVisualEffects(el);
   assertEqual(el.style.opacity, "", "opacity cleared");
   assertEqual(el.style.backdropFilter, "", "backdropFilter cleared");
-  assertEqual(
-    (el.style as unknown as Record<string, string>).webkitBackdropFilter,
-    "",
-    "webkit prefix cleared",
-  );
+  assertEqual((el.style as unknown as Record<string, string>).webkitBackdropFilter, "", "webkit prefix cleared");
 });
 
 test("applyVisualEffects with opacity=1 resets to default", () => {

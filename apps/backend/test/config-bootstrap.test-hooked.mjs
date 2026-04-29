@@ -1,8 +1,8 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
 
 import { bootstrapBackendConfig, logConfigBootstrapSummary } from "../dist-test/src/config-bootstrap.js";
 
@@ -16,9 +16,12 @@ async function createTestConfigDir() {
       "ghost.backend.port": 8787,
     }),
   );
-  await writeFile(join(dir, "app.json"), JSON.stringify({
-    "ghost.backend.corsOrigin": "http://localhost:5173",
-  }));
+  await writeFile(
+    join(dir, "app.json"),
+    JSON.stringify({
+      "ghost.backend.corsOrigin": "http://localhost:5173",
+    }),
+  );
   await mkdir(join(dir, "tenants", "demo"), { recursive: true });
   await writeFile(
     join(dir, "tenants", "demo", "tenant.json"),
@@ -55,7 +58,7 @@ test("bootstrap with valid config directory returns configService and serviceCon
 });
 
 test("bootstrap with missing config directory does not throw", async () => {
-  const dir = join(tmpdir(), "config-bootstrap-nonexistent-" + Date.now());
+  const dir = join(tmpdir(), `config-bootstrap-nonexistent-${Date.now()}`);
   // dir does not exist — FileSystemStorageProvider handles missing files gracefully
   const result = await bootstrapBackendConfig({ configDir: dir });
 

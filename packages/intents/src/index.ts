@@ -1,32 +1,29 @@
 export type {
-  IntentFactBag,
-  IntentWhenMatcher,
-  PredicateFailureTrace,
-  PredicateEvaluationResult,
-} from "./matcher/contracts.js";
-
-export { createPredicateWhenMatcher } from "./matcher/predicate-when-matcher.js";
-export { createDefaultIntentWhenMatcher } from "./matcher/default-when-matcher.js";
-
-export {
-  createIntentRuntime,
-  resolveIntent,
-  resolveIntentWithTrace,
-  createActionCatalogFromRegistrySnapshot,
-} from "./intent-runtime.js";
-
-export type {
-  ShellIntent,
-  RuntimeActionDescriptor,
   IntentActionMatch,
-  IntentSession,
   IntentActionTrace,
+  IntentResolution,
+  IntentResolutionDelegate,
+  IntentResolutionOutcome,
   IntentResolutionTrace,
   IntentResolutionWithTrace,
   IntentRuntime,
   IntentRuntimeDeps,
   IntentRuntimeOptions,
-  IntentResolutionDelegate,
-  IntentResolutionOutcome,
-  IntentResolution,
+  IntentSession,
+  RuntimeActionDescriptor,
+  ShellIntent,
 } from "./intent-runtime.js";
+export {
+  createActionCatalogFromRegistrySnapshot,
+  createIntentRuntime,
+  resolveIntent,
+  resolveIntentWithTrace,
+} from "./intent-runtime.js";
+export type {
+  IntentFactBag,
+  IntentWhenMatcher,
+  PredicateEvaluationResult,
+  PredicateFailureTrace,
+} from "./matcher/contracts.js";
+export { createDefaultIntentWhenMatcher } from "./matcher/default-when-matcher.js";
+export { createPredicateWhenMatcher } from "./matcher/predicate-when-matcher.js";

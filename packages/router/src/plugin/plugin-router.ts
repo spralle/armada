@@ -1,6 +1,6 @@
 import type { z } from "zod";
-import type { NavigationHints, NavigationTarget } from "../core/types.js";
 import type { AnyRouteMap } from "../core/route-map.js";
+import type { NavigationHints, NavigationTarget } from "../core/types.js";
 import type { PluginRouter } from "./plugin-router-types.js";
 
 /**
@@ -34,11 +34,7 @@ function getRouteDef(routes: AnyRouteMap, route: string): AnyRouteMap[string] {
  * Serialize typed params to a flat string record with _route convention.
  * Zod ensures type correctness; we just stringify values for shell transport.
  */
-function serializeParams(
-  routeId: string,
-  params: Record<string, unknown>,
-  schema: z.ZodType,
-): Record<string, string> {
+function serializeParams(routeId: string, params: Record<string, unknown>, schema: z.ZodType): Record<string, string> {
   const parsed = schema.parse(params) as Record<string, unknown>;
   const result: Record<string, string> = { [ROUTE_KEY]: routeId };
   for (const [key, value] of Object.entries(parsed)) {
@@ -53,9 +49,7 @@ function serializeParams(
  * Create a scoped PluginRouter instance for type-safe navigation
  * within a plugin's own route definitions.
  */
-export function createPluginRouter<T extends AnyRouteMap>(
-  options: CreatePluginRouterOptions,
-): PluginRouter<T> {
+export function createPluginRouter<T extends AnyRouteMap>(options: CreatePluginRouterOptions): PluginRouter<T> {
   const { routes, onArgsChange, onNavigate } = options;
   let currentArgs: Readonly<Record<string, string>> = options.initialArgs;
   const listeners = new Set<(route: unknown) => void>();
@@ -89,10 +83,7 @@ export function createPluginRouter<T extends AnyRouteMap>(
 
     const result = routeDef.schema.safeParse(argsWithoutRoute);
     if (!result.success) {
-      console.warn(
-        `[PluginRouter] Failed to parse params for route "${routeId}":`,
-        result.error.issues,
-      );
+      console.warn(`[PluginRouter] Failed to parse params for route "${routeId}":`, result.error.issues);
       return null;
     }
 
@@ -115,7 +106,9 @@ export function createPluginRouter<T extends AnyRouteMap>(
 
     subscribe(listener) {
       listeners.add(listener as (route: unknown) => void);
-      return () => { listeners.delete(listener as (route: unknown) => void); };
+      return () => {
+        listeners.delete(listener as (route: unknown) => void);
+      };
     },
 
     buildTarget(route, params) {

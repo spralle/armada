@@ -53,16 +53,14 @@ export function buildActivationPlan(entries: ActivationPlanEntry[]): ActivationP
       if (!dependents.has(depId)) {
         dependents.set(depId, []);
       }
-      dependents.get(depId)!.push(entry.id);
+      dependents.get(depId)?.push(entry.id);
     }
     inDegree.set(entry.id, count);
   }
 
   // Kahn's algorithm: peel layers of zero-in-degree nodes.
   const layers: string[][] = [];
-  let frontier = entries
-    .map((e) => e.id)
-    .filter((id) => inDegree.get(id) === 0);
+  let frontier = entries.map((e) => e.id).filter((id) => inDegree.get(id) === 0);
 
   while (frontier.length > 0) {
     layers.push(frontier);

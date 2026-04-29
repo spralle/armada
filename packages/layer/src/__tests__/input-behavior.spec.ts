@@ -1,9 +1,5 @@
 import { InputBehavior, KeyboardInteractivity } from "@ghost-shell/contracts/layer";
-import {
-  applyInputBehavior,
-  applyKeyboardInteractivity,
-  createKeyboardExclusiveManager,
-} from "../input-behavior.js";
+import { applyInputBehavior, applyKeyboardInteractivity, createKeyboardExclusiveManager } from "../input-behavior.js";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];
@@ -95,9 +91,7 @@ function setupDocumentMock(): void {
       listeners.push({ type, handler, capture: !!capture });
     },
     removeEventListener(type: string, handler: (e: unknown) => void, capture?: boolean) {
-      const idx = listeners.findIndex(
-        (l) => l.type === type && l.handler === handler && l.capture === !!capture,
-      );
+      const idx = listeners.findIndex((l) => l.type === type && l.handler === handler && l.capture === !!capture);
       if (idx !== -1) listeners.splice(idx, 1);
     },
     /** Expose for test inspection */
@@ -301,11 +295,15 @@ test("capturing listener suppresses events outside exclusive surface", () => {
     let stopImmediateCalled = false;
     const mockEvent = {
       target: { notTheSurface: true }, // not contained by el
-      stopPropagation() { stopPropCalled = true; },
-      stopImmediatePropagation() { stopImmediateCalled = true; },
+      stopPropagation() {
+        stopPropCalled = true;
+      },
+      stopImmediatePropagation() {
+        stopImmediateCalled = true;
+      },
     };
 
-    capHandler!.handler(mockEvent);
+    capHandler?.handler(mockEvent);
     assertEqual(stopPropCalled, true, "stopPropagation called");
     assertEqual(stopImmediateCalled, true, "stopImmediatePropagation called");
 
@@ -330,11 +328,13 @@ test("capturing listener allows events inside exclusive surface", () => {
     let stopPropCalled = false;
     const mockEvent = {
       target: asHtmlDiv(el), // the surface itself — contains returns true
-      stopPropagation() { stopPropCalled = true; },
+      stopPropagation() {
+        stopPropCalled = true;
+      },
       stopImmediatePropagation() {},
     };
 
-    capHandler!.handler(mockEvent);
+    capHandler?.handler(mockEvent);
     assertEqual(stopPropCalled, false, "stopPropagation NOT called for inside event");
 
     manager.dispose();

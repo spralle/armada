@@ -1,33 +1,33 @@
-import type { RuleSession, FiringResult } from '../contracts.js';
+import type { FiringResult, RuleSession } from "../contracts.js";
 
 /** Human-readable summary of a firing result. */
 export function explainResult(result: FiringResult): string {
   const lines: string[] = [];
   lines.push(`Fired ${result.rulesFired} rules in ${result.cycles} cycles`);
-  lines.push('Changes:');
+  lines.push("Changes:");
   if (result.changes.length === 0) {
-    lines.push('  (none)');
+    lines.push("  (none)");
   } else {
     for (const c of result.changes) {
       lines.push(`  ${c.path}: ${fmt(c.previousValue)} → ${fmt(c.newValue)} (by ${c.ruleName})`);
     }
   }
   const warnCount = result.warnings.length;
-  lines.push(`Warnings: ${warnCount === 0 ? 'none' : String(warnCount)}`);
+  lines.push(`Warnings: ${warnCount === 0 ? "none" : String(warnCount)}`);
   if (warnCount > 0) {
     for (const w of result.warnings) {
       lines.push(`  [${w.code}] ${w.message}`);
     }
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /** Format all changes from a firing result. */
 export function formatChanges(result: FiringResult): string {
-  if (result.changes.length === 0) return '(no changes)';
+  if (result.changes.length === 0) return "(no changes)";
   return result.changes
     .map((c) => `${c.path}: ${fmt(c.previousValue)} → ${fmt(c.newValue)} (by ${c.ruleName})`)
-    .join('\n');
+    .join("\n");
 }
 
 /** Dump the current session state as formatted JSON. */
@@ -36,5 +36,5 @@ export function dumpState(session: RuleSession): string {
 }
 
 function fmt(value: unknown): string {
-  return value === undefined ? 'undefined' : JSON.stringify(value);
+  return value === undefined ? "undefined" : JSON.stringify(value);
 }

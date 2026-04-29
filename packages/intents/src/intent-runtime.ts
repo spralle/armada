@@ -1,10 +1,6 @@
 import type { PluginContract } from "@ghost-shell/contracts/plugin";
+import type { IntentFactBag, IntentWhenMatcher, PredicateFailureTrace } from "./matcher/contracts.js";
 import { createPredicateWhenMatcher } from "./matcher/predicate-when-matcher.js";
-import type {
-  IntentFactBag,
-  IntentWhenMatcher,
-  PredicateFailureTrace,
-} from "./matcher/contracts.js";
 
 export type { IntentFactBag, PredicateFailureTrace } from "./matcher/contracts.js";
 
@@ -60,7 +56,11 @@ export interface IntentRuntimeOptions {
 }
 
 export interface IntentResolutionDelegate {
-  showChooser(matches: IntentActionMatch[], intent: ShellIntent, trace: IntentResolutionTrace): Promise<IntentActionMatch | null>;
+  showChooser(
+    matches: IntentActionMatch[],
+    intent: ShellIntent,
+    trace: IntentResolutionTrace,
+  ): Promise<IntentActionMatch | null>;
   activatePlugin(pluginId: string, trigger: { type: string; id: string }): Promise<boolean>;
   announce(message: string): void;
 }
@@ -274,7 +274,7 @@ export function createIntentRuntime(deps: IntentRuntimeDeps): IntentRuntime {
       } else {
         // multiple-matches
         if (options?.preferredActionId) {
-          const preferred = resolution.matches.find(m => m.actionId === options.preferredActionId);
+          const preferred = resolution.matches.find((m) => m.actionId === options.preferredActionId);
           if (preferred) {
             match = preferred;
           } else {

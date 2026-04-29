@@ -4,26 +4,19 @@
 // via the derivation engine, and supports runtime theme switching with
 // user preference persistence.
 
-import type {
-  FullThemePalette,
-  PluginContract,
-  ThemeBackgroundEntry,
-} from "@ghost-shell/contracts";
+import type { FullThemePalette, PluginContract, ThemeBackgroundEntry } from "@ghost-shell/contracts";
+import { type ComposedThemeContribution, composeThemeContributions } from "@ghost-shell/plugin-system";
 import {
+  clearBackgroundPreference,
   deriveFullPalette,
   GHOST_THEME_CSS_VARS,
-  readUserThemePreference,
-  writeUserThemePreference,
-  readBackgroundPreference,
-  writeBackgroundPreference,
-  clearBackgroundPreference,
   manageBackgroundImage,
   preloadBackgroundUrls,
+  readBackgroundPreference,
+  readUserThemePreference,
+  writeBackgroundPreference,
+  writeUserThemePreference,
 } from "@ghost-shell/theme";
-import {
-  composeThemeContributions,
-  type ComposedThemeContribution,
-} from "@ghost-shell/plugin-system";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 import { activateAllThemePlugins } from "./theme-activation.js";
 
@@ -102,12 +95,8 @@ function injectDerivedPaletteVariables(palette: FullThemePalette): void {
     document.head.appendChild(styleEl);
   }
 
-  const entries = Object.entries(GHOST_THEME_CSS_VARS) as Array<
-    [keyof FullThemePalette, string]
-  >;
-  const declarations = entries
-    .map(([token, cssVar]) => `  ${cssVar}: ${palette[token]};`)
-    .join("\n");
+  const entries = Object.entries(GHOST_THEME_CSS_VARS) as Array<[keyof FullThemePalette, string]>;
+  const declarations = entries.map(([token, cssVar]) => `  ${cssVar}: ${palette[token]};`).join("\n");
 
   styleEl.textContent = `:root {\n${declarations}\n}`;
 }
@@ -136,10 +125,7 @@ function collectPluginThemeSources(
 // Theme resolution
 // ---------------------------------------------------------------------------
 
-function resolveThemeId(
-  themes: ComposedThemeContribution[],
-  tenantDefaultThemeId: string | undefined,
-): string | null {
+function resolveThemeId(themes: ComposedThemeContribution[], tenantDefaultThemeId: string | undefined): string | null {
   if (themes.length === 0) {
     return null;
   }
@@ -192,11 +178,7 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
     return discoveredThemes.find((t) => t.id === themeId);
   }
 
-  function applyBackgroundEntry(
-    entry: ThemeBackgroundEntry,
-    source: "theme" | "custom",
-    index: number | null,
-  ): void {
+  function applyBackgroundEntry(entry: ThemeBackgroundEntry, source: "theme" | "custom", index: number | null): void {
     manageBackgroundImage([entry]);
     activeBackground = {
       url: entry.url,
@@ -206,10 +188,7 @@ export function createThemeRegistry(options: ThemeRegistryOptions): ThemeRegistr
     };
   }
 
-  function applyThemeBackground(
-    theme: ComposedThemeContribution,
-    themeId: string,
-  ): void {
+  function applyThemeBackground(theme: ComposedThemeContribution, themeId: string): void {
     const pref = readBackgroundPreference(themeId);
     const backgrounds = theme.backgrounds ?? [];
 

@@ -1,5 +1,5 @@
-import { FileSystemStorageProvider } from "./config-stubs.js";
 import { resolve } from "node:path";
+import { FileSystemStorageProvider } from "./config-stubs.js";
 
 export interface ConfigLoaderOptions {
   configDir: string;
@@ -25,10 +25,7 @@ export function validateTenantId(tenantId: string): boolean {
  * Core and app are read-only; tenant is writable.
  * Caller MUST validate tenantId before calling this function.
  */
-export function createTenantConfigProviders(
-  options: ConfigLoaderOptions,
-  tenantId: string,
-): TenantConfigProviders {
+export function createTenantConfigProviders(options: ConfigLoaderOptions, tenantId: string): TenantConfigProviders {
   const configDir = resolve(options.configDir);
 
   const environmentOverlayPath = options.environment

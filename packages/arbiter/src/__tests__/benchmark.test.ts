@@ -1,15 +1,14 @@
-import { describe, it, expect } from 'bun:test';
-import { createSession } from '../session.js';
-import type { ProductionRule } from '../contracts.js';
+import { describe, expect, it } from "bun:test";
+import type { ProductionRule } from "../contracts.js";
+import { createSession } from "../session.js";
 
 // ---------------------------------------------------------------------------
 // Performance benchmarks (ADR §18)
 // Thresholds are 10x the ADR aspirational targets to avoid CI flakiness.
 // ---------------------------------------------------------------------------
 
-describe('Benchmarks', () => {
-
-  it('50-rule form fires in < 50ms', () => {
+describe("Benchmarks", () => {
+  it("50-rule form fires in < 50ms", () => {
     const rules: ProductionRule[] = Array.from({ length: 50 }, (_, i) => ({
       name: `field-${i}-visibility`,
       when: { [`field${i}`]: { $exists: true } },
@@ -32,16 +31,16 @@ describe('Benchmarks', () => {
     console.log(`50-rule fire: ${elapsed.toFixed(2)}ms`);
   });
 
-  it('200-rule contributions fire in < 100ms', () => {
+  it("200-rule contributions fire in < 100ms", () => {
     const rules: ProductionRule[] = Array.from({ length: 200 }, (_, i) => ({
       name: `contribution-${i}`,
-      when: { context: 'active' },
+      when: { context: "active" },
       then: [{ $set: { [`$contributions.action${i}.visible`]: true } }],
     }));
 
     const session = createSession({
       rules,
-      initialState: { context: 'active' },
+      initialState: { context: "active" },
       limits: { maxCycles: 500, maxRuleFirings: 5000 },
     });
 
@@ -54,20 +53,22 @@ describe('Benchmarks', () => {
     console.log(`200-rule fire: ${elapsed.toFixed(2)}ms`);
   });
 
-  it('1000 field updates in < 500ms', () => {
+  it("1000 field updates in < 500ms", () => {
     const session = createSession({
       initialState: { counter: 0 },
-      rules: [{
-        name: 'counter-display',
-        when: { counter: { $exists: true } },
-        then: [{ $set: { '$ui.counterDisplay.value': '$counter' } }],
-      }],
+      rules: [
+        {
+          name: "counter-display",
+          when: { counter: { $exists: true } },
+          then: [{ $set: { "$ui.counterDisplay.value": "$counter" } }],
+        },
+      ],
     });
     session.fire();
 
     const start = performance.now();
     for (let i = 0; i < 1000; i++) {
-      session.update('counter', i);
+      session.update("counter", i);
     }
     const elapsed = performance.now() - start;
 

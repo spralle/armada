@@ -9,9 +9,7 @@ const DOCK_PREVIEW_CLASSES = [
 ] as const;
 
 export function setDockDropPreview(zoneNode: HTMLElement, zone: DockDropZone): void {
-  const overlay = typeof zoneNode.closest === "function"
-    ? zoneNode.closest<HTMLElement>(".dock-drop-overlay")
-    : null;
+  const overlay = typeof zoneNode.closest === "function" ? zoneNode.closest<HTMLElement>(".dock-drop-overlay") : null;
   if (!overlay) {
     return;
   }
@@ -21,9 +19,7 @@ export function setDockDropPreview(zoneNode: HTMLElement, zone: DockDropZone): v
 }
 
 export function clearDockDropPreview(zoneNode: HTMLElement): void {
-  const overlay = typeof zoneNode.closest === "function"
-    ? zoneNode.closest<HTMLElement>(".dock-drop-overlay")
-    : null;
+  const overlay = typeof zoneNode.closest === "function" ? zoneNode.closest<HTMLElement>(".dock-drop-overlay") : null;
   if (!overlay) {
     return;
   }

@@ -9,9 +9,7 @@ export const HOOK_REGISTRY_PLUGIN_ID = "ghost.shell.hook-registry";
  * Create a HookRegistry and register it as a builtin plugin capability.
  * Returns the registry instance so the shell can query hooks internally.
  */
-export function registerHookRegistryCapability(
-  registry: ShellPluginRegistry,
-): HookRegistry {
+export function registerHookRegistryCapability(registry: ShellPluginRegistry): HookRegistry {
   const hookRegistry = new HookRegistry();
 
   const contract: PluginContract = {
@@ -22,9 +20,7 @@ export function registerHookRegistryCapability(
     },
     contributes: {
       capabilities: {
-        services: [
-          { id: HOOK_REGISTRY_SERVICE_ID, version: "1.0.0" },
-        ],
+        services: [{ id: HOOK_REGISTRY_SERVICE_ID, version: "1.0.0" }],
       },
     },
   };

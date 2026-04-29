@@ -1,4 +1,4 @@
-import type { ProductionRule } from '@ghost-shell/arbiter';
+import type { ProductionRule } from "@ghost-shell/arbiter";
 
 export interface WeaverSchemaEntry {
   readonly path: string;
@@ -38,7 +38,8 @@ function buildCeilingRule(entry: WeaverSchemaEntry, context: GovernanceRuleConte
       name: `governance.ceiling.${entry.path}`,
       description: `Layer ${context.layer} exceeds ceiling ${ceiling} for ${entry.path}`,
       when: { $always: true },
-      then: [{ $set: { [uiPath(entry.path, 'readOnly')]: true } }],
+      // biome-ignore lint/suspicious/noThenProperty: rule DSL action clause
+      then: [{ $set: { [uiPath(entry.path, "readOnly")]: true } }],
     };
   }
   return undefined;
@@ -46,7 +47,7 @@ function buildCeilingRule(entry: WeaverSchemaEntry, context: GovernanceRuleConte
 
 function buildChangePolicyRule(entry: WeaverSchemaEntry): ProductionRule | undefined {
   const policy = entry.weaver.changePolicy;
-  if (policy === undefined || policy === 'direct-allowed') {
+  if (policy === undefined || policy === "direct-allowed") {
     return undefined;
   }
 
@@ -54,7 +55,8 @@ function buildChangePolicyRule(entry: WeaverSchemaEntry): ProductionRule | undef
     name: `governance.changePolicy.${entry.path}`,
     description: `Change policy "${policy}" requires session for ${entry.path}`,
     when: { $session: { active: { $ne: true } } },
-    then: [{ $set: { [uiPath(entry.path, 'readOnly')]: true } }],
+    // biome-ignore lint/suspicious/noThenProperty: rule DSL action clause
+    then: [{ $set: { [uiPath(entry.path, "readOnly")]: true } }],
   };
 }
 
@@ -69,7 +71,8 @@ function buildVisibilityRule(entry: WeaverSchemaEntry, context: GovernanceRuleCo
       name: `governance.visibility.${entry.path}`,
       description: `Role "${role}" required for ${entry.path}`,
       when: { $always: true },
-      then: [{ $set: { [uiPath(entry.path, 'visible')]: false } }],
+      // biome-ignore lint/suspicious/noThenProperty: rule DSL action clause
+      then: [{ $set: { [uiPath(entry.path, "visible")]: false } }],
     };
   }
   return undefined;
@@ -85,8 +88,9 @@ function buildSessionModeRule(entry: WeaverSchemaEntry): ProductionRule | undefi
     name: `governance.sessionMode.${entry.path}`,
     description: `Session mode "${mode}" toggles readOnly for ${entry.path}`,
     when: { $session: { active: { $ne: true } } },
-    then: [{ $set: { [uiPath(entry.path, 'readOnly')]: true } }],
-    else: [{ $set: { [uiPath(entry.path, 'readOnly')]: false } }],
+    // biome-ignore lint/suspicious/noThenProperty: rule DSL action clause
+    then: [{ $set: { [uiPath(entry.path, "readOnly")]: true } }],
+    else: [{ $set: { [uiPath(entry.path, "readOnly")]: false } }],
   };
 }
 

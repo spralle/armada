@@ -1,7 +1,7 @@
 import type { MenuService, ResolvedMenuAction } from "@ghost-shell/contracts";
-import type { ActionSurface } from "../action-surface.js";
-import { resolveMenuActions, dispatchAction } from "../action-surface.js";
 import type { IntentRuntime } from "@ghost-shell/intents";
+import type { ActionSurface } from "../action-surface.js";
+import { dispatchAction, resolveMenuActions } from "../action-surface.js";
 
 /**
  * Dependencies required by MenuService to bridge shell internals.
@@ -24,10 +24,10 @@ export function createMenuService(deps: MenuServiceDependencies): MenuService {
       const actions = resolveMenuActions(surface, menuId, context);
 
       // Build a lookup for group/order from menu items
-      const menuItems = surface.menus.filter(m => m.menu === menuId);
-      const menuItemByAction = new Map(menuItems.map(m => [m.action, m]));
+      const menuItems = surface.menus.filter((m) => m.menu === menuId);
+      const menuItemByAction = new Map(menuItems.map((m) => [m.action, m]));
 
-      return actions.map(action => {
+      return actions.map((action) => {
         const menuItem = menuItemByAction.get(action.id);
         return {
           id: action.id,

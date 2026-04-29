@@ -1,9 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-import { createForm } from '../create-form.js';
-import { FormrError } from '../errors.js';
+import { describe, expect, it, vi } from "vitest";
+import { createForm } from "../create-form.js";
+import { FormrError } from "../errors.js";
 
-describe('submit double-submit guard', () => {
-  it('rejects concurrent submit with FORMR_SUBMIT_CONCURRENT error', async () => {
+describe("submit double-submit guard", () => {
+  it("rejects concurrent submit with FORMR_SUBMIT_CONCURRENT error", async () => {
     let resolveSubmit!: (v: { ok: true; submitId: string }) => void;
     const onSubmit = vi.fn().mockReturnValue(
       new Promise((resolve) => {
@@ -18,15 +18,15 @@ describe('submit double-submit guard', () => {
 
     // Second submit should be rejected while first is running
     await expect(form.submit()).rejects.toThrow(FormrError);
-    await expect(form.submit()).rejects.toThrow('already in progress');
+    await expect(form.submit()).rejects.toThrow("already in progress");
 
     // Resolve first submit
-    resolveSubmit({ ok: true, submitId: 'test-id' });
+    resolveSubmit({ ok: true, submitId: "test-id" });
     const result = await first;
     expect(result.ok).toBe(true);
   });
 
-  it('rejected error has FORMR_SUBMIT_CONCURRENT code', async () => {
+  it("rejected error has FORMR_SUBMIT_CONCURRENT code", async () => {
     let resolveSubmit!: (v: { ok: true; submitId: string }) => void;
     const onSubmit = vi.fn().mockReturnValue(
       new Promise((resolve) => {
@@ -39,18 +39,18 @@ describe('submit double-submit guard', () => {
 
     try {
       await form.submit();
-      expect.unreachable('should have thrown');
+      expect.unreachable("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(FormrError);
-      expect((err as FormrError).code).toBe('FORMR_SUBMIT_CONCURRENT');
+      expect((err as FormrError).code).toBe("FORMR_SUBMIT_CONCURRENT");
     }
 
-    resolveSubmit({ ok: true, submitId: 'done' });
+    resolveSubmit({ ok: true, submitId: "done" });
     await first;
   });
 
-  it('allows new submit after previous submit completes', async () => {
-    const onSubmit = vi.fn().mockResolvedValue({ ok: true, submitId: 'id' });
+  it("allows new submit after previous submit completes", async () => {
+    const onSubmit = vi.fn().mockResolvedValue({ ok: true, submitId: "id" });
     const form = createForm({ onSubmit });
 
     const first = await form.submit();
@@ -61,11 +61,11 @@ describe('submit double-submit guard', () => {
     expect(onSubmit).toHaveBeenCalledTimes(2);
   });
 
-  it('allows new submit after previous submit fails', async () => {
+  it("allows new submit after previous submit fails", async () => {
     const onSubmit = vi
       .fn()
-      .mockResolvedValueOnce({ ok: false, submitId: 'fail-id', message: 'fail' })
-      .mockResolvedValueOnce({ ok: true, submitId: 'ok-id' });
+      .mockResolvedValueOnce({ ok: false, submitId: "fail-id", message: "fail" })
+      .mockResolvedValueOnce({ ok: true, submitId: "ok-id" });
 
     const form = createForm({ onSubmit });
 

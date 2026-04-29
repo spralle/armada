@@ -1,42 +1,43 @@
-import { useState, useMemo, useRef } from 'react';
-import { useServerTable, GhostDataTable, DataTableColumnHeader } from '@ghost-shell/data-table';
-import type { ColumnDef, SortingState, PaginationState } from '@tanstack/react-table';
-import { Badge, Button } from '@ghost-shell/ui';
-import { DemoShell } from '../components/DemoShell';
-import type { Product, FakeApiResult } from './13-server-side-pro-data';
-import { CATEGORIES, fakeApiCall, useSimulatedQuery } from './13-server-side-pro-data';
+import { DataTableColumnHeader, GhostDataTable, useServerTable } from "@ghost-shell/data-table";
+import { Badge, Button } from "@ghost-shell/ui";
+import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
+import { useMemo, useRef, useState } from "react";
+import { DemoShell } from "../components/DemoShell";
+import type { FakeApiResult, Product } from "./13-server-side-pro-data";
+import { CATEGORIES, fakeApiCall, useSimulatedQuery } from "./13-server-side-pro-data";
 
 // --- Column definitions ---
-const currencyFmt = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
+const currencyFmt = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
   maximumFractionDigits: 0,
 });
 
 function buildColumns(): ColumnDef<Product, unknown>[] {
   return [
     {
-      accessorKey: 'name',
+      accessorKey: "name",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Product" />,
     },
     {
-      accessorKey: 'category',
+      accessorKey: "category",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Category" />,
       cell: ({ getValue }) => {
         const cat = getValue() as string;
-        const variant = CATEGORIES.indexOf(cat as (typeof CATEGORIES)[number]) % 2 === 0
-          ? 'default' as const
-          : 'secondary' as const;
+        const variant =
+          CATEGORIES.indexOf(cat as (typeof CATEGORIES)[number]) % 2 === 0
+            ? ("default" as const)
+            : ("secondary" as const);
         return <Badge variant={variant}>{cat}</Badge>;
       },
     },
     {
-      accessorKey: 'price',
+      accessorKey: "price",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Price" />,
       cell: ({ getValue }) => currencyFmt.format(getValue() as number),
     },
     {
-      accessorKey: 'stock',
+      accessorKey: "stock",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Stock" />,
       cell: ({ getValue }) => {
         const stock = getValue() as number;
@@ -46,12 +47,12 @@ function buildColumns(): ColumnDef<Product, unknown>[] {
       },
     },
     {
-      accessorKey: 'rating',
+      accessorKey: "rating",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Rating" />,
       cell: ({ getValue }) => `${(getValue() as number).toFixed(1)} / 5.0`,
     },
     {
-      accessorKey: 'lastUpdated',
+      accessorKey: "lastUpdated",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Updated" />,
     },
   ];
@@ -123,27 +124,24 @@ export function ServerSideProDemo() {
   // We pass data from a ref that updates after query completes.
   const queryDataRef = useRef<FakeApiResult | undefined>(undefined);
 
-  const { table, searchValue, setSearchValue, tableState } =
-    useServerTable<Product>({
-      data: queryDataRef.current?.rows ?? [],
-      columns,
-      rowCount: queryDataRef.current?.totalCount,
-      sorting,
-      onSortingChange: setSorting,
-      pagination,
-      onPaginationChange: setPagination,
-    });
+  const { table, searchValue, setSearchValue, tableState } = useServerTable<Product>({
+    data: queryDataRef.current?.rows ?? [],
+    columns,
+    rowCount: queryDataRef.current?.totalCount,
+    sorting,
+    onSortingChange: setSorting,
+    pagination,
+    onPaginationChange: setPagination,
+  });
 
   // Step 2: Query uses tableState as key — no circular dependency.
-  const query = useSimulatedQuery(
-    ['products', tableState, simulateError],
-    () =>
-      fakeApiCall({
-        sorting: tableState.sorting,
-        search: tableState.search,
-        pagination: tableState.pagination,
-        shouldError: simulateError,
-      }),
+  const query = useSimulatedQuery(["products", tableState, simulateError], () =>
+    fakeApiCall({
+      sorting: tableState.sorting,
+      search: tableState.search,
+      pagination: tableState.pagination,
+      shouldError: simulateError,
+    }),
   );
 
   // Keep ref in sync so next render picks up fresh data
@@ -154,31 +152,27 @@ export function ServerSideProDemo() {
       title="Server-Side Pro (useServerTable)"
       description="Production-ready server-side pattern: useServerTable hook with debounced search, stale-while-revalidate, error states, estimated row counts, and TanStack Query integration pattern."
       features={[
-        'useServerTable Hook',
-        'Debounced Search (300ms)',
-        'Stale-While-Revalidate',
-        'Error State + Retry',
-        'Estimated Row Count (~N)',
-        '1,000 Products',
-        'Simulated 400-600ms Latency',
+        "useServerTable Hook",
+        "Debounced Search (300ms)",
+        "Stale-While-Revalidate",
+        "Error State + Retry",
+        "Estimated Row Count (~N)",
+        "1,000 Products",
+        "Simulated 400-600ms Latency",
       ]}
       schema={SCHEMA_SOURCE}
-      codeBlocks={[
-        { title: 'TanStack Query Pattern', code: TANSTACK_QUERY_PATTERN, defaultOpen: true },
-      ]}
+      codeBlocks={[{ title: "TanStack Query Pattern", code: TANSTACK_QUERY_PATTERN, defaultOpen: true }]}
     >
       <div className="mb-4 flex items-center gap-3">
         <Button
-          variant={simulateError ? 'destructive' : 'outline'}
+          variant={simulateError ? "destructive" : "outline"}
           size="sm"
           onClick={() => setSimulateError(!simulateError)}
         >
-          {simulateError ? 'Error Mode ON' : 'Simulate Server Error'}
+          {simulateError ? "Error Mode ON" : "Simulate Server Error"}
         </Button>
         {simulateError && (
-          <span className="text-sm text-muted-foreground">
-            Next fetch will fail. Toggle off and data will recover.
-          </span>
+          <span className="text-sm text-muted-foreground">Next fetch will fail. Toggle off and data will recover.</span>
         )}
       </div>
 

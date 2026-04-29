@@ -1,9 +1,6 @@
-import {
-  composeEnabledPluginContributions,
-  type PluginContributionSource,
-} from "@ghost-shell/plugin-system";
-import { createContract } from "./context-state.spec-intent-runtime-fixtures.js";
+import { composeEnabledPluginContributions, type PluginContributionSource } from "@ghost-shell/plugin-system";
 import type { SpecHarness } from "./context-state.spec-harness.js";
+import { createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 
 export function registerIntentRuntimePluginCompositionSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;

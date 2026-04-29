@@ -1,5 +1,5 @@
-import type { NavigationTarget, NavigationHints, PlacementHint } from "../core/types.js";
-import type { NavigationModifierMap, NavigationHandlerOptions } from "./link-types.js";
+import type { NavigationHints, NavigationTarget, PlacementHint } from "../core/types.js";
+import type { NavigationHandlerOptions, NavigationModifierMap } from "./link-types.js";
 import { DEFAULT_MODIFIER_MAP } from "./link-types.js";
 
 /**
@@ -122,9 +122,7 @@ export function resolveHintsFromEvent(
  * @param options - Handler configuration including target and callbacks.
  * @returns An event handler function suitable for "click" or "auxclick" listeners.
  */
-export function createNavigationHandler(
-  options: CreateNavigationHandlerOptions,
-): (event: MouseEvent) => void {
+export function createNavigationHandler(options: CreateNavigationHandlerOptions): (event: MouseEvent) => void {
   const { target, defaultHints, modifiers, onBeforeNavigate, onNavigate } = options;
 
   return (event: MouseEvent): void => {

@@ -1,4 +1,4 @@
-import type { NavigationTarget, NavigationHints, NavigationResult } from "../core/types.js";
+import type { NavigationHints, NavigationResult, NavigationTarget } from "../core/types.js";
 import type { NavigationDelegate } from "./navigation-runtime-types.js";
 
 /**

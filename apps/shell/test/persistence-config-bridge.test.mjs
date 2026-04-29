@@ -1,9 +1,9 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import {
-  createContextConfigBridge,
   CONTEXT_STATE_CONFIG_KEY,
   contextStateConfigSchema,
+  createContextConfigBridge,
 } from "../dist-test/src/persistence/context-config-bridge.js";
 import {
   createKeybindingConfigBridge,
@@ -25,15 +25,27 @@ function createStubConfigService(entries = {}) {
       const v = store[key];
       return v !== undefined ? v : defaultValue;
     },
-    getAtLayer() { return undefined; },
-    getForScope() { return undefined; },
+    getAtLayer() {
+      return undefined;
+    },
+    getForScope() {
+      return undefined;
+    },
     inspect(key) {
       return { key, effectiveValue: store[key], effectiveLayer: undefined };
     },
-    set(key, value) { store[key] = value; },
-    remove(key) { delete store[key]; },
-    onChange() { return () => {}; },
-    getNamespace() { return {}; },
+    set(key, value) {
+      store[key] = value;
+    },
+    remove(key) {
+      delete store[key];
+    },
+    onChange() {
+      return () => {};
+    },
+    getNamespace() {
+      return {};
+    },
     /** Expose internal store for assertions */
     _store: store,
   };
@@ -44,7 +56,9 @@ function createStubConfigService(entries = {}) {
  */
 function createFailingConfigService(entries = {}) {
   const svc = createStubConfigService(entries);
-  svc.set = () => { throw new Error("Config service unavailable"); };
+  svc.set = () => {
+    throw new Error("Config service unavailable");
+  };
   return svc;
 }
 
@@ -53,15 +67,33 @@ function createFailingConfigService(entries = {}) {
  */
 function createFullyBrokenConfigService() {
   return {
-    get() { throw new Error("Config service unavailable"); },
-    getWithDefault() { throw new Error("Config service unavailable"); },
-    getAtLayer() { return undefined; },
-    getForScope() { return undefined; },
-    inspect() { throw new Error("Config service unavailable"); },
-    set() { throw new Error("Config service unavailable"); },
-    remove() { throw new Error("Config service unavailable"); },
-    onChange() { return () => {}; },
-    getNamespace() { return {}; },
+    get() {
+      throw new Error("Config service unavailable");
+    },
+    getWithDefault() {
+      throw new Error("Config service unavailable");
+    },
+    getAtLayer() {
+      return undefined;
+    },
+    getForScope() {
+      return undefined;
+    },
+    inspect() {
+      throw new Error("Config service unavailable");
+    },
+    set() {
+      throw new Error("Config service unavailable");
+    },
+    remove() {
+      throw new Error("Config service unavailable");
+    },
+    onChange() {
+      return () => {};
+    },
+    getNamespace() {
+      return {};
+    },
   };
 }
 

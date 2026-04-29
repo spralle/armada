@@ -2,19 +2,19 @@
 
 import type {
   Disposable,
-  PluginRegistryService,
-  PluginRegistryServiceSnapshot,
-  PluginRegistryEntry,
+  PluginContract,
   PluginContributionsSummary,
+  PluginDependencySummary,
   PluginFailureInfo,
   PluginLifecycleInfo,
-  PluginDependencySummary,
-  PluginReverseDependency,
   PluginRegistryDiagnosticEntry,
-  PluginContract,
+  PluginRegistryEntry,
+  PluginRegistryService,
+  PluginRegistryServiceSnapshot,
+  PluginReverseDependency,
 } from "@ghost-shell/contracts";
 import { PLUGIN_REGISTRY_SERVICE_ID } from "@ghost-shell/contracts";
-import type { ShellPluginRegistry, PluginRegistrySnapshot } from "./plugin-registry-types.js";
+import type { PluginRegistrySnapshot, ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export const PLUGIN_REGISTRY_SERVICE_PLUGIN_ID = "ghost.shell.plugin-registry-service";
 
@@ -59,16 +59,15 @@ function mapContributions(contract: PluginContract | null): PluginContributionsS
   };
 }
 
-function mapFailure(
-  failure: { code: string; message: string; retryable: boolean } | null,
-): PluginFailureInfo | null {
+function mapFailure(failure: { code: string; message: string; retryable: boolean } | null): PluginFailureInfo | null {
   if (!failure) return null;
   return { code: failure.code, message: failure.message, retryable: failure.retryable };
 }
 
-function mapLifecycle(
-  lifecycle: { lastTransitionAt: string; lastTrigger: { type: string; id: string } | null },
-): PluginLifecycleInfo {
+function mapLifecycle(lifecycle: {
+  lastTransitionAt: string;
+  lastTrigger: { type: string; id: string } | null;
+}): PluginLifecycleInfo {
   return {
     lastTransitionAt: lifecycle.lastTransitionAt,
     lastTrigger: lifecycle.lastTrigger,
@@ -89,9 +88,7 @@ function mapDependencies(contract: PluginContract | null): PluginDependencySumma
 // ---------------------------------------------------------------------------
 
 /** Build a map from target id → reverse dependency entries across all plugins. */
-export function computeReverseDependencies(
-  snap: PluginRegistrySnapshot,
-): Map<string, PluginReverseDependency[]> {
+export function computeReverseDependencies(snap: PluginRegistrySnapshot): Map<string, PluginReverseDependency[]> {
   const reverseMap = new Map<string, PluginReverseDependency[]>();
 
   // Build a lookup: service/component id → provider plugin id
@@ -217,9 +214,7 @@ export function registerPluginRegistryServiceCapability(
     },
     contributes: {
       capabilities: {
-        services: [
-          { id: PLUGIN_REGISTRY_SERVICE_ID, version: "1.0.0" },
-        ],
+        services: [{ id: PLUGIN_REGISTRY_SERVICE_ID, version: "1.0.0" }],
       },
     },
   };

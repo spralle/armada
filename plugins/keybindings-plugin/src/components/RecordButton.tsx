@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback, useEffect } from "react";
 import type { KeybindingService } from "@ghost-shell/contracts";
 import { Button, Input } from "@ghost-shell/ui";
-import { normalizeKeyboardEventChord, isBrowserSafe } from "../lib/keybinding-utils.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { isBrowserSafe, normalizeKeyboardEventChord } from "../lib/keybinding-utils.js";
 
 const RECORD_TIMEOUT_MS = 1500;
 
@@ -72,28 +72,31 @@ export function RecordButton({
   // Cleanup timeout on unmount
   useEffect(() => clearRecordTimeout, [clearRecordTimeout]);
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
 
-    if (event.key === "Enter" && chordsRef.current.length > 0) {
-      confirmRecording();
-      return;
-    }
-    if (event.key === "Escape") {
-      cancel();
-      return;
-    }
+      if (event.key === "Enter" && chordsRef.current.length > 0) {
+        confirmRecording();
+        return;
+      }
+      if (event.key === "Escape") {
+        cancel();
+        return;
+      }
 
-    const chord = normalizeKeyboardEventChord(event.nativeEvent);
-    if (!chord) return;
+      const chord = normalizeKeyboardEventChord(event.nativeEvent);
+      if (!chord) return;
 
-    chordsRef.current.push(chord);
-    setDisplayValue(chordsRef.current.join(" ") + " ...");
+      chordsRef.current.push(chord);
+      setDisplayValue(`${chordsRef.current.join(" ")} ...`);
 
-    clearRecordTimeout();
-    timeoutRef.current = setTimeout(() => confirmRecording(), RECORD_TIMEOUT_MS);
-  }, [cancel, clearRecordTimeout, confirmRecording]);
+      clearRecordTimeout();
+      timeoutRef.current = setTimeout(() => confirmRecording(), RECORD_TIMEOUT_MS);
+    },
+    [cancel, clearRecordTimeout, confirmRecording],
+  );
 
   if (recording) {
     return (

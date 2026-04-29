@@ -1,5 +1,12 @@
 import { cloneDockNode } from "./dock-tree-helpers.js";
-import type { DockDirection, DockNode, DockOrientation, DockSplitNode, DockStackNode, DockTreeState } from "./dock-tree-types.js";
+import type {
+  DockDirection,
+  DockNode,
+  DockOrientation,
+  DockSplitNode,
+  DockStackNode,
+  DockTreeState,
+} from "./dock-tree-types.js";
 
 type DockBranch = "first" | "second";
 
@@ -138,9 +145,9 @@ function locateStackByTabId(
   if (node.kind === "stack") {
     return node.tabIds.includes(tabId)
       ? {
-        stack: node,
-        ancestors,
-      }
+          stack: node,
+          ancestors,
+        }
       : null;
   }
 
@@ -187,9 +194,7 @@ function readDeterministicStackTabId(stack: DockStackNode): string | null {
 }
 
 function isOrientationMatch(orientation: DockOrientation, direction: DockDirection): boolean {
-  return (direction === "left" || direction === "right")
-    ? orientation === "horizontal"
-    : orientation === "vertical";
+  return direction === "left" || direction === "right" ? orientation === "horizontal" : orientation === "vertical";
 }
 
 function isBranchEligibleForDirection(branch: DockBranch, direction: DockDirection): boolean {

@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import type { SortingState, PaginationState } from '@tanstack/react-table';
+import type { PaginationState, SortingState } from "@tanstack/react-table";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // --- Types ---
 export interface Product {
@@ -14,28 +14,41 @@ export interface Product {
 
 // --- Constants ---
 export const CATEGORIES = [
-  'Electronics', 'Clothing', 'Home & Garden', 'Sports',
-  'Books', 'Food', 'Toys', 'Auto',
+  "Electronics",
+  "Clothing",
+  "Home & Garden",
+  "Sports",
+  "Books",
+  "Food",
+  "Toys",
+  "Auto",
 ] as const;
 
 const ADJECTIVES = [
-  'Premium', 'Ultra', 'Classic', 'Pro', 'Essential', 'Deluxe',
-  'Compact', 'Advanced', 'Smart', 'Eco', 'Turbo', 'Lite',
+  "Premium",
+  "Ultra",
+  "Classic",
+  "Pro",
+  "Essential",
+  "Deluxe",
+  "Compact",
+  "Advanced",
+  "Smart",
+  "Eco",
+  "Turbo",
+  "Lite",
 ];
-const NOUNS = [
-  'Widget', 'Gadget', 'Device', 'Kit', 'Pack', 'Set',
-  'Module', 'Unit', 'System', 'Tool', 'Gear', 'Hub',
-];
+const NOUNS = ["Widget", "Gadget", "Device", "Kit", "Pack", "Set", "Module", "Unit", "System", "Tool", "Gear", "Hub"];
 
 function generateProducts(count: number): Product[] {
   return Array.from({ length: count }, (_, i) => {
     const adj = ADJECTIVES[i % ADJECTIVES.length];
     const noun = NOUNS[Math.floor(i / ADJECTIVES.length) % NOUNS.length];
     const cat = CATEGORIES[i % CATEGORIES.length];
-    const month = String(1 + (i % 12)).padStart(2, '0');
-    const day = String(1 + (i % 28)).padStart(2, '0');
+    const month = String(1 + (i % 12)).padStart(2, "0");
+    const day = String(1 + (i % 28)).padStart(2, "0");
     return {
-      id: `prod-${String(i + 1).padStart(4, '0')}`,
+      id: `prod-${String(i + 1).padStart(4, "0")}`,
       name: `${adj} ${noun} ${cat.slice(0, 3)}-${i + 1}`,
       category: cat,
       price: 9.99 + ((i * 1327) % 49000) / 100,
@@ -67,7 +80,7 @@ export function fakeApiCall(params: FakeApiParams): Promise<FakeApiResult> {
     const delay = 400 + Math.random() * 200;
     setTimeout(() => {
       if (params.shouldError) {
-        reject(new Error('Server unavailable — connection timed out'));
+        reject(new Error("Server unavailable — connection timed out"));
         return;
       }
 
@@ -75,9 +88,7 @@ export function fakeApiCall(params: FakeApiParams): Promise<FakeApiResult> {
       if (params.search) {
         const lower = params.search.toLowerCase();
         filtered = filtered.filter(
-          (p) =>
-            p.name.toLowerCase().includes(lower) ||
-            p.category.toLowerCase().includes(lower),
+          (p) => p.name.toLowerCase().includes(lower) || p.category.toLowerCase().includes(lower),
         );
       }
 
@@ -111,15 +122,12 @@ export interface QueryResult<T> {
   refetch: () => void;
 }
 
-export function useSimulatedQuery<T>(
-  queryKey: unknown[],
-  queryFn: () => Promise<T>,
-): QueryResult<T> {
+export function useSimulatedQuery<T>(queryKey: unknown[], queryFn: () => Promise<T>): QueryResult<T> {
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<Error | null>(null);
   const [isFetching, setIsFetching] = useState(false);
   const fetchIdRef = useRef(0);
-  const keyRef = useRef('');
+  const keyRef = useRef("");
   const queryFnRef = useRef(queryFn);
   queryFnRef.current = queryFn;
 
@@ -128,7 +136,8 @@ export function useSimulatedQuery<T>(
     setIsFetching(true);
     setError(null);
 
-    queryFnRef.current()
+    queryFnRef
+      .current()
       .then((result) => {
         if (id !== fetchIdRef.current) return;
         setData(result);

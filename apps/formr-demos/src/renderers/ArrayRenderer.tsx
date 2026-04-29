@@ -1,19 +1,18 @@
-import { useState, useCallback } from 'react';
-import type { LayoutNode } from '@ghost-shell/formr-from-schema';
-import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
-import type { FormApi } from '@ghost-shell/formr-core';
+import type { FormApi } from "@ghost-shell/formr-core";
+import type { LayoutNode, SchemaFieldInfo } from "@ghost-shell/formr-from-schema";
 import {
+  Badge,
   Button,
   Input,
   Label,
-  Badge,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Switch,
-} from '@ghost-shell/ui';
+} from "@ghost-shell/ui";
+import { useCallback, useState } from "react";
 
 export interface ArrayRendererProps {
   readonly node: LayoutNode;
@@ -25,24 +24,25 @@ export interface ArrayRendererProps {
 
 export function ArrayRenderer({ node, form, fieldMap, onChange, itemSchema }: ArrayRendererProps) {
   const field = node.path ? fieldMap.get(node.path) : undefined;
-  const title = field?.metadata?.title ?? node.path ?? 'Items';
+  const title = field?.metadata?.title ?? node.path ?? "Items";
   const [items, setItems] = useState<unknown[]>(() => {
     const data = form.getState().data as Record<string, unknown> | undefined;
-    const val = data?.[node.path ?? ''];
+    const val = data?.[node.path ?? ""];
     return Array.isArray(val) ? val : [];
   });
 
-  const updateItems = useCallback((newItems: unknown[]) => {
-    setItems(newItems);
-    if (node.path) onChange(node.path, newItems);
-  }, [node.path, onChange]);
+  const updateItems = useCallback(
+    (newItems: unknown[]) => {
+      setItems(newItems);
+      if (node.path) onChange(node.path, newItems);
+    },
+    [node.path, onChange],
+  );
 
   const addItem = () => {
-    const hasRealChildren = node.children?.some(
-      (c) => c.type === 'field' && c.path && !c.path.endsWith('[]')
-    ) ?? false;
-    const isObjectItems = hasRealChildren || itemSchema?.type === 'object';
-    updateItems([...items, isObjectItems ? {} : '']);
+    const hasRealChildren = node.children?.some((c) => c.type === "field" && c.path && !c.path.endsWith("[]")) ?? false;
+    const isObjectItems = hasRealChildren || itemSchema?.type === "object";
+    updateItems([...items, isObjectItems ? {} : ""]);
   };
 
   const removeItem = (index: number) => {
@@ -53,12 +53,12 @@ export function ArrayRenderer({ node, form, fieldMap, onChange, itemSchema }: Ar
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <Label className="text-sm font-semibold text-foreground">{title}</Label>
-        <Badge variant="secondary" className="text-xs">{items.length} items</Badge>
+        <Badge variant="secondary" className="text-xs">
+          {items.length} items
+        </Badge>
       </div>
       <div className="flex flex-col gap-2 rounded-md border border-border-muted p-3">
-        {items.length === 0 && (
-          <p className="text-xs text-muted-foreground italic">No items yet</p>
-        )}
+        {items.length === 0 && <p className="text-xs text-muted-foreground italic">No items yet</p>}
         {items.map((item, index) => (
           <ArrayItem
             key={index}
@@ -92,12 +92,12 @@ interface ArrayItemProps {
 }
 
 function ArrayItem({ item, index, items, itemSchema, node, fieldMap, updateItems, removeItem }: ArrayItemProps) {
-  if (typeof item !== 'object' || item === null) {
+  if (typeof item !== "object" || item === null) {
     return (
       <div className="flex items-center gap-2">
         <Input
           className="flex-1"
-          value={String(item ?? '')}
+          value={String(item ?? "")}
           onChange={(e) => {
             const newItems = [...items];
             newItems[index] = e.target.value;
@@ -105,16 +105,19 @@ function ArrayItem({ item, index, items, itemSchema, node, fieldMap, updateItems
           }}
           placeholder={`Item ${index + 1}`}
         />
-        <Button variant="ghost" size="sm" onClick={() => removeItem(index)} className="text-destructive shrink-0 h-8 w-8 p-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => removeItem(index)}
+          className="text-destructive shrink-0 h-8 w-8 p-0"
+        >
           ×
         </Button>
       </div>
     );
   }
 
-  const realChildren = node.children?.filter(
-    (c) => c.type === 'field' && c.path && !c.path.endsWith('[]')
-  );
+  const realChildren = node.children?.filter((c) => c.type === "field" && c.path && !c.path.endsWith("[]"));
   const properties = (itemSchema?.properties ?? {}) as Record<string, Record<string, unknown>>;
   const record = item as Record<string, unknown>;
 
@@ -123,10 +126,10 @@ function ArrayItem({ item, index, items, itemSchema, node, fieldMap, updateItems
     realChildren && realChildren.length > 0
       ? realChildren.map((child) => {
           const field = child.path ? fieldMap.get(child.path) : undefined;
-          const key = child.path!.split('.').pop()!;
+          const key = child.path ? (child.path.split(".").pop() ?? "") : "";
           const label = field?.metadata?.title ?? key;
           const enumValues = field?.metadata?.enum as string[] | undefined;
-          const fieldType = field?.type ?? 'string';
+          const fieldType = field?.type ?? "string";
           return { key, label, enumValues, fieldType };
         })
       : Object.entries(properties).map(([key, propSchema]) => ({
@@ -150,7 +153,12 @@ function ArrayItem({ item, index, items, itemSchema, node, fieldMap, updateItems
           </div>
         ))}
       </div>
-      <Button variant="ghost" size="sm" onClick={() => removeItem(index)} className="text-destructive shrink-0 h-8 w-8 p-0">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => removeItem(index)}
+        className="text-destructive shrink-0 h-8 w-8 p-0"
+      >
         ×
       </Button>
     </div>
@@ -166,36 +174,32 @@ function renderArrayItemField(
 ): React.ReactNode {
   if (enumValues) {
     return (
-      <Select value={String(record[key] ?? '')} onValueChange={onChange}>
+      <Select value={String(record[key] ?? "")} onValueChange={onChange}>
         <SelectTrigger className="h-8 text-xs">
           <SelectValue placeholder="Select..." />
         </SelectTrigger>
         <SelectContent>
           {enumValues.map((opt) => (
-            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            <SelectItem key={opt} value={opt}>
+              {opt}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
     );
   }
-  if (fieldType === 'boolean') {
+  if (fieldType === "boolean") {
     return <Switch checked={Boolean(record[key])} onCheckedChange={onChange} />;
   }
-  if (fieldType === 'number' || fieldType === 'integer') {
+  if (fieldType === "number" || fieldType === "integer") {
     return (
       <Input
         type="number"
         className="h-8 text-xs"
-        value={String(record[key] ?? '')}
+        value={String(record[key] ?? "")}
         onChange={(e) => onChange(e.target.value ? Number(e.target.value) : undefined)}
       />
     );
   }
-  return (
-    <Input
-      className="h-8 text-xs"
-      value={String(record[key] ?? '')}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  );
+  return <Input className="h-8 text-xs" value={String(record[key] ?? "")} onChange={(e) => onChange(e.target.value)} />;
 }

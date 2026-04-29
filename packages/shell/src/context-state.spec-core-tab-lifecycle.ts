@@ -1,3 +1,5 @@
+import type { ShellRuntime } from "./app/types.js";
+import { collectRenderTabMetadata } from "./context/runtime-state.js";
 import {
   closeTab,
   closeTabIfAllowed,
@@ -7,9 +9,7 @@ import {
   registerTab,
   writeTabSubcontext,
 } from "./context-state.js";
-import type { ShellRuntime } from "./app/types.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
-import { collectRenderTabMetadata } from "./context/runtime-state.js";
 import { renderPartCard, renderTabStrip } from "./ui/parts-rendering.js";
 
 export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness): void {
@@ -67,11 +67,7 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
     state = registerTab(state, { tabId: "tab-b", groupId: "group-main", closePolicy: "closeable" });
 
     assertEqual(getTabCloseability(state, "tab-a").canClose, true, "default tabs should be closeable");
-    assertEqual(
-      getTabCloseability(state, "tab-a").reason,
-      null,
-      "closeable tabs should report no disabled reason",
-    );
+    assertEqual(getTabCloseability(state, "tab-a").reason, null, "closeable tabs should report no disabled reason");
     assertEqual(getTabCloseability(state, "tab-b").canClose, true, "closeable policy should allow close action");
     assertEqual(
       getTabCloseability(state, "tab-b").reason,
@@ -105,7 +101,11 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
     };
 
     const metadata = collectRenderTabMetadata(state);
-    assertEqual(metadata.map((entry) => entry.tabId).join(","), "tab-a,tab-b,tab-c", "tab metadata should follow tabOrder");
+    assertEqual(
+      metadata.map((entry) => entry.tabId).join(","),
+      "tab-a,tab-b,tab-c",
+      "tab metadata should follow tabOrder",
+    );
     assertEqual(metadata[1]?.label, "Orders", "metadata should expose registered tab labels");
     assertEqual(metadata[1]?.isActive, true, "active tab metadata should mark selected tab");
     assertEqual(metadata[0]?.closeability.reason, null, "default tabs should be closeable");
@@ -141,15 +141,15 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
       closedTabHistory: [
         ...state.closedTabHistory,
         {
-            tabId: "tab-reopenable",
-            partDefinitionId: "tab-reopenable",
-            groupId: "group-main",
-            label: "Reopenable",
-            closePolicy: "closeable",
-            slot: "main",
-            orderIndex: 1,
-          },
-        ],
+          tabId: "tab-reopenable",
+          partDefinitionId: "tab-reopenable",
+          groupId: "group-main",
+          label: "Reopenable",
+          closePolicy: "closeable",
+          slot: "main",
+          orderIndex: 1,
+        },
+      ],
     };
 
     const html = renderTabStrip(
@@ -253,14 +253,8 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
       } as ShellRuntime,
     );
 
-    assertTruthy(
-      html.includes('data-action="reopen-closed-tab"'),
-      "reopen action should keep action wiring attribute",
-    );
-    assertTruthy(
-      html.includes('data-slot="main"'),
-      "reopen action should keep slot wiring attribute",
-    );
+    assertTruthy(html.includes('data-action="reopen-closed-tab"'), "reopen action should keep action wiring attribute");
+    assertTruthy(html.includes('data-slot="main"'), "reopen action should keep slot wiring attribute");
     assertTruthy(html.includes('disabled aria-disabled="true"'), "disabled semantics should remain intact");
     assertTruthy(
       html.includes('title="Reopen unavailable: no recently closed tab in this panel or sync is degraded"'),
@@ -290,8 +284,8 @@ export function registerContextStateCoreTabLifecycleSpecs(harness: SpecHarness):
 
     assertTruthy(html.includes('data-action="popout"'), "part card popout action wiring should remain");
     assertTruthy(html.includes('data-action="restore"'), "part card restore action wiring should remain");
-    assertTruthy(html.includes('>Pop out tab</button>'), "part card should use consistent popout label");
-    assertTruthy(html.includes('>Restore tab</button>'), "part card should use consistent restore label");
+    assertTruthy(html.includes(">Pop out tab</button>"), "part card should use consistent popout label");
+    assertTruthy(html.includes(">Restore tab</button>"), "part card should use consistent restore label");
     assertTruthy(
       html.includes('aria-label="Pop out Orders to a new window"'),
       "part card popout should include descriptive aria label",

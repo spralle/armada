@@ -1,8 +1,13 @@
 // Backend config bootstrap — creates a ConfigurationService at startup
 
-import { FileSystemStorageProvider, createServiceConfigurationService, createConfigurationService, armadaWeaver } from "./config-stubs.js";
-import type { ConfigurationService, ServiceConfigurationService, ConfigurationPropertySchema } from "./config-stubs.js";
 import { resolve } from "node:path";
+import type { ConfigurationPropertySchema, ConfigurationService, ServiceConfigurationService } from "./config-stubs.js";
+import {
+  armadaWeaver,
+  createConfigurationService,
+  createServiceConfigurationService,
+  FileSystemStorageProvider,
+} from "./config-stubs.js";
 
 export interface BackendConfigBootstrapOptions {
   configDir: string;
@@ -20,9 +25,7 @@ const backendSchemaMap = new Map<string, ConfigurationPropertySchema>([
   ["corsOrigin", { type: "string", default: "*", description: "CORS allowed origin", reloadBehavior: "hot" }],
 ]);
 
-export async function bootstrapBackendConfig(
-  options: BackendConfigBootstrapOptions,
-): Promise<BackendConfigResult> {
+export async function bootstrapBackendConfig(options: BackendConfigBootstrapOptions): Promise<BackendConfigResult> {
   const { configDir, environment, tenantId = "demo" } = options;
 
   const coreProvider = new FileSystemStorageProvider({
@@ -62,11 +65,7 @@ export async function bootstrapBackendConfig(
   return { configService, serviceConfig };
 }
 
-export function logConfigBootstrapSummary(
-  configDir: string,
-  environment: string | undefined,
-  tenantId: string,
-): void {
+export function logConfigBootstrapSummary(configDir: string, environment: string | undefined, tenantId: string): void {
   console.log("[backend:config] bootstrap", {
     configDir,
     environment: environment ?? "none",

@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { createActiveViewCodec } from "../codec/active-view-codec.js";
 import type { UrlCodecState } from "../codec/codec-types.js";
 
@@ -53,8 +53,8 @@ describe("createActiveViewCodec", () => {
     const url = new URL("http://localhost/vessel-view?vesselId=v123");
     const result = codec.decode(url);
     expect(result).not.toBeNull();
-    expect(result!.activeDefinitionId).toBe("vessel-view");
-    expect(result!.activeArgs).toEqual({ vesselId: "v123" });
+    expect(result?.activeDefinitionId).toBe("vessel-view");
+    expect(result?.activeArgs).toEqual({ vesselId: "v123" });
   });
 
   test("decode extracts workspaceId from _s param", () => {
@@ -69,13 +69,13 @@ describe("createActiveViewCodec", () => {
     const encoded = codec.encode(state, new URL("http://localhost"));
     const decoded = codec.decode(encoded);
     expect(decoded).not.toBeNull();
-    expect(decoded!.workspaceId).toBe("ws-42");
+    expect(decoded?.workspaceId).toBe("ws-42");
   });
 
   test("decode ignores _s query param from activeArgs", () => {
     const url = new URL("http://localhost/view?foo=bar&_s=abc123");
     const result = codec.decode(url);
-    expect(result!.activeArgs).toEqual({ foo: "bar" });
+    expect(result?.activeArgs).toEqual({ foo: "bar" });
   });
 
   test("canDecode returns true for non-empty path", () => {
@@ -97,7 +97,7 @@ describe("createActiveViewCodec", () => {
     };
     const url = codec.encode(state, new URL("http://localhost"));
     const decoded = codec.decode(url);
-    expect(decoded!.activeDefinitionId).toBe("detail-view");
-    expect(decoded!.activeArgs).toEqual({ entityId: "e1", mode: "edit" });
+    expect(decoded?.activeDefinitionId).toBe("detail-view");
+    expect(decoded?.activeArgs).toEqual({ entityId: "e1", mode: "edit" });
   });
 });

@@ -18,10 +18,7 @@ export function pickComponentModuleExport(
   return pickCapabilityModuleExport(module, contribution.id);
 }
 
-export function pickServiceModuleExport(
-  module: unknown,
-  contribution: PluginCapabilityServiceContribution,
-): unknown {
+export function pickServiceModuleExport(module: unknown, contribution: PluginCapabilityServiceContribution): unknown {
   return pickCapabilityModuleExport(module, contribution.id);
 }
 
@@ -35,9 +32,10 @@ function pickCapabilityModuleExport(module: unknown, capabilityId: string): unkn
     return record[capabilityId];
   }
 
-  const fallback = "default" in record ? record.default : record.pluginComponents ?? record.components
-    ?? record.pluginServices
-    ?? record.services;
+  const fallback =
+    "default" in record
+      ? record.default
+      : (record.pluginComponents ?? record.components ?? record.pluginServices ?? record.services);
   if (fallback && typeof fallback === "object" && capabilityId in (fallback as Record<string, unknown>)) {
     return (fallback as Record<string, unknown>)[capabilityId];
   }

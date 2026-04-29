@@ -1,8 +1,4 @@
-import {
-  readShellMigrationFlags,
-  selectCrossWindowDnd,
-  selectShellTransportPath,
-} from "./migration-flags.js";
+import { readShellMigrationFlags, selectCrossWindowDnd, selectShellTransportPath } from "./migration-flags.js";
 
 type TestCase = {
   name: string;
@@ -68,12 +64,9 @@ test("transport kill switch forces legacy ahead of async enable flag", () => {
 });
 
 test("window overrides can force legacy kill switch over query async enable", () => {
-  const flags = readShellMigrationFlags(
-    new URLSearchParams("shellAsyncScompAdapter=true"),
-    {
-      forceLegacyBridge: true,
-    },
-  );
+  const flags = readShellMigrationFlags(new URLSearchParams("shellAsyncScompAdapter=true"), {
+    forceLegacyBridge: true,
+  });
   const decision = selectShellTransportPath(flags);
 
   assertEqual(decision.path, "legacy-bridge", "override kill switch should force legacy bridge transport");
@@ -125,10 +118,7 @@ test("transport feature-flag matrix preserves deterministic legacy/async parity"
   ] as const;
 
   for (const scenario of matrix) {
-    const flags = readShellMigrationFlags(
-      new URLSearchParams(scenario.query),
-      scenario.override,
-    );
+    const flags = readShellMigrationFlags(new URLSearchParams(scenario.query), scenario.override);
     const decision = selectShellTransportPath(flags);
     assertEqual(decision.path, scenario.expectedPath, `matrix path mismatch for ${scenario.name}`);
     assertEqual(decision.reason, scenario.expectedReason, `matrix reason mismatch for ${scenario.name}`);
@@ -166,12 +156,9 @@ test("cross-window dnd kill switch wins over enable flag", () => {
 });
 
 test("cross-window dnd override kill switch wins over query enable", () => {
-  const flags = readShellMigrationFlags(
-    new URLSearchParams("shellCrossWindowDnd=true"),
-    {
-      forceDisableCrossWindowDnd: true,
-    },
-  );
+  const flags = readShellMigrationFlags(new URLSearchParams("shellCrossWindowDnd=true"), {
+    forceDisableCrossWindowDnd: true,
+  });
   const decision = selectCrossWindowDnd(flags);
 
   assertEqual(decision.enabled, false, "override kill switch should disable cross-window dnd");

@@ -1,5 +1,5 @@
 import { cloneContextState, ensureGroup, shouldApplyRevision } from "./helpers.js";
-import { ContextLaneValue, RevisionMeta, ShellContextState } from "./types.js";
+import type { ContextLaneValue, RevisionMeta, ShellContextState } from "./types.js";
 
 export function writeGlobalLane(
   state: ShellContextState,

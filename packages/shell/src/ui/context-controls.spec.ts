@@ -24,10 +24,12 @@ class FakeControl {
 
   private readonly attrs = new Map<string, string>();
 
-  constructor(input: {
-    id?: string;
-    action?: string;
-  } = {}) {
+  constructor(
+    input: {
+      id?: string;
+      action?: string;
+    } = {},
+  ) {
     this.id = input.id ?? "";
     this.dataset = input.action ? { action: input.action } : {};
   }
@@ -100,10 +102,13 @@ test("publish-failed degraded mode applies read-only styling and mutating contro
   const shellNode = new FakeShellNode([applyButton, input, nonMutating]);
   const root = new FakeRoot(shellNode);
 
-  updateWindowReadOnlyState(root as unknown as HTMLElement, createRuntime({
-    syncDegraded: true,
-    syncDegradedReason: "publish-failed",
-  }));
+  updateWindowReadOnlyState(
+    root as unknown as HTMLElement,
+    createRuntime({
+      syncDegraded: true,
+      syncDegradedReason: "publish-failed",
+    }),
+  );
 
   assertEqual(shellNode.classNames.has("sync-degraded"), true, "publish-failed should set sync-degraded class");
   assertEqual(applyButton.getAttribute("disabled"), "disabled", "context apply should be disabled when degraded");
@@ -118,10 +123,13 @@ test("unavailable bridge keeps shell interactive in local-only mode", () => {
   const shellNode = new FakeShellNode([applyButton, input, nonMutating]);
   const root = new FakeRoot(shellNode);
 
-  updateWindowReadOnlyState(root as unknown as HTMLElement, createRuntime({
-    syncDegraded: true,
-    syncDegradedReason: "unavailable",
-  }));
+  updateWindowReadOnlyState(
+    root as unknown as HTMLElement,
+    createRuntime({
+      syncDegraded: true,
+      syncDegradedReason: "unavailable",
+    }),
+  );
 
   assertEqual(shellNode.classNames.has("sync-degraded"), false, "unavailable should not set sync-degraded class");
   assertEqual(applyButton.getAttribute("disabled"), null, "context apply should stay enabled when unavailable");

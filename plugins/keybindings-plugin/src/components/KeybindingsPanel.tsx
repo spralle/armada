@@ -1,15 +1,12 @@
-import { useState, useCallback, useMemo } from "react";
-import type {
-  PluginMountContext,
-  KeybindingService,
-} from "@ghost-shell/contracts";
+import type { KeybindingService, PluginMountContext } from "@ghost-shell/contracts";
 import { KEYBINDING_SERVICE_ID } from "@ghost-shell/contracts";
-import { ScrollArea, Alert, Button, Separator } from "@ghost-shell/ui";
+import { Alert, Button, ScrollArea, Separator } from "@ghost-shell/ui";
+import { useCallback, useMemo, useState } from "react";
 import { findConflicts } from "../lib/keybinding-utils.js";
-import { KeybindingsErrorBoundary } from "./ErrorBoundary.js";
-import { OverridesSection } from "./OverridesSection.js";
 import { AllBindingsSection } from "./AllBindingsSection.js";
+import { KeybindingsErrorBoundary } from "./ErrorBoundary.js";
 import { ImportExportSection } from "./ImportExportSection.js";
+import { OverridesSection } from "./OverridesSection.js";
 
 interface KeybindingsPanelProps {
   context: PluginMountContext;
@@ -38,7 +35,7 @@ interface KeybindingsPanelInnerProps {
 }
 
 function KeybindingsPanelInner({ service }: KeybindingsPanelInnerProps) {
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [_refreshKey, setRefreshKey] = useState(0);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const onRefresh = useCallback(() => setRefreshKey((k) => k + 1), []);
@@ -46,20 +43,15 @@ function KeybindingsPanelInner({ service }: KeybindingsPanelInnerProps) {
   const onClearAlert = useCallback(() => setAlertMessage(null), []);
 
   // Re-read service data on each refresh
-  const overrides = useMemo(() => service.getOverrides(), [service, refreshKey]);
-  const allBindings = useMemo(() => service.getKeybindings(), [service, refreshKey]);
+  const overrides = useMemo(() => service.getOverrides(), [service]);
+  const allBindings = useMemo(() => service.getKeybindings(), [service]);
   const conflictKeys = useMemo(() => findConflicts(allBindings), [allBindings]);
-  const overrideCommands = useMemo(
-    () => new Set(overrides.map((o) => o.command)),
-    [overrides],
-  );
+  const overrideCommands = useMemo(() => new Set(overrides.map((o) => o.command)), [overrides]);
 
   return (
     <ScrollArea className="h-full">
-      <div
-        className="flex flex-col gap-4 p-3 text-foreground"
-        aria-label="Keybinding settings"
-      >
+      {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-label on generic container for screen readers */}
+      <div className="flex flex-col gap-4 p-3 text-foreground" aria-label="Keybinding settings">
         <h2 className="text-sm font-semibold">Keybinding Settings</h2>
 
         {alertMessage && (

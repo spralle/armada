@@ -18,15 +18,24 @@ export function parseBridgeEvent(value: unknown): WindowBridgeEvent | null {
   const event = value as Record<string, unknown>;
 
   switch (event.type) {
-    case "selection": return parseSelectionEvent(event);
-    case "context": return parseContextEvent(event);
-    case "popout-restore-request": return parsePopoutRestoreEvent(event);
-    case "tab-close": return parseTabCloseEvent(event);
-    case "dnd-session-upsert": return parseDndSessionUpsertEvent(event);
-    case "dnd-session-delete": return parseDndSessionDeleteEvent(event);
-    case "sync-probe": return parseSyncProbeEvent(event);
-    case "sync-ack": return parseSyncAckEvent(event);
-    default: return null;
+    case "selection":
+      return parseSelectionEvent(event);
+    case "context":
+      return parseContextEvent(event);
+    case "popout-restore-request":
+      return parsePopoutRestoreEvent(event);
+    case "tab-close":
+      return parseTabCloseEvent(event);
+    case "dnd-session-upsert":
+      return parseDndSessionUpsertEvent(event);
+    case "dnd-session-delete":
+      return parseDndSessionDeleteEvent(event);
+    case "sync-probe":
+      return parseSyncProbeEvent(event);
+    case "sync-ack":
+      return parseSyncAckEvent(event);
+    default:
+      return null;
   }
 }
 
@@ -34,9 +43,9 @@ function parseSelectionEvent(event: Record<string, unknown>): SelectionSyncEvent
   const selectedPartId =
     typeof event.selectedPartId === "string"
       ? event.selectedPartId
-      : (typeof (event as { selectedPartInstanceId?: unknown }).selectedPartInstanceId === "string"
-          ? (event as { selectedPartInstanceId: string }).selectedPartInstanceId
-          : null);
+      : typeof (event as { selectedPartInstanceId?: unknown }).selectedPartInstanceId === "string"
+        ? (event as { selectedPartInstanceId: string }).selectedPartInstanceId
+        : null;
   const selectedPartInstanceId =
     typeof (event as { selectedPartInstanceId?: unknown }).selectedPartInstanceId === "string"
       ? (event as { selectedPartInstanceId: string }).selectedPartInstanceId
@@ -44,7 +53,9 @@ function parseSelectionEvent(event: Record<string, unknown>): SelectionSyncEvent
   const selectedPartDefinitionId =
     typeof (event as { selectedPartDefinitionId?: unknown }).selectedPartDefinitionId === "string"
       ? (event as { selectedPartDefinitionId: string }).selectedPartDefinitionId
-      : (typeof event.selectedPartId === "string" ? event.selectedPartId : undefined);
+      : typeof event.selectedPartId === "string"
+        ? event.selectedPartId
+        : undefined;
 
   if (
     typeof selectedPartId === "string" &&
@@ -67,9 +78,9 @@ function parseContextEvent(event: Record<string, unknown>): ContextSyncEvent | n
   const tabId =
     typeof event.tabId === "string"
       ? event.tabId
-      : (typeof (event as { tabInstanceId?: unknown }).tabInstanceId === "string"
-          ? (event as { tabInstanceId: string }).tabInstanceId
-          : undefined);
+      : typeof (event as { tabInstanceId?: unknown }).tabInstanceId === "string"
+        ? (event as { tabInstanceId: string }).tabInstanceId
+        : undefined;
   const tabInstanceId =
     typeof (event as { tabInstanceId?: unknown }).tabInstanceId === "string"
       ? (event as { tabInstanceId: string }).tabInstanceId
@@ -97,18 +108,9 @@ function parseContextEvent(event: Record<string, unknown>): ContextSyncEvent | n
 }
 
 function parsePopoutRestoreEvent(event: Record<string, unknown>): PopoutRestoreRequestEvent | null {
-  const tabId =
-    typeof event.tabId === "string"
-      ? event.tabId
-      : typeof event.partId === "string"
-        ? event.partId
-        : null;
+  const tabId = typeof event.tabId === "string" ? event.tabId : typeof event.partId === "string" ? event.partId : null;
 
-  if (
-    tabId &&
-    typeof event.hostWindowId === "string" &&
-    typeof event.sourceWindowId === "string"
-  ) {
+  if (tabId && typeof event.hostWindowId === "string" && typeof event.sourceWindowId === "string") {
     return {
       type: "popout-restore-request",
       tabId,
@@ -145,12 +147,12 @@ function parseDndSessionUpsertEvent(event: Record<string, unknown>): DndSessionU
 
 function parseDndSessionDeleteEvent(event: Record<string, unknown>): DndSessionDeleteEvent | null {
   if (
-    typeof event.id === "string"
-    && isOptionalString((event as { correlationId?: unknown }).correlationId)
-    && isOptionalDndSessionDeleteLifecycle((event as { lifecycle?: unknown }).lifecycle)
-    && isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId)
-    && isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId)
-    && typeof event.sourceWindowId === "string"
+    typeof event.id === "string" &&
+    isOptionalString((event as { correlationId?: unknown }).correlationId) &&
+    isOptionalDndSessionDeleteLifecycle((event as { lifecycle?: unknown }).lifecycle) &&
+    isOptionalString((event as { ownerWindowId?: unknown }).ownerWindowId) &&
+    isOptionalString((event as { consumedByWindowId?: unknown }).consumedByWindowId) &&
+    typeof event.sourceWindowId === "string"
   ) {
     return event as unknown as DndSessionDeleteEvent;
   }
@@ -222,9 +224,7 @@ function isOptionalDndSessionDeleteLifecycle(value: unknown): value is "commit" 
   return value === undefined || value === "commit" || value === "abort" || value === "timeout";
 }
 
-function isOptionalRevision(
-  value: unknown,
-): value is { timestamp: number; writer: string } | undefined {
+function isOptionalRevision(value: unknown): value is { timestamp: number; writer: string } | undefined {
   if (value === undefined) {
     return true;
   }
@@ -236,4 +236,3 @@ function isOptionalRevision(
   const revision = value as { timestamp?: unknown; writer?: unknown };
   return typeof revision.timestamp === "number" && typeof revision.writer === "string";
 }
-

@@ -1,7 +1,7 @@
-import { defineConfig } from 'tsup'
+import { defineConfig } from "tsup";
 
 export const baseConfig = defineConfig({
-  format: ['esm', 'cjs'],
+  format: ["esm", "cjs"],
   dts: {
     compilerOptions: {
       composite: false,
@@ -14,5 +14,5 @@ export const baseConfig = defineConfig({
   splitting: false,
   sourcemap: true,
   treeshake: true,
-  outDir: 'dist',
-})
+  outDir: "dist",
+});

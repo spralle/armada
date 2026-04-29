@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { AnchorEdge } from "@ghost-shell/contracts/layer";
+import { describe, expect, it } from "vitest";
 import type { StackedSurface } from "../auto-stacking.js";
 import { applyAutoStacking } from "../auto-stacking.js";
 

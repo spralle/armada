@@ -1,11 +1,7 @@
-import { applyPendingFocus } from "./pending-focus.js";
-import { closeTabFromUi, reopenMostRecentlyClosedTabThroughRuntime } from "./parts-controller.js";
-import {
-  createInitialShellContextState,
-  registerTab,
-  type ShellContextState,
-} from "../context-state.js";
 import type { ShellRuntime } from "../app/types.js";
+import { createInitialShellContextState, registerTab, type ShellContextState } from "../context-state.js";
+import { closeTabFromUi, reopenMostRecentlyClosedTabThroughRuntime } from "./parts-controller.js";
+import { applyPendingFocus } from "./pending-focus.js";
 
 type TestCase = {
   name: string;
@@ -55,8 +51,12 @@ test("close click flow persists context and applies/clears pending focus", () =>
       },
     },
     workspacePersistence: {
-      save() { return { warning: null }; },
-      load() { return { warning: null }; },
+      save() {
+        return { warning: null };
+      },
+      load() {
+        return { warning: null };
+      },
     },
     workspaceManager: {},
     registry: {
@@ -127,8 +127,12 @@ test("reopen most recently closed tab restores tab and pending focus", () => {
       },
     },
     workspacePersistence: {
-      save() { return { warning: null }; },
-      load() { return { warning: null }; },
+      save() {
+        return { warning: null };
+      },
+      load() {
+        return { warning: null };
+      },
     },
     workspaceManager: {},
     registry: {

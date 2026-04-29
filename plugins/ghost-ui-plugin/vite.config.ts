@@ -1,7 +1,7 @@
-import { federation } from "@module-federation/vite";
-import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { federation } from "@module-federation/vite";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   resolve: {
     alias: {
-      "@/": path.resolve(__dirname, "../../packages/ui/src") + "/",
+      "@/": `${path.resolve(__dirname, "../../packages/ui/src")}/`,
     },
   },
   plugins: [

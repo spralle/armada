@@ -1,8 +1,5 @@
-import { createWindowBridge } from "@ghost-shell/bridge";
-import {
-  createAsyncWindowBridgeCompatibilityShim,
-} from "@ghost-shell/bridge";
 import type { ContextSyncEvent, SelectionSyncEvent, WindowBridgeEvent } from "@ghost-shell/bridge";
+import { createAsyncWindowBridgeCompatibilityShim, createWindowBridge } from "@ghost-shell/bridge";
 
 type TestCase = {
   name: string;
@@ -82,7 +79,11 @@ test("unavailable bridge reports degraded health and no-op publish", () => {
     });
 
     assertEqual(bridge.available, false, "bridge should be unavailable without BroadcastChannel");
-    assertEqual(bridge.publish({ type: "sync-probe", probeId: "p1", sourceWindowId: "w1" }), false, "publish should fail in unavailable mode");
+    assertEqual(
+      bridge.publish({ type: "sync-probe", probeId: "p1", sourceWindowId: "w1" }),
+      false,
+      "publish should fail in unavailable mode",
+    );
     assertEqual(degraded, true, "health should be degraded in unavailable mode");
     assertEqual(healthReason, "unavailable", "health reason mismatch for unavailable mode");
   } finally {
@@ -106,11 +107,19 @@ test("bridge detects publish failure and can recover", () => {
       reason = health.reason;
     });
 
-    assertEqual(bridge.publish({ type: "sync-probe", probeId: "p1", sourceWindowId: "w1" }), true, "initial publish should succeed");
+    assertEqual(
+      bridge.publish({ type: "sync-probe", probeId: "p1", sourceWindowId: "w1" }),
+      true,
+      "initial publish should succeed",
+    );
     assertEqual(degraded, false, "health should start healthy");
 
     channel!.shouldThrowOnPost = true;
-    assertEqual(bridge.publish({ type: "sync-probe", probeId: "p2", sourceWindowId: "w1" }), false, "publish should fail when channel throws");
+    assertEqual(
+      bridge.publish({ type: "sync-probe", probeId: "p2", sourceWindowId: "w1" }),
+      false,
+      "publish should fail when channel throws",
+    );
     assertEqual(degraded, true, "health should degrade after publish failure");
     assertEqual(reason, "publish-failed", "health reason mismatch after publish failure");
 
@@ -142,13 +151,13 @@ test("bridge close deterministically tears down channel", () => {
     });
 
     bridge.close();
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "sync-probe",
       probeId: "p-after-close",
       sourceWindowId: "w-1",
     });
 
-    assertEqual(channel!.closed, true, "close should close underlying channel");
+    assertEqual(channel?.closed, true, "close should close underlying channel");
     assertEqual(eventCalls, 0, "close should clear event listeners before follow-up messages");
     assertEqual(healthCalls > 0, true, "health subscription should receive initial state before close");
   } finally {
@@ -170,7 +179,7 @@ test("bridge parses sync events and selection revisions", () => {
       seen.push(event);
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "selection",
       selectedPartId: "part-a",
       selectedPartTitle: "Part A",
@@ -188,14 +197,14 @@ test("bridge parses sync events and selection revisions", () => {
       sourceWindowId: "window-a",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "sync-ack",
       probeId: "p-1",
       targetWindowId: "window-b",
       sourceWindowId: "window-a",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "selection",
       selectedPartId: "part-invalid",
       selectedPartTitle: "Invalid",
@@ -208,10 +217,18 @@ test("bridge parses sync events and selection revisions", () => {
     assertEqual(seen[1]?.type, "sync-ack", "expected second parsed event to be sync-ack");
 
     const selectionEvent = seen[0] as SelectionSyncEvent;
-    assertEqual(selectionEvent.selectedPartInstanceId, "part-a", "legacy selection payload should hydrate selectedPartInstanceId");
-    assertEqual(selectionEvent.selectedPartDefinitionId, "part-a", "legacy selection payload should hydrate selectedPartDefinitionId");
+    assertEqual(
+      selectionEvent.selectedPartInstanceId,
+      "part-a",
+      "legacy selection payload should hydrate selectedPartInstanceId",
+    );
+    assertEqual(
+      selectionEvent.selectedPartDefinitionId,
+      "part-a",
+      "legacy selection payload should hydrate selectedPartDefinitionId",
+    );
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "selection",
       selectedPartInstanceId: "tab-instance-a",
       selectedPartDefinitionId: "domain.orders",
@@ -223,11 +240,23 @@ test("bridge parses sync events and selection revisions", () => {
 
     const instanceAwareSelection = seen[2] as SelectionSyncEvent;
     assertEqual(instanceAwareSelection.type, "selection", "instance-aware selection payload should parse");
-    assertEqual(instanceAwareSelection.selectedPartId, "domain.orders", "selection should preserve legacy selectedPartId field");
-    assertEqual(instanceAwareSelection.selectedPartInstanceId, "tab-instance-a", "selection should parse selectedPartInstanceId");
-    assertEqual(instanceAwareSelection.selectedPartDefinitionId, "domain.orders", "selection should parse selectedPartDefinitionId");
+    assertEqual(
+      instanceAwareSelection.selectedPartId,
+      "domain.orders",
+      "selection should preserve legacy selectedPartId field",
+    );
+    assertEqual(
+      instanceAwareSelection.selectedPartInstanceId,
+      "tab-instance-a",
+      "selection should parse selectedPartInstanceId",
+    );
+    assertEqual(
+      instanceAwareSelection.selectedPartDefinitionId,
+      "domain.orders",
+      "selection should parse selectedPartDefinitionId",
+    );
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "selection",
       selectedPartInstanceId: "tab-instance-b",
       selectedPartDefinitionId: "domain.vessels",
@@ -237,8 +266,16 @@ test("bridge parses sync events and selection revisions", () => {
     });
 
     const migratedSelection = seen[3] as SelectionSyncEvent;
-    assertEqual(migratedSelection.type, "selection", "selection payload without selectedPartId should parse during migration");
-    assertEqual(migratedSelection.selectedPartId, "tab-instance-b", "selectedPartId should fall back to selectedPartInstanceId");
+    assertEqual(
+      migratedSelection.type,
+      "selection",
+      "selection payload without selectedPartId should parse during migration",
+    );
+    assertEqual(
+      migratedSelection.selectedPartId,
+      "tab-instance-b",
+      "selectedPartId should fall back to selectedPartInstanceId",
+    );
     assertEqual(migratedSelection.selectedPartInstanceId, "tab-instance-b", "instance id should be preserved");
     assertEqual(migratedSelection.selectedPartDefinitionId, "domain.vessels", "definition id should be preserved");
   } finally {
@@ -260,7 +297,7 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
       events.push(event);
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "context",
       scope: "group",
       tabId: "tab-a",
@@ -270,7 +307,7 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
       sourceWindowId: "window-a",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "context",
       scope: "group",
       groupId: "group-main",
@@ -280,7 +317,7 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
       sourceWindowId: "window-b",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "popout-restore-request",
       tabId: "domain.unplanned-orders.part#instance-1",
       partId: "domain.unplanned-orders.part",
@@ -288,31 +325,31 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
       sourceWindowId: "popout-window",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "popout-restore-request",
       partId: "legacy.part-id",
       hostWindowId: "host-window",
       sourceWindowId: "legacy-popout-window",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "popout-restore-request",
       partId: "missing-host-window",
       sourceWindowId: "popout-window",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "tab-close",
       tabId: "tab-a",
       sourceWindowId: "window-b",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "tab-close",
       sourceWindowId: "window-b",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "context",
       scope: "group",
       tabInstanceId: "tab-instance-a",
@@ -335,8 +372,16 @@ test("bridge parses popout restore and context tab/group sync payloads", () => {
     assertEqual(contextFromTab.tabInstanceId, "tab-a", "legacy context payload should hydrate tabInstanceId");
 
     const contextFromInstance = events[5] as ContextSyncEvent;
-    assertEqual(contextFromInstance.tabId, "tab-instance-a", "tabId should fall back from tabInstanceId during migration");
-    assertEqual(contextFromInstance.tabInstanceId, "tab-instance-a", "tabInstanceId should parse from instance-aware payload");
+    assertEqual(
+      contextFromInstance.tabId,
+      "tab-instance-a",
+      "tabId should fall back from tabInstanceId during migration",
+    );
+    assertEqual(
+      contextFromInstance.tabInstanceId,
+      "tab-instance-a",
+      "tabInstanceId should parse from instance-aware payload",
+    );
   } finally {
     (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
   }
@@ -356,7 +401,7 @@ test("bridge compatibility parses legacy and instance-aware migration payload va
       parsed.push({ type: event.type, event });
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "context",
       scope: "group",
       tabId: "orders.instance-a",
@@ -370,7 +415,7 @@ test("bridge compatibility parses legacy and instance-aware migration payload va
       selectedPartDefinitionId: "orders.definition",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "context",
       scope: "group",
       groupId: "group-main",
@@ -382,14 +427,14 @@ test("bridge compatibility parses legacy and instance-aware migration payload va
       selectedPartDefinitionId: "orders.definition",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "popout-restore-request",
       partId: "orders.legacy",
       hostWindowId: "host-window",
       sourceWindowId: "popout-window",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "popout-restore-request",
       partId: "orders.legacy",
       partInstanceId: "orders.instance-a",
@@ -397,13 +442,13 @@ test("bridge compatibility parses legacy and instance-aware migration payload va
       sourceWindowId: "popout-window",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "tab-close",
       tabId: "orders.instance-a",
       sourceWindowId: "window-b",
     });
 
-    channel!.emit("message", {
+    channel?.emit("message", {
       type: "tab-close",
       tabId: "orders.instance-a",
       partInstanceId: "orders.instance-a",
@@ -452,12 +497,16 @@ test("async compatibility shim returns accepted/enqueued and deterministic healt
       assertEqual(published.disposition, "enqueued", "shim accepted publish should be enqueued");
     }
 
-    channel!.emit("messageerror");
-    channel!.emit("messageerror");
+    channel?.emit("messageerror");
+    channel?.emit("messageerror");
     assertEqual(seenHealth.length, 2, "health snapshots should emit only for state changes");
     assertEqual(seenHealth[0]?.state, "healthy", "initial health snapshot should be healthy");
     assertEqual(seenHealth[1]?.state, "degraded", "messageerror should emit degraded snapshot");
-    assertEqual(seenHealth[1]?.sequence > seenHealth[0]!.sequence, true, "health sequence should increase monotonically");
+    assertEqual(
+      seenHealth[1]?.sequence > seenHealth[0]?.sequence,
+      true,
+      "health sequence should increase monotonically",
+    );
   } finally {
     (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = previous;
   }
@@ -471,11 +520,14 @@ test("async compatibility shim normalizes timeout and closed publish rejections"
     const legacyBridge = createWindowBridge("ghost.test.bridge.async-timeout");
     const shim = createAsyncWindowBridgeCompatibilityShim(legacyBridge);
 
-    const timedOut = await shim.publish({
-      type: "sync-probe",
-      probeId: "probe-timeout",
-      sourceWindowId: "window-a",
-    }, { timeoutMs: 0 });
+    const timedOut = await shim.publish(
+      {
+        type: "sync-probe",
+        probeId: "probe-timeout",
+        sourceWindowId: "window-a",
+      },
+      { timeoutMs: 0 },
+    );
     assertEqual(timedOut.status, "rejected", "timeout publish should reject");
     if (timedOut.status === "rejected") {
       assertEqual(timedOut.reason, "timeout", "timeout publish should normalize timeout reason");

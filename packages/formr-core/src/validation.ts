@@ -1,10 +1,7 @@
-import type { CanonicalSegment } from './path.js';
-import type { ValidationIssue } from './state.js';
+import type { CanonicalSegment } from "./path.js";
+import type { ValidationIssue } from "./state.js";
 
-function comparePaths(
-  a: readonly CanonicalSegment[],
-  b: readonly CanonicalSegment[],
-): number {
+function comparePaths(a: readonly CanonicalSegment[], b: readonly CanonicalSegment[]): number {
   const len = Math.min(a.length, b.length);
   for (let i = 0; i < len; i++) {
     const sa = String(a[i]);
@@ -20,16 +17,14 @@ export function sortIssues(
   issues: readonly ValidationIssue[],
   orderedStages?: readonly string[],
 ): readonly ValidationIssue[] {
-  const stageOrder = orderedStages
-    ? new Map(orderedStages.map((s, i) => [s, i]))
-    : undefined;
+  const stageOrder = orderedStages ? new Map(orderedStages.map((s, i) => [s, i])) : undefined;
   const severityOrder: Record<string, number> = { error: 0, warning: 1, info: 2 };
   const nsOrder: Record<string, number> = { data: 0, ui: 1 };
 
   return [...issues].sort((a, b) => {
     if (stageOrder) {
-      const sa = stageOrder.get(a.stage ?? '') ?? Infinity;
-      const sb = stageOrder.get(b.stage ?? '') ?? Infinity;
+      const sa = stageOrder.get(a.stage ?? "") ?? Infinity;
+      const sb = stageOrder.get(b.stage ?? "") ?? Infinity;
       if (sa !== sb) return sa - sb;
     }
 
@@ -58,16 +53,14 @@ export function sortIssues(
 }
 
 function buildDedupeKey(issue: ValidationIssue): string {
-  const pathStr = `${issue.path.namespace}:${issue.path.segments.join('.')}`;
-  return `${issue.stage ?? ''}|${issue.severity}|${pathStr}|${issue.code}|${issue.source.origin}|${issue.source.validatorId}|${issue.message}`;
+  const pathStr = `${issue.path.namespace}:${issue.path.segments.join(".")}`;
+  return `${issue.stage ?? ""}|${issue.severity}|${pathStr}|${issue.code}|${issue.source.origin}|${issue.source.validatorId}|${issue.message}`;
 }
 
 /** ADR 6.3 — deduplicate validation issues by composite key. */
-export function dedupeIssues(
-  issues: readonly ValidationIssue[],
-): readonly ValidationIssue[] {
+export function dedupeIssues(issues: readonly ValidationIssue[]): readonly ValidationIssue[] {
   const seen = new Set<string>();
-  return issues.filter(issue => {
+  return issues.filter((issue) => {
     const key = buildDedupeKey(issue);
     if (seen.has(key)) return false;
     seen.add(key);

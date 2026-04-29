@@ -3,8 +3,8 @@
 // injection/removal functions for applying theme variables to the DOM.
 
 import type { FullThemePalette, PartialThemePalette } from "@ghost-shell/contracts/theme";
-import { deriveFullPalette } from "./derive-palette.js";
 import { GHOST_THEME_CSS_VARS } from "./css-vars.js";
+import { deriveFullPalette } from "./derive-palette.js";
 
 // ---------------------------------------------------------------------------
 // Default dark palette input (matches Default Dark theme in theme-default-plugin)
@@ -28,7 +28,7 @@ const DEFAULT_DARK_INPUT: PartialThemePalette = {
   ring: "#7cb4ff",
   cursor: "#e9edf3",
   selectionBackground: "#7cb4ff",
-  opacity: 0.70,
+  opacity: 0.7,
   opacityActive: 0.85,
 };
 
@@ -44,10 +44,7 @@ const THEME_STYLE_ID = "ghost-theme-variables";
  * Injects (or updates) a `<style>` element that sets all --ghost-*
  * CSS custom properties on the target element (defaults to `:root`).
  */
-export function injectThemeVariables(
-  palette: FullThemePalette,
-  target?: HTMLElement,
-): void {
+export function injectThemeVariables(palette: FullThemePalette, target?: HTMLElement): void {
   const rootElement = target ?? document.documentElement;
   const ownerDoc = rootElement.ownerDocument ?? document;
 

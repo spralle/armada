@@ -32,9 +32,7 @@ export interface FocusGrabManager {
  * behind grabbed surfaces and delegates keyboard exclusivity to the
  * provided keyboard exclusive manager.
  */
-export function createFocusGrabManager(
-  keyboardExclusiveManager: KeyboardExclusiveManager,
-): FocusGrabManager {
+export function createFocusGrabManager(keyboardExclusiveManager: KeyboardExclusiveManager): FocusGrabManager {
   const grabs: GrabEntry[] = [];
 
   return {
@@ -66,8 +64,7 @@ export function createFocusGrabManager(
         backdrop.style.opacity = "0";
 
         // Resolve backdrop color
-        const color =
-          typeof config.backdrop === "string" ? config.backdrop : DEFAULT_BACKDROP_COLOR;
+        const color = typeof config.backdrop === "string" ? config.backdrop : DEFAULT_BACKDROP_COLOR;
         backdrop.style.background = color;
 
         // Insert before the surface element

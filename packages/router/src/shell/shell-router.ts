@@ -1,16 +1,16 @@
+import type { UrlCodecRegistry, UrlCodecState } from "../codec/codec-types.js";
+import type { NavigationHints, NavigationResult, NavigationTarget } from "../core/types.js";
+import type { HistoryAdapter } from "./history-adapter.js";
+import { createNavigationRuntime } from "./navigation-runtime.js";
+import type { NavigationDelegate } from "./navigation-runtime-types.js";
 import type {
+  ShellContextStateSnapshot,
   ShellRouter,
-  ShellStateObserver,
   ShellRouterConfig,
   ShellRouterStateSnapshot,
-  ShellContextStateSnapshot,
+  ShellStateObserver,
   StateChangeHint,
 } from "./shell-router-types.js";
-import type { NavigationTarget, NavigationHints, NavigationResult } from "../core/types.js";
-import type { UrlCodecRegistry, UrlCodecState } from "../codec/codec-types.js";
-import type { HistoryAdapter } from "./history-adapter.js";
-import type { NavigationDelegate } from "./navigation-runtime-types.js";
-import { createNavigationRuntime } from "./navigation-runtime.js";
 
 /** Hints that should push a new history entry (vs replace) */
 const PUSH_HINTS: ReadonlySet<StateChangeHint> = new Set([
@@ -38,7 +38,7 @@ export interface CreateShellRouterOptions {
  */
 export function createShellRouter(options: CreateShellRouterOptions): ShellRouter {
   const { config, codecRegistry, historyAdapter, workspaceId } = options;
-  let delegate = options.delegate;
+  const delegate = options.delegate;
 
   const listeners = new Set<(state: ShellRouterStateSnapshot) => void>();
   let currentSnapshot: ShellRouterStateSnapshot = {
@@ -108,7 +108,10 @@ export function createShellRouter(options: CreateShellRouterOptions): ShellRoute
     updateSnapshot(state);
   }
 
-  function applyDecodedState(decoded: { activeTabHint?: string | undefined; activeArgs?: Readonly<Record<string, string>> | undefined }): void {
+  function applyDecodedState(decoded: {
+    activeTabHint?: string | undefined;
+    activeArgs?: Readonly<Record<string, string>> | undefined;
+  }): void {
     if (!delegate) return;
 
     if (decoded.activeTabHint) {

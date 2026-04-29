@@ -1,14 +1,14 @@
-import { useMemo, useState } from "react";
 import type {
   ColumnDef,
-  SortingState,
   ColumnFiltersState,
   PaginationState,
-  VisibilityState,
+  SortingState,
   Table,
+  VisibilityState,
 } from "@tanstack/react-table";
-import { useGhostTable } from "./use-ghost-table.js";
+import { useMemo, useState } from "react";
 import { useDebouncedValue } from "./use-debounced-value.js";
+import { useGhostTable } from "./use-ghost-table.js";
 
 export interface UseServerTableOptions<TData> {
   /** Current page of data from server */
@@ -51,9 +51,7 @@ export interface UseServerTableResult<TData> {
   };
 }
 
-export function useServerTable<TData>(
-  options: UseServerTableOptions<TData>,
-): UseServerTableResult<TData> {
+export function useServerTable<TData>(options: UseServerTableOptions<TData>): UseServerTableResult<TData> {
   const {
     data,
     columns,

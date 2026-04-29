@@ -1,4 +1,4 @@
-import type { JsonSchema } from './adapters/json-schema-types.js';
+import type { JsonSchema } from "./adapters/json-schema-types.js";
 
 /** A synchronous transform applied to a JSON Schema before extraction */
 export type SchemaMiddleware = (schema: JsonSchema) => JsonSchema;

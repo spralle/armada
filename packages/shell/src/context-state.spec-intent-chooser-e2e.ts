@@ -1,15 +1,18 @@
 import {
   createIntentRuntime,
-  type IntentResolutionDelegate,
   type IntentActionMatch,
+  type IntentResolutionDelegate,
   type ShellIntent,
-  type IntentResolutionTrace,
 } from "@ghost-shell/intents";
-import { createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
+import { createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 
 function createMockDelegate(overrides: Partial<IntentResolutionDelegate> = {}): IntentResolutionDelegate & {
-  calls: { activatePlugin: { pluginId: string; trigger: { type: string; id: string } }[]; announce: string[]; showChooser: number };
+  calls: {
+    activatePlugin: { pluginId: string; trigger: { type: string; id: string } }[];
+    announce: string[];
+    showChooser: number;
+  };
 } {
   const calls = {
     activatePlugin: [] as { pluginId: string; trigger: { type: string; id: string } }[],
@@ -57,9 +60,7 @@ function createMultiMatchPlugins() {
       contract: createContract({
         manifest: { id: "plugin-beta", name: "Beta", version: "0.1.0" },
         contributes: {
-          actions: [
-            { id: "beta.open", title: "Beta Open", intent: "chooser.test.action", when: { scope: "shared" } },
-          ],
+          actions: [{ id: "beta.open", title: "Beta Open", intent: "chooser.test.action", when: { scope: "shared" } }],
         },
       }),
     },

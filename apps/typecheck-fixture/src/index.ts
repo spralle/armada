@@ -4,25 +4,25 @@ const fixturePlugin: PluginContract = {
   manifest: {
     id: "ghost.fixture",
     name: "Typecheck Fixture",
-    version: "0.1.0"
+    version: "0.1.0",
   },
   contributes: {
     views: [
       {
         id: "fixture.view",
         title: "Fixture View",
-        component: "FixtureView"
-      }
+        component: "FixtureView",
+      },
     ],
     parts: [
       {
         id: "fixture.part",
         title: "Fixture Part",
         dock: {
-          container: "side"
+          container: "side",
         },
-        component: "FixturePart"
-      }
+        component: "FixturePart",
+      },
     ],
     actions: [
       {
@@ -31,21 +31,21 @@ const fixturePlugin: PluginContract = {
         intent: "fixture.run",
         when: {
           entityType: "workbench.item",
-          hasSelection: true
-        }
-      }
+          hasSelection: true,
+        },
+      },
     ],
     menus: [
       {
         menu: "actionPalette",
-        action: "fixture.action"
-      }
+        action: "fixture.action",
+      },
     ],
     keybindings: [
       {
         action: "fixture.action",
-        keybinding: "ctrl+alt+f"
-      }
+        keybinding: "ctrl+alt+f",
+      },
     ],
     selection: [
       {
@@ -53,22 +53,22 @@ const fixturePlugin: PluginContract = {
         receiverEntityType: "workbench.item",
         interests: [
           {
-            sourceEntityType: "workbench.item"
-          }
-        ]
-      }
+            sourceEntityType: "workbench.item",
+          },
+        ],
+      },
     ],
     dragDropSessionReferences: [
       {
         type: "workbench-item",
-        sessionId: "session-1"
-      }
+        sessionId: "session-1",
+      },
     ],
     popoutCapabilities: {
       allowPopout: true,
-      allowMultiplePopouts: false
-    }
-  }
+      allowMultiplePopouts: false,
+    },
+  },
 };
 
 void fixturePlugin;

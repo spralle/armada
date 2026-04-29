@@ -35,4 +35,3 @@ export function mountPart(target: HTMLElement, context: PartMountContext): void 
     mount(target, context);
   }
 }
-

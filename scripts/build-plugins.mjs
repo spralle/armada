@@ -1,11 +1,12 @@
 #!/usr/bin/env node
+
 // Build all plugins in plugins/*/
 // Usage: node scripts/build-plugins.mjs [--force] [--only plugin1,plugin2]
 
-import { readdirSync, statSync, existsSync, writeFileSync, unlinkSync } from "node:fs";
-import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
+import { existsSync, readdirSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { join, resolve } from "node:path";
 
 const pluginsDir = resolve(import.meta.dirname, "..", "plugins");
 const require = createRequire(import.meta.url);
@@ -30,14 +31,10 @@ function resolveViteBin() {
           return viteBinPath;
         }
       }
-    } catch {
-      continue;
-    }
+    } catch {}
   }
 
-  throw new Error(
-    "Cannot resolve vite CLI. Ensure vite is installed in at least one workspace package.",
-  );
+  throw new Error("Cannot resolve vite CLI. Ensure vite is installed in at least one workspace package.");
 }
 
 const viteBin = resolveViteBin();
@@ -59,9 +56,7 @@ function discoverPlugins() {
     .filter((name) => {
       const dir = join(pluginsDir, name);
       return (
-        statSync(dir).isDirectory() &&
-        existsSync(join(dir, "package.json")) &&
-        existsSync(join(dir, "vite.config.ts"))
+        statSync(dir).isDirectory() && existsSync(join(dir, "package.json")) && existsSync(join(dir, "vite.config.ts"))
       );
     })
     .sort();
@@ -72,7 +67,10 @@ function parseArgs(argv) {
   const onlyIndex = argv.indexOf("--only");
   const only =
     onlyIndex >= 0 && onlyIndex < argv.length - 1
-      ? argv[onlyIndex + 1].split(",").map((s) => s.trim()).filter(Boolean)
+      ? argv[onlyIndex + 1]
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : null;
   return { force, only };
 }
@@ -108,9 +106,7 @@ function isFresh(pluginDir) {
   if (distMtime === 0) return false;
 
   const srcMtime = getNewestMtime(srcDir);
-  const configMtime = existsSync(configPath)
-    ? statSync(configPath).mtimeMs
-    : 0;
+  const configMtime = existsSync(configPath) ? statSync(configPath).mtimeMs : 0;
 
   return distMtime > srcMtime && distMtime > configMtime;
 }
@@ -198,9 +194,7 @@ async function main() {
     }
   }
 
-  const targets = only
-    ? allPlugins.filter((p) => only.includes(p))
-    : allPlugins;
+  const targets = only ? allPlugins.filter((p) => only.includes(p)) : allPlugins;
 
   if (targets.length === 0) {
     console.log("No plugins to build.");
@@ -227,9 +221,7 @@ async function main() {
     return buildPlugin(name)
       .then(() => {
         completed++;
-        console.log(
-          `  \u2713 ${name} (${completed + skipped}/${targets.length})`,
-        );
+        console.log(`  \u2713 ${name} (${completed + skipped}/${targets.length})`);
       })
       .catch((err) => {
         failed++;
@@ -240,9 +232,7 @@ async function main() {
 
   await runWithConcurrency(tasks, CONCURRENCY);
 
-  console.log(
-    `\nDone: ${completed} built, ${skipped} skipped, ${failed} failed`,
-  );
+  console.log(`\nDone: ${completed} built, ${skipped} skipped, ${failed} failed`);
 
   if (failed > 0) {
     console.error("\nFailed plugins:");

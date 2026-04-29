@@ -1,5 +1,5 @@
-import { AnchorEdge } from "@ghost-shell/contracts/layer";
 import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts/layer";
+import { AnchorEdge } from "@ghost-shell/contracts/layer";
 import { computeAnchorStyles, computeExclusiveZones, getAnchorKey } from "../anchor-positioning.js";
 
 type TestCase = { name: string; run: () => void };
@@ -166,7 +166,9 @@ test("anchor 14 (Bottom+Left+Right) → bottom panel, fill width", () => {
 });
 
 test("anchor 15 (all edges) → fill entire layer", () => {
-  const s = computeAnchorStyles(makeSurface({ anchor: AnchorEdge.Top | AnchorEdge.Bottom | AnchorEdge.Left | AnchorEdge.Right }));
+  const s = computeAnchorStyles(
+    makeSurface({ anchor: AnchorEdge.Top | AnchorEdge.Bottom | AnchorEdge.Left | AnchorEdge.Right }),
+  );
   assertEqual(s.top, "0px", "top");
   assertEqual(s.right, "0px", "right");
   assertEqual(s.bottom, "0px", "bottom");
@@ -180,19 +182,23 @@ test("anchor 15 (all edges) → fill entire layer", () => {
 // ---------------------------------------------------------------------------
 
 test("margins are applied correctly", () => {
-  const s = computeAnchorStyles(makeSurface({
-    anchor: AnchorEdge.Top | AnchorEdge.Left,
-    margin: { top: 10, left: 20, right: 5, bottom: 15 },
-  }));
+  const s = computeAnchorStyles(
+    makeSurface({
+      anchor: AnchorEdge.Top | AnchorEdge.Left,
+      margin: { top: 10, left: 20, right: 5, bottom: 15 },
+    }),
+  );
   assertEqual(s.top, "10px", "top margin");
   assertEqual(s.left, "20px", "left margin");
 });
 
 test("margins on fill-width anchor", () => {
-  const s = computeAnchorStyles(makeSurface({
-    anchor: AnchorEdge.Top,
-    margin: { top: 8, left: 16, right: 16 },
-  }));
+  const s = computeAnchorStyles(
+    makeSurface({
+      anchor: AnchorEdge.Top,
+      margin: { top: 8, left: 16, right: 16 },
+    }),
+  );
   assertEqual(s.top, "8px", "top");
   assertEqual(s.left, "16px", "left");
   assertEqual(s.right, "16px", "right");
@@ -203,19 +209,23 @@ test("margins on fill-width anchor", () => {
 // ---------------------------------------------------------------------------
 
 test("size as number appends px", () => {
-  const s = computeAnchorStyles(makeSurface({
-    anchor: AnchorEdge.Top | AnchorEdge.Left,
-    size: { width: 300, height: 200 },
-  }));
+  const s = computeAnchorStyles(
+    makeSurface({
+      anchor: AnchorEdge.Top | AnchorEdge.Left,
+      size: { width: 300, height: 200 },
+    }),
+  );
   assertEqual(s.width, "300px", "width");
   assertEqual(s.height, "200px", "height");
 });
 
 test("size as string used as-is", () => {
-  const s = computeAnchorStyles(makeSurface({
-    anchor: AnchorEdge.Top | AnchorEdge.Left,
-    size: { width: "50vw", height: "100%" },
-  }));
+  const s = computeAnchorStyles(
+    makeSurface({
+      anchor: AnchorEdge.Top | AnchorEdge.Left,
+      size: { width: "50vw", height: "100%" },
+    }),
+  );
   assertEqual(s.width, "50vw", "width");
   assertEqual(s.height, "100%", "height");
 });

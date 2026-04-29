@@ -1,6 +1,6 @@
-import { describe, test, expect } from "bun:test";
-import { evaluateContributionPredicate } from "@ghost-shell/plugin-system";
+import { describe, expect, test } from "bun:test";
 import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts";
+import { evaluateContributionPredicate } from "@ghost-shell/plugin-system";
 
 /**
  * Mirrors the filterByWhenCondition logic from surface-renderer.ts
@@ -10,9 +10,7 @@ function filterByWhenCondition(
   surfaces: Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }>,
   facts: Record<string, unknown> = {},
 ): Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }> {
-  return surfaces.filter((entry) =>
-    evaluateContributionPredicate(entry.surface.when, facts),
-  );
+  return surfaces.filter((entry) => evaluateContributionPredicate(entry.surface.when, facts));
 }
 
 function makeSurface(

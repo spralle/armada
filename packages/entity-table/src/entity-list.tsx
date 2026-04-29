@@ -1,14 +1,14 @@
-import { useMemo } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
-import { useGhostTable, GhostDataTable } from "@ghost-shell/data-table";
-import { cn, Button } from "@ghost-shell/ui";
-import { createEntityTable } from "./create-entity-table.js";
-import { useRenderedColumns } from "./use-cell-renderer.js";
-import { defaultCellRegistry } from "./cell-registry.js";
-import { RowActionsCell } from "./row-actions-cell.js";
-import { useMenuOperations } from "./use-menu-operations.js";
-import type { EntityListProps } from "./entity-list-types.js";
+import { GhostDataTable, useGhostTable } from "@ghost-shell/data-table";
 import type { CompileTableFieldsOptions } from "@ghost-shell/table-from-schema";
+import { Button, cn } from "@ghost-shell/ui";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useMemo } from "react";
+import { defaultCellRegistry } from "./cell-registry.js";
+import { createEntityTable } from "./create-entity-table.js";
+import type { EntityListProps } from "./entity-list-types.js";
+import { RowActionsCell } from "./row-actions-cell.js";
+import { useRenderedColumns } from "./use-cell-renderer.js";
+import { useMenuOperations } from "./use-menu-operations.js";
 
 /**
  * Opinionated, schema-driven entity list component.
@@ -40,7 +40,7 @@ export function EntityList<TData>({
   enableDensityToggle,
   enableColumnFilters,
   responsive,
-    // Server-side mode
+  // Server-side mode
   manualSorting,
   manualFiltering,
   manualPagination,
@@ -75,14 +75,10 @@ export function EntityList<TData>({
   const baseColumns = columnOverride ?? tableConfig!.columns;
 
   // 3. Wire cell renderers from registry
-  const renderedColumns = useRenderedColumns(
-    baseColumns,
-    cellRegistry ?? defaultCellRegistry,
-  );
+  const renderedColumns = useRenderedColumns(baseColumns, cellRegistry ?? defaultCellRegistry);
 
   // 4. Append row actions column if needed
-  const hasRowActions =
-    (rowOperations?.length ?? 0) > 0 || menuService !== undefined;
+  const hasRowActions = (rowOperations?.length ?? 0) > 0 || menuService !== undefined;
 
   const finalColumns = useMemo(() => {
     if (!hasRowActions) return renderedColumns;
@@ -92,20 +88,18 @@ export function EntityList<TData>({
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => (
-        <RowActionsCell
-          row={row}
-          data={data}
-          entityType={entityType}
-          operations={ops}
-          menuService={menuService}
-        />
+        <RowActionsCell row={row} data={data} entityType={entityType} operations={ops} menuService={menuService} />
       ),
     };
     return [...renderedColumns, actionsColumn];
   }, [renderedColumns, rowOperations, data, entityType, menuService, hasRowActions]);
 
   // 5. Ghost table hook
-  const { table, globalFilter: internalGlobalFilter, setGlobalFilter: setInternalGlobalFilter } = useGhostTable<TData>({
+  const {
+    table,
+    globalFilter: internalGlobalFilter,
+    setGlobalFilter: setInternalGlobalFilter,
+  } = useGhostTable<TData>({
     data,
     columns: finalColumns,
     enableRowSelection: enableRowSelection ?? (batchOperations?.length ?? 0) > 0,
@@ -129,26 +123,13 @@ export function EntityList<TData>({
   const effectiveOnGlobalFilterChange = controlledOnGlobalFilterChange ?? setInternalGlobalFilter;
 
   // 6. Resolve Ghost menu contributions for toolbar and batch
-  const toolbarMenuContext = useMemo(
-    () => ({ entityType }),
-    [entityType],
-  );
-  const toolbarMenuItems = useMenuOperations(
-    menuService,
-    "entityTable/toolbar",
-    toolbarMenuContext,
-  );
+  const toolbarMenuContext = useMemo(() => ({ entityType }), [entityType]);
+  const toolbarMenuItems = useMenuOperations(menuService, "entityTable/toolbar", toolbarMenuContext);
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
-  const selection = useMemo(
-    () => selectedRows.map((r) => r.original),
-    [selectedRows],
-  );
+  const selection = useMemo(() => selectedRows.map((r) => r.original), [selectedRows]);
 
-  const batchMenuContext = useMemo(
-    () => ({ entityType, selection: selection as unknown[] }),
-    [entityType, selection],
-  );
+  const batchMenuContext = useMemo(() => ({ entityType, selection: selection as unknown[] }), [entityType, selection]);
   const batchMenuItems = useMenuOperations(
     selectedRows.length > 0 ? menuService : undefined,
     "entityTable/selection",
@@ -165,12 +146,7 @@ export function EntityList<TData>({
         const ctx = { data };
         if (op.when && !op.when(ctx)) continue;
         actions.push(
-          <Button
-            key={op.id}
-            variant={op.variant ?? "outline"}
-            size="sm"
-            onClick={() => op.handler(ctx)}
-          >
+          <Button key={op.id} variant={op.variant ?? "outline"} size="sm" onClick={() => op.handler(ctx)}>
             {op.icon}
             {op.label}
           </Button>,
@@ -179,18 +155,11 @@ export function EntityList<TData>({
     }
 
     // Ghost menu toolbar contributions (dedup against prop IDs)
-    const propToolbarIds = new Set(
-      (toolbarOperations ?? []).map((op) => op.id),
-    );
+    const propToolbarIds = new Set((toolbarOperations ?? []).map((op) => op.id));
     for (const item of toolbarMenuItems) {
       if (propToolbarIds.has(item.id)) continue;
       actions.push(
-        <Button
-          key={item.id}
-          variant="outline"
-          size="sm"
-          onClick={() => item.onAction()}
-        >
+        <Button key={item.id} variant="outline" size="sm" onClick={() => item.onAction()}>
           {item.label}
         </Button>,
       );
@@ -202,12 +171,7 @@ export function EntityList<TData>({
         const ctx = { selection, data };
         if (op.when && !op.when(ctx)) continue;
         actions.push(
-          <Button
-            key={op.id}
-            variant={op.variant ?? "default"}
-            size="sm"
-            onClick={() => op.handler(ctx)}
-          >
+          <Button key={op.id} variant={op.variant ?? "default"} size="sm" onClick={() => op.handler(ctx)}>
             {op.icon}
             {op.label} ({selectedRows.length})
           </Button>,
@@ -217,18 +181,11 @@ export function EntityList<TData>({
 
     // Ghost menu batch contributions (dedup against prop IDs)
     if (selectedRows.length > 0) {
-      const propBatchIds = new Set(
-        (batchOperations ?? []).map((op) => op.id),
-      );
+      const propBatchIds = new Set((batchOperations ?? []).map((op) => op.id));
       for (const item of batchMenuItems) {
         if (propBatchIds.has(item.id)) continue;
         actions.push(
-          <Button
-            key={item.id}
-            variant="default"
-            size="sm"
-            onClick={() => item.onAction()}
-          >
+          <Button key={item.id} variant="default" size="sm" onClick={() => item.onAction()}>
             {item.label} ({selectedRows.length})
           </Button>,
         );
@@ -236,15 +193,7 @@ export function EntityList<TData>({
     }
 
     return actions.length > 0 ? <>{actions}</> : undefined;
-  }, [
-    toolbarOperations,
-    batchOperations,
-    data,
-    selection,
-    selectedRows.length,
-    toolbarMenuItems,
-    batchMenuItems,
-  ]);
+  }, [toolbarOperations, batchOperations, data, selection, selectedRows.length, toolbarMenuItems, batchMenuItems]);
 
   // 8. Render
   return (

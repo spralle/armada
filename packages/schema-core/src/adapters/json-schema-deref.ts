@@ -1,4 +1,4 @@
-import type { JsonSchema } from './json-schema-types.js';
+import type { JsonSchema } from "./json-schema-types.js";
 
 /**
  * Dereference all local $ref pointers in a JSON Schema by inlining definitions.
@@ -14,22 +14,14 @@ function resolveDefs(root: JsonSchema): Readonly<Record<string, JsonSchema>> {
   return { ...root.definitions, ...root.$defs };
 }
 
-function derefNode(
-  node: JsonSchema,
-  defs: Readonly<Record<string, JsonSchema>>,
-  visiting: Set<string>,
-): JsonSchema {
+function derefNode(node: JsonSchema, defs: Readonly<Record<string, JsonSchema>>, visiting: Set<string>): JsonSchema {
   if (node.$ref) {
     return resolveRef(node.$ref, defs, visiting);
   }
   return derefProperties(node, defs, visiting);
 }
 
-function resolveRef(
-  ref: string,
-  defs: Readonly<Record<string, JsonSchema>>,
-  visiting: Set<string>,
-): JsonSchema {
+function resolveRef(ref: string, defs: Readonly<Record<string, JsonSchema>>, visiting: Set<string>): JsonSchema {
   const name = parseLocalRef(ref);
   if (visiting.has(name)) {
     throw new Error(`Circular $ref detected: ${ref}`);
@@ -68,6 +60,7 @@ function derefProperties(
     result.items = derefNode(node.items, defs, visiting);
   }
   if (node.if) result.if = derefNode(node.if, defs, visiting);
+  // biome-ignore lint/suspicious/noThenProperty: JSON Schema if/then/else keyword
   if (node.then) result.then = derefNode(node.then, defs, visiting);
   if (node.else) result.else = derefNode(node.else, defs, visiting);
   if (node.oneOf) result.oneOf = node.oneOf.map((s) => derefNode(s, defs, visiting));

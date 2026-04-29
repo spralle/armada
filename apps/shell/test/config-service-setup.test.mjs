@@ -1,9 +1,6 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  createShellConfigService,
-  runPersistenceMigrations,
-} from "../src/config-service-setup.ts";
+import test from "node:test";
+import { runPersistenceMigrations } from "../src/config-service-setup.ts";
 
 // ---------------------------------------------------------------------------
 // Stub ConfigurationService — minimal mock for migration tests
@@ -19,15 +16,27 @@ function createStubConfigService(entries = {}) {
       const v = store[key];
       return v !== undefined ? v : defaultValue;
     },
-    getAtLayer() { return undefined; },
-    getForScope() { return undefined; },
+    getAtLayer() {
+      return undefined;
+    },
+    getForScope() {
+      return undefined;
+    },
     inspect(key) {
       return { key, effectiveValue: store[key], effectiveLayer: undefined };
     },
-    set(key, value) { store[key] = value; },
-    remove(key) { delete store[key]; },
-    onChange() { return () => {}; },
-    getNamespace() { return {}; },
+    set(key, value) {
+      store[key] = value;
+    },
+    remove(key) {
+      delete store[key];
+    },
+    onChange() {
+      return () => {};
+    },
+    getNamespace() {
+      return {};
+    },
     _store: store,
   };
 }
@@ -96,15 +105,33 @@ test("runPersistenceMigrations reports source=none when no data to migrate", () 
 test("runPersistenceMigrations continues when individual bridges throw", () => {
   // A config service that throws on get() — simulates total failure
   const throwingService = {
-    get() { throw new Error("Service offline"); },
-    getWithDefault() { throw new Error("Service offline"); },
-    getAtLayer() { throw new Error("Service offline"); },
-    getForScope() { throw new Error("Service offline"); },
-    inspect() { throw new Error("Service offline"); },
-    set() { throw new Error("Service offline"); },
-    remove() { throw new Error("Service offline"); },
-    onChange() { return () => {}; },
-    getNamespace() { return {}; },
+    get() {
+      throw new Error("Service offline");
+    },
+    getWithDefault() {
+      throw new Error("Service offline");
+    },
+    getAtLayer() {
+      throw new Error("Service offline");
+    },
+    getForScope() {
+      throw new Error("Service offline");
+    },
+    inspect() {
+      throw new Error("Service offline");
+    },
+    set() {
+      throw new Error("Service offline");
+    },
+    remove() {
+      throw new Error("Service offline");
+    },
+    onChange() {
+      return () => {};
+    },
+    getNamespace() {
+      return {};
+    },
   };
 
   // Should not throw — each bridge failure is caught independently

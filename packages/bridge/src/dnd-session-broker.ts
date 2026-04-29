@@ -1,4 +1,3 @@
-import type { WindowBridge } from "./window-bridge.js";
 import {
   createCorrelationId,
   finalizeSession,
@@ -9,6 +8,7 @@ import {
   rememberTerminal,
   type SessionEntry,
 } from "./dnd-session-broker-protocol.js";
+import type { WindowBridge } from "./window-bridge.js";
 
 const DEFAULT_TTL_MS = 60_000;
 
@@ -84,7 +84,17 @@ export function createDragSessionBroker(
 }
 
 function handleBridgeEvent(
-  event: { type: string; sourceWindowId: string; id?: string; payload?: unknown; expiresAt?: number; correlationId?: string; lifecycle?: string; ownerWindowId?: string; consumedByWindowId?: string },
+  event: {
+    type: string;
+    sourceWindowId: string;
+    id?: string;
+    payload?: unknown;
+    expiresAt?: number;
+    correlationId?: string;
+    lifecycle?: string;
+    ownerWindowId?: string;
+    consumedByWindowId?: string;
+  },
   sessions: Map<string, SessionEntry>,
   terminalSessions: Map<string, number>,
   windowId: string,
@@ -106,7 +116,16 @@ function handleBridgeEvent(
 }
 
 function handleUpsertEvent(
-  event: { id?: string; sourceWindowId: string; payload?: unknown; expiresAt?: number; correlationId?: string; lifecycle?: string; ownerWindowId?: string; consumedByWindowId?: string },
+  event: {
+    id?: string;
+    sourceWindowId: string;
+    payload?: unknown;
+    expiresAt?: number;
+    correlationId?: string;
+    lifecycle?: string;
+    ownerWindowId?: string;
+    consumedByWindowId?: string;
+  },
   sessions: Map<string, SessionEntry>,
   terminalSessions: Map<string, number>,
   windowId: string,
@@ -360,16 +379,7 @@ function abortSession(
     return false;
   }
 
-  finalizeSession(
-    sessions,
-    terminalSessions,
-    bridge,
-    windowId,
-    ref.id,
-    entry,
-    "abort",
-    entry.consumedByWindowId,
-  );
+  finalizeSession(sessions, terminalSessions, bridge, windowId, ref.id, entry, "abort", entry.consumedByWindowId);
   return true;
 }
 

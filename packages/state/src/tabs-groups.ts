@@ -1,19 +1,14 @@
-import { cloneContextState, ensureGroup } from "./helpers.js";
 import {
-  applyDockTabDrop,
   activateTabInDockTree,
+  applyDockTabDrop,
   deriveDeterministicActiveTabId,
   ensureTabRegisteredInDockTree,
   removeTabFromDockTree,
 } from "./dock-tree.js";
 import { findActiveOrFirstStack } from "./dock-tree-helpers.js";
 import type { DockDropZone } from "./dock-tree-types.js";
-import type { TabPlacementStrategy, PlacementConfig } from "./placement-strategy/types.js";
-import {
-  ContextTabSlot,
-  ClosedTabHistoryEntry,
-  ShellContextState,
-} from "./types.js";
+import { cloneContextState, ensureGroup } from "./helpers.js";
+import type { PlacementConfig, TabPlacementStrategy } from "./placement-strategy/types.js";
 import {
   clampClosedTabHistory,
   cloneTabArgs,
@@ -23,6 +18,7 @@ import {
   normalizeInsertIndex,
   resolveTargetGroupId,
 } from "./tabs-groups-helpers.js";
+import type { ClosedTabHistoryEntry, ContextTabSlot, ShellContextState } from "./types.js";
 
 export function registerTab(
   state: ShellContextState,
@@ -42,16 +38,10 @@ export function registerTab(
   const next = cloneContextState(state);
   ensureGroup(next, input.groupId, input.groupColor);
   const prior = next.tabs[input.tabId];
-  const resolvedDefinitionId = input.definitionId
-    ?? input.partDefinitionId
-    ?? prior?.definitionId
-    ?? prior?.partDefinitionId
-    ?? input.tabId;
-  const resolvedPartDefinitionId = input.partDefinitionId
-    ?? input.definitionId
-    ?? prior?.partDefinitionId
-    ?? prior?.definitionId
-    ?? input.tabId;
+  const resolvedDefinitionId =
+    input.definitionId ?? input.partDefinitionId ?? prior?.definitionId ?? prior?.partDefinitionId ?? input.tabId;
+  const resolvedPartDefinitionId =
+    input.partDefinitionId ?? input.definitionId ?? prior?.partDefinitionId ?? prior?.definitionId ?? input.tabId;
   next.tabs[input.tabId] = {
     id: input.tabId,
     definitionId: resolvedDefinitionId,
@@ -150,9 +140,7 @@ export function moveTabInDockTree(
   }
   next.activeTabId = next.tabs[input.tabId]
     ? input.tabId
-    : deriveDeterministicActiveTabId(next.dockTree)
-      ?? next.tabOrder[0]
-      ?? null;
+    : (deriveDeterministicActiveTabId(next.dockTree) ?? next.tabOrder[0] ?? null);
   return next;
 }
 
@@ -199,11 +187,7 @@ export function moveTabBeforeTab(
     return state;
   }
 
-  next.tabOrder = [
-    ...ordered.slice(0, targetIndex),
-    tabId,
-    ...ordered.slice(targetIndex),
-  ];
+  next.tabOrder = [...ordered.slice(0, targetIndex), tabId, ...ordered.slice(targetIndex)];
 
   return next;
 }
@@ -222,9 +206,7 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
   next.dockTree = removeTabFromDockTree(next.dockTree, tabId);
 
   if (next.activeTabId === tabId) {
-    const rightCandidate = orderedTabIds
-      .slice(closedTabOrderIndex + 1)
-      .find((id) => id !== tabId && next.tabs[id]);
+    const rightCandidate = orderedTabIds.slice(closedTabOrderIndex + 1).find((id) => id !== tabId && next.tabs[id]);
     if (rightCandidate) {
       next.activeTabId = rightCandidate;
     } else {
@@ -238,9 +220,7 @@ export function closeTab(state: ShellContextState, tabId: string): ShellContextS
   }
 
   if (!next.activeTabId || !next.tabs[next.activeTabId]) {
-    next.activeTabId = deriveDeterministicActiveTabId(next.dockTree)
-      ?? next.tabOrder[0]
-      ?? null;
+    next.activeTabId = deriveDeterministicActiveTabId(next.dockTree) ?? next.tabOrder[0] ?? null;
   }
 
   return next;
@@ -288,15 +268,10 @@ export function closeTabWithHistory(
 }
 
 export function canReopenClosedTab(state: ShellContextState, slot: ContextTabSlot): boolean {
-  return state.closedTabHistory.some(
-    (entry) => entry.slot === slot && isClosedTabEntryRestorable(entry),
-  );
+  return state.closedTabHistory.some((entry) => entry.slot === slot && isClosedTabEntryRestorable(entry));
 }
 
-export function reopenMostRecentlyClosedTab(
-  state: ShellContextState,
-  slot: ContextTabSlot,
-): ShellContextState {
+export function reopenMostRecentlyClosedTab(state: ShellContextState, slot: ContextTabSlot): ShellContextState {
   const slotHistory = state.closedTabHistory.filter((entry) => entry.slot === slot);
   if (slotHistory.length === 0) {
     return state;
@@ -307,11 +282,7 @@ export function reopenMostRecentlyClosedTab(
   const retained: ClosedTabHistoryEntry[] = [];
 
   for (const candidate of slotHistory) {
-    if (
-      !reopenedEntry
-      && isClosedTabEntryRestorable(candidate)
-      && !next.tabs[candidate.tabId]
-    ) {
+    if (!reopenedEntry && isClosedTabEntryRestorable(candidate) && !next.tabs[candidate.tabId]) {
       reopenedEntry = candidate as ClosedTabHistoryEntry & { orderIndex?: number };
       continue;
     }
@@ -340,15 +311,10 @@ export function reopenMostRecentlyClosedTab(
     args: reopenedEntry.args ?? {},
   };
 
-  const existingOrder = next.tabOrder.filter((id) => next.tabs[id] && id !== reopenedEntry!.tabId);
+  const existingOrder = next.tabOrder.filter((id) => next.tabs[id] && id !== reopenedEntry?.tabId);
   const insertIndex = normalizeInsertIndex(existingOrder, reopenedEntry.orderIndex ?? Number.POSITIVE_INFINITY);
-  next.tabOrder = [
-    ...existingOrder.slice(0, insertIndex),
-    reopenedEntry.tabId,
-    ...existingOrder.slice(insertIndex),
-  ];
+  next.tabOrder = [...existingOrder.slice(0, insertIndex), reopenedEntry.tabId, ...existingOrder.slice(insertIndex)];
   next.activeTabId = reopenedEntry.tabId;
 
   return next;
 }
-

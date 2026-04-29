@@ -1,26 +1,27 @@
-import { useMemo, useCallback, useState } from 'react';
-import { useSchemaForm } from '@ghost-shell/formr-react';
-import { isSectionNode } from '@ghost-shell/formr-from-schema';
-import type { LayoutNode } from '@ghost-shell/formr-from-schema';
-import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
-import type { FormApi } from '@ghost-shell/formr-core';
-import { Card, CardContent, CardHeader, CardTitle } from '@ghost-shell/ui';
-import { DemoFormField } from './DemoFormField';
-import { ArrayRenderer } from './ArrayRenderer';
+import type { FormApi } from "@ghost-shell/formr-core";
+import type { LayoutNode, SchemaFieldInfo } from "@ghost-shell/formr-from-schema";
+import { isSectionNode } from "@ghost-shell/formr-from-schema";
+import { useSchemaForm } from "@ghost-shell/formr-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@ghost-shell/ui";
+import { useCallback, useMemo, useState } from "react";
+import { ArrayRenderer } from "./ArrayRenderer";
+import { DemoFormField } from "./DemoFormField";
 
 const COLUMN_CLASSES: Record<number, string> = {
-  1: 'grid grid-cols-1 gap-4',
-  2: 'grid grid-cols-1 sm:grid-cols-2 gap-4',
-  3: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4',
+  1: "grid grid-cols-1 gap-4",
+  2: "grid grid-cols-1 sm:grid-cols-2 gap-4",
+  3: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4",
 };
 
 /** Extract items schemas for array fields from the raw JSON Schema */
 function buildArrayItemsMap(rawSchema: object): ReadonlyMap<string, Record<string, unknown>> {
   const map = new Map<string, Record<string, unknown>>();
-  const props = (rawSchema as Record<string, unknown>).properties as Record<string, Record<string, unknown>> | undefined;
+  const props = (rawSchema as Record<string, unknown>).properties as
+    | Record<string, Record<string, unknown>>
+    | undefined;
   if (!props) return map;
   for (const [key, fieldSchema] of Object.entries(props)) {
-    if (fieldSchema.type === 'array' && fieldSchema.items && typeof fieldSchema.items === 'object') {
+    if (fieldSchema.type === "array" && fieldSchema.items && typeof fieldSchema.items === "object") {
       map.set(key, fieldSchema.items as Record<string, unknown>);
     }
   }
@@ -35,7 +36,13 @@ interface DemoFormRootProps {
   readonly responsive?: boolean;
 }
 
-export function DemoFormRoot({ schema, data, layout: layoutOverride, onChange, responsive }: DemoFormRootProps) {
+export function DemoFormRoot({
+  schema,
+  data,
+  layout: layoutOverride,
+  onChange,
+  responsive: _responsive,
+}: DemoFormRootProps) {
   const { form, fields, layout } = useSchemaForm(schema, {
     initialData: data,
     layoutOverride: layoutOverride as LayoutNode | undefined,
@@ -65,9 +72,7 @@ export function DemoFormRoot({ schema, data, layout: layoutOverride, onChange, r
           <CardTitle className="text-foreground">Live Form</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4">
-            {renderNode(layout, form, fieldMap, handleChange, arrayItemsMap)}
-          </div>
+          <div className="flex flex-col gap-4">{renderNode(layout, form, fieldMap, handleChange, arrayItemsMap)}</div>
         </CardContent>
       </Card>
       <Card className="border-border mt-4">
@@ -91,7 +96,7 @@ function renderNode(
   onChange: (path: string, value: unknown) => void,
   arrayItemsMap: ReadonlyMap<string, Record<string, unknown>>,
 ): React.ReactNode {
-  if (node.type === 'field' && node.path) {
+  if (node.type === "field" && node.path) {
     const field = fieldMap.get(node.path);
     if (!field) return null;
     return <DemoFormField key={node.id} form={form} field={field} onChange={onChange} />;
@@ -100,7 +105,7 @@ function renderNode(
   if (isSectionNode(node)) {
     const columns = (node.props?.columns as number) ?? 1;
     const title = node.props?.title;
-    const gridClass = COLUMN_CLASSES[columns] ?? 'flex flex-col gap-4';
+    const gridClass = COLUMN_CLASSES[columns] ?? "flex flex-col gap-4";
     return (
       <div key={node.id} className="flex flex-col gap-3">
         {title && <h3 className="text-sm font-semibold text-foreground">{title}</h3>}
@@ -111,7 +116,7 @@ function renderNode(
     );
   }
 
-  if (node.type === 'array' && node.path) {
+  if (node.type === "array" && node.path) {
     return (
       <ArrayRenderer
         key={node.id}

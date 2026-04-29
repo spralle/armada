@@ -5,14 +5,9 @@ import type {
   PluginKeybindingContribution,
   PluginMenuContribution,
 } from "@ghost-shell/contracts/plugin";
-import type {
-  ContributionPredicateMatcher,
-  PredicateFactBag,
-} from "@ghost-shell/plugin-system";
-import {
-  createDefaultContributionPredicateMatcher,
-} from "@ghost-shell/plugin-system";
-import type { IntentResolutionDelegate, IntentRuntime, ShellIntent, IntentFactBag } from "@ghost-shell/intents";
+import type { IntentFactBag, IntentResolutionDelegate, IntentRuntime, ShellIntent } from "@ghost-shell/intents";
+import type { ContributionPredicateMatcher, PredicateFactBag } from "@ghost-shell/plugin-system";
+import { createDefaultContributionPredicateMatcher } from "@ghost-shell/plugin-system";
 
 export interface ActionSurfaceContext {
   [key: string]: unknown;
@@ -115,8 +110,12 @@ export function resolveMenuActions(
 
 /** Default delegate for action-by-ID dispatch: never shows chooser, assumes plugin already activated. */
 const actionByIdDelegate: IntentResolutionDelegate = {
-  async showChooser() { return null; },
-  async activatePlugin() { return true; },
+  async showChooser() {
+    return null;
+  },
+  async activatePlugin() {
+    return true;
+  },
   announce() {},
 };
 

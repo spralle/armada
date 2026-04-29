@@ -1,30 +1,18 @@
 // plugin-parts.ts — Mount function for the appearance settings plugin.
 
-import type {
-  ThemeService,
-  PluginMountContext,
-  PluginContract,
-  ActivityStatusService,
-  PartMountCleanup,
-  MountPartFn,
-} from "@ghost-shell/contracts";
+import type { ActivityStatusService, MountPartFn, PluginContract, ThemeService } from "@ghost-shell/contracts";
+import { ACTIVITY_STATUS_SERVICE_ID, THEME_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ComposedPluginSectionContribution } from "@ghost-shell/plugin-system";
-import {
-  THEME_SERVICE_ID,
-  ACTIVITY_STATUS_SERVICE_ID,
-} from "@ghost-shell/contracts";
-import {
-  composeEnabledPluginContributions,
-} from "@ghost-shell/plugin-system";
+import { composeEnabledPluginContributions } from "@ghost-shell/plugin-system";
 import {
   injectAppearanceStyles,
-  renderThemePicker,
   renderBackgroundGallery,
-  updateBackgroundSelection,
-  revokeGalleryBlobUrls,
   renderSectionContainer,
+  renderThemePicker,
+  revokeGalleryBlobUrls,
+  updateBackgroundSelection,
 } from "./appearance-dom.js";
-import { pluginContract, APPEARANCE_SECTION_TARGET } from "./plugin-contract-expose.js";
+import { APPEARANCE_SECTION_TARGET, pluginContract } from "./plugin-contract-expose.js";
 
 const APPEARANCE_PLUGIN_ID = pluginContract.manifest.id;
 
@@ -39,10 +27,7 @@ type AppearanceRuntime = {
       }>;
     };
     subscribe(callback: () => void): { dispose(): void };
-    resolveComponentCapability(
-      requesterPluginId: string,
-      capabilityId: string,
-    ): Promise<unknown | null>;
+    resolveComponentCapability(requesterPluginId: string, capabilityId: string): Promise<unknown | null>;
   };
 };
 
@@ -58,15 +43,10 @@ function discoverSections(runtime: AppearanceRuntime): ComposedPluginSectionCont
   const composed = composeEnabledPluginContributions(
     snapshot.plugins.map((p) => ({ id: p.id, enabled: p.enabled, contract: p.contract })),
   );
-  return composed.sections
-    .filter((s) => s.target === APPEARANCE_SECTION_TARGET)
-    .sort((a, b) => a.order - b.order);
+  return composed.sections.filter((s) => s.target === APPEARANCE_SECTION_TARGET).sort((a, b) => a.order - b.order);
 }
 
-async function mountDiscoveredSections(
-  panelTarget: HTMLElement,
-  runtime: AppearanceRuntime,
-): Promise<void> {
+async function mountDiscoveredSections(panelTarget: HTMLElement, runtime: AppearanceRuntime): Promise<void> {
   const panel = panelTarget.querySelector<HTMLElement>(".appearance-panel");
   if (!panel) return;
 
@@ -116,14 +96,11 @@ async function mountSingleSection(
   wrapper.appendChild(mountTarget);
   container.appendChild(wrapper);
 
-  const capability = await runtime.registry!.resolveComponentCapability(
-    APPEARANCE_PLUGIN_ID,
-    section.component,
-  );
+  const capability = await runtime.registry?.resolveComponentCapability(APPEARANCE_PLUGIN_ID, section.component);
 
   if (capability && typeof capability === "object") {
     const comp = capability as {
-      mount?: (target: HTMLElement) => { unmount: () => void } | void;
+      mount?: (target: HTMLElement) => { unmount: () => void } | undefined;
     };
     if (typeof comp.mount === "function") {
       const result = comp.mount(mountTarget);
@@ -159,7 +136,11 @@ const mountAppearancePart: MountPartFn = async (target, context) => {
     notice.className = "appearance-unavailable";
     notice.textContent = "ThemeService unavailable. Theme management requires the theme service to be registered.";
     target.appendChild(notice);
-    return { unmount: () => { target.innerHTML = ""; } };
+    return {
+      unmount: () => {
+        target.innerHTML = "";
+      },
+    };
   }
 
   injectAppearanceStyles();
@@ -170,11 +151,13 @@ const mountAppearancePart: MountPartFn = async (target, context) => {
   renderPanel(target, themeService, activityService);
 
   // Re-render after all themes have loaded (may discover additional themes).
-  loadPromise.then(() => {
-    renderPanel(target, themeService, activityService);
-  }).catch((err) => {
-    console.warn("[appearance-settings] Theme loading failed:", err);
-  });
+  loadPromise
+    .then(() => {
+      renderPanel(target, themeService, activityService);
+    })
+    .catch((err) => {
+      console.warn("[appearance-settings] Theme loading failed:", err);
+    });
 
   // Mount contributed sections and subscribe to registry changes.
   let registrySub: { dispose(): void } | undefined;

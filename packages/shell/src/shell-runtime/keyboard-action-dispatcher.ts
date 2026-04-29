@@ -1,9 +1,8 @@
-import type { KeybindingService } from "@ghost-shell/commands";
-import type { NormalizedKeybindingChord } from "@ghost-shell/commands";
+import type { KeybindingService, NormalizedKeybindingChord } from "@ghost-shell/commands";
 import type { ShellRuntime } from "../app/types.js";
+import { needsStructuralRender, updateDockTabVisibility } from "../ui/dock-tab-visibility.js";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
 import { handleShellKeyboardAction } from "./shell-keyboard-actions.js";
-import { updateDockTabVisibility, needsStructuralRender } from "../ui/dock-tab-visibility.js";
 
 export async function dispatchExactMatch(
   root: HTMLElement,
@@ -31,7 +30,7 @@ export async function dispatchExactMatch(
     if (runtimeHandler) {
       try {
         const runtimeResult = await runtimeHandler();
-        executed = runtimeResult === false ? false : true;
+        executed = runtimeResult !== false;
       } catch (runtimeError) {
         console.warn("[shell:keybinding] runtime action failed", action.id, runtimeError);
         executed = false;
@@ -42,7 +41,7 @@ export async function dispatchExactMatch(
     }
   }
 
-  const chordStr = chords.map(c => c.value).join(" ");
+  const chordStr = chords.map((c) => c.value).join(" ");
   runtime.actionNotice = shellResult.handled
     ? `Keybinding (${chordStr}): ${shellResult.message}`
     : executed
@@ -50,7 +49,7 @@ export async function dispatchExactMatch(
       : `Keybinding (${chordStr}): Action '${action.id}' is not executable in current context.`;
 
   if (chords.length > 1) {
-    keybindingService.fireKeySequenceCompleted({ chords: chords.map(c => c.value), actionId: action.id });
+    keybindingService.fireKeySequenceCompleted({ chords: chords.map((c) => c.value), actionId: action.id });
   }
 
   if (shellResult.handled) {

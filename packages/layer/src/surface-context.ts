@@ -1,6 +1,6 @@
 import type { FocusGrabConfig, LayerSurfaceContext } from "@ghost-shell/contracts/layer";
-import type { LayerRegistry } from "./registry.js";
 import type { FocusGrabManager } from "./focus-grab.js";
+import type { LayerRegistry } from "./registry.js";
 import { setDynamicOpacity } from "./visual-effects.js";
 
 /**
@@ -36,7 +36,7 @@ export function createLayerSurfaceContext(options: LayerSurfaceContextOptions): 
   } = options;
 
   let currentLayerName = options.layerName;
-  let currentExclusiveZone = 0;
+  let _currentExclusiveZone = 0;
   let dismissed = false;
 
   // --- callback bookkeeping ------------------------------------------------
@@ -144,7 +144,7 @@ export function createLayerSurfaceContext(options: LayerSurfaceContextOptions): 
 
     setExclusiveZone(value: number): void {
       assertNotDismissed("setExclusiveZone");
-      currentExclusiveZone = value;
+      _currentExclusiveZone = value;
       onExclusiveZoneChange?.(value);
     },
 

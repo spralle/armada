@@ -1,16 +1,17 @@
 import type { ShellRuntime } from "../app/types.js";
 import { wireDockSplitterDrag } from "./dock-splitter-dnd.js";
 import { wireDockTabDragDrop } from "./dock-tab-dnd.js";
+import { type PartContextMenuDeps, showPartContextMenu } from "./part-context-menu.js";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
+import { restorePart } from "./part-instance-popout-lifecycle.js";
 import {
-  type PartLifecycleDeps,
   closeTabFromUi,
   closeTabThroughRuntime,
+  type PartLifecycleDeps,
   reopenMostRecentlyClosedTabThroughRuntime,
 } from "./part-instance-tab-lifecycle.js";
-import { restorePart } from "./part-instance-popout-lifecycle.js";
-import { showPartContextMenu, type PartContextMenuDeps } from "./part-context-menu.js";
-import { wireTabStripDragDrop } from "./tab-drag-drop.js";
+import { resolveClosedPopoutTransition } from "./parts-controller-popout-transition.js";
+import type { PartsControllerDeps } from "./parts-controller-types.js";
 import {
   getVisibleComposedParts,
   renderDockTree,
@@ -19,13 +20,17 @@ import {
   updateSelectedStyles,
 } from "./parts-rendering.js";
 import { renderDockSplitTrackValue } from "./parts-rendering-dock-split-style.js";
-import { resolveClosedPopoutTransition } from "./parts-controller-popout-transition.js";
-import type { PartsControllerDeps } from "./parts-controller-types.js";
+import { wireTabStripDragDrop } from "./tab-drag-drop.js";
 
-export { closeTabFromUi, closeTabThroughRuntime, reopenMostRecentlyClosedTabThroughRuntime, restorePart };
 export type { PartsControllerDeps };
+export { closeTabFromUi, closeTabThroughRuntime, reopenMostRecentlyClosedTabThroughRuntime, restorePart };
 
-export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps, options?: { teardownMode?: boolean }): void {
+export function renderParts(
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  deps: PartsControllerDeps,
+  options?: { teardownMode?: boolean },
+): void {
   const visibleParts = getVisibleComposedParts(runtime);
 
   if (runtime.isPopout) {
@@ -74,11 +79,15 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
       if (!target) return;
       const partId = target.dataset.partId;
       if (partId && partId !== runtime.selectedPartId) {
-        dispatchLocalLifecycleAction(runtime, {
-          actionId: "part-instance.activate",
-          tabInstanceId: partId,
-          partTitle: resolvePartTitle(partId, runtime),
-        }, deps as PartLifecycleDeps);
+        dispatchLocalLifecycleAction(
+          runtime,
+          {
+            actionId: "part-instance.activate",
+            tabInstanceId: partId,
+            partTitle: resolvePartTitle(partId, runtime),
+          },
+          deps as PartLifecycleDeps,
+        );
       }
     });
   }
@@ -102,11 +111,15 @@ export function renderParts(root: HTMLElement, runtime: ShellRuntime, deps: Part
   wireDockTabDragDrop(root, runtime, deps);
   wireTabStripDragDrop(root, runtime, {
     onTabMoved: (tabId) => {
-      dispatchLocalLifecycleAction(runtime, {
-        actionId: "part-instance.activate",
-        tabInstanceId: tabId,
-        partTitle: resolvePartTitle(tabId, runtime),
-      }, deps as PartLifecycleDeps);
+      dispatchLocalLifecycleAction(
+        runtime,
+        {
+          actionId: "part-instance.activate",
+          tabInstanceId: tabId,
+          partTitle: resolvePartTitle(tabId, runtime),
+        },
+        deps as PartLifecycleDeps,
+      );
     },
     onStateChange: () => {
       deps.renderContextControls();
@@ -142,7 +155,7 @@ function previewDockSplitStyle(
 }
 
 export function startPopoutWatchdog(
-  root: HTMLElement,
+  _root: HTMLElement,
   runtime: ShellRuntime,
   deps: Pick<PartsControllerDeps, "renderParts" | "renderSyncStatus">,
 ): () => void {
@@ -193,11 +206,15 @@ function renderPopoutPart(
   wireDockTabDragDrop(root, runtime, deps);
   wireTabStripDragDrop(root, runtime, {
     onTabMoved: (tabId) => {
-      dispatchLocalLifecycleAction(runtime, {
-        actionId: "part-instance.activate",
-        tabInstanceId: tabId,
-        partTitle: resolvePartTitle(tabId, runtime),
-      }, deps as PartLifecycleDeps);
+      dispatchLocalLifecycleAction(
+        runtime,
+        {
+          actionId: "part-instance.activate",
+          tabInstanceId: tabId,
+          partTitle: resolvePartTitle(tabId, runtime),
+        },
+        deps as PartLifecycleDeps,
+      );
     },
     onStateChange: () => {
       deps.renderContextControls();
@@ -206,7 +223,7 @@ function renderPopoutPart(
     },
   });
   updateSelectedStyles(root, runtime.selectedPartId);
-  void deps.partHost.syncRenderedParts(root, (part.pluginId === "shell.utility") ? [] : [part]);
+  void deps.partHost.syncRenderedParts(root, part.pluginId === "shell.utility" ? [] : [part]);
 }
 
 function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsControllerDeps): void {
@@ -215,9 +232,13 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       if (runtime.syncDegraded) {
         return;
       }
-      dispatchLocalLifecycleAction(runtime, {
-        actionId: "part-instance.reopen",
-      }, deps as PartLifecycleDeps);
+      dispatchLocalLifecycleAction(
+        runtime,
+        {
+          actionId: "part-instance.reopen",
+        },
+        deps as PartLifecycleDeps,
+      );
     });
   }
 
@@ -226,11 +247,15 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       if (runtime.syncDegraded) {
         return;
       }
-      dispatchLocalLifecycleAction(runtime, {
-        actionId: "part-instance.activate",
-        tabInstanceId: button.dataset.partId,
-        partTitle: button.dataset.partTitle,
-      }, deps as PartLifecycleDeps);
+      dispatchLocalLifecycleAction(
+        runtime,
+        {
+          actionId: "part-instance.activate",
+          tabInstanceId: button.dataset.partId,
+          partTitle: button.dataset.partTitle,
+        },
+        deps as PartLifecycleDeps,
+      );
     });
   }
 
@@ -239,10 +264,14 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       if (runtime.syncDegraded) {
         return;
       }
-      dispatchLocalLifecycleAction(runtime, {
-        actionId: "part-instance.restore",
-        tabInstanceId: button.dataset.partId,
-      }, deps as PartLifecycleDeps);
+      dispatchLocalLifecycleAction(
+        runtime,
+        {
+          actionId: "part-instance.restore",
+          tabInstanceId: button.dataset.partId,
+        },
+        deps as PartLifecycleDeps,
+      );
     });
   }
 
@@ -262,11 +291,14 @@ function wirePartActions(root: HTMLElement, runtime: ShellRuntime, deps: PartsCo
       if (runtime.syncDegraded) {
         return;
       }
-      dispatchLocalLifecycleAction(runtime, {
-        actionId: "part-instance.close",
-        tabInstanceId: button.dataset.tabId,
-      }, deps as PartLifecycleDeps);
+      dispatchLocalLifecycleAction(
+        runtime,
+        {
+          actionId: "part-instance.close",
+          tabInstanceId: button.dataset.tabId,
+        },
+        deps as PartLifecycleDeps,
+      );
     });
   }
 }
-

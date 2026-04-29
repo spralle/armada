@@ -1,16 +1,13 @@
-import {
-  createIntentRuntime,
-  type IntentResolutionDelegate,
-  type IntentActionMatch,
-  type ShellIntent,
-  type IntentResolutionTrace,
-  type IntentResolutionOutcome,
-} from "@ghost-shell/intents";
-import { createCatalog, createContract } from "./context-state.spec-intent-runtime-fixtures.js";
+import { createIntentRuntime, type IntentResolutionDelegate, type ShellIntent } from "@ghost-shell/intents";
 import type { SpecHarness } from "./context-state.spec-harness.js";
+import { type createCatalog, createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 
 function createMockDelegate(overrides: Partial<IntentResolutionDelegate> = {}): IntentResolutionDelegate & {
-  calls: { activatePlugin: { pluginId: string; trigger: { type: string; id: string } }[]; announce: string[]; showChooser: number };
+  calls: {
+    activatePlugin: { pluginId: string; trigger: { type: string; id: string } }[];
+    announce: string[];
+    showChooser: number;
+  };
 } {
   const calls = {
     activatePlugin: [] as { pluginId: string; trigger: { type: string; id: string } }[],
@@ -48,8 +45,18 @@ const domainOrdersPlugin = {
     manifest: { id: "ghost.domain.unplanned-orders", name: "Unplanned Orders", version: "0.1.0" },
     contributes: {
       actions: [
-        { id: "domain.unplanned-orders.open", title: "Open Unplanned Orders", intent: "domain.entity.open", when: { entityType: "order" } },
-        { id: "domain.unplanned-orders.inspect", title: "Inspect Order Details", intent: "domain.entity.inspect", when: { entityType: "order" } },
+        {
+          id: "domain.unplanned-orders.open",
+          title: "Open Unplanned Orders",
+          intent: "domain.entity.open",
+          when: { entityType: "order" },
+        },
+        {
+          id: "domain.unplanned-orders.inspect",
+          title: "Inspect Order Details",
+          intent: "domain.entity.inspect",
+          when: { entityType: "order" },
+        },
       ],
     },
   }),
@@ -63,8 +70,18 @@ const domainVesselPlugin = {
     manifest: { id: "ghost.domain.vessel-view", name: "Vessel View", version: "0.1.0" },
     contributes: {
       actions: [
-        { id: "domain.vessel-view.open", title: "Open Vessel View", intent: "domain.entity.open", when: { entityType: "vessel" } },
-        { id: "domain.vessel-view.inspect", title: "Inspect Vessel Details", intent: "domain.entity.inspect", when: { entityType: "vessel" } },
+        {
+          id: "domain.vessel-view.open",
+          title: "Open Vessel View",
+          intent: "domain.entity.open",
+          when: { entityType: "vessel" },
+        },
+        {
+          id: "domain.vessel-view.inspect",
+          title: "Inspect Vessel Details",
+          intent: "domain.entity.inspect",
+          when: { entityType: "vessel" },
+        },
       ],
     },
   }),
@@ -130,7 +147,12 @@ export function registerDomainIntentResolutionSpecs(harness: SpecHarness): void 
         manifest: { id: "ghost.domain.alternate-orders", name: "Alternate Orders", version: "0.1.0" },
         contributes: {
           actions: [
-            { id: "domain.alternate-orders.open", title: "Open Alternate Orders", intent: "domain.entity.open", when: { entityType: "order" } },
+            {
+              id: "domain.alternate-orders.open",
+              title: "Open Alternate Orders",
+              intent: "domain.entity.open",
+              when: { entityType: "order" },
+            },
           ],
         },
       }),
@@ -158,7 +180,7 @@ export function registerDomainIntentResolutionSpecs(harness: SpecHarness): void 
     const vesselOpenTrace = outcome.trace.actions.find((a) => a.actionId === "domain.vessel-view.open");
     assertTruthy(vesselOpenTrace, "vessel open action present in trace");
     assertEqual(vesselOpenTrace?.predicateMatched, false, "vessel predicate did not match");
-    assertTruthy(vesselOpenTrace?.failedPredicates.length ?? 0 > 0, "vessel has failed predicates");
+    assertTruthy((vesselOpenTrace?.failedPredicates.length ?? 0) > 0, "vessel has failed predicates");
     assertEqual(vesselOpenTrace?.failedPredicates[0]?.path, "entityType", "failed predicate path is entityType");
   });
 

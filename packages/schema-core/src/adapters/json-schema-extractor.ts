@@ -1,19 +1,12 @@
-import type { SchemaFieldInfo, SchemaFieldMetadata, SchemaFieldType, SchemaIngestionResult, SchemaMetadata } from '../types.js';
-import type { JsonSchema } from './json-schema-types.js';
-import { dereferenceSchema } from './json-schema-deref.js';
-
-/** Extract x-* object keys into an extensions record */
-function extractExtensions(schema: JsonSchema): Readonly<Record<string, Readonly<Record<string, unknown>>>> | undefined {
-  const extensions: Record<string, Readonly<Record<string, unknown>>> = {};
-  for (const key of Object.keys(schema)) {
-    const match = /^x-(.+)$/.exec(key);
-    if (!match) continue;
-    const value = schema[key as `x-${string}`];
-    if (typeof value !== 'object' || value === null) continue;
-    extensions[match[1]] = value as Readonly<Record<string, unknown>>;
-  }
-  return Object.keys(extensions).length > 0 ? extensions : undefined;
-}
+import type {
+  SchemaFieldInfo,
+  SchemaFieldMetadata,
+  SchemaFieldType,
+  SchemaIngestionResult,
+  SchemaMetadata,
+} from "../types.js";
+import { dereferenceSchema } from "./json-schema-deref.js";
+import type { JsonSchema } from "./json-schema-types.js";
 
 function buildMetadata(standardMeta: Record<string, unknown>, schema: JsonSchema): SchemaFieldMetadata | undefined {
   const extensions = extractExtensions(schema);
@@ -31,12 +24,12 @@ export function extractFromJsonSchema(rawSchema: JsonSchema): SchemaIngestionRes
   const fields: SchemaFieldInfo[] = [];
 
   const metadata: SchemaMetadata = {
-    vendor: 'json-schema',
+    vendor: "json-schema",
     ...(schema.title !== undefined ? { title: schema.title } : {}),
     ...(schema.description !== undefined ? { description: schema.description } : {}),
   };
 
-  walkJsonSchema(schema, '', fields);
+  walkJsonSchema(schema, "", fields);
 
   return { fields, metadata };
 }
@@ -61,7 +54,7 @@ function mergeAllOf(schema: JsonSchema): JsonSchema {
     }
     // Merge other keywords (type, etc.) — subschema wins if parent doesn't have it
     for (const [key, value] of Object.entries(resolved)) {
-      if (key !== 'properties' && key !== 'required' && !(key in merged)) {
+      if (key !== "properties" && key !== "required" && !(key in merged)) {
         merged[key] = value;
       }
     }
@@ -87,7 +80,7 @@ function walkJsonSchema(
   const effective = mergeAllOf(schema);
   const resolvedType = resolveType(effective);
 
-  if (resolvedType === 'object' && effective.properties) {
+  if (resolvedType === "object" && effective.properties) {
     for (const [key, childSchema] of Object.entries(effective.properties)) {
       const childPath = prefix ? `${prefix}.${key}` : key;
       walkJsonSchema(childSchema, childPath, fields, effective.required, key);
@@ -99,7 +92,7 @@ function walkJsonSchema(
     return;
   }
 
-  if (resolvedType === 'array') {
+  if (resolvedType === "array") {
     const isRequired = fieldName !== undefined && parentRequired?.includes(fieldName) === true;
     const arrayStandardMeta: Record<string, unknown> = {};
     if (effective.title !== undefined) arrayStandardMeta.title = effective.title;
@@ -112,13 +105,13 @@ function walkJsonSchema(
     const arrayMetadata = buildMetadata(arrayStandardMeta, effective);
     fields.push({
       path: prefix,
-      type: 'array',
+      type: "array",
       required: isRequired,
       ...(arrayMetadata ? { metadata: arrayMetadata } : {}),
     });
 
     const itemSchema = effective.items;
-    if (itemSchema && typeof itemSchema === 'object' && !Array.isArray(itemSchema)) {
+    if (itemSchema && typeof itemSchema === "object" && !Array.isArray(itemSchema)) {
       const items = itemSchema as JsonSchema;
       if (items.properties) {
         for (const [key, childSchema] of Object.entries(items.properties)) {
@@ -141,7 +134,7 @@ function walkJsonSchema(
       const metadata = buildMetadata(standardMeta, effective);
       fields.push({
         path: prefix,
-        type: 'union',
+        type: "union",
         required: isRequired,
         ...(metadata ? { metadata } : {}),
       });
@@ -190,48 +183,44 @@ function walkJsonSchema(
 }
 
 function resolveType(schema: JsonSchema): string | undefined {
-  if (typeof schema.type === 'string') return schema.type;
+  if (typeof schema.type === "string") return schema.type;
   if (Array.isArray(schema.type) && schema.type.length > 0) {
-    const nonNull = schema.type.filter((t) => t !== 'null');
+    const nonNull = schema.type.filter((t) => t !== "null");
     return (nonNull.length > 0 ? nonNull[0] : schema.type[0]) as string;
   }
-  if (schema.properties) return 'object';
-  if (schema.items) return 'array';
-  if (schema.enum) return 'enum';
+  if (schema.properties) return "object";
+  if (schema.items) return "array";
+  if (schema.enum) return "enum";
   return undefined;
 }
 
 function mapJsonSchemaType(schema: JsonSchema): SchemaFieldType {
-  if (schema.enum) return 'enum';
-  if (schema.oneOf ?? schema.anyOf) return 'union';
+  if (schema.enum) return "enum";
+  if (schema.oneOf ?? schema.anyOf) return "union";
 
   const type = resolveType(schema);
   switch (type) {
-    case 'string':
-      if (schema.format === 'date') return 'date';
-      if (schema.format === 'date-time') return 'datetime';
-      return 'string';
-    case 'number':
-      return 'number';
-    case 'integer':
-      return 'integer';
-    case 'boolean':
-      return 'boolean';
-    case 'object':
-      return 'object';
-    case 'array':
-      return 'array';
+    case "string":
+      if (schema.format === "date") return "date";
+      if (schema.format === "date-time") return "datetime";
+      return "string";
+    case "number":
+      return "number";
+    case "integer":
+      return "integer";
+    case "boolean":
+      return "boolean";
+    case "object":
+      return "object";
+    case "array":
+      return "array";
     default:
-      return 'unknown';
+      return "unknown";
   }
 }
 
 /** Walk oneOf/anyOf variants and collect all fields as a union */
-function walkUnionVariants(
-  schema: JsonSchema,
-  prefix: string,
-  fields: SchemaFieldInfo[],
-): void {
+function walkUnionVariants(schema: JsonSchema, prefix: string, fields: SchemaFieldInfo[]): void {
   const variants = schema.oneOf ?? schema.anyOf ?? [];
   const variantFields: Map<string, { count: number; field: SchemaFieldInfo }> = new Map();
 
@@ -256,11 +245,7 @@ function walkUnionVariants(
 }
 
 /** Walk if/then/else and extract conditional fields as optional */
-function walkConditionalFields(
-  schema: JsonSchema,
-  prefix: string,
-  fields: SchemaFieldInfo[],
-): void {
+function walkConditionalFields(schema: JsonSchema, prefix: string, fields: SchemaFieldInfo[]): void {
   const branches = [schema.then, schema.else].filter(Boolean) as JsonSchema[];
   for (const branch of branches) {
     const branchFields: SchemaFieldInfo[] = [];

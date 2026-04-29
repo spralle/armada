@@ -41,9 +41,7 @@ export function rebuildTenantManifest(extraPluginsDirs: readonly string[]): void
   };
 }
 
-export function createCanonicalLocalTenantDescriptors(
-  extraPluginsDirs?: readonly string[],
-): TenantPluginDescriptor[] {
+export function createCanonicalLocalTenantDescriptors(extraPluginsDirs?: readonly string[]): TenantPluginDescriptor[] {
   const plugins = discoverLocalUiPlugins({
     appsRoot: "plugins",
     extraPluginsDirs,
@@ -70,26 +68,20 @@ export function createDefaultLocalPluginEntryUrlMap(options: {
 }): ReadonlyMap<string, string> {
   const discovered = discoverLocalUiPlugins(options);
 
-  return new Map(
-    Array.from(discovered, ([pluginId, plugin]) => [pluginId, plugin.entry]),
-  );
+  return new Map(Array.from(discovered, ([pluginId, plugin]) => [pluginId, plugin.entry]));
 }
 
 export function applyLocalPluginEntryOverrides(
   plugins: readonly TenantPluginDescriptor[],
   overrideOptions?: TenantManifestOverrideOptions,
 ): TenantPluginDescriptor[] {
-  const selectedPluginIds = new Set(
-    normalizeSelectedPluginIds(overrideOptions?.selectedLocalPluginIds),
-  );
+  const selectedPluginIds = new Set(normalizeSelectedPluginIds(overrideOptions?.selectedLocalPluginIds));
 
   if (selectedPluginIds.size === 0) {
     return plugins.slice();
   }
 
-  const entryOverridesByPluginId =
-    overrideOptions?.pluginEntryUrlOverridesById ??
-    DEFAULT_LOCAL_PLUGIN_ENTRY_URL_MAP;
+  const entryOverridesByPluginId = overrideOptions?.pluginEntryUrlOverridesById ?? DEFAULT_LOCAL_PLUGIN_ENTRY_URL_MAP;
 
   const missingEntryOverridePluginIds = Array.from(selectedPluginIds).filter(
     (pluginId) => !entryOverridesByPluginId.get(pluginId),
@@ -121,9 +113,7 @@ export function applyLocalPluginEntryOverrides(
 
     const overriddenEntry = entryOverridesByPluginId.get(plugin.id);
     if (!overriddenEntry) {
-      throw new Error(
-        `Missing local plugin override entry mapping for selected plugin '${plugin.id}'.`,
-      );
+      throw new Error(`Missing local plugin override entry mapping for selected plugin '${plugin.id}'.`);
     }
 
     return {
@@ -163,18 +153,12 @@ export function resolveTenantManifestRequest(
   return getTenantManifestResponse(tenantId, overrideOptions);
 }
 
-export function normalizeSelectedPluginIds(
-  selectedPluginIds: readonly string[] | undefined,
-): string[] {
+export function normalizeSelectedPluginIds(selectedPluginIds: readonly string[] | undefined): string[] {
   if (!selectedPluginIds || selectedPluginIds.length === 0) {
     return [];
   }
 
   return Array.from(
-    new Set(
-      selectedPluginIds
-        .map((pluginId) => pluginId.trim())
-        .filter((pluginId) => pluginId.length > 0),
-    ),
+    new Set(selectedPluginIds.map((pluginId) => pluginId.trim()).filter((pluginId) => pluginId.length > 0)),
   ).sort((left, right) => left.localeCompare(right));
 }

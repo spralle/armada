@@ -42,7 +42,7 @@
             "accent": "#7aa2f7",
             "cursor": "#c0caf5",
             "selectionBackground": "#7aa2f7",
-            "opacity": 0.70,
+            "opacity": 0.7,
             "opacityActive": 0.85
           },
           "terminal": {
@@ -64,10 +64,22 @@
             "color15": "#acb0d0"
           },
           "backgrounds": [
-            { "url": "https://raw.githubusercontent.com/basecamp/omarchy/dev/themes/tokyo-night/backgrounds/0-swirl-buck.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/basecamp/omarchy/dev/themes/tokyo-night/backgrounds/1-sunset-lake.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/basecamp/omarchy/dev/themes/tokyo-night/backgrounds/2-pawel-czerwinski.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/basecamp/omarchy/dev/themes/tokyo-night/backgrounds/3-milad-fakurian.jpg", "mode": "cover" }
+            {
+              "url": "https://raw.githubusercontent.com/basecamp/omarchy/dev/themes/tokyo-night/backgrounds/0-swirl-buck.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/basecamp/omarchy/dev/themes/tokyo-night/backgrounds/1-sunset-lake.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/basecamp/omarchy/dev/themes/tokyo-night/backgrounds/2-pawel-czerwinski.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/basecamp/omarchy/dev/themes/tokyo-night/backgrounds/3-milad-fakurian.jpg",
+              "mode": "cover"
+            }
           ]
         },
         {
@@ -81,7 +93,7 @@
             "accent": "#faa968",
             "cursor": "#f6dcac",
             "selectionBackground": "#faa968",
-            "opacity": 0.70,
+            "opacity": 0.7,
             "opacityActive": 0.85
           },
           "terminal": {
@@ -103,21 +115,66 @@
             "color15": "#f6dcac"
           },
           "backgrounds": [
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/01-omarchy-sigil.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/02-retro-sf.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/03-abstract-lines.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/04-dusk-guardian.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/05-gateway_LE_upscale_digiart.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/06-livingroom-1982_LE_upscale_gentle.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/07-zen-boat_LE_upscale_digiart.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/08-walkman_LE_upscale_gentle.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/09-pirate-bay_LE_upscale_prime.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/10-abstract-pyramids_LE_upscale_prime.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/11-retro-spective.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/12-in-the-groove.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/13-the-journey.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/14-cassette.jpg", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/15-abstraction-layer.jpg", "mode": "cover" }
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/01-omarchy-sigil.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/02-retro-sf.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/03-abstract-lines.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/04-dusk-guardian.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/05-gateway_LE_upscale_digiart.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/06-livingroom-1982_LE_upscale_gentle.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/07-zen-boat_LE_upscale_digiart.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/08-walkman_LE_upscale_gentle.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/09-pirate-bay_LE_upscale_prime.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/10-abstract-pyramids_LE_upscale_prime.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/11-retro-spective.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/12-in-the-groove.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/13-the-journey.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/14-cassette.jpg",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-retro-82-theme/master/backgrounds/15-abstraction-layer.jpg",
+              "mode": "cover"
+            }
           ]
         },
         {
@@ -131,7 +188,7 @@
             "accent": "#8caaee",
             "cursor": "#b5bfe2",
             "selectionBackground": "#f4b8e4",
-            "opacity": 0.70,
+            "opacity": 0.7,
             "opacityActive": 0.85
           },
           "terminal": {
@@ -153,17 +210,50 @@
             "color15": "#b5bfe2"
           },
           "backgrounds": [
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/0-mud-monster.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/1-marina-garage.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/2-mangrove-causeway.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/3-gator-tour.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/4-motel-iguana.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/5-vice-marina.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/6-beach-shades.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/7-firewatch-eagle.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/8-mural-lot.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/9-ocean-view-hotel.png", "mode": "cover" },
-            { "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/10-lifeguard-dusk.png", "mode": "cover" }
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/0-mud-monster.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/1-marina-garage.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/2-mangrove-causeway.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/3-gator-tour.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/4-motel-iguana.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/5-vice-marina.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/6-beach-shades.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/7-firewatch-eagle.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/8-mural-lot.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/9-ocean-view-hotel.png",
+              "mode": "cover"
+            },
+            {
+              "url": "https://raw.githubusercontent.com/OldJobobo/omarchy-florida-man-theme/master/backgrounds/10-lifeguard-dusk.png",
+              "mode": "cover"
+            }
           ]
         },
         {
@@ -178,7 +268,7 @@
             "accent": "#1e66f5",
             "cursor": "#dc8a78",
             "selectionBackground": "#dc8a78",
-            "opacity": 0.70,
+            "opacity": 0.7,
             "opacityActive": 0.85
           },
           "terminal": {
@@ -200,7 +290,10 @@
             "color15": "#6c6f85"
           },
           "backgrounds": [
-            { "url": "https://raw.githubusercontent.com/basecamp/omarchy/dev/themes/catppuccin-latte/backgrounds/1-color-fade.png", "mode": "cover" }
+            {
+              "url": "https://raw.githubusercontent.com/basecamp/omarchy/dev/themes/catppuccin-latte/backgrounds/1-color-fade.png",
+              "mode": "cover"
+            }
           ]
         }
       ],

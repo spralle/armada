@@ -1,6 +1,12 @@
-import type { Middleware, MiddlewareDecision, MiddlewareInitContext, VetoHookContextMap, NotifyHookContextMap } from './contracts.js';
-import { withTimeout, DEFAULT_RUNTIME_CONSTRAINTS } from './timeout.js';
-import { FormrError } from './errors.js';
+import type {
+  Middleware,
+  MiddlewareDecision,
+  MiddlewareInitContext,
+  NotifyHookContextMap,
+  VetoHookContextMap,
+} from "./contracts.js";
+import { FormrError } from "./errors.js";
+import { DEFAULT_RUNTIME_CONSTRAINTS, withTimeout } from "./timeout.js";
 
 /** Run veto-capable hooks synchronously (for non-submit pipeline path) */
 export function runVetoHooksSync<K extends keyof VetoHookContextMap>(
@@ -14,24 +20,26 @@ export function runVetoHooksSync<K extends keyof VetoHookContextMap>(
     try {
       // Justified: TS cannot correlate generic K between hook and context in a loop;
       // callers are type-safe via the generic constraint on K
-      const result = (hook as (ctx: VetoHookContextMap[K]) => MiddlewareDecision | Promise<MiddlewareDecision>)(context);
+      const result = (hook as (ctx: VetoHookContextMap[K]) => MiddlewareDecision | Promise<MiddlewareDecision>)(
+        context,
+      );
       if (isPromiseLike(result)) {
         throw new FormrError(
-          'FORMR_ASYNC_IN_SYNC_PIPELINE',
+          "FORMR_ASYNC_IN_SYNC_PIPELINE",
           `Middleware "${mw.id}" returned a Promise from ${String(hookName)}. Use the async pipeline path for async middleware.`,
         );
       }
-      if (result && typeof result === 'object' && 'action' in result) {
-        if ((result as MiddlewareDecision).action === 'veto') {
+      if (result && typeof result === "object" && "action" in result) {
+        if ((result as MiddlewareDecision).action === "veto") {
           return result as MiddlewareDecision;
         }
       }
     } catch (err) {
       if (err instanceof FormrError) throw err;
-      return { action: 'veto', reason: `Middleware "${mw.id}" threw in ${String(hookName)}` };
+      return { action: "veto", reason: `Middleware "${mw.id}" threw in ${String(hookName)}` };
     }
   }
-  return { action: 'continue' };
+  return { action: "continue" };
 }
 
 /** Run notification hooks synchronously (for non-submit pipeline path) */
@@ -64,7 +72,9 @@ export async function runVetoHooksAsync<K extends keyof VetoHookContextMap>(
     if (!hook) continue;
     try {
       // Justified: TS correlated-types limitation — callers are type-safe via generic K
-      const result = (hook as (ctx: VetoHookContextMap[K]) => MiddlewareDecision | Promise<MiddlewareDecision>)(context);
+      const result = (hook as (ctx: VetoHookContextMap[K]) => MiddlewareDecision | Promise<MiddlewareDecision>)(
+        context,
+      );
       const decision = isPromiseLike(result)
         ? await withTimeout(
             result as Promise<MiddlewareDecision>,
@@ -72,13 +82,13 @@ export async function runVetoHooksAsync<K extends keyof VetoHookContextMap>(
             `Middleware "${mw.id}" timed out in ${String(hookName)}`,
           )
         : (result as MiddlewareDecision);
-      if (decision?.action === 'veto') return decision;
+      if (decision?.action === "veto") return decision;
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      return { action: 'veto', reason };
+      return { action: "veto", reason };
     }
   }
-  return { action: 'continue' };
+  return { action: "continue" };
 }
 
 /** Run notification hooks with async support and timeout */
@@ -108,10 +118,7 @@ export async function runNotifyHooksAsync<K extends keyof NotifyHookContextMap>(
 }
 
 /** Run onInit on all middlewares in registration order */
-export function initMiddlewares(
-  middlewares: readonly Middleware[],
-  context: MiddlewareInitContext,
-): void {
+export function initMiddlewares(middlewares: readonly Middleware[], context: MiddlewareInitContext): void {
   for (const mw of middlewares) {
     if (mw.onInit) {
       try {
@@ -124,9 +131,7 @@ export function initMiddlewares(
 }
 
 /** Run onDispose on all middlewares in registration order */
-export function disposeMiddlewares(
-  middlewares: readonly Middleware[],
-): void {
+export function disposeMiddlewares(middlewares: readonly Middleware[]): void {
   for (const mw of middlewares) {
     if (mw.onDispose) {
       try {
@@ -139,5 +144,5 @@ export function disposeMiddlewares(
 }
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
-  return value !== null && typeof value === 'object' && typeof (value as { then?: unknown }).then === 'function';
+  return value !== null && typeof value === "object" && typeof (value as { then?: unknown }).then === "function";
 }

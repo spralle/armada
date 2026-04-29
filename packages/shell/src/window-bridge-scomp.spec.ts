@@ -1,10 +1,5 @@
-import {
-  createAsyncScompWindowBridge,
-  normalizeScompFailureReason,
-} from "@ghost-shell/bridge";
-import type {
-  AsyncWindowBridgeRejectReason,
-} from "@ghost-shell/bridge";
+import type { AsyncWindowBridgeRejectReason } from "@ghost-shell/bridge";
+import { createAsyncScompWindowBridge, normalizeScompFailureReason } from "@ghost-shell/bridge";
 
 type TestCase = {
   name: string;
@@ -187,8 +182,16 @@ test("scomp adapter maps transport publish failures to normalized reject reasons
 
 test("scomp failure normalization maps known error classes", () => {
   assertEqual(normalizeScompFailureReason(new Error("timed out")), "timeout", "timeout error should normalize");
-  assertEqual(normalizeScompFailureReason(new Error("channel broke")), "channel-error", "channel error should normalize");
-  assertEqual(normalizeScompFailureReason(new Error("resource unavailable")), "unavailable", "unavailable should normalize");
+  assertEqual(
+    normalizeScompFailureReason(new Error("channel broke")),
+    "channel-error",
+    "channel error should normalize",
+  );
+  assertEqual(
+    normalizeScompFailureReason(new Error("resource unavailable")),
+    "unavailable",
+    "unavailable should normalize",
+  );
   assertEqual(normalizeScompFailureReason(new Error("bridge closed")), "closed", "closed should normalize");
 });
 

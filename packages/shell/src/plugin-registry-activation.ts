@@ -1,15 +1,15 @@
-import { evaluateShellPluginCompatibility } from "@ghost-shell/plugin-system";
 import type { PluginServices } from "@ghost-shell/contracts";
+import type { LayerRegistry } from "@ghost-shell/layer";
+import { evaluateShellPluginCompatibility } from "@ghost-shell/plugin-system";
 import type { CapabilityRegistry } from "./capability-registry.js";
+import { buildActivationPlan } from "./plugin-activation-plan.js";
 import {
   createActivationContext,
   createGhostApi,
   type GhostApiFactoryDependencies,
 } from "./plugin-api/ghost-api-factory.js";
-import type { LayerRegistry } from "@ghost-shell/layer";
-import { PluginLoadError } from "./plugin-loader.js";
 import type { PluginLoadStrategy } from "./plugin-loader.js";
-import { buildActivationPlan } from "./plugin-activation-plan.js";
+import { PluginLoadError } from "./plugin-loader.js";
 import { pushDiagnostic, transitionLifecycle } from "./plugin-registry-diagnostics.js";
 import type {
   PluginActivationTrigger,
@@ -110,7 +110,7 @@ async function activateState(
       return;
     }
 
-    if (!await runActivateHook(state, pluginId, trigger, diagnostics, capabilityRegistry, apiDeps, pluginServices)) {
+    if (!(await runActivateHook(state, pluginId, trigger, diagnostics, capabilityRegistry, apiDeps, pluginServices))) {
       return;
     }
 
@@ -220,9 +220,7 @@ async function runActivateHook(
     state.ghostApiInstance = ghostApiInstance;
     return true;
   } catch (activateError) {
-    const message = activateError instanceof Error
-      ? activateError.message
-      : String(activateError);
+    const message = activateError instanceof Error ? activateError.message : String(activateError);
     state.failure = {
       code: "ACTIVATE_FAILED",
       message: `Plugin '${pluginId}' activate() failed: ${message}`,

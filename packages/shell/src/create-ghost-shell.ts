@@ -7,25 +7,23 @@
  * while retaining the ability to override individual subsystems.
  */
 
-import type {
-  PartRenderer,
-  PartRendererRegistry,
-  ContextContributionRegistry,
-} from "@ghost-shell/contracts";
-import type { ShellRuntime } from "./app/types.js";
+import type { ContextContributionRegistry, PartRenderer, PartRendererRegistry } from "@ghost-shell/contracts";
+import { createContextContributionRegistry } from "@ghost-shell/plugin-system";
+import { createReactPartRenderer } from "@ghost-shell/react";
 import type { ShellMigrationFlags } from "./app/migration-flags.js";
 import { readShellMigrationFlags, selectShellTransportPath } from "./app/migration-flags.js";
 import { createShellRuntime } from "./app/runtime.js";
-import { createPartRendererRegistry } from "./part-renderer-registry.js";
-import { createReactPartRenderer } from "@ghost-shell/react";
-import { createContextContributionRegistry } from "@ghost-shell/plugin-system";
-import {
-  createShellBootstrap,
-  registerShellBootstrap,
-} from "./bootstrap-shell.js";
+import type { ShellRuntime } from "./app/types.js";
 import type { ShellBootstrapDeps } from "./bootstrap-shell.js";
+import { createShellBootstrap, registerShellBootstrap } from "./bootstrap-shell.js";
+import { createShellPartHostAdapter } from "./part-module-host.js";
+import { createPartRendererRegistry } from "./part-renderer-registry.js";
+import { hydratePluginRegistry } from "./shell-hydrate.js";
+import { mountShell, registerRuntimeTeardown } from "./shell-mount.js";
+import { publishWithDegrade } from "./shell-runtime/bridge-sync-handlers.js";
+import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
+import { registerWorkspaceRuntimeActions } from "./shell-runtime/workspace-runtime-actions.js";
 import {
-  ShellWiringContext,
   activatePluginForBoundary,
   announce,
   createBridgeBindings,
@@ -35,14 +33,9 @@ import {
   renderContextControlsPanel,
   renderParts,
   renderSyncStatus,
+  ShellWiringContext,
   summarizeSelectionPriorities,
 } from "./shell-wiring.js";
-import { registerWorkspaceRuntimeActions } from "./shell-runtime/workspace-runtime-actions.js";
-import { publishWithDegrade } from "./shell-runtime/bridge-sync-handlers.js";
-import { createShellPartHostAdapter } from "./part-module-host.js";
-import { mountShell, registerRuntimeTeardown } from "./shell-mount.js";
-import { hydratePluginRegistry } from "./shell-hydrate.js";
-import { getShellHmrRegistry } from "./shell-runtime/hmr-window-registry.js";
 
 // ---------------------------------------------------------------------------
 // Options
@@ -209,8 +202,7 @@ function buildBootstrapDeps(root: HTMLElement, runtime: ShellRuntime): ShellBoot
     announce: (message) => announce(root, runtime, message),
     dismissIntentChooser: () => dismissIntentChooser(root, runtime),
     primeEnabledPluginActivations: () => primeEnabledPluginActivations(root, runtime),
-    publishWithDegrade: (event) =>
-      publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime)),
+    publishWithDegrade: (event) => publishWithDegrade(root, runtime, event, createBridgeBindings(root, runtime)),
     refreshActionContributions: () => refreshActionContributions(runtime),
     renderContextControlsPanel: () => renderContextControlsPanel(root, runtime),
     renderParts: () => renderParts(root, runtime),
@@ -222,8 +214,12 @@ function buildBootstrapDeps(root: HTMLElement, runtime: ShellRuntime): ShellBoot
 function exposeDebugNamespace(runtime: ShellRuntime): void {
   window.__g = {
     runtime,
-    get services() { return runtime.services; },
-    get registry() { return runtime.registry; },
+    get services() {
+      return runtime.services;
+    },
+    get registry() {
+      return runtime.registry;
+    },
   };
   console.debug("[shell] __g namespace available — try: __g.runtime, __g.services, __g.registry");
 }

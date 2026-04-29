@@ -28,8 +28,7 @@ export interface DiscoverLocalUiPluginsOptions {
   extraPluginsDirs?: readonly string[];
 }
 
-const VALID_LOCAL_PLUGIN_ID_PATTERN =
-  /^(?:@[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/)?[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/;
+const VALID_LOCAL_PLUGIN_ID_PATTERN = /^(?:@[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?\/)?[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/;
 
 /**
  * Scans a plugins directory and returns canonical definitions by reading
@@ -41,10 +40,7 @@ const VALID_LOCAL_PLUGIN_ID_PATTERN =
  */
 const DEFAULT_DEV_PORT_BASE = 4170;
 
-export function discoverPluginDefinitions(
-  pluginsDir: string,
-  startPort?: number,
-): CanonicalLocalUiPluginDefinition[] {
+export function discoverPluginDefinitions(pluginsDir: string, startPort?: number): CanonicalLocalUiPluginDefinition[] {
   let entries: string[];
   try {
     entries = readdirSync(pluginsDir);
@@ -68,7 +64,7 @@ export function discoverPluginDefinitions(
     .sort((a, b) => a.localeCompare(b));
 
   const definitions: CanonicalLocalUiPluginDefinition[] = [];
-  let nextAutoPort = startPort ?? (DEFAULT_DEV_PORT_BASE + 1);
+  let nextAutoPort = startPort ?? DEFAULT_DEV_PORT_BASE + 1;
 
   for (const folderName of folderNames) {
     const packageJsonPath = join(pluginsDir, folderName, "package.json");
@@ -100,14 +96,15 @@ export function discoverPluginDefinitions(
       continue;
     }
 
-    const ghost = parsed.ghost as {
-      displayName?: string;
-      dependsOn?: { plugins?: { pluginId: string }[] };
-      pluginDependencies?: string[]; // TODO: remove after migration
-    } | undefined;
+    const ghost = parsed.ghost as
+      | {
+          displayName?: string;
+          dependsOn?: { plugins?: { pluginId: string }[] };
+          pluginDependencies?: string[]; // TODO: remove after migration
+        }
+      | undefined;
 
-    const pluginDependencies = ghost?.dependsOn?.plugins?.map(p => p.pluginId)
-      ?? ghost?.pluginDependencies; // TODO: remove fallback after migration
+    const pluginDependencies = ghost?.dependsOn?.plugins?.map((p) => p.pluginId) ?? ghost?.pluginDependencies; // TODO: remove fallback after migration
 
     const devPort = nextAutoPort;
     nextAutoPort += 1;
@@ -131,9 +128,7 @@ export function discoverPluginDefinitions(
  * Discovers plugin definitions from multiple directories, assigning
  * globally unique dev ports across all directories.
  */
-export function discoverPluginDefinitionsFromDirs(
-  pluginsDirs: readonly string[],
-): CanonicalLocalUiPluginDefinition[] {
+export function discoverPluginDefinitionsFromDirs(pluginsDirs: readonly string[]): CanonicalLocalUiPluginDefinition[] {
   let nextPort = DEFAULT_DEV_PORT_BASE + 1;
   const allDefinitions: CanonicalLocalUiPluginDefinition[] = [];
 
@@ -162,17 +157,11 @@ export function discoverLocalUiPlugins(
   const host = options.host ?? "127.0.0.1";
   const protocol = options.protocol ?? "http";
   const definitions =
-    options.definitions ?? discoverPluginDefinitionsFromDirs([
-      options.appsRoot,
-      ...(options.extraPluginsDirs ?? []),
-    ]);
+    options.definitions ?? discoverPluginDefinitionsFromDirs([options.appsRoot, ...(options.extraPluginsDirs ?? [])]);
 
   const normalizedDefinitions = definitions.map((definition) => ({
     ...definition,
-    normalizedId: normalizeAndAssertValidLocalPluginId(
-      definition.id,
-      `for folder '${definition.folderName}'`,
-    ),
+    normalizedId: normalizeAndAssertValidLocalPluginId(definition.id, `for folder '${definition.folderName}'`),
   }));
 
   const orderedDefinitions = normalizedDefinitions.sort((left, right) =>
@@ -182,10 +171,7 @@ export function discoverLocalUiPlugins(
   const discovered = new Map<string, DiscoveredLocalUiPlugin>();
 
   for (const definition of orderedDefinitions) {
-    const folderPath = resolveLocalFolderPath(
-      options.appsRoot,
-      definition.folderName,
-    );
+    const folderPath = resolveLocalFolderPath(options.appsRoot, definition.folderName);
     const entry = options.gatewayPort
       ? `${protocol}://${host}:${options.gatewayPort}/${encodeURIComponent(definition.normalizedId)}/mf-manifest.json`
       : `${protocol}://${host}:${definition.devPort}${definition.entryPath}`;
@@ -221,10 +207,7 @@ function resolveLocalFolderPath(appsRoot: string, folderName: string): string {
   return `${withoutTrailingSlash}/${folderName}`;
 }
 
-export function normalizeAndAssertValidLocalPluginId(
-  id: string,
-  context: string,
-): string {
+export function normalizeAndAssertValidLocalPluginId(id: string, context: string): string {
   const normalizedId = id.trim();
 
   if (!normalizedId) {
@@ -240,29 +223,19 @@ export function normalizeAndAssertValidLocalPluginId(
   return normalizedId;
 }
 
-export function assertValidLocalPluginEntryUrl(
-  entry: string,
-  pluginId: string,
-  context: string,
-): void {
+export function assertValidLocalPluginEntryUrl(entry: string, _pluginId: string, context: string): void {
   let parsed: URL;
   try {
     parsed = new URL(entry);
   } catch {
-    throw new Error(
-      `Invalid local plugin entry URL '${entry}' ${context}.`,
-    );
+    throw new Error(`Invalid local plugin entry URL '${entry}' ${context}.`);
   }
 
   if (!/^https?:$/.test(parsed.protocol)) {
-    throw new Error(
-      `Invalid local plugin entry URL '${entry}' ${context}: protocol must be http or https.`,
-    );
+    throw new Error(`Invalid local plugin entry URL '${entry}' ${context}: protocol must be http or https.`);
   }
 
   if (!parsed.pathname.endsWith("/mf-manifest.json")) {
-    throw new Error(
-      `Invalid local plugin entry URL '${entry}' ${context}: path must end with '/mf-manifest.json'.`,
-    );
+    throw new Error(`Invalid local plugin entry URL '${entry}' ${context}: path must end with '/mf-manifest.json'.`);
   }
 }

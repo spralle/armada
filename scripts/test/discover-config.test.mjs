@@ -1,8 +1,8 @@
-import { describe, it, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, writeFile, mkdir, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, it } from "node:test";
 import { discoverViewConfigs } from "../discover-config.mjs";
 
 /** @type {string[]} */

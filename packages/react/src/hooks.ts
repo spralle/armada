@@ -21,9 +21,7 @@ export function useGhostApi(): GhostContextValue {
  */
 export function useService<T>(serviceId: string): T | undefined {
   const { mountContext } = useGhostApi();
-  return (mountContext.runtime.services.getService<T>(serviceId) ?? undefined) as
-    | T
-    | undefined;
+  return (mountContext.runtime.services.getService<T>(serviceId) ?? undefined) as T | undefined;
 }
 
 /**
@@ -38,9 +36,7 @@ export function usePluginContext(): { pluginId: string; partId: string } {
  * Factory for creating typed service hooks.
  * Returns a hook that retrieves a specific service by its well-known ID.
  */
-export function createServiceHook<T>(
-  serviceId: string,
-): () => T | undefined {
+export function createServiceHook<T>(serviceId: string): () => T | undefined {
   return function useTypedService(): T | undefined {
     return useService<T>(serviceId);
   };

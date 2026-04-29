@@ -1,7 +1,7 @@
-import type { NavigationTarget, NavigationHints } from "../core/types.js";
-import type { NavigationModifierMap, NavigationAttachment } from "./link-types.js";
-import { createNavigationHandler } from "./navigation-handler.js";
+import type { NavigationHints, NavigationTarget } from "../core/types.js";
+import type { NavigationAttachment, NavigationModifierMap } from "./link-types.js";
 import type { CreateNavigationHandlerOptions } from "./navigation-handler.js";
+import { createNavigationHandler } from "./navigation-handler.js";
 
 /**
  * Options for {@link attachNavigation}.
@@ -36,10 +36,7 @@ export interface AttachNavigationOptions {
  * @param options - Navigation configuration.
  * @returns A {@link NavigationAttachment} with a `dispose()` method.
  */
-export function attachNavigation(
-  element: HTMLElement,
-  options: AttachNavigationOptions,
-): NavigationAttachment {
+export function attachNavigation(element: HTMLElement, options: AttachNavigationOptions): NavigationAttachment {
   const handlerOptions: CreateNavigationHandlerOptions = {
     target: options.target,
     defaultHints: options.defaultHints,

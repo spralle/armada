@@ -12,8 +12,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 0,
-          "size": { "width": 180, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 180,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 0
@@ -23,8 +31,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 1,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 1
@@ -34,8 +50,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 8,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 2
@@ -45,8 +69,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 9,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 3
@@ -56,8 +88,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 2,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 4
@@ -67,8 +107,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 3,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 5
@@ -78,8 +126,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 10,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 6
@@ -89,8 +145,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 11,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 7
@@ -100,8 +164,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 4,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 8
@@ -111,8 +183,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 5,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 9
@@ -122,8 +202,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 12,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 10
@@ -133,8 +221,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 13,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 11
@@ -144,8 +240,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 6,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 12
@@ -155,8 +259,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 7,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 13
@@ -166,8 +278,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 14,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 14
@@ -177,8 +297,16 @@
           "component": "AnchorShowcaseSurface",
           "layer": "floating",
           "anchor": 15,
-          "size": { "width": 160, "height": 40 },
-          "margin": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "size": {
+            "width": 160,
+            "height": 40
+          },
+          "margin": {
+            "top": 4,
+            "right": 4,
+            "bottom": 4,
+            "left": 4
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
           "order": 15

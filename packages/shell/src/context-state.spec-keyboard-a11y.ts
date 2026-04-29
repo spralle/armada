@@ -1,3 +1,4 @@
+import type { SpecHarness } from "./context-state.spec-harness.js";
 import {
   clampChooserFocusIndex,
   formatDegradedModeAnnouncement,
@@ -7,7 +8,6 @@ import {
   resolveDegradedKeyboardInteraction,
   resolveTabLifecycleShortcut,
 } from "./keyboard-a11y.js";
-import type { SpecHarness } from "./context-state.spec-harness.js";
 
 export function registerKeyboardA11ySpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
@@ -112,16 +112,8 @@ export function registerKeyboardA11ySpecs(harness: SpecHarness): void {
       "reopen-closed-tab",
       "Meta+Shift+T should reopen recently closed tab",
     );
-    assertEqual(
-      resolveTabLifecycleShortcut("ctrl+w"),
-      "close-active-tab",
-      "Ctrl+W should close active tab",
-    );
-    assertEqual(
-      resolveTabLifecycleShortcut("meta+w"),
-      "close-active-tab",
-      "Meta+W should close active tab",
-    );
+    assertEqual(resolveTabLifecycleShortcut("ctrl+w"), "close-active-tab", "Ctrl+W should close active tab");
+    assertEqual(resolveTabLifecycleShortcut("meta+w"), "close-active-tab", "Meta+W should close active tab");
     assertEqual(
       resolveTabLifecycleShortcut("ctrl+shift+w"),
       null,

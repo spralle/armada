@@ -1,10 +1,10 @@
+import type { ActivationContext, GhostApi } from "@ghost-shell/contracts/plugin";
 import { createPluginContract } from "@ghost-shell/contracts/plugin";
-import type { GhostApi, ActivationContext } from "@ghost-shell/contracts/plugin";
-import type { HookService, ElementTransitionHook } from "@ghost-shell/contracts/services";
-import { HOOK_REGISTRY_SERVICE_ID, ELEMENT_TRANSITION_HOOK_ID } from "@ghost-shell/contracts/services";
-import { activateMotion, deactivateMotion } from "./plugin-services-expose.js";
-import { createMotionTransitionHook } from "./motion-hook.js";
+import type { ElementTransitionHook, HookService } from "@ghost-shell/contracts/services";
+import { ELEMENT_TRANSITION_HOOK_ID, HOOK_REGISTRY_SERVICE_ID } from "@ghost-shell/contracts/services";
 import pkg from "../package.json" with { type: "json" };
+import { createMotionTransitionHook } from "./motion-hook.js";
+import { activateMotion, deactivateMotion } from "./plugin-services-expose.js";
 
 export const pluginContract = createPluginContract(pkg);
 

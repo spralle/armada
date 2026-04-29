@@ -1,7 +1,7 @@
-import type { CanonicalPath } from './path.js';
+import type { CanonicalPath } from "./path.js";
 
 /** ADR section 6.2 */
-export type IssueSeverity = 'error' | 'warning' | 'info';
+export type IssueSeverity = "error" | "warning" | "info";
 
 /** ADR section 6.2 — ValidationIssue */
 export interface ValidationIssue {
@@ -12,13 +12,13 @@ export interface ValidationIssue {
   readonly path: CanonicalPath;
   readonly source: {
     readonly origin:
-      | 'standard-schema'
-      | 'function-validator'
-      | 'json-schema-adapter'
-      | 'rule'
-      | 'middleware'
-      | 'async-validator'
-      | 'submit';
+      | "standard-schema"
+      | "function-validator"
+      | "json-schema-adapter"
+      | "rule"
+      | "middleware"
+      | "async-validator"
+      | "submit";
     readonly validatorId: string;
     readonly adapterId?: string;
     readonly ruleId?: string;
@@ -54,7 +54,7 @@ export interface FormState<TData, TUi> {
       readonly lastValidatedAt?: string; // ISO-8601 UTC
     };
     readonly submission?: {
-      readonly status: 'idle' | 'running' | 'succeeded' | 'failed';
+      readonly status: "idle" | "running" | "succeeded" | "failed";
       readonly submitId?: string;
       readonly lastAttemptAt?: string; // ISO-8601 UTC
       readonly lastResultAt?: string; // ISO-8601 UTC
@@ -78,9 +78,7 @@ export interface CreateFormOptions<TData, TUi> {
   readonly arbiterSession?: RuleSession | undefined;
   /** Form-level field defaults — merged below field-level overrides (tier 2 of 3) */
   readonly fieldDefaults?: Readonly<FieldConfig>;
-  readonly onSubmit?: (
-    ctx: SubmitExecutionContext<TData, TUi>,
-  ) => Promise<SubmitResult>;
+  readonly onSubmit?: (ctx: SubmitExecutionContext<TData, TUi>) => Promise<SubmitResult>;
   readonly timeouts?: {
     readonly validator?: number;
     readonly middleware?: number;
@@ -90,16 +88,15 @@ export interface CreateFormOptions<TData, TUi> {
   readonly asyncValidators?: readonly AsyncValidatorConfig[];
 }
 
+import type { ProductionRule, RuleSession } from "@ghost-shell/arbiter";
 // Imports for CreateFormOptions references
 import type {
-  SchemaValidator,
-  ValidatorFn,
   AsyncValidatorConfig,
-  Middleware,
   FieldConfig,
+  Middleware,
+  SchemaValidator,
   SubmitExecutionContext,
   SubmitResult,
-} from './contracts.js';
-import type { StateStrategy } from './transaction.js';
-import type { ProductionRule, RuleSession } from '@ghost-shell/arbiter';
-import type { TransformDefinition } from './transforms.js';
+} from "./contracts.js";
+import type { StateStrategy } from "./transaction.js";
+import type { TransformDefinition } from "./transforms.js";

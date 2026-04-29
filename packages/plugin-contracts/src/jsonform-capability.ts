@@ -1,8 +1,8 @@
-import type { ConfigurationPropertySchema } from './types.js';
+import type { ConfigurationPropertySchema } from "./types.js";
 
 /** Schema passed to the jsonform capability — must be an object schema with properties */
 export interface JsonFormSchema {
-  readonly type: 'object';
+  readonly type: "object";
   readonly properties: Readonly<Record<string, ConfigurationPropertySchema>>;
   readonly required?: readonly string[] | undefined;
   readonly title?: string | undefined;
@@ -28,7 +28,7 @@ export interface JsonFormOptions {
 
 /** Controller returned from mount — manages form lifecycle */
 export interface JsonFormController {
-  update(options: Partial<Pick<JsonFormOptions, 'data'>>): void;
+  update(options: Partial<Pick<JsonFormOptions, "data">>): void;
   unmount(): void;
 }
 

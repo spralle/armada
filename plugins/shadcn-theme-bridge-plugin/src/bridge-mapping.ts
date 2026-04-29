@@ -8,9 +8,7 @@
  * Order: semantically grouped (core, semantic, status, surface, foreground,
  * border, primary effects, interactive, chart, edge panels, window, geometry).
  */
-export const GHOST_TO_SHADCN_MAP: ReadonlyArray<
-  readonly [ghostVar: string, shadcnVar: string]
-> = [
+export const GHOST_TO_SHADCN_MAP: ReadonlyArray<readonly [ghostVar: string, shadcnVar: string]> = [
   // Core surface tokens
   ["--ghost-background", "--background"],
   ["--ghost-foreground", "--foreground"],

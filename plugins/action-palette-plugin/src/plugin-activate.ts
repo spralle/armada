@@ -1,4 +1,4 @@
-import type { GhostApi, ActivationContext, QuickPickItem } from "@ghost-shell/contracts/plugin";
+import type { ActivationContext, GhostApi, QuickPickItem } from "@ghost-shell/contracts/plugin";
 
 interface PaletteItem extends QuickPickItem {
   readonly actionId: string;
@@ -24,7 +24,7 @@ function activate(api: GhostApi, ctx: ActivationContext): void {
       if (selected?.enabled) {
         await api.actions.executeAction(selected.actionId);
       }
-    })
+    }),
   );
 }
 

@@ -1,6 +1,6 @@
-import { useForm } from '@ghost-shell/formr-react';
-import { Card, CardContent, CardHeader, CardTitle, Badge, cn } from '@ghost-shell/ui';
-import { DemoShell } from '../renderers/DemoShell';
+import { useForm } from "@ghost-shell/formr-react";
+import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from "@ghost-shell/ui";
+import { DemoShell } from "../renderers/DemoShell";
 
 // NOTE: $ui entries are synced shallowly (top-level keys only).
 // Use flat keys like '$ui.showField' rather than nested '$ui.section.field.visible'.
@@ -16,22 +16,30 @@ interface UiState {
 }
 
 const arbiterRules = [
-  { name: 'smallOrder', when: { quantity: { $lt: 10 } }, then: [{ $set: { '$ui.tier': 'small', '$ui.showBulkDiscount': false } }] },
-  { name: 'bulkOrder', when: { quantity: { $gte: 10 } }, then: [{ $set: { '$ui.tier': 'bulk', '$ui.showBulkDiscount': true } }] },
+  {
+    name: "smallOrder",
+    when: { quantity: { $lt: 10 } },
+    then: [{ $set: { "$ui.tier": "small", "$ui.showBulkDiscount": false } }],
+  },
+  {
+    name: "bulkOrder",
+    when: { quantity: { $gte: 10 } },
+    then: [{ $set: { "$ui.tier": "bulk", "$ui.showBulkDiscount": true } }],
+  },
 ] as const;
 
 const schema = {
-  type: 'object',
+  type: "object",
   properties: {
-    quantity: { type: 'number', title: 'Quantity', minimum: 1 },
-    unitPrice: { type: 'number', title: 'Unit Price' },
+    quantity: { type: "number", title: "Quantity", minimum: 1 },
+    unitPrice: { type: "number", title: "Unit Price" },
   },
 };
 
 export function ArbiterCalculatedDemo() {
   const form = useForm<FormData, UiState>({
     initialData: { quantity: 1, unitPrice: 25 },
-    initialUiState: { tier: 'small', showBulkDiscount: false },
+    initialUiState: { tier: "small", showBulkDiscount: false },
     arbiterRules,
   });
 
@@ -45,12 +53,14 @@ export function ArbiterCalculatedDemo() {
       title="Arbiter: Calculated Fields"
       description="Rules handle conditional logic (tier detection, discount eligibility) while derived arithmetic is computed in the render layer. This separates concerns: rules for conditions, code for math."
       motivation="Arbiter rules use $set for static values — they can't compute arithmetic. The pattern shown here uses rules for threshold-based conditional logic and standard code for calculations. This keeps rules simple and testable."
-      features={['Arbiter Rules', '$ui Namespace', 'Tier Detection', 'Computed Values', 'Separation of Concerns']}
+      features={["Arbiter Rules", "$ui Namespace", "Tier Detection", "Computed Values", "Separation of Concerns"]}
       schema={schema}
-      codeBlocks={[{ title: 'Arbiter Rules', code: arbiterRules as unknown as object, defaultOpen: true }]}
+      codeBlocks={[{ title: "Arbiter Rules", code: arbiterRules as unknown as object, defaultOpen: true }]}
     >
       <Card className="border-border">
-        <CardHeader><CardTitle className="text-foreground">Order Form</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-foreground">Order Form</CardTitle>
+        </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1">
@@ -58,9 +68,9 @@ export function ArbiterCalculatedDemo() {
               <input
                 type="number"
                 min={1}
-                className={cn('rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground')}
+                className={cn("rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground")}
                 value={data.quantity}
-                onChange={(e) => form.setValue('quantity', Number(e.target.value) || 0)}
+                onChange={(e) => form.setValue("quantity", Number(e.target.value) || 0)}
               />
             </label>
             <label className="flex flex-col gap-1">
@@ -69,9 +79,9 @@ export function ArbiterCalculatedDemo() {
                 type="number"
                 min={0}
                 step={0.01}
-                className={cn('rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground')}
+                className={cn("rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground")}
                 value={data.unitPrice}
-                onChange={(e) => form.setValue('unitPrice', Number(e.target.value) || 0)}
+                onChange={(e) => form.setValue("unitPrice", Number(e.target.value) || 0)}
               />
             </label>
           </div>
@@ -79,7 +89,7 @@ export function ArbiterCalculatedDemo() {
           <div className="rounded-md border border-border p-4 flex flex-col gap-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Tier</span>
-              <Badge variant={uiState.tier === 'bulk' ? 'default' : 'secondary'}>{uiState.tier}</Badge>
+              <Badge variant={uiState.tier === "bulk" ? "default" : "secondary"}>{uiState.tier}</Badge>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
@@ -99,15 +109,11 @@ export function ArbiterCalculatedDemo() {
 
           <div className="rounded-md bg-surface-inset border border-border-muted p-3">
             <p className="text-xs font-medium text-muted-foreground mb-1">Form Data</p>
-            <pre className="text-xs text-code-foreground font-mono">
-              {JSON.stringify(data, null, 2)}
-            </pre>
+            <pre className="text-xs text-code-foreground font-mono">{JSON.stringify(data, null, 2)}</pre>
           </div>
           <div className="rounded-md bg-surface-inset border border-border-muted p-3">
             <p className="text-xs font-medium text-muted-foreground mb-1">UI State</p>
-            <pre className="text-xs text-code-foreground font-mono">
-              {JSON.stringify(uiState, null, 2)}
-            </pre>
+            <pre className="text-xs text-code-foreground font-mono">{JSON.stringify(uiState, null, 2)}</pre>
           </div>
         </CardContent>
       </Card>

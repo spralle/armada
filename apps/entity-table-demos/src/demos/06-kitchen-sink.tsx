@@ -1,16 +1,16 @@
-import { z } from 'zod';
-import { EntityList } from '@ghost-shell/entity-table';
-import { DemoShell } from '../components/DemoShell';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
-import type { EntityOperation } from '@ghost-shell/entity-table';
+import type { EntityOperation } from "@ghost-shell/entity-table";
+import { EntityList } from "@ghost-shell/entity-table";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+import { z } from "zod";
+import { DemoShell } from "../components/DemoShell";
 
 const UserSchema = z.object({
   id: z.string(),
   avatar: z.string(),
   name: z.string(),
   email: z.string().email(),
-  role: z.enum(['admin', 'editor', 'viewer', 'guest']),
-  department: z.enum(['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finance']),
+  role: z.enum(["admin", "editor", "viewer", "guest"]),
+  department: z.enum(["Engineering", "Design", "Marketing", "Sales", "HR", "Finance"]),
   salary: z.number(),
   joinDate: z.coerce.date(),
   lastLogin: z.coerce.date(),
@@ -64,11 +64,75 @@ const usageSource = `<EntityList
   getRowId={(row) => row.id}
 />`;
 
-const firstNames = ['Alice', 'Bob', 'Carol', 'David', 'Eva', 'Frank', 'Grace', 'Hiro', 'Isla', 'James', 'Keiko', 'Liam', 'Mia', 'Noah', 'Olivia', 'Priya', 'Quinn', 'Raj', 'Sofia', 'Tomas', 'Uma', 'Victor', 'Wendy', 'Xander', 'Yuki', 'Zara'];
-const lastNames = ['Johnson', 'Martinez', 'Chen', 'Kim', 'Rossi', 'Okafor', 'Liu', 'Tanaka', 'Patel', 'Wright', 'Sato', "O'Brien", 'Fernandez', 'Andersen', 'Brown', 'Singh', 'Murphy', 'Gupta', 'Garcia', 'Müller'];
-const roles = ['admin', 'editor', 'viewer', 'guest'] as const;
-const departments = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finance'] as const;
-const allSkills = ['React', 'TypeScript', 'Python', 'Go', 'Rust', 'Figma', 'SQL', 'AWS', 'Docker', 'GraphQL', 'Node.js', 'CSS', 'ML', 'DevOps', 'Testing'];
+const firstNames = [
+  "Alice",
+  "Bob",
+  "Carol",
+  "David",
+  "Eva",
+  "Frank",
+  "Grace",
+  "Hiro",
+  "Isla",
+  "James",
+  "Keiko",
+  "Liam",
+  "Mia",
+  "Noah",
+  "Olivia",
+  "Priya",
+  "Quinn",
+  "Raj",
+  "Sofia",
+  "Tomas",
+  "Uma",
+  "Victor",
+  "Wendy",
+  "Xander",
+  "Yuki",
+  "Zara",
+];
+const lastNames = [
+  "Johnson",
+  "Martinez",
+  "Chen",
+  "Kim",
+  "Rossi",
+  "Okafor",
+  "Liu",
+  "Tanaka",
+  "Patel",
+  "Wright",
+  "Sato",
+  "O'Brien",
+  "Fernandez",
+  "Andersen",
+  "Brown",
+  "Singh",
+  "Murphy",
+  "Gupta",
+  "Garcia",
+  "Müller",
+];
+const roles = ["admin", "editor", "viewer", "guest"] as const;
+const departments = ["Engineering", "Design", "Marketing", "Sales", "HR", "Finance"] as const;
+const allSkills = [
+  "React",
+  "TypeScript",
+  "Python",
+  "Go",
+  "Rust",
+  "Figma",
+  "SQL",
+  "AWS",
+  "Docker",
+  "GraphQL",
+  "Node.js",
+  "CSS",
+  "ML",
+  "DevOps",
+  "Testing",
+];
 
 function generateUsers(count: number): User[] {
   const users: User[] = [];
@@ -76,7 +140,7 @@ function generateUsers(count: number): User[] {
     const first = firstNames[i % firstNames.length];
     const last = lastNames[i % lastNames.length];
     const name = `${first} ${last}`;
-    const email = `${first.toLowerCase()}.${last.toLowerCase().replace(/'/g, '')}@company.com`;
+    const email = `${first.toLowerCase()}.${last.toLowerCase().replace(/'/g, "")}@company.com`;
     const role = roles[i % roles.length];
     const dept = departments[i % departments.length];
     const skillCount = 2 + (i % 4);
@@ -86,13 +150,13 @@ function generateUsers(count: number): User[] {
       skills.push(allSkills[(skillStart + s) % allSkills.length]);
     }
     users.push({
-      id: `usr-${String(i + 1).padStart(3, '0')}`,
+      id: `usr-${String(i + 1).padStart(3, "0")}`,
       avatar: name,
       name,
       email,
       role,
       department: dept,
-      salary: 80000 + (i * 3500) % 120000,
+      salary: 80000 + ((i * 3500) % 120000),
       joinDate: new Date(2018 + (i % 7), i % 12, 1 + (i % 28)),
       lastLogin: new Date(2024, 8, 1 + (i % 28), 8 + (i % 12), i % 60),
       active: i % 7 !== 0,
@@ -106,9 +170,26 @@ function generateUsers(count: number): User[] {
 const users = generateUsers(55);
 
 const rowOps: EntityOperation<User>[] = [
-  { id: 'view', label: 'View Profile', icon: <Eye className="h-4 w-4" />, handler: ({ entity }) => alert(`View ${entity?.name}`) },
-  { id: 'edit', label: 'Edit', icon: <Pencil className="h-4 w-4" />, handler: ({ entity }) => alert(`Edit ${entity?.name}`) },
-  { id: 'delete', label: 'Delete', icon: <Trash2 className="h-4 w-4" />, variant: 'destructive', handler: ({ entity }) => alert(`Delete ${entity?.name}`), when: ({ entity }) => entity?.role !== 'admin' },
+  {
+    id: "view",
+    label: "View Profile",
+    icon: <Eye className="h-4 w-4" />,
+    handler: ({ entity }) => alert(`View ${entity?.name}`),
+  },
+  {
+    id: "edit",
+    label: "Edit",
+    icon: <Pencil className="h-4 w-4" />,
+    handler: ({ entity }) => alert(`Edit ${entity?.name}`),
+  },
+  {
+    id: "delete",
+    label: "Delete",
+    icon: <Trash2 className="h-4 w-4" />,
+    variant: "destructive",
+    handler: ({ entity }) => alert(`Delete ${entity?.name}`),
+    when: ({ entity }) => entity?.role !== "admin",
+  },
 ];
 
 export function KitchenSinkDemo() {
@@ -116,29 +197,40 @@ export function KitchenSinkDemo() {
     <DemoShell
       title="Kitchen Sink"
       description="Everything combined: all renderers, operations, overrides, sorting, selection, pagination, column filters, resize, sticky header, and density toggle with 55 rows."
-      features={['All Renderers', 'Operations', 'Overrides', 'Sorting', 'Selection', 'Pagination', 'Column Filters', 'Column Resize', 'Sticky Header', 'Density Toggle']}
+      features={[
+        "All Renderers",
+        "Operations",
+        "Overrides",
+        "Sorting",
+        "Selection",
+        "Pagination",
+        "Column Filters",
+        "Column Resize",
+        "Sticky Header",
+        "Density Toggle",
+      ]}
       schema={schemaSource}
       codeBlocks={[
-        { title: 'Overrides', code: overridesSource, defaultOpen: true },
-        { title: 'Usage', code: usageSource, defaultOpen: true },
+        { title: "Overrides", code: overridesSource, defaultOpen: true },
+        { title: "Usage", code: usageSource, defaultOpen: true },
       ]}
     >
       <EntityList
         entityType="user"
         schema={UserSchema}
         data={users}
-        exclude={['id']}
-        defaultVisible={['avatar', 'name', 'email', 'role', 'salary', 'skills']}
+        exclude={["id"]}
+        defaultVisible={["avatar", "name", "email", "role", "salary", "skills"]}
         overrides={{
-          avatar: { format: 'avatar', width: 60 },
-          email: { format: 'link' },
-          salary: { format: 'currency', width: 120 },
-          skills: { format: 'tags' },
+          avatar: { format: "avatar", width: 60 },
+          email: { format: "link" },
+          salary: { format: "currency", width: 120 },
+          skills: { format: "tags" },
           bio: { hidden: true },
           role: {
-            format: 'badge',
+            format: "badge",
             formatOptions: {
-              colorMap: { admin: 'red', editor: 'blue', viewer: 'green', guest: 'amber' },
+              colorMap: { admin: "red", editor: "blue", viewer: "green", guest: "amber" },
             },
           },
         }}

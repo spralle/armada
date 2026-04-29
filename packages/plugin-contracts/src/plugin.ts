@@ -1,74 +1,68 @@
+export { createPluginContract } from "./create-plugin-contract.js";
+export type { ExtractActionIds, ExtractPartIds } from "./define-plugin.js";
+export { definePlugin } from "./define-plugin.js";
 export type { Disposable } from "./disposable.js";
+export {
+  INTENT_ENTITY_ASSIGN,
+  INTENT_ENTITY_INSPECT,
+  INTENT_ENTITY_OPEN,
+} from "./domain-intents.js";
 export type { Event, EventEmitter } from "./event.js";
-
 export type {
-  ConfigurationPropertySchema,
-  PluginGalleryBanner,
-  PluginGallery,
-  PluginManifestIdentity,
-  PluginViewContribution,
-  PluginPartContribution,
-  PluginDockableTabMetadata,
-  PluginCapabilityComponentContribution,
-  PluginCapabilityServiceContribution,
-  PluginDependencyPluginRequirement,
-  PluginDependencyComponentRequirement,
-  PluginDependencyServiceRequirement,
-  PluginProvidedCapabilities,
-  PluginDependencies,
-  PluginContributionPredicate,
-  PluginActionContribution,
-  PluginMenuContribution,
-  PluginKeybindingContribution,
-  PluginSelectionContribution,
-  PluginSelectionInterest,
-  PluginDerivedLaneContribution,
-  PluginDragDropSessionReference,
-  PluginPopoutCapabilityFlags,
-  ThemeBackgroundEntry,
-  ThemeFonts,
-  ThemeContribution,
-  BrandingLogo,
-  BrandingLoadingScreen,
-  BrandingContribution,
-  PluginConfigurationContribution,
-  ShellEdgeSlot,
-  ShellEdgeSlotPosition,
-  PluginSlotContribution,
-  PluginSectionContribution,
-  PluginContributions,
-  PluginContract,
-  PluginCompatibilityMetadata,
-  TenantPluginDescriptor,
-  TenantPluginManifestResponse,
-} from "./types.js";
-
-export type {
-  GhostApi,
-  ActionService,
   ActionDescriptor,
-  WindowService,
-  WindowDescriptor,
-  QuickPickItem,
-  QuickPickOptions,
-  QuickPick,
-  InputBoxOptions,
+  ActionService,
   ActivationContext,
   DeactivationContext,
-  ViewService,
-  ViewDescriptor,
+  GhostApi,
+  InputBoxOptions,
   OpenViewOptions,
+  QuickPick,
+  QuickPickItem,
+  QuickPickOptions,
+  ViewDescriptor,
+  ViewService,
+  WindowDescriptor,
+  WindowService,
 } from "./ghost-api.js";
-
-export type { PluginServices, PluginMountContext, PartMountCleanup, MountPartFn } from "./plugin-services.js";
-
-export {
-  INTENT_ENTITY_OPEN,
-  INTENT_ENTITY_INSPECT,
-  INTENT_ENTITY_ASSIGN,
-} from "./domain-intents.js";
-
-export { definePlugin } from "./define-plugin.js";
-export type { ExtractPartIds, ExtractActionIds } from "./define-plugin.js";
-
-export { createPluginContract } from "./create-plugin-contract.js";
+export type { MountPartFn, PartMountCleanup, PluginMountContext, PluginServices } from "./plugin-services.js";
+export type {
+  BrandingContribution,
+  BrandingLoadingScreen,
+  BrandingLogo,
+  ConfigurationPropertySchema,
+  PluginActionContribution,
+  PluginCapabilityComponentContribution,
+  PluginCapabilityServiceContribution,
+  PluginCompatibilityMetadata,
+  PluginConfigurationContribution,
+  PluginContract,
+  PluginContributionPredicate,
+  PluginContributions,
+  PluginDependencies,
+  PluginDependencyComponentRequirement,
+  PluginDependencyPluginRequirement,
+  PluginDependencyServiceRequirement,
+  PluginDerivedLaneContribution,
+  PluginDockableTabMetadata,
+  PluginDragDropSessionReference,
+  PluginGallery,
+  PluginGalleryBanner,
+  PluginKeybindingContribution,
+  PluginManifestIdentity,
+  PluginMenuContribution,
+  PluginPartContribution,
+  PluginPopoutCapabilityFlags,
+  PluginProvidedCapabilities,
+  PluginSectionContribution,
+  PluginSelectionContribution,
+  PluginSelectionInterest,
+  PluginSlotContribution,
+  PluginViewContribution,
+  ShellEdgeSlot,
+  ShellEdgeSlotPosition,
+  TenantPluginDescriptor,
+  TenantPluginManifestResponse,
+  ThemeBackgroundEntry,
+  ThemeContribution,
+  ThemeFonts,
+} from "./types.js";

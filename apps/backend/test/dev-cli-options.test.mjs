@@ -1,14 +1,14 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
 import {
   formatLocalPluginOverrideStartupSummary,
   parseBackendDevCliOptions,
 } from "../dist-test/src/dev-cli-options.js";
 import {
+  buildEntryOverrideMap,
   DEFAULT_LOCAL_PLUGIN_ENTRIES,
   LOCAL_PLUGIN_IDS,
-  buildEntryOverrideMap,
 } from "./fixtures/local-plugin-overrides-fixtures.mjs";
 
 test("parseBackendDevCliOptions keeps no-override baseline when no flags are provided", () => {
@@ -49,29 +49,19 @@ test("parseBackendDevCliOptions normalizes duplicate and whitespace plugin IDs d
     LOCAL_PLUGIN_IDS.pluginStarter,
     LOCAL_PLUGIN_IDS.sampleContractConsumer,
   ]);
-  assert.deepEqual(parsed.duplicateSelectedLocalPluginIds, [
-    LOCAL_PLUGIN_IDS.pluginStarter,
-  ]);
+  assert.deepEqual(parsed.duplicateSelectedLocalPluginIds, [LOCAL_PLUGIN_IDS.pluginStarter]);
 });
 
 test("parseBackendDevCliOptions rejects invalid plugin ID format with actionable error", () => {
   assert.throws(
-    () =>
-      parseBackendDevCliOptions([
-        "--local-plugin",
-        "Ghost.Invalid",
-      ]),
+    () => parseBackendDevCliOptions(["--local-plugin", "Ghost.Invalid"]),
     /Invalid local plugin id 'Ghost\.Invalid' from --local-plugin argument\./,
   );
 });
 
 test("parseBackendDevCliOptions rejects unknown plugin IDs with actionable error", () => {
   assert.throws(
-    () =>
-      parseBackendDevCliOptions([
-        "--local-plugin",
-        "ghost.unknown.plugin",
-      ]),
+    () => parseBackendDevCliOptions(["--local-plugin", "ghost.unknown.plugin"]),
     /Unknown local plugin id\(s\): ghost\.unknown\.plugin\..*Available local plugin id\(s\): .*Use --local-plugin <pluginId> with one of the available IDs\./,
   );
 });
@@ -104,11 +94,7 @@ test("formatLocalPluginOverrideStartupSummary prints deterministic selected over
 
 test("formatLocalPluginOverrideStartupSummary fails fast for missing selected mapping", () => {
   assert.throws(
-    () =>
-      formatLocalPluginOverrideStartupSummary(
-        ["ghost.plugin-starter"],
-        new Map(),
-      ),
+    () => formatLocalPluginOverrideStartupSummary(["ghost.plugin-starter"], new Map()),
     /Missing local plugin override entry mapping for selected plugin 'ghost\.plugin-starter'/,
   );
 });
@@ -127,12 +113,7 @@ test("parseBackendDevCliOptions returns undefined gatewayPort when flag is absen
 });
 
 test("parseBackendDevCliOptions combines --gateway-port with --local-plugin", () => {
-  const parsed = parseBackendDevCliOptions([
-    "--gateway-port",
-    "9999",
-    "--local-plugin",
-    LOCAL_PLUGIN_IDS.themeDefault,
-  ]);
+  const parsed = parseBackendDevCliOptions(["--gateway-port", "9999", "--local-plugin", LOCAL_PLUGIN_IDS.themeDefault]);
 
   assert.equal(parsed.gatewayPort, 9999);
   assert.deepEqual(parsed.selectedLocalPluginIds, [LOCAL_PLUGIN_IDS.themeDefault]);

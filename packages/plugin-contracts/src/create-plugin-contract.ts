@@ -11,12 +11,6 @@ interface PackageJsonGhostField {
   activationEvents?: string[];
 }
 
-interface PackageJsonWithGhost {
-  name: string;
-  version: string;
-  ghost: PackageJsonGhostField;
-}
-
 /**
  * Build a {@link PluginContract} from a plugin's package.json.
  *

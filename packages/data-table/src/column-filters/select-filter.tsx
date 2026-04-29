@@ -1,11 +1,5 @@
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ghost-shell/ui";
 import type { Column } from "@tanstack/react-table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ghost-shell/ui";
 
 export function SelectColumnFilter<TData>({ column }: { column: Column<TData, unknown> }) {
   const meta = column.columnDef.meta as Record<string, unknown> | undefined;

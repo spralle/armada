@@ -1,13 +1,5 @@
-import type { KeybindingService, KeybindingOverride } from "@ghost-shell/contracts";
-import {
-  Button,
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@ghost-shell/ui";
+import type { KeybindingOverride, KeybindingService } from "@ghost-shell/contracts";
+import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ghost-shell/ui";
 import { ChordDisplay } from "./ChordDisplay.js";
 import { RecordButton } from "./RecordButton.js";
 
@@ -19,13 +11,7 @@ interface OverridesSectionProps {
   onClearAlert: () => void;
 }
 
-export function OverridesSection({
-  overrides,
-  service,
-  onRefresh,
-  onAlert,
-  onClearAlert,
-}: OverridesSectionProps) {
+export function OverridesSection({ overrides, service, onRefresh, onAlert, onClearAlert }: OverridesSectionProps) {
   if (overrides.length === 0) return null;
 
   return (

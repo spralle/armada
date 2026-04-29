@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
 import { createRouter, jsonResponse } from "../dist-test/src/router.js";
 
@@ -7,10 +7,7 @@ test("jsonResponse returns JSON body with correct content-type and status", asyn
   const response = jsonResponse({ message: "ok" }, 201);
 
   assert.equal(response.status, 201);
-  assert.equal(
-    response.headers.get("content-type"),
-    "application/json; charset=utf-8",
-  );
+  assert.equal(response.headers.get("content-type"), "application/json; charset=utf-8");
   const body = await response.json();
   assert.deepEqual(body, { message: "ok" });
 });
@@ -84,8 +81,7 @@ test("createRouter extracts regex capture groups as params", async () => {
     {
       method: "GET",
       pattern: /^\/tenants\/([^/]+)\/config\/([^/]+)$/,
-      handler: (params) =>
-        jsonResponse({ tenantId: params[0], key: params[1] }),
+      handler: (params) => jsonResponse({ tenantId: params[0], key: params[1] }),
     },
   ]);
 

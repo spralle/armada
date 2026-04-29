@@ -16,7 +16,12 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
   test("close then reopen restores most recent eligible tab in same slot and activates it", () => {
     let state = createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" });
     state = registerTab(state, { tabId: "tab-b", groupId: "group-main", tabLabel: "Orders", closePolicy: "closeable" });
-    state = registerTab(state, { tabId: "tab-c", groupId: "group-main", tabLabel: "Vessels", closePolicy: "closeable" });
+    state = registerTab(state, {
+      tabId: "tab-c",
+      groupId: "group-main",
+      tabLabel: "Vessels",
+      closePolicy: "closeable",
+    });
     state = {
       ...state,
       activeTabId: "tab-c",
@@ -41,15 +46,15 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
     const state = {
       ...createInitialShellContextState({ initialTabId: "utility.sync", initialGroupId: "group-main" }),
       closedTabHistory: [
-          {
-            tabId: "utility.sync",
-            groupId: "group-main",
-            label: "Cross-window sync",
-            closePolicy: "closeable" as const,
-            slot: "main" as const,
-            orderIndex: 0,
-          },
-        ],
+        {
+          tabId: "utility.sync",
+          groupId: "group-main",
+          label: "Cross-window sync",
+          closePolicy: "closeable" as const,
+          slot: "main" as const,
+          orderIndex: 0,
+        },
+      ],
     };
 
     assertEqual(canReopenClosedTab(state, "main"), true, "a closed tab should contribute reopen eligibility");
@@ -62,29 +67,33 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
     const state: ShellContextState = {
       ...createInitialShellContextState({ initialTabId: "tab-a", initialGroupId: "group-main" }),
       closedTabHistory: [
-          {
-            tabId: "",
-            partDefinitionId: "",
-            groupId: "group-main",
-            label: "Bad",
-            closePolicy: "closeable" as const,
-            slot: "main" as const,
-          },
-          {
-            tabId: "tab-b",
-            partDefinitionId: "tab-b",
-            groupId: "group-main",
-            label: "Orders",
-            closePolicy: "closeable" as const,
-            slot: "main" as const,
-            orderIndex: 1,
-          },
-        ],
+        {
+          tabId: "",
+          partDefinitionId: "",
+          groupId: "group-main",
+          label: "Bad",
+          closePolicy: "closeable" as const,
+          slot: "main" as const,
+        },
+        {
+          tabId: "tab-b",
+          partDefinitionId: "tab-b",
+          groupId: "group-main",
+          label: "Orders",
+          closePolicy: "closeable" as const,
+          slot: "main" as const,
+          orderIndex: 1,
+        },
+      ],
       dockTree: createInitialDockTree("tab-a"),
     };
 
     const reopened = reopenMostRecentlyClosedTab(state, "main");
-    assertEqual(reopened.tabs["tab-b"]?.label, "Orders", "reopen should skip invalid payloads and restore next safe entry");
+    assertEqual(
+      reopened.tabs["tab-b"]?.label,
+      "Orders",
+      "reopen should skip invalid payloads and restore next safe entry",
+    );
     assertEqual(reopened.closedTabHistory.length, 0, "history should prune invalid and consumed entries");
   });
 
@@ -127,6 +136,10 @@ export function registerContextStateCoreTabLifecycleReopenSpecs(harness: SpecHar
     assertEqual(second.state.tabs[first.tabId]?.args.orderId, "o-1", "first instance args should persist");
     assertEqual(second.state.tabs[second.tabId]?.args.orderId, "o-2", "second instance args should persist");
     assertEqual(second.state.tabs[first.tabId]?.args.mode, "detail", "first instance args should remain independent");
-    assertEqual(second.state.tabs[second.tabId]?.args.mode, "summary", "second instance args should remain independent");
+    assertEqual(
+      second.state.tabs[second.tabId]?.args.mode,
+      "summary",
+      "second instance args should remain independent",
+    );
   });
 }

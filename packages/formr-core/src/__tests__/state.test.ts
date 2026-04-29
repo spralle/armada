@@ -1,20 +1,8 @@
-import { describe, test, expect } from 'bun:test';
-import type {
-  FormState,
-  ValidationIssue,
-  SubmitContext,
-  CreateFormOptions,
-} from '../index.js';
-import type {
-  FormApi,
-  FieldApi,
-  FieldConfig,
-  SubmitResult,
-  ExprNode,
-} from '../index.js';
+import { describe, expect, test } from "bun:test";
+import type { CreateFormOptions, ExprNode, FormState, ValidationIssue } from "../index.js";
 
-describe('FormState shape', () => {
-  test('default state has optional stage', () => {
+describe("FormState shape", () => {
+  test("default state has optional stage", () => {
     const state: FormState = {
       data: {},
       uiState: {},
@@ -27,94 +15,94 @@ describe('FormState shape', () => {
     expect(state.meta.stage).toBeUndefined();
   });
 
-  test('state with stage set', () => {
+  test("state with stage set", () => {
     const state: FormState = {
       data: null,
       uiState: null,
       meta: {
-        stage: 'new',
+        stage: "new",
         validation: {},
       },
       fieldMeta: {},
       issues: [],
     };
-    expect(state.meta.stage).toBe('new');
+    expect(state.meta.stage).toBe("new");
   });
 
-  test('meta.submission fields are optional', () => {
+  test("meta.submission fields are optional", () => {
     const state: FormState = {
       data: {},
       uiState: {},
       meta: {
-        stage: 'draft',
+        stage: "draft",
         validation: {},
         submission: {
-          status: 'idle',
+          status: "idle",
         },
       },
       fieldMeta: {},
       issues: [],
     };
-    expect(state.meta.submission?.status).toBe('idle');
+    expect(state.meta.submission?.status).toBe("idle");
   });
 
-  test('issues array contains ValidationIssue', () => {
+  test("issues array contains ValidationIssue", () => {
     const issue: ValidationIssue = {
-      code: 'REQUIRED',
-      message: 'Field is required',
-      severity: 'error',
-      stage: 'submit',
-      path: { namespace: 'data', segments: ['name'] },
-      source: { origin: 'function-validator', validatorId: 'required-check' },
+      code: "REQUIRED",
+      message: "Field is required",
+      severity: "error",
+      stage: "submit",
+      path: { namespace: "data", segments: ["name"] },
+      source: { origin: "function-validator", validatorId: "required-check" },
     };
     const state: FormState = {
       data: {},
       uiState: {},
-      meta: { stage: 'draft', validation: {} },
+      meta: { stage: "draft", validation: {} },
       fieldMeta: {},
       issues: [issue],
     };
     expect(state.issues).toHaveLength(1);
-    expect(state.issues[0].code).toBe('REQUIRED');
+    expect(state.issues[0].code).toBe("REQUIRED");
   });
 });
 
-describe('CreateFormOptions', () => {
-  test('schema is optional', () => {
+describe("CreateFormOptions", () => {
+  test("schema is optional", () => {
     const opts: CreateFormOptions = {};
     expect(opts.schema).toBeUndefined();
   });
 
-  test('accepts full options', () => {
+  test("accepts full options", () => {
     const opts: CreateFormOptions = {
       schema: {},
-      initialData: { name: '' },
+      initialData: { name: "" },
       initialUiState: { visible: true },
     };
     expect(opts.schema).toBeDefined();
   });
 });
 
-describe('ExprNode discriminated union', () => {
-  test('literal node', () => {
-    const node: ExprNode = { kind: 'literal', value: 42 };
-    expect(node.kind).toBe('literal');
+describe("ExprNode discriminated union", () => {
+  test("literal node", () => {
+    const node: ExprNode = { kind: "literal", value: 42 };
+    expect(node.kind).toBe("literal");
   });
 
-  test('path node', () => {
-    const node: ExprNode = { kind: 'path', path: 'customer.email' };
-    expect(node.kind).toBe('path');
+  test("path node", () => {
+    const node: ExprNode = { kind: "path", path: "customer.email" };
+    expect(node.kind).toBe("path");
   });
 
-  test('op node', () => {
+  test("op node", () => {
     const node: ExprNode = {
-      kind: 'op',
-      op: '$eq',
+      kind: "op",
+      op: "$eq",
       args: [
-        { kind: 'path', path: 'status' },
-        { kind: 'literal', value: 'active' },
+        { kind: "path", path: "status" },
+        { kind: "literal", value: "active" },
       ],
     };
-    expect(node.kind).toBe('op');
+    expect(node.kind).toBe("op");
   });
 });

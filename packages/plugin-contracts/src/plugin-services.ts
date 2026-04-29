@@ -63,7 +63,4 @@ export interface PartMountCleanup {
 }
 
 /** Standard mount function signature for plugin parts. */
-export type MountPartFn = (
-  target: HTMLElement,
-  context: PluginMountContext,
-) => Promise<PartMountCleanup>;
+export type MountPartFn = (target: HTMLElement, context: PluginMountContext) => Promise<PartMountCleanup>;

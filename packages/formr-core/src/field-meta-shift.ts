@@ -1,4 +1,4 @@
-import type { FieldMetaEntry } from './state.js';
+import type { FieldMetaEntry } from "./state.js";
 
 /**
  * Shift fieldMeta keys for array children after insert/remove.
@@ -14,16 +14,22 @@ export function shiftFieldMeta(
   const prefix = `${basePath}.`;
   const result: Record<string, FieldMetaEntry> = {};
   for (const [key, entry] of Object.entries(fieldMeta)) {
-    if (!key.startsWith(prefix)) { result[key] = entry; continue; }
+    if (!key.startsWith(prefix)) {
+      result[key] = entry;
+      continue;
+    }
     const suffix = key.slice(prefix.length);
-    const dotIdx = suffix.indexOf('.');
+    const dotIdx = suffix.indexOf(".");
     const indexStr = dotIdx === -1 ? suffix : suffix.slice(0, dotIdx);
     const idx = Number(indexStr);
-    if (Number.isNaN(idx)) { result[key] = entry; continue; }
+    if (Number.isNaN(idx)) {
+      result[key] = entry;
+      continue;
+    }
     if (delta < 0 && idx === fromIndex) continue;
     if (idx >= fromIndex) {
       const newIdx = idx + delta;
-      const rest = dotIdx === -1 ? '' : suffix.slice(dotIdx);
+      const rest = dotIdx === -1 ? "" : suffix.slice(dotIdx);
       result[`${basePath}.${newIdx}${rest}`] = entry;
     } else {
       result[key] = entry;

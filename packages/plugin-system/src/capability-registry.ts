@@ -1,15 +1,19 @@
 import type { PluginContract } from "@ghost-shell/contracts/plugin";
 import {
-  validateDependenciesAgainstProviders,
-  readContractShape,
-  isProviderUsable,
   type CapabilityDependencyFailure,
+  isProviderUsable,
   type PluginDependencyValidationContext,
+  readContractShape,
+  validateDependenciesAgainstProviders,
 } from "./capability-validation.js";
 
-export type { CapabilityDependencyFailureCode, CapabilityDependencyFailure, PluginDependencyValidationContext } from "./capability-validation.js";
 export type { PluginComponentsModule, PluginServicesModule } from "./capability-module-exports.js";
 export { pickComponentModuleExport, pickServiceModuleExport } from "./capability-module-exports.js";
+export type {
+  CapabilityDependencyFailure,
+  CapabilityDependencyFailureCode,
+  PluginDependencyValidationContext,
+} from "./capability-validation.js";
 
 interface ComponentProvider {
   pluginId: string;
@@ -36,14 +40,8 @@ export interface CapabilityRegistry {
   unregisterPlugin(pluginId: string): void;
   clear(): void;
   validateDependencies(context: PluginDependencyValidationContext): CapabilityDependencyFailure[];
-  resolveComponent(
-    capabilityId: string,
-    context: CapabilityResolutionContext,
-  ): { providerPluginId: string } | null;
-  resolveService(
-    capabilityId: string,
-    context: CapabilityResolutionContext,
-  ): { providerPluginId: string } | null;
+  resolveComponent(capabilityId: string, context: CapabilityResolutionContext): { providerPluginId: string } | null;
+  resolveService(capabilityId: string, context: CapabilityResolutionContext): { providerPluginId: string } | null;
 }
 
 export function createCapabilityRegistry(

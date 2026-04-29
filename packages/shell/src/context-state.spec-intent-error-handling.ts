@@ -1,15 +1,13 @@
-import {
-  createIntentRuntime,
-  type IntentResolutionDelegate,
-  type IntentActionMatch,
-  type ShellIntent,
-  type IntentResolutionTrace,
-} from "@ghost-shell/intents";
-import { createContract } from "./context-state.spec-intent-runtime-fixtures.js";
+import { createIntentRuntime, type IntentResolutionDelegate, type ShellIntent } from "@ghost-shell/intents";
 import type { SpecHarness } from "./context-state.spec-harness.js";
+import { createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 
 function createMockDelegate(overrides: Partial<IntentResolutionDelegate> = {}): IntentResolutionDelegate & {
-  calls: { activatePlugin: { pluginId: string; trigger: { type: string; id: string } }[]; announce: string[]; showChooser: number };
+  calls: {
+    activatePlugin: { pluginId: string; trigger: { type: string; id: string } }[];
+    announce: string[];
+    showChooser: number;
+  };
 } {
   const calls = {
     activatePlugin: [] as { pluginId: string; trigger: { type: string; id: string } }[],
@@ -84,7 +82,9 @@ function createMultiMatchPlugins() {
   ];
 }
 
-function createSnapshotDeps(plugins: ReturnType<typeof createSingleMatchPlugin> | ReturnType<typeof createMultiMatchPlugins>) {
+function createSnapshotDeps(
+  plugins: ReturnType<typeof createSingleMatchPlugin> | ReturnType<typeof createMultiMatchPlugins>,
+) {
   return { getRegistrySnapshot: () => ({ plugins }) };
 }
 

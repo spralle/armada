@@ -1,9 +1,6 @@
-import type { SpecHarness } from "../context-state.spec-harness.js";
+import { exportKeybindingOverrides, validateKeybindingImport } from "@ghost-shell/commands";
 import type { KeybindingOverrideEntryV1 } from "@ghost-shell/persistence";
-import {
-  exportKeybindingOverrides,
-  validateKeybindingImport,
-} from "@ghost-shell/commands";
+import type { SpecHarness } from "../context-state.spec-harness.js";
 
 export function registerKeybindingImportExportSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
@@ -13,9 +10,7 @@ export function registerKeybindingImportExportSpecs(harness: SpecHarness): void 
   // -------------------------------------------------------------------------
 
   test("exportKeybindingOverrides returns envelope with version 1", () => {
-    const overrides: KeybindingOverrideEntryV1[] = [
-      { action: "shell.focus.left", keybinding: "ctrl+h" },
-    ];
+    const overrides: KeybindingOverrideEntryV1[] = [{ action: "shell.focus.left", keybinding: "ctrl+h" }];
     const envelope = exportKeybindingOverrides(overrides);
     assertEqual(envelope.version, 1, "version should be 1");
     assertTruthy(envelope.exportedAt.length > 0, "exportedAt should be non-empty ISO string");
@@ -25,13 +20,15 @@ export function registerKeybindingImportExportSpecs(harness: SpecHarness): void 
   });
 
   test("exportKeybindingOverrides strips extra properties from entries", () => {
-    const overrides: KeybindingOverrideEntryV1[] = [
-      { action: "a", keybinding: "ctrl+a", removed: true },
-    ];
+    const overrides: KeybindingOverrideEntryV1[] = [{ action: "a", keybinding: "ctrl+a", removed: true }];
     const envelope = exportKeybindingOverrides(overrides);
     assertEqual(envelope.overrides[0].action, "a", "action kept");
     assertEqual(envelope.overrides[0].keybinding, "ctrl+a", "keybinding kept");
-    assertEqual((envelope.overrides[0] as unknown as Record<string, unknown>).removed, undefined, "removed should be stripped");
+    assertEqual(
+      (envelope.overrides[0] as unknown as Record<string, unknown>).removed,
+      undefined,
+      "removed should be stripped",
+    );
   });
 
   test("exportKeybindingOverrides with empty overrides returns empty array", () => {

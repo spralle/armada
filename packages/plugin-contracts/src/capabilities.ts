@@ -1,7 +1,7 @@
 export type {
-  JsonFormSchema,
+  JsonFormCapability,
+  JsonFormController,
   JsonFormLayoutNode,
   JsonFormOptions,
-  JsonFormController,
-  JsonFormCapability,
+  JsonFormSchema,
 } from "./jsonform-capability.js";

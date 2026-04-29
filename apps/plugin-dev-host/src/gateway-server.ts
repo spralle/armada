@@ -1,19 +1,12 @@
-import { createServer as createHttpServer, type Server as HttpServer } from "node:http";
-import type { IncomingMessage, ServerResponse } from "node:http";
 import { existsSync, readFileSync } from "node:fs";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { createServer as createHttpServer, type Server as HttpServer } from "node:http";
 import { join, normalize, resolve } from "node:path";
-import {
-  createPluginViteInstance,
-  closeAllViteInstances,
-  type ManagedViteInstance,
-} from "./vite-instance-factory.js";
-import {
-  resolvePluginConfigPath,
-  resolvePluginDir,
-} from "./cli.js";
-import { discoverPlugins, type DiscoveredPluginDefinition } from "./plugin-discovery.js";
-import { serveStaticFile } from "./static-serve.js";
+import { resolvePluginConfigPath, resolvePluginDir } from "./cli.js";
 import { rewriteManifestPublicPath } from "./manifest-rewrite.js";
+import { type DiscoveredPluginDefinition, discoverPlugins } from "./plugin-discovery.js";
+import { serveStaticFile } from "./static-serve.js";
+import { closeAllViteInstances, createPluginViteInstance, type ManagedViteInstance } from "./vite-instance-factory.js";
 
 export interface PluginGatewayOptions {
   /** All plugin IDs to serve (live + static). */
@@ -38,10 +31,8 @@ export interface PluginGateway {
  *   GET /{pluginId}/path → strips prefix → dispatches to Vite middlewares
  *   WebSocket /__vite_hmr/{pluginId} → handled by Vite HMR per-plugin
  */
-export function createPluginGateway(
-  options: PluginGatewayOptions,
-): PluginGateway {
-  const { pluginIds, livePluginIds, port, workspaceRoot, pluginsDirs } = options;
+export function createPluginGateway(options: PluginGatewayOptions): PluginGateway {
+  const { pluginIds, livePluginIds, port, workspaceRoot: _workspaceRoot, pluginsDirs: _pluginsDirs } = options;
   let httpServer: HttpServer | undefined;
   let viteInstances: ManagedViteInstance[] = [];
 
@@ -61,10 +52,7 @@ export function createPluginGateway(
     const staticPluginIds = pluginIds.filter((id) => !liveSet.has(id));
 
     // Build static-plugin dist directory map and warn about missing dist/
-    const staticDistMap = buildStaticDistMap(
-      staticPluginIds,
-      definitionMap,
-    );
+    const staticDistMap = buildStaticDistMap(staticPluginIds, definitionMap);
 
     // Create Vite instances only for live plugins
     if (livePluginIds.length > 0) {
@@ -121,9 +109,7 @@ export function createPluginGateway(
   }
 }
 
-function buildViteMap(
-  instances: readonly ManagedViteInstance[],
-): Map<string, ManagedViteInstance> {
+function buildViteMap(instances: readonly ManagedViteInstance[]): Map<string, ManagedViteInstance> {
   const map = new Map<string, ManagedViteInstance>();
   for (const instance of instances) {
     map.set(instance.pluginId, instance);
@@ -170,7 +156,7 @@ function handleRoutedRequest(
     if (routeResult.strippedPath === "/mf-manifest.json") {
       // MF vite plugin serves dev manifest at `${base}mf-manifest.json`, so keep the base prefix
       req.url = `/${routeResult.pluginId}${routeResult.strippedPath}`;
-      const originalWrite = res.write.bind(res);
+      const _originalWrite = res.write.bind(res);
       const originalEnd = res.end.bind(res);
       const chunks: Buffer[] = [];
 
@@ -186,9 +172,8 @@ function handleRoutedRequest(
         const body = Buffer.concat(chunks).toString("utf-8");
         try {
           const parsed: unknown = JSON.parse(body);
-          const manifest = (parsed && typeof parsed === "object" && !Array.isArray(parsed))
-            ? parsed as Record<string, unknown>
-            : {};
+          const manifest =
+            parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
           const absoluteBase = `http://127.0.0.1:${port}/${routeResult.pluginId}/`;
           const rewritten = rewriteManifestPublicPath(manifest, absoluteBase);
           const rewrittenBody = JSON.stringify(rewritten);
@@ -208,14 +193,10 @@ function handleRoutedRequest(
     }
 
     req.url = routeResult.strippedPath;
-    instance.viteServer.middlewares.handle(
-      req,
-      res,
-      () => {
-        res.statusCode = 404;
-        res.end(`Not found: ${url}`);
-      },
-    );
+    instance.viteServer.middlewares.handle(req, res, () => {
+      res.statusCode = 404;
+      res.end(`Not found: ${url}`);
+    });
     return;
   }
 
@@ -240,9 +221,8 @@ function handleRoutedRequest(
       try {
         const raw = readFileSync(normalizedFilePath, "utf-8");
         const parsed: unknown = JSON.parse(raw);
-        const manifest = (parsed && typeof parsed === "object" && !Array.isArray(parsed))
-          ? parsed as Record<string, unknown>
-          : {};
+        const manifest =
+          parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
         const absoluteBase = `http://127.0.0.1:${port}/${routeResult.pluginId}/`;
         const rewritten = rewriteManifestPublicPath(manifest, absoluteBase);
         res.statusCode = 200;
@@ -304,9 +284,7 @@ function buildStaticDistMap(
   for (const pluginId of staticPluginIds) {
     const definition = definitionMap.get(pluginId);
     if (!definition) {
-      console.warn(
-        `[plugin-dev-host] static plugin '${pluginId}' has no discovery definition — skipping`,
-      );
+      console.warn(`[plugin-dev-host] static plugin '${pluginId}' has no discovery definition — skipping`);
       continue;
     }
 

@@ -6,5 +6,4 @@ export const DEFAULT_GROUP_ID = "group-main";
 export const DEFAULT_GROUP_COLOR = "blue";
 export const DOMAIN_CONTEXT_KEY = "domain.selection";
 export const GLOBAL_CONTEXT_KEY = "shell.selection";
-export const DEV_MODE =
-  (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
+export const DEV_MODE = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;

@@ -1,23 +1,17 @@
 // ---------- Dot-path generation (depth 3 max, explicit unrolling) ----------
 
-/** Extract keys of T that are not arrays (for dot-path recursion into objects). */
-type ObjectKeys<T> = {
-  [K in keyof T & string]: NonNullable<T[K]> extends readonly unknown[] ? never : K;
-}[keyof T & string];
-
-/** Extract keys of T that are arrays. */
-type ArrayKeys<T> = {
-  [K in keyof T & string]: NonNullable<T[K]> extends readonly unknown[] ? K : never;
-}[keyof T & string];
-
 /** True when V is a plain object — excludes arrays, primitives, Date, RegExp, Function. */
-type IsPlainObject<V> =
-  V extends readonly unknown[] ? false
-  : V extends Date ? false
-  : V extends RegExp ? false
-  : V extends (...args: readonly unknown[]) => unknown ? false
-  : V extends object ? true
-  : false;
+type IsPlainObject<V> = V extends readonly unknown[]
+  ? false
+  : V extends Date
+    ? false
+    : V extends RegExp
+      ? false
+      : V extends (...args: readonly unknown[]) => unknown
+        ? false
+        : V extends object
+          ? true
+          : false;
 
 /**
  * Generate all valid dot-paths up to depth 3.
@@ -29,18 +23,14 @@ export type DotPaths<T> =
     ? {
         [K in keyof T & string]:
           | K
-          | (IsPlainObject<NonNullable<T[K]>> extends true
-              ? `${K}.${DotPathsD1<NonNullable<T[K]>>}`
-              : never);
+          | (IsPlainObject<NonNullable<T[K]>> extends true ? `${K}.${DotPathsD1<NonNullable<T[K]>>}` : never);
       }[keyof T & string]
     : string;
 
 type DotPathsD1<T> = {
   [K in keyof T & string]:
     | K
-    | (IsPlainObject<NonNullable<T[K]>> extends true
-        ? `${K}.${DotPathsD2<NonNullable<T[K]>>}`
-        : never);
+    | (IsPlainObject<NonNullable<T[K]>> extends true ? `${K}.${DotPathsD2<NonNullable<T[K]>>}` : never);
 }[keyof T & string];
 
 type DotPathsD2<T> = keyof T & string;
@@ -48,20 +38,19 @@ type DotPathsD2<T> = keyof T & string;
 // ---------- Path value resolution ----------
 
 /** Resolve a dot-path to its value type. */
-export type PathValue<T, P extends string> =
-  P extends `${infer Head}.${infer Tail}`
-    ? Head extends keyof T
-      ? NonNullable<T[Head]> extends readonly (infer E)[]
-        ? IsPlainObject<E> extends true
-          ? PathValue<E, Tail> | undefined
-          : unknown
-        : IsPlainObject<NonNullable<T[Head]>> extends true
-          ? PathValue<NonNullable<T[Head]>, Tail>
-          : unknown
-      : unknown
-    : P extends keyof T
-      ? T[P]
-      : unknown;
+export type PathValue<T, P extends string> = P extends `${infer Head}.${infer Tail}`
+  ? Head extends keyof T
+    ? NonNullable<T[Head]> extends readonly (infer E)[]
+      ? IsPlainObject<E> extends true
+        ? PathValue<E, Tail> | undefined
+        : unknown
+      : IsPlainObject<NonNullable<T[Head]>> extends true
+        ? PathValue<NonNullable<T[Head]>, Tail>
+        : unknown
+    : unknown
+  : P extends keyof T
+    ? T[P]
+    : unknown;
 
 // ---------- Operator conditions per type ----------
 
@@ -96,14 +85,15 @@ interface BaseOps<V> {
 }
 
 /** Assemble the correct operator set based on the value type V. */
-export type FieldCondition<V> =
-  V extends readonly (infer E)[]
-    ? BaseOps<V | E> & ArrayOps<E> & (E extends string ? StringOps & OrderedOps<E> : E extends number | Date ? OrderedOps<E> : unknown)
-    : V extends string
-      ? BaseOps<V> & OrderedOps<V> & StringOps
-      : V extends number | Date
-        ? BaseOps<V> & OrderedOps<V>
-        : BaseOps<V>;
+export type FieldCondition<V> = V extends readonly (infer E)[]
+  ? BaseOps<V | E> &
+      ArrayOps<E> &
+      (E extends string ? StringOps & OrderedOps<E> : E extends number | Date ? OrderedOps<E> : unknown)
+  : V extends string
+    ? BaseOps<V> & OrderedOps<V> & StringOps
+    : V extends number | Date
+      ? BaseOps<V> & OrderedOps<V>
+      : BaseOps<V>;
 
 // ---------- Top-level query ----------
 
@@ -126,7 +116,7 @@ interface LogicalOps<T> {
  */
 export type TypedQuery<T> =
   IsPlainObject<T> extends true
-    ? (string extends keyof T
-        ? Record<string, unknown>  // fallback for wide Record types
-        : { [P in DotPaths<T>]?: PathValue<T, P> | FieldCondition<PathValue<T, P>> } & LogicalOps<T>)
+    ? string extends keyof T
+      ? Record<string, unknown> // fallback for wide Record types
+      : { [P in DotPaths<T>]?: PathValue<T, P> | FieldCondition<PathValue<T, P>> } & LogicalOps<T>
     : Record<string, unknown>;

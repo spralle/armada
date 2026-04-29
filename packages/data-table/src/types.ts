@@ -7,8 +7,8 @@ import type {
   Table,
   VisibilityState,
 } from "@tanstack/react-table";
-import type { ColumnMeasurer } from "./responsive/column-measurer.js";
 import type { BudgetDebugInfo } from "./responsive/budget-algorithm.js";
+import type { ColumnMeasurer } from "./responsive/column-measurer.js";
 export interface ResponsiveConfig {
   /** Enable responsive column hiding. Default: false */
   enabled?: boolean;

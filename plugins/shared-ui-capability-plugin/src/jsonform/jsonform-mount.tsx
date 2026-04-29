@@ -1,8 +1,8 @@
-import { createRoot } from 'react-dom/client';
-import type { Root } from 'react-dom/client';
-import type { JsonFormCapability, JsonFormOptions, JsonFormController } from '@ghost-shell/contracts';
-import { ErrorBoundary } from './ErrorBoundary.js';
-import { JsonFormRoot } from './JsonFormRoot.js';
+import type { JsonFormCapability, JsonFormController, JsonFormOptions } from "@ghost-shell/contracts";
+import type { Root } from "react-dom/client";
+import { createRoot } from "react-dom/client";
+import { ErrorBoundary } from "./ErrorBoundary.js";
+import { JsonFormRoot } from "./JsonFormRoot.js";
 
 export function createJsonFormCapability(): JsonFormCapability {
   return {
@@ -13,12 +13,7 @@ export function createJsonFormCapability(): JsonFormCapability {
       function render(opts: JsonFormOptions): void {
         root.render(
           <ErrorBoundary>
-            <JsonFormRoot
-              schema={opts.schema}
-              data={opts.data}
-              onChange={opts.onChange}
-              layout={opts.layout}
-            />
+            <JsonFormRoot schema={opts.schema} data={opts.data} onChange={opts.onChange} layout={opts.layout} />
           </ErrorBoundary>,
         );
       }

@@ -1,47 +1,67 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSchemaForm } from '@ghost-shell/formr-react';
-import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
-import type { FormApi } from '@ghost-shell/formr-core';
-import {
-  Card, CardContent, CardHeader, CardTitle,
-  Checkbox, Label, Progress, Slider, cn,
-} from '@ghost-shell/ui';
-import { DemoShell } from '../renderers/DemoShell';
-import { DemoFormField } from '../renderers/DemoFormField';
+import type { FormApi } from "@ghost-shell/formr-core";
+import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema";
+import { useSchemaForm } from "@ghost-shell/formr-react";
+import { Card, CardContent, CardHeader, CardTitle, Checkbox, cn, Label, Progress, Slider } from "@ghost-shell/ui";
+import { useCallback, useEffect, useState } from "react";
+import { DemoFormField } from "../renderers/DemoFormField";
+import { DemoShell } from "../renderers/DemoShell";
 
 const schema = {
-  type: 'object',
+  type: "object",
   properties: {
-    productName: { type: 'string', title: 'Product Name' },
+    productName: { type: "string", title: "Product Name" },
     qualityRating: {
-      type: 'integer', title: 'Quality Rating', minimum: 0, maximum: 5,
-      'x-formr': { widget: 'rating' }, description: 'Click stars to rate',
+      type: "integer",
+      title: "Quality Rating",
+      minimum: 0,
+      maximum: 5,
+      "x-formr": { widget: "rating" },
+      description: "Click stars to rate",
     },
     userSatisfaction: {
-      type: 'integer', title: 'User Satisfaction', minimum: 0, maximum: 5,
-      'x-formr': { widget: 'rating' },
+      type: "integer",
+      title: "User Satisfaction",
+      minimum: 0,
+      maximum: 5,
+      "x-formr": { widget: "rating" },
     },
     brandColor: {
-      type: 'string', title: 'Brand Color',
-      pattern: '^#[0-9a-fA-F]{6}$',
-      'x-formr': { widget: 'color', options: ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'] },
-      description: 'Pick a brand color',
+      type: "string",
+      title: "Brand Color",
+      pattern: "^#[0-9a-fA-F]{6}$",
+      "x-formr": {
+        widget: "color",
+        options: ["#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#F97316"],
+      },
+      description: "Pick a brand color",
     },
     accentColor: {
-      type: 'string', title: 'Accent Color',
-      pattern: '^#[0-9a-fA-F]{6}$',
-      'x-formr': { widget: 'color', options: ['#1E293B', '#334155', '#475569', '#64748B', '#94A3B8', '#CBD5E1', '#E2E8F0', '#F8FAFC'] },
+      type: "string",
+      title: "Accent Color",
+      pattern: "^#[0-9a-fA-F]{6}$",
+      "x-formr": {
+        widget: "color",
+        options: ["#1E293B", "#334155", "#475569", "#64748B", "#94A3B8", "#CBD5E1", "#E2E8F0", "#F8FAFC"],
+      },
     },
     tags: {
-      type: 'string', title: 'Tags',
-      'x-formr': { widget: 'checkbox-group', options: ['Performance', 'Usability', 'Design', 'Reliability', 'Security'] },
-      description: 'Select all that apply',
+      type: "string",
+      title: "Tags",
+      "x-formr": {
+        widget: "checkbox-group",
+        options: ["Performance", "Usability", "Design", "Reliability", "Security"],
+      },
+      description: "Select all that apply",
     },
     completionRate: {
-      type: 'integer', title: 'Completion Rate', minimum: 0, maximum: 100,
-      'x-formr': { widget: 'progress' }, description: 'Project completion percentage',
+      type: "integer",
+      title: "Completion Rate",
+      minimum: 0,
+      maximum: 100,
+      "x-formr": { widget: "progress" },
+      description: "Project completion percentage",
     },
-    notes: { type: 'string', title: 'Notes', 'x-formr': { widget: 'textarea' } },
+    notes: { type: "string", title: "Notes", "x-formr": { widget: "textarea" } },
   },
 };
 
@@ -54,14 +74,16 @@ function StarRating({ value, max, onChange }: { value: number; max: number; onCh
           type="button"
           onClick={() => onChange(i + 1)}
           className={cn(
-            'text-xl transition-colors cursor-pointer',
-            i < value ? 'text-warning' : 'text-muted-foreground/30',
+            "text-xl transition-colors cursor-pointer",
+            i < value ? "text-warning" : "text-muted-foreground/30",
           )}
         >
           ★
         </button>
       ))}
-      <span className="text-sm text-muted-foreground ml-2">{value}/{max}</span>
+      <span className="text-sm text-muted-foreground ml-2">
+        {value}/{max}
+      </span>
     </div>
   );
 }
@@ -70,7 +92,15 @@ function StarRating({ value, max, onChange }: { value: number; max: number; onCh
  * Color swatches use inline backgroundColor because these are DATA values
  * from the schema options, not theme/design tokens.
  */
-function ColorPicker({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
+function ColorPicker({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
   return (
     <div className="flex gap-2 flex-wrap">
       {options.map((color) => (
@@ -79,8 +109,8 @@ function ColorPicker({ value, options, onChange }: { value: string; options: str
           type="button"
           onClick={() => onChange(color)}
           className={cn(
-            'w-8 h-8 rounded-full border-2 transition-all',
-            value === color ? 'border-foreground scale-110' : 'border-transparent',
+            "w-8 h-8 rounded-full border-2 transition-all",
+            value === color ? "border-foreground scale-110" : "border-transparent",
           )}
           style={{ backgroundColor: color }}
         />
@@ -90,18 +120,28 @@ function ColorPicker({ value, options, onChange }: { value: string; options: str
   );
 }
 
-function CheckboxGroup({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
-  const selected = value ? value.split(',').filter(Boolean) : [];
+function CheckboxGroup({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
+  const selected = value ? value.split(",").filter(Boolean) : [];
   const toggle = (opt: string) => {
-    const next = selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt];
-    onChange(next.join(','));
+    const next = selected.includes(opt) ? selected.filter((s) => s !== opt) : [...selected, opt];
+    onChange(next.join(","));
   };
   return (
     <div className="flex flex-col gap-2">
       {options.map((opt) => (
         <div key={opt} className="flex items-center gap-2">
           <Checkbox checked={selected.includes(opt)} onCheckedChange={() => toggle(opt)} id={`cb-${opt}`} />
-          <Label htmlFor={`cb-${opt}`} className="text-sm text-foreground">{opt}</Label>
+          <Label htmlFor={`cb-${opt}`} className="text-sm text-foreground">
+            {opt}
+          </Label>
         </div>
       ))}
     </div>
@@ -120,8 +160,14 @@ function ProgressField({ value, onChange }: { value: number; onChange: (v: numbe
   );
 }
 
-function CustomField({ form, field, onChange }: {
-  form: FormApi; field: SchemaFieldInfo; onChange: (path: string, value: unknown) => void;
+function CustomField({
+  form,
+  field,
+  onChange,
+}: {
+  form: FormApi;
+  field: SchemaFieldInfo;
+  onChange: (path: string, value: unknown) => void;
 }) {
   const widget = field.metadata?.widget;
   const options = field.metadata?.options as string[] | undefined;
@@ -135,15 +181,18 @@ function CustomField({ form, field, onChange }: {
     });
   }, [form, field.path, getData]);
 
-  const handleChange = useCallback((v: unknown) => {
-    form.setValue(field.path, v);
-    onChange(field.path, v);
-  }, [form, field.path, onChange]);
+  const handleChange = useCallback(
+    (v: unknown) => {
+      form.setValue(field.path, v);
+      onChange(field.path, v);
+    },
+    [form, field.path, onChange],
+  );
 
   const title = field.metadata?.title ?? field.path;
   const description = field.metadata?.description;
 
-  if (!widget || widget === 'textarea') {
+  if (!widget || widget === "textarea") {
     return <DemoFormField form={form} field={field} onChange={onChange} />;
   }
 
@@ -151,25 +200,30 @@ function CustomField({ form, field, onChange }: {
     <div className="flex flex-col gap-1.5">
       <Label className="text-sm font-medium text-foreground">{title}</Label>
       {description && <p className="text-xs text-muted-foreground">{description}</p>}
-      {widget === 'rating' && (
-        <StarRating value={Number(value) || 0} max={5} onChange={handleChange} />
+      {widget === "rating" && <StarRating value={Number(value) || 0} max={5} onChange={handleChange} />}
+      {widget === "color" && options && (
+        <ColorPicker value={String(value ?? "")} options={options} onChange={(v) => handleChange(v)} />
       )}
-      {widget === 'color' && options && (
-        <ColorPicker value={String(value ?? '')} options={options} onChange={(v) => handleChange(v)} />
+      {widget === "checkbox-group" && options && (
+        <CheckboxGroup value={String(value ?? "")} options={options} onChange={(v) => handleChange(v)} />
       )}
-      {widget === 'checkbox-group' && options && (
-        <CheckboxGroup value={String(value ?? '')} options={options} onChange={(v) => handleChange(v)} />
-      )}
-      {widget === 'progress' && (
-        <ProgressField value={Number(value) || 0} onChange={handleChange} />
-      )}
+      {widget === "progress" && <ProgressField value={Number(value) || 0} onChange={handleChange} />}
     </div>
   );
 }
 
 export function CustomRenderersDemo() {
   const { form, fields } = useSchemaForm(schema, {
-    initialData: { qualityRating: 0, userSatisfaction: 0, brandColor: '', accentColor: '', completionRate: 0, tags: '', notes: '', productName: '' } as Record<string, unknown>,
+    initialData: {
+      qualityRating: 0,
+      userSatisfaction: 0,
+      brandColor: "",
+      accentColor: "",
+      completionRate: 0,
+      tags: "",
+      notes: "",
+      productName: "",
+    } as Record<string, unknown>,
   });
   const [formData, setFormData] = useState<Record<string, unknown>>({});
 
@@ -180,7 +234,7 @@ export function CustomRenderersDemo() {
   }, [form]);
 
   const handleChange = useCallback((path: string, value: unknown) => {
-    console.log('change', path, value);
+    console.log("change", path, value);
   }, []);
 
   return (
@@ -188,7 +242,15 @@ export function CustomRenderersDemo() {
       title="Custom Renderers"
       description="Demonstrates custom field renderers using x-formr metadata extensions. Star ratings, color pickers, checkbox groups, and progress bars — all driven by schema metadata."
       motivation="Shows the extensibility story: star ratings, color pickers, checkbox groups, and progress bars via custom renderer functions. Proves developers aren't locked into built-in widgets — they can plug in any React component."
-      features={['Custom Widgets', 'x-formr Metadata', 'Star Rating', 'Color Picker', 'Checkbox Group', 'Progress Bar', 'Extensible Renderers']}
+      features={[
+        "Custom Widgets",
+        "x-formr Metadata",
+        "Star Rating",
+        "Color Picker",
+        "Checkbox Group",
+        "Progress Bar",
+        "Extensible Renderers",
+      ]}
       schema={schema}
     >
       <div className="flex flex-col gap-4">

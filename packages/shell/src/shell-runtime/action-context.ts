@@ -1,8 +1,5 @@
-import {
-  CORE_GROUP_CONTEXT_KEY,
-  readGroupSelectionContext,
-} from "../context/runtime-state.js";
 import type { ShellRuntime } from "../app/types.js";
+import { CORE_GROUP_CONTEXT_KEY, readGroupSelectionContext } from "../context/runtime-state.js";
 
 export function toActionContext(runtime: ShellRuntime): Record<string, string> {
   const context: Record<string, string> = {
@@ -31,7 +28,8 @@ export function toActionContext(runtime: ShellRuntime): Record<string, string> {
 }
 
 export function summarizeSelectionPriorities(runtime: ShellRuntime): string {
-  const entries = Object.entries(runtime.contextState.selectionByEntityType)
-    .map(([entityType, selection]) => `${entityType}:${selection.priorityId ?? "none"}`);
+  const entries = Object.entries(runtime.contextState.selectionByEntityType).map(
+    ([entityType, selection]) => `${entityType}:${selection.priorityId ?? "none"}`,
+  );
   return entries.length > 0 ? entries.join(", ") : "none";
 }

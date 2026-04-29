@@ -1,4 +1,4 @@
-import type { SchemaFieldInfo, SchemaIngestionResult, StandardSchemaV1 } from './types.js';
+import type { SchemaFieldInfo, SchemaIngestionResult, StandardSchemaV1 } from "./types.js";
 
 /** Pluggable extractor for non-Zod Standard Schema vendors */
 export interface SchemaExtractor {
@@ -29,6 +29,6 @@ export function clearExtractorRegistry(): void {
 export function createValidationOnlyResult(schema: StandardSchemaV1): SchemaIngestionResult {
   return {
     fields: [],
-    metadata: { vendor: schema['~standard'].vendor, validationOnly: true },
+    metadata: { vendor: schema["~standard"].vendor, validationOnly: true },
   };
 }

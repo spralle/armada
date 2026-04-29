@@ -4,15 +4,10 @@
 import type { QuickPick, QuickPickItem } from "@ghost-shell/contracts";
 import { createEventEmitter } from "@ghost-shell/plugin-system";
 import type { QuickPickAction, QuickPickState } from "./quick-pick-state.js";
-import {
-  createInitialQuickPickState,
-  reduceQuickPickState,
-  getSelectedItem,
-} from "./quick-pick-state.js";
+import { createInitialQuickPickState, getSelectedItem, reduceQuickPickState } from "./quick-pick-state.js";
 
 /** Internal interface extending QuickPick with shell-side accessors. */
-export interface QuickPickController<T extends QuickPickItem>
-  extends QuickPick<T> {
+export interface QuickPickController<T extends QuickPickItem> extends QuickPick<T> {
   /** Get the current state for rendering. */
   getState(): QuickPickState<T>;
   /** Dispatch a state action (used by the overlay). */
@@ -21,9 +16,7 @@ export interface QuickPickController<T extends QuickPickItem>
   fireAccept(): void;
 }
 
-export function createQuickPickController<
-  T extends QuickPickItem,
->(): QuickPickController<T> {
+export function createQuickPickController<T extends QuickPickItem>(): QuickPickController<T> {
   let state = createInitialQuickPickState<T>();
   let disposed = false;
 
@@ -53,9 +46,7 @@ export function createQuickPickController<
     },
     set items(newItems: T[]) {
       if (disposed) return;
-      applyState(
-        reduceQuickPickState(state, { type: "setItems", items: newItems }),
-      );
+      applyState(reduceQuickPickState(state, { type: "setItems", items: newItems }));
     },
 
     // --- activeItems ---

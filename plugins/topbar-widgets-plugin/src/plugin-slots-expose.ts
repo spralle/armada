@@ -8,10 +8,10 @@ import type { ActivityStatusService } from "@ghost-shell/contracts/services";
 import { ACTIVITY_STATUS_SERVICE_ID } from "@ghost-shell/contracts/services";
 import { getGhostApi } from "./plugin-activate.js";
 import {
-  showWorkspaceContextMenu,
-  switchWorkspaceViaActionOrFallback,
   createWorkspaceViaActionOrFallback,
   deleteWorkspaceViaActionOrFallback,
+  showWorkspaceContextMenu,
+  switchWorkspaceViaActionOrFallback,
 } from "./workspace-menu.js";
 
 // ---------------------------------------------------------------------------

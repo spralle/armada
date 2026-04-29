@@ -34,13 +34,7 @@ const DEFAULT_SHELL_MIGRATION_FLAGS: ShellMigrationFlags = {
   forceDisableCrossWindowDnd: false,
 };
 
-const ENABLED_FLAG_VALUES = new Set([
-  "1",
-  "true",
-  "yes",
-  "on",
-  "enabled",
-]);
+const ENABLED_FLAG_VALUES = new Set(["1", "true", "yes", "on", "enabled"]);
 
 declare global {
   interface Window {
@@ -66,16 +60,20 @@ export function readShellMigrationFlags(
   const forceDisableCrossWindowDndFromQuery = parseBooleanFlag(searchParams.get("shellCrossWindowDndKillSwitch"));
 
   return {
-    enableAsyncScompAdapter: override?.enableAsyncScompAdapter ?? asyncTransportFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.enableAsyncScompAdapter,
-    forceLegacyBridge: override?.forceLegacyBridge ?? forceLegacyFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.forceLegacyBridge,
+    enableAsyncScompAdapter:
+      override?.enableAsyncScompAdapter ??
+      asyncTransportFromQuery ??
+      DEFAULT_SHELL_MIGRATION_FLAGS.enableAsyncScompAdapter,
+    forceLegacyBridge:
+      override?.forceLegacyBridge ?? forceLegacyFromQuery ?? DEFAULT_SHELL_MIGRATION_FLAGS.forceLegacyBridge,
     enableCrossWindowDnd:
-      override?.enableCrossWindowDnd
-      ?? enableCrossWindowDndFromQuery
-      ?? DEFAULT_SHELL_MIGRATION_FLAGS.enableCrossWindowDnd,
+      override?.enableCrossWindowDnd ??
+      enableCrossWindowDndFromQuery ??
+      DEFAULT_SHELL_MIGRATION_FLAGS.enableCrossWindowDnd,
     forceDisableCrossWindowDnd:
-      override?.forceDisableCrossWindowDnd
-      ?? forceDisableCrossWindowDndFromQuery
-      ?? DEFAULT_SHELL_MIGRATION_FLAGS.forceDisableCrossWindowDnd,
+      override?.forceDisableCrossWindowDnd ??
+      forceDisableCrossWindowDndFromQuery ??
+      DEFAULT_SHELL_MIGRATION_FLAGS.forceDisableCrossWindowDnd,
   };
 }
 

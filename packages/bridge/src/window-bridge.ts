@@ -6,10 +6,13 @@ export interface SelectionSyncEvent {
   selectedPartDefinitionId?: string;
   selectedPartId: string;
   selectedPartTitle: string;
-  selectionByEntityType: Record<string, {
-    selectedIds: string[];
-    priorityId?: string | null;
-  }>;
+  selectionByEntityType: Record<
+    string,
+    {
+      selectedIds: string[];
+      priorityId?: string | null;
+    }
+  >;
   revision?: {
     timestamp: number;
     writer: string;

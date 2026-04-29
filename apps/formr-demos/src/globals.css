@@ -1,6 +1,6 @@
 @import "tailwindcss";
-@source "../../../packages/ui/src/components";
 @import "../../../packages/ui/src/styles/theme.css";
+@source "../../../packages/ui/src/components";
 
 /* Standalone theme variables — mimics the Ghost theme + shadcn bridge for demos */
 :root {
@@ -35,18 +35,18 @@
   --info-background: oklch(0.25 0.04 230);
   --destructive-background: oklch(0.25 0.04 25);
   --destructive-foreground-muted: oklch(0.65 0.1 25);
-  --surface-elevated: oklch(0.20 0.005 285);
+  --surface-elevated: oklch(0.2 0.005 285);
   --surface-hover: oklch(0.22 0.008 285);
   --surface-inset: oklch(0.12 0.005 285);
-  --surface-inset-deep: oklch(0.10 0.005 285);
+  --surface-inset-deep: oklch(0.1 0.005 285);
   --surface-overlay: oklch(0.15 0.005 285);
   --foreground-bright: oklch(0.98 0.005 285);
   --dim-foreground: oklch(0.55 0.01 285);
-  --faint-foreground: oklch(0.40 0.01 285);
+  --faint-foreground: oklch(0.4 0.01 285);
   --code-foreground: oklch(0.75 0.12 180);
   --border-muted: oklch(0.23 0.008 285);
-  --border-alt: oklch(0.30 0.01 285);
-  --border-accent: oklch(0.50 0.12 250);
+  --border-alt: oklch(0.3 0.01 285);
+  --border-accent: oklch(0.5 0.12 250);
   --primary-glow-subtle: oklch(0.65 0.18 250 / 0.08);
   --primary-glow: oklch(0.65 0.18 250 / 0.2);
   --primary-border-semi: oklch(0.65 0.18 250 / 0.4);
@@ -62,12 +62,16 @@
   --chart-5: oklch(0.55 0.2 25);
   --sidebar: oklch(0.12 0.005 285);
   --sidebar-foreground: oklch(0.85 0.005 285);
-  --sidebar-accent: oklch(0.20 0.015 285);
+  --sidebar-accent: oklch(0.2 0.015 285);
   --sidebar-accent-foreground: oklch(0.93 0.005 285);
   --sidebar-border: oklch(0.25 0.01 285);
 }
 
 @layer base {
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

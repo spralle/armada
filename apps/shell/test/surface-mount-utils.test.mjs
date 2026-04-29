@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { resolveSurfaceMount } from "../dist-test/src/layer/surface-mount-utils.js";
 
 const surface = { id: "test-surface", component: "TestComponent" };
@@ -16,10 +16,7 @@ test("resolves module.mountSurface", () => {
 });
 
 test("resolves module.surfaces[component] as function", () => {
-  const result = resolveSurfaceMount(
-    { surfaces: { TestComponent: fakeMountFn } },
-    surface,
-  );
+  const result = resolveSurfaceMount({ surfaces: { TestComponent: fakeMountFn } }, surface);
   assert.equal(result, fakeMountFn);
 });
 
@@ -29,10 +26,7 @@ test("resolves module.default as function", () => {
 });
 
 test("resolves module.default.mount", () => {
-  const result = resolveSurfaceMount(
-    { default: { mount: fakeMountFn } },
-    surface,
-  );
+  const result = resolveSurfaceMount({ default: { mount: fakeMountFn } }, surface);
   assert.equal(result, fakeMountFn);
 });
 
@@ -50,9 +44,6 @@ test("returns null for null module", () => {
 
 test("mountSurface takes priority over mount", () => {
   const mountSurfaceFn = () => () => {};
-  const result = resolveSurfaceMount(
-    { mountSurface: mountSurfaceFn, mount: fakeMountFn },
-    surface,
-  );
+  const result = resolveSurfaceMount({ mountSurface: mountSurfaceFn, mount: fakeMountFn }, surface);
   assert.equal(result, mountSurfaceFn);
 });

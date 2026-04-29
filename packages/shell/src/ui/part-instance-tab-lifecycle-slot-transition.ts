@@ -1,11 +1,11 @@
+import type { ShellRuntime } from "../app/types.js";
 import {
-  closeTab,
-  canReopenClosedTab,
-  reopenMostRecentlyClosedTab,
   type ContextTabSlot,
+  canReopenClosedTab,
+  closeTab,
+  reopenMostRecentlyClosedTab,
   type ShellContextState,
 } from "../context-state.js";
-import type { ShellRuntime } from "../app/types.js";
 import { getVisibleComposedParts } from "./parts-rendering.js";
 
 export function resolveSlotForTab(runtime: ShellRuntime, tabId: string): ContextTabSlot {
@@ -26,10 +26,11 @@ export function resolveSlotForTab(runtime: ShellRuntime, tabId: string): Context
 }
 
 export function resolvePreferredReopenSlot(runtime: ShellRuntime): ContextTabSlot {
-  const preferredTabId = runtime.selectedPartId
-    ?? runtime.contextState.activeTabId
-    ?? runtime.contextState.tabOrder.find((tabId) => runtime.contextState.tabs[tabId])
-    ?? null;
+  const preferredTabId =
+    runtime.selectedPartId ??
+    runtime.contextState.activeTabId ??
+    runtime.contextState.tabOrder.find((tabId) => runtime.contextState.tabs[tabId]) ??
+    null;
 
   if (!preferredTabId) {
     return "main";
@@ -38,10 +39,7 @@ export function resolvePreferredReopenSlot(runtime: ShellRuntime): ContextTabSlo
   return resolveSlotForTab(runtime, preferredTabId);
 }
 
-export function reopenUntilEligibleTabRestored(
-  runtime: ShellRuntime,
-  slot: ContextTabSlot,
-): ShellContextState | null {
+export function reopenUntilEligibleTabRestored(runtime: ShellRuntime, slot: ContextTabSlot): ShellContextState | null {
   let next = runtime.contextState;
 
   while (canReopenClosedTab(next, slot)) {

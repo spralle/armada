@@ -1,22 +1,22 @@
-import { useCallback, useState, useEffect, useRef } from 'react';
-import type { FormApi } from '@ghost-shell/formr-core';
-import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
+import type { FormApi } from "@ghost-shell/formr-core";
+import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema";
 import {
+  Badge,
+  cn,
   Input,
-  Switch,
-  Textarea,
-  Slider,
+  Label,
+  RadioGroup,
+  RadioGroupItem,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  RadioGroup,
-  RadioGroupItem,
-  Label,
-  Badge,
-  cn,
-} from '@ghost-shell/ui';
+  Slider,
+  Switch,
+  Textarea,
+} from "@ghost-shell/ui";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface FieldMeta {
   readonly widget: string | undefined;
@@ -63,11 +63,12 @@ function buildConstraints(
   format: string | undefined,
 ): string[] {
   const constraints: string[] = [];
-  if (field.required) constraints.push('Required');
+  if (field.required) constraints.push("Required");
   if (minLength) constraints.push(`Min ${minLength} chars`);
   if (maxLength) constraints.push(`Max ${maxLength} chars`);
   if (pattern) constraints.push(`Pattern: ${pattern}`);
-  if (min != null && max != null && field.type !== 'number' && field.type !== 'integer') constraints.push(`${min}–${max}`);
+  if (min != null && max != null && field.type !== "number" && field.type !== "integer")
+    constraints.push(`${min}–${max}`);
   if (format) constraints.push(format);
   return constraints;
 }
@@ -92,9 +93,10 @@ export function DemoFormField({ form, field, onChange }: DemoFormFieldProps) {
     [fieldApi, field.path, onChange],
   );
 
-  const { widget, enumValues, format, min, max, minLength, maxLength, pattern, title, description } = extractFieldMeta(field);
+  const { widget, enumValues, format, min, max, minLength, maxLength, pattern, title, description } =
+    extractFieldMeta(field);
 
-  const issues = form.getState().issues?.filter((i) => i.path.segments.join('.') === field.path) ?? [];
+  const issues = form.getState().issues?.filter((i) => i.path.segments.join(".") === field.path) ?? [];
   const hasError = issues.length > 0;
 
   const constraints = buildConstraints(field, min, max, minLength, maxLength, pattern, format);
@@ -110,10 +112,25 @@ export function DemoFormField({ form, field, onChange }: DemoFormFieldProps) {
         )}
       </div>
       {description && <p className="text-xs text-muted-foreground">{description}</p>}
-      <div>{renderControl(field, value, handleChange, widget, enumValues, format, min, max, minLength, maxLength, pattern, hasError)}</div>
+      <div>
+        {renderControl(
+          field,
+          value,
+          handleChange,
+          widget,
+          enumValues,
+          format,
+          min,
+          max,
+          minLength,
+          maxLength,
+          pattern,
+          hasError,
+        )}
+      </div>
       {hasError && <p className="text-xs text-destructive">{issues[0]?.message}</p>}
       {!hasError && constraints.length > 0 && (
-        <p className="text-xs text-muted-foreground">{constraints.join(' · ')}</p>
+        <p className="text-xs text-muted-foreground">{constraints.join(" · ")}</p>
       )}
     </div>
   );
@@ -128,7 +145,7 @@ function renderEnumControl(
 ): React.ReactNode {
   if (enumValues.length <= 5) {
     return (
-      <RadioGroup value={(value as string) ?? ''} onValueChange={onChange} className="flex flex-col gap-2">
+      <RadioGroup value={(value as string) ?? ""} onValueChange={onChange} className="flex flex-col gap-2">
         {enumValues.map((opt) => (
           <div key={opt} className="flex items-center gap-2">
             <RadioGroupItem value={opt} id={`${field.path}-${opt}`} />
@@ -140,9 +157,9 @@ function renderEnumControl(
       </RadioGroup>
     );
   }
-  const errorClass = hasError ? 'border-destructive' : '';
+  const errorClass = hasError ? "border-destructive" : "";
   return (
-    <Select value={(value as string) ?? ''} onValueChange={onChange}>
+    <Select value={(value as string) ?? ""} onValueChange={onChange}>
       <SelectTrigger className={cn(errorClass)}>
         <SelectValue placeholder="Select..." />
       </SelectTrigger>
@@ -167,11 +184,11 @@ function renderStringControl(
   pattern: string | undefined,
   hasError: boolean,
 ): React.ReactNode {
-  const errorClass = hasError ? 'border-destructive' : '';
-  if (widget === 'textarea' || (maxLength != null && maxLength > 200)) {
+  const errorClass = hasError ? "border-destructive" : "";
+  if (widget === "textarea" || (maxLength != null && maxLength > 200)) {
     return (
       <Textarea
-        value={(value as string) ?? ''}
+        value={(value as string) ?? ""}
         onChange={(e) => onChange(e.target.value)}
         className={cn(errorClass)}
         maxLength={maxLength}
@@ -179,11 +196,11 @@ function renderStringControl(
       />
     );
   }
-  const inputType = format === 'email' ? 'email' : format === 'uri' ? 'url' : 'text';
+  const inputType = format === "email" ? "email" : format === "uri" ? "url" : "text";
   return (
     <Input
       type={inputType}
-      value={(value as string) ?? ''}
+      value={(value as string) ?? ""}
       onChange={(e) => onChange(e.target.value)}
       className={cn(errorClass)}
       minLength={minLength}
@@ -207,22 +224,20 @@ function renderNumberControl(
         <Slider
           min={min}
           max={max}
-          step={field.type === 'integer' ? 1 : 0.1}
-          value={[typeof value === 'number' ? value : min]}
+          step={field.type === "integer" ? 1 : 0.1}
+          value={[typeof value === "number" ? value : min]}
           onValueChange={([v]) => onChange(v)}
           className="flex-1"
         />
-        <span className="text-sm text-muted-foreground w-10 text-right">
-          {typeof value === 'number' ? value : min}
-        </span>
+        <span className="text-sm text-muted-foreground w-10 text-right">{typeof value === "number" ? value : min}</span>
       </div>
     );
   }
-  const errorClass = hasError ? 'border-destructive' : '';
-  const step = field.type === 'integer' ? 1 : 'any';
+  const errorClass = hasError ? "border-destructive" : "";
+  const step = field.type === "integer" ? 1 : "any";
   const parseValue = (raw: string) => {
-    if (raw === '') return undefined;
-    return field.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
+    if (raw === "") return undefined;
+    return field.type === "integer" ? parseInt(raw, 10) : parseFloat(raw);
   };
   return (
     <Input
@@ -230,7 +245,7 @@ function renderNumberControl(
       step={step}
       min={min}
       max={max}
-      value={(value as string) ?? ''}
+      value={(value as string) ?? ""}
       onChange={(e) => onChange(parseValue(e.target.value))}
       className={cn(errorClass)}
     />
@@ -255,24 +270,20 @@ function renderControl(
   pattern: string | undefined,
   hasError: boolean,
 ): React.ReactNode {
-  if (field.type === 'enum' && enumValues) {
+  if (field.type === "enum" && enumValues) {
     return renderEnumControl(field, value, onChange, enumValues, hasError);
   }
-  if (field.type === 'boolean') {
+  if (field.type === "boolean") {
     return renderBooleanControl(value, onChange);
   }
-  if (field.type === 'string') {
+  if (field.type === "string") {
     return renderStringControl(value, onChange, widget, format, minLength, maxLength, pattern, hasError);
   }
-  if (field.type === 'number' || field.type === 'integer') {
+  if (field.type === "number" || field.type === "integer") {
     return renderNumberControl(field, value, onChange, min, max, hasError);
   }
-  const errorClass = hasError ? 'border-destructive' : '';
+  const errorClass = hasError ? "border-destructive" : "";
   return (
-    <Input
-      value={(value as string) ?? ''}
-      onChange={(e) => onChange(e.target.value)}
-      className={cn(errorClass)}
-    />
+    <Input value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value)} className={cn(errorClass)} />
   );
 }

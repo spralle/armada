@@ -15,10 +15,6 @@
     "skipLibCheck": true,
     "composite": true
   },
-  "include": [
-    "src"
-  ],
-  "references": [
-    { "path": "../plugin-contracts" }
-  ]
+  "include": ["src"],
+  "references": [{ "path": "../plugin-contracts" }]
 }

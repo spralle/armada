@@ -1,12 +1,12 @@
 // Standard Schema v1 interface (vendor-agnostic)
 // See: https://github.com/standard-schema/standard-schema
 export interface StandardSchemaV1<Input = unknown, Output = Input> {
-  readonly '~standard': {
+  readonly "~standard": {
     readonly version: 1;
     readonly vendor: string;
     readonly validate: (value: unknown) => StandardSchemaResult<Output> | Promise<StandardSchemaResult<Output>>;
   };
-  readonly '~types'?: {
+  readonly "~types"?: {
     readonly input: Input;
     readonly output: Output;
   };
@@ -64,17 +64,17 @@ export interface SchemaFieldInfo {
 }
 
 export type SchemaFieldType =
-  | 'string'
-  | 'number'
-  | 'integer'
-  | 'boolean'
-  | 'date'
-  | 'datetime'
-  | 'array'
-  | 'object'
-  | 'enum'
-  | 'union'
-  | 'unknown';
+  | "string"
+  | "number"
+  | "integer"
+  | "boolean"
+  | "date"
+  | "datetime"
+  | "array"
+  | "object"
+  | "enum"
+  | "union"
+  | "unknown";
 
 /** Typed metadata produced by schema ingestion at the root level */
 export interface SchemaMetadata {

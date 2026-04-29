@@ -1,6 +1,6 @@
-import type { NavigationTarget, NavigationHints, PlacementHint } from "../core/types.js";
+import type { NavigationHints, NavigationTarget, PlacementHint } from "../core/types.js";
 import type { DelegatedNavigationOptions, NavigationAttachment } from "./link-types.js";
-import { NAVIGATION_DATA_ATTRIBUTES, DEFAULT_MODIFIER_MAP } from "./link-types.js";
+import { DEFAULT_MODIFIER_MAP, NAVIGATION_DATA_ATTRIBUTES } from "./link-types.js";
 import { resolveHintsFromEvent } from "./navigation-handler.js";
 
 /** Valid placement hint values for data-attribute validation. */

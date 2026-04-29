@@ -1,6 +1,6 @@
-import { useState } from "react";
 import type { KeybindingService } from "@ghost-shell/contracts";
 import { Button } from "@ghost-shell/ui";
+import { useState } from "react";
 import { downloadJson, pickJsonFile } from "../lib/keybinding-utils.js";
 
 interface ImportExportSectionProps {
@@ -54,9 +54,7 @@ export function ImportExportSection({ service, onRefresh }: ImportExportSectionP
           Import JSON
         </Button>
       </div>
-      {status && (
-        <p className="text-[11px] text-muted-foreground">{status}</p>
-      )}
+      {status && <p className="text-[11px] text-muted-foreground">{status}</p>}
     </div>
   );
 }

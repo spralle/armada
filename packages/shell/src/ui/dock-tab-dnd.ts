@@ -1,12 +1,14 @@
-import { moveTabInDockTree } from "../context-state.js";
-import { updateContextState } from "../context/runtime-state.js";
 import type { ShellRuntime } from "../app/types.js";
+import { updateContextState } from "../context/runtime-state.js";
 import type { DockDropZone } from "../context-state.js";
+import { moveTabInDockTree } from "../context-state.js";
 import {
   clearActiveDockDragPayload,
   readActiveDockDragPayload,
   setActiveDockDragPayload,
 } from "./dock-drag-session.js";
+import { handleCrossWindowDockDrop } from "./dock-tab-dnd-cross-window.js";
+import { type DockDragPayload as DragPayload, isDockDropZone, readTabDragPayload } from "./dock-tab-dnd-payload.js";
 import {
   addRootClass,
   clearDockDropPreview,
@@ -14,10 +16,9 @@ import {
   removeRootClass,
   setDockDropPreview,
 } from "./dock-tab-dnd-ui.js";
-import { handleCrossWindowDockDrop } from "./dock-tab-dnd-cross-window.js";
-import { isDockDropZone, readTabDragPayload, type DockDragPayload as DragPayload } from "./dock-tab-dnd-payload.js";
 
-const DEBUG_DND = typeof globalThis !== "undefined" && (globalThis as Record<string, unknown>).__GHOST_DEBUG_DND === true;
+const DEBUG_DND =
+  typeof globalThis !== "undefined" && (globalThis as Record<string, unknown>).__GHOST_DEBUG_DND === true;
 
 type DockDragDeps = {
   renderContextControls: () => void;
@@ -43,23 +44,39 @@ export function wireDockTabDragDrop(root: HTMLElement, runtime: ShellRuntime, de
   const listenerOptions = { signal: bindings.signal };
 
   if (typeof root.addEventListener === "function") {
-    root.addEventListener("dragend", () => {
-      handleDockDragEnd(root, runtime, deps);
-    }, listenerOptions);
+    root.addEventListener(
+      "dragend",
+      () => {
+        handleDockDragEnd(root, runtime, deps);
+      },
+      listenerOptions,
+    );
   }
 
   for (const zoneNode of root.querySelectorAll<HTMLElement>("[data-dock-drop-zone][data-target-tab-id]")) {
-    zoneNode.addEventListener("dragover", (event) => {
-      handleDockDragOver(event, zoneNode, root, runtime);
-    }, listenerOptions);
+    zoneNode.addEventListener(
+      "dragover",
+      (event) => {
+        handleDockDragOver(event, zoneNode, root, runtime);
+      },
+      listenerOptions,
+    );
 
-    zoneNode.addEventListener("dragleave", (event) => {
-      handleDockDragLeave(event, zoneNode, root);
-    }, listenerOptions);
+    zoneNode.addEventListener(
+      "dragleave",
+      (event) => {
+        handleDockDragLeave(event, zoneNode, root);
+      },
+      listenerOptions,
+    );
 
-    zoneNode.addEventListener("drop", (event) => {
-      handleDockDrop(event, zoneNode, root, runtime, deps);
-    }, listenerOptions);
+    zoneNode.addEventListener(
+      "drop",
+      (event) => {
+        handleDockDrop(event, zoneNode, root, runtime, deps);
+      },
+      listenerOptions,
+    );
   }
 }
 
@@ -74,13 +91,14 @@ function handleDockDragEnd(root: HTMLElement, runtime: ShellRuntime, deps: DockD
       zone: dropTarget.zone,
       transferSessionId: dropTarget.transferSessionId,
     });
-    if (DEBUG_DND) console.log("[shell:dnd:dock] dragend-fallback", {
-      targetTabId: dropTarget.targetTabId,
-      zone: dropTarget.zone,
-      payload,
-      moved,
-      stack: new Error().stack,
-    });
+    if (DEBUG_DND)
+      console.log("[shell:dnd:dock] dragend-fallback", {
+        targetTabId: dropTarget.targetTabId,
+        zone: dropTarget.zone,
+        payload,
+        moved,
+        stack: new Error().stack,
+      });
   }
 
   clearActiveDockDragPayload(root);
@@ -95,20 +113,20 @@ function handleDockDragOver(event: DragEvent, zoneNode: HTMLElement, root: HTMLE
     return;
   }
 
-  const payload = readTabDragPayload(dataTransfer, runtime, { consumeRef: false })
-    ?? readActiveDockDragPayload(root)
-    ?? null;
+  const payload =
+    readTabDragPayload(dataTransfer, runtime, { consumeRef: false }) ?? readActiveDockDragPayload(root) ?? null;
   if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
     removeRootClass(root, "is-dock-dragging");
     dataTransfer.dropEffect = "none";
-    if (DEBUG_DND) console.log("[shell:dnd:dock] dragover-ignored", {
-      targetTabId: zoneNode.dataset.targetTabId,
-      zone: zoneNode.dataset.dockDropZone,
-      payload,
-      windowId: runtime.windowId,
-      reason: "splitter-active",
-      stack: new Error().stack,
-    });
+    if (DEBUG_DND)
+      console.log("[shell:dnd:dock] dragover-ignored", {
+        targetTabId: zoneNode.dataset.targetTabId,
+        zone: zoneNode.dataset.dockDropZone,
+        payload,
+        windowId: runtime.windowId,
+        reason: "splitter-active",
+        stack: new Error().stack,
+      });
     return;
   }
 
@@ -146,12 +164,13 @@ function handleDockDragOver(event: DragEvent, zoneNode: HTMLElement, root: HTMLE
     });
     setDockDropPreview(zoneNode, zone);
   }
-  if (DEBUG_DND) console.log("[shell:dnd:dock] dragover-armed", {
-    targetTabId: zoneNode.dataset.targetTabId,
-    zone: zoneNode.dataset.dockDropZone,
-    payload,
-    stack: new Error().stack,
-  });
+  if (DEBUG_DND)
+    console.log("[shell:dnd:dock] dragover-armed", {
+      targetTabId: zoneNode.dataset.targetTabId,
+      zone: zoneNode.dataset.dockDropZone,
+      payload,
+      stack: new Error().stack,
+    });
 }
 
 function handleDockDragLeave(event: DragEvent, zoneNode: HTMLElement, root: HTMLElement): void {
@@ -162,9 +181,7 @@ function handleDockDragLeave(event: DragEvent, zoneNode: HTMLElement, root: HTML
     return;
   }
 
-  const overlay = typeof zoneNode.closest === "function"
-    ? zoneNode.closest<HTMLElement>(".dock-drop-overlay")
-    : null;
+  const overlay = typeof zoneNode.closest === "function" ? zoneNode.closest<HTMLElement>(".dock-drop-overlay") : null;
   const relatedTarget = event.relatedTarget as Node | null;
   if (overlay && relatedTarget && overlay.contains(relatedTarget)) {
     return;
@@ -176,18 +193,25 @@ function handleDockDragLeave(event: DragEvent, zoneNode: HTMLElement, root: HTML
   }
 }
 
-function handleDockDrop(event: DragEvent, zoneNode: HTMLElement, root: HTMLElement, runtime: ShellRuntime, deps: DockDragDeps): void {
+function handleDockDrop(
+  event: DragEvent,
+  zoneNode: HTMLElement,
+  root: HTMLElement,
+  runtime: ShellRuntime,
+  deps: DockDragDeps,
+): void {
   event.preventDefault();
   if (typeof event.stopPropagation === "function") {
     event.stopPropagation();
   }
   if (root.hasAttribute(SPLITTER_DRAG_ACTIVE_ATTR)) {
-    if (DEBUG_DND) console.log("[shell:dnd:dock] drop-blocked", {
-      targetTabId: zoneNode.dataset.targetTabId,
-      zone: zoneNode.dataset.dockDropZone,
-      reason: "splitter-active",
-      stack: new Error().stack,
-    });
+    if (DEBUG_DND)
+      console.log("[shell:dnd:dock] drop-blocked", {
+        targetTabId: zoneNode.dataset.targetTabId,
+        zone: zoneNode.dataset.dockDropZone,
+        reason: "splitter-active",
+        stack: new Error().stack,
+      });
     activeDockDropTargetByRoot.delete(root);
     clearDockDropPreviews(root);
     clearActiveDockDragPayload(root);
@@ -199,30 +223,31 @@ function handleDockDrop(event: DragEvent, zoneNode: HTMLElement, root: HTMLEleme
   const targetTabId = zoneNode.dataset.targetTabId;
   const zone = zoneNode.dataset.dockDropZone;
   if (!targetTabId || !isDockDropZone(zone)) {
-    if (DEBUG_DND) console.log("[shell:dnd:dock] drop-blocked", {
-      targetTabId,
-      zone,
-      stack: new Error().stack,
-    });
+    if (DEBUG_DND)
+      console.log("[shell:dnd:dock] drop-blocked", {
+        targetTabId,
+        zone,
+        stack: new Error().stack,
+      });
     activeDockDropTargetByRoot.delete(root);
     clearDockDropPreviews(root);
     removeRootClass(root, "is-dock-dragging");
     return;
   }
 
-  const payload = (dataTransfer
-    ? readTabDragPayload(dataTransfer, runtime, { consumeRef: true })
-    : null)
-    ?? readActiveDockDragPayload(root)
-    ?? null;
+  const payload =
+    (dataTransfer ? readTabDragPayload(dataTransfer, runtime, { consumeRef: true }) : null) ??
+    readActiveDockDragPayload(root) ??
+    null;
   if (!payload) {
-    if (DEBUG_DND) console.log("[shell:dnd:dock] drop-no-payload", {
-      targetTabId,
-      zone,
-      hasDataTransfer: Boolean(dataTransfer),
-      types: dataTransfer ? Array.from(dataTransfer.types ?? []) : [],
-      stack: new Error().stack,
-    });
+    if (DEBUG_DND)
+      console.log("[shell:dnd:dock] drop-no-payload", {
+        targetTabId,
+        zone,
+        hasDataTransfer: Boolean(dataTransfer),
+        types: dataTransfer ? Array.from(dataTransfer.types ?? []) : [],
+        stack: new Error().stack,
+      });
     clearActiveDockDragPayload(root);
     activeDockDropTargetByRoot.delete(root);
     clearDockDropPreviews(root);
@@ -237,13 +262,14 @@ function handleDockDrop(event: DragEvent, zoneNode: HTMLElement, root: HTMLEleme
     zone,
     transferSessionId: readTransferSessionId(payload),
   });
-  if (DEBUG_DND) console.log("[shell:dnd:dock] drop", {
-    targetTabId,
-    zone,
-    payload,
-    moved,
-    stack: new Error().stack,
-  });
+  if (DEBUG_DND)
+    console.log("[shell:dnd:dock] drop", {
+      targetTabId,
+      zone,
+      payload,
+      moved,
+      stack: new Error().stack,
+    });
   clearActiveDockDragPayload(root);
   activeDockDropTargetByRoot.delete(root);
   clearDockDropPreviews(root);
@@ -261,40 +287,49 @@ export function moveDockTabThroughRuntime(
     transferSessionId?: string;
   },
 ): boolean {
-  if (DEBUG_DND) console.log("[shell:dnd:dock] move-attempt", {
-    tabId: input.tabId,
-    sourceWindowId: input.sourceWindowId,
-    targetTabId: input.targetTabId,
-    zone: input.zone,
-    runtimeWindowId: runtime.windowId,
-    sourceTabExists: Boolean(runtime.contextState.tabs[input.tabId]),
-    targetTabExists: Boolean(runtime.contextState.tabs[input.targetTabId]),
-    stack: new Error().stack,
-  });
-
-  if (input.sourceWindowId !== runtime.windowId) {
-    return handleCrossWindowDockDrop(runtime, {
+  if (DEBUG_DND)
+    console.log("[shell:dnd:dock] move-attempt", {
       tabId: input.tabId,
       sourceWindowId: input.sourceWindowId,
       targetTabId: input.targetTabId,
       zone: input.zone,
-      transferSessionId: input.transferSessionId ?? null,
-    }, deps);
+      runtimeWindowId: runtime.windowId,
+      sourceTabExists: Boolean(runtime.contextState.tabs[input.tabId]),
+      targetTabExists: Boolean(runtime.contextState.tabs[input.targetTabId]),
+      stack: new Error().stack,
+    });
+
+  if (input.sourceWindowId !== runtime.windowId) {
+    return handleCrossWindowDockDrop(
+      runtime,
+      {
+        tabId: input.tabId,
+        sourceWindowId: input.sourceWindowId,
+        targetTabId: input.targetTabId,
+        zone: input.zone,
+        transferSessionId: input.transferSessionId ?? null,
+      },
+      deps,
+    );
   }
 
   if (!runtime.contextState.tabs[input.tabId] || !runtime.contextState.tabs[input.targetTabId]) {
-    if (DEBUG_DND) console.log("[shell:dnd:dock] move-rejected-missing-tab", {
-      input,
-      stack: new Error().stack,
-    });
+    if (DEBUG_DND)
+      console.log("[shell:dnd:dock] move-rejected-missing-tab", {
+        input,
+        stack: new Error().stack,
+      });
     return false;
   }
 
-  updateContextState(runtime, moveTabInDockTree(runtime.contextState, {
-    tabId: input.tabId,
-    targetTabId: input.targetTabId,
-    zone: input.zone,
-  }));
+  updateContextState(
+    runtime,
+    moveTabInDockTree(runtime.contextState, {
+      tabId: input.tabId,
+      targetTabId: input.targetTabId,
+      zone: input.zone,
+    }),
+  );
 
   runtime.selectedPartId = input.tabId;
   runtime.selectedPartTitle = runtime.contextState.tabs[input.tabId]?.label ?? input.tabId;
@@ -303,12 +338,13 @@ export function moveDockTabThroughRuntime(
   deps.renderContextControls();
   deps.renderParts();
   deps.renderSyncStatus();
-  if (DEBUG_DND) console.log("[shell:dnd:dock] move-applied", {
-    tabId: input.tabId,
-    targetTabId: input.targetTabId,
-    zone: input.zone,
-    stack: new Error().stack,
-  });
+  if (DEBUG_DND)
+    console.log("[shell:dnd:dock] move-applied", {
+      tabId: input.tabId,
+      targetTabId: input.targetTabId,
+      zone: input.zone,
+      stack: new Error().stack,
+    });
   return true;
 }
 
@@ -319,4 +355,3 @@ function readTransferSessionId(payload: DragPayload | { tabId: string; sourceWin
 
   return typeof payload.transferSessionId === "string" ? payload.transferSessionId : undefined;
 }
-

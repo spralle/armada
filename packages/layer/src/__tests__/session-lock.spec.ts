@@ -1,5 +1,5 @@
-import { createSessionLockManager } from "../session-lock.js";
 import type { KeyboardExclusiveManager } from "../input-behavior.js";
+import { createSessionLockManager } from "../session-lock.js";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];
@@ -49,8 +49,12 @@ function makeMockElement(tagName: string, className: string, layer: string, z: s
     className,
     tagName,
     focused: false,
-    focus() { this.focused = true; },
-    blur() { this.focused = false; },
+    focus() {
+      this.focused = true;
+    },
+    blur() {
+      this.focused = false;
+    },
   };
 }
 
@@ -61,13 +65,20 @@ function makeMockDiv(): MockElement {
     className: "",
     tagName: "DIV",
     focused: false,
-    focus() { this.focused = true; },
-    blur() { this.focused = false; },
+    focus() {
+      this.focused = true;
+    },
+    blur() {
+      this.focused = false;
+    },
   };
 }
 
 /** Build a mock layerHost with standard shell-layer sections. */
-function buildLayerHost(): { layerHost: MockElement & { _sections: MockElement[]; querySelectorAll: (sel: string) => MockElement[] }; sections: Record<string, MockElement> } {
+function buildLayerHost(): {
+  layerHost: MockElement & { _sections: MockElement[]; querySelectorAll: (sel: string) => MockElement[] };
+  sections: Record<string, MockElement>;
+} {
   const background = makeMockElement("SECTION", "shell-layer", "background", "0");
   const bottom = makeMockElement("SECTION", "shell-layer", "bottom", "100");
   const main = makeMockElement("MAIN", "shell shell-layer", "main", "200");
@@ -92,7 +103,10 @@ function buildLayerHost(): { layerHost: MockElement & { _sections: MockElement[]
   };
 }
 
-function makeMockKeyboardManager(): KeyboardExclusiveManager & { pushCalls: Array<{ surfaceId: string }>; popCalls: string[] } {
+function makeMockKeyboardManager(): KeyboardExclusiveManager & {
+  pushCalls: Array<{ surfaceId: string }>;
+  popCalls: string[];
+} {
   const pushCalls: Array<{ surfaceId: string }> = [];
   const popCalls: string[] = [];
   return {
@@ -104,7 +118,9 @@ function makeMockKeyboardManager(): KeyboardExclusiveManager & { pushCalls: Arra
     popExclusive(surfaceId: string) {
       popCalls.push(surfaceId);
     },
-    getActiveExclusive() { return null; },
+    getActiveExclusive() {
+      return null;
+    },
     dispose() {},
   };
 }

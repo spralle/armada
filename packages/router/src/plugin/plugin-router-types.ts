@@ -1,5 +1,5 @@
-import type { NavigationHints, NavigationTarget } from "../core/types.js";
 import type { AnyRouteMap, RouteId, RouteParams, RouteRefUnion } from "../core/route-map.js";
+import type { NavigationHints, NavigationTarget } from "../core/types.js";
 
 /**
  * Scoped router instance for a plugin — provides compile-time type-safe
@@ -44,11 +44,7 @@ export interface PluginRouter<TRoutes extends AnyRouteMap = AnyRouteMap> {
    * Navigate to a route within this plugin's route definitions.
    * Params are type-checked at compile time against the route's Zod schema.
    */
-  navigate<K extends RouteId<TRoutes>>(
-    route: K,
-    params: RouteParams<TRoutes, K>,
-    hints?: NavigationHints,
-  ): void;
+  navigate<K extends RouteId<TRoutes>>(route: K, params: RouteParams<TRoutes, K>, hints?: NavigationHints): void;
 
   /**
    * Get the currently active route for this tab, or null if no route is active.
@@ -66,19 +62,13 @@ export interface PluginRouter<TRoutes extends AnyRouteMap = AnyRouteMap> {
    * Build a NavigationTarget for use with the link behavior system.
    * The returned target can be passed to createNavigationHandler() or attachNavigation().
    */
-  buildTarget<K extends RouteId<TRoutes>>(
-    route: K,
-    params: RouteParams<TRoutes, K>,
-  ): NavigationTarget;
+  buildTarget<K extends RouteId<TRoutes>>(route: K, params: RouteParams<TRoutes, K>): NavigationTarget;
 
   /**
    * Get the raw args representation of a route (for bridging with shell APIs).
    * Serializes typed params to Record<string, string> with _route convention.
    */
-  serializeRoute<K extends RouteId<TRoutes>>(
-    route: K,
-    params: RouteParams<TRoutes, K>,
-  ): Record<string, string>;
+  serializeRoute<K extends RouteId<TRoutes>>(route: K, params: RouteParams<TRoutes, K>): Record<string, string>;
 }
 
 /**

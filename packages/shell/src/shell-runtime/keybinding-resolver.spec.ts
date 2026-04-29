@@ -1,14 +1,14 @@
-import { createDefaultContributionPredicateMatcher } from "@ghost-shell/plugin-system";
-import type { SpecHarness } from "../context-state.spec-harness.js";
-import type { InvokableAction } from "../action-surface.js";
-import { normalizeConfiguredChord } from "@ghost-shell/commands";
 import type { NormalizedKeybindingChord, NormalizedKeybindingSequence } from "@ghost-shell/commands";
 import {
+  type KeybindingLayer,
+  normalizeConfiguredChord,
+  type RegisteredKeybindingRecord,
   resolveKeybindingMatch,
   resolveKeybindingSequence,
-  type KeybindingLayer,
-  type RegisteredKeybindingRecord,
 } from "@ghost-shell/commands";
+import { createDefaultContributionPredicateMatcher } from "@ghost-shell/plugin-system";
+import type { InvokableAction } from "../action-surface.js";
+import type { SpecHarness } from "../context-state.spec-harness.js";
 
 function chord(input: string): NormalizedKeybindingChord {
   const c = normalizeConfiguredChord(input);
@@ -73,13 +73,10 @@ export function registerKeybindingResolverSpecs(harness: SpecHarness): void {
   });
 
   test("layer precedence — higher-priority layer wins", () => {
-    const records = [
-      record(["ctrl+k"], "user-overrides"),
-      record(["ctrl+k"], "defaults"),
-    ];
+    const records = [record(["ctrl+k"], "user-overrides"), record(["ctrl+k"], "defaults")];
     // Overwrite action id for distinction
-    records[0]!.action = { ...records[0]!.action, id: "override" };
-    records[1]!.action = { ...records[1]!.action, id: "default" };
+    records[0]!.action = { ...records[0]?.action, id: "override" };
+    records[1]!.action = { ...records[1]?.action, id: "default" };
     const result = resolveKeybindingSequence(records, [chord("ctrl+k")], {});
     assertEqual(result.kind, "exact", "should be exact");
     assertEqual(result.match?.action.id, "override", "user-override should win (first in pre-sorted list)");
@@ -87,9 +84,7 @@ export function registerKeybindingResolverSpecs(harness: SpecHarness): void {
 
   test("predicate gating on exact match skips failing record", () => {
     const matcher = createDefaultContributionPredicateMatcher();
-    const records = [
-      record(["ctrl+h"], "defaults", { when: { role: "admin" } }),
-    ];
+    const records = [record(["ctrl+h"], "defaults", { when: { role: "admin" } })];
     const noMatch = resolveKeybindingSequence(records, [chord("ctrl+h")], { role: "operator" }, matcher);
     assertEqual(noMatch.kind, "none", "should not match when predicate fails");
 
@@ -104,10 +99,7 @@ export function registerKeybindingResolverSpecs(harness: SpecHarness): void {
   });
 
   test("multiple prefix matches counted correctly", () => {
-    const records = [
-      record(["ctrl+k", "c"]),
-      record(["ctrl+k", "u"]),
-    ];
+    const records = [record(["ctrl+k", "c"]), record(["ctrl+k", "u"])];
     const result = resolveKeybindingSequence(records, [chord("ctrl+k")], {});
     assertEqual(result.kind, "prefix", "should be prefix");
     assertEqual(result.prefixCount, 2, "should count both prefix matches");

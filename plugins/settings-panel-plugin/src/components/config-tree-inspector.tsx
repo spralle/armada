@@ -3,20 +3,11 @@
 // Shows the full configuration tree from all plugins, grouped by namespace.
 // For each key: effective value, source layer, and expandable layer breakdown.
 
-import { useState, useEffect, useCallback } from "react";
 import type { PluginMountContext } from "@ghost-shell/contracts";
-import {
-  CONFIG_SERVICE_ID,
-  type ConfigurationService,
-} from "@ghost-shell/contracts";
+import { CONFIG_SERVICE_ID, type ConfigurationService } from "@ghost-shell/contracts";
 import { useService } from "@ghost-shell/react";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@ghost-shell/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@ghost-shell/ui";
+import { useCallback, useEffect, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -88,17 +79,13 @@ function ConfigEntryRow({ entry }: { readonly entry: ConfigEntry }) {
         <span className="flex-1 truncate font-medium" title={entry.key}>
           {entry.key}
         </span>
-        <span
-          className="shrink-0 max-w-[50%] truncate text-muted-foreground"
-          title={formatValue(entry.value)}
-        >
+        <span className="shrink-0 max-w-[50%] truncate text-muted-foreground" title={formatValue(entry.value)}>
           {formatValue(entry.value)}
         </span>
       </div>
       {expanded && (
-        <div
+        <section
           className="px-3 py-1 bg-muted/30 text-xs text-muted-foreground border-b"
-          role="region"
           aria-label={`Details for ${entry.key}`}
         >
           <div>
@@ -111,11 +98,9 @@ function ConfigEntryRow({ entry }: { readonly entry: ConfigEntry }) {
             <strong>Source:</strong>{" "}
             {/* TODO: Use service.inspect(key) for per-layer provenance once
                 the extended ConfigurationService interface exposes it. */}
-            <span className="text-info">
-              resolved (service.get)
-            </span>
+            <span className="text-info">resolved (service.get)</span>
           </div>
-        </div>
+        </section>
       )}
     </>
   );
@@ -158,19 +143,13 @@ const PROBE_KEYS = [
   "workspace.formatOnSave",
 ];
 
-function InspectorPanel({
-  configService,
-}: {
-  readonly configService: ConfigurationService;
-}) {
+function InspectorPanel({ configService }: { readonly configService: ConfigurationService }) {
   const [entries, setEntries] = useState<readonly ConfigEntry[]>([]);
 
   useEffect(() => {
     // ConfigurationService has no enumerate/list method in the stub.
     // Try inspect() if available, otherwise probe known keys.
-    const inspectFn = configService.inspect as
-      | ((key: string) => unknown)
-      | undefined;
+    const inspectFn = configService.inspect as ((key: string) => unknown) | undefined;
 
     const collected: ConfigEntry[] = [];
 
@@ -253,11 +232,7 @@ function InspectorPanel({
 // Public component
 // ---------------------------------------------------------------------------
 
-export function ConfigTreeInspector({
-  context: _context,
-}: {
-  readonly context: PluginMountContext;
-}) {
+export function ConfigTreeInspector({ context: _context }: { readonly context: PluginMountContext }) {
   const configService = useService<ConfigurationService>(CONFIG_SERVICE_ID);
 
   if (!configService) {

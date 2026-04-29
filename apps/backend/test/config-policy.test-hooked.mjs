@@ -1,13 +1,12 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-
-import { createConfigRoutes } from "../dist-test/src/config-endpoints.js";
-import { extractAccessContext } from "../dist-test/src/config-auth.js";
-import { createInMemoryAuditLog } from "@weaver/config-server";
+import { join } from "node:path";
+import test from "node:test";
 import { createInMemoryOverrideTracker } from "@weaver/config-policy";
+import { createInMemoryAuditLog } from "@weaver/config-server";
+import { extractAccessContext } from "../dist-test/src/config-auth.js";
+import { createConfigRoutes } from "../dist-test/src/config-endpoints.js";
 
 /** Create a temporary config directory with seed data for testing. */
 async function createTestConfigDir() {
@@ -15,10 +14,7 @@ async function createTestConfigDir() {
   await writeFile(join(dir, "core.json"), JSON.stringify({}));
   await writeFile(join(dir, "app.json"), JSON.stringify({}));
   await mkdir(join(dir, "tenants", "demo"), { recursive: true });
-  await writeFile(
-    join(dir, "tenants", "demo", "tenant.json"),
-    JSON.stringify({ "existing.key": "value" }),
-  );
+  await writeFile(join(dir, "tenants", "demo", "tenant.json"), JSON.stringify({ "existing.key": "value" }));
   return dir;
 }
 
@@ -41,9 +37,7 @@ const ADMIN_HEADERS = {
 
 /** Helper to invoke a route handler by matching against the route list. */
 async function callRoute(routes, method, pathname, bodyValue, headers = {}) {
-  const body = bodyValue !== undefined
-    ? () => Promise.resolve(bodyValue)
-    : () => Promise.resolve(null);
+  const body = bodyValue !== undefined ? () => Promise.resolve(bodyValue) : () => Promise.resolve(null);
   for (const route of routes) {
     const match = pathname.match(route.pattern);
     if (!match || route.method !== method) continue;
@@ -89,12 +83,10 @@ test("extractAccessContext defaults for missing headers", () => {
 test("PUT with direct-allowed key succeeds (200)", async () => {
   const dir = await createTestConfigDir();
   try {
-    const routes = createConfigRoutes(
-      { configDir: dir },
-      { schemaMap: createSchemaMap() },
-    );
+    const routes = createConfigRoutes({ configDir: dir }, { schemaMap: createSchemaMap() });
     const res = await callRoute(
-      routes, "PUT",
+      routes,
+      "PUT",
       "/api/tenants/demo/config/direct.key",
       { value: "new-value" },
       ADMIN_HEADERS,
@@ -111,12 +103,10 @@ test("PUT with direct-allowed key succeeds (200)", async () => {
 test("PUT with staging-gate key returns 409", async () => {
   const dir = await createTestConfigDir();
   try {
-    const routes = createConfigRoutes(
-      { configDir: dir },
-      { schemaMap: createSchemaMap() },
-    );
+    const routes = createConfigRoutes({ configDir: dir }, { schemaMap: createSchemaMap() });
     const res = await callRoute(
-      routes, "PUT",
+      routes,
+      "PUT",
       "/api/tenants/demo/config/staging.key",
       { value: "new-value" },
       ADMIN_HEADERS,
@@ -133,12 +123,10 @@ test("PUT with staging-gate key returns 409", async () => {
 test("PUT with full-pipeline key returns 409", async () => {
   const dir = await createTestConfigDir();
   try {
-    const routes = createConfigRoutes(
-      { configDir: dir },
-      { schemaMap: createSchemaMap() },
-    );
+    const routes = createConfigRoutes({ configDir: dir }, { schemaMap: createSchemaMap() });
     const res = await callRoute(
-      routes, "PUT",
+      routes,
+      "PUT",
       "/api/tenants/demo/config/pipeline.key",
       { value: "new-value" },
       ADMIN_HEADERS,
@@ -154,12 +142,10 @@ test("PUT with full-pipeline key returns 409", async () => {
 test("PUT with emergency-override key without auth returns 403", async () => {
   const dir = await createTestConfigDir();
   try {
-    const routes = createConfigRoutes(
-      { configDir: dir },
-      { schemaMap: createSchemaMap() },
-    );
+    const routes = createConfigRoutes({ configDir: dir }, { schemaMap: createSchemaMap() });
     const res = await callRoute(
-      routes, "PUT",
+      routes,
+      "PUT",
       "/api/tenants/demo/config/emergency.key",
       { value: "new-value" },
       ADMIN_HEADERS,
@@ -177,12 +163,10 @@ test("PUT with emergency-override key with proper session headers succeeds", asy
   try {
     const auditLog = createInMemoryAuditLog();
     const overrideTracker = createInMemoryOverrideTracker();
-    const routes = createConfigRoutes(
-      { configDir: dir },
-      { schemaMap: createSchemaMap(), auditLog, overrideTracker },
-    );
+    const routes = createConfigRoutes({ configDir: dir }, { schemaMap: createSchemaMap(), auditLog, overrideTracker });
     const res = await callRoute(
-      routes, "PUT",
+      routes,
+      "PUT",
       "/api/tenants/demo/config/emergency.key",
       { value: "emergency-value" },
       {
@@ -204,16 +188,8 @@ test("PUT with emergency-override key with proper session headers succeeds", asy
 test("DELETE with policy enforcement rejects staging-gate key", async () => {
   const dir = await createTestConfigDir();
   try {
-    const routes = createConfigRoutes(
-      { configDir: dir },
-      { schemaMap: createSchemaMap() },
-    );
-    const res = await callRoute(
-      routes, "DELETE",
-      "/api/tenants/demo/config/staging.key",
-      undefined,
-      ADMIN_HEADERS,
-    );
+    const routes = createConfigRoutes({ configDir: dir }, { schemaMap: createSchemaMap() });
+    const res = await callRoute(routes, "DELETE", "/api/tenants/demo/config/staging.key", undefined, ADMIN_HEADERS);
     assert.equal(res.status, 409);
     const body = await res.json();
     assert.equal(body.error, "promotion_required");
@@ -228,16 +204,8 @@ test("audit entry created after successful write", async () => {
   const dir = await createTestConfigDir();
   try {
     const auditLog = createInMemoryAuditLog();
-    const routes = createConfigRoutes(
-      { configDir: dir },
-      { schemaMap: createSchemaMap(), auditLog },
-    );
-    await callRoute(
-      routes, "PUT",
-      "/api/tenants/demo/config/direct.key",
-      { value: "audited-value" },
-      ADMIN_HEADERS,
-    );
+    const routes = createConfigRoutes({ configDir: dir }, { schemaMap: createSchemaMap(), auditLog });
+    await callRoute(routes, "PUT", "/api/tenants/demo/config/direct.key", { value: "audited-value" }, ADMIN_HEADERS);
 
     const entries = await auditLog.getRecent(10);
     assert.equal(entries.length, 1);
@@ -256,12 +224,10 @@ test("emergency override record created after emergency write", async () => {
   try {
     const auditLog = createInMemoryAuditLog();
     const overrideTracker = createInMemoryOverrideTracker();
-    const routes = createConfigRoutes(
-      { configDir: dir },
-      { schemaMap: createSchemaMap(), auditLog, overrideTracker },
-    );
+    const routes = createConfigRoutes({ configDir: dir }, { schemaMap: createSchemaMap(), auditLog, overrideTracker });
     await callRoute(
-      routes, "PUT",
+      routes,
+      "PUT",
       "/api/tenants/demo/config/emergency.key",
       { value: "override-value" },
       {
@@ -290,13 +256,11 @@ test("emergency override record created after emergency write", async () => {
 test("missing schema defaults to direct-allowed (write succeeds)", async () => {
   const dir = await createTestConfigDir();
   try {
-    const routes = createConfigRoutes(
-      { configDir: dir },
-      { schemaMap: createSchemaMap() },
-    );
+    const routes = createConfigRoutes({ configDir: dir }, { schemaMap: createSchemaMap() });
     // "unknown.key" is not in the schemaMap → defaults to allowed
     const res = await callRoute(
-      routes, "PUT",
+      routes,
+      "PUT",
       "/api/tenants/demo/config/unknown.key",
       { value: "any-value" },
       ADMIN_HEADERS,

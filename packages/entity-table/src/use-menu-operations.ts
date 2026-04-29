@@ -1,5 +1,5 @@
-import { useMemo } from "react";
 import type { MenuService } from "@ghost-shell/contracts";
+import { useMemo } from "react";
 
 export interface MenuOperationItem {
   id: string;

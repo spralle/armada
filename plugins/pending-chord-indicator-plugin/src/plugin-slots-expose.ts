@@ -94,10 +94,7 @@ function injectStyles(): void {
 // Slot mount
 // ---------------------------------------------------------------------------
 
-function mountPendingChordIndicator(
-  container: HTMLElement,
-  services: PluginServicesLike,
-): CleanupFn {
+function mountPendingChordIndicator(container: HTMLElement, services: PluginServicesLike): CleanupFn {
   const wrapper = document.createElement("div");
   wrapper.className = "pending-chord-indicator";
   wrapper.setAttribute("role", "status");

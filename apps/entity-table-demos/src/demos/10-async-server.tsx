@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useGhostTable, GhostDataTable, DataTableColumnHeader, ExportButton } from '@ghost-shell/data-table';
-import type { ColumnDef, SortingState, PaginationState } from '@tanstack/react-table';
-import { Badge } from '@ghost-shell/ui';
-import { DemoShell } from '../components/DemoShell';
+import { DataTableColumnHeader, ExportButton, GhostDataTable, useGhostTable } from "@ghost-shell/data-table";
+import { Badge } from "@ghost-shell/ui";
+import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { DemoShell } from "../components/DemoShell";
 
 interface Employee {
   id: string;
@@ -14,11 +14,51 @@ interface Employee {
   active: boolean;
 }
 
-const DEPARTMENTS = ['Engineering', 'Sales', 'Marketing', 'Finance', 'HR', 'Operations', 'Legal', 'Support'];
-const FIRST_NAMES = ['Alice', 'Bob', 'Carol', 'David', 'Eva', 'Frank', 'Grace', 'Hiro', 'Isla', 'James',
-  'Keiko', 'Liam', 'Mia', 'Noah', 'Olivia', 'Priya', 'Quinn', 'Rosa', 'Sam', 'Tara'];
-const LAST_NAMES = ['Johnson', 'Martinez', 'Chen', 'Kim', 'Rossi', 'Okafor', 'Liu', 'Tanaka', 'Patel',
-  'Wright', 'Sato', 'Brown', 'Fernandez', 'Andersen', 'Singh', 'Müller', 'Yamamoto', 'Costa', 'Park', 'Ali'];
+const DEPARTMENTS = ["Engineering", "Sales", "Marketing", "Finance", "HR", "Operations", "Legal", "Support"];
+const FIRST_NAMES = [
+  "Alice",
+  "Bob",
+  "Carol",
+  "David",
+  "Eva",
+  "Frank",
+  "Grace",
+  "Hiro",
+  "Isla",
+  "James",
+  "Keiko",
+  "Liam",
+  "Mia",
+  "Noah",
+  "Olivia",
+  "Priya",
+  "Quinn",
+  "Rosa",
+  "Sam",
+  "Tara",
+];
+const LAST_NAMES = [
+  "Johnson",
+  "Martinez",
+  "Chen",
+  "Kim",
+  "Rossi",
+  "Okafor",
+  "Liu",
+  "Tanaka",
+  "Patel",
+  "Wright",
+  "Sato",
+  "Brown",
+  "Fernandez",
+  "Andersen",
+  "Singh",
+  "Müller",
+  "Yamamoto",
+  "Costa",
+  "Park",
+  "Ali",
+];
 
 function generateEmployees(count: number): Employee[] {
   return Array.from({ length: count }, (_, i) => {
@@ -26,18 +66,18 @@ function generateEmployees(count: number): Employee[] {
     const last = LAST_NAMES[Math.floor(i / FIRST_NAMES.length) % LAST_NAMES.length];
     const dept = DEPARTMENTS[i % DEPARTMENTS.length];
     return {
-      id: `emp-${String(i + 1).padStart(3, '0')}`,
+      id: `emp-${String(i + 1).padStart(3, "0")}`,
       name: `${first} ${last}`,
       email: `${first.toLowerCase()}.${last.toLowerCase()}@example.com`,
       department: dept,
       salary: 55000 + Math.floor((i * 7919) % 95000),
-      startDate: `20${String(15 + (i % 10)).padStart(2, '0')}-${String(1 + (i % 12)).padStart(2, '0')}-${String(1 + (i % 28)).padStart(2, '0')}`,
+      startDate: `20${String(15 + (i % 10)).padStart(2, "0")}-${String(1 + (i % 12)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`,
       active: i % 7 !== 0,
     };
   });
 }
 
-const currencyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const currencyFmt = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 function fakeServerFetch(
   allData: Employee[],
@@ -49,10 +89,11 @@ function fakeServerFetch(
 
   if (globalFilter) {
     const lower = globalFilter.toLowerCase();
-    filtered = filtered.filter(e =>
-      e.name.toLowerCase().includes(lower) ||
-      e.email.toLowerCase().includes(lower) ||
-      e.department.toLowerCase().includes(lower),
+    filtered = filtered.filter(
+      (e) =>
+        e.name.toLowerCase().includes(lower) ||
+        e.email.toLowerCase().includes(lower) ||
+        e.department.toLowerCase().includes(lower),
     );
   }
 
@@ -113,7 +154,7 @@ const usageSource = `const { table } = useGhostTable<Employee>({
 export function AsyncServerDemo() {
   const allData = useRef(generateEmployees(200));
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [searchInput, setSearchInput] = useState('');
+  const [searchInput, setSearchInput] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [loading, setLoading] = useState(false);
   const [pageData, setPageData] = useState<Employee[]>([]);
@@ -130,39 +171,40 @@ export function AsyncServerDemo() {
     return () => clearTimeout(timer);
   }, [sorting, searchInput, pagination]);
 
-  const columns: ColumnDef<Employee, unknown>[] = useMemo(() => [
-    {
-      accessorKey: 'name',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-    },
-    {
-      accessorKey: 'email',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
-    },
-    {
-      accessorKey: 'department',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Department" />,
-    },
-    {
-      accessorKey: 'salary',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Salary" />,
-      cell: ({ getValue }) => currencyFmt.format(getValue() as number),
-    },
-    {
-      accessorKey: 'startDate',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Start Date" />,
-    },
-    {
-      accessorKey: 'active',
-      header: 'Status',
-      cell: ({ getValue }) => (
-        <Badge variant={getValue() ? 'default' : 'secondary'}>
-          {getValue() ? 'Active' : 'Inactive'}
-        </Badge>
-      ),
-      enableSorting: false,
-    },
-  ], []);
+  const columns: ColumnDef<Employee, unknown>[] = useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+      },
+      {
+        accessorKey: "email",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
+      },
+      {
+        accessorKey: "department",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Department" />,
+      },
+      {
+        accessorKey: "salary",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Salary" />,
+        cell: ({ getValue }) => currencyFmt.format(getValue() as number),
+      },
+      {
+        accessorKey: "startDate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Start Date" />,
+      },
+      {
+        accessorKey: "active",
+        header: "Status",
+        cell: ({ getValue }) => (
+          <Badge variant={getValue() ? "default" : "secondary"}>{getValue() ? "Active" : "Inactive"}</Badge>
+        ),
+        enableSorting: false,
+      },
+    ],
+    [],
+  );
 
   const { table } = useGhostTable<Employee>({
     data: pageData,
@@ -183,19 +225,26 @@ export function AsyncServerDemo() {
     <DemoShell
       title="Async / Server-Side Mode"
       description="Simulates server-side sorting, filtering, and pagination with a 300ms delay. All data processing happens outside the table — the hook just displays pre-fetched page data."
-      features={['Server-Side Sort', 'Server-Side Filter', 'Server-Side Pagination', '300ms Latency', '200 Rows', 'CSV Export']}
+      features={[
+        "Server-Side Sort",
+        "Server-Side Filter",
+        "Server-Side Pagination",
+        "300ms Latency",
+        "200 Rows",
+        "CSV Export",
+      ]}
       schema={SCHEMA_SOURCE}
-      codeBlocks={[{ title: 'Usage', code: usageSource, defaultOpen: true }]}
+      codeBlocks={[{ title: "Usage", code: usageSource, defaultOpen: true }]}
     >
       <GhostDataTable
         table={table}
         globalFilter={searchInput}
         onGlobalFilterChange={(v) => {
           setSearchInput(v);
-          setPagination(prev => ({ ...prev, pageIndex: 0 }));
+          setPagination((prev) => ({ ...prev, pageIndex: 0 }));
         }}
         loading={loading}
-        toolbarActions={<ExportButton table={table} options={{ filename: 'employees' }} />}
+        toolbarActions={<ExportButton table={table} options={{ filename: "employees" }} />}
         pageSizeOptions={[10, 25, 50]}
       />
     </DemoShell>

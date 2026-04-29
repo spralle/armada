@@ -1,11 +1,7 @@
-import {
-  getTabGroupId,
-  registerTab,
-  setActiveTab,
-  writeGlobalLane,
-  writeGroupLaneByGroup,
-  writeGroupLaneByTab,
-} from "../context-state.js";
+import type { ContextSyncEvent, SelectionSyncEvent } from "@ghost-shell/bridge";
+import type { IntentActionMatch, IntentResolutionDelegate, ShellIntent } from "@ghost-shell/intents";
+import { DEFAULT_GROUP_COLOR, DEFAULT_GROUP_ID } from "../app/constants.js";
+import type { ShellRuntime } from "../app/types.js";
 import {
   createRevision,
   resolveActiveTabId,
@@ -14,22 +10,16 @@ import {
   writeGroupSelectionContext,
 } from "../context/runtime-state.js";
 import {
-  type IntentActionMatch,
-  type IntentResolutionDelegate,
-  type ShellIntent,
-} from "@ghost-shell/intents";
-import {
-  formatSelectionAnnouncement,
-  resolveChooserFocusRestoration,
-} from "../keyboard-a11y.js";
-import { DEFAULT_GROUP_COLOR, DEFAULT_GROUP_ID } from "../app/constants.js";
-import type { PluginActivationTriggerType } from "../plugin-registry.js";
-import type { ShellRuntime } from "../app/types.js";
-import type {
-  ContextSyncEvent,
-  SelectionSyncEvent,
-} from "@ghost-shell/bridge";
+  getTabGroupId,
+  registerTab,
+  setActiveTab,
+  writeGlobalLane,
+  writeGroupLaneByGroup,
+  writeGroupLaneByTab,
+} from "../context-state.js";
 import { applySelectionPropagation } from "../domain/selection-graph.js";
+import { formatSelectionAnnouncement, resolveChooserFocusRestoration } from "../keyboard-a11y.js";
+import type { PluginActivationTriggerType } from "../plugin-registry.js";
 import { updateDockTabVisibility } from "../ui/dock-tab-visibility.js";
 
 export interface RuntimeEventHandlerBindings {
@@ -64,17 +54,20 @@ export function createRuntimeEventHandlers(
     if (!isRemoteSelection) {
       runtime.selectedPartId = event.selectedPartId;
       runtime.selectedPartTitle = event.selectedPartTitle;
-      updateContextState(runtime, registerTab(runtime.contextState, {
-        tabId: event.selectedPartId,
-        definitionId: runtime.contextState.tabs[event.selectedPartId]?.definitionId ?? event.selectedPartId,
-        partDefinitionId:
-          runtime.contextState.tabs[event.selectedPartId]?.partDefinitionId
-          ?? runtime.contextState.tabs[event.selectedPartId]?.definitionId
-          ?? event.selectedPartId,
-        groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
-        groupColor: DEFAULT_GROUP_COLOR,
-        tabLabel: event.selectedPartTitle,
-      }));
+      updateContextState(
+        runtime,
+        registerTab(runtime.contextState, {
+          tabId: event.selectedPartId,
+          definitionId: runtime.contextState.tabs[event.selectedPartId]?.definitionId ?? event.selectedPartId,
+          partDefinitionId:
+            runtime.contextState.tabs[event.selectedPartId]?.partDefinitionId ??
+            runtime.contextState.tabs[event.selectedPartId]?.definitionId ??
+            event.selectedPartId,
+          groupId: getTabGroupId(runtime.contextState, event.selectedPartId) ?? DEFAULT_GROUP_ID,
+          groupColor: DEFAULT_GROUP_COLOR,
+          tabLabel: event.selectedPartTitle,
+        }),
+      );
       updateContextState(runtime, setActiveTab(runtime.contextState, event.selectedPartId));
     }
     writeGlobalSelectionLane(runtime, {
@@ -92,27 +85,35 @@ export function createRuntimeEventHandlers(
 
     updateDockTabVisibility(root, runtime);
     bindings.renderSyncStatus();
-    bindings.announce(formatSelectionAnnouncement({
-      selectedPartTitle: runtime.selectedPartTitle,
-      selectedEntitySummary: bindings.summarizeSelectionPriorities(),
-    }));
+    bindings.announce(
+      formatSelectionAnnouncement({
+        selectedPartTitle: runtime.selectedPartTitle,
+        selectedEntitySummary: bindings.summarizeSelectionPriorities(),
+      }),
+    );
   }
 
   function applyContext(event: ContextSyncEvent): void {
     const revision = event.revision ?? createRevision(event.sourceWindowId);
     if (event.scope === "global") {
-      updateContextState(runtime, writeGlobalLane(runtime.contextState, {
-        key: event.contextKey,
-        value: event.contextValue,
-        revision,
-      }));
+      updateContextState(
+        runtime,
+        writeGlobalLane(runtime.contextState, {
+          key: event.contextKey,
+          value: event.contextValue,
+          revision,
+        }),
+      );
     } else if (event.groupId) {
-      updateContextState(runtime, writeGroupLaneByGroup(runtime.contextState, {
-        groupId: event.groupId,
-        key: event.contextKey,
-        value: event.contextValue,
-        revision,
-      }));
+      updateContextState(
+        runtime,
+        writeGroupLaneByGroup(runtime.contextState, {
+          groupId: event.groupId,
+          key: event.contextKey,
+          value: event.contextValue,
+          revision,
+        }),
+      );
     } else {
       const targetTabId =
         event.tabId && runtime.contextState.tabs[event.tabId]
@@ -123,12 +124,15 @@ export function createRuntimeEventHandlers(
         return;
       }
 
-      updateContextState(runtime, writeGroupLaneByTab(runtime.contextState, {
-        tabId: targetTabId,
-        key: event.contextKey,
-        value: event.contextValue,
-        revision,
-      }));
+      updateContextState(
+        runtime,
+        writeGroupLaneByTab(runtime.contextState, {
+          tabId: targetTabId,
+          key: event.contextKey,
+          value: event.contextValue,
+          revision,
+        }),
+      );
     }
     bindings.renderContextControlsPanel();
     bindings.renderSyncStatus();
@@ -144,10 +148,7 @@ export function createRuntimeEventHandlers(
     });
   }
 
-  async function executeResolvedAction(
-    match: IntentActionMatch,
-    intent: ShellIntent | null,
-  ): Promise<void> {
+  async function executeResolvedAction(match: IntentActionMatch, intent: ShellIntent | null): Promise<void> {
     const triggerId = intent?.type ?? match.intentType;
     const activated = await bindings.activatePluginForBoundary({
       pluginId: match.pluginId,
@@ -165,7 +166,10 @@ export function createRuntimeEventHandlers(
     const genericContextValue = intent ? `intent:${intent.type}` : "none";
     writeGroupSelectionContext(runtime, genericContextValue);
 
-    const restoreSelector = resolveChooserFocusRestoration("execute", runtime.activeIntentSession?.returnFocusSelector ?? null);
+    const restoreSelector = resolveChooserFocusRestoration(
+      "execute",
+      runtime.activeIntentSession?.returnFocusSelector ?? null,
+    );
     runtime.activeIntentSession = null;
     runtime.pendingFocusSelector = restoreSelector;
     runtime.intentNotice = `Executed '${match.title}' via ${match.pluginId}.${match.handler}.`;
@@ -226,7 +230,10 @@ function handleIntentOutcome(
   if (outcome.kind === "executed" && outcome.match) {
     const match = outcome.match;
     writeGroupSelectionContext(runtime, `intent:${intent.type}`);
-    const restoreSelector = resolveChooserFocusRestoration("execute", runtime.activeIntentSession?.returnFocusSelector ?? null);
+    const restoreSelector = resolveChooserFocusRestoration(
+      "execute",
+      runtime.activeIntentSession?.returnFocusSelector ?? null,
+    );
     runtime.activeIntentSession = null;
     runtime._pendingChooserResolve = null;
     runtime.pendingFocusSelector = restoreSelector;

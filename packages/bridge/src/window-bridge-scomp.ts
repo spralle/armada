@@ -1,8 +1,8 @@
 import {
-  normalizeBridgePublishRejectionReason,
   type AsyncWindowBridge,
   type AsyncWindowBridgeHealth,
   type AsyncWindowBridgeRejectReason,
+  normalizeBridgePublishRejectionReason,
 } from "./async-bridge.js";
 import type { WindowBridgeEvent } from "./window-bridge.js";
 import { parseBridgeEvent } from "./window-bridge-parse.js";
@@ -25,9 +25,7 @@ export interface CreateAsyncScompWindowBridgeOptions {
 
 const SCOMP_TRANSPORT_SPECIFIER = "@scomp/transport-browser-windows";
 
-export function createAsyncScompWindowBridge(
-  options: CreateAsyncScompWindowBridgeOptions,
-): AsyncWindowBridge {
+export function createAsyncScompWindowBridge(options: CreateAsyncScompWindowBridgeOptions): AsyncWindowBridge {
   const listeners = new Set<(event: WindowBridgeEvent) => void>();
   const healthListeners = new Set<(health: AsyncWindowBridgeHealth) => void>();
   let closed = false;
@@ -63,12 +61,13 @@ export function createAsyncScompWindowBridge(
         }
       });
 
-      unsubscribeHealth = transport.subscribeHealth?.((rawHealth) => {
-        if (closed) {
-          return;
-        }
-        setHealth(normalizeScompHealth(rawHealth));
-      }) ?? null;
+      unsubscribeHealth =
+        transport.subscribeHealth?.((rawHealth) => {
+          if (closed) {
+            return;
+          }
+          setHealth(normalizeScompHealth(rawHealth));
+        }) ?? null;
 
       setHealth({
         state: "healthy",
@@ -86,10 +85,7 @@ export function createAsyncScompWindowBridge(
       return null;
     });
 
-  function setHealth(next: {
-    state: ScompHealthState;
-    reason: AsyncWindowBridgeRejectReason | null;
-  }): void {
+  function setHealth(next: { state: ScompHealthState; reason: AsyncWindowBridgeRejectReason | null }): void {
     if (next.state === latestHealth.state && next.reason === latestHealth.reason) {
       return;
     }
@@ -286,18 +282,16 @@ function normalizeTransport(transport: Record<string, unknown>): ScompTransport 
   return {
     publish: transport.publish.bind(transport) as (event: unknown) => void | Promise<void>,
     subscribe: transport.subscribe.bind(transport) as (listener: (event: unknown) => void) => () => void,
-    subscribeHealth: typeof transport.subscribeHealth === "function"
-      ? transport.subscribeHealth.bind(transport) as (listener: (health: unknown) => void) => () => void
-      : undefined,
-    recover: typeof transport.recover === "function"
-      ? transport.recover.bind(transport) as () => void | Promise<void>
-      : undefined,
-    close: typeof transport.close === "function"
-      ? transport.close.bind(transport) as () => void
-      : undefined,
-    dispose: typeof transport.dispose === "function"
-      ? transport.dispose.bind(transport) as () => void
-      : undefined,
+    subscribeHealth:
+      typeof transport.subscribeHealth === "function"
+        ? (transport.subscribeHealth.bind(transport) as (listener: (health: unknown) => void) => () => void)
+        : undefined,
+    recover:
+      typeof transport.recover === "function"
+        ? (transport.recover.bind(transport) as () => void | Promise<void>)
+        : undefined,
+    close: typeof transport.close === "function" ? (transport.close.bind(transport) as () => void) : undefined,
+    dispose: typeof transport.dispose === "function" ? (transport.dispose.bind(transport) as () => void) : undefined,
   };
 }
 
@@ -316,8 +310,9 @@ function readErrorMessage(error: unknown): string {
   return "";
 }
 
-const dynamicImport: (specifier: string) => Promise<unknown> =
-  Function("specifier", "return import(specifier);") as (specifier: string) => Promise<unknown>;
+const dynamicImport: (specifier: string) => Promise<unknown> = Function("specifier", "return import(specifier);") as (
+  specifier: string,
+) => Promise<unknown>;
 
 async function withOptionalTimeout<T>(promise: Promise<T>, timeoutMs: number | undefined): Promise<T> {
   if (timeoutMs === undefined) {

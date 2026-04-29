@@ -1,20 +1,20 @@
 // keybinding-service-registration.ts — KeybindingService adapter and shell registration.
 
+import type { KeybindingOverrideManager } from "@ghost-shell/commands";
 import type {
-  KeybindingService,
+  Event,
   KeybindingEntry,
   KeybindingOverride,
-  PluginContract,
-  Event,
-  KeySequencePendingEvent,
-  KeySequenceCompletedEvent,
+  KeybindingService,
   KeySequenceCancelledEvent,
+  KeySequenceCompletedEvent,
+  KeySequencePendingEvent,
+  PluginContract,
 } from "@ghost-shell/contracts";
 import { KEYBINDING_SERVICE_ID } from "@ghost-shell/contracts";
 import { createEventEmitter } from "@ghost-shell/plugin-system";
-import type { ShellPluginRegistry } from "./plugin-registry-types.js";
-import type { KeybindingOverrideManager } from "@ghost-shell/commands";
 import type { ActionKeybinding } from "./action-surface.js";
+import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
 export const KEYBINDING_SERVICE_PLUGIN_ID = "ghost.shell.keybinding-service";
 
@@ -33,10 +33,7 @@ export interface KeybindingServiceDeps {
 // Adapter factory + registration
 // ---------------------------------------------------------------------------
 
-export function registerKeybindingServiceCapability(
-  registry: ShellPluginRegistry,
-  deps: KeybindingServiceDeps,
-): void {
+export function registerKeybindingServiceCapability(registry: ShellPluginRegistry, deps: KeybindingServiceDeps): void {
   const pendingEmitter = createEventEmitter<KeySequencePendingEvent>();
   const completedEmitter = createEventEmitter<KeySequenceCompletedEvent>();
   const cancelledEmitter = createEventEmitter<KeySequenceCancelledEvent>();
@@ -64,7 +61,8 @@ export function registerKeybindingServiceCapability(
   const service: KeybindingService = {
     getKeybindings(): KeybindingEntry[] {
       ensureEventBridgeWired();
-      return deps.getKeybindings()
+      return deps
+        .getKeybindings()
         .filter((kb) => !kb.hidden)
         .map((kb) => ({
           id: kb.action,
@@ -75,10 +73,13 @@ export function registerKeybindingServiceCapability(
     },
 
     getOverrides(): KeybindingOverride[] {
-      return deps.getOverrideManager().getOverrides().map((o) => ({
-        action: o.action,
-        key: o.keybinding,
-      }));
+      return deps
+        .getOverrideManager()
+        .getOverrides()
+        .map((o) => ({
+          action: o.action,
+          key: o.keybinding,
+        }));
     },
 
     addOverride(action: string, key: string): void {
@@ -112,9 +113,18 @@ export function registerKeybindingServiceCapability(
       };
     },
 
-    onDidKeySequencePending: (listener: Parameters<Event<KeySequencePendingEvent>>[0]) => { ensureEventBridgeWired(); return pendingEmitter.event(listener); },
-    onDidKeySequenceCompleted: (listener: Parameters<Event<KeySequenceCompletedEvent>>[0]) => { ensureEventBridgeWired(); return completedEmitter.event(listener); },
-    onDidKeySequenceCancelled: (listener: Parameters<Event<KeySequenceCancelledEvent>>[0]) => { ensureEventBridgeWired(); return cancelledEmitter.event(listener); },
+    onDidKeySequencePending: (listener: Parameters<Event<KeySequencePendingEvent>>[0]) => {
+      ensureEventBridgeWired();
+      return pendingEmitter.event(listener);
+    },
+    onDidKeySequenceCompleted: (listener: Parameters<Event<KeySequenceCompletedEvent>>[0]) => {
+      ensureEventBridgeWired();
+      return completedEmitter.event(listener);
+    },
+    onDidKeySequenceCancelled: (listener: Parameters<Event<KeySequenceCancelledEvent>>[0]) => {
+      ensureEventBridgeWired();
+      return cancelledEmitter.event(listener);
+    },
   };
 
   const contract: PluginContract = {
@@ -125,9 +135,7 @@ export function registerKeybindingServiceCapability(
     },
     contributes: {
       capabilities: {
-        services: [
-          { id: KEYBINDING_SERVICE_ID, version: "1.0.0" },
-        ],
+        services: [{ id: KEYBINDING_SERVICE_ID, version: "1.0.0" }],
       },
     },
   };

@@ -1,146 +1,144 @@
 import { definePlugin } from "@ghost-shell/contracts/plugin";
 
 export const pluginManifest = definePlugin({
-  "displayName": "Ghost Motion",
-  "activationEvents": [
-    "onStartup"
-  ],
-  "contributes": {
-    "capabilities": {
-      "services": [
+  displayName: "Ghost Motion",
+  activationEvents: ["onStartup"],
+  contributes: {
+    capabilities: {
+      services: [
         {
-          "id": "ghost.motion.service",
-          "version": "0.1.0"
-        }
+          id: "ghost.motion.service",
+          version: "0.1.0",
+        },
       ],
-      "components": [
+      components: [
         {
-          "id": "ghost.motion.settings-panel",
-          "version": "0.1.0"
-        }
-      ]
+          id: "ghost.motion.settings-panel",
+          version: "0.1.0",
+        },
+      ],
     },
-    "sections": [
+    sections: [
       {
-        "id": "ghost.motion.settings",
-        "title": "Motion",
-        "target": "config.appearance",
-        "order": 200,
-        "component": "ghost.motion.settings-panel"
-      }
+        id: "ghost.motion.settings",
+        title: "Motion",
+        target: "config.appearance",
+        order: 200,
+        component: "ghost.motion.settings-panel",
+      },
     ],
-    "configuration": {
-      "properties": {
+    configuration: {
+      properties: {
         "ghost.motion.enabled": {
-          "type": "boolean",
-          "title": "Enable animations",
-          "description": "Global kill switch for all animations. When off, zero animation CSS is injected.",
-          "default": true
+          type: "boolean",
+          title: "Enable animations",
+          description: "Global kill switch for all animations. When off, zero animation CSS is injected.",
+          default: true,
         },
         "ghost.motion.curves": {
-          "type": "array",
-          "title": "Bezier curves",
-          "description": "Named bezier curve registry. Referenced by animation entries.",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string",
-                "title": "Curve name"
+          type: "array",
+          title: "Bezier curves",
+          description: "Named bezier curve registry. Referenced by animation entries.",
+          items: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
+                title: "Curve name",
               },
-              "points": {
-                "type": "object",
-                "properties": {
-                  "x1": {
-                    "type": "number",
-                    "title": "X1",
-                    "description": "First control point X [0-1]"
+              points: {
+                type: "object",
+                properties: {
+                  x1: {
+                    type: "number",
+                    title: "X1",
+                    description: "First control point X [0-1]",
                   },
-                  "y1": {
-                    "type": "number",
-                    "title": "Y1",
-                    "description": "First control point Y [-2 to 2]"
+                  y1: {
+                    type: "number",
+                    title: "Y1",
+                    description: "First control point Y [-2 to 2]",
                   },
-                  "x2": {
-                    "type": "number",
-                    "title": "X2",
-                    "description": "Second control point X [0-1]"
+                  x2: {
+                    type: "number",
+                    title: "X2",
+                    description: "Second control point X [0-1]",
                   },
-                  "y2": {
-                    "type": "number",
-                    "title": "Y2",
-                    "description": "Second control point Y [-2 to 2]"
-                  }
-                }
-              }
-            }
+                  y2: {
+                    type: "number",
+                    title: "Y2",
+                    description: "Second control point Y [-2 to 2]",
+                  },
+                },
+              },
+            },
           },
-          "default": [
+          default: [
             {
-              "name": "default",
-              "points": {
-                "x1": 0.25,
-                "y1": 0.1,
-                "x2": 0.25,
-                "y2": 1
-              }
+              name: "default",
+              points: {
+                x1: 0.25,
+                y1: 0.1,
+                x2: 0.25,
+                y2: 1,
+              },
             },
             {
-              "name": "snappy",
-              "points": {
-                "x1": 0.16,
-                "y1": 1,
-                "x2": 0.3,
-                "y2": 1
-              }
+              name: "snappy",
+              points: {
+                x1: 0.16,
+                y1: 1,
+                x2: 0.3,
+                y2: 1,
+              },
             },
             {
-              "name": "bounce",
-              "points": {
-                "x1": 0.05,
-                "y1": 0.9,
-                "x2": 0.1,
-                "y2": 1.05
-              }
+              name: "bounce",
+              points: {
+                x1: 0.05,
+                y1: 0.9,
+                x2: 0.1,
+                y2: 1.05,
+              },
             },
             {
-              "name": "smooth",
-              "points": {
-                "x1": 0.4,
-                "y1": 0,
-                "x2": 0.2,
-                "y2": 1
-              }
+              name: "smooth",
+              points: {
+                x1: 0.4,
+                y1: 0,
+                x2: 0.2,
+                y2: 1,
+              },
             },
             {
-              "name": "linear",
-              "points": {
-                "x1": 0,
-                "y1": 0,
-                "x2": 1,
-                "y2": 1
-              }
-            }
-          ]
+              name: "linear",
+              points: {
+                x1: 0,
+                y1: 0,
+                x2: 1,
+                y2: 1,
+              },
+            },
+          ],
         },
         "ghost.motion.animations": {
-          "type": "object",
-          "title": "Animation overrides",
-          "description": "Per-animation configuration. Omitted entries inherit from their parent in the animation tree."
-        }
-      }
-    }
+          type: "object",
+          title: "Animation overrides",
+          description: "Per-animation configuration. Omitted entries inherit from their parent in the animation tree.",
+        },
+      },
+    },
   },
-  "dependsOn": {
-    "plugins": [
+  dependsOn: {
+    plugins: [
       {
-        "pluginId": "ghost.ui",
-        "versionRange": "^1.0.0"
+        pluginId: "ghost.ui",
+        versionRange: "^1.0.0",
       },
       {
-        "pluginId": "ghost.shadcn.theme-bridge",
-        "versionRange": "^1.0.0"
-      }
-    ]
-  }
+        pluginId: "ghost.shadcn.theme-bridge",
+        versionRange: "^1.0.0",
+      },
+    ],
+  },
 });

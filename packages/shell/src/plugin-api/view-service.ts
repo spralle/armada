@@ -1,4 +1,4 @@
-import type { ViewService, ViewDescriptor, OpenViewOptions } from "@ghost-shell/contracts";
+import type { OpenViewOptions, ViewDescriptor, ViewService } from "@ghost-shell/contracts";
 
 export interface ViewServiceDeps {
   getPartDefinitions(): { definitionId: string; title: string; slot: string; pluginId: string }[];

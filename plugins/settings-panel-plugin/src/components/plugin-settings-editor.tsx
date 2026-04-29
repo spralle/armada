@@ -6,45 +6,31 @@
 // 3. Governance rules (arbiter production rules)
 // 4. Renders via SchemaForm with GovernanceFieldRenderer
 
-import { useState, useCallback, useMemo } from "react";
 import type { PluginMountContext } from "@ghost-shell/contracts";
+import { CONFIG_SERVICE_ID, type ConfigurationService } from "@ghost-shell/contracts";
+import type { ProductionRule } from "@ghost-shell/formr-core";
+import { createSchemaForm } from "@ghost-shell/formr-from-schema";
+import type { LayoutRendererProps, NodeRenderer } from "@ghost-shell/formr-react";
 import {
-  CONFIG_SERVICE_ID,
-  type ConfigurationService,
-} from "@ghost-shell/contracts";
-import { useService } from "@ghost-shell/react";
-import { applySchemaMiddleware } from "@ghost-shell/schema-core";
-import type { JsonSchema } from "@ghost-shell/schema-core";
-import {
-  weaverToFormrMiddleware,
-  createGovernanceMiddleware,
-  buildGovernanceRules,
-  GovernanceFieldRenderer,
-} from "@ghost-shell/weaver-formr-bridge";
-import type {
-  WeaverFormrContext,
-  WeaverSchemaEntry,
-  GovernanceRuleContext,
-} from "@ghost-shell/weaver-formr-bridge";
-import {
-  renderLayoutTree,
+  pruneHiddenFields,
   RendererRegistry,
+  renderLayoutTree,
+  resolveFieldStates,
   useForm,
   useFormSelector,
-  resolveFieldStates,
-  pruneHiddenFields,
 } from "@ghost-shell/formr-react";
-import type { LayoutRendererProps, NodeRenderer } from "@ghost-shell/formr-react";
-import { createSchemaForm } from "@ghost-shell/formr-from-schema";
-import type { ProductionRule } from "@ghost-shell/formr-core";
+import { useService } from "@ghost-shell/react";
+import type { JsonSchema } from "@ghost-shell/schema-core";
+import { applySchemaMiddleware } from "@ghost-shell/schema-core";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@ghost-shell/ui";
+import type { GovernanceRuleContext, WeaverFormrContext, WeaverSchemaEntry } from "@ghost-shell/weaver-formr-bridge";
 import {
-  Button,
-  Badge,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@ghost-shell/ui";
+  buildGovernanceRules,
+  createGovernanceMiddleware,
+  GovernanceFieldRenderer,
+  weaverToFormrMiddleware,
+} from "@ghost-shell/weaver-formr-bridge";
+import { useCallback, useMemo, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -148,8 +134,7 @@ function SettingsEditorForm({
   );
 
   const processedSchema = useMemo(
-    () =>
-      applySchemaMiddleware(schema, [weaverToFormrMiddleware(weaverContext)]),
+    () => applySchemaMiddleware(schema, [weaverToFormrMiddleware(weaverContext)]),
     [schema, weaverContext],
   );
 
@@ -167,10 +152,7 @@ function SettingsEditorForm({
     [editingLayer, layerRank, effectiveLayerRanks],
   );
 
-  const governanceRules = useMemo(
-    () => buildGovernanceRules(weaverEntries, ruleContext),
-    [weaverEntries, ruleContext],
-  );
+  const governanceRules = useMemo(() => buildGovernanceRules(weaverEntries, ruleContext), [weaverEntries, ruleContext]);
 
   const initialData = useMemo(
     () => buildInitialData(schema, configService, pluginId),
@@ -220,22 +202,13 @@ function SettingsEditorForm({
     arbiterRules: governanceRules as unknown as readonly ProductionRule[],
   });
 
-  const fieldPaths = useMemo(
-    () => prepared.fields.map((f) => f.path),
-    [prepared.fields],
-  );
+  const fieldPaths = useMemo(() => prepared.fields.map((f) => f.path), [prepared.fields]);
 
   const EMPTY_UI: Readonly<Record<string, unknown>> = useMemo(() => Object.freeze({}), []);
 
-  const uiState = useFormSelector(
-    form,
-    (state) => (state.uiState ?? EMPTY_UI) as Readonly<Record<string, unknown>>,
-  );
+  const uiState = useFormSelector(form, (state) => (state.uiState ?? EMPTY_UI) as Readonly<Record<string, unknown>>);
 
-  const fieldStates = useMemo(
-    () => resolveFieldStates(uiState, fieldPaths),
-    [uiState, fieldPaths],
-  );
+  const fieldStates = useMemo(() => resolveFieldStates(uiState, fieldPaths), [uiState, fieldPaths]);
 
   const layout = useMemo(
     () => pruneHiddenFields(prepared.layout, fieldStates) ?? { ...prepared.layout, children: [] },
@@ -267,13 +240,13 @@ function SettingsEditorForm({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Settings: {pluginId}</CardTitle>
-        <Badge variant="outline" className="w-fit">Layer: {editingLayer}</Badge>
+        <Badge variant="outline" className="w-fit">
+          Layer: {editingLayer}
+        </Badge>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} noValidate aria-label={`Settings for ${pluginId}`}>
-          {(layout.children?.map((node) =>
-            renderLayoutTree(node, registry),
-          ) ?? []) as React.ReactNode}
+          {(layout.children?.map((node) => renderLayoutTree(node, registry)) ?? []) as React.ReactNode}
           <Button
             type="submit"
             size="sm"
@@ -311,11 +284,7 @@ const DEMO_SCHEMA: JsonSchema = {
   },
 };
 
-export function PluginSettingsEditor({
-  context,
-}: {
-  readonly context: PluginMountContext;
-}) {
+export function PluginSettingsEditor({ context }: { readonly context: PluginMountContext }) {
   const configService = useService<ConfigurationService>(CONFIG_SERVICE_ID);
   const pluginId = context.args.pluginId ?? context.part.id;
   const editingLayer = context.args.layer ?? "user";
@@ -335,11 +304,6 @@ export function PluginSettingsEditor({
   }
 
   return (
-    <SettingsEditorForm
-      pluginId={pluginId}
-      editingLayer={editingLayer}
-      schema={schema}
-      configService={configService}
-    />
+    <SettingsEditorForm pluginId={pluginId} editingLayer={editingLayer} schema={schema} configService={configService} />
   );
 }

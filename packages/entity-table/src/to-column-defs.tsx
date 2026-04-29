@@ -1,6 +1,6 @@
-import type { ColumnDef, FilterFn } from '@tanstack/react-table';
-import type { TableFieldDescriptor } from '@ghost-shell/table-from-schema';
-import { DataTableColumnHeader, inNumberRange } from '@ghost-shell/data-table';
+import { DataTableColumnHeader, inNumberRange } from "@ghost-shell/data-table";
+import type { TableFieldDescriptor } from "@ghost-shell/table-from-schema";
+import type { ColumnDef, FilterFn } from "@tanstack/react-table";
 
 /** EntityColumnMeta stored in ColumnDef.meta — kept for backward compat */
 export interface EntityColumnMeta {
@@ -12,21 +12,19 @@ export interface EntityColumnMeta {
   readonly filterMax?: number;
   readonly cellRenderer?: string;
   readonly cellProps?: Record<string, unknown>;
-  readonly pinned?: 'left' | 'right' | false;
+  readonly pinned?: "left" | "right" | false;
   readonly hasExplicitWidth?: boolean;
   readonly label?: string;
-  readonly priority?: 'essential' | 'default' | 'optional';
+  readonly priority?: "essential" | "default" | "optional";
   readonly minWidth?: number;
   readonly wrap?: boolean;
-  readonly cardSlot?: 'header' | 'leading' | 'body' | 'trailing' | 'footer';
+  readonly cardSlot?: "header" | "leading" | "body" | "trailing" | "footer";
 }
 
 /**
  * Bridge: maps framework-agnostic TableFieldDescriptor[] to TanStack ColumnDef[].
  */
-export function toColumnDefs<TData>(
-  fields: readonly TableFieldDescriptor[],
-): ColumnDef<TData, unknown>[] {
+export function toColumnDefs<TData>(fields: readonly TableFieldDescriptor[]): ColumnDef<TData, unknown>[] {
   return fields.map((desc) => {
     const meta: EntityColumnMeta = {
       fieldType: desc.type,
@@ -49,19 +47,17 @@ export function toColumnDefs<TData>(
     const col: ColumnDef<TData, unknown> = {
       id: desc.field,
       accessorKey: desc.field,
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={desc.label} />
-      ),
+      header: ({ column }) => <DataTableColumnHeader column={column} title={desc.label} />,
       enableSorting: desc.sortable,
       enableColumnFilter: desc.filter !== undefined,
       meta,
     };
 
-    if (desc.filter === 'range') {
+    if (desc.filter === "range") {
       col.filterFn = inNumberRange as FilterFn<TData>;
     }
 
-    if (typeof desc.width === 'number') {
+    if (typeof desc.width === "number") {
       col.size = desc.width;
     }
 

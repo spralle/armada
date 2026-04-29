@@ -1,0 +1,74 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": [
+    "dist/**",
+    "build/**",
+    "out/**",
+    "fixtures/**",
+    "**/node_modules/**",
+    "dist-test/**",
+    "templates/**",
+    "docs/**",
+    "**/internal-import-negative.ts"
+  ],
+  "project": ["**/*.ts", "**/*.tsx", "**/*.mjs"],
+  "workspaces": {
+    "apps/*": {
+      "entry": [
+        "src/main.ts",
+        "src/main.tsx",
+        "src/index.ts",
+        "vite.config.ts",
+        "test/**/*.test.mjs",
+        "test/**/*.test-hooked.mjs"
+      ],
+      "project": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.mjs"]
+    },
+    "packages/*": {
+      "entry": [
+        "src/index.ts",
+        "tsup.config.ts",
+        "test/**/*.test.mjs",
+        "src/**/*.spec.ts",
+        "src/**/*.spec-*.ts",
+        "src/**/*.test.ts",
+        "src/**/*.test-d.ts",
+        "src/**/__tests__/*.test.ts",
+        "src/**/__tests__/*.spec.ts"
+      ],
+      "project": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.test.mjs"]
+    },
+    "plugins/*": {
+      "entry": [
+        "src/index.ts",
+        "src/manifest.ts",
+        "src/plugin-contract.ts",
+        "src/plugin-contract-expose.ts",
+        "src/plugin-parts.ts",
+        "src/plugin-parts-expose.ts",
+        "src/plugin-slots-expose.ts",
+        "src/plugin-services-expose.ts",
+        "src/plugin-services.ts",
+        "src/plugin-components-expose.ts",
+        "src/plugin-components.ts",
+        "src/plugin-layer-surfaces-expose.ts",
+        "src/plugin-layer-surfaces.ts",
+        "src/plugin-activate.ts",
+        "vite.config.ts"
+      ],
+      "project": ["src/**/*.ts", "src/**/*.tsx"]
+    }
+  },
+  "ignoreDependencies": [
+    "concurrently",
+    "tsup",
+    "@module-federation/vite",
+    "@module-federation/enhanced",
+    "tailwindcss",
+    "@tailwindcss/vite",
+    "vitest",
+    "@weaver/config-policy",
+    "@weaver/config-server",
+    "@weaver/config-sessions"
+  ]
+}

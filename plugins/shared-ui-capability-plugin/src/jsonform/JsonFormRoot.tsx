@@ -1,14 +1,12 @@
-import type { ReactElement } from 'react';
-import { useMemo } from 'react';
-import { useForm } from '@ghost-shell/formr-react';
-import type { FormApi } from '@ghost-shell/formr-core';
-import { compileLayout } from '@ghost-shell/formr-from-schema';
-import type { LayoutNode } from '@ghost-shell/formr-from-schema';
-import { ingestSchema } from '@ghost-shell/schema-core';
-import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
-import type { JsonFormSchema, JsonFormLayoutNode } from '@ghost-shell/contracts';
-import { FieldGroup } from '@ghost-shell/ui';
-import { FormField } from './FormField.js';
+import type { JsonFormLayoutNode, JsonFormSchema } from "@ghost-shell/contracts";
+import type { FormApi } from "@ghost-shell/formr-core";
+import type { LayoutNode, SchemaFieldInfo } from "@ghost-shell/formr-from-schema";
+import { compileLayout, ingestSchema } from "@ghost-shell/formr-from-schema";
+import { useForm } from "@ghost-shell/formr-react";
+import { FieldGroup } from "@ghost-shell/ui";
+import type { ReactElement } from "react";
+import { useMemo } from "react";
+import { FormField } from "./FormField.js";
 
 interface JsonFormRootProps {
   readonly schema: JsonFormSchema;
@@ -41,7 +39,7 @@ function renderNode(
   form: FormApi<unknown, unknown>,
   onChange: (path: string, value: unknown) => void,
 ): ReactElement | null {
-  if (node.type === 'field') {
+  if (node.type === "field") {
     const fieldInfo = node.path ? fieldMap.get(node.path) : undefined;
     if (!fieldInfo) return null;
     return <FormField key={node.id} form={form} field={fieldInfo} onChange={onChange} />;
@@ -49,13 +47,11 @@ function renderNode(
 
   const children = node.children?.map((child) => renderNode(child, fieldMap, form, onChange));
 
-  if (node.type === 'section') {
+  if (node.type === "section") {
     const title = node.props?.title as string | undefined;
     return (
       <div key={node.id} className="flex flex-col gap-3">
-        {title ? (
-          <h3 className="text-sm font-semibold text-[var(--ghost-text-primary)]">{title}</h3>
-        ) : null}
+        {title ? <h3 className="text-sm font-semibold text-[var(--ghost-text-primary)]">{title}</h3> : null}
         <FieldGroup>{children}</FieldGroup>
       </div>
     );
@@ -68,11 +64,7 @@ export function JsonFormRoot({ schema, data, onChange, layout }: JsonFormRootPro
   const ingestion = useMemo(() => ingestSchema(schema), [schema]);
 
   const compiledLayout = useMemo(
-    () =>
-      compileLayout(
-        ingestion,
-        layout ? { overrideLayout: layout as LayoutNode } : undefined,
-      ),
+    () => compileLayout(ingestion, layout ? { overrideLayout: layout as LayoutNode } : undefined),
     [ingestion, layout],
   );
 

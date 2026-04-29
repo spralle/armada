@@ -1,10 +1,7 @@
-import type { ActionSurface } from "../action-surface.js";
 import type { IntentRuntime } from "@ghost-shell/intents";
+import type { ActionSurface } from "../action-surface.js";
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import {
-  createActionService,
-  type ActionServiceDependencies,
-} from "./action-service.js";
+import { type ActionServiceDependencies, createActionService } from "./action-service.js";
 
 function createTestSurface(): ActionSurface {
   return {
@@ -49,14 +46,27 @@ function createTestSurface(): ActionSurface {
 function createMockIntentRuntime(): IntentRuntime {
   return {
     async resolve(_intent, _delegate, _options) {
-      return { kind: "executed", match: { pluginId: "shell.core", pluginName: "Shell", actionId: "stub", title: "Stub", handler: "stub", intentType: "stub", when: {}, loadStrategy: "eager", registrationOrder: 0, sortKey: "stub" }, trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] } };
+      return {
+        kind: "executed",
+        match: {
+          pluginId: "shell.core",
+          pluginName: "Shell",
+          actionId: "stub",
+          title: "Stub",
+          handler: "stub",
+          intentType: "stub",
+          when: {},
+          loadStrategy: "eager",
+          registrationOrder: 0,
+          sortKey: "stub",
+        },
+        trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] },
+      };
     },
   };
 }
 
-function createTestDeps(
-  overrides: Partial<ActionServiceDependencies> = {},
-): ActionServiceDependencies {
+function createTestDeps(overrides: Partial<ActionServiceDependencies> = {}): ActionServiceDependencies {
   return {
     getActionSurface: () => createTestSurface(),
     getActionContext: () => ({}),
@@ -243,9 +253,11 @@ export function registerActionServiceSpecs(harness: SpecHarness): void {
       return true;
     });
 
-    const { service } = createActionService(createTestDeps({
-      runtimeActionRegistry: sharedRuntimeRegistry,
-    }));
+    const { service } = createActionService(
+      createTestDeps({
+        runtimeActionRegistry: sharedRuntimeRegistry,
+      }),
+    );
 
     await service.executeAction("shell.workspace.create");
     assertEqual(called, true, "shared runtime registry handler should execute");

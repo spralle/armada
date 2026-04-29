@@ -1,9 +1,5 @@
-import type {
-  ContextTabCloseability,
-  ContextTabSlot,
-  ShellContextState,
-} from "./types.js";
 import { closeTab, closeTabWithHistory } from "./tabs-groups.js";
+import type { ContextTabCloseability, ContextTabSlot, ShellContextState } from "./types.js";
 
 export function getTabCloseability(state: ShellContextState, tabId: string): ContextTabCloseability {
   const tab = state.tabs[tabId];

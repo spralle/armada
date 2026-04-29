@@ -1,4 +1,4 @@
-import type { UrlCodecStrategy, UrlCodecRegistry } from "./codec-types.js";
+import type { UrlCodecRegistry, UrlCodecStrategy } from "./codec-types.js";
 
 /**
  * Create a URL codec registry. Follows the same pattern as PlacementStrategyRegistry.
@@ -25,9 +25,7 @@ export function createUrlCodecRegistry(fallbackId: string): UrlCodecRegistry {
       if (fallback) {
         return fallback;
       }
-      throw new Error(
-        `No URL codec found for "${id}" and fallback "${fallbackId}" is not registered.`,
-      );
+      throw new Error(`No URL codec found for "${id}" and fallback "${fallbackId}" is not registered.`);
     },
 
     list(): readonly UrlCodecStrategy[] {

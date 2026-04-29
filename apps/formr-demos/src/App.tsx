@@ -1,7 +1,7 @@
-import { Fragment, useState } from 'react';
-import './globals.css';
-import { ScrollArea, cn } from '@ghost-shell/ui';
-import { demos } from './demos/index';
+import { Fragment, useState } from "react";
+import "./globals.css";
+import { cn, ScrollArea } from "@ghost-shell/ui";
+import { demos } from "./demos/index";
 
 export function App() {
   const [activeDemo, setActiveDemo] = useState(0);
@@ -12,9 +12,7 @@ export function App() {
       <aside className="w-72 border-r border-border bg-card flex flex-col">
         <div className="p-4 border-b border-border">
           <h1 className="text-lg font-bold text-foreground">Formr Demos</h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            JSON Schema → Beautiful Forms
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">JSON Schema → Beautiful Forms</p>
         </div>
         <ScrollArea className="flex-1">
           <nav className="p-2 flex flex-col gap-1">
@@ -28,12 +26,13 @@ export function App() {
                     </div>
                   )}
                   <button
+                    type="button"
                     onClick={() => setActiveDemo(i)}
                     className={cn(
-                      'text-left px-3 py-2 rounded-md text-sm transition-colors',
+                      "text-left px-3 py-2 rounded-md text-sm transition-colors",
                       i === activeDemo
-                        ? 'bg-accent text-accent-foreground'
-                        : 'text-muted-foreground hover:bg-accent/50',
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:bg-accent/50",
                     )}
                   >
                     <div className="font-medium">{d.title}</div>

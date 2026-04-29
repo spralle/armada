@@ -1,6 +1,6 @@
 import type { ShellRuntime } from "./app/types.js";
-import type { SpecHarness } from "./context-state.spec-harness.js";
 import { createInitialShellContextState, registerTab } from "./context-state.js";
+import type { SpecHarness } from "./context-state.spec-harness.js";
 import { toActionContext } from "./shell-runtime/action-context.js";
 
 export function registerActionContextSpecs(harness: SpecHarness): void {

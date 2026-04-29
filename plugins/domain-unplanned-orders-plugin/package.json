@@ -21,13 +21,21 @@
           "id": "domain.unplanned-orders.open",
           "title": "Open Unplanned Orders",
           "intent": "domain.entity.open",
-          "when": { "entityType": { "$eq": "order" } }
+          "when": {
+            "entityType": {
+              "$eq": "order"
+            }
+          }
         },
         {
           "id": "domain.unplanned-orders.inspect",
           "title": "Inspect Order Details",
           "intent": "domain.entity.inspect",
-          "when": { "entityType": { "$eq": "order" } }
+          "when": {
+            "entityType": {
+              "$eq": "order"
+            }
+          }
         }
       ],
       "selection": [

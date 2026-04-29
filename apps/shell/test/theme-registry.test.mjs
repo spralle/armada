@@ -1,11 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { createThemeRegistry, manageBackgroundImage } from "../dist-test/src/theme-registry.js";
+import test from "node:test";
 import {
+  clearUserThemePreference,
   readUserThemePreference,
   writeUserThemePreference,
-  clearUserThemePreference,
 } from "../dist-test/src/theme-persistence.js";
+import { createThemeRegistry, manageBackgroundImage } from "../dist-test/src/theme-registry.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -37,12 +37,24 @@ function createMockPluginRegistry(plugins) {
     registerBuiltinPlugin() {},
     registerManifestDescriptors() {},
     async setEnabled() {},
-    async activateByCommand() { return false; },
-    async activateByView() { return false; },
-    async activateByIntent() { return false; },
-    async activateByEvent() { return false; },
-    async resolveComponentCapability() { return null; },
-    async resolveServiceCapability() { return null; },
+    async activateByCommand() {
+      return false;
+    },
+    async activateByView() {
+      return false;
+    },
+    async activateByIntent() {
+      return false;
+    },
+    async activateByEvent() {
+      return false;
+    },
+    async resolveComponentCapability() {
+      return null;
+    },
+    async resolveServiceCapability() {
+      return null;
+    },
     getSnapshot() {
       return {
         tenantId: "demo",
@@ -67,15 +79,27 @@ function createMockPluginRegistry(plugins) {
 }
 
 // Mock localStorage for Node.js test environment
-function createMockLocalStorage() {
+function _createMockLocalStorage() {
   const store = new Map();
   return {
-    getItem(key) { return store.get(key) ?? null; },
-    setItem(key, value) { store.set(key, String(value)); },
-    removeItem(key) { store.delete(key); },
-    clear() { store.clear(); },
-    get length() { return store.size; },
-    key(index) { return [...store.keys()][index] ?? null; },
+    getItem(key) {
+      return store.get(key) ?? null;
+    },
+    setItem(key, value) {
+      store.set(key, String(value));
+    },
+    removeItem(key) {
+      store.delete(key);
+    },
+    clear() {
+      store.clear();
+    },
+    get length() {
+      return store.size;
+    },
+    key(index) {
+      return [...store.keys()][index] ?? null;
+    },
   };
 }
 
@@ -88,9 +112,7 @@ test("theme registry discovers themes from active plugin contracts", () => {
   const theme2 = createMockTheme("light-theme", "Light Theme", "light");
   const contract = createMockContract([theme1, theme2]);
 
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -133,9 +155,7 @@ test("theme registry discovers themes from multiple plugins", () => {
 test("setTheme returns false for unknown theme ID", () => {
   const theme = createMockTheme("known-theme", "Known Theme");
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -148,9 +168,7 @@ test("setTheme returns false for unknown theme ID", () => {
 test("setTheme returns true and updates active theme ID for known theme", () => {
   const theme = createMockTheme("dark-theme", "Dark Theme");
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -164,9 +182,7 @@ test("setTheme switches between themes", () => {
   const theme1 = createMockTheme("dark-theme", "Dark");
   const theme2 = createMockTheme("light-theme", "Light", "light");
   const contract = createMockContract([theme1, theme2]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -207,9 +223,7 @@ test("applyInitialTheme uses tenant default when no user preference", () => {
   const theme1 = createMockTheme("theme-a", "Theme A");
   const theme2 = createMockTheme("theme-b", "Theme B");
   const contract = createMockContract([theme1, theme2]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({
     pluginRegistry: mockRegistry,
@@ -229,9 +243,7 @@ test("applyInitialTheme uses first available when no preference and no tenant de
   const theme1 = createMockTheme("first-theme", "First Theme");
   const theme2 = createMockTheme("second-theme", "Second Theme");
   const contract = createMockContract([theme1, theme2]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -242,9 +254,7 @@ test("applyInitialTheme uses first available when no preference and no tenant de
 
 test("applyInitialTheme does nothing when no themes are available", () => {
   const contract = createMockContract([]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -260,9 +270,7 @@ test("applyInitialTheme does nothing when no themes are available", () => {
 test("applyInitialTheme falls back to first available when tenant default does not match", () => {
   const theme = createMockTheme("actual-theme", "Actual Theme");
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({
     pluginRegistry: mockRegistry,
@@ -288,20 +296,22 @@ test("theme registry excludes themes from disabled plugins", () => {
       return {
         tenantId: "demo",
         diagnostics: [],
-        plugins: [{
-          id: "ghost.disabled",
-          enabled: false,
-          loadStrategy: "remote-manifest",
-          descriptor: {
+        plugins: [
+          {
             id: "ghost.disabled",
-            version: "1.0.0",
-            entry: "https://example.com/mf-manifest.json",
-            compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" },
+            enabled: false,
+            loadStrategy: "remote-manifest",
+            descriptor: {
+              id: "ghost.disabled",
+              version: "1.0.0",
+              entry: "https://example.com/mf-manifest.json",
+              compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" },
+            },
+            contract,
+            failure: null,
+            lifecycle: { state: "disabled", lastTransitionAt: new Date().toISOString(), lastTrigger: null },
           },
-          contract,
-          failure: null,
-          lifecycle: { state: "disabled", lastTransitionAt: new Date().toISOString(), lastTrigger: null },
-        }],
+        ],
       };
     },
   };
@@ -318,20 +328,22 @@ test("theme registry excludes plugins with null contract", () => {
   mockRegistry.getSnapshot = () => ({
     tenantId: "demo",
     diagnostics: [],
-    plugins: [{
-      id: "ghost.no-contract",
-      enabled: true,
-      loadStrategy: "remote-manifest",
-      descriptor: {
+    plugins: [
+      {
         id: "ghost.no-contract",
-        version: "1.0.0",
-        entry: "https://example.com/mf-manifest.json",
-        compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" },
+        enabled: true,
+        loadStrategy: "remote-manifest",
+        descriptor: {
+          id: "ghost.no-contract",
+          version: "1.0.0",
+          entry: "https://example.com/mf-manifest.json",
+          compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" },
+        },
+        contract: null,
+        failure: null,
+        lifecycle: { state: "registered", lastTransitionAt: new Date().toISOString(), lastTrigger: null },
       },
-      contract: null,
-      failure: null,
-      lifecycle: { state: "registered", lastTransitionAt: new Date().toISOString(), lastTrigger: null },
-    }],
+    ],
   });
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
@@ -366,9 +378,7 @@ test("applyTheme passes backgrounds through to manageBackgroundImage (theme with
     backgrounds: [{ url: "https://example.com/wallpaper.jpg", mode: "cover" }],
   };
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.bg", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.bg", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -388,9 +398,7 @@ test("theme switch between themes with and without backgrounds does not throw", 
   };
   const themeWithoutBg = createMockTheme("without-bg", "Without BG");
   const contract = createMockContract([themeWithBg, themeWithoutBg]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.mixed", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.mixed", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -410,9 +418,7 @@ test("theme switch between themes with and without backgrounds does not throw", 
 test("getAvailableBackgrounds returns empty array when no theme active", () => {
   const theme = createMockTheme("bg-theme", "BG Theme");
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -427,9 +433,7 @@ test("getAvailableBackgrounds returns theme backgrounds after setTheme", () => {
   ];
   const theme = { ...createMockTheme("bg-theme", "BG Theme"), backgrounds };
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -444,9 +448,7 @@ test("getAvailableBackgrounds returns theme backgrounds after setTheme", () => {
 test("getAvailableBackgrounds returns empty array when theme has no backgrounds", () => {
   const theme = createMockTheme("no-bg-theme", "No BG Theme");
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -462,9 +464,7 @@ test("setBackground returns true for valid index and updates active background",
   ];
   const theme = { ...createMockTheme("bg-theme", "BG Theme"), backgrounds };
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -485,9 +485,7 @@ test("setBackground returns false for out-of-bounds index", () => {
   const backgrounds = [{ url: "https://example.com/bg.jpg" }];
   const theme = { ...createMockTheme("bg-theme", "BG"), backgrounds };
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -499,9 +497,7 @@ test("setBackground returns false for out-of-bounds index", () => {
 
 test("setBackground returns false when no theme is active", () => {
   const contract = createMockContract([createMockTheme("t", "T")]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -515,9 +511,7 @@ test("setCustomBackground applies custom URL and updates active background", () 
     backgrounds: [{ url: "https://example.com/default.jpg" }],
   };
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -536,9 +530,7 @@ test("setCustomBackground applies custom URL and updates active background", () 
 test("setCustomBackground defaults mode to cover", () => {
   const theme = createMockTheme("bg-theme", "BG");
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -555,9 +547,7 @@ test("clearCustomBackground reverts to theme default background", () => {
   const backgrounds = [{ url: "https://example.com/default.jpg", mode: "cover" }];
   const theme = { ...createMockTheme("bg-theme", "BG"), backgrounds };
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -576,9 +566,7 @@ test("clearCustomBackground reverts to theme default background", () => {
 test("clearCustomBackground clears background when theme has no backgrounds", () => {
   const theme = createMockTheme("no-bg", "No BG");
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -592,9 +580,7 @@ test("clearCustomBackground clears background when theme has no backgrounds", ()
 
 test("getActiveBackground returns null when no theme is active", () => {
   const contract = createMockContract([createMockTheme("t", "T")]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -603,15 +589,10 @@ test("getActiveBackground returns null when no theme is active", () => {
 });
 
 test("getActiveBackground returns correct state after setTheme with backgrounds", () => {
-  const backgrounds = [
-    { url: "https://example.com/bg1.jpg", mode: "cover" },
-    { url: "https://example.com/bg2.jpg" },
-  ];
+  const backgrounds = [{ url: "https://example.com/bg1.jpg", mode: "cover" }, { url: "https://example.com/bg2.jpg" }];
   const theme = { ...createMockTheme("bg-theme", "BG Theme"), backgrounds };
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -631,9 +612,7 @@ test("getAvailableThemes includes author field from theme contribution", () => {
     author: "Test Author",
   };
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -645,9 +624,7 @@ test("getAvailableThemes includes author field from theme contribution", () => {
 test("getAvailableThemes has undefined author when not set", () => {
   const theme = createMockTheme("no-author-theme", "No Author");
   const contract = createMockContract([theme]);
-  const mockRegistry = createMockPluginRegistry([
-    { pluginId: "ghost.theme.default", contract },
-  ]);
+  const mockRegistry = createMockPluginRegistry([{ pluginId: "ghost.theme.default", contract }]);
 
   const themeRegistry = createThemeRegistry({ pluginRegistry: mockRegistry });
   themeRegistry.discoverThemes();
@@ -740,7 +717,12 @@ test("loadAllThemes activates unloaded plugins and discovers their themes", asyn
           id: "ghost.plugin-a",
           enabled: true,
           loadStrategy: "remote-manifest",
-          descriptor: { id: "ghost.plugin-a", version: "1.0.0", entry: "https://example.com/a.json", compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" } },
+          descriptor: {
+            id: "ghost.plugin-a",
+            version: "1.0.0",
+            entry: "https://example.com/a.json",
+            compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" },
+          },
           contract: contractA,
           failure: null,
           lifecycle: { state: "active", lastTransitionAt: new Date().toISOString(), lastTrigger: null },
@@ -749,10 +731,19 @@ test("loadAllThemes activates unloaded plugins and discovers their themes", asyn
           id: "ghost.plugin-b",
           enabled: true,
           loadStrategy: "remote-manifest",
-          descriptor: { id: "ghost.plugin-b", version: "1.0.0", entry: "https://example.com/b.json", compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" } },
+          descriptor: {
+            id: "ghost.plugin-b",
+            version: "1.0.0",
+            entry: "https://example.com/b.json",
+            compatibility: { shell: "^1.0.0", pluginContract: "^1.0.0" },
+          },
           contract: state.pluginBActivated ? contractB : null,
           failure: null,
-          lifecycle: { state: state.pluginBActivated ? "active" : "registered", lastTransitionAt: new Date().toISOString(), lastTrigger: null },
+          lifecycle: {
+            state: state.pluginBActivated ? "active" : "registered",
+            lastTransitionAt: new Date().toISOString(),
+            lastTrigger: null,
+          },
         },
       ];
       return { tenantId: "demo", diagnostics: [], plugins };

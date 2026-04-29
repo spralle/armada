@@ -1,19 +1,16 @@
-import { useState, useCallback } from "react";
-import type {
-  PluginRegistryEntry,
-  PluginManagementService,
-} from "@ghost-shell/contracts";
+import type { PluginManagementService, PluginRegistryEntry } from "@ghost-shell/contracts";
 import {
+  Badge,
+  Button,
   Card,
   CardContent,
-  Badge,
-  Switch,
   Collapsible,
-  CollapsibleTrigger,
   CollapsibleContent,
-  Button,
+  CollapsibleTrigger,
   Separator,
+  Switch,
 } from "@ghost-shell/ui";
+import { useCallback, useState } from "react";
 import { PluginDetail } from "./PluginDetail.js";
 
 interface PluginCardProps {
@@ -44,16 +41,13 @@ export function PluginCard({ plugin, managementService, disabled }: PluginCardPr
     void managementService.activatePlugin(plugin.pluginId);
   }, [managementService, plugin.pluginId]);
 
-  const showActivateButton =
-    plugin.enabled && plugin.status !== "active" && plugin.status !== "activating";
+  const showActivateButton = plugin.enabled && plugin.status !== "active" && plugin.status !== "activating";
 
   return (
     <Collapsible open={expanded} onOpenChange={setExpanded} className={expanded ? "col-span-full" : ""}>
-      <Card
-        id={`plugin-card-${plugin.pluginId}`}
-        className="transition-colors bg-card border-border"
-      >
+      <Card id={`plugin-card-${plugin.pluginId}`} className="transition-colors bg-card border-border">
         <CollapsibleTrigger asChild>
+          {/* biome-ignore lint/a11y/useSemanticElements: CollapsibleTrigger requires div wrapper */}
           <div
             role="button"
             tabIndex={0}
@@ -68,20 +62,15 @@ export function PluginCard({ plugin, managementService, disabled }: PluginCardPr
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium truncate">{plugin.name}</span>
-                <span className="text-xs shrink-0 text-muted-foreground">
-                  {plugin.version}
-                </span>
+                <span className="text-xs shrink-0 text-muted-foreground">{plugin.version}</span>
               </div>
-              <div className="text-xs truncate text-muted-foreground">
-                {plugin.pluginId}
-              </div>
+              <div className="text-xs truncate text-muted-foreground">{plugin.pluginId}</div>
             </div>
-            <Badge
-              variant={STATUS_VARIANT[plugin.status] ?? "outline"}
-              className="text-[11px] px-1.5 py-0 shrink-0"
-            >
+            <Badge variant={STATUS_VARIANT[plugin.status] ?? "outline"} className="text-[11px] px-1.5 py-0 shrink-0">
               {plugin.status}
             </Badge>
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: click stops propagation for nested switch */}
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: wrapper div prevents event bubbling */}
             <div onClick={(e) => e.stopPropagation()}>
               <Switch
                 checked={plugin.enabled}

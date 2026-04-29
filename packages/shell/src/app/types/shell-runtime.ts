@@ -1,13 +1,10 @@
-import type { PlacementConfig, PlacementStrategyRegistry } from "@ghost-shell/state";
 import type { ShellStateObserver } from "@ghost-shell/router";
-import type {
-  DndDiagnosticEnvelope,
-  DndDiagnosticRuntime,
-} from "../dnd-diagnostics.js";
+import type { PlacementConfig, PlacementStrategyRegistry } from "@ghost-shell/state";
 import type { ShellPartHostAdapter } from "../contracts.js";
+import type { DndDiagnosticEnvelope, DndDiagnosticRuntime } from "../dnd-diagnostics.js";
 import type {
-  BridgeHost,
   ActionHost,
+  BridgeHost,
   DndHost,
   IntentHost,
   LayoutHost,
@@ -24,18 +21,18 @@ import type {
 // migrate to the narrowest host interface(s) they need (armada-mi6h).
 // ---------------------------------------------------------------------------
 
-export interface ShellRuntime extends
-  DndDiagnosticRuntime,
-  LayoutHost,
-  StateHost,
-  BridgeHost,
-  PluginHost,
-  ThemeHost,
-  ActionHost,
-  IntentHost,
-  DndHost,
-  PersistenceHost,
-  PopoutHost {
+export interface ShellRuntime
+  extends DndDiagnosticRuntime,
+    LayoutHost,
+    StateHost,
+    BridgeHost,
+    PluginHost,
+    ThemeHost,
+    ActionHost,
+    IntentHost,
+    DndHost,
+    PersistenceHost,
+    PopoutHost {
   selectedPartId: string | null;
   selectedPartTitle: string | null;
   notice: string;

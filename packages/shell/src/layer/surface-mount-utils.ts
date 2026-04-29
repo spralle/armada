@@ -1,7 +1,4 @@
-import type {
-  PluginLayerSurfaceContribution,
-  LayerSurfaceContext,
-} from "@ghost-shell/contracts";
+import type { LayerSurfaceContext, PluginLayerSurfaceContribution } from "@ghost-shell/contracts";
 import { resolveModuleMountFn } from "@ghost-shell/contracts";
 import type { PluginHost, ShellRuntime } from "../app/types.js";
 import type { MountCleanup } from "../federation-mount-utils.js";

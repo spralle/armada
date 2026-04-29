@@ -1,3 +1,6 @@
+import { readDockSplitRatio } from "./dock-tree.js";
+import { resizeNearestSplitInDirection } from "./dock-tree-operations.js";
+import type { DockNode, DockStackNode } from "./dock-tree-types.js";
 import {
   absorbNeighborStackInDirection,
   detachActiveTabInDirection,
@@ -6,10 +9,7 @@ import {
   moveActiveTabInDirection,
   swapActiveTabInDirection,
 } from "./dock-tree-window-actions.js";
-import { resizeNearestSplitInDirection } from "./dock-tree-operations.js";
-import { readDockSplitRatio } from "./dock-tree.js";
 import { setActiveTab } from "./tabs-groups.js";
-import type { DockNode, DockStackNode } from "./dock-tree-types.js";
 import type { ShellContextState } from "./types.js";
 
 type DockDirection = "left" | "right" | "up" | "down";
@@ -178,9 +178,7 @@ export function absorbStackInDirection(
   };
 }
 
-export function explodeActiveStack(
-  state: ShellContextState,
-): { state: ShellContextState; changed: boolean } {
+export function explodeActiveStack(state: ShellContextState): { state: ShellContextState; changed: boolean } {
   const activeTabId = state.activeTabId;
   if (!activeTabId) {
     return { state, changed: false };
@@ -221,9 +219,7 @@ export function resizeInDirection(
   };
 }
 
-export function equalizeSplits(
-  state: ShellContextState,
-): { state: ShellContextState; changed: boolean } {
+export function equalizeSplits(state: ShellContextState): { state: ShellContextState; changed: boolean } {
   if (!state.dockTree.root) {
     return { state, changed: false };
   }

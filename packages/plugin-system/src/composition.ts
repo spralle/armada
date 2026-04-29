@@ -1,6 +1,7 @@
+import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts/layer";
 import type {
-  PluginDockableTabMetadata,
   PluginContract,
+  PluginDockableTabMetadata,
   PluginPartContribution,
   PluginSectionContribution,
   PluginSlotContribution,
@@ -9,7 +10,6 @@ import type {
   ShellEdgeSlotPosition,
   ThemeContribution,
 } from "@ghost-shell/contracts/plugin";
-import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts/layer";
 
 export interface ComposedPluginViewContribution {
   pluginId: string;
@@ -77,9 +77,7 @@ export interface PluginContributionSource {
  * Consider extracting a ContributionStrategy<T> pattern if contribution
  * types grow beyond the current set. See armada-7fks.
  */
-export function composeEnabledPluginContributions(
-  plugins: PluginContributionSource[],
-): ComposedPluginContributions {
+export function composeEnabledPluginContributions(plugins: PluginContributionSource[]): ComposedPluginContributions {
   const views: ComposedPluginViewContribution[] = [];
   const parts: ComposedPluginPartContribution[] = [];
   const slots: ComposedPluginSlotContribution[] = [];
@@ -128,10 +126,7 @@ export function composeEnabledPluginContributions(
   };
 }
 
-function toComposedView(
-  pluginId: string,
-  view: PluginViewContribution,
-): ComposedPluginViewContribution {
+function toComposedView(pluginId: string, view: PluginViewContribution): ComposedPluginViewContribution {
   return {
     pluginId,
     id: view.id,
@@ -140,10 +135,7 @@ function toComposedView(
   };
 }
 
-function toComposedPart(
-  pluginId: string,
-  part: PluginPartContribution,
-): ComposedPluginPartContribution {
+function toComposedPart(pluginId: string, part: PluginPartContribution): ComposedPluginPartContribution {
   return {
     pluginId,
     id: part.id,
@@ -153,10 +145,7 @@ function toComposedPart(
   };
 }
 
-function toComposedSlot(
-  pluginId: string,
-  slot: PluginSlotContribution,
-): ComposedPluginSlotContribution {
+function toComposedSlot(pluginId: string, slot: PluginSlotContribution): ComposedPluginSlotContribution {
   return {
     pluginId,
     id: slot.id,
@@ -167,10 +156,7 @@ function toComposedSlot(
   };
 }
 
-function toComposedSection(
-  pluginId: string,
-  section: PluginSectionContribution,
-): ComposedPluginSectionContribution {
+function toComposedSection(pluginId: string, section: PluginSectionContribution): ComposedPluginSectionContribution {
   return {
     pluginId,
     id: section.id,

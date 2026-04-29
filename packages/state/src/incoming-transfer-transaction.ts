@@ -1,11 +1,6 @@
 import type { DockDropZone } from "./dock-tree-types.js";
+import { moveTabBeforeTab, moveTabInDockTree, registerTab, setActiveTab } from "./tabs-groups.js";
 import type { ShellContextState } from "./types.js";
-import {
-  moveTabBeforeTab,
-  moveTabInDockTree,
-  registerTab,
-  setActiveTab,
-} from "./tabs-groups.js";
 
 export interface IncomingTransferJournal {
   readonly appliedTransferIds: ReadonlySet<string>;
@@ -24,14 +19,14 @@ export interface IncomingTransferTab {
 
 export type IncomingTransferTarget =
   | {
-    kind: "tab-strip";
-    beforeTabId: string;
-  }
+      kind: "tab-strip";
+      beforeTabId: string;
+    }
   | {
-    kind: "dock-zone";
-    targetTabId: string;
-    zone: DockDropZone;
-  };
+      kind: "dock-zone";
+      targetTabId: string;
+      zone: DockDropZone;
+    };
 
 export interface IncomingTransferTransactionInput {
   transferId: string;
@@ -104,9 +99,7 @@ function resolveGroupId(state: ShellContextState, input: IncomingTransferTransac
     return input.tab.groupId;
   }
 
-  const targetTabId = input.target.kind === "tab-strip"
-    ? input.target.beforeTabId
-    : input.target.targetTabId;
+  const targetTabId = input.target.kind === "tab-strip" ? input.target.beforeTabId : input.target.targetTabId;
   const targetGroup = state.tabs[targetTabId]?.groupId;
   if (targetGroup) {
     return targetGroup;

@@ -1,5 +1,5 @@
-import type { PartialThemePalette, TerminalPalette } from "./theme-types.js";
 import type { PluginLayerDefinition, PluginLayerSurfaceContribution } from "./layer-types.js";
+import type { PartialThemePalette, TerminalPalette } from "./theme-types.js";
 /** Configuration property schema (JSON Schema subset with extension fields). */
 export interface ConfigurationPropertySchema {
   type?: string | readonly string[] | undefined;
@@ -190,10 +190,10 @@ export interface PluginConfigurationContribution {
 }
 
 /** Edge slot position for shell chrome areas */
-export type ShellEdgeSlot = "top" | "bottom" | "left" | "right"
+export type ShellEdgeSlot = "top" | "bottom" | "left" | "right";
 
 /** Position within an edge slot's flex layout (mirrors Waybar modules-left/center/right) */
-export type ShellEdgeSlotPosition = "start" | "center" | "end"
+export type ShellEdgeSlotPosition = "start" | "center" | "end";
 
 /** Plugin contribution for edge slot components */
 export interface PluginSlotContribution {
@@ -268,13 +268,13 @@ export interface PluginContract {
   displayName?: string | undefined;
   contributes?: PluginContributions | undefined;
   dependsOn?: PluginDependencies | undefined;
-  activationEvents?: ("onStartup")[] | undefined;
+  activationEvents?: "onStartup"[] | undefined;
 }
 
 /** Partial plugin contract for use in definePlugin — manifest is injected at runtime from package.json. */
-export type PluginContractInput = Omit<PluginContract, 'manifest'> & {
+export type PluginContractInput = Omit<PluginContract, "manifest"> & {
   manifest?: PluginManifestIdentity | undefined;
-}
+};
 
 export interface PluginCompatibilityMetadata {
   shell: string;

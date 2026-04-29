@@ -1,5 +1,10 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
+import { buildActionSurface, dispatchAction, resolveMenuActions } from "../../../apps/shell/src/action-surface.ts";
+import {
+  createDefaultContributionPredicateMatcher,
+  evaluateContributionPredicate,
+} from "../../plugin-system/src/predicate.ts";
 import {
   composeEnabledPluginContributions,
   composeThemeContributions,
@@ -7,15 +12,6 @@ import {
   parsePluginContract,
   parseTenantPluginManifest,
 } from "../dist/index.js";
-import {
-  createDefaultContributionPredicateMatcher,
-  evaluateContributionPredicate,
-} from "../../plugin-system/src/predicate.ts";
-import {
-  buildActionSurface,
-  dispatchAction,
-  resolveMenuActions,
-} from "../../../apps/shell/src/action-surface.ts";
 
 test("returns typed data for a valid plugin contract", () => {
   const result = parsePluginContract({
@@ -128,7 +124,10 @@ test("returns structured errors for missing required manifest fields", () => {
 
   assert.equal(result.success, false);
   if (!result.success) {
-    assert.equal(result.errors.some((error) => error.path === "manifest.id"), true);
+    assert.equal(
+      result.errors.some((error) => error.path === "manifest.id"),
+      true,
+    );
     assert.equal(
       result.errors.some((error) => error.path === "manifest.version"),
       true,
@@ -255,9 +254,7 @@ test("rejects invalid capability and dependency declaration shapes", () => {
   assert.equal(result.success, false);
   if (!result.success) {
     assert.equal(
-      result.errors.some(
-        (error) => error.path === "contributes.capabilities.components.0.version",
-      ),
+      result.errors.some((error) => error.path === "contributes.capabilities.components.0.version"),
       true,
     );
     assert.equal(
@@ -391,9 +388,7 @@ test("tenant manifest parser reports nested field validation errors", () => {
   assert.equal(result.success, false);
   if (!result.success) {
     assert.equal(
-      result.errors.some(
-        (error) => error.path === "plugins.0.compatibility.pluginContract",
-      ),
+      result.errors.some((error) => error.path === "plugins.0.compatibility.pluginContract"),
       true,
     );
     assert.equal(
@@ -699,12 +694,7 @@ test("action-surface menu and keybinding predicate semantics match default match
     const expected = evaluateContributionPredicate(testCase.when, testCase.facts);
 
     const resolvedMenu = resolveMenuActions(surface, "actionPalette", testCase.facts);
-    assert.equal(
-      resolvedMenu.length > 0,
-      expected,
-      `menu parity failed for ${testCase.name}`,
-    );
-
+    assert.equal(resolvedMenu.length > 0, expected, `menu parity failed for ${testCase.name}`);
   }
 });
 
@@ -730,9 +720,7 @@ test("accepts a plugin contract with contributes.themes", () => {
             foreground: "#c0caf5",
             accent: "#7aa2f7",
           },
-          backgrounds: [
-            { url: "/assets/ocean.png", mode: "cover" },
-          ],
+          backgrounds: [{ url: "/assets/ocean.png", mode: "cover" }],
           fonts: {
             body: "Inter",
             mono: "JetBrains Mono",
@@ -843,9 +831,7 @@ test("rejects unknown keys in theme contribution (strict mode)", () => {
 
   assert.equal(result.success, false);
   if (!result.success) {
-    const hasUnrecognized = result.errors.some(
-      (error) => error.code === "unrecognized_keys",
-    );
+    const hasUnrecognized = result.errors.some((error) => error.code === "unrecognized_keys");
     assert.equal(hasUnrecognized, true);
   }
 });
@@ -867,9 +853,7 @@ test("rejects unknown keys in branding contribution (strict mode)", () => {
 
   assert.equal(result.success, false);
   if (!result.success) {
-    const hasUnrecognized = result.errors.some(
-      (error) => error.code === "unrecognized_keys",
-    );
+    const hasUnrecognized = result.errors.some((error) => error.code === "unrecognized_keys");
     assert.equal(hasUnrecognized, true);
   }
 });
@@ -886,9 +870,7 @@ test("rejects invalid activationEvent string", () => {
 
   assert.equal(result.success, false);
   if (!result.success) {
-    const hasEventError = result.errors.some(
-      (error) => error.path.startsWith("activationEvents"),
-    );
+    const hasEventError = result.errors.some((error) => error.path.startsWith("activationEvents"));
     assert.equal(hasEventError, true);
   }
 });
@@ -956,11 +938,7 @@ test("composeThemeContributions merges themes from multiple plugins with pluginI
   assert.equal(composed.length, 3);
   assert.deepEqual(
     composed.map((t) => `${t.pluginId}:${t.id}`),
-    [
-      "ghost.theme.ocean:ocean-dark",
-      "ghost.theme.ocean:ocean-light",
-      "ghost.theme.forest:forest-dark",
-    ],
+    ["ghost.theme.ocean:ocean-dark", "ghost.theme.ocean:ocean-light", "ghost.theme.forest:forest-dark"],
   );
   assert.equal(composed[0].mode, "dark");
   assert.equal(composed[1].mode, "light");
@@ -994,10 +972,7 @@ test("accepts a plugin contract with manifest.gallery.screenshots", () => {
       name: "Plugin With Gallery",
       version: "1.0.0",
       gallery: {
-        screenshots: [
-          "https://cdn.example.com/screenshots/1.png",
-          "https://cdn.example.com/screenshots/2.png",
-        ],
+        screenshots: ["https://cdn.example.com/screenshots/1.png", "https://cdn.example.com/screenshots/2.png"],
       },
     },
   });
@@ -1005,10 +980,7 @@ test("accepts a plugin contract with manifest.gallery.screenshots", () => {
   assert.equal(result.success, true);
   if (result.success) {
     assert.equal(result.data.manifest.gallery?.screenshots?.length, 2);
-    assert.equal(
-      result.data.manifest.gallery?.screenshots?.[0],
-      "https://cdn.example.com/screenshots/1.png",
-    );
+    assert.equal(result.data.manifest.gallery?.screenshots?.[0], "https://cdn.example.com/screenshots/1.png");
   }
 });
 
@@ -1049,9 +1021,7 @@ test("rejects unknown keys in gallery (strict mode)", () => {
 
   assert.equal(result.success, false);
   if (!result.success) {
-    const hasUnrecognized = result.errors.some(
-      (error) => error.code === "unrecognized_keys",
-    );
+    const hasUnrecognized = result.errors.some((error) => error.code === "unrecognized_keys");
     assert.equal(hasUnrecognized, true);
   }
 });

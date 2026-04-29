@@ -1,11 +1,8 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  parsePluginContract,
-  GHOST_THEME_CSS_VARS,
-} from "../../../packages/plugin-contracts/dist/index.js";
-import { pluginContract } from "../../../plugins/shadcn-theme-bridge-plugin/src/plugin-contract.ts";
+import test from "node:test";
+import { GHOST_THEME_CSS_VARS, parsePluginContract } from "../../../packages/plugin-contracts/dist/index.js";
 import { GHOST_TO_SHADCN_MAP } from "../../../plugins/shadcn-theme-bridge-plugin/src/bridge-mapping.ts";
+import { pluginContract } from "../../../plugins/shadcn-theme-bridge-plugin/src/plugin-contract.ts";
 
 // ---------------------------------------------------------------------------
 // Expected shadcn variable names (all 29 that shadcn/ui components use)
@@ -48,19 +45,12 @@ const EXPECTED_SHADCN_VARS = [
 // ---------------------------------------------------------------------------
 
 test("GHOST_TO_SHADCN_MAP covers all 29 expected shadcn variables", () => {
-  assert.equal(
-    GHOST_TO_SHADCN_MAP.length,
-    29,
-    `Expected 29 mappings, got ${GHOST_TO_SHADCN_MAP.length}`,
-  );
+  assert.equal(GHOST_TO_SHADCN_MAP.length, 29, `Expected 29 mappings, got ${GHOST_TO_SHADCN_MAP.length}`);
 
   const shadcnVars = GHOST_TO_SHADCN_MAP.map(([, shadcn]) => shadcn);
 
   for (const expected of EXPECTED_SHADCN_VARS) {
-    assert.ok(
-      shadcnVars.includes(expected),
-      `Missing shadcn variable: ${expected}`,
-    );
+    assert.ok(shadcnVars.includes(expected), `Missing shadcn variable: ${expected}`);
   }
 });
 

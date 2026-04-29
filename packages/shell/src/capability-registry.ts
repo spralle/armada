@@ -1,10 +1,10 @@
 export type {
-  CapabilityDependencyFailureCode,
   CapabilityDependencyFailure,
-  PluginDependencyValidationContext,
-  CapabilityResolutionContext,
+  CapabilityDependencyFailureCode,
   CapabilityRegistry,
+  CapabilityResolutionContext,
   PluginComponentsModule,
+  PluginDependencyValidationContext,
   PluginServicesModule,
 } from "@ghost-shell/plugin-system";
 

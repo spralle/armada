@@ -1,15 +1,12 @@
 /** Metadata describing an operator's name and arity. */
 export interface OperatorDefinition {
   readonly name: string;
-  readonly arity: number | 'variadic';
+  readonly arity: number | "variadic";
   readonly minArgs?: number;
 }
 
 /** Function signature for custom operator implementations. */
-export type CustomOperatorFn = (
-  args: readonly unknown[],
-  scope: Record<string, unknown>,
-) => unknown;
+export type CustomOperatorFn = (args: readonly unknown[], scope: Record<string, unknown>) => unknown;
 
 /** A custom operator entry pairing its definition with an execution function. */
 export interface CustomOperatorEntry {
@@ -18,18 +15,18 @@ export interface CustomOperatorEntry {
 }
 
 const BASELINE_OPERATORS: readonly OperatorDefinition[] = [
-  { name: '$eq', arity: 2 },
-  { name: '$ne', arity: 2 },
-  { name: '$gt', arity: 2 },
-  { name: '$gte', arity: 2 },
-  { name: '$lt', arity: 2 },
-  { name: '$lte', arity: 2 },
-  { name: '$and', arity: 'variadic', minArgs: 1 },
-  { name: '$or', arity: 'variadic', minArgs: 1 },
-  { name: '$not', arity: 1 },
-  { name: '$in', arity: 2 },
-  { name: '$nin', arity: 2 },
-  { name: '$exists', arity: 2 },
+  { name: "$eq", arity: 2 },
+  { name: "$ne", arity: 2 },
+  { name: "$gt", arity: 2 },
+  { name: "$gte", arity: 2 },
+  { name: "$lt", arity: 2 },
+  { name: "$lte", arity: 2 },
+  { name: "$and", arity: "variadic", minArgs: 1 },
+  { name: "$or", arity: "variadic", minArgs: 1 },
+  { name: "$not", arity: 1 },
+  { name: "$in", arity: 2 },
+  { name: "$nin", arity: 2 },
+  { name: "$exists", arity: 2 },
 ] as const;
 
 /** Registry of built-in and custom operators for query compilation. */

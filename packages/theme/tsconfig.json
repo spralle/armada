@@ -15,11 +15,7 @@
     "skipLibCheck": true,
     "composite": true
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "exclude": ["src/**/__tests__", "src/**/*.test.ts"],
-  "references": [
-    { "path": "../plugin-contracts" }
-  ]
+  "references": [{ "path": "../plugin-contracts" }]
 }

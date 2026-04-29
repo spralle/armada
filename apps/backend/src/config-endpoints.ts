@@ -1,22 +1,24 @@
-import type { Route, RouteParams, RequestInfo } from "./router.js";
-import { jsonResponse } from "./router.js";
-import { createTenantConfigProviders, validateTenantId } from "./config-loader.js";
-import type { ConfigLoaderOptions } from "./config-loader.js";
-import { resolveConfiguration, inspectKey } from "./config-stubs.js";
-import type { ConfigurationLayerEntry, ConfigurationPropertySchema, ConfigAuditLog, OverrideTracker } from "./config-stubs.js";
 import {
-  extractAccessContext,
   checkPolicy,
+  extractAccessContext,
+  type PolicyCheckDeps,
   policyToResponse,
   recordAudit,
   recordOverride,
-  type PolicyCheckDeps,
 } from "./config-auth.js";
+import type { ConfigLoaderOptions } from "./config-loader.js";
+import { createTenantConfigProviders, validateTenantId } from "./config-loader.js";
+import type {
+  ConfigAuditLog,
+  ConfigurationLayerEntry,
+  ConfigurationPropertySchema,
+  OverrideTracker,
+} from "./config-stubs.js";
+import { inspectKey, resolveConfiguration } from "./config-stubs.js";
+import type { RequestInfo, Route, RouteParams } from "./router.js";
+import { jsonResponse } from "./router.js";
 
-async function loadLayerStack(
-  options: ConfigLoaderOptions,
-  tenantId: string,
-): Promise<ConfigurationLayerEntry[]> {
+async function loadLayerStack(options: ConfigLoaderOptions, tenantId: string): Promise<ConfigurationLayerEntry[]> {
   const providers = createTenantConfigProviders(options, tenantId);
   const [coreData, appData, tenantData] = await Promise.all([
     providers.core.load(),
@@ -75,10 +77,7 @@ export function createConfigRoutes(
   ];
 }
 
-async function handleGetResolvedConfig(
-  loaderOptions: ConfigLoaderOptions,
-  params: RouteParams,
-): Promise<Response> {
+async function handleGetResolvedConfig(loaderOptions: ConfigLoaderOptions, params: RouteParams): Promise<Response> {
   const tenantId = params[0];
   if (!validateTenantId(tenantId)) {
     return jsonResponse({ error: "invalid_tenant_id" }, 400);
@@ -89,10 +88,7 @@ async function handleGetResolvedConfig(
   return jsonResponse(resolved.entries);
 }
 
-async function handleGetConfigLayers(
-  loaderOptions: ConfigLoaderOptions,
-  params: RouteParams,
-): Promise<Response> {
+async function handleGetConfigLayers(loaderOptions: ConfigLoaderOptions, params: RouteParams): Promise<Response> {
   const tenantId = params[0];
   if (!validateTenantId(tenantId)) {
     return jsonResponse({ error: "invalid_tenant_id" }, 400);
@@ -112,10 +108,7 @@ async function handleGetConfigLayers(
   });
 }
 
-async function handleGetConfigKey(
-  loaderOptions: ConfigLoaderOptions,
-  params: RouteParams,
-): Promise<Response> {
+async function handleGetConfigKey(loaderOptions: ConfigLoaderOptions, params: RouteParams): Promise<Response> {
   const tenantId = params[0];
   const key = params[1];
   if (!validateTenantId(tenantId)) {
@@ -167,8 +160,7 @@ async function handlePutConfigKey(
     return jsonResponse({ error: "write_failed", message: result.error }, 500);
   }
 
-  const isEmergency = context.sessionMode === "emergency-override"
-    && schema?.changePolicy === "emergency-override";
+  const isEmergency = context.sessionMode === "emergency-override" && schema?.changePolicy === "emergency-override";
   await recordAudit(deps, {
     timestamp: new Date().toISOString(),
     actor: context.userId,
@@ -221,8 +213,7 @@ async function handleDeleteConfigKey(
     return jsonResponse({ error: "remove_failed", message: result.error }, 500);
   }
 
-  const isEmergency = context.sessionMode === "emergency-override"
-    && schema?.changePolicy === "emergency-override";
+  const isEmergency = context.sessionMode === "emergency-override" && schema?.changePolicy === "emergency-override";
   await recordAudit(deps, {
     timestamp: new Date().toISOString(),
     actor: context.userId,

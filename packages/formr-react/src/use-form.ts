@@ -1,7 +1,7 @@
-import { useRef, useSyncExternalStore, useEffect, useMemo } from 'react';
-import { createForm } from '@ghost-shell/formr-core';
-import type { CreateFormOptions, FormApi, SubmitResult } from '@ghost-shell/formr-core';
-import { focusFirstError } from './a11y.js';
+import type { CreateFormOptions, FormApi, SubmitResult } from "@ghost-shell/formr-core";
+import { createForm } from "@ghost-shell/formr-core";
+import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { focusFirstError } from "./a11y.js";
 
 /** Options for useForm, extending core CreateFormOptions with React-specific behavior */
 export interface UseFormOptions<TData, TUi> extends CreateFormOptions<TData, TUi> {
@@ -9,9 +9,7 @@ export interface UseFormOptions<TData, TUi> extends CreateFormOptions<TData, TUi
   readonly autoFocusOnError?: boolean;
 }
 
-export function useForm<TData, TUi>(
-  options?: UseFormOptions<TData, TUi>,
-): FormApi<TData, TUi> {
+export function useForm<TData, TUi>(options?: UseFormOptions<TData, TUi>): FormApi<TData, TUi> {
   const autoFocus = options?.autoFocusOnError ?? true;
   const formRef = useRef<FormApi<TData, TUi> | null>(null);
   const disposeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -48,7 +46,7 @@ export function useForm<TData, TUi>(
 
     return {
       ...form,
-      submit: async (...args: Parameters<FormApi<TData, TUi>['submit']>): Promise<SubmitResult> => {
+      submit: async (...args: Parameters<FormApi<TData, TUi>["submit"]>): Promise<SubmitResult> => {
         const result = await form.submit(...args);
         if (!result.ok && result.fieldIssues?.length) {
           focusFirstError(result.fieldIssues);

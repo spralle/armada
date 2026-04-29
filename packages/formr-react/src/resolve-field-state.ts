@@ -1,4 +1,4 @@
-import type { LayoutNode } from '@ghost-shell/formr-from-schema';
+import type { LayoutNode } from "@ghost-shell/formr-from-schema";
 
 /** Resolved UI state for a single field, driven by arbiter $ui namespace */
 export interface ResolvedFieldState {
@@ -56,7 +56,7 @@ export function pruneHiddenFields(
   fieldStates: ReadonlyMap<string, ResolvedFieldState>,
 ): LayoutNode | null {
   // Field nodes: check visibility
-  if (node.type === 'field' && node.path) {
+  if (node.type === "field" && node.path) {
     const state = fieldStates.get(node.path) ?? DEFAULT_FIELD_STATE;
     return state.visible ? node : null;
   }

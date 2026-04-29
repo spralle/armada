@@ -5,11 +5,16 @@
   "type": "module",
   "ghost": {
     "displayName": "shadcn Theme Bridge",
-    "activationEvents": ["onStartup"],
+    "activationEvents": [
+      "onStartup"
+    ],
     "contributes": {
       "capabilities": {
         "services": [
-          { "id": "ghost.shadcn.theme-bridge", "version": "1.0.0" }
+          {
+            "id": "ghost.shadcn.theme-bridge",
+            "version": "1.0.0"
+          }
         ]
       }
     }

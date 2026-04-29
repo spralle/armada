@@ -12,19 +12,10 @@ export interface ExportCsvOptions {
 /**
  * Export visible + filtered table data to CSV and trigger browser download.
  */
-export function exportTableToCsv<TData>(
-  table: Table<TData>,
-  options: ExportCsvOptions = {},
-): void {
-  const {
-    filename = "export",
-    includeHeaders = true,
-    separator = ",",
-  } = options;
+export function exportTableToCsv<TData>(table: Table<TData>, options: ExportCsvOptions = {}): void {
+  const { filename = "export", includeHeaders = true, separator = "," } = options;
 
-  const columns = table
-    .getVisibleFlatColumns()
-    .filter((col) => col.id !== "select" && col.id !== "actions");
+  const columns = table.getVisibleFlatColumns().filter((col) => col.id !== "select" && col.id !== "actions");
 
   const rows: string[] = [];
 
@@ -62,11 +53,7 @@ export function exportTableToCsv<TData>(
 }
 
 function escapeCsvField(value: string, separator: string): string {
-  if (
-    value.includes(separator) ||
-    value.includes('"') ||
-    value.includes("\n")
-  ) {
+  if (value.includes(separator) || value.includes('"') || value.includes("\n")) {
     return `"${value.replace(/"/g, '""')}"`;
   }
   return value;

@@ -1,15 +1,14 @@
+import { createInitialShellContextState } from "./state.js";
+import { registerTab } from "./tabs-groups.js";
 import {
   createInitialWorkspaceManagerState,
   createWorkspace,
   deleteWorkspace,
-  switchWorkspace,
+  moveTabToWorkspace,
   renameWorkspace,
   reorderWorkspace,
-  moveTabToWorkspace,
+  switchWorkspace,
 } from "./workspace.js";
-import { createInitialShellContextState } from "./state.js";
-import { registerTab } from "./tabs-groups.js";
-import type { WorkspaceManagerState } from "./workspace-types.js";
 
 type TestCase = {
   name: string;

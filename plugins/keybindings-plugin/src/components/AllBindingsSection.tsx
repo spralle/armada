@@ -1,13 +1,5 @@
-import type { KeybindingService, KeybindingEntry } from "@ghost-shell/contracts";
-import {
-  Badge,
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@ghost-shell/ui";
+import type { KeybindingEntry, KeybindingService } from "@ghost-shell/contracts";
+import { Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ghost-shell/ui";
 import { ChordDisplay } from "./ChordDisplay.js";
 import { RecordButton } from "./RecordButton.js";
 

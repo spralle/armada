@@ -1,7 +1,7 @@
-import { describe, it, expect } from "bun:test";
-import { generateMotionCss } from "../css-generator.js";
+import { describe, expect, it } from "bun:test";
 import { DEFAULT_MOTION_CONFIG } from "../config-defaults.js";
 import type { GhostMotionConfig } from "../config-types.js";
+import { generateMotionCss } from "../css-generator.js";
 
 describe("generateMotionCss", () => {
   it("returns empty string when config.enabled is false", () => {

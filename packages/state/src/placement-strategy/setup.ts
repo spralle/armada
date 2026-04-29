@@ -1,9 +1,9 @@
-import { createPlacementStrategyRegistry } from "./registry.js";
-import { createTabsPlacementStrategy } from "./tabs.js";
-import { createDwindlePlacementStrategy } from "./dwindle.js";
-import { createStackPlacementStrategy } from "./stack.js";
 import { DEFAULT_PLACEMENT_CONFIG } from "./config.js";
+import { createDwindlePlacementStrategy } from "./dwindle.js";
 import type { PlacementStrategyRegistry } from "./registry.js";
+import { createPlacementStrategyRegistry } from "./registry.js";
+import { createStackPlacementStrategy } from "./stack.js";
+import { createTabsPlacementStrategy } from "./tabs.js";
 import type { PlacementConfig } from "./types.js";
 
 export function initPlacementStrategy(): { registry: PlacementStrategyRegistry; config: PlacementConfig } {

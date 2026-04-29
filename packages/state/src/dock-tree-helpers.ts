@@ -59,9 +59,8 @@ export function collapseDockNode(node: DockNode | null): DockNode | null {
       return null;
     }
 
-    const activeTabId = node.activeTabId && node.tabIds.includes(node.activeTabId)
-      ? node.activeTabId
-      : node.tabIds[0] ?? null;
+    const activeTabId =
+      node.activeTabId && node.tabIds.includes(node.activeTabId) ? node.activeTabId : (node.tabIds[0] ?? null);
     return {
       ...node,
       activeTabId,
@@ -121,7 +120,11 @@ function collectStacks(node: DockNode): DockStackNode[] {
 
 export type DockPathSegment = "first" | "second";
 
-export function replaceNodeAtPath(root: DockNode | null, path: readonly DockPathSegment[], replacement: DockNode): DockNode | null {
+export function replaceNodeAtPath(
+  root: DockNode | null,
+  path: readonly DockPathSegment[],
+  replacement: DockNode,
+): DockNode | null {
   if (!root) {
     return replacement;
   }

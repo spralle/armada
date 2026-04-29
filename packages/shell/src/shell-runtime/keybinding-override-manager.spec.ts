@@ -1,10 +1,7 @@
-import type { SpecHarness } from "../context-state.spec-harness.js";
-import type { ActionKeybinding } from "../action-surface.js";
-import type {
-  KeybindingOverrideEntryV1,
-  ShellKeybindingPersistence,
-} from "@ghost-shell/persistence";
 import { createKeybindingOverrideManager } from "@ghost-shell/commands";
+import type { KeybindingOverrideEntryV1, ShellKeybindingPersistence } from "@ghost-shell/persistence";
+import type { ActionKeybinding } from "../action-surface.js";
+import type { SpecHarness } from "../context-state.spec-harness.js";
 
 function createMockPersistence(): ShellKeybindingPersistence & { saved: KeybindingOverrideEntryV1[][] } {
   const saved: KeybindingOverrideEntryV1[][] = [];
@@ -163,11 +160,11 @@ export function registerKeybindingOverrideManagerSpecs(harness: SpecHarness): vo
 
     const defaultConflict = conflicts.find((c) => c.layer === "defaults");
     assertTruthy(defaultConflict, "should find default layer conflict");
-    assertEqual(defaultConflict!.action, "shell.focus.left", "default conflict action");
+    assertEqual(defaultConflict?.action, "shell.focus.left", "default conflict action");
 
     const userConflict = conflicts.find((c) => c.layer === "user-overrides");
     assertTruthy(userConflict, "should find user-override layer conflict");
-    assertEqual(userConflict!.action, "user.action", "user override conflict action");
+    assertEqual(userConflict?.action, "user.action", "user override conflict action");
   });
 
   test("listConflicts returns empty array for unused chord", () => {
@@ -278,9 +275,7 @@ export function registerKeybindingOverrideManagerSpecs(harness: SpecHarness): vo
   test("manager initializes overrides from persistence.load()", () => {
     const persistence = createMockPersistence();
     // Pre-populate persistence with saved data via save
-    persistence.save([
-      { action: "preloaded.action", keybinding: "ctrl+p" },
-    ]);
+    persistence.save([{ action: "preloaded.action", keybinding: "ctrl+p" }]);
 
     const manager = createKeybindingOverrideManager({
       persistence,

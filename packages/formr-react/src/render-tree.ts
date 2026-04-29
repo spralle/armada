@@ -1,10 +1,10 @@
-import { createElement } from 'react';
-import type { ReactElement } from 'react';
-import type { LayoutNode } from '@ghost-shell/formr-from-schema';
-import type { ValidationIssue } from '@ghost-shell/formr-core';
-import type { RendererRegistry } from './renderer-registry.js';
-import type { LayoutRendererProps } from './renderer-types.js';
-import { getFieldProps } from './a11y.js';
+import type { ValidationIssue } from "@ghost-shell/formr-core";
+import type { LayoutNode } from "@ghost-shell/formr-from-schema";
+import type { ReactElement } from "react";
+import { createElement } from "react";
+import { getFieldProps } from "./a11y.js";
+import type { RendererRegistry } from "./renderer-registry.js";
+import type { LayoutRendererProps } from "./renderer-types.js";
 
 /** Options for rendering a layout tree with a11y context */
 export interface RenderTreeOptions {
@@ -20,9 +20,7 @@ export function renderLayoutTree(
 ): ReactElement {
   const Component = registry.resolve(tree.type);
 
-  const children = tree.children?.map((child) =>
-    renderLayoutTree(child, registry, options),
-  );
+  const children = tree.children?.map((child) => renderLayoutTree(child, registry, options));
 
   const aria = computeAriaProps(tree, options);
   const issues = tree.path ? filterIssuesForPath(tree.path, options?.issues) : undefined;
@@ -46,10 +44,7 @@ function computeAriaProps(node: LayoutNode, options?: RenderTreeOptions) {
   });
 }
 
-function filterIssuesForPath(
-  path: string,
-  issues?: readonly ValidationIssue[],
-): readonly ValidationIssue[] {
+function filterIssuesForPath(path: string, issues?: readonly ValidationIssue[]): readonly ValidationIssue[] {
   if (!issues || issues.length === 0) return [];
-  return issues.filter((i) => i.path.segments.join('.') === path);
+  return issues.filter((i) => i.path.segments.join(".") === path);
 }

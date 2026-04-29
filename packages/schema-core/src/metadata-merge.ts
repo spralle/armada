@@ -1,4 +1,4 @@
-import { SchemaError } from './errors.js';
+import { FromSchemaError } from "./errors.js";
 
 export type MetadataSource = Readonly<Record<string, unknown>>;
 
@@ -13,9 +13,7 @@ export interface MergeInput {
  * kernelDefaults < embedded < external.
  * Higher precedence wins on conflict.
  */
-export function mergeMetadata(
-  input: MergeInput,
-): Readonly<Record<string, unknown>> {
+export function mergeMetadata(input: MergeInput): Readonly<Record<string, unknown>> {
   let result: Record<string, unknown> = {};
 
   if (input.kernelDefaults) {
@@ -35,24 +33,18 @@ export function mergeMetadata(
  * Merge two sources at the same precedence level with strict conflict detection.
  * Structurally equal values are deduped; differing values throw SCHEMA_META_CONFLICT.
  */
-export function mergeSamePrecedence(
-  a: MetadataSource,
-  b: MetadataSource,
-): Readonly<Record<string, unknown>> {
+export function mergeSamePrecedence(a: MetadataSource, b: MetadataSource): Readonly<Record<string, unknown>> {
   return deepMergeSamePrecedence(a, b);
 }
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return v !== null && typeof v === 'object' && !Array.isArray(v);
+  return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
 /**
  * Cross-precedence merge: higher-precedence source wins.
  */
-function deepMerge(
-  lower: Record<string, unknown>,
-  higher: Readonly<Record<string, unknown>>,
-): Record<string, unknown> {
+function deepMerge(lower: Record<string, unknown>, higher: Readonly<Record<string, unknown>>): Record<string, unknown> {
   const result: Record<string, unknown> = { ...lower };
 
   for (const key of Object.keys(higher)) {
@@ -62,17 +54,14 @@ function deepMerge(
       continue;
     }
 
-    if (hi === null || typeof hi !== 'object' || Array.isArray(hi)) {
+    if (hi === null || typeof hi !== "object" || Array.isArray(hi)) {
       result[key] = hi;
       continue;
     }
 
     const lo = result[key];
     if (isPlainObject(lo) && isPlainObject(hi)) {
-      result[key] = deepMerge(
-        lo as Record<string, unknown>,
-        hi as Record<string, unknown>,
-      );
+      result[key] = deepMerge(lo as Record<string, unknown>, hi as Record<string, unknown>);
     } else {
       result[key] = hi;
     }
@@ -109,15 +98,12 @@ function deepMergeSamePrecedence(
     }
 
     if (isPlainObject(va) && isPlainObject(vb)) {
-      result[key] = deepMergeSamePrecedence(
-        va as Record<string, unknown>,
-        vb as Record<string, unknown>,
-      );
+      result[key] = deepMergeSamePrecedence(va as Record<string, unknown>, vb as Record<string, unknown>);
       continue;
     }
 
-    throw new SchemaError(
-      'SCHEMA_META_CONFLICT',
+    throw new FromSchemaError(
+      "FORMR_META_CONFLICT",
       `Metadata conflict at key "${key}": incompatible values at same precedence`,
     );
   }
@@ -140,9 +126,7 @@ export function structuralEqual(a: unknown, b: unknown): boolean {
     const keysA = Object.keys(a);
     const keysB = Object.keys(b);
     if (keysA.length !== keysB.length) return false;
-    return keysA.every(
-      (k) => Object.hasOwn(b, k) && structuralEqual(a[k], b[k]),
-    );
+    return keysA.every((k) => Object.hasOwn(b, k) && structuralEqual(a[k], b[k]));
   }
 
   return false;

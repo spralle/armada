@@ -1,12 +1,12 @@
-import type { ComponentType } from "react";
 import type { Column } from "@tanstack/react-table";
-import { TextColumnFilter } from "./text-filter.js";
-import { SelectColumnFilter } from "./select-filter.js";
+import type { ComponentType } from "react";
 import { RangeColumnFilter } from "./range-filter.js";
+import { SelectColumnFilter } from "./select-filter.js";
+import { TextColumnFilter } from "./text-filter.js";
 
-export { TextColumnFilter } from "./text-filter.js";
+export { inNumberRange, RangeColumnFilter } from "./range-filter.js";
 export { SelectColumnFilter } from "./select-filter.js";
-export { RangeColumnFilter, inNumberRange } from "./range-filter.js";
+export { TextColumnFilter } from "./text-filter.js";
 
 /** Column filter props shared by all filter components. */
 export interface ColumnFilterProps<TData> {

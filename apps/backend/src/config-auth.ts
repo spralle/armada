@@ -1,12 +1,27 @@
 // Auth context extraction from request headers
 
-import type { ConfigurationRole, PolicyEvaluationContext, PolicyDecision, ConfigurationPropertySchema, ConfigAuditEntry, ConfigAuditLog, OverrideTracker } from "./config-stubs.js";
+import type {
+  ConfigAuditEntry,
+  ConfigAuditLog,
+  ConfigurationPropertySchema,
+  ConfigurationRole,
+  OverrideTracker,
+  PolicyDecision,
+  PolicyEvaluationContext,
+} from "./config-stubs.js";
 import { evaluateChangePolicy } from "./config-stubs.js";
 import { jsonResponse } from "./router.js";
 
 const VALID_ROLES: ReadonlySet<string> = new Set([
-  "platform-ops", "tenant-admin", "scope-admin", "integrator",
-  "user", "support", "system", "service", "platform-service",
+  "platform-ops",
+  "tenant-admin",
+  "scope-admin",
+  "integrator",
+  "user",
+  "support",
+  "system",
+  "service",
+  "platform-service",
 ]);
 
 /**
@@ -14,9 +29,7 @@ const VALID_ROLES: ReadonlySet<string> = new Set([
  * Maps: x-user-id, x-tenant-id, x-roles (comma-separated),
  * x-session-mode, x-override-reason.
  */
-export function extractAccessContext(
-  headers: Record<string, string>,
-): PolicyEvaluationContext {
+export function extractAccessContext(headers: Record<string, string>): PolicyEvaluationContext {
   const roles = (headers["x-roles"] ?? "")
     .split(",")
     .map((r) => r.trim())
@@ -88,10 +101,7 @@ export function policyToResponse(decision: PolicyDecision): Response | undefined
 /**
  * Records an audit entry after a successful config mutation.
  */
-export async function recordAudit(
-  deps: PolicyCheckDeps,
-  entry: ConfigAuditEntry,
-): Promise<void> {
+export async function recordAudit(deps: PolicyCheckDeps, entry: ConfigAuditEntry): Promise<void> {
   if (deps.auditLog !== undefined) {
     await deps.auditLog.append(entry);
   }

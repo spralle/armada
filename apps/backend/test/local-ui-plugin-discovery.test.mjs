@@ -1,14 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
+import { discoverLocalUiPlugins, discoverPluginDefinitions } from "../dist-test/src/local-ui-plugin-discovery.js";
 import {
-  discoverPluginDefinitions,
-  discoverLocalUiPlugins,
-} from "../dist-test/src/local-ui-plugin-discovery.js";
-import {
-  DEFAULT_LOCAL_PLUGIN_ENTRIES,
   DEFAULT_GATEWAY_PLUGIN_ENTRIES,
   DEFAULT_GATEWAY_PORT,
+  DEFAULT_LOCAL_PLUGIN_ENTRIES,
   LOCAL_PLUGIN_IDS,
   SORTED_LOCAL_PLUGIN_IDS,
 } from "./fixtures/local-plugin-overrides-fixtures.mjs";
@@ -23,18 +20,12 @@ test("discoverLocalUiPlugins returns deterministic plugin ordering", () => {
   const pluginStarter = discovered.get(LOCAL_PLUGIN_IDS.pluginStarter);
   assert.ok(pluginStarter);
   assert.equal(pluginStarter.folderPath, "plugins/plugin-starter");
-  assert.equal(
-    pluginStarter.entry,
-    DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.pluginStarter],
-  );
+  assert.equal(pluginStarter.entry, DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.pluginStarter]);
 
   const sharedUiCapabilities = discovered.get(LOCAL_PLUGIN_IDS.sharedUiCapabilities);
   assert.ok(sharedUiCapabilities);
   assert.equal(sharedUiCapabilities.folderPath, "plugins/shared-ui-capability-plugin");
-  assert.equal(
-    sharedUiCapabilities.entry,
-    DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.sharedUiCapabilities],
-  );
+  assert.equal(sharedUiCapabilities.entry, DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.sharedUiCapabilities]);
 });
 
 test("discoverLocalUiPlugins rejects duplicate plugin ids with actionable error", () => {
@@ -165,11 +156,7 @@ test("discoverLocalUiPlugins generates gateway-mode URLs when gatewayPort is set
   assert.deepEqual(Array.from(discovered.keys()), SORTED_LOCAL_PLUGIN_IDS);
 
   for (const [pluginId, plugin] of discovered) {
-    assert.equal(
-      plugin.entry,
-      DEFAULT_GATEWAY_PLUGIN_ENTRIES[pluginId],
-      `gateway entry mismatch for ${pluginId}`,
-    );
+    assert.equal(plugin.entry, DEFAULT_GATEWAY_PLUGIN_ENTRIES[pluginId], `gateway entry mismatch for ${pluginId}`);
   }
 });
 
@@ -179,11 +166,7 @@ test("discoverLocalUiPlugins without gatewayPort returns legacy per-port URLs", 
   });
 
   for (const [pluginId, plugin] of discovered) {
-    assert.equal(
-      plugin.entry,
-      DEFAULT_LOCAL_PLUGIN_ENTRIES[pluginId],
-      `legacy entry mismatch for ${pluginId}`,
-    );
+    assert.equal(plugin.entry, DEFAULT_LOCAL_PLUGIN_ENTRIES[pluginId], `legacy entry mismatch for ${pluginId}`);
   }
 });
 

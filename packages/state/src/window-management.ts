@@ -1,19 +1,19 @@
 export {
+  absorbStackInDirection,
+  detachTabInDirection,
+  equalizeSplits,
+  explodeActiveStack,
   focusTabInDirection,
   moveTabInDirection,
-  swapTabInDirection,
-  detachTabInDirection,
-  absorbStackInDirection,
-  explodeActiveStack,
   resizeInDirection,
-  equalizeSplits,
+  swapTabInDirection,
 } from "./window-spatial-commands.js";
 
 export {
-  cycleTabInActiveStack,
   cycleTabGroup,
+  cycleTabInActiveStack,
   gotoTabByIndex,
-  reorderActiveTabInStack,
   navigateBackInActiveStack,
   navigateForwardInActiveStack,
+  reorderActiveTabInStack,
 } from "./window-tab-navigation.js";

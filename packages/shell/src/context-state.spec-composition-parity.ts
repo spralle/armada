@@ -1,19 +1,12 @@
-import {
-  createInitialShellContextState,
-  registerTab,
-  type ShellContextState,
-} from "./context-state.js";
-import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
 import { createShellCoreApi } from "./app/shell-core.js";
-import { dismissIntentChooser } from "./shell-runtime/keyboard-handlers.js";
-import {
-  closeTabThroughRuntime,
-  reopenMostRecentlyClosedTabThroughRuntime,
-} from "./ui/part-instance-tab-lifecycle.js";
-import { resolveClosedPopoutTransition } from "./ui/parts-controller-popout-transition.js";
-import type { PartLifecycleDeps } from "./ui/part-instance-tab-lifecycle.js";
 import type { ShellRuntime } from "./app/types.js";
+import { createInitialShellContextState, registerTab, type ShellContextState } from "./context-state.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
+import { dismissIntentChooser } from "./shell-runtime/keyboard-handlers.js";
+import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
+import type { PartLifecycleDeps } from "./ui/part-instance-tab-lifecycle.js";
+import { closeTabThroughRuntime, reopenMostRecentlyClosedTabThroughRuntime } from "./ui/part-instance-tab-lifecycle.js";
+import { resolveClosedPopoutTransition } from "./ui/parts-controller-popout-transition.js";
 
 type FlowMode = "baseline" | "contract";
 
@@ -63,7 +56,9 @@ export function registerCompositionParitySpecs(harness: SpecHarness): void {
     const contractTranscript = runParityFlow("contract");
 
     if (baselineTranscript.length !== contractTranscript.length) {
-      throw new Error(`parity transcript length mismatch baseline=${baselineTranscript.length} contract=${contractTranscript.length}`);
+      throw new Error(
+        `parity transcript length mismatch baseline=${baselineTranscript.length} contract=${contractTranscript.length}`,
+      );
     }
 
     for (let index = 0; index < baselineTranscript.length; index += 1) {
@@ -74,8 +69,8 @@ export function registerCompositionParitySpecs(harness: SpecHarness): void {
       if (baselineSerialized !== contractSerialized) {
         throw new Error(
           `parity mismatch at step '${baseline.step}'\n` +
-          `baseline=${baselineSerialized}\n` +
-          `contract=${contractSerialized}`,
+            `baseline=${baselineSerialized}\n` +
+            `contract=${contractSerialized}`,
         );
       }
     }
@@ -94,13 +89,15 @@ function runParityFlow(mode: FlowMode): ParityStepSnapshot[] {
           version: "0.1.0",
         },
         contributes: {
-          actions: [{
-            id: "open-a",
-            title: "Open A",
-            handler: "openA",
-            intentType: "intent.open-order",
-            when: {},
-          }],
+          actions: [
+            {
+              id: "open-a",
+              title: "Open A",
+              handler: "openA",
+              intentType: "intent.open-order",
+              when: {},
+            },
+          ],
         },
       },
     },
@@ -114,13 +111,15 @@ function runParityFlow(mode: FlowMode): ParityStepSnapshot[] {
           version: "0.1.0",
         },
         contributes: {
-          actions: [{
-            id: "open-b",
-            title: "Open B",
-            handler: "openB",
-            intentType: "intent.open-order",
-            when: {},
-          }],
+          actions: [
+            {
+              id: "open-b",
+              title: "Open B",
+              handler: "openB",
+              intentType: "intent.open-order",
+              when: {},
+            },
+          ],
         },
       },
     },
@@ -135,11 +134,7 @@ function runParityFlow(mode: FlowMode): ParityStepSnapshot[] {
   const lifecycleDeps: PartLifecycleDeps = {
     applySelection: driver.applySelection,
     publishWithDegrade: (event) => {
-      const suffix = "tabId" in event
-        ? event.tabId
-        : "selectedPartId" in event
-          ? event.selectedPartId
-          : "";
+      const suffix = "tabId" in event ? event.tabId : "selectedPartId" in event ? event.selectedPartId : "";
       publishedEvents.push(`${event.type}:${suffix}`);
     },
     renderContextControls: () => {},
@@ -218,7 +213,10 @@ function runParityFlow(mode: FlowMode): ParityStepSnapshot[] {
   return transcript;
 
   function captureSnapshot(step: string): void {
-    const enabledPluginIds = pluginRecords.filter((plugin) => plugin.enabled).map((plugin) => plugin.id).sort();
+    const enabledPluginIds = pluginRecords
+      .filter((plugin) => plugin.enabled)
+      .map((plugin) => plugin.id)
+      .sort();
     transcript.push({
       step,
       selectedPartId: runtime.selectedPartId,
@@ -337,9 +335,8 @@ function withElementClass(run: () => void): void {
   } finally {
     if (existing) {
       scope.HTMLElement = existing;
-      return;
+    } else {
+      Reflect.deleteProperty(scope as Record<string, unknown>, "HTMLElement");
     }
-
-    Reflect.deleteProperty(scope as Record<string, unknown>, "HTMLElement");
   }
 }

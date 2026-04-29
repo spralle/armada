@@ -15,14 +15,7 @@
     "skipLibCheck": true,
     "composite": true
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "src/**/__tests__",
-    "src/**/*.test.ts"
-  ],
-  "references": [
-    { "path": "../predicate" }
-  ]
+  "include": ["src"],
+  "exclude": ["src/**/__tests__", "src/**/*.test.ts"],
+  "references": [{ "path": "../predicate" }]
 }

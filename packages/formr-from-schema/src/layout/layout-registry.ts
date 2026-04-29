@@ -1,5 +1,5 @@
-import { FromSchemaError } from '../errors.js';
-import { type LayoutNode, isBuiltInNodeType } from './layout-types.js';
+import { FromSchemaError } from "../errors.js";
+import { isBuiltInNodeType, type LayoutNode } from "./layout-types.js";
 
 export interface LayoutNodeDefinition {
   readonly type: string;
@@ -12,10 +12,7 @@ export class LayoutNodeRegistry {
   /** Register a custom node type. Built-in types cannot be overridden. */
   register(type: string, definition: LayoutNodeDefinition): void {
     if (isBuiltInNodeType(type)) {
-      throw new FromSchemaError(
-        'FORMR_LAYOUT_UNKNOWN_NODE_TYPE',
-        `Cannot override built-in layout node type: ${type}`,
-      );
+      throw new FromSchemaError("FORMR_LAYOUT_UNKNOWN_NODE_TYPE", `Cannot override built-in layout node type: ${type}`);
     }
     this.custom.set(type, definition);
   }
@@ -33,10 +30,7 @@ export class LayoutNodeRegistry {
   /** Walk a layout tree and throw for each unknown node type. */
   validate(tree: LayoutNode): void {
     if (!this.has(tree.type)) {
-      throw new FromSchemaError(
-        'FORMR_LAYOUT_UNKNOWN_NODE_TYPE',
-        `Unknown layout node type: ${tree.type}`,
-      );
+      throw new FromSchemaError("FORMR_LAYOUT_UNKNOWN_NODE_TYPE", `Unknown layout node type: ${tree.type}`);
     }
     if (tree.children) {
       for (const child of tree.children) {

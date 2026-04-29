@@ -1,18 +1,16 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import {
-  deriveFullPalette,
   adjustLightness,
-  desaturate,
-  contrastSafe,
   blendWithBackground,
   contrastRatio,
-  isValidHex,
+  contrastSafe,
+  deriveFullPalette,
+  desaturate,
   GHOST_THEME_CSS_VARS,
+  isValidHex,
 } from "../../theme/src/index.ts";
-import {
-  partialThemePaletteSchema,
-} from "../dist/index.js";
+import { partialThemePaletteSchema } from "../dist/index.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -54,25 +52,91 @@ const OMARCHY_TERMINAL = {
 
 /** All 85 token keys expected in a full palette. */
 const ALL_TOKEN_KEYS = [
-  "mode", "background", "surface", "overlay", "primary", "secondary", "accent",
-  "muted", "foreground", "error", "warning", "success", "info", "border", "ring",
-  "cursor", "selectionBackground", "radius", "opacity",
-  "opacityActive", "opacityInactive", "borderActive", "borderInactive", "borderSize",
-  "surfaceForeground", "overlayForeground", "primaryForeground", "secondaryForeground",
-  "accentForeground", "mutedForeground", "input", "selectionForeground",
-  "hoverBackground", "activeBackground",
-  "chart1", "chart2", "chart3", "chart4", "chart5",
-  "edgeTop", "edgeTopForeground", "edgeTopBorder", "edgeTopAccent", "edgeTopAccentForeground",
-  "edgeBottom", "edgeBottomForeground", "edgeBottomBorder", "edgeBottomAccent", "edgeBottomAccentForeground",
-  "edgeLeft", "edgeLeftForeground", "edgeLeftBorder", "edgeLeftAccent", "edgeLeftAccentForeground",
-  "edgeRight", "edgeRightForeground", "edgeRightBorder", "edgeRightAccent", "edgeRightAccentForeground",
-  "surfaceElevated", "surfaceHover", "surfaceInset", "surfaceInsetDeep", "surfaceOverlay",
-  "foregroundBright", "dimForeground", "faintForeground", "codeForeground",
-  "borderMuted", "borderAlt", "borderAccent",
-  "primaryGlowSubtle", "primaryGlow", "primaryBorderSemi", "primaryOverlay",
-  "warningForeground", "warningBackground", "errorForeground", "errorBackground",
-  "errorForegroundMuted", "successBackground", "successForeground", "infoBackground",
-  "infoForeground", "neutralBackground",
+  "mode",
+  "background",
+  "surface",
+  "overlay",
+  "primary",
+  "secondary",
+  "accent",
+  "muted",
+  "foreground",
+  "error",
+  "warning",
+  "success",
+  "info",
+  "border",
+  "ring",
+  "cursor",
+  "selectionBackground",
+  "radius",
+  "opacity",
+  "opacityActive",
+  "opacityInactive",
+  "borderActive",
+  "borderInactive",
+  "borderSize",
+  "surfaceForeground",
+  "overlayForeground",
+  "primaryForeground",
+  "secondaryForeground",
+  "accentForeground",
+  "mutedForeground",
+  "input",
+  "selectionForeground",
+  "hoverBackground",
+  "activeBackground",
+  "chart1",
+  "chart2",
+  "chart3",
+  "chart4",
+  "chart5",
+  "edgeTop",
+  "edgeTopForeground",
+  "edgeTopBorder",
+  "edgeTopAccent",
+  "edgeTopAccentForeground",
+  "edgeBottom",
+  "edgeBottomForeground",
+  "edgeBottomBorder",
+  "edgeBottomAccent",
+  "edgeBottomAccentForeground",
+  "edgeLeft",
+  "edgeLeftForeground",
+  "edgeLeftBorder",
+  "edgeLeftAccent",
+  "edgeLeftAccentForeground",
+  "edgeRight",
+  "edgeRightForeground",
+  "edgeRightBorder",
+  "edgeRightAccent",
+  "edgeRightAccentForeground",
+  "surfaceElevated",
+  "surfaceHover",
+  "surfaceInset",
+  "surfaceInsetDeep",
+  "surfaceOverlay",
+  "foregroundBright",
+  "dimForeground",
+  "faintForeground",
+  "codeForeground",
+  "borderMuted",
+  "borderAlt",
+  "borderAccent",
+  "primaryGlowSubtle",
+  "primaryGlow",
+  "primaryBorderSemi",
+  "primaryOverlay",
+  "warningForeground",
+  "warningBackground",
+  "errorForeground",
+  "errorBackground",
+  "errorForegroundMuted",
+  "successBackground",
+  "successForeground",
+  "infoBackground",
+  "infoForeground",
+  "neutralBackground",
 ];
 
 // ---------------------------------------------------------------------------
@@ -148,10 +212,7 @@ test("explicit values override derivation", () => {
 });
 
 test("explicit error overrides terminal color1", () => {
-  const result = deriveFullPalette(
-    { ...OMARCHY_INPUT, error: "#cc0000" },
-    OMARCHY_TERMINAL,
-  );
+  const result = deriveFullPalette({ ...OMARCHY_INPUT, error: "#cc0000" }, OMARCHY_TERMINAL);
 
   assert.equal(result.error, "#cc0000");
 });
@@ -340,14 +401,8 @@ test("schema rejects unrecognized keys (strict mode)", () => {
 test("GHOST_THEME_CSS_VARS has entries for all 85 tokens", () => {
   assert.equal(Object.keys(GHOST_THEME_CSS_VARS).length, 85);
   for (const key of ALL_TOKEN_KEYS) {
-    assert.ok(
-      key in GHOST_THEME_CSS_VARS,
-      `CSS var mapping missing for "${key}"`,
-    );
-    assert.ok(
-      GHOST_THEME_CSS_VARS[key].startsWith("--ghost-"),
-      `CSS var for "${key}" should start with --ghost-`,
-    );
+    assert.ok(key in GHOST_THEME_CSS_VARS, `CSS var mapping missing for "${key}"`);
+    assert.ok(GHOST_THEME_CSS_VARS[key].startsWith("--ghost-"), `CSS var for "${key}" should start with --ghost-`);
   }
 });
 
@@ -441,7 +496,7 @@ test("schema rejects opacity out of range (below 0)", () => {
 test("split opacity defaults: no opacity input → opacityActive=0.97, opacityInactive=0.90", () => {
   const result = deriveFullPalette(MINIMAL_INPUT);
   assert.equal(result.opacityActive, 0.97);
-  assert.equal(result.opacityInactive, 0.90);
+  assert.equal(result.opacityInactive, 0.9);
 });
 
 test("legacy opacity backward compat: opacity=0.85 → opacityActive=0.85, opacityInactive≈0.79", () => {
@@ -460,10 +515,10 @@ test("explicit opacityActive/opacityInactive override legacy opacity and default
     ...MINIMAL_INPUT,
     opacity: 0.85,
     opacityActive: 0.95,
-    opacityInactive: 0.80,
+    opacityInactive: 0.8,
   });
   assert.equal(result.opacityActive, 0.95);
-  assert.equal(result.opacityInactive, 0.80);
+  assert.equal(result.opacityInactive, 0.8);
   assert.equal(result.opacity, 0.95, "FullThemePalette.opacity should equal opacityActive");
 });
 
@@ -498,7 +553,7 @@ test("schema accepts new window appearance fields", () => {
   const result = partialThemePaletteSchema.safeParse({
     ...MINIMAL_INPUT,
     opacityActive: 0.97,
-    opacityInactive: 0.90,
+    opacityInactive: 0.9,
     borderActive: "#ff0000",
     borderInactive: "#00ff00",
     borderSize: "2px",
@@ -584,7 +639,18 @@ test("primary effect tokens include alpha channel (8-digit hex)", () => {
 
 test("status foreground/background tokens are valid hex", () => {
   const result = deriveFullPalette(MINIMAL_INPUT);
-  for (const key of ["warningForeground", "warningBackground", "errorForeground", "errorBackground", "errorForegroundMuted", "successForeground", "successBackground", "infoForeground", "infoBackground", "neutralBackground"]) {
+  for (const key of [
+    "warningForeground",
+    "warningBackground",
+    "errorForeground",
+    "errorBackground",
+    "errorForegroundMuted",
+    "successForeground",
+    "successBackground",
+    "infoForeground",
+    "infoBackground",
+    "neutralBackground",
+  ]) {
     assert.ok(isValidHex(result[key]), `${key} should be valid hex, got "${result[key]}"`);
   }
 });

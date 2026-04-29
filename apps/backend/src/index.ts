@@ -1,29 +1,37 @@
 import { resolve } from "node:path";
+import { bootstrapBackendConfig, logConfigBootstrapSummary } from "./config-bootstrap.js";
+import { createConfigRoutes } from "./config-endpoints.js";
 import {
-  getTenantManifestEndpointPath,
-  getDefaultLocalPluginEntryUrlMap,
-  getTenantManifestResponse,
+  createInMemoryAuditLog,
+  createInMemoryOverrideTracker,
+  createOverrideSessionProvider,
+} from "./config-stubs.js";
+import { formatLocalPluginOverrideStartupSummary, parseBackendDevCliOptions } from "./dev-cli-options.js";
+import { createOverrideRoutes } from "./override-endpoints.js";
+import { createRouter, jsonResponse, type Route } from "./router.js";
+import { createSessionRoutes } from "./session-endpoints.js";
+import {
   createDefaultLocalPluginEntryUrlMap,
-  resolveTenantManifestRequest,
+  getDefaultLocalPluginEntryUrlMap,
+  getTenantManifestEndpointPath,
+  getTenantManifestResponse,
   rebuildTenantManifest,
 } from "./tenant-manifest.js";
-import {
-  formatLocalPluginOverrideStartupSummary,
-  parseBackendDevCliOptions,
-} from "./dev-cli-options.js";
-import { createRouter, jsonResponse, type Route } from "./router.js";
-import { createConfigRoutes } from "./config-endpoints.js";
-import { createOverrideRoutes } from "./override-endpoints.js";
-import { createSessionRoutes } from "./session-endpoints.js";
-import { bootstrapBackendConfig, logConfigBootstrapSummary } from "./config-bootstrap.js";
-import { createInMemoryAuditLog, createInMemoryOverrideTracker, createOverrideSessionProvider } from "./config-stubs.js";
 
 const BACKEND_DEV_HOST = "127.0.0.1";
 const BACKEND_DEV_PORT = 8787;
 const DEFAULT_TENANT = "demo";
 
-interface NodeHttpRequestLike { method?: string | undefined; url?: string | undefined; headers?: Record<string, string | string[] | undefined> | undefined }
-interface NodeHttpResponseLike { setHeader(name: string, value: string): void; statusCode: number; end(body?: string): void }
+interface NodeHttpRequestLike {
+  method?: string | undefined;
+  url?: string | undefined;
+  headers?: Record<string, string | string[] | undefined> | undefined;
+}
+interface NodeHttpResponseLike {
+  setHeader(name: string, value: string): void;
+  statusCode: number;
+  end(body?: string): void;
+}
 
 const backendDevCliOptions = parseBackendDevCliOptions(getRuntimeArgv());
 
@@ -52,12 +60,7 @@ if (backendDevCliOptions.duplicateSelectedLocalPluginIds.length > 0) {
   );
 }
 
-console.log(
-  formatLocalPluginOverrideStartupSummary(
-    effectiveSelectedPluginIds,
-    localPluginEntryOverrides,
-  ),
-);
+console.log(formatLocalPluginOverrideStartupSummary(effectiveSelectedPluginIds, localPluginEntryOverrides));
 
 const overrideOptions = {
   selectedLocalPluginIds: effectiveSelectedPluginIds,
@@ -78,12 +81,15 @@ bootstrapBackendConfig({ configDir: CONFIG_DIR, tenantId: "demo" })
 const auditLog = createInMemoryAuditLog();
 const overrideTracker = createInMemoryOverrideTracker();
 
-const configRoutes = createConfigRoutes({
-  configDir: CONFIG_DIR,
-}, {
-  auditLog,
-  overrideTracker,
-});
+const configRoutes = createConfigRoutes(
+  {
+    configDir: CONFIG_DIR,
+  },
+  {
+    auditLog,
+    overrideTracker,
+  },
+);
 
 const overrideRoutes = createOverrideRoutes({
   auditLog,
@@ -110,7 +116,17 @@ const routes: Route[] = [
 const router = createRouter(routes);
 
 function startBackendDevServer(): void {
-  const bun = (globalThis as { Bun?: { serve: (options: { hostname: string; port: number; fetch: (request: Request) => Response | Promise<Response>; }) => unknown; }; }).Bun;
+  const bun = (
+    globalThis as {
+      Bun?: {
+        serve: (options: {
+          hostname: string;
+          port: number;
+          fetch: (request: Request) => Response | Promise<Response>;
+        }) => unknown;
+      };
+    }
+  ).Bun;
   if (!bun) {
     startNodeBackendDevServer();
     return;
@@ -122,7 +138,9 @@ function startBackendDevServer(): void {
     fetch(request) {
       const url = new URL(request.url);
       const headers: Record<string, string> = {};
-      request.headers.forEach((value, key) => { headers[key] = value; });
+      request.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
       return router({
         method: request.method,
         pathname: url.pathname,
@@ -158,10 +176,18 @@ function startNodeBackendDevServer(): void {
         const headers: Record<string, string> = {};
         if (req.headers) {
           for (const [k, v] of Object.entries(req.headers)) {
-            if (typeof v === "string") { headers[k] = v; }
+            if (typeof v === "string") {
+              headers[k] = v;
+            }
           }
         }
-        const response = router({ method: req.method ?? "GET", pathname, body: () => Promise.resolve(null), headers, search });
+        const response = router({
+          method: req.method ?? "GET",
+          pathname,
+          body: () => Promise.resolve(null),
+          headers,
+          search,
+        });
 
         void Promise.resolve(response).then((resolved) => {
           res.setHeader("content-type", "application/json; charset=utf-8");

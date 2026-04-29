@@ -13,7 +13,5 @@
       "path": "../../packages/plugin-contracts"
     }
   ],
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

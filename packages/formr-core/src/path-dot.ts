@@ -1,6 +1,6 @@
-import type { CanonicalPath, CanonicalSegment, Namespace } from './path.js';
-import type { NamespaceConfig } from './path-parser.js';
-import { FormrError } from './errors.js';
+import { FormrError } from "./errors.js";
+import type { CanonicalPath, CanonicalSegment, Namespace } from "./path.js";
+import type { NamespaceConfig } from "./path-parser.js";
 
 const NUMERIC_INDEX_RE = /^(?:0|[1-9]\d*)$/;
 
@@ -12,14 +12,14 @@ export function findMatchingNamespace(
 }
 
 export function parseDot(input: string, namespaces: readonly NamespaceConfig[]): CanonicalPath {
-  let namespace: Namespace = 'data';
+  let namespace: Namespace = "data";
   let raw = input;
 
   const matched = findMatchingNamespace(input, namespaces);
   if (matched) {
     if (raw === matched.prefix) {
       throw new FormrError(
-        'FORMR_PATH_INVALID_DOT',
+        "FORMR_PATH_INVALID_DOT",
         `${matched.prefix} alone is not a valid path; at least one segment is required after ${matched.prefix}.`,
       );
     }
@@ -29,22 +29,22 @@ export function parseDot(input: string, namespaces: readonly NamespaceConfig[]):
 
   validateDotRaw(raw);
 
-  const segments = raw.split('.').map(toDotSegment);
+  const segments = raw.split(".").map(toDotSegment);
   return { namespace, segments };
 }
 
 function validateDotRaw(raw: string): void {
-  if (raw === '') {
-    throw new FormrError('FORMR_PATH_INVALID_DOT', 'Path has no segments after prefix');
+  if (raw === "") {
+    throw new FormrError("FORMR_PATH_INVALID_DOT", "Path has no segments after prefix");
   }
-  if (raw.startsWith('.')) {
-    throw new FormrError('FORMR_PATH_INVALID_DOT', 'Path must not start with a dot');
+  if (raw.startsWith(".")) {
+    throw new FormrError("FORMR_PATH_INVALID_DOT", "Path must not start with a dot");
   }
-  if (raw.endsWith('.')) {
-    throw new FormrError('FORMR_PATH_INVALID_DOT', 'Path must not end with a dot');
+  if (raw.endsWith(".")) {
+    throw new FormrError("FORMR_PATH_INVALID_DOT", "Path must not end with a dot");
   }
-  if (raw.includes('..')) {
-    throw new FormrError('FORMR_PATH_INVALID_DOT', 'Path must not contain consecutive dots');
+  if (raw.includes("..")) {
+    throw new FormrError("FORMR_PATH_INVALID_DOT", "Path must not contain consecutive dots");
   }
 }
 

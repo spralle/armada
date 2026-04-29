@@ -1,9 +1,6 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  parsePluginContract,
-  deriveFullPalette,
-} from "../../../packages/plugin-contracts/dist/index.js";
+import test from "node:test";
+import { deriveFullPalette, parsePluginContract } from "../../../packages/plugin-contracts/dist/index.js";
 import { pluginContract } from "../../../plugins/theme-default-plugin/src/plugin-contract.ts";
 
 // ---------------------------------------------------------------------------
@@ -64,9 +61,7 @@ test("plugin contract contains all five built-in themes", () => {
 // ---------------------------------------------------------------------------
 
 test("Default Dark theme has full explicit palette values", () => {
-  const defaultDark = pluginContract.contributes?.themes?.find(
-    (t) => t.id === "ghost.theme.default.dark",
-  );
+  const defaultDark = pluginContract.contributes?.themes?.find((t) => t.id === "ghost.theme.default.dark");
   assert.ok(defaultDark);
 
   const { palette } = defaultDark;
@@ -86,9 +81,7 @@ test("Default Dark theme has full explicit palette values", () => {
 // ---------------------------------------------------------------------------
 
 test("Tokyo Night theme uses minimal Omarchy-compatible palette (5 values)", () => {
-  const tokyoNight = pluginContract.contributes?.themes?.find(
-    (t) => t.id === "ghost.theme.tokyo-night",
-  );
+  const tokyoNight = pluginContract.contributes?.themes?.find((t) => t.id === "ghost.theme.tokyo-night");
   assert.ok(tokyoNight);
 
   const { palette } = tokyoNight;
@@ -109,9 +102,7 @@ test("Tokyo Night theme uses minimal Omarchy-compatible palette (5 values)", () 
 });
 
 test("Tokyo Night theme has 16 terminal colors", () => {
-  const tokyoNight = pluginContract.contributes?.themes?.find(
-    (t) => t.id === "ghost.theme.tokyo-night",
-  );
+  const tokyoNight = pluginContract.contributes?.themes?.find((t) => t.id === "ghost.theme.tokyo-night");
   assert.ok(tokyoNight);
   assert.ok(tokyoNight.terminal, "terminal palette must be defined");
 
@@ -127,16 +118,11 @@ test("Tokyo Night theme has 16 terminal colors", () => {
 // ---------------------------------------------------------------------------
 
 test("Tokyo Night theme has background images", () => {
-  const tokyoNight = pluginContract.contributes?.themes?.find(
-    (t) => t.id === "ghost.theme.tokyo-night",
-  );
+  const tokyoNight = pluginContract.contributes?.themes?.find((t) => t.id === "ghost.theme.tokyo-night");
   assert.ok(tokyoNight);
   assert.ok(tokyoNight.backgrounds, "Tokyo Night backgrounds must be defined");
   assert.equal(tokyoNight.backgrounds.length, 4, "Expected 4 background images");
-  assert.ok(
-    tokyoNight.backgrounds[0].url.includes("swirl-buck"),
-    "First background should contain 'swirl-buck'",
-  );
+  assert.ok(tokyoNight.backgrounds[0].url.includes("swirl-buck"), "First background should contain 'swirl-buck'");
   assert.equal(tokyoNight.backgrounds[0].mode, "cover");
 });
 
@@ -145,9 +131,7 @@ test("Tokyo Night theme has background images", () => {
 // ---------------------------------------------------------------------------
 
 test("Retro 82 theme has Omarchy-compatible palette and backgrounds", () => {
-  const retro82 = pluginContract.contributes?.themes?.find(
-    (t) => t.id === "ghost.theme.retro-82",
-  );
+  const retro82 = pluginContract.contributes?.themes?.find((t) => t.id === "ghost.theme.retro-82");
   assert.ok(retro82, "Retro 82 theme must exist");
   assert.equal(retro82.name, "Retro 82");
   assert.equal(retro82.mode, "dark");
@@ -173,9 +157,7 @@ test("Retro 82 theme has Omarchy-compatible palette and backgrounds", () => {
 // ---------------------------------------------------------------------------
 
 test("Florida Man theme has Omarchy-compatible palette and backgrounds", () => {
-  const floridaMan = pluginContract.contributes?.themes?.find(
-    (t) => t.id === "ghost.theme.florida-man",
-  );
+  const floridaMan = pluginContract.contributes?.themes?.find((t) => t.id === "ghost.theme.florida-man");
   assert.ok(floridaMan, "Florida Man theme must exist");
   assert.equal(floridaMan.name, "Florida Man");
   assert.equal(floridaMan.mode, "dark");
@@ -201,9 +183,7 @@ test("Florida Man theme has Omarchy-compatible palette and backgrounds", () => {
 // ---------------------------------------------------------------------------
 
 test("Catppuccin Latte is a light mode theme with proper derivation", () => {
-  const catppuccinLatte = pluginContract.contributes?.themes?.find(
-    (t) => t.id === "ghost.theme.catppuccin-latte",
-  );
+  const catppuccinLatte = pluginContract.contributes?.themes?.find((t) => t.id === "ghost.theme.catppuccin-latte");
   assert.ok(catppuccinLatte, "Catppuccin Latte theme must exist");
   assert.equal(catppuccinLatte.mode, "light");
   assert.ok(catppuccinLatte.author?.includes("Catppuccin"), "Author must contain Catppuccin");
@@ -223,9 +203,7 @@ test("Catppuccin Latte is a light mode theme with proper derivation", () => {
 // ---------------------------------------------------------------------------
 
 test("deriveFullPalette fills all gaps for Tokyo Night minimal palette", () => {
-  const tokyoNight = pluginContract.contributes?.themes?.find(
-    (t) => t.id === "ghost.theme.tokyo-night",
-  );
+  const tokyoNight = pluginContract.contributes?.themes?.find((t) => t.id === "ghost.theme.tokyo-night");
   assert.ok(tokyoNight);
 
   const derived = deriveFullPalette(tokyoNight.palette, tokyoNight.terminal);

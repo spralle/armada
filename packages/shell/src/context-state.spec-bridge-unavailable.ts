@@ -1,17 +1,15 @@
-import type { ShellRuntime } from "./app/types.js";
 import type {
   AsyncWindowBridge,
   AsyncWindowBridgeHealth,
   AsyncWindowBridgePublishResult,
-} from "@ghost-shell/bridge";
-import type { SpecHarness } from "./context-state.spec-harness.js";
-import { bindBridgeSync } from "./shell-runtime/bridge-sync-handlers.js";
-import { publishWithDegrade } from "./sync/bridge-degraded.js";
-import type {
   WindowBridge,
   WindowBridgeEvent,
   WindowBridgeHealth,
 } from "@ghost-shell/bridge";
+import type { ShellRuntime } from "./app/types.js";
+import type { SpecHarness } from "./context-state.spec-harness.js";
+import { bindBridgeSync } from "./shell-runtime/bridge-sync-handlers.js";
+import { publishWithDegrade } from "./sync/bridge-degraded.js";
 
 class StubWindowBridge implements WindowBridge {
   available = true;
@@ -174,28 +172,39 @@ export function registerBridgeUnavailableSpecs(harness: SpecHarness): void {
     const runtime = createRuntime(asyncBridge);
     const announcements: string[] = [];
 
-    publishWithDegrade(runtime, {
-      type: "selection",
-      selectedPartId: "tab-a",
-      selectedPartTitle: "Tab A",
-      selectionByEntityType: {},
-      revision: { timestamp: 10, writer: "host-window" },
-      sourceWindowId: "host-window",
-    }, {
-      announce(message) {
-        announcements.push(message);
+    publishWithDegrade(
+      runtime,
+      {
+        type: "selection",
+        selectedPartId: "tab-a",
+        selectedPartTitle: "Tab A",
+        selectionByEntityType: {},
+        revision: { timestamp: 10, writer: "host-window" },
+        sourceWindowId: "host-window",
       },
-      updateWindowReadOnlyState() {},
-      renderSyncStatus() {},
-      renderContextControls() {},
-    });
+      {
+        announce(message) {
+          announcements.push(message);
+        },
+        updateWindowReadOnlyState() {},
+        renderSyncStatus() {},
+        renderContextControls() {},
+      },
+    );
 
-    assertEqual(asyncBridge.publishedEvents[0]?.type, "selection", "async publish should enqueue selection event before promise settles");
+    assertEqual(
+      asyncBridge.publishedEvents[0]?.type,
+      "selection",
+      "async publish should enqueue selection event before promise settles",
+    );
     await flushMicrotasks();
     assertEqual(runtime.syncDegraded, true, "async rejection should set degraded mode");
     assertEqual(runtime.syncHealthState, "degraded", "async rejection should set degraded health state");
     assertEqual(runtime.syncDegradedReason, "channel-error", "async rejection should preserve reject reason");
-    assertTruthy(announcements[0]?.includes("Cross-window sync degraded"), "async rejection should announce degraded mode");
+    assertTruthy(
+      announcements[0]?.includes("Cross-window sync degraded"),
+      "async rejection should announce degraded mode",
+    );
   });
 
   test("recovery requires healthy signal and matching probe ack", () => {

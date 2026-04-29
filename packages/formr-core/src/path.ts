@@ -1,4 +1,4 @@
-export type Namespace = 'data' | 'ui';
+export type Namespace = "data" | "ui";
 export type CanonicalSegment = string | number;
 
 export interface CanonicalPath {

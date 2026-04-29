@@ -10,10 +10,7 @@ import type { LayerSurfaceContext } from "@ghost-shell/contracts/layer";
  * - Multiple surfaces sharing an anchor point
  * - Close button and auto-dismiss timer
  */
-export function mount(
-  target: HTMLDivElement,
-  context: LayerSurfaceContext,
-): (() => void) | void {
+export function mount(target: HTMLDivElement, context: LayerSurfaceContext): (() => void) | undefined {
   const titles: Record<string, string> = {
     "example-notification-1": "Build Complete",
     "example-notification-2": "New Message",

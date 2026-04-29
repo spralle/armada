@@ -1,6 +1,6 @@
-import type { CompiledRule } from './contracts.js';
-import { isWildcardPath, matchWildcardPath } from './path-utils.js';
-import { extractConditionDeps, extractActionDeps } from './dependency-extract.js';
+import type { CompiledRule } from "./contracts.js";
+import { extractActionDeps, extractConditionDeps } from "./dependency-extract.js";
+import { isWildcardPath, matchWildcardPath } from "./path-utils.js";
 
 export interface AlphaNetwork {
   readonly getAffectedRules: (changedPath: string) => readonly CompiledRule[];

@@ -1,8 +1,20 @@
+export {
+  CONTEXT_STATE_CONFIG_KEY,
+  type ContextConfigBridge,
+  type ContextConfigBridgeOptions,
+  contextStateConfigSchema,
+  createConfigBackedContextPersistence,
+  createContextConfigBridge,
+} from "./context-config-bridge.js";
+export {
+  createLocalStorageContextStatePersistence,
+  createLocalStorageWorkspacePersistence,
+} from "./context-persistence.js";
 export type {
-  ContextStateLoadResult,
-  ContextStateSaveResult,
-  ContextStatePersistenceOptions,
   ContextStateEnvelopeV2,
+  ContextStateLoadResult,
+  ContextStatePersistenceOptions,
+  ContextStateSaveResult,
   KeybindingOverrideEntryV1,
   KeybindingOverridesEnvelopeV1,
   KeybindingPersistenceOptions,
@@ -19,74 +31,49 @@ export type {
   WorkspaceManagerSaveResult,
   WorkspacePersistenceEnvelopeV1,
 } from "./contracts.js";
-
 export {
-  SHELL_PERSISTENCE_STORAGE_KEY,
-  SHELL_PERSISTENCE_SCHEMA_VERSION,
-  LAYOUT_SECTION_SCHEMA_VERSION,
   CONTEXT_STATE_SCHEMA_VERSION,
-  WORKSPACE_SCHEMA_VERSION,
-  KEYBINDING_OVERRIDES_SCHEMA_VERSION,
   getUnifiedStorageKey,
-  safeParseUnknown,
+  KEYBINDING_OVERRIDES_SCHEMA_VERSION,
+  LAYOUT_SECTION_SCHEMA_VERSION,
   loadUnifiedEnvelope,
-  migrateUnifiedShellEnvelope,
-  migrateLayoutSectionEnvelope,
+  mergeAndSaveEnvelope,
   migrateContextStateEnvelope,
   migrateKeybindingOverridesEnvelope,
+  migrateLayoutSectionEnvelope,
+  migrateUnifiedShellEnvelope,
   migrateWorkspacePersistenceEnvelope,
-  mergeAndSaveEnvelope,
+  SHELL_PERSISTENCE_SCHEMA_VERSION,
+  SHELL_PERSISTENCE_STORAGE_KEY,
+  safeParseUnknown,
+  WORKSPACE_SCHEMA_VERSION,
 } from "./envelope.js";
-
-export { isRecord } from "./utils.js";
-
 export {
-  sanitizeDockTreeState,
-  sanitizeDockTreeStateWithReport,
-  type DockTreeSanitizeResult,
-} from "./sanitize-dock-tree.js";
+  createConfigBackedKeybindingPersistence,
+  createKeybindingConfigBridge,
+  KEYBINDING_CONFIG_KEY,
+  type KeybindingConfigBridge,
+  type KeybindingConfigBridgeOptions,
+  keybindingConfigSchema,
+} from "./keybinding-config-bridge.js";
+export { createLocalStorageKeybindingPersistence } from "./keybinding-persistence.js";
+export {
+  createConfigBackedLayoutPersistence,
+  createLayoutConfigBridge,
+  LAYOUT_CONFIG_KEY,
+  type LayoutConfigBridge,
+  type LayoutConfigBridgeOptions,
+  layoutConfigSchema,
+} from "./layout-config-bridge.js";
 
+export { createLocalStorageLayoutPersistence } from "./layout-persistence.js";
 export {
   sanitizeContextState,
   sanitizeWorkspaceEnvelope,
 } from "./sanitize.js";
-
 export {
-  createLocalStorageContextStatePersistence,
-  createLocalStorageWorkspacePersistence,
-} from "./context-persistence.js";
-
-export {
-  createLocalStorageKeybindingPersistence,
-} from "./keybinding-persistence.js";
-
-export {
-  createLocalStorageLayoutPersistence,
-} from "./layout-persistence.js";
-
-export {
-  CONTEXT_STATE_CONFIG_KEY,
-  contextStateConfigSchema,
-  createContextConfigBridge,
-  createConfigBackedContextPersistence,
-  type ContextConfigBridge,
-  type ContextConfigBridgeOptions,
-} from "./context-config-bridge.js";
-
-export {
-  KEYBINDING_CONFIG_KEY,
-  keybindingConfigSchema,
-  createKeybindingConfigBridge,
-  createConfigBackedKeybindingPersistence,
-  type KeybindingConfigBridge,
-  type KeybindingConfigBridgeOptions,
-} from "./keybinding-config-bridge.js";
-
-export {
-  LAYOUT_CONFIG_KEY,
-  layoutConfigSchema,
-  createLayoutConfigBridge,
-  createConfigBackedLayoutPersistence,
-  type LayoutConfigBridge,
-  type LayoutConfigBridgeOptions,
-} from "./layout-config-bridge.js";
+  type DockTreeSanitizeResult,
+  sanitizeDockTreeState,
+  sanitizeDockTreeStateWithReport,
+} from "./sanitize-dock-tree.js";
+export { isRecord } from "./utils.js";

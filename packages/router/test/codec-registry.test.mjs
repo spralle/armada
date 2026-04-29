@@ -1,14 +1,20 @@
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { createUrlCodecRegistry } from "../dist/codec/codec-registry.js";
 
 function fakeCodec(id, name) {
   return {
     id,
     name: name ?? id,
-    encode() { return new URL("http://localhost/"); },
-    decode() { return null; },
-    canDecode() { return false; },
+    encode() {
+      return new URL("http://localhost/");
+    },
+    decode() {
+      return null;
+    },
+    canDecode() {
+      return false;
+    },
   };
 }
 
@@ -53,10 +59,7 @@ describe("codec registry", () => {
   it("getActive throws when no fallback registered", () => {
     const registry = createUrlCodecRegistry("fallback");
 
-    assert.throws(
-      () => registry.getActive({}),
-      { message: /No URL codec found/ },
-    );
+    assert.throws(() => registry.getActive({}), { message: /No URL codec found/ });
   });
 
   it("list returns all registered codecs", () => {

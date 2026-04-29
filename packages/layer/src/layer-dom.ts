@@ -1,10 +1,7 @@
 /** DOM utilities for creating and removing layer container elements. */
 
 /** Create a layer container element and insert it at the correct z-order position. */
-export function createLayerContainer(
-  layerHost: HTMLElement,
-  layer: { name: string; zOrder: number },
-): HTMLElement {
+export function createLayerContainer(layerHost: HTMLElement, layer: { name: string; zOrder: number }): HTMLElement {
   const el = document.createElement("div");
   el.setAttribute("role", "presentation");
   el.className = "shell-layer";
@@ -33,10 +30,7 @@ export function createLayerContainer(
 }
 
 /** Remove a layer container element by layer name. */
-export function removeLayerContainer(
-  layerHost: HTMLElement,
-  layerName: string,
-): void {
+export function removeLayerContainer(layerHost: HTMLElement, layerName: string): void {
   const el = layerHost.querySelector<HTMLElement>(`.shell-layer[data-layer="${layerName}"]`);
   el?.remove();
 }

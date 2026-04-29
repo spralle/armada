@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
 import {
   applyLocalPluginEntryOverrides,
@@ -7,10 +7,10 @@ import {
   getTenantManifestResponse,
 } from "../dist-test/src/tenant-manifest.js";
 import {
+  buildEntryOverrideMap,
   DEFAULT_LOCAL_PLUGIN_ENTRIES,
   LOCAL_PLUGIN_IDS,
   SORTED_LOCAL_PLUGIN_IDS,
-  buildEntryOverrideMap,
 } from "./fixtures/local-plugin-overrides-fixtures.mjs";
 
 test("getTenantManifestResponse without selected local plugins matches baseline", () => {
@@ -33,14 +33,10 @@ test("selected local plugin receives entry override from default map", () => {
 
   const manifest = getTenantManifestResponse("demo", {
     selectedLocalPluginIds: [selectedPluginId],
-    pluginEntryUrlOverridesById: new Map([
-      [selectedPluginId, selectedPluginOverrideEntry],
-    ]),
+    pluginEntryUrlOverridesById: new Map([[selectedPluginId, selectedPluginOverrideEntry]]),
   });
 
-  const selectedPlugin = manifest.plugins.find(
-    (plugin) => plugin.id === selectedPluginId,
-  );
+  const selectedPlugin = manifest.plugins.find((plugin) => plugin.id === selectedPluginId);
   assert.ok(selectedPlugin);
   assert.equal(selectedPlugin.entry, selectedPluginOverrideEntry);
 });
@@ -48,15 +44,11 @@ test("selected local plugin receives entry override from default map", () => {
 test("non-selected local plugins remain unchanged when overrides are applied", () => {
   const selectedPluginId = LOCAL_PLUGIN_IDS.pluginStarter;
   const baseline = getTenantManifestResponse("demo");
-  const baselineById = new Map(
-    baseline.plugins.map((plugin) => [plugin.id, plugin.entry]),
-  );
+  const baselineById = new Map(baseline.plugins.map((plugin) => [plugin.id, plugin.entry]));
 
   const manifest = getTenantManifestResponse("demo", {
     selectedLocalPluginIds: [selectedPluginId],
-    pluginEntryUrlOverridesById: new Map([
-      [selectedPluginId, "https://127.0.0.1:5173/mf-manifest.json"],
-    ]),
+    pluginEntryUrlOverridesById: new Map([[selectedPluginId, "https://127.0.0.1:5173/mf-manifest.json"]]),
   });
 
   for (const plugin of manifest.plugins) {
@@ -71,8 +63,7 @@ test("non-selected local plugins remain unchanged when overrides are applied", (
 test("override application is deterministic and idempotent", () => {
   const overrides = buildEntryOverrideMap({
     [LOCAL_PLUGIN_IDS.pluginStarter]: "https://127.0.0.1:5173/mf-manifest.json",
-    [LOCAL_PLUGIN_IDS.sampleContractConsumer]:
-      "https://127.0.0.1:5174/mf-manifest.json",
+    [LOCAL_PLUGIN_IDS.sampleContractConsumer]: "https://127.0.0.1:5174/mf-manifest.json",
   });
   const selectedPluginIds = [
     LOCAL_PLUGIN_IDS.sampleContractConsumer,
@@ -120,15 +111,10 @@ test("getTenantManifestResponse applies default map for CLI-selected local plugi
     selectedLocalPluginIds: selectedPluginIds,
   });
 
-  const selectedPlugin = manifest.plugins.find(
-    (plugin) => plugin.id === LOCAL_PLUGIN_IDS.sharedUiCapabilities,
-  );
+  const selectedPlugin = manifest.plugins.find((plugin) => plugin.id === LOCAL_PLUGIN_IDS.sharedUiCapabilities);
 
   assert.ok(selectedPlugin);
-  assert.equal(
-    selectedPlugin.entry,
-    DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.sharedUiCapabilities],
-  );
+  assert.equal(selectedPlugin.entry, DEFAULT_LOCAL_PLUGIN_ENTRIES[LOCAL_PLUGIN_IDS.sharedUiCapabilities]);
 });
 
 test("getTenantManifestResponse keeps no-override baseline when selection has only blanks", () => {
@@ -147,9 +133,7 @@ test("applyLocalPluginEntryOverrides fails fast when selected plugin is not in m
     () =>
       applyLocalPluginEntryOverrides(baseline.plugins, {
         selectedLocalPluginIds: ["ghost.unknown.plugin"],
-        pluginEntryUrlOverridesById: new Map([
-          ["ghost.unknown.plugin", "http://127.0.0.1:4999/mf-manifest.json"],
-        ]),
+        pluginEntryUrlOverridesById: new Map([["ghost.unknown.plugin", "http://127.0.0.1:4999/mf-manifest.json"]]),
       }),
     /Selected local plugin id\(s\) not present in tenant manifest: ghost\.unknown\.plugin\./,
   );

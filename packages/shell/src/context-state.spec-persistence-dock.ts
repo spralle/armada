@@ -1,10 +1,6 @@
-import { createLocalStorageContextStatePersistence } from "./persistence.js";
-import {
-  createInitialShellContextState,
-  moveTabInDockTree,
-  registerTab,
-} from "./context-state.js";
+import { createInitialShellContextState, moveTabInDockTree, registerTab } from "./context-state.js";
 import { MemoryStorage, type SpecHarness } from "./context-state.spec-harness.js";
+import { createLocalStorageContextStatePersistence } from "./persistence.js";
 
 export function registerContextPersistenceDockSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
@@ -13,35 +9,38 @@ export function registerContextPersistenceDockSpecs(harness: SpecHarness): void 
     const storage = new MemoryStorage();
     const userId = "spec-user";
     const unifiedKey = `ghost.shell.persistence.v1.${userId}`;
-    storage.setItem(unifiedKey, JSON.stringify({
-      version: 1,
-      context: {
-        version: 2,
-        contextState: {
-          groups: {
-            "group-main": { id: "group-main", color: "blue" },
-          },
-          tabs: {
-            "tab-a": { id: "tab-a", groupId: "group-main", label: "A" },
-            "tab-b": { id: "tab-b", groupId: "group-main", label: "B" },
-            "tab-c": { id: "tab-c", groupId: "group-main", label: "C" },
-          },
-          tabOrder: ["tab-a", "tab-b", "tab-c"],
-          activeTabId: "tab-a",
-          dockTree: {
-            tabsBySlot: {
-              main: ["tab-b"],
-              secondary: [{ tabId: "tab-a" }],
-              side: [{ id: "tab-c" }],
+    storage.setItem(
+      unifiedKey,
+      JSON.stringify({
+        version: 1,
+        context: {
+          version: 2,
+          contextState: {
+            groups: {
+              "group-main": { id: "group-main", color: "blue" },
             },
+            tabs: {
+              "tab-a": { id: "tab-a", groupId: "group-main", label: "A" },
+              "tab-b": { id: "tab-b", groupId: "group-main", label: "B" },
+              "tab-c": { id: "tab-c", groupId: "group-main", label: "C" },
+            },
+            tabOrder: ["tab-a", "tab-b", "tab-c"],
+            activeTabId: "tab-a",
+            dockTree: {
+              tabsBySlot: {
+                main: ["tab-b"],
+                secondary: [{ tabId: "tab-a" }],
+                side: [{ id: "tab-c" }],
+              },
+            },
+            globalLanes: {},
+            groupLanes: {},
+            subcontextsByTab: {},
+            selectionByEntityType: {},
           },
-          globalLanes: {},
-          groupLanes: {},
-          subcontextsByTab: {},
-          selectionByEntityType: {},
         },
-      },
-    }));
+      }),
+    );
 
     const persistence = createLocalStorageContextStatePersistence(storage, { userId });
     const loaded = persistence.load(createInitialShellContextState({ initialTabId: "fallback-tab" }));
@@ -50,7 +49,11 @@ export function registerContextPersistenceDockSpecs(harness: SpecHarness): void 
       Boolean(loaded.warning?.includes("legacy slot schema")),
       "legacy slot payload migration should surface migration warning",
     );
-    assertEqual(loaded.state.dockTree.root?.kind, "stack", "legacy slot payload should map to deterministic default stack");
+    assertEqual(
+      loaded.state.dockTree.root?.kind,
+      "stack",
+      "legacy slot payload should map to deterministic default stack",
+    );
     if (loaded.state.dockTree.root?.kind === "stack") {
       assertEqual(
         loaded.state.dockTree.root.tabIds.join(","),
@@ -65,36 +68,39 @@ export function registerContextPersistenceDockSpecs(harness: SpecHarness): void 
     const storage = new MemoryStorage();
     const userId = "spec-user";
     const unifiedKey = `ghost.shell.persistence.v1.${userId}`;
-    storage.setItem(unifiedKey, JSON.stringify({
-      version: 1,
-      context: {
-        version: 2,
-        contextState: {
-          groups: {
-            "group-main": { id: "group-main", color: "blue" },
-          },
-          tabs: {
-            "tab-a": { id: "tab-a", groupId: "group-main", label: "A" },
-            "tab-b": { id: "tab-b", groupId: "group-main", label: "B" },
-          },
-          tabOrder: ["tab-a", "tab-b"],
-          activeTabId: "tab-b",
-          dockTree: {
-            root: {
-              kind: "split",
-              id: "broken",
-              orientation: "diagonal",
-              first: null,
-              second: null,
+    storage.setItem(
+      unifiedKey,
+      JSON.stringify({
+        version: 1,
+        context: {
+          version: 2,
+          contextState: {
+            groups: {
+              "group-main": { id: "group-main", color: "blue" },
             },
+            tabs: {
+              "tab-a": { id: "tab-a", groupId: "group-main", label: "A" },
+              "tab-b": { id: "tab-b", groupId: "group-main", label: "B" },
+            },
+            tabOrder: ["tab-a", "tab-b"],
+            activeTabId: "tab-b",
+            dockTree: {
+              root: {
+                kind: "split",
+                id: "broken",
+                orientation: "diagonal",
+                first: null,
+                second: null,
+              },
+            },
+            globalLanes: {},
+            groupLanes: {},
+            subcontextsByTab: {},
+            selectionByEntityType: {},
           },
-          globalLanes: {},
-          groupLanes: {},
-          subcontextsByTab: {},
-          selectionByEntityType: {},
         },
-      },
-    }));
+      }),
+    );
 
     const persistence = createLocalStorageContextStatePersistence(storage, { userId });
     const loaded = persistence.load(createInitialShellContextState({ initialTabId: "fallback-tab" }));
@@ -103,7 +109,11 @@ export function registerContextPersistenceDockSpecs(harness: SpecHarness): void 
       Boolean(loaded.warning?.includes("dock layout payload was invalid")),
       "corrupt dock payload should surface sanitization warning",
     );
-    assertEqual(loaded.state.dockTree.root?.kind, "stack", "corrupt dock payload should fall back to deterministic stack");
+    assertEqual(
+      loaded.state.dockTree.root?.kind,
+      "stack",
+      "corrupt dock payload should fall back to deterministic stack",
+    );
     if (loaded.state.dockTree.root?.kind === "stack") {
       assertEqual(
         loaded.state.dockTree.root.tabIds.join(","),
@@ -133,11 +143,7 @@ export function registerContextPersistenceDockSpecs(harness: SpecHarness): void 
     const root = loaded.state.dockTree.root;
     assertTruthy(root?.kind === "split", "nested dock layout split root should be preserved across save/load");
     if (root?.kind === "split" && root.first.kind === "stack") {
-      assertEqual(
-        root.first.tabIds.join(","),
-        "tab-a",
-        "first stack should contain tab-a after load",
-      );
+      assertEqual(root.first.tabIds.join(","), "tab-a", "first stack should contain tab-a after load");
     }
     if (root?.kind === "split" && root.second.kind === "split") {
       if (root.second.first.kind === "stack") {

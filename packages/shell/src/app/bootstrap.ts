@@ -1,21 +1,12 @@
 import type { PluginContract } from "@ghost-shell/contracts";
+import { readUserThemePreference } from "@ghost-shell/theme";
+import { registerBuiltinServices } from "../builtin-service-descriptors.js";
+import { createPluginConfigSyncController, deriveNamespace } from "../plugin-config-sync-controller.js";
 import { createShellPluginRegistry } from "../plugin-registry.js";
 import { activateByStartupEvent } from "../plugin-registry-activation.js";
+import { activatePreferredThemePlugin, DEFAULT_THEME_PLUGIN_ID } from "../theme-activation.js";
 import { createThemeRegistry } from "../theme-registry.js";
-import { readUserThemePreference } from "@ghost-shell/theme";
-import {
-  activatePreferredThemePlugin,
-  DEFAULT_THEME_PLUGIN_ID,
-} from "../theme-activation.js";
-import { registerBuiltinServices } from "../builtin-service-descriptors.js";
-import {
-  createPluginConfigSyncController,
-  deriveNamespace,
-} from "../plugin-config-sync-controller.js";
-import type {
-  ShellBootstrapOptions,
-  ShellBootstrapState,
-} from "./types.js";
+import type { ShellBootstrapOptions, ShellBootstrapState } from "./types.js";
 import { parseTenantManifestFallback } from "./utils.js";
 
 async function fetchManifestFromEndpoint(manifestUrl: string): Promise<unknown> {
@@ -43,22 +34,14 @@ function isLoopbackEntry(entry: string): boolean {
     return false;
   }
 
-  return (
-    parsed.hostname === "127.0.0.1" ||
-    parsed.hostname === "localhost" ||
-    parsed.hostname === "::1"
-  );
+  return parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost" || parsed.hostname === "::1";
 }
 
 function resolveBootstrapMode(entries: readonly string[]): "inner-loop" | "integration" {
-  return entries.some((entry) => !isLoopbackEntry(entry))
-    ? "integration"
-    : "inner-loop";
+  return entries.some((entry) => !isLoopbackEntry(entry)) ? "integration" : "inner-loop";
 }
 
-export async function bootstrapShellWithTenantManifest(
-  options: ShellBootstrapOptions,
-): Promise<ShellBootstrapState> {
+export async function bootstrapShellWithTenantManifest(options: ShellBootstrapOptions): Promise<ShellBootstrapState> {
   const tenantId = options.tenantId.trim();
   if (!tenantId) {
     throw new Error("tenantId is required");
@@ -122,7 +105,10 @@ export async function bootstrapShellWithTenantManifest(
   });
 
   // Now activate onStartup plugins — all 7 builtin services are available.
-  const activationResult = await activateByStartupEvent(registry, options.onProgress ? () => options.onProgress!(registry) : undefined);
+  const activationResult = await activateByStartupEvent(
+    registry,
+    options.onProgress ? () => options.onProgress?.(registry) : undefined,
+  );
 
   if (activationResult.failed.length > 0) {
     console.warn(
@@ -132,10 +118,7 @@ export async function bootstrapShellWithTenantManifest(
       activationResult.failed,
     );
   } else {
-    console.info(
-      "[shell] plugin activation summary —",
-      `activated: ${activationResult.activated.length}, all OK`,
-    );
+    console.info("[shell] plugin activation summary —", `activated: ${activationResult.activated.length}, all OK`);
   }
 
   const snapshot = registry.getSnapshot();

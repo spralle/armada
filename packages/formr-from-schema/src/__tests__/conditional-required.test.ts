@@ -1,233 +1,233 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from "bun:test";
+import type { JsonSchema } from "../adapters/json-schema-types.js";
 import {
-  resolveIfThenElseRequired,
-  resolveDependentRequired,
-  resolveOneOfRequired,
-  resolveExpressionRequired,
   resolveAllConditionalRequired,
-} from '../conditional-required.js';
-import type { JsonSchema } from '../adapters/json-schema-types.js';
+  resolveDependentRequired,
+  resolveExpressionRequired,
+  resolveIfThenElseRequired,
+  resolveOneOfRequired,
+} from "../conditional-required.js";
 
-describe('resolveIfThenElseRequired', () => {
-  test('field becomes required when if-condition matches (then branch)', () => {
+describe("resolveIfThenElseRequired", () => {
+  test("field becomes required when if-condition matches (then branch)", () => {
     const schema: JsonSchema = {
-      type: 'object',
+      type: "object",
       properties: {
-        hasEmail: { type: 'boolean' },
-        email: { type: 'string' },
+        hasEmail: { type: "boolean" },
+        email: { type: "string" },
       },
       if: {
         properties: { hasEmail: { enum: [true] } },
-        required: ['hasEmail'],
+        required: ["hasEmail"],
       },
-      then: { required: ['email'] },
+      then: { required: ["email"] },
     };
     const issues = resolveIfThenElseRequired({
       schema,
       data: { hasEmail: true },
-      stage: 'submit',
+      stage: "submit",
     });
     expect(issues).toHaveLength(1);
-    expect(issues[0].code).toBe('CONDITIONAL_REQUIRED');
-    expect(issues[0].path.segments).toEqual(['email']);
-    expect(issues[0].source.origin).toBe('json-schema-adapter');
+    expect(issues[0].code).toBe("CONDITIONAL_REQUIRED");
+    expect(issues[0].path.segments).toEqual(["email"]);
+    expect(issues[0].source.origin).toBe("json-schema-adapter");
   });
 
-  test('no issues when condition matches and field is present', () => {
+  test("no issues when condition matches and field is present", () => {
     const schema: JsonSchema = {
-      type: 'object',
+      type: "object",
       if: {
         properties: { hasEmail: { enum: [true] } },
-        required: ['hasEmail'],
+        required: ["hasEmail"],
       },
-      then: { required: ['email'] },
+      then: { required: ["email"] },
     };
     const issues = resolveIfThenElseRequired({
       schema,
-      data: { hasEmail: true, email: 'a@b.com' },
-      stage: 'submit',
+      data: { hasEmail: true, email: "a@b.com" },
+      stage: "submit",
     });
     expect(issues).toHaveLength(0);
   });
 
-  test('else branch required when condition does not match', () => {
+  test("else branch required when condition does not match", () => {
     const schema: JsonSchema = {
-      type: 'object',
+      type: "object",
       if: {
-        properties: { type: { enum: ['business'] } },
-        required: ['type'],
+        properties: { type: { enum: ["business"] } },
+        required: ["type"],
       },
-      then: { required: ['companyName'] },
-      else: { required: ['firstName'] },
+      then: { required: ["companyName"] },
+      else: { required: ["firstName"] },
     };
     const issues = resolveIfThenElseRequired({
       schema,
-      data: { type: 'personal' },
-      stage: 'submit',
+      data: { type: "personal" },
+      stage: "submit",
     });
     expect(issues).toHaveLength(1);
-    expect(issues[0].path.segments).toEqual(['firstName']);
+    expect(issues[0].path.segments).toEqual(["firstName"]);
   });
 
-  test('no if schema returns empty', () => {
+  test("no if schema returns empty", () => {
     const issues = resolveIfThenElseRequired({
-      schema: { type: 'object' },
+      schema: { type: "object" },
       data: {},
-      stage: 'submit',
+      stage: "submit",
     });
     expect(issues).toHaveLength(0);
   });
 });
 
-describe('resolveDependentRequired', () => {
-  test('field Y required when X has value', () => {
+describe("resolveDependentRequired", () => {
+  test("field Y required when X has value", () => {
     const schema: JsonSchema = {
-      type: 'object',
+      type: "object",
       properties: {
-        country: { type: 'string' },
-        state: { type: 'string' },
+        country: { type: "string" },
+        state: { type: "string" },
       },
-      dependentRequired: { country: ['state'] },
+      dependentRequired: { country: ["state"] },
     };
     const issues = resolveDependentRequired({
       schema,
-      data: { country: 'US' },
-      stage: 'submit',
+      data: { country: "US" },
+      stage: "submit",
     });
     expect(issues).toHaveLength(1);
-    expect(issues[0].code).toBe('DEPENDENT_REQUIRED');
-    expect(issues[0].path.segments).toEqual(['state']);
-    expect(issues[0].source.origin).toBe('json-schema-adapter');
+    expect(issues[0].code).toBe("DEPENDENT_REQUIRED");
+    expect(issues[0].path.segments).toEqual(["state"]);
+    expect(issues[0].source.origin).toBe("json-schema-adapter");
   });
 
-  test('no issues when trigger field is absent', () => {
+  test("no issues when trigger field is absent", () => {
     const schema: JsonSchema = {
-      type: 'object',
-      dependentRequired: { country: ['state'] },
+      type: "object",
+      dependentRequired: { country: ["state"] },
     };
     const issues = resolveDependentRequired({
       schema,
       data: {},
-      stage: 'submit',
+      stage: "submit",
     });
     expect(issues).toHaveLength(0);
   });
 
-  test('no issues when dependent field is present', () => {
+  test("no issues when dependent field is present", () => {
     const schema: JsonSchema = {
-      type: 'object',
-      dependentRequired: { country: ['state'] },
+      type: "object",
+      dependentRequired: { country: ["state"] },
     };
     const issues = resolveDependentRequired({
       schema,
-      data: { country: 'US', state: 'CA' },
-      stage: 'submit',
+      data: { country: "US", state: "CA" },
+      stage: "submit",
     });
     expect(issues).toHaveLength(0);
   });
 });
 
-describe('resolveOneOfRequired', () => {
-  test('correct branch required fields enforced', () => {
+describe("resolveOneOfRequired", () => {
+  test("correct branch required fields enforced", () => {
     const schema: JsonSchema = {
-      type: 'object',
+      type: "object",
       oneOf: [
         {
-          properties: { type: { enum: ['person'] } },
-          required: ['type', 'firstName'],
+          properties: { type: { enum: ["person"] } },
+          required: ["type", "firstName"],
         },
         {
-          properties: { type: { enum: ['company'] } },
-          required: ['type', 'companyName'],
+          properties: { type: { enum: ["company"] } },
+          required: ["type", "companyName"],
         },
       ],
     };
     const issues = resolveOneOfRequired({
       schema,
-      data: { type: 'company' },
-      stage: 'submit',
+      data: { type: "company" },
+      stage: "submit",
     });
     expect(issues).toHaveLength(1);
-    expect(issues[0].code).toBe('ONEOF_REQUIRED');
-    expect(issues[0].path.segments).toEqual(['companyName']);
+    expect(issues[0].code).toBe("ONEOF_REQUIRED");
+    expect(issues[0].path.segments).toEqual(["companyName"]);
   });
 
-  test('no issues when matching branch fields are present', () => {
+  test("no issues when matching branch fields are present", () => {
     const schema: JsonSchema = {
-      type: 'object',
+      type: "object",
       oneOf: [
         {
-          properties: { type: { enum: ['person'] } },
-          required: ['type', 'firstName'],
+          properties: { type: { enum: ["person"] } },
+          required: ["type", "firstName"],
         },
       ],
     };
     const issues = resolveOneOfRequired({
       schema,
-      data: { type: 'person', firstName: 'Alice' },
-      stage: 'submit',
+      data: { type: "person", firstName: "Alice" },
+      stage: "submit",
     });
     expect(issues).toHaveLength(0);
   });
 
-  test('no oneOf returns empty', () => {
+  test("no oneOf returns empty", () => {
     const issues = resolveOneOfRequired({
-      schema: { type: 'object' },
+      schema: { type: "object" },
       data: {},
-      stage: 'submit',
+      stage: "submit",
     });
     expect(issues).toHaveLength(0);
   });
 
-  test('no matching branch returns empty', () => {
+  test("no matching branch returns empty", () => {
     const schema: JsonSchema = {
-      type: 'object',
+      type: "object",
       oneOf: [
         {
-          properties: { type: { enum: ['person'] } },
-          required: ['type', 'firstName'],
+          properties: { type: { enum: ["person"] } },
+          required: ["type", "firstName"],
         },
       ],
     };
     const issues = resolveOneOfRequired({
       schema,
-      data: { type: 'unknown' },
-      stage: 'submit',
+      data: { type: "unknown" },
+      stage: "submit",
     });
     expect(issues).toHaveLength(0);
   });
 });
 
-describe('resolveExpressionRequired', () => {
-  test('stub returns empty (not yet wired)', () => {
+describe("resolveExpressionRequired", () => {
+  test("stub returns empty (not yet wired)", () => {
     const issues = resolveExpressionRequired({
-      schema: { type: 'object' },
+      schema: { type: "object" },
       data: {},
-      stage: 'submit',
+      stage: "submit",
     });
     expect(issues).toHaveLength(0);
   });
 });
 
-describe('resolveAllConditionalRequired', () => {
-  test('combines all conditional required sources', () => {
+describe("resolveAllConditionalRequired", () => {
+  test("combines all conditional required sources", () => {
     const schema: JsonSchema = {
-      type: 'object',
+      type: "object",
       if: {
         properties: { hasEmail: { enum: [true] } },
-        required: ['hasEmail'],
+        required: ["hasEmail"],
       },
-      then: { required: ['email'] },
-      dependentRequired: { country: ['state'] },
+      then: { required: ["email"] },
+      dependentRequired: { country: ["state"] },
     };
     const issues = resolveAllConditionalRequired({
       schema,
-      data: { hasEmail: true, country: 'US' },
-      stage: 'submit',
+      data: { hasEmail: true, country: "US" },
+      stage: "submit",
     });
     expect(issues.length).toBeGreaterThanOrEqual(2);
     const codes = issues.map((i) => i.code);
-    expect(codes).toContain('CONDITIONAL_REQUIRED');
-    expect(codes).toContain('DEPENDENT_REQUIRED');
+    expect(codes).toContain("CONDITIONAL_REQUIRED");
+    expect(codes).toContain("DEPENDENT_REQUIRED");
   });
 });

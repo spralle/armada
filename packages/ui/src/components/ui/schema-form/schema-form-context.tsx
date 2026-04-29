@@ -1,47 +1,40 @@
-"use client"
+"use client";
 
-import { createContext, useContext } from "react"
-import type { FormApi } from "@ghost-shell/formr-core"
-import type { SchemaFieldInfo } from "@ghost-shell/schema-core"
-import type { RendererRegistry } from "@ghost-shell/formr-react"
-import type { ResolvedFieldState } from "@ghost-shell/formr-react"
-import { DEFAULT_FIELD_STATE } from "@ghost-shell/formr-react"
-import type { WidgetOverrides } from "./widget-overrides"
+import type { FormApi } from "@ghost-shell/formr-core";
+import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema";
+import type { RendererRegistry } from "@ghost-shell/formr-react";
+import { createContext, useContext } from "react";
+import type { WidgetOverrides } from "./widget-overrides";
 
 export interface SchemaFormContextValue {
-  readonly form: FormApi<unknown, unknown>
-  readonly fields: readonly SchemaFieldInfo[]
-  readonly overrides?: WidgetOverrides | undefined
-  readonly registry: RendererRegistry
-  readonly fieldStates: ReadonlyMap<string, ResolvedFieldState>
+  readonly form: FormApi<unknown, unknown>;
+  readonly fields: readonly SchemaFieldInfo[];
+  readonly overrides?: WidgetOverrides | undefined;
+  readonly registry: RendererRegistry;
 }
 
-const SchemaFormContext = createContext<SchemaFormContextValue | null>(null)
+const SchemaFormContext = createContext<SchemaFormContextValue | null>(null);
 
 export function SchemaFormProvider({
   value,
   children,
 }: {
-  readonly value: SchemaFormContextValue
-  readonly children: React.ReactNode
+  readonly value: SchemaFormContextValue;
+  readonly children: React.ReactNode;
 }) {
-  return (
-    <SchemaFormContext.Provider value={value}>
-      {children}
-    </SchemaFormContext.Provider>
-  )
+  return <SchemaFormContext.Provider value={value}>{children}</SchemaFormContext.Provider>;
 }
 
 export function useSchemaFormContext(): SchemaFormContextValue {
-  const ctx = useContext(SchemaFormContext)
+  const ctx = useContext(SchemaFormContext);
   if (!ctx) {
-    throw new Error("useSchemaFormContext must be used within a SchemaForm")
+    throw new Error("useSchemaFormContext must be used within a SchemaForm");
   }
-  return ctx
+  return ctx;
 }
 
 /** Convenience hook to get resolved field state for a specific path */
 export function useFieldState(path: string): ResolvedFieldState {
-  const { fieldStates } = useSchemaFormContext()
-  return fieldStates.get(path) ?? DEFAULT_FIELD_STATE
+  const { fieldStates } = useSchemaFormContext();
+  return fieldStates.get(path) ?? DEFAULT_FIELD_STATE;
 }

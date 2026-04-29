@@ -1,17 +1,8 @@
-import type {
-  ActionDescriptor,
-  ActionService,
-  Disposable,
-} from "@ghost-shell/contracts";
-import {
-  createEventEmitter,
-} from "@ghost-shell/plugin-system";
-import {
-  evaluateContributionPredicate,
-} from "@ghost-shell/plugin-system";
+import type { ActionDescriptor, ActionService, Disposable } from "@ghost-shell/contracts";
+import type { IntentRuntime } from "@ghost-shell/intents";
+import { createEventEmitter, evaluateContributionPredicate } from "@ghost-shell/plugin-system";
 import type { ActionKeybinding, ActionSurface } from "../action-surface.js";
 import { dispatchAction } from "../action-surface.js";
-import type { IntentRuntime } from "@ghost-shell/intents";
 
 /**
  * Dependencies required by ActionService to bridge shell internals.
@@ -58,17 +49,12 @@ function readRuntimeHandler(
  *
  * Returns the service plus shell-side wiring hooks (fireChanged, dispose).
  */
-export function createActionService(
-  deps: ActionServiceDependencies,
-): ActionServiceWithEmitter {
+export function createActionService(deps: ActionServiceDependencies): ActionServiceWithEmitter {
   const runtimeActions = new Map<string, RuntimeActionHandler>();
   const emitter = createEventEmitter<void>();
 
   const service: ActionService = {
-    registerAction(
-      id: string,
-      handler: (...args: unknown[]) => unknown,
-    ): Disposable {
+    registerAction(id: string, handler: (...args: unknown[]) => unknown): Disposable {
       runtimeActions.set(id, handler);
       deps.runtimeActionRegistry?.set(id, handler);
       emitter.fire(undefined as never);
@@ -81,10 +67,7 @@ export function createActionService(
       };
     },
 
-    async executeAction<T = void>(
-      id: string,
-      ...args: unknown[]
-    ): Promise<T | undefined> {
+    async executeAction<T = void>(id: string, ...args: unknown[]): Promise<T | undefined> {
       // Check runtime-registered actions first
       const runtimeHandler = readRuntimeHandler(id, runtimeActions, deps.runtimeActionRegistry);
       if (runtimeHandler) {
@@ -101,9 +84,7 @@ export function createActionService(
       // Transparent plugin activation
       const activated = await deps.activatePlugin(action.pluginId, id);
       if (!activated) {
-        throw new Error(
-          `Action '${id}' blocked: plugin '${action.pluginId}' could not be activated`,
-        );
+        throw new Error(`Action '${id}' blocked: plugin '${action.pluginId}' could not be activated`);
       }
 
       // Re-check runtime actions — plugin may have registered a handler during activate()
@@ -114,17 +95,10 @@ export function createActionService(
 
       // Dispatch through the intent runtime
       const context = deps.getActionContext();
-      const executed = await dispatchAction(
-        surface,
-        deps.getIntentRuntime(),
-        id,
-        context,
-      );
+      const executed = await dispatchAction(surface, deps.getIntentRuntime(), id, context);
 
       if (!executed) {
-        throw new Error(
-          `Action '${id}' is not executable in current context`,
-        );
+        throw new Error(`Action '${id}' is not executable in current context`);
       }
 
       return undefined;
@@ -133,18 +107,13 @@ export function createActionService(
     async getActions(): Promise<ActionDescriptor[]> {
       const surface = deps.getActionSurface();
       const context = deps.getActionContext();
-      const keybindingsByAction = indexKeybindingsByAction(
-        surface.keybindings,
-      );
+      const keybindingsByAction = indexKeybindingsByAction(surface.keybindings);
 
       const descriptors: ActionDescriptor[] = [];
 
       for (const action of surface.actions) {
         if (action.hidden) continue;
-        const enabled = evaluateContributionPredicate(
-          action.when,
-          context,
-        );
+        const enabled = evaluateContributionPredicate(action.when, context);
         const keybinding = keybindingsByAction.get(action.id);
 
         descriptors.push({
@@ -152,9 +121,7 @@ export function createActionService(
           title: action.title,
           keybinding,
           enabled,
-          disabledReason: enabled
-            ? undefined
-            : `Action '${action.title}' is not available in current context`,
+          disabledReason: enabled ? undefined : `Action '${action.title}' is not available in current context`,
           pluginId: action.pluginId,
         });
       }
@@ -176,9 +143,7 @@ export function createActionService(
   };
 }
 
-function indexKeybindingsByAction(
-  keybindings: readonly ActionKeybinding[],
-): Map<string, string> {
+function indexKeybindingsByAction(keybindings: readonly ActionKeybinding[]): Map<string, string> {
   const map = new Map<string, string>();
 
   for (const binding of keybindings) {

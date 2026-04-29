@@ -39,8 +39,7 @@ export function createFactMemory(): FactMemory {
 
   const getFact = (factId: string): Fact | undefined => facts.get(factId);
 
-  const getFactsByType = (type: string): readonly Fact[] =>
-    [...facts.values()].filter((f) => f.type === type);
+  const getFactsByType = (type: string): readonly Fact[] => [...facts.values()].filter((f) => f.type === type);
 
   const getAllFacts = (): readonly Fact[] => [...facts.values()];
 

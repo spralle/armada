@@ -1,5 +1,5 @@
-import type { Table } from "@tanstack/react-table";
 import { Button, Input } from "@ghost-shell/ui";
+import type { Table } from "@tanstack/react-table";
 import { Search, X } from "lucide-react";
 import { DataTableViewOptions } from "./data-table-view-options.js";
 
@@ -22,8 +22,7 @@ export function DataTableToolbar<TData>({
   onColumnToggle,
   onToggleAll,
 }: DataTableToolbarProps<TData>) {
-  const isFiltered =
-    table.getState().columnFilters.length > 0 || (globalFilter && globalFilter.length > 0);
+  const isFiltered = table.getState().columnFilters.length > 0 || (globalFilter && globalFilter.length > 0);
 
   return (
     <div className="flex items-center justify-between">

@@ -3,7 +3,7 @@
  * This is the default fallback renderer for all non-framework-specific plugins.
  */
 
-import type { PartRenderer, PartRenderContext, PartRenderHandle } from "@ghost-shell/contracts/parts";
+import type { PartRenderContext, PartRenderer, PartRenderHandle } from "@ghost-shell/contracts/parts";
 import { containsReactParts, resolveModuleMountFn } from "@ghost-shell/contracts/parts";
 
 /**
@@ -61,16 +61,18 @@ export function createVanillaDomRenderer(): PartRenderer {
       const result = mountFn(context.container, context.mountContext);
 
       if (result instanceof Promise) {
-        result.then((resolved) => {
-          const fn = normalizeToDispose(resolved);
-          if (disposed) {
-            fn?.();
-          } else {
-            cleanupFn = fn;
-          }
-        }).catch((err: unknown) => {
-          console.warn(`[vanilla-dom-renderer] async mount failed for part '${context.partId}'`, err);
-        });
+        result
+          .then((resolved) => {
+            const fn = normalizeToDispose(resolved);
+            if (disposed) {
+              fn?.();
+            } else {
+              cleanupFn = fn;
+            }
+          })
+          .catch((err: unknown) => {
+            console.warn(`[vanilla-dom-renderer] async mount failed for part '${context.partId}'`, err);
+          });
       } else {
         cleanupFn = normalizeToDispose(result);
       }

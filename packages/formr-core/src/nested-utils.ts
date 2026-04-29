@@ -1,13 +1,13 @@
-import { FormrError } from './errors.js';
+import { FormrError } from "./errors.js";
 
 export function setNestedValue(
   obj: Record<string, unknown>,
   segments: string[],
   value: unknown,
 ): Record<string, unknown> {
-  const filtered = segments.filter((s) => s !== '');
+  const filtered = segments.filter((s) => s !== "");
   if (filtered.length === 0) {
-    throw new FormrError('FORMR_PATH_EMPTY', 'Cannot set value at empty path');
+    throw new FormrError("FORMR_PATH_EMPTY", "Cannot set value at empty path");
   }
   if (filtered.length === 1) {
     return { ...obj, [filtered[0]]: value };
@@ -30,13 +30,10 @@ export function setNestedValue(
   return { ...obj, [head]: setNestedValue(child as Record<string, unknown>, rest, value) };
 }
 
-export function deleteNestedValue(
-  obj: Record<string, unknown>,
-  segments: string[],
-): Record<string, unknown> {
-  const filtered = segments.filter((s) => s !== '');
+export function deleteNestedValue(obj: Record<string, unknown>, segments: string[]): Record<string, unknown> {
+  const filtered = segments.filter((s) => s !== "");
   if (filtered.length === 0) {
-    throw new FormrError('FORMR_PATH_EMPTY', 'Cannot delete value at empty path');
+    throw new FormrError("FORMR_PATH_EMPTY", "Cannot delete value at empty path");
   }
   if (filtered.length === 1) {
     const { [filtered[0]]: _, ...rest } = obj;
@@ -44,6 +41,6 @@ export function deleteNestedValue(
   }
   const [head, ...rest] = filtered;
   const child = obj[head];
-  if (child === null || child === undefined || typeof child !== 'object') return obj;
+  if (child === null || child === undefined || typeof child !== "object") return obj;
   return { ...obj, [head]: deleteNestedValue(child as Record<string, unknown>, rest) };
 }

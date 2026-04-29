@@ -1,8 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { createShellPluginRegistry } from "../dist-test/src/plugin-registry.js";
-import { registerThemeServiceCapability, THEME_SERVICE_PLUGIN_ID } from "../dist-test/src/theme-service-registration.js";
+import test from "node:test";
 import { THEME_SERVICE_ID } from "../../../packages/plugin-contracts/dist/index.js";
+import { createShellPluginRegistry } from "../dist-test/src/plugin-registry.js";
+import {
+  registerThemeServiceCapability,
+  THEME_SERVICE_PLUGIN_ID,
+} from "../dist-test/src/theme-service-registration.js";
 
 // ---------------------------------------------------------------------------
 // Mock ThemeRegistry
@@ -21,9 +24,7 @@ function createMockThemeRegistry() {
       },
       getAvailableThemes() {
         calls.push("getAvailableThemes");
-        return [
-          { id: "dark-wave", name: "Dark Wave", mode: "dark", pluginId: "p1" },
-        ];
+        return [{ id: "dark-wave", name: "Dark Wave", mode: "dark", pluginId: "p1" }];
       },
       getActiveThemeId() {
         calls.push("getActiveThemeId");

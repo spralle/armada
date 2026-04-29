@@ -1,20 +1,19 @@
+import type { ExprNode } from "@ghost-shell/predicate";
+import { evaluate } from "@ghost-shell/predicate";
+import type { Agenda } from "./agenda.js";
+import type { AlphaNetwork } from "./alpha-network.js";
 import type {
-  CompiledRule,
-  CompiledStage,
-  StateChange,
   ArbiterWarning,
+  CompiledRule,
   FiringResult,
   OperatorFunction,
+  StateChange,
   ThenOperatorRegistry,
-} from './contracts.js';
-import type { ScopeManager } from './scope.js';
-import type { AlphaNetwork } from './alpha-network.js';
-import type { Agenda } from './agenda.js';
-import type { TruthMaintenanceSystem } from './tms.js';
-import { evaluate } from '@ghost-shell/predicate';
-import type { ExprNode } from '@ghost-shell/predicate';
-import { ArbiterError, ArbiterErrorCode } from './errors.js';
-import { executeStages } from './stage-executor.js';
+} from "./contracts.js";
+import { ArbiterError, ArbiterErrorCode } from "./errors.js";
+import type { ScopeManager } from "./scope.js";
+import { executeStages } from "./stage-executor.js";
+import type { TruthMaintenanceSystem } from "./tms.js";
 
 // ---------------------------------------------------------------------------
 // Limits config
@@ -47,10 +46,7 @@ export interface FireContext {
 // Condition evaluation
 // ---------------------------------------------------------------------------
 
-export function evaluateCondition(
-  rule: CompiledRule,
-  scope: ScopeManager,
-): boolean {
+export function evaluateCondition(rule: CompiledRule, scope: ScopeManager): boolean {
   const state = scope.getReadView();
   const result = evaluate(rule.condition as ExprNode, state);
   return Boolean(result);
@@ -60,10 +56,7 @@ export function evaluateCondition(
 // TMS retraction → StateChange conversion
 // ---------------------------------------------------------------------------
 
-function buildRetractionChanges(
-  rule: CompiledRule,
-  ctx: FireContext,
-): readonly StateChange[] {
+function buildRetractionChanges(rule: CompiledRule, ctx: FireContext): readonly StateChange[] {
   const revertedPaths = ctx.tms.ruleDeactivated(rule, ctx.scope);
   return revertedPaths.map((path) => ({
     path,
@@ -77,10 +70,7 @@ function buildRetractionChanges(
 // Rule evaluation (single rule)
 // ---------------------------------------------------------------------------
 
-export function reevaluateRule(
-  rule: CompiledRule,
-  ctx: FireContext,
-): readonly StateChange[] {
+export function reevaluateRule(rule: CompiledRule, ctx: FireContext): readonly StateChange[] {
   if (!rule.enabled) return [];
   const wasActive = ctx.ruleConditionState.get(rule.name) ?? false;
   const isActive = evaluateCondition(rule, ctx.scope);
@@ -125,10 +115,7 @@ export function evaluateAllRules(ctx: FireContext): readonly StateChange[] {
 // Execute else actions for initially-false rules
 // ---------------------------------------------------------------------------
 
-export function executeElseBranches(
-  ctx: FireContext,
-  changes: StateChange[],
-): void {
+export function executeElseBranches(ctx: FireContext, changes: StateChange[]): void {
   for (const rule of ctx.compiledRules.values()) {
     if (!rule.enabled || !rule.elseActions) continue;
     const isActive = ctx.ruleConditionState.get(rule.name) ?? false;
@@ -143,11 +130,7 @@ export function executeElseBranches(
 // Propagation: find affected rules and re-evaluate
 // ---------------------------------------------------------------------------
 
-function propagateChanges(
-  changes: readonly StateChange[],
-  ctx: FireContext,
-  allChanges: StateChange[],
-): void {
+function propagateChanges(changes: readonly StateChange[], ctx: FireContext, allChanges: StateChange[]): void {
   const affectedNames = new Set<string>();
   for (const change of changes) {
     for (const rule of ctx.network.getAffectedRules(change.path)) {
@@ -173,7 +156,9 @@ export function fireCycle(ctx: FireContext): FiringResult {
   let rulesFired = 0;
   let cycles = 0;
 
-  evaluateAllRules(ctx).forEach((c) => changes.push(c));
+  evaluateAllRules(ctx).forEach((c) => {
+    changes.push(c);
+  });
   executeElseBranches(ctx, changes);
 
   while (!ctx.agenda.isEmpty()) {

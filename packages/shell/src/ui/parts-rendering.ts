@@ -1,5 +1,5 @@
 import { composeEnabledPluginContributions } from "@ghost-shell/plugin-system";
-import type { BridgeHost, PluginHost, StateHost, ShellRuntime } from "../app/types.js";
+import type { BridgeHost, PluginHost, ShellRuntime, StateHost } from "../app/types.js";
 import { escapeHtml } from "../app/utils.js";
 import type { DockNode } from "../context-state.js";
 import { canReopenClosedTab, getTabCloseability } from "../context-state.js";
@@ -190,11 +190,12 @@ export function renderTabStrip(
     : "Reopen unavailable: no recently closed tab in this panel or sync is degraded";
   return `
     <div class="part-tab-strip" role="tablist" aria-label="${escapeHtml(label)}" data-slot-tablist="${slot}" data-tab-scope="${escapeHtml(tabScope)}">
-      ${tabs.map((part) => {
-    const isActive = part.instanceId === activeTabId;
-    const closeability = getTabCloseability(runtime.contextState, part.instanceId);
-    const closeButton = closeability.canClose
-      ? `<button
+      ${tabs
+        .map((part) => {
+          const isActive = part.instanceId === activeTabId;
+          const closeability = getTabCloseability(runtime.contextState, part.instanceId);
+          const closeButton = closeability.canClose
+            ? `<button
             type="button"
             class="part-tab-close"
             data-action="close-tab"
@@ -203,8 +204,8 @@ export function renderTabStrip(
             aria-keyshortcuts="Control+W Meta+W"
             title="Close tab (Ctrl+W / ⌘W)"
           >×</button>`
-      : "";
-    return `<div class="part-tab-item" data-tab-item="${part.instanceId}" data-tab-can-close="${closeability.canClose ? "true" : "false"}" data-part-id="${part.instanceId}">
+            : "";
+          return `<div class="part-tab-item" data-tab-item="${part.instanceId}" data-tab-can-close="${closeability.canClose ? "true" : "false"}" data-part-id="${part.instanceId}">
         <button
           type="button"
           role="tab"
@@ -225,7 +226,8 @@ export function renderTabStrip(
         >${escapeHtml(part.title)}</button>
         ${closeButton}
       </div>`;
-  }).join("")}
+        })
+        .join("")}
       <button
         type="button"
         class="part-tab"
@@ -235,7 +237,7 @@ export function renderTabStrip(
         aria-label="${reopenAriaLabel}"
         aria-keyshortcuts="Control+Shift+T Meta+Shift+T"
         title="${reopenTitle}"
-        ${reopenEnabled ? "" : "disabled aria-disabled=\"true\""}
+        ${reopenEnabled ? "" : 'disabled aria-disabled="true"'}
       >↶ Reopen</button>
     </div>
   `;
@@ -252,11 +254,12 @@ export function renderDockTree(
   runtime: ShellRuntime,
 ): string {
   const partsById = new Map(visibleParts.map((part) => [part.id, part]));
-  const activeTabId = runtime.selectedPartId && partsById.has(runtime.selectedPartId)
-    ? runtime.selectedPartId
-    : runtime.contextState.activeTabId && partsById.has(runtime.contextState.activeTabId)
-      ? runtime.contextState.activeTabId
-      : visibleParts[0]?.id;
+  const activeTabId =
+    runtime.selectedPartId && partsById.has(runtime.selectedPartId)
+      ? runtime.selectedPartId
+      : runtime.contextState.activeTabId && partsById.has(runtime.contextState.activeTabId)
+        ? runtime.contextState.activeTabId
+        : visibleParts[0]?.id;
   return renderDockNode(root, partsById, activeTabId ?? null, runtime);
 }
 
@@ -310,7 +313,7 @@ function renderDockNode(
   const tabScope = `stack:${node.id}`;
   const panelLabel = `${tabs[0]?.title ?? panelSlot} panel tabs`;
   const isSingleTab = tabs.length === 1;
-  return `<section class="dock-node dock-node-stack" data-dock-node-id="${node.id}" data-dock-stack-id="${node.id}" data-slot="${panelSlot}"${isSingleTab ? ' data-single-tab="true"' : ''}>
+  return `<section class="dock-node dock-node-stack" data-dock-node-id="${node.id}" data-dock-stack-id="${node.id}" data-slot="${panelSlot}"${isSingleTab ? ' data-single-tab="true"' : ""}>
       ${renderTabStrip(panelSlot, tabs, activeTabId, runtime, { tabScope, label: panelLabel })}
       <section class="dock-stack-panels" data-dock-stack-panels="${node.id}">
         ${tabs.map((part) => renderDockPartPanel(part, part.id === activeTabId)).join("")}
@@ -336,5 +339,5 @@ function resolveStackActiveTabId(
     return "";
   }
 
-  return tabs[0]!.id;
+  return tabs[0]?.id;
 }

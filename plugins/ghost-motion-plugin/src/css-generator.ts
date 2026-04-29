@@ -1,11 +1,11 @@
-import type { AnimationName, GhostMotionConfig } from "./config-types.js";
 import { ANIMATION_TREE } from "./animation-tree.js";
 import { resolveEntry } from "./config-resolver.js";
+import type { AnimationName, GhostMotionConfig } from "./config-types.js";
 import { KEYFRAMES_REGISTRY } from "./keyframes.js";
 
 /** Resolve a curve name to a CSS cubic-bezier() value. */
 function resolveCurve(curveName: string, config: GhostMotionConfig): string {
-  const curve = config.curves.find(c => c.name === curveName);
+  const curve = config.curves.find((c) => c.name === curveName);
   if (!curve) return "ease";
   const { x1, y1, x2, y2 } = curve.points;
   return `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})`;
@@ -17,8 +17,13 @@ function isMotionSelector(selector: string): boolean {
 }
 
 /** Check if a node is transition-based (uses transition, not animation). */
-function isTransitionNode(node: { transitionProps?: readonly string[] | undefined; keyframesMap: Readonly<Record<string, string>> }): boolean {
-  return node.transitionProps !== undefined && node.transitionProps.length > 0 && Object.keys(node.keyframesMap).length === 0;
+function isTransitionNode(node: {
+  transitionProps?: readonly string[] | undefined;
+  keyframesMap: Readonly<Record<string, string>>;
+}): boolean {
+  return (
+    node.transitionProps !== undefined && node.transitionProps.length > 0 && Object.keys(node.keyframesMap).length === 0
+  );
 }
 
 /** Build a CSS block for a transition-based animation node. */
@@ -32,9 +37,7 @@ function buildTransitionBlock(
     return "";
   }
   const props = node.transitionProps.join(", ");
-  const transitionValue = node.transitionProps
-    .map(p => `${p} ${durationMs}ms ${easing}`)
-    .join(", ");
+  const transitionValue = node.transitionProps.map((p) => `${p} ${durationMs}ms ${easing}`).join(", ");
   let block = `${selector} {\n  transition: ${transitionValue};\n`;
   if (isMotionSelector(node.cssTarget)) {
     block += `  will-change: ${props};\n`;

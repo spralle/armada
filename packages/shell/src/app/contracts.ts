@@ -1,14 +1,6 @@
+import type { ContextSyncEvent, SelectionSyncEvent } from "@ghost-shell/bridge";
+import type { IntentActionMatch, IntentResolutionTrace, IntentSession, ShellIntent } from "@ghost-shell/intents";
 import type { ComposedShellPart } from "../ui/parts-rendering.js";
-import type {
-  ContextSyncEvent,
-  SelectionSyncEvent,
-} from "@ghost-shell/bridge";
-import type {
-  IntentActionMatch,
-  IntentResolutionTrace,
-  IntentSession,
-  ShellIntent,
-} from "@ghost-shell/intents";
 import type { DevLaneMetadata, RenderTabMetadata } from "./types.js";
 
 export interface ShellCoreSnapshot {

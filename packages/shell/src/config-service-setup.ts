@@ -17,9 +17,11 @@ interface OverrideSessionController {
   [key: string]: unknown;
 }
 
-import { createLayoutConfigBridge } from "@ghost-shell/persistence";
-import { createContextConfigBridge } from "@ghost-shell/persistence";
-import { createKeybindingConfigBridge } from "@ghost-shell/persistence";
+import {
+  createContextConfigBridge,
+  createKeybindingConfigBridge,
+  createLayoutConfigBridge,
+} from "@ghost-shell/persistence";
 import { getCurrentUserId, getStorage } from "./app/utils.js";
 
 // ---------------------------------------------------------------------------
@@ -66,7 +68,9 @@ function createInMemoryConfigService(): ConfigurationService {
         listeners.set(key, keyListeners);
       }
       keyListeners.add(listener);
-      return () => { keyListeners.delete(listener); };
+      return () => {
+        keyListeners.delete(listener);
+      };
     },
   };
 }
@@ -95,9 +99,7 @@ export interface MigrationResults {
  * Each migration is idempotent and non-destructive.
  * Failures are caught per-bridge so one failure doesn't block others.
  */
-export function runPersistenceMigrations(
-  configService: ConfigurationService,
-): MigrationResults {
+export function runPersistenceMigrations(configService: ConfigurationService): MigrationResults {
   const storage = getStorage();
   const userId = getCurrentUserId();
   const bridgeOptions = { configService, storage, userId };

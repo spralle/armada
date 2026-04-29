@@ -57,7 +57,7 @@ export function resolveKeybindingSequence(
 
     let matches = true;
     for (let i = 0; i < pressedChords.length; i++) {
-      if (seqChords[i]!.value !== pressedChords[i]!.value) {
+      if (seqChords[i]?.value !== pressedChords[i]?.value) {
         matches = false;
         break;
       }

@@ -1,5 +1,5 @@
-import { deriveDeterministicActiveFromNode } from "./dock-tree-helpers.js";
 import { applyDockTabDrop } from "./dock-tree-drop.js";
+import { deriveDeterministicActiveFromNode } from "./dock-tree-helpers.js";
 import {
   cloneDockTree,
   createInitialDockTree,
@@ -12,13 +12,7 @@ const DEFAULT_DOCK_SPLIT_RATIO = 0.5;
 const MIN_DOCK_SPLIT_RATIO = 0.15;
 const MAX_DOCK_SPLIT_RATIO = 0.85;
 
-export {
-  applyDockTabDrop,
-  cloneDockTree,
-  createInitialDockTree,
-  ensureTabRegisteredInDockTree,
-  removeTabFromDockTree,
-};
+export { applyDockTabDrop, cloneDockTree, createInitialDockTree, ensureTabRegisteredInDockTree, removeTabFromDockTree };
 
 export function readDockSplitRatio(node: Pick<DockSplitNode, "ratio">): number {
   return clampDockSplitRatio(node.ratio);
