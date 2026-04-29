@@ -1,6 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
-import { applyIncomingTransferTransaction } from "../context-state.js";
 import { updateContextState } from "../context/runtime-state.js";
+import { applyIncomingTransferTransaction } from "../context-state.js";
 
 export interface CrossWindowTabDropInput {
   tabId: string;
@@ -39,23 +39,19 @@ export function handleCrossWindowTabStripDrop(
     return true;
   }
 
-  const transferResult = applyIncomingTransferTransaction(
-    runtime.contextState,
-    runtime.incomingTransferJournal,
-    {
-      transferId: input.transferSessionId,
-      correlationId: input.transferSessionId,
-      sourceWindowId: input.sourceWindowId,
-      targetWindowId: runtime.windowId,
-      tab: {
-        tabId: input.tabId,
-      },
-      target: {
-        kind: "tab-strip",
-        beforeTabId: input.targetTabId,
-      },
+  const transferResult = applyIncomingTransferTransaction(runtime.contextState, runtime.incomingTransferJournal, {
+    transferId: input.transferSessionId,
+    correlationId: input.transferSessionId,
+    sourceWindowId: input.sourceWindowId,
+    targetWindowId: runtime.windowId,
+    tab: {
+      tabId: input.tabId,
     },
-  );
+    target: {
+      kind: "tab-strip",
+      beforeTabId: input.targetTabId,
+    },
+  });
   runtime.incomingTransferJournal = transferResult.journal;
   if (!transferResult.applied && !transferResult.duplicate) {
     runtime.notice = "Cross-window tab drop could not be applied.";

@@ -1,11 +1,11 @@
 import {
   createDndDiagnosticEnvelope,
+  type DndDiagnosticEvent,
   emitDndAbort,
   emitDndCommit,
   emitDndDiagnostic,
   emitDndReject,
   emitDndStart,
-  type DndDiagnosticEvent,
 } from "./dnd-diagnostics.js";
 
 type TestCase = {
@@ -69,12 +69,15 @@ test("diagnostic emitter stores last diagnostic and returns envelope", () => {
     lastDndDiagnostic: ReturnType<typeof createDndDiagnosticEnvelope> | null;
   };
 
-  const envelope = emitDndDiagnostic(runtime, createEvent({
-    outcome: "reject",
-    path: "cross-window-bridge",
-    reason: "cross-window-out-of-scope",
-    targetWindowId: "win-b",
-  }));
+  const envelope = emitDndDiagnostic(
+    runtime,
+    createEvent({
+      outcome: "reject",
+      path: "cross-window-bridge",
+      reason: "cross-window-out-of-scope",
+      targetWindowId: "win-b",
+    }),
+  );
 
   assertEqual(runtime.lastDndDiagnostic, envelope, "runtime should retain last diagnostic envelope");
   assertEqual(envelope.outcome, "reject", "emitted envelope should retain outcome");

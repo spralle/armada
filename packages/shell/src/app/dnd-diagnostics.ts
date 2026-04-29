@@ -1,7 +1,8 @@
 export type DndDiagnosticOutcome = "start" | "commit" | "abort" | "reject";
 export type DndDiagnosticPath = "same-window" | "cross-window-bridge";
 
-const DEBUG_DND = typeof globalThis !== "undefined" && (globalThis as Record<string, unknown>).__GHOST_DEBUG_DND === true;
+const DEBUG_DND =
+  typeof globalThis !== "undefined" && (globalThis as Record<string, unknown>).__GHOST_DEBUG_DND === true;
 
 export interface DndDiagnosticCorrelation {
   transferId?: string;
@@ -40,28 +41,40 @@ export function emitDndDiagnostic(runtime: DndDiagnosticRuntime, event: DndDiagn
   return envelope;
 }
 
-export function emitDndStart(runtime: DndDiagnosticRuntime, event: Omit<DndDiagnosticEvent, "outcome">): DndDiagnosticEnvelope {
+export function emitDndStart(
+  runtime: DndDiagnosticRuntime,
+  event: Omit<DndDiagnosticEvent, "outcome">,
+): DndDiagnosticEnvelope {
   return emitDndDiagnostic(runtime, {
     ...event,
     outcome: "start",
   });
 }
 
-export function emitDndCommit(runtime: DndDiagnosticRuntime, event: Omit<DndDiagnosticEvent, "outcome">): DndDiagnosticEnvelope {
+export function emitDndCommit(
+  runtime: DndDiagnosticRuntime,
+  event: Omit<DndDiagnosticEvent, "outcome">,
+): DndDiagnosticEnvelope {
   return emitDndDiagnostic(runtime, {
     ...event,
     outcome: "commit",
   });
 }
 
-export function emitDndAbort(runtime: DndDiagnosticRuntime, event: Omit<DndDiagnosticEvent, "outcome">): DndDiagnosticEnvelope {
+export function emitDndAbort(
+  runtime: DndDiagnosticRuntime,
+  event: Omit<DndDiagnosticEvent, "outcome">,
+): DndDiagnosticEnvelope {
   return emitDndDiagnostic(runtime, {
     ...event,
     outcome: "abort",
   });
 }
 
-export function emitDndReject(runtime: DndDiagnosticRuntime, event: Omit<DndDiagnosticEvent, "outcome">): DndDiagnosticEnvelope {
+export function emitDndReject(
+  runtime: DndDiagnosticRuntime,
+  event: Omit<DndDiagnosticEvent, "outcome">,
+): DndDiagnosticEnvelope {
   return emitDndDiagnostic(runtime, {
     ...event,
     outcome: "reject",

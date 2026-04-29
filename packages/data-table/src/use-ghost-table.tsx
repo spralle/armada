@@ -1,18 +1,18 @@
-import { useState, useMemo } from "react";
+import { Checkbox } from "@ghost-shell/ui";
 import {
-  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
   getCoreRowModel,
-  getSortedRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
-  type ColumnDef,
-  type SortingState,
-  type ColumnFiltersState,
-  type VisibilityState,
+  getSortedRowModel,
   type PaginationState,
   type RowSelectionState,
+  type SortingState,
+  useReactTable,
+  type VisibilityState,
 } from "@tanstack/react-table";
-import { Checkbox } from "@ghost-shell/ui";
+import { useMemo, useState } from "react";
 import type { GhostTableOptions, GhostTableResult } from "./types.js";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -22,10 +22,7 @@ function makeSelectionColumn<TData>(): ColumnDef<TData, unknown> {
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
+        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
         onCheckedChange={(value: boolean | "indeterminate") => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
       />
@@ -42,9 +39,7 @@ function makeSelectionColumn<TData>(): ColumnDef<TData, unknown> {
   };
 }
 
-export function useGhostTable<TData>(
-  options: GhostTableOptions<TData>,
-): GhostTableResult<TData> {
+export function useGhostTable<TData>(options: GhostTableOptions<TData>): GhostTableResult<TData> {
   const {
     data,
     columns,
@@ -96,7 +91,7 @@ export function useGhostTable<TData>(
     enableHiding: enableColumnVisibility,
     enableGlobalFilter,
     enableColumnResizing,
-    columnResizeMode: 'onChange' as const,
+    columnResizeMode: "onChange" as const,
     globalFilterFn: "includesString",
     state: {
       sorting: options.sorting ?? internalSorting,
@@ -108,62 +103,42 @@ export function useGhostTable<TData>(
     },
     onSortingChange: (updater) => {
       if (options.onSortingChange) {
-        const next = typeof updater === "function"
-          ? updater(options.sorting ?? internalSorting)
-          : updater;
+        const next = typeof updater === "function" ? updater(options.sorting ?? internalSorting) : updater;
         options.onSortingChange(next);
       } else {
-        setInternalSorting(prev =>
-          typeof updater === "function" ? updater(prev) : updater
-        );
+        setInternalSorting((prev) => (typeof updater === "function" ? updater(prev) : updater));
       }
     },
     onColumnFiltersChange: (updater) => {
       if (options.onColumnFiltersChange) {
-        const next = typeof updater === "function"
-          ? updater(options.columnFilters ?? internalFilters)
-          : updater;
+        const next = typeof updater === "function" ? updater(options.columnFilters ?? internalFilters) : updater;
         options.onColumnFiltersChange(next);
       } else {
-        setInternalFilters(prev =>
-          typeof updater === "function" ? updater(prev) : updater
-        );
+        setInternalFilters((prev) => (typeof updater === "function" ? updater(prev) : updater));
       }
     },
     onPaginationChange: (updater) => {
       if (options.onPaginationChange) {
-        const next = typeof updater === "function"
-          ? updater(options.pagination ?? internalPagination)
-          : updater;
+        const next = typeof updater === "function" ? updater(options.pagination ?? internalPagination) : updater;
         options.onPaginationChange(next);
       } else {
-        setInternalPagination(prev =>
-          typeof updater === "function" ? updater(prev) : updater
-        );
+        setInternalPagination((prev) => (typeof updater === "function" ? updater(prev) : updater));
       }
     },
     onRowSelectionChange: (updater) => {
       if (options.onRowSelectionChange) {
-        const next = typeof updater === "function"
-          ? updater(options.rowSelection ?? internalRowSelection)
-          : updater;
+        const next = typeof updater === "function" ? updater(options.rowSelection ?? internalRowSelection) : updater;
         options.onRowSelectionChange(next);
       } else {
-        setInternalRowSelection(prev =>
-          typeof updater === "function" ? updater(prev) : updater
-        );
+        setInternalRowSelection((prev) => (typeof updater === "function" ? updater(prev) : updater));
       }
     },
     onColumnVisibilityChange: (updater) => {
       if (options.onColumnVisibilityChange) {
-        const next = typeof updater === "function"
-          ? updater(options.columnVisibility ?? internalVisibility)
-          : updater;
+        const next = typeof updater === "function" ? updater(options.columnVisibility ?? internalVisibility) : updater;
         options.onColumnVisibilityChange(next);
       } else {
-        setInternalVisibility(prev =>
-          typeof updater === "function" ? updater(prev) : updater
-        );
+        setInternalVisibility((prev) => (typeof updater === "function" ? updater(prev) : updater));
       }
     },
     onGlobalFilterChange: setGlobalFilter,

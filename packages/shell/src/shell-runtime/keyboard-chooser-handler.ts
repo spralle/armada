@@ -1,8 +1,5 @@
-import {
-  resolveChooserFocusRestoration,
-  resolveChooserKeyboardAction,
-} from "../keyboard-a11y.js";
 import type { ShellRuntime } from "../app/types.js";
+import { resolveChooserFocusRestoration, resolveChooserKeyboardAction } from "../keyboard-a11y.js";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
 
 export function handleChooserKeyboardEvent(
@@ -53,7 +50,10 @@ export function dismissIntentChooser(
   runtime: ShellRuntime,
   bindings: Pick<KeyboardBindings, "announce" | "renderSyncStatus">,
 ): void {
-  const restoreSelector = resolveChooserFocusRestoration("dismiss", runtime.activeIntentSession?.returnFocusSelector ?? null);
+  const restoreSelector = resolveChooserFocusRestoration(
+    "dismiss",
+    runtime.activeIntentSession?.returnFocusSelector ?? null,
+  );
   if (runtime._pendingChooserResolve) {
     runtime._pendingChooserResolve(null);
     runtime._pendingChooserResolve = null;

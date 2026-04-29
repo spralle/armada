@@ -1,6 +1,6 @@
 // plugin-parts.ts — Mount function for the group context plugin.
 
-import type { PluginMountContext, PartMountCleanup, MountPartFn } from "@ghost-shell/contracts/plugin";
+import type { MountPartFn } from "@ghost-shell/contracts/plugin";
 import type { ContextService, SyncStatusService } from "@ghost-shell/contracts/services";
 import { CONTEXT_SERVICE_ID, SYNC_STATUS_SERVICE_ID } from "@ghost-shell/contracts/services";
 
@@ -19,7 +19,11 @@ const mountGroupContextPart: MountPartFn = async (target, context) => {
     const notice = document.createElement("p");
     notice.textContent = "ContextService unavailable.";
     target.appendChild(notice);
-    return { unmount: () => { target.innerHTML = ""; } };
+    return {
+      unmount: () => {
+        target.innerHTML = "";
+      },
+    };
   }
 
   renderPanel(target, contextService, syncStatusService);

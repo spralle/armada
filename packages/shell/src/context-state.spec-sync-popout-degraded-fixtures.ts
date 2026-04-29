@@ -1,10 +1,6 @@
+import type { WindowBridge, WindowBridgeEvent, WindowBridgeHealth } from "@ghost-shell/bridge";
 import type { ShellRuntime } from "./app/types.js";
 import { createInitialShellContextState, registerTab } from "./context-state.js";
-import type {
-  WindowBridge,
-  WindowBridgeEvent,
-  WindowBridgeHealth,
-} from "@ghost-shell/bridge";
 
 export class TestBridge implements WindowBridge {
   available = true;
@@ -94,14 +90,17 @@ export function createRuntime(bridge: TestBridge): ShellRuntime {
     popoutHandles: new Map([["part-a", popoutHandle]]),
     selectedPartId: "tab-a",
     selectedPartTitle: "Tab A",
-    contextState: registerTab(createInitialShellContextState({
-      initialTabId: "tab-a",
-      initialGroupId: "group-main",
-    }), {
-      tabId: "tab-b",
-      groupId: "group-main",
-      closePolicy: "closeable",
-    }),
+    contextState: registerTab(
+      createInitialShellContextState({
+        initialTabId: "tab-a",
+        initialGroupId: "group-main",
+      }),
+      {
+        tabId: "tab-b",
+        groupId: "group-main",
+        closePolicy: "closeable",
+      },
+    ),
     contextPersistence: {
       save() {
         return { warning: null };

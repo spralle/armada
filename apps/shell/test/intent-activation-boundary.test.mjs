@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import test from "node:test";
 
 test("intent execution boundary activates plugin with intent trigger", async () => {
   const sourcePath = resolve(process.cwd(), "apps/shell/src/shell-runtime/runtime-event-handlers.ts");

@@ -1,8 +1,8 @@
 export type {
-  ThemeMode,
-  TerminalPalette,
-  PartialThemePalette,
   FullThemePalette,
+  PartialThemePalette,
+  TerminalPalette,
+  ThemeMode,
 } from "./theme-types.js";
 
 export {

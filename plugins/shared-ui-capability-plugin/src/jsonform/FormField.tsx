@@ -1,16 +1,16 @@
-import { useCallback, useState, useEffect, useRef } from 'react';
-import type { FormApi } from '@ghost-shell/formr-core';
-import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
+import type { FormApi } from "@ghost-shell/formr-core";
+import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema";
 import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
   Input,
-  Switch,
   NativeSelect,
   NativeSelectOption,
-  Field,
-  FieldLabel,
-  FieldDescription,
-  FieldContent,
-} from '@ghost-shell/ui';
+  Switch,
+} from "@ghost-shell/ui";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface FormFieldProps {
   readonly form: FormApi<unknown, unknown>;
@@ -42,7 +42,7 @@ export function FormField({ form, field, onChange }: FormFieldProps) {
       try {
         fieldApi.set(newValue as never);
       } catch (err) {
-        console.warn('[FormField] set error:', field.path, err);
+        console.warn("[FormField] set error:", field.path, err);
       }
       setValue(newValue);
       onChange(field.path, newValue);
@@ -52,9 +52,7 @@ export function FormField({ form, field, onChange }: FormFieldProps) {
 
   return (
     <Field orientation="vertical">
-      <FieldLabel htmlFor={id}>
-        {(field.metadata?.title as string) ?? field.path}
-      </FieldLabel>
+      <FieldLabel htmlFor={id}>{(field.metadata?.title as string) ?? field.path}</FieldLabel>
       <FieldContent>
         {renderControl(field, id, value, handleChange)}
         {field.metadata?.description ? (
@@ -65,20 +63,11 @@ export function FormField({ form, field, onChange }: FormFieldProps) {
   );
 }
 
-function renderControl(
-  field: SchemaFieldInfo,
-  id: string,
-  value: unknown,
-  onChange: (value: unknown) => void,
-) {
-  if (field.type === 'enum' && field.metadata?.enum) {
+function renderControl(field: SchemaFieldInfo, id: string, value: unknown, onChange: (value: unknown) => void) {
+  if (field.type === "enum" && field.metadata?.enum) {
     const options = field.metadata.enum as readonly unknown[];
     return (
-      <NativeSelect
-        id={id}
-        value={String(value ?? '')}
-        onChange={(e) => onChange(e.target.value)}
-      >
+      <NativeSelect id={id} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)}>
         <NativeSelectOption value="">— Select —</NativeSelectOption>
         {options.map((opt) => (
           <NativeSelectOption key={String(opt)} value={String(opt)}>
@@ -89,39 +78,24 @@ function renderControl(
     );
   }
 
-  if (field.type === 'boolean') {
-    return (
-      <Switch
-        id={id}
-        checked={Boolean(value)}
-        onCheckedChange={(checked) => onChange(checked)}
-      />
-    );
+  if (field.type === "boolean") {
+    return <Switch id={id} checked={Boolean(value)} onCheckedChange={(checked) => onChange(checked)} />;
   }
 
-  if (field.type === 'number' || field.type === 'integer') {
+  if (field.type === "number" || field.type === "integer") {
     return (
       <Input
         id={id}
         type="number"
-        step={field.type === 'integer' ? 1 : 'any'}
-        value={value != null ? String(value) : ''}
+        step={field.type === "integer" ? 1 : "any"}
+        value={value != null ? String(value) : ""}
         onChange={(e) => {
-          const num = field.type === 'integer'
-            ? parseInt(e.target.value, 10)
-            : parseFloat(e.target.value);
-          onChange(isNaN(num) ? '' : num);
+          const num = field.type === "integer" ? parseInt(e.target.value, 10) : parseFloat(e.target.value);
+          onChange(Number.isNaN(num) ? "" : num);
         }}
       />
     );
   }
 
-  return (
-    <Input
-      id={id}
-      type="text"
-      value={String(value ?? '')}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  );
+  return <Input id={id} type="text" value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />;
 }

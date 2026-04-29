@@ -1,21 +1,21 @@
-import { buildActionSurface, type ActionSurface } from "./action-surface.js";
+import { createInitialWorkspaceManagerState } from "@ghost-shell/state";
+import { type ActionSurface, buildActionSurface } from "./action-surface.js";
+import type { ShellRuntime } from "./app/types.js";
 import {
   createInitialShellContextState,
   moveTabInDockTree,
   registerTab,
-  setActiveTab,
   type ShellContextState,
+  setActiveTab,
 } from "./context-state.js";
-import type { ShellRuntime } from "./app/types.js";
-import { bindKeyboardShortcuts, type KeyboardBindings } from "./shell-runtime/keyboard-handlers.js";
+import type { SpecHarness } from "./context-state.spec-harness.js";
 import {
-  DEFAULT_SHELL_KEYBINDINGS,
-  DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
   createDefaultShellKeybindingContract,
+  DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+  DEFAULT_SHELL_KEYBINDINGS,
   isBrowserSafeDefaultKeybinding,
 } from "./shell-runtime/default-shell-keybindings.js";
-import type { SpecHarness } from "./context-state.spec-harness.js";
-import { createInitialWorkspaceManagerState } from "@ghost-shell/state";
+import { bindKeyboardShortcuts, type KeyboardBindings } from "./shell-runtime/keyboard-handlers.js";
 
 type KeydownListener = (event: KeyboardEvent) => Promise<void>;
 
@@ -123,7 +123,11 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
     const disposeMove = bindKeyboardShortcuts(moveRoot as unknown as HTMLElement, moveRuntime, moveBindings);
     await moveRoot.dispatchKey({ key: "ArrowRight", ctrlKey: true, altKey: true, target });
     assertEqual(moveRuntime.contextState.activeTabId, "tab-a", "move-right should keep moved tab active");
-    assertEqual(isTabInRightStack(moveRuntime.contextState, "tab-a"), true, "move-right should place active tab in right stack");
+    assertEqual(
+      isTabInRightStack(moveRuntime.contextState, "tab-a"),
+      true,
+      "move-right should place active tab in right stack",
+    );
     disposeMove();
 
     const swapRoot = new FakeRoot();
@@ -139,7 +143,11 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
     const groupBindings = createKeyboardBindings(groupRuntime);
     const disposeGroup = bindKeyboardShortcuts(groupRoot as unknown as HTMLElement, groupRuntime, groupBindings);
     await groupRoot.dispatchKey({ key: "g", altKey: true, shiftKey: true, target });
-    assertEqual(groupRuntime.contextState.tabs[groupRuntime.contextState.activeTabId ?? ""]?.groupId, "group-b", "group-cycle next should focus next group tab");
+    assertEqual(
+      groupRuntime.contextState.tabs[groupRuntime.contextState.activeTabId ?? ""]?.groupId,
+      "group-b",
+      "group-cycle next should focus next group tab",
+    );
     disposeGroup();
 
     const stackRoot = new FakeRoot();
@@ -189,8 +197,14 @@ export function registerShellKeyboardActionSpecs(harness: SpecHarness): void {
     await root.dispatchKey({ key: "f", altKey: true, shiftKey: true, target });
 
     assertEqual(runtime.contextState.activeTabId, activeBefore, "fullscreen toggle should not change active tab");
-    assertTruthy(runtime.actionNotice.includes("shell.window.fullscreen.toggle"), "fullscreen toggle should be referenced in action notice");
-    assertTruthy(!runtime.actionNotice.includes("action unavailable"), "fullscreen toggle should not report generic unavailable");
+    assertTruthy(
+      runtime.actionNotice.includes("shell.window.fullscreen.toggle"),
+      "fullscreen toggle should be referenced in action notice",
+    );
+    assertTruthy(
+      !runtime.actionNotice.includes("action unavailable"),
+      "fullscreen toggle should not report generic unavailable",
+    );
 
     dispose();
   });
@@ -277,7 +291,7 @@ function createKeyboardRuntimeFixture(): ShellRuntime {
   return {
     actionSurface,
     announcement: "",
-    bridge: ({ publish: () => true } as unknown) as ShellRuntime["bridge"],
+    bridge: { publish: () => true } as unknown as ShellRuntime["bridge"],
     activeIntentSession: null,
     closeableTabIds: new Set(["tab-a", "tab-b", "tab-c", "tab-d"]),
     actionNotice: "",
@@ -328,10 +342,7 @@ function createKeyboardRuntimeFixture(): ShellRuntime {
   } as unknown as ShellRuntime;
 }
 
-function createKeyboardBindings(
-  runtime: ShellRuntime,
-  overrides: Partial<KeyboardBindings> = {},
-): KeyboardBindings {
+function createKeyboardBindings(runtime: ShellRuntime, overrides: Partial<KeyboardBindings> = {}): KeyboardBindings {
   return {
     activatePluginForBoundary: async () => true,
     announce: () => {},
@@ -345,11 +356,12 @@ function createKeyboardBindings(
     renderEdgeSlots: () => {},
     renderParts: () => {},
     renderSyncStatus: () => {},
-    getDefaultKeybindings: () => DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
-      action: entry.action,
-      keybinding: entry.keybinding,
-      pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
-    })),
+    getDefaultKeybindings: () =>
+      DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
+        action: entry.action,
+        keybinding: entry.keybinding,
+        pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+      })),
     getUserOverrideKeybindings: () => [],
     getWorkspaceSwitchDeps: () => ({
       root: {} as HTMLElement,

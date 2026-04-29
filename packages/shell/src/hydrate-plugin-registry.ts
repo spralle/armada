@@ -4,26 +4,17 @@
 // tenant manifest bootstrap, service bridge wiring, keybinding registration,
 // and registry subscription for reactive UI updates.
 
-import {
-  readGroupSelectionContext,
-  writeGroupSelectionContext,
-} from "./context/runtime-state.js";
-import {
-  createDefaultShellKeybindingContract,
-} from "./shell-runtime/default-shell-keybindings.js";
 import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
-import { getShellBootstrap } from "./bootstrap-shell.js";
 import type { ShellRuntime } from "./app/types.js";
-import {
-  ShellWiringContext,
-  refreshActionContributions,
-  renderParts,
-} from "./shell-wiring.js";
+import { getShellBootstrap } from "./bootstrap-shell.js";
 import { registerConfigurationServiceCapability } from "./config-service-registration.js";
 import { createShellConfigService, runPersistenceMigrations } from "./config-service-setup.js";
-import { createPluginServicesBridge } from "./plugin-service-bridge.js";
-import { createQuickPickBridge } from "./ui/quick-pick/quick-pick-bridge.js";
+import { readGroupSelectionContext, writeGroupSelectionContext } from "./context/runtime-state.js";
 import { createGhostApiDeps } from "./plugin-api/ghost-api-deps-factory.js";
+import { createPluginServicesBridge } from "./plugin-service-bridge.js";
+import { createDefaultShellKeybindingContract } from "./shell-runtime/default-shell-keybindings.js";
+import { refreshActionContributions, renderParts, ShellWiringContext } from "./shell-wiring.js";
+import { createQuickPickBridge } from "./ui/quick-pick/quick-pick-bridge.js";
 
 /**
  * Explicit configuration for the shell hydration phase.
@@ -140,11 +131,7 @@ function hydrateKeybindings(runtime: ShellRuntime): void {
  * Uses microtask batching to coalesce rapid notifications (e.g. cascade-disable).
  * Also performs the initial render pass.
  */
-function hydrateRendering(
-  root: HTMLElement,
-  runtime: ShellRuntime,
-  isActive: () => boolean,
-): void {
+function hydrateRendering(root: HTMLElement, runtime: ShellRuntime, isActive: () => boolean): void {
   let renderPending = false;
   const registrySub = runtime.registry.subscribe(() => {
     if (renderPending) return;

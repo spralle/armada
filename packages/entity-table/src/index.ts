@@ -15,60 +15,55 @@
  * - Schema annotations via .meta({ table: {} })
  */
 
-// Re-exports from table-from-schema for convenience
-export { compileTableFields, createTableConfig, humanize } from '@ghost-shell/table-from-schema';
+export type { BudgetColumnDebug, BudgetDebugInfo, ResponsiveConfig } from "@ghost-shell/data-table";
 export type {
-  TableFieldDescriptor,
-  TableConfig,
-  FilterVariant,
-  FilterableFieldInfo,
-  TableFieldOverride,
   CompileTableFieldsOptions,
   CreateTableConfigOptions,
-} from '@ghost-shell/table-from-schema';
-
-// Bridge layer
-export { toColumnDefs, type EntityColumnMeta } from './to-column-defs.js';
+  FilterableFieldInfo,
+  FilterVariant,
+  TableConfig,
+  TableFieldDescriptor,
+  TableFieldOverride,
+} from "@ghost-shell/table-from-schema";
+// Re-exports from table-from-schema for convenience
+export { compileTableFields, createTableConfig, humanize } from "@ghost-shell/table-from-schema";
 
 // Cell renderer system
 export { CellRendererRegistry, defaultCellRegistry } from "./cell-registry.js";
 export type { CellRendererFn } from "./cell-renderer-types.js";
-export { registerBuiltins } from "./renderers/index.js";
+// Entity table pipeline
+export { createEntityTable } from "./create-entity-table.js";
+export type { CardIndicatorResult, CardSlot, EntityCardListProps } from "./entity-card-list.js";
+// EntityCardList — standalone card rendering from schema+data
+export { EntityCardList } from "./entity-card-list.js";
+export { EntityList } from "./entity-list.js";
+export type {
+  EntityListProps,
+  EntityOperation,
+  EntityTableResult,
+  FilterableColumnInfo as FilterableColumnInfoLegacy,
+  OperationContext,
+} from "./entity-list-types.js";
 export {
-  textRenderer,
+  avatarRenderer,
   badgeRenderer,
+  booleanRenderer,
   currencyRenderer,
   dateRenderer,
   datetimeRenderer,
-  booleanRenderer,
   linkRenderer,
+  registerBuiltins,
   tagsRenderer,
-  avatarRenderer,
+  textRenderer,
 } from "./renderers/index.js";
-
 // Responsive — pretext measurer (optional, tree-shakeable)
 export { createPretextMeasurer } from "./responsive/index.js";
-export type { ResponsiveConfig, BudgetDebugInfo, BudgetColumnDebug } from "@ghost-shell/data-table";
-
-// EntityCardList — standalone card rendering from schema+data
-export { EntityCardList } from './entity-card-list.js'
-export type { EntityCardListProps, CardIndicatorResult, CardSlot } from './entity-card-list.js'
-
+export type { ResponsiveEntityProps } from "./responsive-entity.js";
 // ResponsiveEntity — auto-switches between table and card view
-export { ResponsiveEntity } from './responsive-entity.js'
-export type { ResponsiveEntityProps } from './responsive-entity.js'
-
-// Entity table pipeline
-export { createEntityTable } from "./create-entity-table.js";
-export { EntityList } from "./entity-list.js";
+export { ResponsiveEntity } from "./responsive-entity.js";
 export { RowActionsCell } from "./row-actions-cell.js";
-export { useMenuOperations } from "./use-menu-operations.js";
-export type { MenuOperationItem } from "./use-menu-operations.js";
+// Bridge layer
+export { type EntityColumnMeta, toColumnDefs } from "./to-column-defs.js";
 export { useRenderedColumns } from "./use-cell-renderer.js";
-export type {
-  EntityTableResult,
-  FilterableColumnInfo as FilterableColumnInfoLegacy,
-  EntityOperation,
-  OperationContext,
-  EntityListProps,
-} from "./entity-list-types.js";
+export type { MenuOperationItem } from "./use-menu-operations.js";
+export { useMenuOperations } from "./use-menu-operations.js";

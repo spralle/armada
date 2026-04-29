@@ -1,17 +1,9 @@
-import type { ShellRuntime } from "../app/types.js";
-import {
-  createInitialShellContextState,
-  registerTab,
-  setActiveTab,
-  type ShellContextState,
-} from "../context-state.js";
-import { updateContextState } from "../context/runtime-state.js";
-import type { SpecHarness } from "../context-state.spec-harness.js";
-import {
-  applySourceTabTransferTerminal,
-  beginSourceTabTransferPending,
-} from "./source-tab-transfer.js";
 import type { DndSessionDeleteEvent, DndSessionUpsertEvent } from "@ghost-shell/bridge";
+import type { ShellRuntime } from "../app/types.js";
+import { updateContextState } from "../context/runtime-state.js";
+import { createInitialShellContextState, registerTab, type ShellContextState, setActiveTab } from "../context-state.js";
+import type { SpecHarness } from "../context-state.spec-harness.js";
+import { applySourceTabTransferTerminal, beginSourceTabTransferPending } from "./source-tab-transfer.js";
 
 function createRuntime(): ShellRuntime {
   let state: ShellContextState = createInitialShellContextState({
@@ -84,7 +76,11 @@ export function registerSourceTabTransferSpecs(harness: SpecHarness): void {
 
     const orderAfterCommit = runtime.contextState.tabOrder.join(",");
     applySourceTabTransferTerminal(runtime, createTerminalEvent("session-1", "commit"));
-    assertEqual(runtime.contextState.tabOrder.join(","), orderAfterCommit, "duplicate commit should be idempotent no-op");
+    assertEqual(
+      runtime.contextState.tabOrder.join(","),
+      orderAfterCommit,
+      "duplicate commit should be idempotent no-op",
+    );
     assertEqual(beforeOrder.includes("tab-b"), true, "fixture should include source tab before commit");
   });
 
@@ -121,7 +117,11 @@ export function registerSourceTabTransferSpecs(harness: SpecHarness): void {
     applySourceTabTransferTerminal(runtime, createTerminalEvent("session-3", "timeout"));
     beginSourceTabTransferPending(runtime, createConsumeEvent("session-3", "tab-b"));
 
-    assertEqual(runtime.sourceTabTransferPendingBySessionId?.size, 0, "late consume after terminal should be ignored idempotently");
+    assertEqual(
+      runtime.sourceTabTransferPendingBySessionId?.size,
+      0,
+      "late consume after terminal should be ignored idempotently",
+    );
     assertEqual(runtime.contextState.tabs["tab-b"]?.id, "tab-b", "late events must not remove source tab");
   });
 
@@ -131,7 +131,15 @@ export function registerSourceTabTransferSpecs(harness: SpecHarness): void {
     applySourceTabTransferTerminal(runtime, createTerminalEvent("session-late", "commit"));
     beginSourceTabTransferPending(runtime, createConsumeEvent("session-late", "tab-b"));
 
-    assertEqual(runtime.sourceTabTransferPendingBySessionId?.size, 0, "late commit tombstone should block future stale consume");
-    assertEqual(runtime.contextState.tabs["tab-b"]?.id, "tab-b", "late commit should not remove source tab without pending transaction");
+    assertEqual(
+      runtime.sourceTabTransferPendingBySessionId?.size,
+      0,
+      "late commit tombstone should block future stale consume",
+    );
+    assertEqual(
+      runtime.contextState.tabs["tab-b"]?.id,
+      "tab-b",
+      "late commit should not remove source tab without pending transaction",
+    );
   });
 }

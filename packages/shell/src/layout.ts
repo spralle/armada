@@ -1,14 +1,14 @@
 export type {
-  ShellLayoutState,
-  PartialLayoutState,
-  PaneResizeRequest,
   EdgeSlotState,
+  PaneResizeRequest,
+  PartialLayoutState,
   ShellEdgeSlotsLayout,
+  ShellLayoutState,
 } from "@ghost-shell/state";
 
 export {
-  createDefaultLayoutState,
-  sanitizeLayoutState,
   applyPaneResize,
   createDefaultEdgeSlotsLayout,
+  createDefaultLayoutState,
+  sanitizeLayoutState,
 } from "@ghost-shell/state";

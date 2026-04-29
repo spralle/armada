@@ -45,7 +45,7 @@ export function createStackPlacementStrategy(): TabPlacementStrategy {
       }
 
       const stack = findStackById(nextRoot, ctx.stackId);
-      if (!stack || !stack.navHistory) {
+      if (!stack?.navHistory) {
         return { root: nextRoot };
       }
 
@@ -100,7 +100,7 @@ function navigateStackHistory(
   }
 
   const stack = findStackById(nextRoot, stackId);
-  if (!stack || !stack.navHistory) {
+  if (!stack?.navHistory) {
     return null;
   }
 

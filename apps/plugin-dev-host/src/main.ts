@@ -38,9 +38,7 @@ function runPreBuild(livePluginIds: readonly string[]): void {
   const liveSet = new Set(livePluginIds);
   const definitions = discoverPlugins(pluginsDirs);
 
-  const toBuild = definitions
-    .filter((d) => !liveSet.has(d.id))
-    .map((d) => d.folderName);
+  const toBuild = definitions.filter((d) => !liveSet.has(d.id)).map((d) => d.folderName);
 
   if (toBuild.length === 0) {
     console.log("[plugin-dev-host] --build: nothing to build (all plugins are live).");

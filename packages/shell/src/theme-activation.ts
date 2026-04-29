@@ -38,9 +38,7 @@ export async function activatePreferredThemePlugin(
  * plugins are already active. The remaining unloaded plugins are theme
  * plugins (which no longer declare `onStartup`).
  */
-export async function activateAllThemePlugins(
-  registry: ShellPluginRegistry,
-): Promise<void> {
+export async function activateAllThemePlugins(registry: ShellPluginRegistry): Promise<void> {
   const snapshot = registry.getSnapshot();
   const activationPromises = snapshot.plugins
     .filter((p) => p.enabled && !p.contract)

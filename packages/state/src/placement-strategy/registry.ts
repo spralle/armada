@@ -1,8 +1,4 @@
-import type {
-  PlacementConfig,
-  PlacementStrategyId,
-  TabPlacementStrategy,
-} from "./types.js";
+import type { PlacementConfig, PlacementStrategyId, TabPlacementStrategy } from "./types.js";
 
 export interface PlacementStrategyRegistry {
   register(strategy: TabPlacementStrategy): void;

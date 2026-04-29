@@ -10,11 +10,9 @@ const repoRoot = resolve(__dirname, "..");
 const PLUGIN_DIRS = ["plugins", "apps"];
 
 async function main() {
-  const {
-    composeConfigurationSchemas,
-    deriveContractFromPackageJson,
-    validateChangePolicies,
-  } = await import("../packages/config-engine/dist/index.js");
+  const { composeConfigurationSchemas, deriveContractFromPackageJson, validateChangePolicies } = await import(
+    "../packages/config-engine/dist/index.js"
+  );
 
   /** @type {import('../packages/config-engine/dist/index.js').ConfigurationSchemaDeclaration[]} */
   const declarations = [];
@@ -38,14 +36,11 @@ async function main() {
         continue;
       }
       const pkgJson = JSON.parse(raw);
-      const hasConfig =
-        pkgJson.ghost?.configuration !== undefined ||
-        pkgJson.contributes?.configuration !== undefined;
+      const hasConfig = pkgJson.ghost?.configuration !== undefined || pkgJson.contributes?.configuration !== undefined;
       if (!hasConfig) continue;
 
       const contract = deriveContractFromPackageJson(pkgJson);
-      const properties =
-        pkgJson.ghost?.configuration ?? pkgJson.contributes?.configuration ?? {};
+      const properties = pkgJson.ghost?.configuration ?? pkgJson.contributes?.configuration ?? {};
       declarations.push({
         ownerId: contract.pluginId,
         namespace: contract.namespace,

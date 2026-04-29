@@ -1,4 +1,4 @@
-import type { JsonSchema, SchemaMiddleware } from '@ghost-shell/schema-core';
+import type { JsonSchema, SchemaMiddleware } from "@ghost-shell/schema-core";
 
 export interface WeaverFormrContext {
   readonly layer: string;
@@ -34,7 +34,7 @@ function walkSchema(schema: JsonSchema, context: WeaverFormrContext): JsonSchema
     result = { ...result, properties: transformed };
   }
 
-  const weaver = schema['x-weaver'] as WeaverExtension | undefined;
+  const weaver = schema["x-weaver"] as WeaverExtension | undefined;
   if (weaver === undefined) {
     return result;
   }
@@ -44,18 +44,15 @@ function walkSchema(schema: JsonSchema, context: WeaverFormrContext): JsonSchema
     return result;
   }
 
-  const existing = (result['x-formr'] ?? {}) as Readonly<Record<string, unknown>>;
-  return { ...result, 'x-formr': { ...existing, ...hints } };
+  const existing = (result["x-formr"] ?? {}) as Readonly<Record<string, unknown>>;
+  return { ...result, "x-formr": { ...existing, ...hints } };
 }
 
-function buildFormrHints(
-  weaver: WeaverExtension,
-  context: WeaverFormrContext,
-): Record<string, unknown> {
+function buildFormrHints(weaver: WeaverExtension, context: WeaverFormrContext): Record<string, unknown> {
   const hints: Record<string, unknown> = {};
 
   if (weaver.sensitive === true) {
-    hints.widget = 'password';
+    hints.widget = "password";
   }
 
   if (weaver.maxOverrideLayer !== undefined) {
@@ -65,7 +62,7 @@ function buildFormrHints(
     }
   }
 
-  if (weaver.changePolicy !== undefined && weaver.changePolicy !== 'direct-allowed') {
+  if (weaver.changePolicy !== undefined && weaver.changePolicy !== "direct-allowed") {
     if (context.sessionActive !== true) {
       hints.readOnly = true;
     }

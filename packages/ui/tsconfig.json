@@ -17,7 +17,5 @@
     "composite": true
   },
   "include": ["src"],
-  "references": [
-    { "path": "../schema-core" }
-  ]
+  "references": [{ "path": "../schema-core" }]
 }

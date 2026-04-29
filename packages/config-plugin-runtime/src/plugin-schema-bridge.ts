@@ -1,20 +1,57 @@
 // Plugin schema ingestion bridge — extracts config schemas from plugin contracts
 
 import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
-import {
-  createSchemaRegistry,
-  composeConfigurationSchemas,
-  deriveNamespace,
-} from "@weaver/config-engine";
-import type {
-  ConfigurationSchemaDeclaration,
-  ConfigurationSchemaRegistry,
-  ComposeResult,
-  RegisterSchemaResult,
-  UnregisterSchemaResult,
-  ComposedSchemaEntry,
-} from "@weaver/config-engine";
-import type { ConfigurationPropertySchema as WeaverPropertySchema } from "@weaver/config-types";
+
+// @weaver/config-engine removed — inline stub types and throwing functions
+
+/** Stub for ConfigurationSchemaDeclaration (@weaver/config-engine removed). */
+export interface ConfigurationSchemaDeclaration {
+  ownerId: string;
+  namespace: string;
+  properties: Record<string, ConfigurationPropertySchema>;
+}
+
+/** Stub for ComposeResult (@weaver/config-engine removed). */
+export interface ComposeResult {
+  schemas: Map<string, ConfigurationPropertySchema & { owner: string }>;
+  errors: Array<{ key: string; owners: string[]; message: string }>;
+}
+
+/** Stub for ConfigurationSchemaRegistry (@weaver/config-engine removed). */
+export interface ConfigurationSchemaRegistry {
+  register(declaration: ConfigurationSchemaDeclaration): RegisterSchemaResult;
+  unregister(ownerId: string): UnregisterSchemaResult;
+  getSchema(key: string): (ConfigurationPropertySchema & { owner: string }) | undefined;
+  getSchemas(): Map<string, ConfigurationPropertySchema & { owner: string }>;
+  getSchemasByOwner(ownerId: string): Map<string, ConfigurationPropertySchema>;
+  getCompositionErrors(): ComposeResult["errors"];
+}
+
+/** Stub for RegisterSchemaResult (@weaver/config-engine removed). */
+export interface RegisterSchemaResult {
+  registeredKeys: string[];
+  errors: ComposeResult["errors"];
+}
+
+/** Stub for UnregisterSchemaResult (@weaver/config-engine removed). */
+export interface UnregisterSchemaResult {
+  removedKeys: string[];
+}
+
+// @weaver/config-engine removed — stub throws
+function deriveNamespace(_pluginId: string): string {
+  throw new Error("@weaver/config-engine is not available");
+}
+
+// @weaver/config-engine removed — stub throws
+function composeConfigurationSchemas(_declarations: ConfigurationSchemaDeclaration[]): ComposeResult {
+  throw new Error("@weaver/config-engine is not available");
+}
+
+// @weaver/config-engine removed — stub throws
+function createSchemaRegistry(): ConfigurationSchemaRegistry {
+  throw new Error("@weaver/config-engine is not available");
+}
 
 /**
  * Minimal plugin configuration input to avoid circular dependency
@@ -22,18 +59,18 @@ import type { ConfigurationPropertySchema as WeaverPropertySchema } from "@weave
  */
 export interface PluginConfigInput {
   pluginId: string;
-  configuration?: {
-    properties: Record<string, ConfigurationPropertySchema>;
-  } | undefined;
+  configuration?:
+    | {
+        properties: Record<string, ConfigurationPropertySchema>;
+      }
+    | undefined;
 }
 
 /**
  * Extracts ConfigurationSchemaDeclaration entries from plugin contracts.
  * Plugins without a `configuration` block are skipped.
  */
-export function collectPluginSchemaDeclarations(
-  plugins: PluginConfigInput[],
-): ConfigurationSchemaDeclaration[] {
+export function collectPluginSchemaDeclarations(plugins: PluginConfigInput[]): ConfigurationSchemaDeclaration[] {
   const declarations: ConfigurationSchemaDeclaration[] = [];
 
   for (const plugin of plugins) {
@@ -61,17 +98,13 @@ export function buildSchemaMap(plugins: PluginConfigInput[]): ComposeResult {
 export interface IncrementalSchemaRegistryAdapter {
   registerPlugin(plugin: PluginConfigInput): RegisterSchemaResult;
   unregisterPlugin(pluginId: string): UnregisterSchemaResult;
-  getSchema(fullyQualifiedKey: string): ComposedSchemaEntry | undefined;
-  getSchemas(): Map<string, ComposedSchemaEntry>;
-  getSchemasByOwner(pluginId: string): Map<string, ComposedSchemaEntry>;
-  getCompositionErrors(): ReturnType<
-    ConfigurationSchemaRegistry["getCompositionErrors"]
-  >;
+  getSchema(fullyQualifiedKey: string): ReturnType<ConfigurationSchemaRegistry["getSchema"]>;
+  getSchemas(): ReturnType<ConfigurationSchemaRegistry["getSchemas"]>;
+  getSchemasByOwner(pluginId: string): ReturnType<ConfigurationSchemaRegistry["getSchemasByOwner"]>;
+  getCompositionErrors(): ReturnType<ConfigurationSchemaRegistry["getCompositionErrors"]>;
 }
 
-class DefaultIncrementalSchemaRegistryAdapter
-  implements IncrementalSchemaRegistryAdapter
-{
+class DefaultIncrementalSchemaRegistryAdapter implements IncrementalSchemaRegistryAdapter {
   private readonly registry = createSchemaRegistry();
 
   registerPlugin(plugin: PluginConfigInput): RegisterSchemaResult {
@@ -91,7 +124,7 @@ class DefaultIncrementalSchemaRegistryAdapter
     return this.registry.unregister(pluginId);
   }
 
-  getSchema(fullyQualifiedKey: string): ComposedSchemaEntry | undefined {
+  getSchema(fullyQualifiedKey: string): ReturnType<ConfigurationSchemaRegistry["getSchema"]> {
     return this.registry.getSchema(fullyQualifiedKey);
   }
 
@@ -99,13 +132,11 @@ class DefaultIncrementalSchemaRegistryAdapter
     return this.registry.getSchemas();
   }
 
-  getSchemasByOwner(pluginId: string): Map<string, ComposedSchemaEntry> {
+  getSchemasByOwner(pluginId: string): ReturnType<ConfigurationSchemaRegistry["getSchemasByOwner"]> {
     return this.registry.getSchemasByOwner(pluginId);
   }
 
-  getCompositionErrors(): ReturnType<
-    ConfigurationSchemaRegistry["getCompositionErrors"]
-  > {
+  getCompositionErrors(): ReturnType<ConfigurationSchemaRegistry["getCompositionErrors"]> {
     return this.registry.getCompositionErrors();
   }
 }
@@ -116,14 +147,13 @@ export function createIncrementalSchemaRegistryAdapter(): IncrementalSchemaRegis
 
 // Re-export weaver types for downstream consumers
 export type {
-  ConfigurationSchemaDeclaration,
+  ComposedSchemaEntry,
   ComposeResult,
+  ConfigurationSchemaDeclaration,
   RegisterSchemaResult,
   UnregisterSchemaResult,
-  ComposedSchemaEntry,
 };
 
 // Backward compatibility aliases
 export type IncrementalPluginSchemaRegistry = IncrementalSchemaRegistryAdapter;
-export const createIncrementalPluginSchemaRegistry =
-  createIncrementalSchemaRegistryAdapter;
+export const createIncrementalPluginSchemaRegistry = createIncrementalSchemaRegistryAdapter;

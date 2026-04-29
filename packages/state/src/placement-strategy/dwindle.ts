@@ -1,16 +1,6 @@
-import {
-  cloneDockNode,
-  createUniqueNodeId,
-  findActiveOrFirstStack,
-  hasTabInDockNode,
-} from "../dock-tree-helpers.js";
+import { cloneDockNode, createUniqueNodeId, findActiveOrFirstStack, hasTabInDockNode } from "../dock-tree-helpers.js";
 import type { DockNode, DockOrientation, DockStackNode } from "../dock-tree-types.js";
-import type {
-  DwindleSplitDirection,
-  PlacementContext,
-  PlacementResult,
-  TabPlacementStrategy,
-} from "./types.js";
+import type { DwindleSplitDirection, PlacementContext, PlacementResult, TabPlacementStrategy } from "./types.js";
 
 export function createDwindlePlacementStrategy(): TabPlacementStrategy {
   return {

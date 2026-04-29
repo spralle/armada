@@ -123,9 +123,12 @@ export function computeAnchorStyles(surface: PluginLayerSurfaceContribution): Re
  * Surfaces with `exclusiveZone > 0` reserve space on the edge determined by
  * their anchor. If multiple surfaces claim the same edge the maximum wins.
  */
-export function computeExclusiveZones(
-  surfaces: Array<{ surface: PluginLayerSurfaceContribution; pluginId: string }>,
-): { top: number; right: number; bottom: number; left: number } {
+export function computeExclusiveZones(surfaces: Array<{ surface: PluginLayerSurfaceContribution; pluginId: string }>): {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+} {
   const result = { top: 0, right: 0, bottom: 0, left: 0 };
 
   for (const { surface } of surfaces) {

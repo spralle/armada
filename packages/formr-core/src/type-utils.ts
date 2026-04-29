@@ -15,20 +15,20 @@ export type Prettify<T> = { [K in keyof T]: T[K] } & {};
  * Handles nested objects, arrays, optionals, nullables, and Records.
  * Depth-limited to 10 levels to prevent infinite recursion.
  */
-export type DeepKeys<T, Depth extends unknown[] = []> =
-  Depth['length'] extends 10
-    ? never
-    : IsAny<T> extends true
+export type DeepKeys<T, Depth extends unknown[] = []> = Depth["length"] extends 10
+  ? never
+  : IsAny<T> extends true
+    ? string
+    : unknown extends T
       ? string
-      : unknown extends T
-        ? string
-        : T extends readonly unknown[]
-          ? DeepArrayKeys<T, Depth>
-          : T extends object
-            ? string extends keyof T
-              ? string // Record<string, V> — stop recursion
-              : { [K in keyof T & string]: K | `${K}.${DeepKeys<NonNullable<T[K]>, [...Depth, unknown]>}` }[keyof T & string]
-            : never;
+      : T extends readonly unknown[]
+        ? DeepArrayKeys<T, Depth>
+        : T extends object
+          ? string extends keyof T
+            ? string // Record<string, V> — stop recursion
+            : { [K in keyof T & string]: K | `${K}.${DeepKeys<NonNullable<T[K]>, [...Depth, unknown]>}` }[keyof T &
+                string]
+          : never;
 
 type DeepArrayKeys<T extends readonly unknown[], Depth extends unknown[]> =
   | `${number}`

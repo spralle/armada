@@ -1,5 +1,4 @@
 import { describe, it } from "node:test";
-import assert from "node:assert/strict";
 
 // @weaver/config-engine was removed — all lifecycle hook functions throw stubs.
 // These tests are skipped until the engine is restored or replaced.

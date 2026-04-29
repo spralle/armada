@@ -1,5 +1,5 @@
-import { ShellContextState } from "./types.js";
 import { createInitialDockTree } from "./dock-tree.js";
+import type { ShellContextState } from "./types.js";
 
 export function createInitialShellContextState(options?: {
   initialTabId?: string;

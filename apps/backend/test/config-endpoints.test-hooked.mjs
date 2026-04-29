@@ -1,11 +1,10 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile, readFile, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-
-import { validateTenantId, createTenantConfigProviders } from "../dist-test/src/config-loader.js";
+import { join } from "node:path";
+import test from "node:test";
 import { createConfigRoutes } from "../dist-test/src/config-endpoints.js";
+import { validateTenantId } from "../dist-test/src/config-loader.js";
 
 /** Create a temporary config directory with seed data for testing. */
 async function createTestConfigDir() {
@@ -120,12 +119,9 @@ test("PUT /config/{key} writes value to tenant config", async () => {
   const dir = await createTestConfigDir();
   try {
     const routes = createConfigRoutes({ configDir: dir });
-    const res = await callRoute(
-      routes,
-      "PUT",
-      "/api/tenants/demo/config/ghost.shell.custom.key",
-      { value: "custom-value" },
-    );
+    const res = await callRoute(routes, "PUT", "/api/tenants/demo/config/ghost.shell.custom.key", {
+      value: "custom-value",
+    });
     assert.equal(res.status, 200);
     const body = await res.json();
     assert.equal(body.success, true);
@@ -144,11 +140,7 @@ test("DELETE /config/{key} removes value from tenant config", async () => {
   const dir = await createTestConfigDir();
   try {
     const routes = createConfigRoutes({ configDir: dir });
-    const res = await callRoute(
-      routes,
-      "DELETE",
-      "/api/tenants/demo/config/ghost.shell.display.dateFormat",
-    );
+    const res = await callRoute(routes, "DELETE", "/api/tenants/demo/config/ghost.shell.display.dateFormat");
     assert.equal(res.status, 200);
     const body = await res.json();
     assert.equal(body.success, true);
@@ -199,12 +191,7 @@ test("invalid tenant ID returns 400 on PUT /config/{key}", async () => {
   const dir = await createTestConfigDir();
   try {
     const routes = createConfigRoutes({ configDir: dir });
-    const res = await callRoute(
-      routes,
-      "PUT",
-      "/api/tenants/INVALID/config/ghost.test",
-      { value: "x" },
-    );
+    const res = await callRoute(routes, "PUT", "/api/tenants/INVALID/config/ghost.test", { value: "x" });
     assert.equal(res.status, 400);
     const body = await res.json();
     assert.equal(body.error, "invalid_tenant_id");
@@ -233,12 +220,7 @@ test("PUT /config/{key} returns 400 for invalid body", async () => {
   const dir = await createTestConfigDir();
   try {
     const routes = createConfigRoutes({ configDir: dir });
-    const res = await callRoute(
-      routes,
-      "PUT",
-      "/api/tenants/demo/config/ghost.test",
-      { notValue: "x" },
-    );
+    const res = await callRoute(routes, "PUT", "/api/tenants/demo/config/ghost.test", { notValue: "x" });
     assert.equal(res.status, 400);
     const body = await res.json();
     assert.equal(body.error, "invalid_body");

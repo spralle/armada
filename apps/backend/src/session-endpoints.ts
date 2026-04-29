@@ -1,13 +1,11 @@
 // Session lifecycle endpoints: activate, deactivate, status
 
-import type { Route } from "./router.js";
-import { jsonResponse } from "./router.js";
 import type { OverrideSessionController } from "./config-stubs.js";
 import { sessionActivationRequestSchema } from "./config-stubs.js";
+import type { Route } from "./router.js";
+import { jsonResponse } from "./router.js";
 
-export function createSessionRoutes(options: {
-  sessionController: OverrideSessionController;
-}): Route[] {
+export function createSessionRoutes(options: { sessionController: OverrideSessionController }): Route[] {
   const { sessionController } = options;
 
   return [
@@ -20,17 +18,11 @@ export function createSessionRoutes(options: {
         const parsed = sessionActivationRequestSchema.safeParse(body);
 
         if (!parsed.success) {
-          return jsonResponse(
-            { error: "invalid_body", details: parsed.error.issues },
-            400,
-          );
+          return jsonResponse({ error: "invalid_body", details: parsed.error.issues }, 400);
         }
 
         if (sessionController.isActive()) {
-          return jsonResponse(
-            { error: "session_already_active" },
-            409,
-          );
+          return jsonResponse({ error: "session_already_active" }, 409);
         }
 
         const session = sessionController.activate(parsed.data);
@@ -44,10 +36,7 @@ export function createSessionRoutes(options: {
       pattern: /^\/api\/session\/deactivate$/,
       handler: async () => {
         if (!sessionController.isActive()) {
-          return jsonResponse(
-            { error: "no_active_session" },
-            404,
-          );
+          return jsonResponse({ error: "no_active_session" }, 404);
         }
 
         const result = sessionController.deactivate();

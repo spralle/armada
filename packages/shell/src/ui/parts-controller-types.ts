@@ -1,6 +1,6 @@
-import type { BridgeHost } from "../app/types.js";
-import type { ShellPartHostAdapter } from "../app/contracts.js";
 import type { SelectionSyncEvent } from "@ghost-shell/bridge";
+import type { ShellPartHostAdapter } from "../app/contracts.js";
+import type { BridgeHost } from "../app/types.js";
 
 export type PartsControllerDeps = {
   applySelection: (event: SelectionSyncEvent) => void;

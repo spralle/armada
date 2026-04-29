@@ -27,10 +27,7 @@ export interface GhostApi {
 /** Service for registering, executing, and discovering actions. */
 export interface ActionService {
   /** Register a runtime action handler. Returns Disposable for cleanup. */
-  registerAction(
-    id: string,
-    handler: (...args: unknown[]) => unknown,
-  ): Disposable;
+  registerAction(id: string, handler: (...args: unknown[]) => unknown): Disposable;
 
   /** Execute an action by ID. Shell handles plugin activation transparently. */
   executeAction<T = void>(id: string, ...args: unknown[]): Promise<T | undefined>;
@@ -71,10 +68,7 @@ export interface WindowService {
    * Show a quick pick overlay with the given items.
    * Returns the selected item, or undefined if dismissed.
    */
-  showQuickPick<T extends QuickPickItem>(
-    items: T[],
-    options?: QuickPickOptions,
-  ): Promise<T | undefined>;
+  showQuickPick<T extends QuickPickItem>(items: T[], options?: QuickPickOptions): Promise<T | undefined>;
 
   /**
    * Create a QuickPick with full lifecycle control.
@@ -89,10 +83,7 @@ export interface WindowService {
   showInputBox(options?: InputBoxOptions): Promise<string | undefined>;
 
   /** Show a notification message. */
-  showNotification(
-    message: string,
-    severity: "info" | "warning" | "error",
-  ): void;
+  showNotification(message: string, severity: "info" | "warning" | "error"): void;
 }
 
 /** Descriptor for an open window. */

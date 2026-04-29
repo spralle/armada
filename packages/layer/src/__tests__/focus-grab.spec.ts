@@ -1,6 +1,5 @@
 import { createFocusGrabManager } from "../focus-grab.js";
 import type { KeyboardExclusiveManager } from "../input-behavior.js";
-import type { FocusGrabConfig } from "@ghost-shell/contracts/layer";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];
@@ -275,7 +274,9 @@ test("dismissOnOutsideClick=true: clicking backdrop calls onDismiss", () => {
       surfaceElement: asHtmlDiv(surface),
       layerContainer: asHtmlElement(container),
       config: { backdrop: true, dismissOnOutsideClick: true },
-      onDismiss: () => { dismissed = true; },
+      onDismiss: () => {
+        dismissed = true;
+      },
     });
 
     const backdrop = container.children[0];
@@ -302,7 +303,9 @@ test("dismissOnOutsideClick=false: clicking backdrop does NOT call onDismiss", (
       surfaceElement: asHtmlDiv(surface),
       layerContainer: asHtmlElement(container),
       config: { backdrop: true, dismissOnOutsideClick: false },
-      onDismiss: () => { dismissed = true; },
+      onDismiss: () => {
+        dismissed = true;
+      },
     });
 
     const backdrop = container.children[0];

@@ -8,8 +8,8 @@
  * Fallback: if config service is unavailable, falls back to localStorage.
  */
 
-import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
 import type { ConfigurationService } from "@ghost-shell/contracts";
+import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
 import type {
   KeybindingOverrideEntryV1,
   KeybindingOverridesEnvelopeV1,
@@ -70,9 +70,7 @@ export interface KeybindingConfigBridgeOptions {
 // Factory
 // ---------------------------------------------------------------------------
 
-export function createKeybindingConfigBridge(
-  options: KeybindingConfigBridgeOptions,
-): KeybindingConfigBridge {
+export function createKeybindingConfigBridge(options: KeybindingConfigBridgeOptions): KeybindingConfigBridge {
   const { configService, storage, userId } = options;
   const configKey = options.configKey ?? KEYBINDING_CONFIG_KEY;
   const storageKey = getUnifiedStorageKey(userId);
@@ -83,9 +81,7 @@ export function createKeybindingConfigBridge(
       try {
         const fromConfig = configService.get<KeybindingOverrideEntryV1[]>(configKey);
         if (fromConfig !== undefined && fromConfig !== null) {
-          return sanitizeOverrideEntries(
-            Array.isArray(fromConfig) ? fromConfig : [],
-          );
+          return sanitizeOverrideEntries(Array.isArray(fromConfig) ? fromConfig : []);
         }
       } catch {
         // Config service unavailable — fall through to localStorage
@@ -168,10 +164,7 @@ export function createConfigBackedKeybindingPersistence(
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function loadFromStorage(
-  storage: StorageLike | undefined,
-  storageKey: string,
-): KeybindingOverrideEntryV1[] {
+function loadFromStorage(storage: StorageLike | undefined, storageKey: string): KeybindingOverrideEntryV1[] {
   if (!storage) {
     return [];
   }

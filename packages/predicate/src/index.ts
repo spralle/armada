@@ -1,36 +1,50 @@
 // Primary API
-export { Predicate, type PredicateOptions } from './predicate.js';
-
-// Compilation
-export { compile, type Query } from './compile.js';
-export { compileFilter, compileFilterFromAst, compileRawFromAst, type FilterFn, type CompileFilterOptions, clearRegexCache as clearFilterRegexCache, getRegexCacheSize as getFilterRegexCacheSize } from './filter-compiler.js';
-
-// Evaluation (thin facade)
-export { evaluate, type EvaluateOptions, clearRegexCache, getRegexCacheSize } from './evaluator.js';
-
-// Diagnostics
-export { evaluateWithTrace, type PredicateFailureTrace, type EvaluateWithTraceResult } from './failure-trace.js';
-
-// Extensibility
-export { OperatorRegistry, type OperatorDefinition, type CustomOperatorFn, type CustomOperatorEntry } from './operators.js';
-
-// Collections
-export { find, type FindOptions } from './collection/find.js';
-export { findOne } from './collection/find-one.js';
 
 // Types
-export { type ExprNode, type ExpressionDefinition, type EvaluationScope } from './ast.js';
-export type { TypedQuery, DotPaths, PathValue, FieldCondition } from './typed-query.js';
+export type { EvaluationScope, ExpressionDefinition, ExprNode } from "./ast.js";
+// Collections
+export { type FindOptions, find } from "./collection/find.js";
+export { findOne } from "./collection/find-one.js";
+// Compilation
+// Backward compatibility
+export { compile, compileShorthand, type Query, type ShorthandQuery } from "./compile.js";
+export { PredicateError, type PredicateErrorCode } from "./errors.js";
+// Evaluation (thin facade)
+export { clearRegexCache, type EvaluateOptions, evaluate, getRegexCacheSize } from "./evaluator.js";
+// Diagnostics
+export { type EvaluateWithTraceResult, evaluateWithTrace, type PredicateFailureTrace } from "./failure-trace.js";
+export {
+  type CompileFilterOptions,
+  clearRegexCache as clearFilterRegexCache,
+  compileFilter,
+  compileFilterFromAst,
+  compileRawFromAst,
+  type FilterFn,
+  getRegexCacheSize as getFilterRegexCacheSize,
+} from "./filter-compiler.js";
+// Extensibility
+export {
+  type CustomOperatorEntry,
+  type CustomOperatorFn,
+  type OperatorDefinition,
+  OperatorRegistry,
+} from "./operators.js";
 
 // Path utilities
-export { validateAndSplitPath, resolveSegments, collectPath, collectArrayLeaves, resolvePath, normalizeComparable, assertComparableTypes, PATH_MISSING } from './path-utils.js';
-
+export {
+  assertComparableTypes,
+  collectArrayLeaves,
+  collectPath,
+  normalizeComparable,
+  PATH_MISSING,
+  resolvePath,
+  resolveSegments,
+  validateAndSplitPath,
+} from "./path-utils.js";
+export { Predicate, type PredicateOptions } from "./predicate.js";
 // Safety
-export { assertSafeSegment, DANGEROUS_KEYS } from './safe-path.js';
-export { PredicateError, type PredicateErrorCode } from './errors.js';
+export { assertSafeSegment, DANGEROUS_KEYS } from "./safe-path.js";
 
 // Sort utilities
-export { compareValues, applySorting } from './sort-utils.js';
-
-// Backward compatibility
-export { compileShorthand, type ShorthandQuery } from './compile.js';
+export { applySorting, compareValues } from "./sort-utils.js";
+export type { DotPaths, FieldCondition, PathValue, TypedQuery } from "./typed-query.js";

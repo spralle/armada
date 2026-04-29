@@ -30,7 +30,5 @@
       "path": "../../packages/ui"
     }
   ],
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { createShellPluginRegistry } from "../dist-test/src/plugin-registry.js";
 
 function descriptor(id) {
@@ -66,10 +66,7 @@ test("activation fails with actionable dependency diagnostics and no auto-enable
     },
   });
 
-  registry.registerManifestDescriptors("demo", [
-    descriptor("ghost.consumer"),
-    descriptor("ghost.provider"),
-  ]);
+  registry.registerManifestDescriptors("demo", [descriptor("ghost.consumer"), descriptor("ghost.provider")]);
 
   await registry.setEnabled("ghost.consumer", true);
   const activated = await registry.activateByView("ghost.consumer", "view.main");
@@ -117,10 +114,7 @@ test("resolves component/service capabilities from split plugin modules", async 
     },
   });
 
-  registry.registerManifestDescriptors("demo", [
-    descriptor("ghost.consumer"),
-    descriptor("ghost.provider"),
-  ]);
+  registry.registerManifestDescriptors("demo", [descriptor("ghost.consumer"), descriptor("ghost.provider")]);
 
   await registry.setEnabled("ghost.provider", true);
   await registry.setEnabled("ghost.consumer", true);
@@ -128,14 +122,8 @@ test("resolves component/service capabilities from split plugin modules", async 
   assert.equal(await registry.activateByView("ghost.provider", "view.provider"), true);
   assert.equal(await registry.activateByView("ghost.consumer", "view.consumer"), true);
 
-  const resolvedComponent = await registry.resolveComponentCapability(
-    "ghost.consumer",
-    "ghost.component.map",
-  );
-  const resolvedService = await registry.resolveServiceCapability(
-    "ghost.consumer",
-    "ghost.service.route",
-  );
+  const resolvedComponent = await registry.resolveComponentCapability("ghost.consumer", "ghost.component.map");
+  const resolvedService = await registry.resolveServiceCapability("ghost.consumer", "ghost.service.route");
 
   assert.equal(resolvedComponent, providerComponent);
   assert.equal(resolvedService, providerService);

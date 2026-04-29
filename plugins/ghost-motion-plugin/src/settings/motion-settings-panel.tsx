@@ -1,22 +1,22 @@
-import { useState, useCallback } from "react";
 import {
-  Switch,
-  Label,
-  Slider,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Separator,
+  Slider,
+  Switch,
 } from "@ghost-shell/ui";
+import { useCallback, useState } from "react";
 import { getCurrentConfig, updateConfig } from "../activate.js";
-import type { GhostMotionConfig, AnimationName, AnimationEntry } from "../config-types.js";
 import { resolveEntry } from "../config-resolver.js";
+import type { AnimationEntry, AnimationName, GhostMotionConfig } from "../config-types.js";
 
 /** Animation categories shown as cards in the settings panel. */
 const ANIMATION_CATEGORIES: ReadonlyArray<{
@@ -29,7 +29,12 @@ const ANIMATION_CATEGORIES: ReadonlyArray<{
   { name: "layers", label: "Layers", description: "Layer surface transitions", styles: ["slide", "popin", "fade"] },
   { name: "fade", label: "Fade", description: "Fade and dim effects", styles: [] },
   { name: "border", label: "Border", description: "Border glow animations", styles: [] },
-  { name: "workspaces", label: "Workspaces", description: "Workspace switch transitions", styles: ["slide", "slidevert", "fade", "slidefade", "slidefadevert"] },
+  {
+    name: "workspaces",
+    label: "Workspaces",
+    description: "Workspace switch transitions",
+    styles: ["slide", "slidevert", "fade", "slidefade", "slidefadevert"],
+  },
   { name: "edgePanel", label: "Edge Panel", description: "Edge panel reveal animations", styles: ["slide", "fade"] },
 ];
 
@@ -46,9 +51,12 @@ export function MotionSettingsPanel(): JSX.Element {
     });
   }, []);
 
-  const handleGlobalToggle = useCallback((enabled: boolean) => {
-    applyUpdate((prev) => ({ ...prev, enabled }));
-  }, [applyUpdate]);
+  const handleGlobalToggle = useCallback(
+    (enabled: boolean) => {
+      applyUpdate((prev) => ({ ...prev, enabled }));
+    },
+    [applyUpdate],
+  );
 
   const handleEntryUpdate = useCallback(
     (name: AnimationName, patch: Partial<AnimationEntry>) => {
@@ -70,11 +78,7 @@ export function MotionSettingsPanel(): JSX.Element {
         <Label htmlFor="motion-global-toggle" style={{ fontSize: "14px", fontWeight: 500 }}>
           Enable animations
         </Label>
-        <Switch
-          id="motion-global-toggle"
-          checked={config.enabled}
-          onCheckedChange={handleGlobalToggle}
-        />
+        <Switch id="motion-global-toggle" checked={config.enabled} onCheckedChange={handleGlobalToggle} />
       </div>
 
       {config.enabled && (
@@ -120,9 +124,7 @@ function AnimationCard({
             aria-label={`Toggle ${category.label} animations`}
           />
         </div>
-        <p style={{ fontSize: "11px", color: "var(--ghost-muted-foreground)", margin: 0 }}>
-          {category.description}
-        </p>
+        <p style={{ fontSize: "11px", color: "var(--ghost-muted-foreground)", margin: 0 }}>{category.description}</p>
       </CardHeader>
 
       {enabled && (
@@ -147,10 +149,7 @@ function AnimationCard({
           {/* Curve selector */}
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <Label style={{ fontSize: "12px" }}>Curve</Label>
-            <Select
-              value={resolvedEntry.curve}
-              onValueChange={(val: string) => onUpdate({ curve: val })}
-            >
+            <Select value={resolvedEntry.curve} onValueChange={(val: string) => onUpdate({ curve: val })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -168,10 +167,7 @@ function AnimationCard({
           {category.styles.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <Label style={{ fontSize: "12px" }}>Style</Label>
-              <Select
-                value={resolvedEntry.style}
-                onValueChange={(val: string) => onUpdate({ style: val })}
-              >
+              <Select value={resolvedEntry.style} onValueChange={(val: string) => onUpdate({ style: val })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

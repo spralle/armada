@@ -1,18 +1,17 @@
-import type { Column } from "@tanstack/react-table";
 import {
   Button,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  cn,
 } from "@ghost-shell/ui";
+import type { Column } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown, EyeOff, X } from "lucide-react";
 
-interface DataTableColumnHeaderProps<TData, TValue>
-  extends React.HTMLAttributes<HTMLDivElement> {
+interface DataTableColumnHeaderProps<TData, TValue> extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title: string;
 }
@@ -33,19 +32,9 @@ export function DataTableColumnHeader<TData, TValue>({
     <div className={cn("flex items-center space-x-2", className)}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8 data-[state=open]:bg-accent"
-          >
+          <Button variant="ghost" size="sm" className="-ml-3 h-8 data-[state=open]:bg-accent">
             <span>{title}</span>
-            {sorted === "desc" ? (
-              <ArrowDown />
-            ) : sorted === "asc" ? (
-              <ArrowUp />
-            ) : (
-              <ArrowUpDown />
-            )}
+            {sorted === "desc" ? <ArrowDown /> : sorted === "asc" ? <ArrowUp /> : <ArrowUpDown />}
             {sorted && sortIndex > 0 && (
               <span className="ml-0.5 text-[10px] text-muted-foreground align-super">{sortIndex + 1}</span>
             )}

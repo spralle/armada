@@ -1,10 +1,6 @@
 import { pushDiagnostic } from "./plugin-registry-diagnostics.js";
 import { computeReverseDependencies } from "./plugin-registry-service-registration.js";
-import type {
-  PluginRegistryDiagnostic,
-  PluginRuntimeState,
-  ShellPluginRegistry,
-} from "./plugin-registry-types.js";
+import type { PluginRegistryDiagnostic, PluginRuntimeState, ShellPluginRegistry } from "./plugin-registry-types.js";
 
 /** Cascade-disable plugins that depend on the just-disabled plugin. */
 export async function cascadeDisableDependents(

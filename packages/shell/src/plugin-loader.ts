@@ -1,22 +1,17 @@
 import {
-  parsePluginContract,
   type ActivationContext,
   type GhostApi,
   type PluginContract,
+  parsePluginContract,
   type TenantPluginDescriptor,
 } from "@ghost-shell/contracts";
-import {
-  createShellFederationRuntime,
-  type ShellFederationRuntime,
-} from "./federation-runtime.js";
+import { createShellFederationRuntime, type ShellFederationRuntime } from "./federation-runtime.js";
 
 /** The activate() function signature exported by a plugin module. */
-export type PluginActivateFunction =
-  (api: GhostApi, context: ActivationContext) => void | Promise<void>;
+export type PluginActivateFunction = (api: GhostApi, context: ActivationContext) => void | Promise<void>;
 
 /** The optional deactivate() function signature exported by a plugin module. */
-export type PluginDeactivateExport =
-  (context: { readonly pluginId: string }) => void | Promise<void>;
+export type PluginDeactivateExport = (context: { readonly pluginId: string }) => void | Promise<void>;
 
 /** Result of loading and validating a plugin's contract module. */
 export interface PluginContractLoadResult {
@@ -57,11 +52,7 @@ export interface PluginLoadDiagnostic {
 export interface PluginLoadErrorContext {
   pluginId: string;
   strategy: string;
-  reason:
-    | "REMOTE_UNAVAILABLE"
-    | "INVALID_CONTRACT"
-    | "COMPONENTS_UNAVAILABLE"
-    | "SERVICES_UNAVAILABLE";
+  reason: "REMOTE_UNAVAILABLE" | "INVALID_CONTRACT" | "COMPONENTS_UNAVAILABLE" | "SERVICES_UNAVAILABLE";
   message: string;
   attempts: number;
   maxAttempts: number;
@@ -102,9 +93,7 @@ function resolveContractExport(moduleValue: unknown): unknown {
   return moduleValue;
 }
 
-export function createRuntimeFirstPluginLoader(
-  options: RuntimeFirstPluginLoaderOptions = {},
-): PluginLoadStrategy {
+export function createRuntimeFirstPluginLoader(options: RuntimeFirstPluginLoaderOptions = {}): PluginLoadStrategy {
   const federationRuntime = options.federationRuntime ?? createShellFederationRuntime();
   const remoteLoadMaxAttempts = clampAttempts(options.remoteLoadMaxAttempts ?? 3);
   const remoteLoadRetryDelayMs = Math.max(0, options.remoteLoadRetryDelayMs ?? 300);
@@ -125,9 +114,7 @@ export function createRuntimeFirstPluginLoader(
       const parsed = parsePluginContract(contractData);
 
       if (!parsed.success) {
-        const details = parsed.errors
-          .map((error) => `${error.path || "<root>"}: ${error.message}`)
-          .join("; ");
+        const details = parsed.errors.map((error) => `${error.path || "<root>"}: ${error.message}`).join("; ");
         const message = `Remote plugin '${descriptor.id}' returned invalid contract: ${details}`;
         emitDiagnostic(onDiagnostic, {
           pluginId: descriptor.id,
@@ -191,10 +178,7 @@ interface RetryOptions {
   onExhausted?: (attempt: number, error: unknown) => void;
 }
 
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions,
-): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions): Promise<T> {
   let latestError: unknown;
 
   for (let attempt = 1; attempt <= options.maxAttempts; attempt += 1) {
@@ -225,37 +209,34 @@ interface RemoteRetryLoadOptions {
 
 async function loadRemoteContractWithRetry(options: RemoteRetryLoadOptions): Promise<unknown> {
   try {
-    return await withRetry(
-      () => options.federationRuntime.loadPluginContract(options.descriptor.id),
-      {
-        maxAttempts: options.remoteLoadMaxAttempts,
-        delayMs: options.remoteLoadRetryDelayMs,
-        onRetry(attempt, error) {
-          emitDiagnostic(options.onDiagnostic, {
-            pluginId: options.descriptor.id,
-            level: "info",
-            code: "REMOTE_LOAD_RETRY",
-            message: `Retrying remote load for plugin '${options.descriptor.id}' (attempt ${attempt + 1}/${options.remoteLoadMaxAttempts}).`,
-            attempt,
-            maxAttempts: options.remoteLoadMaxAttempts,
-            module: "pluginContract",
-            cause: error,
-          });
-        },
-        onExhausted(attempt, error) {
-          emitDiagnostic(options.onDiagnostic, {
-            pluginId: options.descriptor.id,
-            level: "warn",
-            code: "REMOTE_LOAD_EXHAUSTED",
-            message: `Remote plugin '${options.descriptor.id}' is unavailable after ${options.remoteLoadMaxAttempts} attempt(s).`,
-            attempt,
-            maxAttempts: options.remoteLoadMaxAttempts,
-            module: "pluginContract",
-            cause: error,
-          });
-        },
+    return await withRetry(() => options.federationRuntime.loadPluginContract(options.descriptor.id), {
+      maxAttempts: options.remoteLoadMaxAttempts,
+      delayMs: options.remoteLoadRetryDelayMs,
+      onRetry(attempt, error) {
+        emitDiagnostic(options.onDiagnostic, {
+          pluginId: options.descriptor.id,
+          level: "info",
+          code: "REMOTE_LOAD_RETRY",
+          message: `Retrying remote load for plugin '${options.descriptor.id}' (attempt ${attempt + 1}/${options.remoteLoadMaxAttempts}).`,
+          attempt,
+          maxAttempts: options.remoteLoadMaxAttempts,
+          module: "pluginContract",
+          cause: error,
+        });
       },
-    );
+      onExhausted(attempt, error) {
+        emitDiagnostic(options.onDiagnostic, {
+          pluginId: options.descriptor.id,
+          level: "warn",
+          code: "REMOTE_LOAD_EXHAUSTED",
+          message: `Remote plugin '${options.descriptor.id}' is unavailable after ${options.remoteLoadMaxAttempts} attempt(s).`,
+          attempt,
+          maxAttempts: options.remoteLoadMaxAttempts,
+          module: "pluginContract",
+          cause: error,
+        });
+      },
+    });
   } catch (latestError) {
     throw new PluginLoadError({
       pluginId: options.descriptor.id,
@@ -291,8 +272,8 @@ async function loadRemoteModuleWithRetry(options: RemoteRetryLoadOptions): Promi
           level: "info",
           code: "REMOTE_MODULE_LOAD_RETRY",
           message:
-            `Retrying remote load for plugin '${options.descriptor.id}' module './${moduleName}' `
-            + `(attempt ${attempt + 1}/${options.remoteLoadMaxAttempts}).`,
+            `Retrying remote load for plugin '${options.descriptor.id}' module './${moduleName}' ` +
+            `(attempt ${attempt + 1}/${options.remoteLoadMaxAttempts}).`,
           attempt,
           maxAttempts: options.remoteLoadMaxAttempts,
           module: moduleName,
@@ -305,8 +286,8 @@ async function loadRemoteModuleWithRetry(options: RemoteRetryLoadOptions): Promi
           level: "warn",
           code: "REMOTE_MODULE_LOAD_EXHAUSTED",
           message:
-            `Remote plugin '${options.descriptor.id}' module './${moduleName}' is unavailable after `
-            + `${options.remoteLoadMaxAttempts} attempt(s).`,
+            `Remote plugin '${options.descriptor.id}' module './${moduleName}' is unavailable after ` +
+            `${options.remoteLoadMaxAttempts} attempt(s).`,
           attempt,
           maxAttempts: options.remoteLoadMaxAttempts,
           module: moduleName,

@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
 // ---------------------------------------------------------------------------
 // Mock setup — must come before importing the module under test.
@@ -93,7 +93,10 @@ test("resolveBackgroundUrl returns blob URL from cache on hit", async () => {
   // Pre-populate cache.
   cacheStore.set("https://example.com/cached.png", makeFakeResponse());
   let fetchCalled = false;
-  fetchFn = async () => { fetchCalled = true; return makeFakeResponse(); };
+  fetchFn = async () => {
+    fetchCalled = true;
+    return makeFakeResponse();
+  };
 
   const result = await resolveBackgroundUrl("https://example.com/cached.png");
   assert.ok(result.startsWith("blob:"));
@@ -105,14 +108,14 @@ test("preloadBackgroundUrls fetches and caches uncached URLs", async () => {
   clearGlobals();
   installGlobals();
   const fetched = [];
-  fetchFn = async (url) => { fetched.push(url); return makeFakeResponse(); };
+  fetchFn = async (url) => {
+    fetched.push(url);
+    return makeFakeResponse();
+  };
   // Pre-populate one URL.
   cacheStore.set("https://example.com/a.png", makeFakeResponse());
 
-  preloadBackgroundUrls([
-    "https://example.com/a.png",
-    "https://example.com/b.png",
-  ]);
+  preloadBackgroundUrls(["https://example.com/a.png", "https://example.com/b.png"]);
 
   // Give the fire-and-forget a tick to complete.
   await new Promise((r) => setTimeout(r, 50));
@@ -140,7 +143,9 @@ test("previous blob URLs are revoked when new ones are created", async () => {
 test("fetch failure gracefully falls back to original URL", async () => {
   clearGlobals();
   installGlobals();
-  fetchFn = async () => { throw new Error("Network error"); };
+  fetchFn = async () => {
+    throw new Error("Network error");
+  };
 
   const url = "https://example.com/fail.png";
   const result = await resolveBackgroundUrl(url);

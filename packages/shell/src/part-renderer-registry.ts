@@ -3,11 +3,7 @@
  * Vanilla DOM renderer is registered as the default fallback.
  */
 
-import type {
-  PartRenderer,
-  PartRendererRegistry,
-  Disposable,
-} from "@ghost-shell/contracts";
+import type { Disposable, PartRenderer, PartRendererRegistry } from "@ghost-shell/contracts";
 import { createVanillaDomRenderer } from "@ghost-shell/plugin-system";
 
 /** Create a PartRendererRegistry with vanilla-dom as the default fallback. */

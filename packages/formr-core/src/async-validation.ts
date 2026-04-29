@@ -1,5 +1,5 @@
-import type { AsyncValidatorConfig } from './contracts.js';
-import type { FormState, ValidationIssue, FieldMetaEntry } from './state.js';
+import type { AsyncValidatorConfig } from "./contracts.js";
+import type { FieldMetaEntry, FormState, ValidationIssue } from "./state.js";
 
 export interface AsyncValidationManager {
   onFieldChange(path: string): void;
@@ -19,7 +19,7 @@ const DEFAULT_DEBOUNCE_MS = 300;
 
 function getLabel(v: AsyncValidatorConfig, index: number): string {
   if (v.label) return v.label;
-  if (v.fields?.length) return `async:${[...v.fields].sort().join(',')}`;
+  if (v.fields?.length) return `async:${[...v.fields].sort().join(",")}`;
   return `async:form-level:${index}`;
 }
 
@@ -29,22 +29,14 @@ interface InFlightEntry {
 }
 
 /** Increment isValidating ref-count for a field path */
-function incrementValidating(
-  counts: Map<string, number>,
-  fieldPath: string,
-  deps: AsyncManagerDeps,
-): void {
+function incrementValidating(counts: Map<string, number>, fieldPath: string, deps: AsyncManagerDeps): void {
   const prev = counts.get(fieldPath) ?? 0;
   counts.set(fieldPath, prev + 1);
   if (prev === 0) setFieldValidating(deps, fieldPath, true);
 }
 
 /** Decrement isValidating ref-count for a field path */
-function decrementValidating(
-  counts: Map<string, number>,
-  fieldPath: string,
-  deps: AsyncManagerDeps,
-): void {
+function decrementValidating(counts: Map<string, number>, fieldPath: string, deps: AsyncManagerDeps): void {
   const prev = counts.get(fieldPath) ?? 0;
   const next = Math.max(0, prev - 1);
   counts.set(fieldPath, next);
@@ -78,10 +70,10 @@ function mergeAsyncIssues(
   deps.updateState((draft) => {
     // Remove previous issues from this async validator for these field paths
     const filtered = draft.issues.filter((issue) => {
-      if (issue.source.origin !== 'async-validator') return true;
+      if (issue.source.origin !== "async-validator") return true;
       if (issue.source.validatorId !== validatorId) return true;
       if (fieldPaths.length === 0) return false; // form-level: remove all from this validator
-      return !fieldPaths.some((fp) => issue.path.segments.join('.') === fp);
+      return !fieldPaths.some((fp) => issue.path.segments.join(".") === fp);
     });
     return { ...draft, issues: [...filtered, ...newIssues] };
   });
@@ -90,10 +82,10 @@ function mergeAsyncIssues(
 function getMatchingValidators(
   validators: readonly AsyncValidatorConfig[],
   path: string,
-  trigger: 'onChange' | 'onBlur',
+  trigger: "onChange" | "onBlur",
 ): readonly AsyncValidatorConfig[] {
   return validators.filter((v) => {
-    const vTrigger = v.trigger ?? 'onChange';
+    const vTrigger = v.trigger ?? "onChange";
     if (vTrigger !== trigger) return false;
     if (!v.fields?.length) return true; // form-level
     return v.fields.includes(path);
@@ -180,7 +172,7 @@ export function createAsyncValidationManager(deps: AsyncManagerDeps): AsyncValid
     }
   }
 
-  function triggerForPath(path: string, trigger: 'onChange' | 'onBlur'): void {
+  function triggerForPath(path: string, trigger: "onChange" | "onBlur"): void {
     const matching = getMatchingValidators(deps.asyncValidators, path, trigger);
     for (const v of matching) {
       const index = deps.asyncValidators.indexOf(v);
@@ -189,7 +181,7 @@ export function createAsyncValidationManager(deps: AsyncManagerDeps): AsyncValid
   }
 
   function cancelAll(): void {
-    for (const [key, entry] of inFlight) {
+    for (const [_key, entry] of inFlight) {
       if (entry.timer !== null) clearTimeout(entry.timer);
       entry.controller.abort();
     }
@@ -207,19 +199,18 @@ export function createAsyncValidationManager(deps: AsyncManagerDeps): AsyncValid
     cancelAll();
     const state = deps.getState();
     const allIssues: ValidationIssue[] = [];
-    const promises = deps.asyncValidators
-      .map(async (v) => {
-        if (signal.aborted) return;
-        const issues = await v.validate({ data: state.data, uiState: state.uiState, signal });
-        if (!signal.aborted) allIssues.push(...issues);
-      });
+    const promises = deps.asyncValidators.map(async (v) => {
+      if (signal.aborted) return;
+      const issues = await v.validate({ data: state.data, uiState: state.uiState, signal });
+      if (!signal.aborted) allIssues.push(...issues);
+    });
     await Promise.all(promises);
     return allIssues;
   }
 
   return {
-    onFieldChange: (path) => triggerForPath(path, 'onChange'),
-    onFieldBlur: (path) => triggerForPath(path, 'onBlur'),
+    onFieldChange: (path) => triggerForPath(path, "onChange"),
+    onFieldBlur: (path) => triggerForPath(path, "onBlur"),
     cancelAll,
     runAllForSubmit,
   };

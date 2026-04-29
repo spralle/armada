@@ -1,5 +1,3 @@
-import type React from "react";
-import type { Column, Table } from "@tanstack/react-table";
 import {
   Button,
   DropdownMenu,
@@ -9,7 +7,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@ghost-shell/ui";
+import type { Column, Table } from "@tanstack/react-table";
 import { SlidersHorizontal } from "lucide-react";
+import type React from "react";
 
 function getColumnLabel(column: Column<unknown, unknown>): string {
   const meta = column.columnDef.meta as Record<string, unknown> | undefined;
@@ -52,14 +52,8 @@ interface DataTableViewOptionsProps<TData> {
   onToggleAll?: (visible: boolean) => void;
 }
 
-export function DataTableViewOptions<TData>({
-  table,
-  onColumnToggle,
-  onToggleAll,
-}: DataTableViewOptionsProps<TData>) {
-  const allColumns = table
-    .getAllColumns()
-    .filter((col) => typeof col.accessorFn !== "undefined" && col.getCanHide());
+export function DataTableViewOptions<TData>({ table, onColumnToggle, onToggleAll }: DataTableViewOptionsProps<TData>) {
+  const allColumns = table.getAllColumns().filter((col) => typeof col.accessorFn !== "undefined" && col.getCanHide());
 
   const allVisible = allColumns.every((col) => col.getIsVisible());
 
@@ -107,11 +101,7 @@ export function DataTableViewOptions<TData>({
               {(() => {
                 const priority = getColumnPriority(column as Column<unknown, unknown>);
                 if (!priority || priority === "default") return null;
-                return (
-                  <span style={priorityStyles[priority]}>
-                    {priorityIcons[priority]}
-                  </span>
-                );
+                return <span style={priorityStyles[priority]}>{priorityIcons[priority]}</span>;
               })()}
             </span>
           </DropdownMenuCheckboxItem>

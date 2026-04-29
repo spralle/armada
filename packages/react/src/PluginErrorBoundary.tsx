@@ -1,4 +1,4 @@
-import { Component, type ReactNode, type ErrorInfo } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface PluginErrorBoundaryProps {
   pluginId: string;
@@ -19,11 +19,7 @@ export class PluginErrorBoundary extends Component<PluginErrorBoundaryProps, Plu
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error(
-      `[PluginErrorBoundary] Plugin '${this.props.pluginId}' render error:`,
-      error,
-      info.componentStack,
-    );
+    console.error(`[PluginErrorBoundary] Plugin '${this.props.pluginId}' render error:`, error, info.componentStack);
   }
 
   render(): ReactNode {

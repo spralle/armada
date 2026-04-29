@@ -1,6 +1,6 @@
-import type { FormDispatchResult } from './contracts.js';
-import type { FieldMetaEntry } from './state.js';
-import { shiftFieldMeta, clearChildFieldMeta, swapFieldMeta } from './field-meta-shift.js';
+import type { FormDispatchResult } from "./contracts.js";
+import { clearChildFieldMeta, shiftFieldMeta, swapFieldMeta } from "./field-meta-shift.js";
+import type { FieldMetaEntry } from "./state.js";
 
 export interface ArrayHelperDeps {
   readonly get: () => unknown;

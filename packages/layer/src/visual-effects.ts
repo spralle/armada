@@ -5,11 +5,7 @@
  * Apply visual effects (opacity, backdrop-filter) to a surface element.
  * Called during surface mount and when effects change dynamically.
  */
-export function applyVisualEffects(
-  element: HTMLElement,
-  opacity?: number,
-  backdropFilter?: string,
-): void {
+export function applyVisualEffects(element: HTMLElement, opacity?: number, backdropFilter?: string): void {
   // Set CSS opacity (default 1.0)
   if (opacity !== undefined && opacity !== 1) {
     element.style.opacity = String(opacity);

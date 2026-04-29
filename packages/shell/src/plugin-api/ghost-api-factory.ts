@@ -1,39 +1,27 @@
-import type {
-  ActivationContext,
-  Disposable,
-  GhostApi,
-  PluginServices,
-} from "@ghost-shell/contracts";
+import type { ActivationContext, Disposable, GhostApi, PluginServices } from "@ghost-shell/contracts";
 import {
-  createActionService,
   type ActionServiceDependencies,
   type ActionServiceWithEmitter,
+  createActionService,
 } from "./action-service.js";
+import { createMenuService, type MenuServiceDependencies } from "./menu-service.js";
+import { createViewService, type ViewServiceDeps } from "./view-service.js";
 import {
   createWindowService,
   type WindowServiceDependencies,
   type WindowServiceWithEmitter,
 } from "./window-service.js";
 import {
-  createViewService,
-  type ViewServiceDeps,
-} from "./view-service.js";
-import {
   createWorkspaceService,
   type WorkspaceServiceDependencies,
   type WorkspaceServiceWithEmitter,
 } from "./workspace-service-impl.js";
-import {
-  createMenuService,
-  type MenuServiceDependencies,
-} from "./menu-service.js";
 
 /**
  * Dependencies needed to create a scoped GhostApi for a plugin.
  * Composed from ActionServiceDependencies + WindowServiceDependencies + ViewServiceDeps + WorkspaceServiceDependencies.
  */
-export interface GhostApiFactoryDependencies
-  extends ActionServiceDependencies, WindowServiceDependencies {
+export interface GhostApiFactoryDependencies extends ActionServiceDependencies, WindowServiceDependencies {
   readonly viewServiceDeps: ViewServiceDeps;
   readonly workspaceServiceDeps: WorkspaceServiceDependencies;
   readonly menuServiceDeps: MenuServiceDependencies;
@@ -75,7 +63,5 @@ export function createGhostApi(deps: GhostApiFactoryDependencies): GhostApiInsta
  */
 export function createActivationContext(pluginId: string, services?: PluginServices): ActivationContext {
   const subscriptions: Disposable[] = [];
-  return services
-    ? { pluginId, subscriptions, services }
-    : { pluginId, subscriptions };
+  return services ? { pluginId, subscriptions, services } : { pluginId, subscriptions };
 }

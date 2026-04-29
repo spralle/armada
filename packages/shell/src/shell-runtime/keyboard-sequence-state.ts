@@ -1,5 +1,4 @@
-import type { KeybindingService } from "@ghost-shell/commands";
-import type { NormalizedKeybindingChord } from "@ghost-shell/commands";
+import type { KeybindingService, NormalizedKeybindingChord } from "@ghost-shell/commands";
 import type { KeyboardBindings } from "./keyboard-handlers.js";
 
 const SEQUENCE_TIMEOUT_KEY = "ghost.keybindings.sequenceTimeoutMs";
@@ -40,7 +39,9 @@ export function createSequenceStateManager(): SequenceStateManager {
 
   return {
     get: () => sequenceState,
-    set: (state) => { sequenceState = state; },
+    set: (state) => {
+      sequenceState = state;
+    },
     clear: () => {
       if (sequenceState?.timeoutHandle != null) {
         clearTimeout(sequenceState.timeoutHandle);
@@ -61,7 +62,7 @@ export function startSequenceTimeout(
     clearTimeout(sequenceState.timeoutHandle);
   }
   if (sequenceState) {
-    const timeoutChords = sequenceState.pressedChords.map(c => c.value);
+    const timeoutChords = sequenceState.pressedChords.map((c) => c.value);
     const handle = setTimeout(() => {
       if (debugKeybindings) {
         console.debug("[shell:keybinding] sequence-timeout", { chords: timeoutChords });

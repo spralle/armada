@@ -1,9 +1,6 @@
 // sync-status-service-registration.ts — SyncStatusService adapter and shell registration.
 
-import type {
-  SyncStatusService,
-  PluginContract,
-} from "@ghost-shell/contracts";
+import type { PluginContract, SyncStatusService } from "@ghost-shell/contracts";
 import { SYNC_STATUS_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
@@ -21,10 +18,7 @@ export interface SyncStatusServiceDeps {
 // Adapter factory + registration
 // ---------------------------------------------------------------------------
 
-export function registerSyncStatusServiceCapability(
-  registry: ShellPluginRegistry,
-  deps: SyncStatusServiceDeps,
-): void {
+export function registerSyncStatusServiceCapability(registry: ShellPluginRegistry, deps: SyncStatusServiceDeps): void {
   const service: SyncStatusService = {
     isSyncDegraded(): boolean {
       return deps.isSyncDegraded();
@@ -39,9 +33,7 @@ export function registerSyncStatusServiceCapability(
     },
     contributes: {
       capabilities: {
-        services: [
-          { id: SYNC_STATUS_SERVICE_ID, version: "1.0.0" },
-        ],
+        services: [{ id: SYNC_STATUS_SERVICE_ID, version: "1.0.0" }],
       },
     },
   };

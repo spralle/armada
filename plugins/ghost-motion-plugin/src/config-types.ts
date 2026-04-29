@@ -47,11 +47,23 @@ export interface GhostMotionConfig {
  * Children inherit from parents unless explicitly overridden.
  */
 export type AnimationName =
-  | "windows" | "windowsIn" | "windowsOut"
-  | "layers" | "layersIn" | "layersOut"
-  | "fade" | "fadeIn" | "fadeOut" | "fadeDim" | "fadeLayersIn" | "fadeLayersOut"
-  | "border" | "borderangle"
-  | "workspaces" | "workspacesIn" | "workspacesOut"
+  | "windows"
+  | "windowsIn"
+  | "windowsOut"
+  | "layers"
+  | "layersIn"
+  | "layersOut"
+  | "fade"
+  | "fadeIn"
+  | "fadeOut"
+  | "fadeDim"
+  | "fadeLayersIn"
+  | "fadeLayersOut"
+  | "border"
+  | "borderangle"
+  | "workspaces"
+  | "workspacesIn"
+  | "workspacesOut"
   | "edgePanel";
 
 /** Style variants allowed per animation category. */

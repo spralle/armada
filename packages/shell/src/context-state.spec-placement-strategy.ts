@@ -1,14 +1,14 @@
-import type { SpecHarness } from "./context-state.spec-harness.js";
-import type { DockNode, DockStackNode, DockSplitNode, DockTreeState, PlacementConfig } from "@ghost-shell/state";
+import type { DockNode, DockSplitNode, DockStackNode, DockTreeState, PlacementConfig } from "@ghost-shell/state";
 import {
-  createPlacementStrategyRegistry,
-  createTabsPlacementStrategy,
   createDwindlePlacementStrategy,
+  createPlacementStrategyRegistry,
   createStackPlacementStrategy,
+  createTabsPlacementStrategy,
   DEFAULT_PLACEMENT_CONFIG,
-  PLACEMENT_STRATEGY_CONFIG_KEY,
   DWINDLE_DIRECTION_CONFIG_KEY,
+  PLACEMENT_STRATEGY_CONFIG_KEY,
 } from "@ghost-shell/state";
+import type { SpecHarness } from "./context-state.spec-harness.js";
 
 function makeStack(id: string, tabs: string[], activeTabId?: string | null): DockStackNode {
   return {
@@ -102,7 +102,11 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
 
   h.test("config: config keys are correct", () => {
     h.assertEqual(PLACEMENT_STRATEGY_CONFIG_KEY, "ghost.shell.placement.strategy", "strategy config key");
-    h.assertEqual(DWINDLE_DIRECTION_CONFIG_KEY, "ghost.shell.placement.dwindleDirection", "dwindle direction config key");
+    h.assertEqual(
+      DWINDLE_DIRECTION_CONFIG_KEY,
+      "ghost.shell.placement.dwindleDirection",
+      "dwindle direction config key",
+    );
   });
 
   // ─── TabsPlacementStrategy ──────────────────────────────────────────
@@ -111,7 +115,7 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
     const strategy = createTabsPlacementStrategy();
     const result = strategy.place({ tabId: "t1", tree: emptyTree() });
     h.assertTruthy(result.tree.root, "root should exist");
-    h.assertEqual(result.tree.root!.kind, "stack", "root should be a stack");
+    h.assertEqual(result.tree.root?.kind, "stack", "root should be a stack");
     const stack = result.tree.root as DockStackNode;
     h.assertEqual(stack.tabIds.length, 1, "should have 1 tab");
     h.assertEqual(stack.tabIds[0], "t1", "tab should be t1");
@@ -157,7 +161,7 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
     const strategy = createDwindlePlacementStrategy();
     const result = strategy.place({ tabId: "t1", tree: emptyTree() });
     h.assertTruthy(result.tree.root, "root should exist");
-    h.assertEqual(result.tree.root!.kind, "stack", "should be a stack");
+    h.assertEqual(result.tree.root?.kind, "stack", "should be a stack");
     const stack = result.tree.root as DockStackNode;
     h.assertEqual(stack.tabIds[0], "t1", "tab is t1");
   });
@@ -166,7 +170,7 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
     const strategy = createDwindlePlacementStrategy();
     const tree = treeWith(makeStack("s1", ["t1"], "t1"));
     const result = strategy.place({ tabId: "t2", tree, dwindleDirection: "horizontal" });
-    h.assertEqual(result.tree.root!.kind, "split", "root should be split");
+    h.assertEqual(result.tree.root?.kind, "split", "root should be split");
     const split = result.tree.root as DockSplitNode;
     h.assertEqual(split.orientation, "horizontal", "should be horizontal");
     h.assertEqual(split.first.kind, "stack", "first child is stack");
@@ -194,7 +198,7 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
   h.test("dwindle: alternate direction alternates based on depth", () => {
     const strategy = createDwindlePlacementStrategy();
     // Start with a single stack
-    let tree = treeWith(makeStack("s1", ["t1"], "t1"));
+    const tree = treeWith(makeStack("s1", ["t1"], "t1"));
     // First dwindle at depth 0 → horizontal
     const r1 = strategy.place({ tabId: "t2", tree, dwindleDirection: "alternate" });
     const split1 = r1.tree.root as DockSplitNode;
@@ -254,7 +258,7 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
     const strategy = createDwindlePlacementStrategy();
     const tree = treeWith(makeStack("s1", ["t1"], "t1"));
     const result = strategy.place({ tabId: "t1", tree, dwindleDirection: "horizontal" });
-    h.assertEqual(result.tree.root!.kind, "stack", "should still be a stack (no split)");
+    h.assertEqual(result.tree.root?.kind, "stack", "should still be a stack (no split)");
   });
 
   // ─── StackPlacementStrategy ─────────────────────────────────────────
@@ -266,8 +270,8 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
     h.assertEqual(stack.tabIds[0], "t1", "tab is t1");
     h.assertEqual(stack.activeTabId, "t1", "active tab is t1");
     h.assertTruthy(stack.navHistory, "navHistory should exist");
-    h.assertEqual(stack.navHistory!.back.length, 0, "back should be empty");
-    h.assertEqual(stack.navHistory!.forward.length, 0, "forward should be empty");
+    h.assertEqual(stack.navHistory?.back.length, 0, "back should be empty");
+    h.assertEqual(stack.navHistory?.forward.length, 0, "forward should be empty");
   });
 
   h.test("stack: place pushes previous active to navHistory.back", () => {
@@ -276,8 +280,8 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
     const result = strategy.place({ tabId: "t2", tree });
     const stack = result.tree.root as DockStackNode;
     h.assertEqual(stack.activeTabId, "t2", "active should be t2");
-    h.assertEqual(stack.navHistory!.back.length, 1, "back should have 1 entry");
-    h.assertEqual(stack.navHistory!.back[0], "t1", "back[0] should be t1");
+    h.assertEqual(stack.navHistory?.back.length, 1, "back should have 1 entry");
+    h.assertEqual(stack.navHistory?.back[0], "t1", "back[0] should be t1");
   });
 
   h.test("stack: place clears navHistory.forward", () => {
@@ -288,48 +292,48 @@ export function registerPlacementStrategySpecs(h: SpecHarness): void {
     // that may still be in tabs. Let's just test the forward clearing.
     const result = strategy.place({ tabId: "t4", tree });
     const stack = result.tree.root as DockStackNode;
-    h.assertEqual(stack.navHistory!.forward.length, 0, "forward should be cleared");
+    h.assertEqual(stack.navHistory?.forward.length, 0, "forward should be cleared");
     h.assertEqual(stack.activeTabId, "t4", "active should be t4");
-    h.assertEqual(stack.navHistory!.back.length, 2, "back should have t1, t2");
+    h.assertEqual(stack.navHistory?.back.length, 2, "back should have t1, t2");
   });
 
   h.test("stack: navigateBack pops from back, pushes current to forward", () => {
     const strategy = createStackPlacementStrategy();
     const tree = treeWith(makeStackWithNav("s1", ["t1", "t2"], "t2", ["t1"], []));
-    const result = strategy.navigateBack!("s1", tree);
+    const result = strategy.navigateBack?.("s1", tree);
     h.assertTruthy(result, "result should not be null");
-    h.assertEqual(result!.activatedTabId, "t1", "should activate t1");
-    const stack = result!.tree.root as DockStackNode;
+    h.assertEqual(result?.activatedTabId, "t1", "should activate t1");
+    const stack = result?.tree.root as DockStackNode;
     h.assertEqual(stack.activeTabId, "t1", "active should be t1");
-    h.assertEqual(stack.navHistory!.back.length, 0, "back should be empty");
-    h.assertEqual(stack.navHistory!.forward.length, 1, "forward should have 1");
-    h.assertEqual(stack.navHistory!.forward[0], "t2", "forward[0] should be t2");
+    h.assertEqual(stack.navHistory?.back.length, 0, "back should be empty");
+    h.assertEqual(stack.navHistory?.forward.length, 1, "forward should have 1");
+    h.assertEqual(stack.navHistory?.forward[0], "t2", "forward[0] should be t2");
   });
 
   h.test("stack: navigateForward pops from forward, pushes current to back", () => {
     const strategy = createStackPlacementStrategy();
     const tree = treeWith(makeStackWithNav("s1", ["t1", "t2"], "t1", [], ["t2"]));
-    const result = strategy.navigateForward!("s1", tree);
+    const result = strategy.navigateForward?.("s1", tree);
     h.assertTruthy(result, "result should not be null");
-    h.assertEqual(result!.activatedTabId, "t2", "should activate t2");
-    const stack = result!.tree.root as DockStackNode;
+    h.assertEqual(result?.activatedTabId, "t2", "should activate t2");
+    const stack = result?.tree.root as DockStackNode;
     h.assertEqual(stack.activeTabId, "t2", "active should be t2");
-    h.assertEqual(stack.navHistory!.back.length, 1, "back should have 1");
-    h.assertEqual(stack.navHistory!.back[0], "t1", "back[0] should be t1");
-    h.assertEqual(stack.navHistory!.forward.length, 0, "forward should be empty");
+    h.assertEqual(stack.navHistory?.back.length, 1, "back should have 1");
+    h.assertEqual(stack.navHistory?.back[0], "t1", "back[0] should be t1");
+    h.assertEqual(stack.navHistory?.forward.length, 0, "forward should be empty");
   });
 
   h.test("stack: navigateBack with empty back returns null", () => {
     const strategy = createStackPlacementStrategy();
     const tree = treeWith(makeStackWithNav("s1", ["t1"], "t1", [], ["t2"]));
-    const result = strategy.navigateBack!("s1", tree);
+    const result = strategy.navigateBack?.("s1", tree);
     h.assertEqual(result, null, "should return null");
   });
 
   h.test("stack: navigateForward with empty forward returns null", () => {
     const strategy = createStackPlacementStrategy();
     const tree = treeWith(makeStackWithNav("s1", ["t1"], "t1", ["t2"], []));
-    const result = strategy.navigateForward!("s1", tree);
+    const result = strategy.navigateForward?.("s1", tree);
     h.assertEqual(result, null, "should return null");
   });
 

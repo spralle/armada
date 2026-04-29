@@ -1,4 +1,4 @@
-import type { PlacementHint, NavigationTarget, NavigationHints } from "../core/types.js";
+import type { NavigationHints, NavigationTarget, PlacementHint } from "../core/types.js";
 
 /**
  * Maps keyboard/mouse modifier combinations to placement hints.
@@ -58,7 +58,7 @@ export interface NavigationHandlerOptions {
   /** Custom modifier mapping. */
   readonly modifiers?: NavigationModifierMap | undefined;
   /** Callback invoked with the resolved navigation. Return false to cancel. */
-  readonly onBeforeNavigate?: (target: NavigationTarget, hints: NavigationHints) => boolean | void;
+  readonly onBeforeNavigate?: (target: NavigationTarget, hints: NavigationHints) => boolean | undefined;
 }
 
 /**

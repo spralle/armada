@@ -1,13 +1,10 @@
 import type { ActionKeybinding } from "./action-surface.js";
-import type {
-  KeybindingOverrideEntry,
-  KeybindingPersistence,
-} from "./keybinding-persistence-contracts.js";
-import type { KeybindingLayer } from "./keybinding-resolver.js";
-import { normalizeConfiguredSequence } from "./keybinding-normalizer.js";
-import type { NormalizedKeybindingSequence } from "./keybinding-normalizer.js";
 import type { KeybindingExportEnvelope, KeybindingImportResult } from "./keybinding-import-export.js";
 import { exportKeybindingOverrides, validateKeybindingImport } from "./keybinding-import-export.js";
+import type { NormalizedKeybindingSequence } from "./keybinding-normalizer.js";
+import { normalizeConfiguredSequence } from "./keybinding-normalizer.js";
+import type { KeybindingOverrideEntry, KeybindingPersistence } from "./keybinding-persistence-contracts.js";
+import type { KeybindingLayer } from "./keybinding-resolver.js";
 
 // ---------------------------------------------------------------------------
 // Public interfaces
@@ -49,9 +46,7 @@ export interface KeybindingOverrideManagerOptions {
 // Factory
 // ---------------------------------------------------------------------------
 
-export function createKeybindingOverrideManager(
-  options: KeybindingOverrideManagerOptions,
-): KeybindingOverrideManager {
+export function createKeybindingOverrideManager(options: KeybindingOverrideManagerOptions): KeybindingOverrideManager {
   const { persistence, getDefaultBindings, getPluginBindings } = options;
 
   let overrides: KeybindingOverrideEntry[] = persistence.load();
@@ -191,10 +186,7 @@ export function createKeybindingOverrideManager(
   }
 
   function buildKnownActions(): Set<string> {
-    return new Set<string>([
-      ...getDefaultBindings().map((b) => b.action),
-      ...getPluginBindings().map((b) => b.action),
-    ]);
+    return new Set<string>([...getDefaultBindings().map((b) => b.action), ...getPluginBindings().map((b) => b.action)]);
   }
 
   return {

@@ -1,36 +1,35 @@
+export type {
+  FocusGrabManager,
+  FocusGrabOptions,
+  KeyboardExclusiveEntry,
+  KeyboardExclusiveManager,
+  LayerSurfaceContextOptions,
+  SessionLockManager,
+  SessionLockManagerOptions,
+  StackedSurface,
+} from "@ghost-shell/layer";
 export {
-  BUILTIN_LAYERS,
-  LayerRegistry,
-  createLayerContainer,
-  removeLayerContainer,
-  computeAnchorStyles,
-  computeExclusiveZones,
-  getAnchorKey,
   applyAutoStacking,
-  createFocusGrabManager,
   applyInputBehavior,
   applyKeyboardInteractivity,
-  createKeyboardExclusiveManager,
-  createSessionLockManager,
-  createLayerSurfaceContext,
   applyVisualEffects,
+  BUILTIN_LAYERS,
+  computeAnchorStyles,
+  computeExclusiveZones,
+  createFocusGrabManager,
+  createKeyboardExclusiveManager,
+  createLayerContainer,
+  createLayerSurfaceContext,
+  createSessionLockManager,
+  getAnchorKey,
+  LayerRegistry,
+  removeLayerContainer,
   setDynamicOpacity,
 } from "@ghost-shell/layer";
 
 export type {
-  StackedSurface,
-  FocusGrabOptions,
-  FocusGrabManager,
-  KeyboardExclusiveEntry,
-  KeyboardExclusiveManager,
-  SessionLockManager,
-  SessionLockManagerOptions,
-  LayerSurfaceContextOptions,
-} from "@ghost-shell/layer";
-
-export type {
-  MountSurfaceComponentFn,
-  LayerSurfaceRendererOptions,
   LayerSurfaceRenderer,
+  LayerSurfaceRendererOptions,
+  MountSurfaceComponentFn,
 } from "./surface-renderer.js";
 export { createLayerSurfaceRenderer } from "./surface-renderer.js";

@@ -1,15 +1,13 @@
 import type { PluginContract, PluginServices } from "@ghost-shell/contracts";
-import {
-  createCapabilityRegistry,
-  pickServiceModuleExport,
-} from "./capability-registry.js";
-import {
-  createRuntimeFirstPluginLoader,
-} from "./plugin-loader.js";
+import type { CapabilityRegistry } from "./capability-registry.js";
+import { createCapabilityRegistry, pickServiceModuleExport } from "./capability-registry.js";
+import { createRuntimeFirstPluginLoader } from "./plugin-loader.js";
 import { createActivationController } from "./plugin-registry-activation.js";
-import { resolveComponentCapabilityFromStates, resolveServiceCapabilityFromStates } from "./plugin-registry-capabilities.js";
+import {
+  resolveComponentCapabilityFromStates,
+  resolveServiceCapabilityFromStates,
+} from "./plugin-registry-capabilities.js";
 import { readCapabilityServices } from "./plugin-registry-contract.js";
-import { cascadeDisableDependents, disposeActivationSubscriptions, resetRuntimeState, safeCallDeactivate } from "./plugin-registry-lifecycle.js";
 import {
   cloneLifecycle,
   cloneRuntimeFailure,
@@ -17,6 +15,12 @@ import {
   pushDiagnostic,
   transitionLifecycle,
 } from "./plugin-registry-diagnostics.js";
+import {
+  cascadeDisableDependents,
+  disposeActivationSubscriptions,
+  resetRuntimeState,
+  safeCallDeactivate,
+} from "./plugin-registry-lifecycle.js";
 import type {
   PluginActivationTrigger,
   PluginRegistryDiagnostic,
@@ -24,10 +28,6 @@ import type {
   ShellPluginRegistry,
   ShellPluginRegistryOptions,
 } from "./plugin-registry-types.js";
-
-import type {
-  CapabilityRegistry,
-} from "./capability-registry.js";
 
 function resolveServiceFromRegistry<T = unknown>(
   serviceId: string,
@@ -48,7 +48,7 @@ function resolveServiceFromRegistry<T = unknown>(
 
   if (state.servicesModule && state.contract) {
     const providerServices = readCapabilityServices(state.contract);
-    const cap = providerServices.find(s => s.id === serviceId);
+    const cap = providerServices.find((s) => s.id === serviceId);
     if (cap) {
       return (pickServiceModuleExport(state.servicesModule, cap) as T) ?? null;
     }
@@ -68,9 +68,7 @@ export type {
   ShellPluginRegistryOptions,
 } from "./plugin-registry-types.js";
 
-export function createShellPluginRegistry(
-  options: ShellPluginRegistryOptions = {},
-): ShellPluginRegistry {
+export function createShellPluginRegistry(options: ShellPluginRegistryOptions = {}): ShellPluginRegistry {
   const diagnostics: PluginRegistryDiagnostic[] = [];
   const pluginLoader =
     options.pluginLoader ??
@@ -113,18 +111,23 @@ export function createShellPluginRegistry(
   }
 
   let tenantId = "local";
-  const builtinContracts: Array<{ contract: PluginContract; serviceInstances?: Record<string, unknown>; module?: unknown }> = [];
+  const builtinContracts: Array<{
+    contract: PluginContract;
+    serviceInstances?: Record<string, unknown>;
+    module?: unknown;
+  }> = [];
 
-  async function activateByTrigger(
-    pluginId: string,
-    trigger: { type: string; id: string },
-  ): Promise<boolean> {
+  async function activateByTrigger(pluginId: string, trigger: { type: string; id: string }): Promise<boolean> {
     const result = await ensureActivated(pluginId, trigger as PluginActivationTrigger);
     notifyListeners();
     return result;
   }
 
-  function seedBuiltinState(contract: PluginContract, serviceInstances?: Record<string, unknown>, module?: unknown): void {
+  function seedBuiltinState(
+    contract: PluginContract,
+    serviceInstances?: Record<string, unknown>,
+    module?: unknown,
+  ): void {
     const pluginId = contract.manifest.id;
     const instanceMap = serviceInstances ? new Map(Object.entries(serviceInstances)) : null;
     states.set(pluginId, {
@@ -238,7 +241,7 @@ export function createShellPluginRegistry(
     },
     async preloadContract(pluginId) {
       const state = states.get(pluginId);
-      if (!state || !state.enabled) return null;
+      if (!state?.enabled) return null;
       // Already loaded (builtin or previously preloaded)
       if (state.contract) return state.contract;
 
@@ -255,12 +258,22 @@ export function createShellPluginRegistry(
     },
     async resolveComponentCapability(requesterPluginId, capabilityId) {
       return resolveComponentCapabilityFromStates(
-        requesterPluginId, capabilityId, states, capabilityRegistry, diagnostics, pluginLoader,
+        requesterPluginId,
+        capabilityId,
+        states,
+        capabilityRegistry,
+        diagnostics,
+        pluginLoader,
       );
     },
     async resolveServiceCapability(requesterPluginId, capabilityId) {
       return resolveServiceCapabilityFromStates(
-        requesterPluginId, capabilityId, states, capabilityRegistry, diagnostics, pluginLoader,
+        requesterPluginId,
+        capabilityId,
+        states,
+        capabilityRegistry,
+        diagnostics,
+        pluginLoader,
       );
     },
     getService<T = unknown>(serviceId: string): T | null {

@@ -1,14 +1,12 @@
-import type { CanonicalPath, CanonicalSegment, Namespace } from './path.js';
-import { FormrError } from './errors.js';
-import { parseDot } from './path-dot.js';
-import { parsePointer } from './path-pointer.js';
+import { FormrError } from "./errors.js";
+import type { CanonicalPath, CanonicalSegment, Namespace } from "./path.js";
+import { parseDot } from "./path-dot.js";
+import { parsePointer } from "./path-pointer.js";
 
-const DOT_SAFE_SEGMENT_RE = /^[a-zA-Z0-9_\-]+$/;
+const DOT_SAFE_SEGMENT_RE = /^[a-zA-Z0-9_-]+$/;
 const NUMERIC_INDEX_RE = /^(?:0|[1-9]\d*)$/;
 
-const DEFAULT_NAMESPACES: readonly NamespaceConfig[] = [
-  { prefix: '$ui', namespace: 'ui' },
-];
+const DEFAULT_NAMESPACES: readonly NamespaceConfig[] = [{ prefix: "$ui", namespace: "ui" }];
 
 const PATH_CACHE_MAX = 1000;
 const pathCache = new Map<string, CanonicalPath>();
@@ -34,8 +32,8 @@ export function parsePath(input: string, options?: ParsePathOptions): CanonicalP
   const cached = pathCache.get(input);
   if (cached) return cached;
 
-  if (input === '') {
-    throw new FormrError('FORMR_PATH_EMPTY', 'Path must not be empty');
+  if (input === "") {
+    throw new FormrError("FORMR_PATH_EMPTY", "Path must not be empty");
   }
 
   const namespaces = options?.namespaces ?? DEFAULT_NAMESPACES;
@@ -44,14 +42,14 @@ export function parsePath(input: string, options?: ParsePathOptions): CanonicalP
   for (const ns of namespaces) {
     if (input.startsWith(`${ns.prefix}/`)) {
       throw new FormrError(
-        'FORMR_PATH_MIXED_NAMESPACE',
+        "FORMR_PATH_MIXED_NAMESPACE",
         `Mixed namespace form ${ns.prefix}/... is not allowed; use ${ns.prefix}. dot notation`,
       );
     }
   }
 
   let result: CanonicalPath;
-  if (input.startsWith('/')) {
+  if (input.startsWith("/")) {
     result = parsePointer(input, namespaces);
   } else {
     result = parseDot(input, namespaces);
@@ -68,18 +66,15 @@ export function parsePath(input: string, options?: ParsePathOptions): CanonicalP
  * Serialize a canonical data-namespace path to JSON Pointer (RFC 6901).
  */
 export function toPointer(path: CanonicalPath): string {
-  if (path.namespace === 'ui') {
-    throw new FormrError(
-      'FORMR_PATH_MIXED_NAMESPACE',
-      'Cannot convert ui-namespace path to JSON Pointer',
-    );
+  if (path.namespace === "ui") {
+    throw new FormrError("FORMR_PATH_MIXED_NAMESPACE", "Cannot convert ui-namespace path to JSON Pointer");
   }
-  return '/' + path.segments.map(encodePointerSegment).join('/');
+  return `/${path.segments.map(encodePointerSegment).join("/")}`;
 }
 
 function encodePointerSegment(seg: CanonicalSegment): string {
   const s = String(seg);
-  return s.replace(/~/g, '~0').replace(/\//g, '~1');
+  return s.replace(/~/g, "~0").replace(/\//g, "~1");
 }
 
 /**
@@ -92,18 +87,18 @@ export function toDot(path: CanonicalPath): string {
     const s = String(seg);
     if (!DOT_SAFE_SEGMENT_RE.test(s)) {
       throw new FormrError(
-        'FORMR_PATH_NOT_DOT_SAFE',
+        "FORMR_PATH_NOT_DOT_SAFE",
         `Segment "${s}" contains characters not representable in dot notation`,
       );
     }
-    if (typeof seg === 'string' && NUMERIC_INDEX_RE.test(seg)) {
+    if (typeof seg === "string" && NUMERIC_INDEX_RE.test(seg)) {
       throw new FormrError(
-        'FORMR_PATH_NOT_DOT_SAFE',
+        "FORMR_PATH_NOT_DOT_SAFE",
         `String segment "${seg}" is ambiguous in dot notation (looks numeric)`,
       );
     }
   }
 
-  const dotPath = path.segments.map(String).join('.');
-  return path.namespace === 'ui' ? `$ui.${dotPath}` : dotPath;
+  const dotPath = path.segments.map(String).join(".");
+  return path.namespace === "ui" ? `$ui.${dotPath}` : dotPath;
 }

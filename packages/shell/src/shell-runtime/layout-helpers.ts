@@ -1,5 +1,5 @@
-import { applyPaneResize, type ShellLayoutState } from "../layout.js";
 import type { LayoutHost, PersistenceHost } from "../app/types.js";
+import { applyPaneResize, type ShellLayoutState } from "../layout.js";
 
 export function applyLayout(root: HTMLElement, layout: ShellLayoutState): void {
   root.style.setProperty("--side-size", `${Math.round(layout.sideSize * 100)}vw`);
@@ -12,27 +12,31 @@ export function setupResize(root: HTMLElement, runtime: LayoutHost & Persistence
   const disposers: Array<() => void> = [];
 
   if (sideSplitter) {
-    disposers.push(registerDrag(sideSplitter, (delta) => {
-      runtime.layout = applyPaneResize(runtime.layout, {
-        pane: "side",
-        deltaPx: delta,
-        containerPx: window.innerWidth,
-      });
-      applyLayout(root, runtime.layout);
-      runtime.persistence.save(runtime.layout);
-    }));
+    disposers.push(
+      registerDrag(sideSplitter, (delta) => {
+        runtime.layout = applyPaneResize(runtime.layout, {
+          pane: "side",
+          deltaPx: delta,
+          containerPx: window.innerWidth,
+        });
+        applyLayout(root, runtime.layout);
+        runtime.persistence.save(runtime.layout);
+      }),
+    );
   }
 
   if (secondarySplitter) {
-    disposers.push(registerDrag(secondarySplitter, (delta) => {
-      runtime.layout = applyPaneResize(runtime.layout, {
-        pane: "secondary",
-        deltaPx: -delta,
-        containerPx: window.innerHeight,
-      });
-      applyLayout(root, runtime.layout);
-      runtime.persistence.save(runtime.layout);
-    }));
+    disposers.push(
+      registerDrag(secondarySplitter, (delta) => {
+        runtime.layout = applyPaneResize(runtime.layout, {
+          pane: "secondary",
+          deltaPx: -delta,
+          containerPx: window.innerHeight,
+        });
+        applyLayout(root, runtime.layout);
+        runtime.persistence.save(runtime.layout);
+      }),
+    );
   }
 
   return () => {

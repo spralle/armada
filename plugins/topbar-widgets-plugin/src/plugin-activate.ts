@@ -1,4 +1,4 @@
-import type { GhostApi, ActivationContext } from "@ghost-shell/contracts/plugin";
+import type { ActivationContext, GhostApi } from "@ghost-shell/contracts/plugin";
 
 let ghostApi: GhostApi | undefined;
 

@@ -1,12 +1,8 @@
-import type { SpecHarness } from "../context-state.spec-harness.js";
-import {
-  validateGodModeAuth,
-  activateElevatedSession,
-  GOD_MODE_ACTION_ID,
-} from "./god-mode.js";
-import type { ShellRuntime } from "../app/types.js";
 import { buildActionSurface } from "../action-surface.js";
+import type { ShellRuntime } from "../app/types.js";
+import type { SpecHarness } from "../context-state.spec-harness.js";
 import { createDefaultShellKeybindingContract } from "./default-shell-keybindings.js";
+import { activateElevatedSession, GOD_MODE_ACTION_ID, validateGodModeAuth } from "./god-mode.js";
 
 function createMinimalRuntime(): ShellRuntime {
   return {
@@ -38,25 +34,19 @@ export function registerGodModeSpecs(harness: SpecHarness): void {
 
   test("god-mode: GOD_MODE_ACTION_ID is registered in action surface", () => {
     const runtime = createMinimalRuntime();
-    const action = runtime.actionSurface.actions.find(
-      (a: { id: string }) => a.id === GOD_MODE_ACTION_ID,
-    );
+    const action = runtime.actionSurface.actions.find((a: { id: string }) => a.id === GOD_MODE_ACTION_ID);
     assertTruthy(action !== undefined, "god-mode action should exist in action surface");
   });
 
   test("god-mode: action is marked hidden in action surface", () => {
     const runtime = createMinimalRuntime();
-    const action = runtime.actionSurface.actions.find(
-      (a: { id: string }) => a.id === GOD_MODE_ACTION_ID,
-    );
+    const action = runtime.actionSurface.actions.find((a: { id: string }) => a.id === GOD_MODE_ACTION_ID);
     assertEqual(action?.hidden, true, "god-mode action should be hidden");
   });
 
   test("god-mode: keybinding is marked hidden in action surface", () => {
     const runtime = createMinimalRuntime();
-    const kb = runtime.actionSurface.keybindings.find(
-      (k: { action: string }) => k.action === GOD_MODE_ACTION_ID,
-    );
+    const kb = runtime.actionSurface.keybindings.find((k: { action: string }) => k.action === GOD_MODE_ACTION_ID);
     assertTruthy(kb !== undefined, "god-mode keybinding should exist");
     assertEqual(kb?.hidden, true, "god-mode keybinding should be hidden");
   });
@@ -77,9 +67,7 @@ export function registerGodModeSpecs(harness: SpecHarness): void {
 
   test("god-mode: keybinding is ctrl+shift+alt+g o d", () => {
     const runtime = createMinimalRuntime();
-    const kb = runtime.actionSurface.keybindings.find(
-      (k: { action: string }) => k.action === GOD_MODE_ACTION_ID,
-    );
+    const kb = runtime.actionSurface.keybindings.find((k: { action: string }) => k.action === GOD_MODE_ACTION_ID);
     assertEqual(kb?.keybinding, "ctrl+shift+alt+g o d", "keybinding should be the 3-chord sequence");
   });
 }

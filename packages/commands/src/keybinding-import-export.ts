@@ -1,5 +1,5 @@
-import type { KeybindingOverrideEntry } from "./keybinding-persistence-contracts.js";
 import { normalizeConfiguredSequence } from "./keybinding-normalizer.js";
+import type { KeybindingOverrideEntry } from "./keybinding-persistence-contracts.js";
 
 // ---------------------------------------------------------------------------
 // Export envelope
@@ -26,9 +26,7 @@ export interface KeybindingImportResult {
 // Export
 // ---------------------------------------------------------------------------
 
-export function exportKeybindingOverrides(
-  overrides: KeybindingOverrideEntry[],
-): KeybindingExportEnvelope {
+export function exportKeybindingOverrides(overrides: KeybindingOverrideEntry[]): KeybindingExportEnvelope {
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
@@ -43,10 +41,7 @@ export function exportKeybindingOverrides(
 // Import validation
 // ---------------------------------------------------------------------------
 
-export function validateKeybindingImport(
-  input: unknown,
-  knownActions: ReadonlySet<string>,
-): KeybindingImportResult {
+export function validateKeybindingImport(input: unknown, knownActions: ReadonlySet<string>): KeybindingImportResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   const entries: KeybindingOverrideEntry[] = [];
@@ -59,9 +54,7 @@ export function validateKeybindingImport(
   const record = input as Record<string, unknown>;
 
   if (record.version !== 1) {
-    errors.push(
-      `Unsupported version: ${String(record.version)}. Only version 1 is supported.`,
-    );
+    errors.push(`Unsupported version: ${String(record.version)}. Only version 1 is supported.`);
     return { success: false, entries, warnings, errors };
   }
 
@@ -94,16 +87,12 @@ export function validateKeybindingImport(
 
     const normalized = normalizeConfiguredSequence(entry.keybinding);
     if (!normalized) {
-      warnings.push(
-        `Entry ${i}: skipped — invalid keybinding "${entry.keybinding}".`,
-      );
+      warnings.push(`Entry ${i}: skipped — invalid keybinding "${entry.keybinding}".`);
       continue;
     }
 
     if (!knownActions.has(entry.action)) {
-      warnings.push(
-        `Entry ${i}: action "${entry.action}" is not recognised (may be from another version).`,
-      );
+      warnings.push(`Entry ${i}: action "${entry.action}" is not recognised (may be from another version).`);
     }
 
     entries.push({ action: entry.action, keybinding: normalized.value });

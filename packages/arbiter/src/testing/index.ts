@@ -1,5 +1,5 @@
-import type { ProductionRule, FiringResult, RuleSession } from '../contracts.js';
-import { createSession } from '../session.js';
+import type { FiringResult, ProductionRule, RuleSession } from "../contracts.js";
+import { createSession } from "../session.js";
 
 /** Convenience factory for tests — minimal config. */
 export function createTestSession(
@@ -10,10 +10,7 @@ export function createTestSession(
 }
 
 /** Fire rules against state in one call. */
-export function fireWith(
-  rules: readonly ProductionRule[],
-  state: Readonly<Record<string, unknown>>,
-): FiringResult {
+export function fireWith(rules: readonly ProductionRule[], state: Readonly<Record<string, unknown>>): FiringResult {
   const session = createSession({ rules, initialState: state });
   return session.fire();
 }
@@ -24,8 +21,7 @@ export function assertRuleFired(result: FiringResult, ruleName: string): void {
   if (!found) {
     const fired = [...new Set(result.changes.map((c) => c.ruleName))];
     throw new Error(
-      `Expected rule "${ruleName}" to fire, but it did not. ` +
-      `Rules that fired: [${fired.join(', ')}]`,
+      `Expected rule "${ruleName}" to fire, but it did not. ` + `Rules that fired: [${fired.join(", ")}]`,
     );
   }
 }
@@ -43,8 +39,7 @@ export function assertState(session: RuleSession, path: string, expected: unknow
   const actual = session.getPath(path);
   if (!deepEqual(actual, expected)) {
     throw new Error(
-      `State mismatch at "${path}": ` +
-      `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+      `State mismatch at "${path}": ` + `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
     );
   }
 }
@@ -52,7 +47,7 @@ export function assertState(session: RuleSession, path: string, expected: unknow
 function deepEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
   if (a === null || b === null) return false;
-  if (typeof a !== 'object' || typeof b !== 'object') return false;
+  if (typeof a !== "object" || typeof b !== "object") return false;
 
   if (Array.isArray(a) !== Array.isArray(b)) return false;
   if (Array.isArray(a) && Array.isArray(b)) {

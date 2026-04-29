@@ -1,12 +1,15 @@
-import { describe, test, expect } from "bun:test";
-import { buildActionSurface, resolveMenuActions } from "../action-surface.js";
+import { describe, expect, test } from "bun:test";
 import type { ActionSurface } from "../action-surface.js";
+import { buildActionSurface, resolveMenuActions } from "../action-surface.js";
 
-function makeContract(pluginId: string, contributions: {
-  actions?: Array<{ id: string; title: string; intent: string; when?: any; hidden?: boolean }>;
-  menus?: Array<{ menu: string; action: string; group?: string; order?: number; when?: any }>;
-  keybindings?: Array<{ action: string; keybinding: string; when?: any }>;
-}) {
+function makeContract(
+  pluginId: string,
+  contributions: {
+    actions?: Array<{ id: string; title: string; intent: string; when?: any; hidden?: boolean }>;
+    menus?: Array<{ menu: string; action: string; group?: string; order?: number; when?: any }>;
+    keybindings?: Array<{ action: string; keybinding: string; when?: any }>;
+  },
+) {
   return {
     manifest: { id: pluginId },
     contributes: contributions,
@@ -31,8 +34,8 @@ describe("buildActionSurface", () => {
     });
     const surface = buildActionSurface([contract]);
     expect(surface.actions).toHaveLength(1);
-    expect(surface.actions[0]!.id).toBe("action-1");
-    expect(surface.actions[0]!.pluginId).toBe("plugin-a");
+    expect(surface.actions[0]?.id).toBe("action-1");
+    expect(surface.actions[0]?.pluginId).toBe("plugin-a");
   });
 
   test("deduplicates actions by id", () => {
@@ -44,7 +47,7 @@ describe("buildActionSurface", () => {
     });
     const surface = buildActionSurface([c1, c2]);
     expect(surface.actions).toHaveLength(1);
-    expect(surface.actions[0]!.pluginId).toBe("plugin-a");
+    expect(surface.actions[0]?.pluginId).toBe("plugin-a");
   });
 
   test("filters menus to only known actions", () => {
@@ -57,7 +60,7 @@ describe("buildActionSurface", () => {
     });
     const surface = buildActionSurface([contract]);
     expect(surface.menus).toHaveLength(1);
-    expect(surface.menus[0]!.action).toBe("action-1");
+    expect(surface.menus[0]?.action).toBe("action-1");
   });
 
   test("filters keybindings to only known actions", () => {
@@ -88,7 +91,7 @@ describe("resolveMenuActions", () => {
     const surface = buildActionSurface([contract]);
     const result = resolveMenuActions(surface, "context", {}, alwaysTrueMatcher as any);
     expect(result).toHaveLength(1);
-    expect(result[0]!.id).toBe("a1");
+    expect(result[0]?.id).toBe("a1");
   });
 
   test("returns empty array for unknown menu", () => {

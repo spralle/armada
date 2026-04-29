@@ -6,8 +6,8 @@
  *   bun run scripts/sync-manifests.ts --check   # diff-only, exit 1 on drift
  */
 
-import { readdir, readFile, writeFile, access } from "node:fs/promises";
-import { join, resolve, dirname } from "node:path";
+import { access, readdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -33,9 +33,7 @@ function sortKeysDeep(value: unknown): unknown {
   return value;
 }
 
-async function resolveManifestExport(
-  manifestPath: string,
-): Promise<Record<string, unknown> | null> {
+async function resolveManifestExport(manifestPath: string): Promise<Record<string, unknown> | null> {
   const mod = await import(manifestPath);
   const manifest = mod.pluginManifest ?? mod.manifest ?? mod.default;
   if (manifest && typeof manifest === "object" && !Array.isArray(manifest)) {
@@ -49,7 +47,10 @@ async function syncPlugin(pluginDir: string): Promise<SyncResult> {
   const manifestPath = join(pluginDir, "src", "manifest.ts");
   const pkgPath = join(pluginDir, "package.json");
 
-  const manifestExists = await access(manifestPath).then(() => true, () => false);
+  const manifestExists = await access(manifestPath).then(
+    () => true,
+    () => false,
+  );
   if (!manifestExists) {
     return { plugin: pluginName, status: "skipped" };
   }
@@ -79,16 +80,14 @@ async function syncPlugin(pluginDir: string): Promise<SyncResult> {
   }
 
   pkg.ghost = sortedManifest;
-  await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + "\n", "utf-8");
+  await writeFile(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, "utf-8");
   console.log(`✓ ${pluginName}: updated ghost key`);
   return { plugin: pluginName, status: "updated" };
 }
 
 async function main(): Promise<void> {
   const entries = await readdir(PLUGINS_DIR, { withFileTypes: true });
-  const pluginDirs = entries
-    .filter((e) => e.isDirectory())
-    .map((e) => join(PLUGINS_DIR, e.name));
+  const pluginDirs = entries.filter((e) => e.isDirectory()).map((e) => join(PLUGINS_DIR, e.name));
 
   const results: SyncResult[] = [];
   for (const dir of pluginDirs) {
@@ -100,14 +99,10 @@ async function main(): Promise<void> {
   const skipped = results.filter((r) => r.status === "skipped");
   const unchanged = results.filter((r) => r.status === "unchanged");
 
-  console.log(
-    `\nSummary: ${updated.length} updated, ${unchanged.length} unchanged, ${skipped.length} skipped`,
-  );
+  console.log(`\nSummary: ${updated.length} updated, ${unchanged.length} unchanged, ${skipped.length} skipped`);
 
   if (CHECK_MODE && drifted.length > 0) {
-    console.error(
-      `\n${drifted.length} plugin(s) have drifted ghost keys. Run 'bun run sync-manifests' to fix.`,
-    );
+    console.error(`\n${drifted.length} plugin(s) have drifted ghost keys. Run 'bun run sync-manifests' to fix.`);
     process.exit(1);
   }
 }

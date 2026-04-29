@@ -10,10 +10,7 @@ import type { LayerSurfaceContext } from "@ghost-shell/contracts/layer";
  * - Theme-aware via inherited CSS custom properties
  * - Opacity: 0.85
  */
-export function mount(
-  target: HTMLDivElement,
-  context: LayerSurfaceContext,
-): (() => void) | void {
+export function mount(target: HTMLDivElement, _context: LayerSurfaceContext): (() => void) | undefined {
   const style = document.createElement("style");
   style.textContent = `
     @keyframes example-bg-gradient-shift {

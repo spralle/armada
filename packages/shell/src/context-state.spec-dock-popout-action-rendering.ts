@@ -19,10 +19,10 @@ export function registerDockPopoutActionRenderingSpecs(harness: SpecHarness): vo
       true,
     );
 
-    assertTruthy(markup.includes("class=\"part-actions\""), "dock panel should render action container");
-    assertTruthy(markup.includes("data-action=\"popout\""), "dock panel should render popout action");
-    assertTruthy(markup.includes("data-tab-id=\"tab-1\""), "popout action should expose tab id");
-    assertTruthy(markup.includes("data-part-id=\"tab-1\""), "popout action should expose part id");
+    assertTruthy(markup.includes('class="part-actions"'), "dock panel should render action container");
+    assertTruthy(markup.includes('data-action="popout"'), "dock panel should render popout action");
+    assertTruthy(markup.includes('data-tab-id="tab-1"'), "popout action should expose tab id");
+    assertTruthy(markup.includes('data-part-id="tab-1"'), "popout action should expose part id");
     assertTruthy(markup.includes(">Pop out tab</button>"), "popout action should be visibly labeled");
     assertTruthy(
       markup.includes('aria-label="Pop out Sample tab to a new window"'),
@@ -50,6 +50,10 @@ export function registerDockPopoutActionRenderingSpecs(harness: SpecHarness): vo
     );
 
     assertTruthy(markup.includes("hidden"), "inactive dock panel should remain hidden by panel semantics");
-    assertEqual(markup.includes("data-action=\"popout\""), true, "inactive panel markup should still include popout action");
+    assertEqual(
+      markup.includes('data-action="popout"'),
+      true,
+      "inactive panel markup should still include popout action",
+    );
   });
 }

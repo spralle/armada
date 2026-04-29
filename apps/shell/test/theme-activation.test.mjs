@@ -1,8 +1,8 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import {
-  activatePreferredThemePlugin,
   activateAllThemePlugins,
+  activatePreferredThemePlugin,
   DEFAULT_THEME_PLUGIN_ID,
 } from "../dist-test/src/theme-activation.js";
 
@@ -46,11 +46,21 @@ function createMockPluginRegistry(plugins) {
     registerBuiltinPlugin() {},
     registerManifestDescriptors() {},
     async setEnabled() {},
-    async activateByCommand() { return false; },
-    async activateByView() { return false; },
-    async activateByIntent() { return false; },
-    async resolveComponentCapability() { return null; },
-    async resolveServiceCapability() { return null; },
+    async activateByCommand() {
+      return false;
+    },
+    async activateByView() {
+      return false;
+    },
+    async activateByIntent() {
+      return false;
+    },
+    async resolveComponentCapability() {
+      return null;
+    },
+    async resolveServiceCapability() {
+      return null;
+    },
   };
 }
 
@@ -67,77 +77,45 @@ test("DEFAULT_THEME_PLUGIN_ID is ghost.theme.default", () => {
 // ---------------------------------------------------------------------------
 
 test("activatePreferredThemePlugin activates the preferred plugin", async () => {
-  const registry = createMockPluginRegistry([
-    { id: "ghost.theme.default" },
-    { id: "ghost.theme.community" },
-  ]);
+  const registry = createMockPluginRegistry([{ id: "ghost.theme.default" }, { id: "ghost.theme.community" }]);
 
-  const result = await activatePreferredThemePlugin(
-    registry,
-    "ghost.theme.community",
-    DEFAULT_THEME_PLUGIN_ID,
-  );
+  const result = await activatePreferredThemePlugin(registry, "ghost.theme.community", DEFAULT_THEME_PLUGIN_ID);
 
   assert.equal(result, true);
   assert.deepEqual(registry.activatedIds, ["ghost.theme.community"]);
 });
 
 test("activatePreferredThemePlugin falls back to default when no preference", async () => {
-  const registry = createMockPluginRegistry([
-    { id: "ghost.theme.default" },
-    { id: "ghost.theme.community" },
-  ]);
+  const registry = createMockPluginRegistry([{ id: "ghost.theme.default" }, { id: "ghost.theme.community" }]);
 
-  const result = await activatePreferredThemePlugin(
-    registry,
-    undefined,
-    DEFAULT_THEME_PLUGIN_ID,
-  );
+  const result = await activatePreferredThemePlugin(registry, undefined, DEFAULT_THEME_PLUGIN_ID);
 
   assert.equal(result, true);
   assert.deepEqual(registry.activatedIds, ["ghost.theme.default"]);
 });
 
 test("activatePreferredThemePlugin falls back to default when preferred is empty string", async () => {
-  const registry = createMockPluginRegistry([
-    { id: "ghost.theme.default" },
-  ]);
+  const registry = createMockPluginRegistry([{ id: "ghost.theme.default" }]);
 
-  const result = await activatePreferredThemePlugin(
-    registry,
-    "",
-    DEFAULT_THEME_PLUGIN_ID,
-  );
+  const result = await activatePreferredThemePlugin(registry, "", DEFAULT_THEME_PLUGIN_ID);
 
   assert.equal(result, true);
   assert.deepEqual(registry.activatedIds, ["ghost.theme.default"]);
 });
 
 test("activatePreferredThemePlugin returns false when plugin not found", async () => {
-  const registry = createMockPluginRegistry([
-    { id: "ghost.theme.default" },
-  ]);
+  const registry = createMockPluginRegistry([{ id: "ghost.theme.default" }]);
 
-  const result = await activatePreferredThemePlugin(
-    registry,
-    "ghost.theme.nonexistent",
-    "also-nonexistent",
-  );
+  const result = await activatePreferredThemePlugin(registry, "ghost.theme.nonexistent", "also-nonexistent");
 
   assert.equal(result, false);
   assert.deepEqual(registry.activatedIds, []);
 });
 
 test("activatePreferredThemePlugin skips disabled plugins", async () => {
-  const registry = createMockPluginRegistry([
-    { id: "ghost.theme.default", enabled: false },
-  ]);
+  const registry = createMockPluginRegistry([{ id: "ghost.theme.default", enabled: false }]);
 
-  const result = await activatePreferredThemePlugin(
-    registry,
-    undefined,
-    DEFAULT_THEME_PLUGIN_ID,
-  );
+  const result = await activatePreferredThemePlugin(registry, undefined, DEFAULT_THEME_PLUGIN_ID);
 
   assert.equal(result, false);
   assert.deepEqual(registry.activatedIds, []);
@@ -149,9 +127,12 @@ test("activatePreferredThemePlugin skips disabled plugins", async () => {
 
 test("activateAllThemePlugins activates all unloaded enabled plugins", async () => {
   const registry = createMockPluginRegistry([
-    { id: "ghost.theme.default", contract: { manifest: { id: "ghost.theme.default", name: "Default", version: "1.0.0" } } },
-    { id: "ghost.theme.community" },  // Not yet loaded (null contract).
-    { id: "ghost.theme.extra" },      // Not yet loaded.
+    {
+      id: "ghost.theme.default",
+      contract: { manifest: { id: "ghost.theme.default", name: "Default", version: "1.0.0" } },
+    },
+    { id: "ghost.theme.community" }, // Not yet loaded (null contract).
+    { id: "ghost.theme.extra" }, // Not yet loaded.
   ]);
 
   await activateAllThemePlugins(registry);
@@ -161,9 +142,7 @@ test("activateAllThemePlugins activates all unloaded enabled plugins", async () 
 });
 
 test("activateAllThemePlugins skips disabled plugins", async () => {
-  const registry = createMockPluginRegistry([
-    { id: "ghost.theme.community", enabled: false },
-  ]);
+  const registry = createMockPluginRegistry([{ id: "ghost.theme.community", enabled: false }]);
 
   await activateAllThemePlugins(registry);
 
@@ -172,9 +151,7 @@ test("activateAllThemePlugins skips disabled plugins", async () => {
 
 test("activateAllThemePlugins does nothing when all plugins are already loaded", async () => {
   const contract = { manifest: { id: "ghost.theme.default", name: "Default", version: "1.0.0" } };
-  const registry = createMockPluginRegistry([
-    { id: "ghost.theme.default", contract },
-  ]);
+  const registry = createMockPluginRegistry([{ id: "ghost.theme.default", contract }]);
 
   await activateAllThemePlugins(registry);
 

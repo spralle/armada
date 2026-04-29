@@ -1,7 +1,7 @@
+import type { ActivationContext, GhostApi } from "@ghost-shell/contracts/plugin";
 import { createPluginContract } from "@ghost-shell/contracts/plugin";
-import type { GhostApi, ActivationContext } from "@ghost-shell/contracts/plugin";
-import { injectShadcnBridge, removeShadcnBridge } from "./plugin-services-expose.js";
 import pkg from "../package.json" with { type: "json" };
+import { injectShadcnBridge, removeShadcnBridge } from "./plugin-services-expose.js";
 
 export const pluginContract = createPluginContract(pkg);
 

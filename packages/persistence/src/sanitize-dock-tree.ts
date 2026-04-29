@@ -1,14 +1,5 @@
-import {
-  createInitialDockTree,
-  ensureTabRegisteredInDockTree,
-  readDockSplitRatio,
-} from "@ghost-shell/state";
-import type {
-  DockNode,
-  DockOrientation,
-  DockTreeState,
-} from "@ghost-shell/state";
-import type { ContextTab } from "@ghost-shell/state";
+import type { ContextTab, DockNode, DockOrientation, DockTreeState } from "@ghost-shell/state";
+import { createInitialDockTree, ensureTabRegisteredInDockTree, readDockSplitRatio } from "@ghost-shell/state";
 import { isRecord } from "./utils.js";
 
 type SanitizedDockNode = DockNode | null;
@@ -35,16 +26,12 @@ export function sanitizeDockTreeStateWithReport(
 ): DockTreeSanitizeResult {
   const validTabIds = new Set(Object.keys(tabs));
   const legacySlotTabOrder = extractLegacySlotTabOrder(input, validTabIds);
-  const root = isRecord(input)
-    ? sanitizeDockNode(input.root, validTabIds)
-    : null;
+  const root = isRecord(input) ? sanitizeDockNode(input.root, validTabIds) : null;
 
   const warning = resolveDockSanitizeWarning(input, root, legacySlotTabOrder);
   const normalizedTabOrder = legacySlotTabOrder.length > 0 ? legacySlotTabOrder : tabOrder;
 
-  const withNormalizedTree = root
-    ? { root }
-    : buildDockTreeFromTabOrder(normalizedTabOrder, activeTabId);
+  const withNormalizedTree = root ? { root } : buildDockTreeFromTabOrder(normalizedTabOrder, activeTabId);
 
   let next = withNormalizedTree;
   for (const tabId of tabOrder) {
@@ -60,7 +47,12 @@ export function sanitizeDockTreeStateWithReport(
 }
 
 function sanitizeDockNode(input: unknown, validTabIds: Set<string>): SanitizedDockNode {
-  if (!isRecord(input) || (input.kind !== "split" && input.kind !== "stack") || typeof input.id !== "string" || !input.id) {
+  if (
+    !isRecord(input) ||
+    (input.kind !== "split" && input.kind !== "stack") ||
+    typeof input.id !== "string" ||
+    !input.id
+  ) {
     return null;
   }
 
@@ -163,7 +155,6 @@ function sanitizeOrientation(value: unknown): DockOrientation | null {
   }
   return null;
 }
-
 
 function resolveDockSanitizeWarning(
   input: unknown,

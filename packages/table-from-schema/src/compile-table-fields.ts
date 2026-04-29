@@ -1,12 +1,7 @@
-import type { SchemaFieldInfo, SchemaFieldMetadata } from '@ghost-shell/schema-core';
-import type {
-  CompileTableFieldsOptions,
-  FilterVariant,
-  TableFieldDescriptor,
-  TableFieldOverride,
-} from './types.js';
-import { humanize } from './humanize.js';
-import { inferPriority } from './priority.js';
+import type { SchemaFieldInfo, SchemaFieldMetadata } from "@ghost-shell/schema-core";
+import { humanize } from "./humanize.js";
+import { inferPriority } from "./priority.js";
+import type { CompileTableFieldsOptions, FilterVariant, TableFieldDescriptor, TableFieldOverride } from "./types.js";
 
 /**
  * Compile an array of schema fields into framework-agnostic TableFieldDescriptor[].
@@ -18,9 +13,7 @@ export function compileTableFields(
 ): TableFieldDescriptor[] {
   const filtered = filterFields(fields, options);
   const overrides = (options?.overrides ?? {}) as Record<string, TableFieldOverride>;
-  const defaultVisible = options?.defaultVisible
-    ? new Set(options.defaultVisible)
-    : undefined;
+  const defaultVisible = options?.defaultVisible ? new Set(options.defaultVisible) : undefined;
 
   return filtered.map((field, index) => {
     const override = overrides[field.path] as TableFieldOverride | undefined;
@@ -47,7 +40,7 @@ export function compileTableFields(
       order,
       ...(align !== undefined ? { align } : {}),
       format,
-      ...(override?.formatOptions ?? annotation?.cellProps
+      ...((override?.formatOptions ?? annotation?.cellProps)
         ? { formatOptions: (override?.formatOptions ?? annotation?.cellProps) as Readonly<Record<string, unknown>> }
         : {}),
       sortable,
@@ -84,7 +77,7 @@ interface TableAnnotation {
   label?: string;
   cell?: string;
   cellProps?: Record<string, unknown>;
-  pinned?: 'left' | 'right' | false;
+  pinned?: "left" | "right" | false;
   sortable?: boolean;
   filterable?: boolean;
   filterVariant?: FilterVariant;
@@ -107,13 +100,11 @@ function filterFields(
   return result;
 }
 
-function readTableAnnotation(
-  metadata: SchemaFieldMetadata | undefined,
-): TableAnnotation | undefined {
+function readTableAnnotation(metadata: SchemaFieldMetadata | undefined): TableAnnotation | undefined {
   const extra = metadata?.extra;
-  if (!extra || typeof extra !== 'object') return undefined;
-  const table = (extra as Record<string, unknown>)['table'];
-  if (!table || typeof table !== 'object') return undefined;
+  if (!extra || typeof extra !== "object") return undefined;
+  const table = (extra as Record<string, unknown>)["table"];
+  if (!table || typeof table !== "object") return undefined;
   return table as TableAnnotation;
 }
 
@@ -122,41 +113,41 @@ function deriveFromType(field: SchemaFieldInfo): DerivedColumnConfig {
   const format = meta?.format;
 
   switch (field.type) {
-    case 'string':
-      if (format === 'email' || format === 'url') {
-        return { filterVariant: 'text', cellRenderer: 'link' };
+    case "string":
+      if (format === "email" || format === "url") {
+        return { filterVariant: "text", cellRenderer: "link" };
       }
-      return { filterVariant: 'text', cellRenderer: 'text' };
+      return { filterVariant: "text", cellRenderer: "text" };
 
-    case 'enum':
+    case "enum":
       return deriveEnum(meta);
 
-    case 'number':
-    case 'integer':
+    case "number":
+    case "integer":
       return deriveNumber(meta);
 
-    case 'boolean':
-      return { filterVariant: 'boolean', cellRenderer: 'boolean' };
+    case "boolean":
+      return { filterVariant: "boolean", cellRenderer: "boolean" };
 
-    case 'date':
-      return { filterVariant: 'date', cellRenderer: 'date' };
+    case "date":
+      return { filterVariant: "date", cellRenderer: "date" };
 
-    case 'datetime':
-      return { filterVariant: 'date', cellRenderer: 'datetime' };
+    case "datetime":
+      return { filterVariant: "date", cellRenderer: "datetime" };
 
-    case 'array':
-      return { filterVariant: 'multiSelect', cellRenderer: 'tags' };
+    case "array":
+      return { filterVariant: "multiSelect", cellRenderer: "tags" };
 
     default:
-      return { filterVariant: 'text', cellRenderer: 'text' };
+      return { filterVariant: "text", cellRenderer: "text" };
   }
 }
 
 function deriveEnum(meta: SchemaFieldMetadata | undefined): DerivedColumnConfig {
   const options = meta?.enum;
-  const cellRenderer = options && options.length <= 8 ? 'badge' : 'text';
+  const cellRenderer = options && options.length <= 8 ? "badge" : "text";
   return {
-    filterVariant: 'select',
+    filterVariant: "select",
     cellRenderer,
     filterOptions: options,
   };
@@ -166,23 +157,23 @@ function deriveNumber(meta: SchemaFieldMetadata | undefined): DerivedColumnConfi
   const hasRange = meta?.minimum != null && meta?.maximum != null;
   if (hasRange) {
     return {
-      filterVariant: 'range',
-      cellRenderer: 'text',
+      filterVariant: "range",
+      cellRenderer: "text",
       filterMin: meta!.minimum,
       filterMax: meta!.maximum,
     };
   }
-  return { filterVariant: 'number', cellRenderer: 'text' };
+  return { filterVariant: "number", cellRenderer: "text" };
 }
 
-function deriveAlign(type: string): 'left' | 'center' | 'right' | undefined {
-  if (type === 'number' || type === 'integer') return 'right';
-  if (type === 'boolean') return 'center';
+function deriveAlign(type: string): "left" | "center" | "right" | undefined {
+  if (type === "number" || type === "integer") return "right";
+  if (type === "boolean") return "center";
   return undefined;
 }
 
 function deriveSearchable(type: string): boolean {
-  return type === 'string' || type === 'enum';
+  return type === "string" || type === "enum";
 }
 
 function resolveHeader(
@@ -190,21 +181,12 @@ function resolveHeader(
   override: TableFieldOverride | undefined,
   annotation: TableAnnotation | undefined,
 ): string {
-  return (
-    override?.label ??
-    annotation?.label ??
-    field.metadata?.label ??
-    field.metadata?.title ??
-    humanize(field.path)
-  );
+  return override?.label ?? annotation?.label ?? field.metadata?.label ?? field.metadata?.title ?? humanize(field.path);
 }
 
-function resolveSortable(
-  field: SchemaFieldInfo,
-  override: TableFieldOverride | undefined,
-): boolean {
+function resolveSortable(field: SchemaFieldInfo, override: TableFieldOverride | undefined): boolean {
   if (override?.sortable != null) return override.sortable;
-  if (field.type === 'array' || field.type === 'object') return false;
+  if (field.type === "array" || field.type === "object") return false;
   return true;
 }
 

@@ -1,11 +1,11 @@
-import type { SpecHarness } from "../../context-state.spec-harness.js";
 import type { QuickPickItem } from "@ghost-shell/contracts";
+import type { SpecHarness } from "../../context-state.spec-harness.js";
 import {
-  createInitialQuickPickState,
-  reduceQuickPickState,
-  getSelectedItem,
-  scoreQuickPickItems,
   computeFuzzyScore,
+  createInitialQuickPickState,
+  getSelectedItem,
+  reduceQuickPickState,
+  scoreQuickPickItems,
 } from "./quick-pick-state.js";
 
 // ---------------------------------------------------------------------------
@@ -16,9 +16,7 @@ interface TestItem extends QuickPickItem {
   id: string;
 }
 
-function makeItem(
-  overrides: Partial<TestItem> & { id: string; label: string },
-): TestItem {
+function makeItem(overrides: Partial<TestItem> & { id: string; label: string }): TestItem {
   return {
     enabled: true,
     ...overrides,
@@ -68,29 +66,19 @@ export function registerQuickPickStateSpecs(harness: SpecHarness): void {
   // 2. open transitions to open phase with items and filtered list
   test("open transitions to open phase with items", () => {
     const items = sampleItems();
-    const state = reduceQuickPickState(
-      createInitialQuickPickState<TestItem>(),
-      { type: "open", items },
-    );
+    const state = reduceQuickPickState(createInitialQuickPickState<TestItem>(), { type: "open", items });
 
     assertEqual(state.phase, "open", "phase should be open");
     assertEqual(state.filter, "", "filter should be empty on open");
     assertEqual(state.selectedIndex, 0, "selectedIndex should be 0 on open");
     assertEqual(state.items.length, items.length, "items should be populated");
-    assertEqual(
-      state.filteredItems.length,
-      items.length,
-      "all items should appear in filteredItems",
-    );
+    assertEqual(state.filteredItems.length, items.length, "all items should appear in filteredItems");
   });
 
   // 3. close returns to initial state
   test("close returns to initial state", () => {
     const items = sampleItems();
-    const openState = reduceQuickPickState(
-      createInitialQuickPickState<TestItem>(),
-      { type: "open", items },
-    );
+    const openState = reduceQuickPickState(createInitialQuickPickState<TestItem>(), { type: "open", items });
     const closedState = reduceQuickPickState(openState, { type: "close" });
 
     assertEqual(closedState.phase, "closed", "phase should be closed");
@@ -102,10 +90,7 @@ export function registerQuickPickStateSpecs(harness: SpecHarness): void {
   // 4. updateFilter filters items and resets selectedIndex
   test("updateFilter filters items and resets selectedIndex", () => {
     const items = sampleItems();
-    let state = reduceQuickPickState(
-      createInitialQuickPickState<TestItem>(),
-      { type: "open", items },
-    );
+    let state = reduceQuickPickState(createInitialQuickPickState<TestItem>(), { type: "open", items });
     state = reduceQuickPickState(state, { type: "selectNext" });
     assertEqual(state.selectedIndex, 1, "selectedIndex should be 1");
 
@@ -121,10 +106,7 @@ export function registerQuickPickStateSpecs(harness: SpecHarness): void {
   // 5. updateFilter with empty string shows all items
   test("updateFilter with empty string shows all items", () => {
     const items = sampleItems();
-    let state = reduceQuickPickState(
-      createInitialQuickPickState<TestItem>(),
-      { type: "open", items },
-    );
+    let state = reduceQuickPickState(createInitialQuickPickState<TestItem>(), { type: "open", items });
     state = reduceQuickPickState(state, {
       type: "updateFilter",
       filter: "Focus",
@@ -135,20 +117,13 @@ export function registerQuickPickStateSpecs(harness: SpecHarness): void {
       type: "updateFilter",
       filter: "",
     });
-    assertEqual(
-      state.filteredItems.length,
-      items.length,
-      "empty filter should show all items",
-    );
+    assertEqual(state.filteredItems.length, items.length, "empty filter should show all items");
   });
 
   // 6. selectNext wraps around at end
   test("selectNext wraps around at end", () => {
     const items = sampleItems();
-    let state = reduceQuickPickState(
-      createInitialQuickPickState<TestItem>(),
-      { type: "open", items },
-    );
+    let state = reduceQuickPickState(createInitialQuickPickState<TestItem>(), { type: "open", items });
 
     for (let i = 0; i < items.length - 1; i++) {
       state = reduceQuickPickState(state, { type: "selectNext" });
@@ -162,34 +137,20 @@ export function registerQuickPickStateSpecs(harness: SpecHarness): void {
   // 7. selectPrevious wraps around at start
   test("selectPrevious wraps around at start", () => {
     const items = sampleItems();
-    let state = reduceQuickPickState(
-      createInitialQuickPickState<TestItem>(),
-      { type: "open", items },
-    );
+    let state = reduceQuickPickState(createInitialQuickPickState<TestItem>(), { type: "open", items });
     assertEqual(state.selectedIndex, 0, "should start at 0");
 
     state = reduceQuickPickState(state, { type: "selectPrevious" });
-    assertEqual(
-      state.selectedIndex,
-      state.filteredItems.length - 1,
-      "selectPrevious should wrap to last",
-    );
+    assertEqual(state.selectedIndex, state.filteredItems.length - 1, "selectPrevious should wrap to last");
   });
 
   // 8. selectIndex clamps to valid range
   test("selectIndex clamps to valid range", () => {
     const items = sampleItems();
-    let state = reduceQuickPickState(
-      createInitialQuickPickState<TestItem>(),
-      { type: "open", items },
-    );
+    let state = reduceQuickPickState(createInitialQuickPickState<TestItem>(), { type: "open", items });
 
     state = reduceQuickPickState(state, { type: "selectIndex", index: 999 });
-    assertEqual(
-      state.selectedIndex,
-      state.filteredItems.length - 1,
-      "should clamp to max",
-    );
+    assertEqual(state.selectedIndex, state.filteredItems.length - 1, "should clamp to max");
 
     state = reduceQuickPickState(state, { type: "selectIndex", index: -5 });
     assertEqual(state.selectedIndex, 0, "should clamp negative to 0");
@@ -198,10 +159,7 @@ export function registerQuickPickStateSpecs(harness: SpecHarness): void {
   // 9. getSelectedItem returns correct item
   test("getSelectedItem returns correct item", () => {
     const items = sampleItems();
-    let state = reduceQuickPickState(
-      createInitialQuickPickState<TestItem>(),
-      { type: "open", items },
-    );
+    let state = reduceQuickPickState(createInitialQuickPickState<TestItem>(), { type: "open", items });
 
     const first = getSelectedItem(state);
     assertTruthy(first, "getSelectedItem should return an item");
@@ -210,9 +168,7 @@ export function registerQuickPickStateSpecs(harness: SpecHarness): void {
     const second = getSelectedItem(state);
     assertTruthy(second, "should return an item after selectNext");
     assertTruthy(
-      first!.id !== second!.id ||
-        first!.label !== second!.label ||
-        state.selectedIndex === 0,
+      first?.id !== second?.id || first?.label !== second?.label || state.selectedIndex === 0,
       "selected item should change after selectNext",
     );
   });
@@ -236,10 +192,7 @@ export function registerQuickPickStateSpecs(harness: SpecHarness): void {
     const item = makeItem({ id: "a", label: "Focus Left Panel" });
     const prefixScore = computeFuzzyScore(item, "focus");
     const substringScore = computeFuzzyScore(item, "left");
-    assertTruthy(
-      prefixScore > substringScore,
-      `prefix (${prefixScore}) > substring (${substringScore})`,
-    );
+    assertTruthy(prefixScore > substringScore, `prefix (${prefixScore}) > substring (${substringScore})`);
   });
 
   // 13. Fuzzy scoring: subsequence match works
@@ -315,10 +268,7 @@ export function registerQuickPickStateSpecs(harness: SpecHarness): void {
   // 19. setItems action updates items and re-scores
   test("setItems updates items and re-scores", () => {
     const items = sampleItems();
-    let state = reduceQuickPickState(
-      createInitialQuickPickState<TestItem>(),
-      { type: "open", items },
-    );
+    let state = reduceQuickPickState(createInitialQuickPickState<TestItem>(), { type: "open", items });
     assertEqual(state.items.length, 5, "should have 5 items initially");
 
     const newItems = [makeItem({ id: "new.1", label: "New Item" })];

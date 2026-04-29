@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from 'react';
+import { Component, type ReactNode } from "react";
 
 interface ErrorBoundaryProps {
   readonly children: ReactNode;
@@ -19,12 +19,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     const { error } = this.state;
     if (error) {
       return (
-        <div style={{ color: 'red', padding: '8px', fontSize: '12px' }}>
+        <div style={{ color: "red", padding: "8px", fontSize: "12px" }}>
           <strong>JsonForm render error:</strong>
           <p>{error.message}</p>
-          <pre style={{ whiteSpace: 'pre-wrap', fontSize: '10px' }}>
-            {error.stack}
-          </pre>
+          <pre style={{ whiteSpace: "pre-wrap", fontSize: "10px" }}>{error.stack}</pre>
         </div>
       );
     }

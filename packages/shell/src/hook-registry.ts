@@ -16,8 +16,8 @@ export class HookRegistry implements HookService {
     bucket.add(hook);
     return {
       dispose: () => {
-        bucket!.delete(hook);
-        if (bucket!.size === 0) this.hooks.delete(hookId);
+        bucket?.delete(hook);
+        if (bucket?.size === 0) this.hooks.delete(hookId);
       },
     };
   }

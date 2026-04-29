@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import type { Row } from "@tanstack/react-table";
+import type { MenuService } from "@ghost-shell/contracts";
 import {
   Button,
   DropdownMenu,
@@ -8,8 +7,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@ghost-shell/ui";
+import type { Row } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
-import type { MenuService } from "@ghost-shell/contracts";
+import { useMemo } from "react";
 import type { EntityOperation } from "./entity-list-types.js";
 
 interface RowActionsCellProps<TData> {
@@ -24,27 +24,17 @@ interface RowActionsCellProps<TData> {
  * Row actions cell — merges prop-based operations with
  * Ghost menu contributions for the 'entityTable/row' menu point.
  */
-export function RowActionsCell<TData>({
-  row,
-  data,
-  entityType,
-  operations,
-  menuService,
-}: RowActionsCellProps<TData>) {
+export function RowActionsCell<TData>({ row, data, entityType, operations, menuService }: RowActionsCellProps<TData>) {
   const entity = row.original;
   const ctx = { entity, data };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ctx is derived from entity+data already in deps
   const propItems = useMemo(() => {
-    const sorted = [...operations].sort(
-      (a, b) => (a.order ?? 0) - (b.order ?? 0),
-    );
+    const sorted = [...operations].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     return sorted.filter((op) => !op.when || op.when(ctx));
   }, [operations, entity, data]);
 
-  const menuContext = useMemo(
-    () => ({ entityType, entity: entity as Record<string, unknown> }),
-    [entityType, entity],
-  );
+  const menuContext = useMemo(() => ({ entityType, entity: entity as Record<string, unknown> }), [entityType, entity]);
 
   const menuItems = useMemo(() => {
     if (!menuService) return [];
@@ -72,14 +62,9 @@ export function RowActionsCell<TData>({
             {op.label}
           </DropdownMenuItem>
         ))}
-        {propItems.length > 0 && dedupedMenuItems.length > 0 && (
-          <DropdownMenuSeparator />
-        )}
+        {propItems.length > 0 && dedupedMenuItems.length > 0 && <DropdownMenuSeparator />}
         {dedupedMenuItems.map((item) => (
-          <DropdownMenuItem
-            key={item.id}
-            onClick={() => menuService!.dispatch(item.id, menuContext)}
-          >
+          <DropdownMenuItem key={item.id} onClick={() => menuService!.dispatch(item.id, menuContext)}>
             {item.title}
           </DropdownMenuItem>
         ))}

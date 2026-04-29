@@ -1,16 +1,9 @@
 import type { PluginLoadDiagnostic } from "./plugin-loader.js";
-import type {
-  PluginRegistryDiagnostic,
-  PluginRuntimeFailure,
-  PluginRuntimeState,
-} from "./plugin-registry-types.js";
+import type { PluginRegistryDiagnostic, PluginRuntimeFailure, PluginRuntimeState } from "./plugin-registry-types.js";
 
 const MAX_DIAGNOSTICS = 30;
 
-export function pushDiagnostic(
-  diagnostics: PluginRegistryDiagnostic[],
-  diagnostic: PluginRegistryDiagnostic,
-): void {
+export function pushDiagnostic(diagnostics: PluginRegistryDiagnostic[], diagnostic: PluginRegistryDiagnostic): void {
   diagnostics.unshift(diagnostic);
   if (diagnostics.length > MAX_DIAGNOSTICS) {
     diagnostics.length = MAX_DIAGNOSTICS;

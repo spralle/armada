@@ -1,7 +1,7 @@
-import type { ShellRuntime } from "../app/types.js";
-import { getTabCloseability } from "../context-state.js";
 import { moveTabInDirection } from "@ghost-shell/state";
+import type { ShellRuntime } from "../app/types.js";
 import { updateContextState } from "../context/runtime-state.js";
+import { getTabCloseability } from "../context-state.js";
 import { dispatchLocalLifecycleAction } from "./part-instance-lifecycle-dispatch.js";
 import type { PartLifecycleDeps } from "./part-instance-tab-lifecycle.js";
 
@@ -107,7 +107,7 @@ function applyMoveAction(runtime: ShellRuntime, direction: MoveDirection): void 
   updateContextState(runtime, result.state);
   runtime.selectedPartId = result.state.activeTabId;
   runtime.selectedPartTitle = result.state.activeTabId
-    ? result.state.tabs[result.state.activeTabId]?.label ?? result.state.activeTabId
+    ? (result.state.tabs[result.state.activeTabId]?.label ?? result.state.activeTabId)
     : null;
 }
 
@@ -115,53 +115,74 @@ function applyMoveAction(runtime: ShellRuntime, direction: MoveDirection): void 
 // Build menu items
 // ---------------------------------------------------------------------------
 
-function buildMenuItems(
-  partId: string,
-  runtime: ShellRuntime,
-  deps: PartContextMenuDeps,
-): HTMLElement[] {
+function buildMenuItems(partId: string, runtime: ShellRuntime, deps: PartContextMenuDeps): HTMLElement[] {
   const items: HTMLElement[] = [];
 
   // Pop out to new window
-  items.push(createContextMenuItem("Pop out to new window", "Ctrl+Shift+O", () => {
-    closePartContextMenu();
-    dispatchLocalLifecycleAction(runtime, {
-      actionId: "part-instance.popout",
-      tabInstanceId: partId,
-    }, deps);
-  }));
+  items.push(
+    createContextMenuItem("Pop out to new window", "Ctrl+Shift+O", () => {
+      closePartContextMenu();
+      dispatchLocalLifecycleAction(
+        runtime,
+        {
+          actionId: "part-instance.popout",
+          tabInstanceId: partId,
+        },
+        deps,
+      );
+    }),
+  );
 
   items.push(createSeparator());
 
   // Close tab
   const closeability = getTabCloseability(runtime.contextState, partId);
-  items.push(createContextMenuItem("Close tab", "Ctrl+W", () => {
-    closePartContextMenu();
-    dispatchLocalLifecycleAction(runtime, {
-      actionId: "part-instance.close",
-      tabInstanceId: partId,
-    }, deps);
-  }, { disabled: !closeability.canClose }));
+  items.push(
+    createContextMenuItem(
+      "Close tab",
+      "Ctrl+W",
+      () => {
+        closePartContextMenu();
+        dispatchLocalLifecycleAction(
+          runtime,
+          {
+            actionId: "part-instance.close",
+            tabInstanceId: partId,
+          },
+          deps,
+        );
+      },
+      { disabled: !closeability.canClose },
+    ),
+  );
 
   items.push(createSeparator());
 
   // Move actions
-  items.push(createContextMenuItem("Move left", "Ctrl+Alt+\u2190", () => {
-    closePartContextMenu();
-    applyMoveAction(runtime, "left");
-  }));
-  items.push(createContextMenuItem("Move right", "Ctrl+Alt+\u2192", () => {
-    closePartContextMenu();
-    applyMoveAction(runtime, "right");
-  }));
-  items.push(createContextMenuItem("Move up", "Ctrl+Alt+\u2191", () => {
-    closePartContextMenu();
-    applyMoveAction(runtime, "up");
-  }));
-  items.push(createContextMenuItem("Move down", "Ctrl+Alt+\u2193", () => {
-    closePartContextMenu();
-    applyMoveAction(runtime, "down");
-  }));
+  items.push(
+    createContextMenuItem("Move left", "Ctrl+Alt+\u2190", () => {
+      closePartContextMenu();
+      applyMoveAction(runtime, "left");
+    }),
+  );
+  items.push(
+    createContextMenuItem("Move right", "Ctrl+Alt+\u2192", () => {
+      closePartContextMenu();
+      applyMoveAction(runtime, "right");
+    }),
+  );
+  items.push(
+    createContextMenuItem("Move up", "Ctrl+Alt+\u2191", () => {
+      closePartContextMenu();
+      applyMoveAction(runtime, "up");
+    }),
+  );
+  items.push(
+    createContextMenuItem("Move down", "Ctrl+Alt+\u2193", () => {
+      closePartContextMenu();
+      applyMoveAction(runtime, "down");
+    }),
+  );
 
   return items;
 }
@@ -182,10 +203,7 @@ function wireMenuKeyboard(menu: HTMLElement): void {
       const items = menu.querySelectorAll("[data-menu-item]");
       const current = menu.querySelector("[data-menu-item]:focus");
       const idx = current ? Array.from(items).indexOf(current) : -1;
-      const next =
-        e.key === "ArrowDown"
-          ? items[idx + 1] ?? items[0]
-          : items[idx - 1] ?? items[items.length - 1];
+      const next = e.key === "ArrowDown" ? (items[idx + 1] ?? items[0]) : (items[idx - 1] ?? items[items.length - 1]);
       (next as HTMLElement)?.focus();
     }
   });

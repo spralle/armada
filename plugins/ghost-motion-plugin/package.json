@@ -5,11 +5,23 @@
   "type": "module",
   "ghost": {
     "displayName": "Ghost Motion",
-    "activationEvents": ["onStartup"],
+    "activationEvents": [
+      "onStartup"
+    ],
     "contributes": {
       "capabilities": {
-        "services": [{ "id": "ghost.motion.service", "version": "0.1.0" }],
-        "components": [{ "id": "ghost.motion.settings-panel", "version": "0.1.0" }]
+        "services": [
+          {
+            "id": "ghost.motion.service",
+            "version": "0.1.0"
+          }
+        ],
+        "components": [
+          {
+            "id": "ghost.motion.settings-panel",
+            "version": "0.1.0"
+          }
+        ]
       },
       "sections": [
         {
@@ -35,24 +47,83 @@
             "items": {
               "type": "object",
               "properties": {
-                "name": { "type": "string", "title": "Curve name" },
+                "name": {
+                  "type": "string",
+                  "title": "Curve name"
+                },
                 "points": {
                   "type": "object",
                   "properties": {
-                    "x1": { "type": "number", "title": "X1", "description": "First control point X [0-1]" },
-                    "y1": { "type": "number", "title": "Y1", "description": "First control point Y [-2 to 2]" },
-                    "x2": { "type": "number", "title": "X2", "description": "Second control point X [0-1]" },
-                    "y2": { "type": "number", "title": "Y2", "description": "Second control point Y [-2 to 2]" }
+                    "x1": {
+                      "type": "number",
+                      "title": "X1",
+                      "description": "First control point X [0-1]"
+                    },
+                    "y1": {
+                      "type": "number",
+                      "title": "Y1",
+                      "description": "First control point Y [-2 to 2]"
+                    },
+                    "x2": {
+                      "type": "number",
+                      "title": "X2",
+                      "description": "Second control point X [0-1]"
+                    },
+                    "y2": {
+                      "type": "number",
+                      "title": "Y2",
+                      "description": "Second control point Y [-2 to 2]"
+                    }
                   }
                 }
               }
             },
             "default": [
-              { "name": "default", "points": { "x1": 0.25, "y1": 0.1,  "x2": 0.25, "y2": 1 } },
-              { "name": "snappy",  "points": { "x1": 0.16, "y1": 1,    "x2": 0.3,  "y2": 1 } },
-              { "name": "bounce",  "points": { "x1": 0.05, "y1": 0.9,  "x2": 0.1,  "y2": 1.05 } },
-              { "name": "smooth",  "points": { "x1": 0.4,  "y1": 0,    "x2": 0.2,  "y2": 1 } },
-              { "name": "linear",  "points": { "x1": 0,    "y1": 0,    "x2": 1,    "y2": 1 } }
+              {
+                "name": "default",
+                "points": {
+                  "x1": 0.25,
+                  "y1": 0.1,
+                  "x2": 0.25,
+                  "y2": 1
+                }
+              },
+              {
+                "name": "snappy",
+                "points": {
+                  "x1": 0.16,
+                  "y1": 1,
+                  "x2": 0.3,
+                  "y2": 1
+                }
+              },
+              {
+                "name": "bounce",
+                "points": {
+                  "x1": 0.05,
+                  "y1": 0.9,
+                  "x2": 0.1,
+                  "y2": 1.05
+                }
+              },
+              {
+                "name": "smooth",
+                "points": {
+                  "x1": 0.4,
+                  "y1": 0,
+                  "x2": 0.2,
+                  "y2": 1
+                }
+              },
+              {
+                "name": "linear",
+                "points": {
+                  "x1": 0,
+                  "y1": 0,
+                  "x2": 1,
+                  "y2": 1
+                }
+              }
             ]
           },
           "ghost.motion.animations": {

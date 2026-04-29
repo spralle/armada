@@ -1,14 +1,14 @@
-import { buildActionSurface } from "../action-surface.js";
-import {
-  createInitialShellContextState,
-  registerTab,
-  setActiveTab,
-} from "../context-state.js";
 import { createInitialWorkspaceManagerState } from "@ghost-shell/state";
-import { bindKeyboardShortcuts, type KeyboardBindings } from "./keyboard-handlers.js";
-import { createDefaultShellKeybindingContract, DEFAULT_SHELL_KEYBINDINGS, DEFAULT_SHELL_KEYBINDING_PLUGIN_ID } from "./default-shell-keybindings.js";
-import type { SpecHarness } from "../context-state.spec-harness.js";
+import { buildActionSurface } from "../action-surface.js";
 import type { ShellRuntime } from "../app/types.js";
+import { createInitialShellContextState, registerTab, setActiveTab } from "../context-state.js";
+import type { SpecHarness } from "../context-state.spec-harness.js";
+import {
+  createDefaultShellKeybindingContract,
+  DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+  DEFAULT_SHELL_KEYBINDINGS,
+} from "./default-shell-keybindings.js";
+import { bindKeyboardShortcuts, type KeyboardBindings } from "./keyboard-handlers.js";
 
 class FakeRoot {
   private onKeyDown: ((event: KeyboardEvent) => Promise<void>) | null = null;
@@ -115,7 +115,10 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
     assertEqual(result.prevented, false, "blocked activation should not consume key event");
     assertEqual(activationCalls, 1, "activation boundary should be consulted once");
     assertTruthy(runtime.actionNotice.includes("blocked"), "blocked action should surface explicit notice");
-    assertTruthy(runtime.actionNotice.includes("com.ghost.shell.keybindings.default"), "blocked notice should use ghost keybinding plugin id");
+    assertTruthy(
+      runtime.actionNotice.includes("com.ghost.shell.keybindings.default"),
+      "blocked notice should use ghost keybinding plugin id",
+    );
   });
 
   test("keyboard handler resolves keybinding when target is not an HTMLElement (Bug B)", async () => {
@@ -134,8 +137,15 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
     });
 
     assertEqual(result.prevented, true, "keybinding should resolve even with non-HTMLElement target");
-    assertEqual(runtime.contextState.tabs["tab-a"], undefined, "close action should execute despite non-HTMLElement target");
-    assertTruthy(runtime.actionNotice.includes("shell.view.close"), "action notice should reference action for non-HTMLElement target");
+    assertEqual(
+      runtime.contextState.tabs["tab-a"],
+      undefined,
+      "close action should execute despite non-HTMLElement target",
+    );
+    assertTruthy(
+      runtime.actionNotice.includes("shell.view.close"),
+      "action notice should reference action for non-HTMLElement target",
+    );
   });
 
   test("keyboard handler does not preventDefault for unavailable shell actions (Bug C)", async () => {
@@ -164,10 +174,7 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
       runtime.actionNotice.includes("shell.window.mode.toggle"),
       "action notice should reference the unavailable action",
     );
-    assertTruthy(
-      runtime.actionNotice.includes("no-op"),
-      "action notice should indicate action is a no-op",
-    );
+    assertTruthy(runtime.actionNotice.includes("no-op"), "action notice should indicate action is a no-op");
   });
 
   test("keyboard handler invalidates cache when override content changes but count stays the same (Bug A)", async () => {
@@ -256,7 +263,10 @@ export function registerKeyboardHandlersSpecs(harness: SpecHarness): void {
 
     assertEqual(result.prevented, true, "workspace keybinding should be consumed");
     assertEqual(calls, 1, "workspace delete should execute runtime action handler");
-    assertTruthy(runtime.actionNotice.includes("shell.workspace.delete"), "action notice should reference workspace action");
+    assertTruthy(
+      runtime.actionNotice.includes("shell.workspace.delete"),
+      "action notice should reference workspace action",
+    );
 
     dispose();
   });
@@ -279,7 +289,7 @@ function createRuntimeFixture(): ShellRuntime {
   return {
     actionSurface: buildActionSurface([createDefaultShellKeybindingContract()]),
     announcement: "",
-    bridge: ({ publish: () => true } as unknown) as ShellRuntime["bridge"],
+    bridge: { publish: () => true } as unknown as ShellRuntime["bridge"],
     activeIntentSession: null,
     closeableTabIds: new Set(["tab-a", "tab-b"]),
     actionNotice: "",
@@ -289,7 +299,11 @@ function createRuntimeFixture(): ShellRuntime {
     incomingTransferJournal: { bySessionId: {} },
     intentRuntime: {
       async resolve() {
-        return { kind: "no-match", feedback: "unused", trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] } };
+        return {
+          kind: "no-match",
+          feedback: "unused",
+          trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] },
+        };
       },
     },
     intentNotice: "",
@@ -298,7 +312,7 @@ function createRuntimeFixture(): ShellRuntime {
     layout: { sideSize: 0.2, secondarySize: 0.3 },
     notice: "",
     partHost: { syncRenderedParts: async () => {}, unmountAll: () => {} } as ShellRuntime["partHost"],
-     pendingFocusSelector: null,
+    pendingFocusSelector: null,
     pendingProbeId: null,
     persistence: { save: () => ({ warning: null }), load: () => ({ sideSize: 0.2, secondarySize: 0.3 }) },
     pluginNotice: "",
@@ -319,10 +333,7 @@ function createRuntimeFixture(): ShellRuntime {
   } as unknown as ShellRuntime;
 }
 
-function createBindings(
-  runtime: ShellRuntime,
-  overrides: Partial<KeyboardBindings> = {},
-): KeyboardBindings {
+function createBindings(runtime: ShellRuntime, overrides: Partial<KeyboardBindings> = {}): KeyboardBindings {
   return {
     activatePluginForBoundary: async () => true,
     announce: () => {},
@@ -336,11 +347,12 @@ function createBindings(
     renderEdgeSlots: () => {},
     renderParts: () => {},
     renderSyncStatus: () => {},
-    getDefaultKeybindings: () => DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
-      action: entry.action,
-      keybinding: entry.keybinding,
-      pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
-    })),
+    getDefaultKeybindings: () =>
+      DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
+        action: entry.action,
+        keybinding: entry.keybinding,
+        pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+      })),
     getUserOverrideKeybindings: () => [],
     getWorkspaceSwitchDeps: () => ({
       root: {} as HTMLElement,

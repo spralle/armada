@@ -71,10 +71,7 @@ export function resolveChooserFocusRestoration(
   return null;
 }
 
-export function resolveDegradedKeyboardInteraction(
-  key: string,
-  hasOpenChooser: boolean,
-): DegradedKeyboardInteraction {
+export function resolveDegradedKeyboardInteraction(key: string, hasOpenChooser: boolean): DegradedKeyboardInteraction {
   if (hasOpenChooser) {
     if (key === "Escape") {
       return "dismiss-chooser";

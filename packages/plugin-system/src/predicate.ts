@@ -94,9 +94,7 @@ function getFactValue(facts: PredicateFactBag, path: string): unknown {
  */
 function matchesCondition(actual: unknown, condition: unknown): boolean {
   if (isOperatorCondition(condition)) {
-    return Object.entries(condition).every(([operator, expected]) =>
-      applyOperator(operator, actual, expected),
-    );
+    return Object.entries(condition).every(([operator, expected]) => applyOperator(operator, actual, expected));
   }
 
   return isDeepEqual(actual, condition);
@@ -110,11 +108,7 @@ function isOperatorCondition(value: unknown): value is Record<string, unknown> {
   return Object.keys(value).some((key) => key.startsWith("$"));
 }
 
-function applyOperator(
-  operator: string,
-  actual: unknown,
-  expected: unknown,
-): boolean {
+function applyOperator(operator: string, actual: unknown, expected: unknown): boolean {
   switch (operator) {
     case "$eq":
       return isDeepEqual(actual, expected);

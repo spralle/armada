@@ -2,10 +2,9 @@
  * Shell mounting logic — handles popout vs main-window mount strategies.
  */
 
-import type { ShellBootstrap } from "./bootstrap-shell.js";
 import type { ShellRuntime } from "./app/types.js";
-import { startPopoutWatchdog } from "./ui/parts-controller.js";
-import { updateWindowReadOnlyState } from "./ui/context-controls.js";
+import type { ShellBootstrap } from "./bootstrap-shell.js";
+import { publishWithDegrade } from "./shell-runtime/bridge-sync-handlers.js";
 import { applyLayout, setupResize } from "./shell-runtime/layout-helpers.js";
 import {
   bindBridgeSync,
@@ -14,50 +13,60 @@ import {
   renderParts,
   renderSyncStatus,
 } from "./shell-wiring.js";
-import { publishWithDegrade } from "./shell-runtime/bridge-sync-handlers.js";
+import { updateWindowReadOnlyState } from "./ui/context-controls.js";
+import { startPopoutWatchdog } from "./ui/parts-controller.js";
 
-export function mountShell(
-  root: HTMLElement,
-  runtime: ShellRuntime,
-  bootstrap: ShellBootstrap,
-): () => void {
+export function mountShell(root: HTMLElement, runtime: ShellRuntime, bootstrap: ShellBootstrap): () => void {
   const disposers: Array<() => void> = [];
 
   if (runtime.isPopout) {
-    disposers.push(bootstrap.mountPopout(root, runtime, {
-      renderParts: () => renderParts(root, runtime),
-      updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
-      setupResize: () => setupResize(root, runtime),
-      publishRestoreRequestOnUnload: () => {
-        publishWithDegrade(root, runtime, {
-          type: "popout-restore-request",
-          hostWindowId: runtime.hostWindowId!,
-          tabId: runtime.popoutTabId!,
-          partId: runtime.popoutTabId!,
-          sourceWindowId: runtime.windowId,
-        }, createBridgeBindings(root, runtime));
-      },
-    }));
+    disposers.push(
+      bootstrap.mountPopout(root, runtime, {
+        renderParts: () => renderParts(root, runtime),
+        updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+        setupResize: () => setupResize(root, runtime),
+        publishRestoreRequestOnUnload: () => {
+          publishWithDegrade(
+            root,
+            runtime,
+            {
+              type: "popout-restore-request",
+              hostWindowId: runtime.hostWindowId!,
+              tabId: runtime.popoutTabId!,
+              partId: runtime.popoutTabId!,
+              sourceWindowId: runtime.windowId,
+            },
+            createBridgeBindings(root, runtime),
+          );
+        },
+      }),
+    );
   } else {
-    disposers.push(bootstrap.mountMainWindow(root, {
-      renderParts: () => renderParts(root, runtime),
-      updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
-      setupResize: () => setupResize(root, runtime),
-      publishRestoreRequestOnUnload: () => {
-        console.debug("[shell] Restore request on unload not yet implemented for main window");
-      },
-    }));
+    disposers.push(
+      bootstrap.mountMainWindow(root, {
+        renderParts: () => renderParts(root, runtime),
+        updateWindowReadOnlyState: () => updateWindowReadOnlyState(root, runtime),
+        setupResize: () => setupResize(root, runtime),
+        publishRestoreRequestOnUnload: () => {
+          console.debug("[shell] Restore request on unload not yet implemented for main window");
+        },
+      }),
+    );
     applyLayout(root, runtime.layout);
-    disposers.push(startPopoutWatchdog(root, runtime, {
-      renderParts: () => renderParts(root, runtime),
-      renderSyncStatus: () => renderSyncStatus(root, runtime),
-    }));
+    disposers.push(
+      startPopoutWatchdog(root, runtime, {
+        renderParts: () => renderParts(root, runtime),
+        renderSyncStatus: () => renderSyncStatus(root, runtime),
+      }),
+    );
   }
 
-  disposers.push(bindBridgeSync(root, runtime, {
-    applyContext: bootstrap.core.applyContext,
-    applySelection: bootstrap.core.applySelection,
-  }));
+  disposers.push(
+    bindBridgeSync(root, runtime, {
+      applyContext: bootstrap.core.applyContext,
+      applySelection: bootstrap.core.applySelection,
+    }),
+  );
   disposers.push(bindKeyboardShortcuts(root, runtime));
 
   return () => {

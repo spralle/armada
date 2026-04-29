@@ -1,30 +1,19 @@
-import type {
-  PluginLayerSurfaceContribution,
-} from "@ghost-shell/contracts";
+import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts";
+import { InputBehavior, KeyboardInteractivity } from "@ghost-shell/contracts";
+import type { FocusGrabManager, LayerRegistry } from "@ghost-shell/layer";
 import {
-  InputBehavior,
-  KeyboardInteractivity,
-} from "@ghost-shell/contracts";
-import type { LayerRegistry } from "@ghost-shell/layer";
+  applyAutoStacking,
+  applyInputBehavior,
+  applyKeyboardInteractivity,
+  applyVisualEffects,
+  computeAnchorStyles,
+  createLayerSurfaceContext,
+} from "@ghost-shell/layer";
 import type { PluginHost, ShellRuntime } from "../app/types.js";
+import { ensureRemoteRegistered, normalizeCleanup, safeUnmount } from "../federation-mount-utils.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";
-import {
-  normalizeCleanup,
-  safeUnmount,
-  ensureRemoteRegistered,
-} from "../federation-mount-utils.js";
-import { applyVisualEffects } from "@ghost-shell/layer";
-import { createLayerSurfaceContext } from "@ghost-shell/layer";
-import {
-  composeSurfaceKey,
-  createSurfaceMountKey,
-  resolveSurfaceMount,
-} from "./surface-mount-utils.js";
-import { computeAnchorStyles } from "@ghost-shell/layer";
-import { applyInputBehavior, applyKeyboardInteractivity } from "@ghost-shell/layer";
-import { applyAutoStacking } from "@ghost-shell/layer";
+import { composeSurfaceKey, createSurfaceMountKey, resolveSurfaceMount } from "./surface-mount-utils.js";
 import type { MountSurfaceComponentFn, SurfaceMountState } from "./surface-renderer.js";
-import type { FocusGrabManager } from "@ghost-shell/layer";
 
 // ---------------------------------------------------------------------------
 // Dependencies context passed from the renderer
@@ -101,11 +90,7 @@ export function reconcileLayerContainer(
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function removeStaleChildren(
-  ctx: ReconcilerContext,
-  container: HTMLElement,
-  desiredIds: Set<string>,
-): void {
+function removeStaleChildren(ctx: ReconcilerContext, container: HTMLElement, desiredIds: Set<string>): void {
   for (const child of Array.from(container.children) as HTMLElement[]) {
     const surfaceId = child.dataset.surfaceId;
     if (surfaceId && !desiredIds.has(surfaceId) && !child.hasAttribute("data-exiting")) {
@@ -145,19 +130,18 @@ function createSurfaceElement(
 
   const layerDef = ctx.layerRegistry.getLayer(surface.layer);
   applyInputBehavior(target, surface.inputBehavior ?? layerDef?.defaultPointer ?? InputBehavior.Opaque);
-  applyKeyboardInteractivity(target, surface.keyboardInteractivity ?? layerDef?.defaultKeyboard ?? KeyboardInteractivity.None);
+  applyKeyboardInteractivity(
+    target,
+    surface.keyboardInteractivity ?? layerDef?.defaultKeyboard ?? KeyboardInteractivity.None,
+  );
 
   applyVisualEffects(target, surface.opacity, surface.backdropFilter);
 
   return target;
 }
 
-function insertSurfaceElement(
-  container: HTMLElement,
-  target: HTMLDivElement,
-  previousElement: Element | null,
-): void {
-  if (previousElement && previousElement.nextSibling) {
+function insertSurfaceElement(container: HTMLElement, target: HTMLDivElement, previousElement: Element | null): void {
+  if (previousElement?.nextSibling) {
     container.insertBefore(target, previousElement.nextSibling);
   } else if (!previousElement && container.firstChild) {
     container.insertBefore(target, container.firstChild);
@@ -214,7 +198,18 @@ async function mountSurfaceComponent(
 
   const builtInMount = ctx.builtInSurfaceMounts.get(surface.component);
   if (builtInMount) {
-    await mountBuiltIn(ctx, builtInMount, target, pluginId, surface, runtime, key, mountKey, expectedGeneration, surfaceContext);
+    await mountBuiltIn(
+      ctx,
+      builtInMount,
+      target,
+      pluginId,
+      surface,
+      runtime,
+      key,
+      mountKey,
+      expectedGeneration,
+      surfaceContext,
+    );
     return;
   }
 
@@ -242,7 +237,15 @@ async function mountBuiltIn(
       return;
     }
 
-    ctx.mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
+    ctx.mounted.set(key, {
+      surfaceId: key,
+      pluginId,
+      surface,
+      element: target,
+      cleanup,
+      mountKey,
+      generation: expectedGeneration,
+    });
     ctx.maybeActivateSurfaceBehaviors(key, target, surface);
     ctx.onSurfaceMounted?.(key, pluginId);
     ctx.onSurfaceEntering?.(target, key, pluginId);
@@ -292,7 +295,15 @@ async function mountViaFederation(
       return;
     }
 
-    ctx.mounted.set(key, { surfaceId: key, pluginId, surface, element: target, cleanup, mountKey, generation: expectedGeneration });
+    ctx.mounted.set(key, {
+      surfaceId: key,
+      pluginId,
+      surface,
+      element: target,
+      cleanup,
+      mountKey,
+      generation: expectedGeneration,
+    });
     ctx.maybeActivateSurfaceBehaviors(key, target, surface);
     ctx.onSurfaceMounted?.(key, pluginId);
     ctx.onSurfaceEntering?.(target, key, pluginId);

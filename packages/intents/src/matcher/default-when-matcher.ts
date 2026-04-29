@@ -1,8 +1,8 @@
 import type {
   IntentFactBag,
   IntentWhenMatcher,
-  PredicateFailureTrace,
   PredicateEvaluationResult,
+  PredicateFailureTrace,
 } from "./contracts.js";
 
 export function createDefaultIntentWhenMatcher(): IntentWhenMatcher {
@@ -12,10 +12,7 @@ export function createDefaultIntentWhenMatcher(): IntentWhenMatcher {
   };
 }
 
-function evaluatePredicate(
-  predicate: Record<string, unknown>,
-  facts: IntentFactBag,
-): PredicateEvaluationResult {
+function evaluatePredicate(predicate: Record<string, unknown>, facts: IntentFactBag): PredicateEvaluationResult {
   const failedPredicates: PredicateFailureTrace[] = [];
   for (const [key, condition] of Object.entries(predicate)) {
     const value = getFactValue(facts, key);
@@ -51,9 +48,7 @@ function getFactValue(facts: IntentFactBag, path: string): unknown {
 
 function matchesCondition(actual: unknown, condition: unknown): boolean {
   if (isOperatorCondition(condition)) {
-    return Object.entries(condition).every(([operator, expected]) =>
-      applyOperator(operator, actual, expected),
-    );
+    return Object.entries(condition).every(([operator, expected]) => applyOperator(operator, actual, expected));
   }
 
   return isDeepEqual(actual, condition);

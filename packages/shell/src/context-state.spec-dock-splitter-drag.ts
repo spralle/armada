@@ -1,10 +1,10 @@
 import type { ShellRuntime } from "./app/types.js";
 import {
   createInitialShellContextState,
+  type DockOrientation,
   moveTabInDockTree,
   readDockSplitRatio,
   registerTab,
-  type DockOrientation,
   type ShellContextState,
 } from "./context-state.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
@@ -17,20 +17,21 @@ class FakeWindow {
   private readonly listeners = new Map<string, GenericListener[]>();
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const normalized: GenericListener = typeof listener === "function"
-      ? (listener as GenericListener)
-      : ((event: Event) => listener.handleEvent(event));
+    const normalized: GenericListener =
+      typeof listener === "function" ? (listener as GenericListener) : (event: Event) => listener.handleEvent(event);
     const current = this.listeners.get(type) ?? [];
     current.push(normalized);
     this.listeners.set(type, current);
   }
 
   removeEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const normalized: GenericListener = typeof listener === "function"
-      ? (listener as GenericListener)
-      : ((event: Event) => listener.handleEvent(event));
+    const normalized: GenericListener =
+      typeof listener === "function" ? (listener as GenericListener) : (event: Event) => listener.handleEvent(event);
     const current = this.listeners.get(type) ?? [];
-    this.listeners.set(type, current.filter((entry) => entry !== normalized));
+    this.listeners.set(
+      type,
+      current.filter((entry) => entry !== normalized),
+    );
   }
 
   dispatch(type: string, event: Event): void {
@@ -53,32 +54,38 @@ class FakeDockSplitter {
       dockOrientation: orientation,
     };
     this.parentElement = {
-      getBoundingClientRect: () => ({
-        left: 0,
-        top: 0,
-        right: size.width,
-        bottom: size.height,
-        width: size.width,
-        height: size.height,
-      } as DOMRect),
+      getBoundingClientRect: () =>
+        ({
+          left: 0,
+          top: 0,
+          right: size.width,
+          bottom: size.height,
+          width: size.width,
+          height: size.height,
+        }) as DOMRect,
     };
   }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const normalized = typeof listener === "function"
-      ? (listener as PointerListener)
-      : ((event: PointerEvent) => listener.handleEvent(event as unknown as Event));
+    const normalized =
+      typeof listener === "function"
+        ? (listener as PointerListener)
+        : (event: PointerEvent) => listener.handleEvent(event as unknown as Event);
     const current = this.listeners.get(type) ?? [];
     current.push(normalized);
     this.listeners.set(type, current);
   }
 
   removeEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const normalized = typeof listener === "function"
-      ? (listener as PointerListener)
-      : ((event: PointerEvent) => listener.handleEvent(event as unknown as Event));
+    const normalized =
+      typeof listener === "function"
+        ? (listener as PointerListener)
+        : (event: PointerEvent) => listener.handleEvent(event as unknown as Event);
     const current = this.listeners.get(type) ?? [];
-    this.listeners.set(type, current.filter((entry) => entry !== normalized));
+    this.listeners.set(
+      type,
+      current.filter((entry) => entry !== normalized),
+    );
   }
 
   setPointerCapture(pointerId: number): void {
@@ -95,7 +102,10 @@ class FakeDockSplitter {
     }
   }
 
-  dispatch(type: "pointerdown" | "pointermove" | "pointerup" | "pointercancel" | "lostpointercapture", event: PointerEvent): void {
+  dispatch(
+    type: "pointerdown" | "pointermove" | "pointerup" | "pointercancel" | "lostpointercapture",
+    event: PointerEvent,
+  ): void {
     for (const listener of this.listeners.get(type) ?? []) {
       listener(event);
     }
@@ -129,7 +139,10 @@ class FakeRoot {
     return this.attributes.has(name);
   }
 
-  constructor(private readonly splitter: FakeDockSplitter, fakeWindow: FakeWindow) {
+  constructor(
+    private readonly splitter: FakeDockSplitter,
+    fakeWindow: FakeWindow,
+  ) {
     this.ownerDocument = { defaultView: fakeWindow };
   }
 
@@ -180,7 +193,9 @@ function createRuntime(): ShellRuntime {
   return runtime;
 }
 
-function readRootSplit(runtime: ShellRuntime): Extract<NonNullable<ShellContextState["dockTree"]["root"]>, { kind: "split" }> {
+function readRootSplit(
+  runtime: ShellRuntime,
+): Extract<NonNullable<ShellContextState["dockTree"]["root"]>, { kind: "split" }> {
   const root = runtime.contextState.dockTree.root;
   if (!root || root.kind !== "split") {
     throw new Error("expected split root for splitter drag spec");
@@ -216,9 +231,16 @@ export function registerDockSplitterDragSpecs(harness: SpecHarness): void {
     assertEqual(commitRenderCalls, 0, "horizontal drag should avoid full render while moving");
     fakeWindow.dispatch("pointerup", pointerEvent({ pointerId: 1, clientX: 650, clientY: 10 }));
 
-    assertEqual(readDockSplitRatio(readRootSplit(runtime)), 0.65, "horizontal drag should adjust ratio from x-axis delta");
+    assertEqual(
+      readDockSplitRatio(readRootSplit(runtime)),
+      0.65,
+      "horizontal drag should adjust ratio from x-axis delta",
+    );
     assertEqual(commitRenderCalls, 1, "horizontal drag should rerender once after drag commit");
-    assertTruthy(root.classList.contains("is-dock-splitter-dragging") === false, "dragging class should clear on pointerup");
+    assertTruthy(
+      root.classList.contains("is-dock-splitter-dragging") === false,
+      "dragging class should clear on pointerup",
+    );
   });
 
   test("dock splitter drag uses vertical clientY axis for vertical orientation", () => {
@@ -279,14 +301,26 @@ export function registerDockSplitterDragSpecs(harness: SpecHarness): void {
     assertTruthy(root.hasAttribute("data-dock-splitter-drag-active"), "splitter active attr should set on pointerdown");
 
     fakeWindow.dispatch("pointercancel", pointerEvent({ pointerId: 11, clientX: 500, clientY: 0 }));
-    assertTruthy(root.classList.contains("is-dock-splitter-dragging") === false, "dragging class should clear on pointercancel");
-    assertTruthy(root.hasAttribute("data-dock-splitter-drag-active") === false, "splitter active attr should clear on pointercancel");
+    assertTruthy(
+      root.classList.contains("is-dock-splitter-dragging") === false,
+      "dragging class should clear on pointercancel",
+    );
+    assertTruthy(
+      root.hasAttribute("data-dock-splitter-drag-active") === false,
+      "splitter active attr should clear on pointercancel",
+    );
 
     splitter.dispatch("pointerdown", pointerEvent({ pointerId: 12, clientX: 500, clientY: 0 }));
     assertTruthy(root.hasAttribute("data-dock-splitter-drag-active"), "splitter active attr should set for next drag");
     splitter.dispatch("lostpointercapture", pointerEvent({ pointerId: 12, clientX: 500, clientY: 0 }));
-    assertTruthy(root.classList.contains("is-dock-splitter-dragging") === false, "dragging class should clear on lostpointercapture");
-    assertTruthy(root.hasAttribute("data-dock-splitter-drag-active") === false, "splitter active attr should clear on lostpointercapture");
+    assertTruthy(
+      root.classList.contains("is-dock-splitter-dragging") === false,
+      "dragging class should clear on lostpointercapture",
+    );
+    assertTruthy(
+      root.hasAttribute("data-dock-splitter-drag-active") === false,
+      "splitter active attr should clear on lostpointercapture",
+    );
   });
 
   test("dock splitter drag does not commit render when split ratio stays unchanged", () => {

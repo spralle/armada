@@ -1,5 +1,5 @@
-import { EntityTypeSelection, RevisionMeta, ShellContextState } from "./types.js";
 import { cloneDockTree } from "./dock-tree.js";
+import type { EntityTypeSelection, RevisionMeta, ShellContextState } from "./types.js";
 
 export function cloneContextState(state: ShellContextState): ShellContextState {
   const nextGroupLanes: ShellContextState["groupLanes"] = {};
@@ -75,10 +75,7 @@ export function normalizePriorityId(selectedIds: string[], priorityId: string | 
   return priorityId;
 }
 
-export function shouldApplyRevision(
-  current: RevisionMeta | undefined,
-  incoming: RevisionMeta,
-): boolean {
+export function shouldApplyRevision(current: RevisionMeta | undefined, incoming: RevisionMeta): boolean {
   if (!current) {
     return true;
   }

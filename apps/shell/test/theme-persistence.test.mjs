@@ -1,11 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import {
-  readUserThemePreference,
-  writeUserThemePreference,
-  readBackgroundPreference,
-  writeBackgroundPreference,
   clearBackgroundPreference,
+  readBackgroundPreference,
+  readUserThemePreference,
+  writeBackgroundPreference,
+  writeUserThemePreference,
 } from "../dist-test/src/theme-persistence.js";
 
 // ---------------------------------------------------------------------------
@@ -21,9 +21,7 @@ test("readBackgroundPreference returns null when no localStorage", () => {
 });
 
 test("writeBackgroundPreference does not throw in Node environment", () => {
-  assert.doesNotThrow(() =>
-    writeBackgroundPreference("any-theme", { index: 2 }),
-  );
+  assert.doesNotThrow(() => writeBackgroundPreference("any-theme", { index: 2 }));
 });
 
 test("clearBackgroundPreference does not throw in Node environment", () => {

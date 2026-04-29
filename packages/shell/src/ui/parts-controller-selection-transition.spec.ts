@@ -1,11 +1,5 @@
-import {
-  createInitialShellContextState,
-  setEntityTypeSelection,
-} from "../context-state.js";
-import {
-  buildSelectionByEntityType,
-  buildSelectionEnvelope,
-} from "./parts-controller-selection-transition.js";
+import { createInitialShellContextState, setEntityTypeSelection } from "../context-state.js";
+import { buildSelectionByEntityType, buildSelectionEnvelope } from "./parts-controller-selection-transition.js";
 
 type TestCase = {
   name: string;

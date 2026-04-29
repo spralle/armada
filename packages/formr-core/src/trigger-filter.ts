@@ -1,5 +1,5 @@
-import type { FieldValidationTriggers } from './contracts.js';
-import type { FieldMetaEntry } from './state.js';
+import type { FieldValidationTriggers } from "./contracts.js";
+import type { FieldMetaEntry } from "./state.js";
 
 export interface TriggerContext {
   readonly fieldMeta: FieldMetaEntry | undefined;
@@ -13,10 +13,7 @@ const DEFAULT_TRIGGERS: FieldValidationTriggers = { onChange: true };
  * Returns true if issues should be visible for this field given its
  * trigger config and current state.
  */
-export function shouldShowIssues(
-  triggers: FieldValidationTriggers | undefined,
-  ctx: TriggerContext,
-): boolean {
+export function shouldShowIssues(triggers: FieldValidationTriggers | undefined, ctx: TriggerContext): boolean {
   const t = triggers ?? DEFAULT_TRIGGERS;
   const hasAnyTrigger = t.onChange || t.onBlur || t.onSubmit || t.onMount;
 

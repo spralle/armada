@@ -1,7 +1,7 @@
-import { createLayerSurfaceContext } from "../surface-context.js";
-import type { LayerSurfaceContextOptions } from "../surface-context.js";
 import type { FocusGrabManager, FocusGrabOptions } from "../focus-grab.js";
 import { LayerRegistry } from "../registry.js";
+import type { LayerSurfaceContextOptions } from "../surface-context.js";
+import { createLayerSurfaceContext } from "../surface-context.js";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];
@@ -53,13 +53,12 @@ function makeMockElement(computedVars?: Record<string, string>): MockElement & H
 }
 
 // ResizeObserver mock
-let capturedResizeCallback: ((entries: Array<{ contentRect: { width: number; height: number } }>) => void) | null = null;
+let capturedResizeCallback: ((entries: Array<{ contentRect: { width: number; height: number } }>) => void) | null =
+  null;
 let resizeObserverDisconnected = false;
 let resizeObserverTarget: unknown = null;
 
 class MockResizeObserver {
-  private callback: (entries: Array<{ contentRect: { width: number; height: number } }>) => void;
-
   constructor(callback: (entries: Array<{ contentRect: { width: number; height: number } }>) => void) {
     this.callback = callback;
     capturedResizeCallback = callback;
@@ -158,16 +157,24 @@ function makeOptions(overrides?: Partial<LayerSurfaceContextOptions>): LayerSurf
     layerContainer: container as unknown as HTMLElement,
     layerRegistry: registry,
     focusGrabManager: fgm,
-    onDismiss: () => { onDismissCalls++; },
-    onLayerChange: (name: string) => { onLayerChangeCalls.push(name); },
-    onExclusiveZoneChange: (value: number) => { onExclusiveZoneChangeCalls.push(value); },
+    onDismiss: () => {
+      onDismissCalls++;
+    },
+    onLayerChange: (name: string) => {
+      onLayerChangeCalls.push(name);
+    },
+    onExclusiveZoneChange: (value: number) => {
+      onExclusiveZoneChangeCalls.push(value);
+    },
     ...overrides,
   };
 
   return {
     ...opts,
     _focusGrabManager: fgm,
-    get _onDismissCalls() { return onDismissCalls; },
+    get _onDismissCalls() {
+      return onDismissCalls;
+    },
     _onLayerChangeCalls: onLayerChangeCalls,
     _onExclusiveZoneChangeCalls: onExclusiveZoneChangeCalls,
   };
@@ -203,7 +210,7 @@ test("onConfigure fires callback on size change", () => {
   ctx.onConfigure((rect) => sizes.push(rect));
 
   assert(capturedResizeCallback !== null, "callback should be captured");
-  capturedResizeCallback!([{ contentRect: { width: 100, height: 200 } }]);
+  capturedResizeCallback?.([{ contentRect: { width: 100, height: 200 } }]);
   assertEqual(sizes.length, 1, "should fire once");
   assertEqual(sizes[0].width, 100, "width");
   assertEqual(sizes[0].height, 200, "height");
@@ -224,7 +231,9 @@ test("onClose callback invoked on dismiss", () => {
   const ctx = createLayerSurfaceContext(opts);
   let called = false;
 
-  ctx.onClose(() => { called = true; });
+  ctx.onClose(() => {
+    called = true;
+  });
   ctx.dismiss();
   assert(called, "onClose callback should fire on dismiss");
 });
@@ -234,7 +243,9 @@ test("onClose dispose removes callback", () => {
   const ctx = createLayerSurfaceContext(opts);
   let called = false;
 
-  const sub = ctx.onClose(() => { called = true; });
+  const sub = ctx.onClose(() => {
+    called = true;
+  });
   sub.dispose();
   ctx.dismiss();
   assert(!called, "disposed callback should not fire");
@@ -255,7 +266,9 @@ test("setLayer logs warning for invalid layer", () => {
   const ctx = createLayerSurfaceContext(opts);
   const warnings: string[] = [];
   const origWarn = console.warn;
-  console.warn = (...args: unknown[]) => { warnings.push(String(args[0])); };
+  console.warn = (...args: unknown[]) => {
+    warnings.push(String(args[0]));
+  };
 
   ctx.setLayer("nonexistent");
 
@@ -287,8 +300,12 @@ test("dismiss invokes onClose callbacks and onDismiss", () => {
   const ctx = createLayerSurfaceContext(opts);
   let closeCount = 0;
 
-  ctx.onClose(() => { closeCount++; });
-  ctx.onClose(() => { closeCount++; });
+  ctx.onClose(() => {
+    closeCount++;
+  });
+  ctx.onClose(() => {
+    closeCount++;
+  });
   ctx.dismiss();
 
   assertEqual(closeCount, 2, "both onClose callbacks");
@@ -309,7 +326,9 @@ test("dismiss is idempotent", () => {
   const opts = makeOptions();
   const ctx = createLayerSurfaceContext(opts);
   let closeCount = 0;
-  ctx.onClose(() => { closeCount++; });
+  ctx.onClose(() => {
+    closeCount++;
+  });
 
   ctx.dismiss();
   ctx.dismiss();
@@ -358,9 +377,15 @@ test("context implements all required interface methods", () => {
   const ctx = createLayerSurfaceContext(opts);
 
   const requiredMethods = [
-    "onConfigure", "onClose", "getExclusiveZones",
-    "setLayer", "setOpacity", "setExclusiveZone",
-    "dismiss", "grabFocus", "releaseFocus",
+    "onConfigure",
+    "onClose",
+    "getExclusiveZones",
+    "setLayer",
+    "setOpacity",
+    "setExclusiveZone",
+    "dismiss",
+    "grabFocus",
+    "releaseFocus",
   ] as const;
 
   for (const method of requiredMethods) {
@@ -376,7 +401,7 @@ test("context implements all required interface methods", () => {
 test("onConfigure twice disconnects first ResizeObserver", () => {
   const opts = makeOptions();
   const ctx = createLayerSurfaceContext(opts);
-  let firstDisconnected = false;
+  const _firstDisconnected = false;
 
   ctx.onConfigure(() => {});
   const firstCb = capturedResizeCallback;
@@ -404,7 +429,11 @@ test("setLayer moves element to new layer container", () => {
       return null;
     },
   };
-  const modalContainer = { appendChild: (_el: unknown) => { appendedTo = modalContainer; } };
+  const modalContainer = {
+    appendChild: (_el: unknown) => {
+      appendedTo = modalContainer;
+    },
+  };
   let appendedTo: unknown = null;
 
   // Wire layerContainer.parentElement to our mock layerHost
@@ -420,7 +449,9 @@ test("grabFocus onDismiss does not double-fire dismiss", () => {
   const opts = makeOptions();
   const ctx = createLayerSurfaceContext(opts);
   let closeCount = 0;
-  ctx.onClose(() => { closeCount++; });
+  ctx.onClose(() => {
+    closeCount++;
+  });
 
   // First dismiss via grabFocus path
   ctx.dismiss();

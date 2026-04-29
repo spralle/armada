@@ -1,5 +1,5 @@
-import type { DockNode } from "../context-state.js";
 import type { ShellRuntime } from "../app/types.js";
+import type { DockNode } from "../context-state.js";
 import { updateSelectedStyles } from "./parts-rendering.js";
 
 /**
@@ -14,9 +14,7 @@ export function updateDockTabVisibility(root: HTMLElement, runtime: ShellRuntime
     return;
   }
 
-  const fallbackActiveTabId = runtime.selectedPartId
-    ?? runtime.contextState.activeTabId
-    ?? null;
+  const fallbackActiveTabId = runtime.selectedPartId ?? runtime.contextState.activeTabId ?? null;
 
   for (const stackEl of root.querySelectorAll<HTMLElement>("[data-dock-stack-id]")) {
     const stackId = stackEl.dataset.dockStackId;
@@ -26,15 +24,9 @@ export function updateDockTabVisibility(root: HTMLElement, runtime: ShellRuntime
 
     const stackNode = findStackNode(dockTree, stackId);
     const tabButtons = [...stackEl.querySelectorAll<HTMLButtonElement>("button[data-action='activate-tab']")];
-    const tabIds = tabButtons
-      .map((b) => b.dataset.partId)
-      .filter((id): id is string => Boolean(id));
+    const tabIds = tabButtons.map((b) => b.dataset.partId).filter((id): id is string => Boolean(id));
 
-    const activeTabId = resolveActiveTabForStack(
-      stackNode?.activeTabId ?? null,
-      fallbackActiveTabId,
-      tabIds,
-    );
+    const activeTabId = resolveActiveTabForStack(stackNode?.activeTabId ?? null, fallbackActiveTabId, tabIds);
 
     for (const button of tabButtons) {
       const isActive = button.dataset.partId === activeTabId;
@@ -89,9 +81,18 @@ function resolveActiveTabForStack(
 
 /** Shell keyboard actions that restructure the dock tree and require a full DOM rebuild. */
 const STRUCTURAL_SHELL_ACTIONS: ReadonlySet<string> = new Set([
-  "shell.move.left", "shell.move.right", "shell.move.up", "shell.move.down",
-  "shell.swap.left", "shell.swap.right", "shell.swap.up", "shell.swap.down",
-  "shell.resize.left", "shell.resize.right", "shell.resize.up", "shell.resize.down",
+  "shell.move.left",
+  "shell.move.right",
+  "shell.move.up",
+  "shell.move.down",
+  "shell.swap.left",
+  "shell.swap.right",
+  "shell.swap.up",
+  "shell.swap.down",
+  "shell.resize.left",
+  "shell.resize.right",
+  "shell.resize.up",
+  "shell.resize.down",
 ]);
 
 export function needsStructuralRender(actionId: string): boolean {

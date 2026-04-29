@@ -1,5 +1,5 @@
-import { sanitizeForWindowName } from "../app/utils.js";
 import type { ShellRuntime } from "../app/types.js";
+import { sanitizeForWindowName } from "../app/utils.js";
 import type { PartLifecycleDeps } from "./part-instance-tab-lifecycle.js";
 
 export interface GhostOpenRequest {

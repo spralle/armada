@@ -59,9 +59,7 @@ export function safeParseUnknown(input: string): { ok: true; value: unknown } | 
 export function loadUnifiedEnvelope(
   storage: StorageLike,
   storageKey: string,
-):
-  | { ok: true; value: UnifiedShellPersistenceEnvelopeV1; warning: null }
-  | { ok: false; warning: string | null } {
+): { ok: true; value: UnifiedShellPersistenceEnvelopeV1; warning: null } | { ok: false; warning: string | null } {
   const raw = storage.getItem(storageKey);
   if (!raw) {
     return { ok: false, warning: null };
@@ -78,9 +76,9 @@ export function loadUnifiedEnvelope(
   return migrateUnifiedShellEnvelope(parsed.value);
 }
 
-export function migrateUnifiedShellEnvelope(input: unknown):
-  | { ok: true; value: UnifiedShellPersistenceEnvelopeV1; warning: null }
-  | { ok: false; warning: string } {
+export function migrateUnifiedShellEnvelope(
+  input: unknown,
+): { ok: true; value: UnifiedShellPersistenceEnvelopeV1; warning: null } | { ok: false; warning: string } {
   if (!isRecord(input) || typeof input.version !== "number") {
     return {
       ok: false,
@@ -107,9 +105,9 @@ export function migrateUnifiedShellEnvelope(input: unknown):
   };
 }
 
-export function migrateLayoutSectionEnvelope(input: unknown):
-  | { ok: true; value: LayoutEnvelopeV1; warning: string | null }
-  | { ok: false; warning: string } {
+export function migrateLayoutSectionEnvelope(
+  input: unknown,
+): { ok: true; value: LayoutEnvelopeV1; warning: string | null } | { ok: false; warning: string } {
   if (input === undefined) {
     return {
       ok: false,
@@ -152,9 +150,9 @@ export function migrateLayoutSectionEnvelope(input: unknown):
   };
 }
 
-export function migrateContextStateEnvelope(input: unknown):
-  | { ok: true; value: ContextStateEnvelopeV2; warning: string | null }
-  | { ok: false; warning: string | null } {
+export function migrateContextStateEnvelope(
+  input: unknown,
+): { ok: true; value: ContextStateEnvelopeV2; warning: string | null } | { ok: false; warning: string | null } {
   if (input === undefined) {
     return {
       ok: false,
@@ -211,9 +209,9 @@ export function migrateContextStateEnvelope(input: unknown):
   };
 }
 
-export function migrateKeybindingOverridesEnvelope(input: unknown):
-  | { ok: true; value: KeybindingOverridesEnvelopeV1; warning: string | null }
-  | { ok: false; warning: string | null } {
+export function migrateKeybindingOverridesEnvelope(
+  input: unknown,
+): { ok: true; value: KeybindingOverridesEnvelopeV1; warning: string | null } | { ok: false; warning: string | null } {
   if (input === undefined) {
     return {
       ok: false,
@@ -252,16 +250,15 @@ export function migrateKeybindingOverridesEnvelope(input: unknown):
   };
 }
 
-
 /**
  * Migrate the `context` section of the unified envelope to workspace format.
  * - version 3: native workspace envelope
  * - version 1 or 2: legacy single context state → wrap as workspace "1"
  * - missing/invalid: return failure so caller uses defaults
  */
-export function migrateWorkspacePersistenceEnvelope(input: unknown):
-  | { ok: true; value: WorkspacePersistenceEnvelopeV1; warning: string | null }
-  | { ok: false; warning: string | null } {
+export function migrateWorkspacePersistenceEnvelope(
+  input: unknown,
+): { ok: true; value: WorkspacePersistenceEnvelopeV1; warning: string | null } | { ok: false; warning: string | null } {
   if (input === undefined) {
     return { ok: false, warning: null };
   }
@@ -304,9 +301,9 @@ export function migrateWorkspacePersistenceEnvelope(input: unknown):
   };
 }
 
-function parseWorkspaceEnvelope(input: Record<string, unknown>):
-  | { ok: true; value: WorkspacePersistenceEnvelopeV1; warning: string | null }
-  | { ok: false; warning: string } {
+function parseWorkspaceEnvelope(
+  input: Record<string, unknown>,
+): { ok: true; value: WorkspacePersistenceEnvelopeV1; warning: string | null } | { ok: false; warning: string } {
   if (!Array.isArray(input.workspaces)) {
     return {
       ok: false,
@@ -334,16 +331,20 @@ function parseWorkspaceEnvelope(input: Record<string, unknown>):
   }
 
   const workspaceIds = new Set(workspaces.map((w) => w.id));
-  const activeWorkspaceId = typeof input.activeWorkspaceId === "string" && workspaceIds.has(input.activeWorkspaceId)
-    ? input.activeWorkspaceId
-    : workspaces[0].id;
+  const activeWorkspaceId =
+    typeof input.activeWorkspaceId === "string" && workspaceIds.has(input.activeWorkspaceId)
+      ? input.activeWorkspaceId
+      : workspaces[0].id;
 
   let workspaceOrder: string[];
   if (Array.isArray(input.workspaceOrder)) {
     const seen = new Set<string>();
     workspaceOrder = input.workspaceOrder
       .filter((id): id is string => typeof id === "string" && workspaceIds.has(id) && !seen.has(id))
-      .map((id) => { seen.add(id); return id; });
+      .map((id) => {
+        seen.add(id);
+        return id;
+      });
     // Append remaining workspaces missing from order
     for (const ws of workspaces) {
       if (!seen.has(ws.id)) {

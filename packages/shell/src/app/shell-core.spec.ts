@@ -84,18 +84,21 @@ test("shell core returns snapshot and notifies subscribers", async () => {
   const afterIntent = core.getSnapshot();
   assertEqual(afterIntent.intentNotice, "intent:open-order", "snapshot should reflect intent flow");
 
-  await core.executeResolvedAction({
-    pluginId: "demo.plugin",
-    pluginName: "Demo",
-    actionId: "open",
-    title: "Open",
-    handler: "open",
-    intentType: "open-order",
-    when: {},
-    loadStrategy: "eager",
-    registrationOrder: 0,
-    sortKey: "demo.plugin::open::open::0",
-  }, null);
+  await core.executeResolvedAction(
+    {
+      pluginId: "demo.plugin",
+      pluginName: "Demo",
+      actionId: "open",
+      title: "Open",
+      handler: "open",
+      intentType: "open-order",
+      when: {},
+      loadStrategy: "eager",
+      registrationOrder: 0,
+      sortKey: "demo.plugin::open::open::0",
+    },
+    null,
+  );
 
   const afterExecute = core.getSnapshot();
   assertEqual(afterExecute.actionNotice, "executed:Open", "snapshot should reflect executed action");

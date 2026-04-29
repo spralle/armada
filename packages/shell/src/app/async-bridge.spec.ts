@@ -1,8 +1,5 @@
-import {
-  createAsyncWindowBridgeCompatibilityShim,
-  normalizeBridgePublishRejectionReason,
-} from "@ghost-shell/bridge";
 import type { WindowBridge, WindowBridgeEvent, WindowBridgeHealth } from "@ghost-shell/bridge";
+import { createAsyncWindowBridgeCompatibilityShim, normalizeBridgePublishRejectionReason } from "@ghost-shell/bridge";
 
 type TestCase = {
   name: string;
@@ -81,11 +78,14 @@ test("shim publish normalizes timeout and closed reasons", async () => {
   const legacyBridge = new StubWindowBridge();
   const shim = createAsyncWindowBridgeCompatibilityShim(legacyBridge);
 
-  const timeoutResult = await shim.publish({
-    type: "sync-probe",
-    probeId: "probe-timeout",
-    sourceWindowId: "window-a",
-  }, { timeoutMs: 0 });
+  const timeoutResult = await shim.publish(
+    {
+      type: "sync-probe",
+      probeId: "probe-timeout",
+      sourceWindowId: "window-a",
+    },
+    { timeoutMs: 0 },
+  );
   assertEqual(timeoutResult.status, "rejected", "zero-timeout publish should reject");
   if (timeoutResult.status === "rejected") {
     assertEqual(timeoutResult.reason, "timeout", "zero-timeout publish should return timeout reason");
@@ -124,14 +124,26 @@ test("shim health stream is deterministic by sequence and state changes", () => 
   assertEqual(seen[0]?.state, "healthy", "first snapshot should be healthy");
   assertEqual(seen[1]?.state, "degraded", "second snapshot should be degraded");
   assertEqual(seen[2]?.state, "healthy", "third snapshot should return healthy");
-  assertEqual(seen[1]!.sequence > seen[0]!.sequence, true, "health sequence should increase monotonically");
-  assertEqual(seen[2]!.sequence > seen[1]!.sequence, true, "health sequence should keep increasing");
+  assertEqual(seen[1]?.sequence > seen[0]?.sequence, true, "health sequence should increase monotonically");
+  assertEqual(seen[2]?.sequence > seen[1]?.sequence, true, "health sequence should keep increasing");
 });
 
 test("publish rejection taxonomy normalizes legacy reasons", () => {
-  assertEqual(normalizeBridgePublishRejectionReason("unavailable", false), "unavailable", "unavailable should normalize");
-  assertEqual(normalizeBridgePublishRejectionReason("channel-error", true), "channel-error", "channel error should normalize");
-  assertEqual(normalizeBridgePublishRejectionReason("publish-failed", true), "publish-failed", "publish failure should normalize");
+  assertEqual(
+    normalizeBridgePublishRejectionReason("unavailable", false),
+    "unavailable",
+    "unavailable should normalize",
+  );
+  assertEqual(
+    normalizeBridgePublishRejectionReason("channel-error", true),
+    "channel-error",
+    "channel error should normalize",
+  );
+  assertEqual(
+    normalizeBridgePublishRejectionReason("publish-failed", true),
+    "publish-failed",
+    "publish failure should normalize",
+  );
 });
 
 let passed = 0;

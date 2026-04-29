@@ -1,25 +1,16 @@
-import type {
-  WindowBridge,
-  WindowBridgeEvent,
-  WindowBridgeHealth,
-} from "./window-bridge.js";
+import type { WindowBridge, WindowBridgeEvent, WindowBridgeHealth } from "./window-bridge.js";
 
-export type AsyncWindowBridgeRejectReason =
-  | "unavailable"
-  | "channel-error"
-  | "publish-failed"
-  | "timeout"
-  | "closed";
+export type AsyncWindowBridgeRejectReason = "unavailable" | "channel-error" | "publish-failed" | "timeout" | "closed";
 
 export type AsyncWindowBridgePublishResult =
   | {
-    status: "accepted";
-    disposition: "enqueued";
-  }
+      status: "accepted";
+      disposition: "enqueued";
+    }
   | {
-    status: "rejected";
-    reason: AsyncWindowBridgeRejectReason;
-  };
+      status: "rejected";
+      reason: AsyncWindowBridgeRejectReason;
+    };
 
 export interface AsyncWindowBridgeHealth {
   sequence: number;
@@ -41,27 +32,25 @@ export interface AsyncWindowBridgePublishOptions {
  */
 export interface AsyncWindowBridge {
   readonly available: boolean;
-  publish(
-    event: WindowBridgeEvent,
-    options?: AsyncWindowBridgePublishOptions,
-  ): Promise<AsyncWindowBridgePublishResult>;
+  publish(event: WindowBridgeEvent, options?: AsyncWindowBridgePublishOptions): Promise<AsyncWindowBridgePublishResult>;
   subscribe(listener: (event: WindowBridgeEvent) => void): () => void;
   subscribeHealth(listener: (health: AsyncWindowBridgeHealth) => void): () => void;
   recover(): Promise<void>;
   close(): void;
 }
 
-export function createAsyncWindowBridgeCompatibilityShim(
-  bridge: WindowBridge,
-): AsyncWindowBridge {
+export function createAsyncWindowBridgeCompatibilityShim(bridge: WindowBridge): AsyncWindowBridge {
   const eventListeners = new Set<(event: WindowBridgeEvent) => void>();
   const healthListeners = new Set<(health: AsyncWindowBridgeHealth) => void>();
   let closed = false;
   let sequence = 0;
-  let latestHealth = toAsyncWindowBridgeHealth({
-    degraded: !bridge.available,
-    reason: bridge.available ? null : "unavailable",
-  }, ++sequence);
+  let latestHealth = toAsyncWindowBridgeHealth(
+    {
+      degraded: !bridge.available,
+      reason: bridge.available ? null : "unavailable",
+    },
+    ++sequence,
+  );
 
   const notifyHealth = (health: WindowBridgeHealth): void => {
     const next = toAsyncWindowBridgeHealth(health, sequence + 1);
@@ -201,10 +190,7 @@ function normalizePublishRejectReasonFromShimState(
   return normalizeBridgePublishRejectionReason(reason, available);
 }
 
-function toAsyncWindowBridgeHealth(
-  health: WindowBridgeHealth,
-  sequence: number,
-): AsyncWindowBridgeHealth {
+function toAsyncWindowBridgeHealth(health: WindowBridgeHealth, sequence: number): AsyncWindowBridgeHealth {
   if (health.reason === "unavailable") {
     return {
       sequence,

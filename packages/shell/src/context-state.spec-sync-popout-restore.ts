@@ -1,12 +1,12 @@
-import type { SpecHarness } from "./context-state.spec-harness.js";
 import { readGlobalContext } from "./context/runtime-state.js";
-import { bindBridgeSync } from "./shell-runtime/bridge-sync-handlers.js";
-import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
+import type { SpecHarness } from "./context-state.spec-harness.js";
 import {
   createReadOnlySafeRoot,
   createRuntime,
   TestBridge,
 } from "./context-state.spec-sync-popout-degraded-fixtures.js";
+import { bindBridgeSync } from "./shell-runtime/bridge-sync-handlers.js";
+import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
 
 export function registerSyncPopoutRestoreSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
@@ -108,8 +108,16 @@ export function registerSyncPopoutRestoreSpecs(harness: SpecHarness): void {
       sourceWindowId: "peer-window",
     });
 
-    assertEqual(runtime.contextState.tabs["tab-b"]?.id, "tab-b", "remote tab-close should not mutate local tab topology");
-    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-b", "remote tab-close should not mutate local tab order");
+    assertEqual(
+      runtime.contextState.tabs["tab-b"]?.id,
+      "tab-b",
+      "remote tab-close should not mutate local tab topology",
+    );
+    assertEqual(
+      runtime.contextState.tabOrder.join(","),
+      "tab-a,tab-b",
+      "remote tab-close should not mutate local tab order",
+    );
     assertEqual(renderPartsCalls, 0, "remote tab-close should not trigger part rerender");
     assertEqual(renderSyncCalls, 0, "remote tab-close should not trigger sync rerender");
   });
@@ -140,11 +148,23 @@ export function registerSyncPopoutRestoreSpecs(harness: SpecHarness): void {
       sourceWindowId: "peer-window",
     });
 
-    assertEqual(runtime.contextState.tabs["tab-remote"], undefined, "remote selection should not register remote tab locally");
+    assertEqual(
+      runtime.contextState.tabs["tab-remote"],
+      undefined,
+      "remote selection should not register remote tab locally",
+    );
     assertEqual(runtime.contextState.activeTabId, "tab-a", "remote selection should not change local active tab");
     assertEqual(runtime.selectedPartId, "tab-a", "remote selection should not change local selected part");
-    assertEqual(runtime.contextState.tabOrder.join(","), baselineOrder, "remote selection should keep local tab order unchanged");
-    assertEqual(readGlobalContext(runtime), "tab-remote|Remote Tab", "remote selection should still update global selection lane");
+    assertEqual(
+      runtime.contextState.tabOrder.join(","),
+      baselineOrder,
+      "remote selection should keep local tab order unchanged",
+    );
+    assertEqual(
+      readGlobalContext(runtime),
+      "tab-remote|Remote Tab",
+      "remote selection should still update global selection lane",
+    );
   });
 
   test("bridge sync ignores remote tab-close events to preserve window-local topology", () => {

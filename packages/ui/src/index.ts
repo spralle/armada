@@ -1,5 +1,4 @@
 // @ghost-shell/ui — Ghost component library built on shadcn/ui
-export { cn } from "./lib/utils";
 
 // Components
 export * from "./components/ui/accordion";
@@ -35,6 +34,7 @@ export * from "./components/ui/popover";
 export * from "./components/ui/progress";
 export * from "./components/ui/radio-group";
 export * from "./components/ui/resizable";
+export * from "./components/ui/schema-form";
 export * from "./components/ui/scroll-area";
 export * from "./components/ui/select";
 export * from "./components/ui/separator";
@@ -50,4 +50,4 @@ export * from "./components/ui/textarea";
 export * from "./components/ui/toggle";
 export * from "./components/ui/toggle-group";
 export * from "./components/ui/tooltip";
-export * from "./components/ui/schema-form";
+export { cn } from "./lib/utils";

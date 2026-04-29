@@ -5,7 +5,9 @@
   "type": "module",
   "ghost": {
     "displayName": "Ghost UI Components",
-    "activationEvents": ["onStartup"],
+    "activationEvents": [
+      "onStartup"
+    ],
     "dependsOn": {
       "plugins": [
         {

@@ -1,5 +1,5 @@
-import type { CompiledRule, TmsConfig } from './contracts.js';
-import type { ScopeManager } from './scope.js';
+import type { CompiledRule, TmsConfig } from "./contracts.js";
+import type { ScopeManager } from "./scope.js";
 
 // ---------------------------------------------------------------------------
 // Truth Maintenance System (ADR §5)
@@ -15,8 +15,8 @@ export interface TruthMaintenanceSystem {
   readonly removeRule: (ruleName: string) => void;
 }
 
-const AUTO_RETRACT_PREFIXES: readonly string[] = ['$ui.', '$contributions.'];
-const AUTO_RETRACT_BARE: ReadonlySet<string> = new Set(['$ui', '$contributions']);
+const AUTO_RETRACT_PREFIXES: readonly string[] = ["$ui.", "$contributions."];
+const AUTO_RETRACT_BARE: ReadonlySet<string> = new Set(["$ui", "$contributions"]);
 
 function isAutoRetractNamespace(path: string): boolean {
   if (AUTO_RETRACT_BARE.has(path)) return true;
@@ -28,15 +28,15 @@ function isAutoRetractNamespace(path: string): boolean {
 
 export function createTms(config?: TmsConfig): TruthMaintenanceSystem {
   const activeRules = new Set<string>();
-  const resolvedConfig: TmsConfig = { autoRetract: config?.autoRetract ?? 'ui-contributions' };
+  const resolvedConfig: TmsConfig = { autoRetract: config?.autoRetract ?? "ui-contributions" };
 
   function shouldTrack(rule: CompiledRule): boolean {
     return rule.hasTms !== false;
   }
 
   function shouldAutoRetract(path: string, cfg: TmsConfig): boolean {
-    const mode = cfg.autoRetract ?? 'ui-contributions';
-    if (mode === 'all') return true;
+    const mode = cfg.autoRetract ?? "ui-contributions";
+    if (mode === "all") return true;
     return isAutoRetractNamespace(path);
   }
 

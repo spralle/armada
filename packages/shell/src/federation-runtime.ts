@@ -1,5 +1,5 @@
 export {
-  type ShellFederationRuntime,
   createShellFederationRuntime,
   isModuleFederationRuntimeInstance,
+  type ShellFederationRuntime,
 } from "@ghost-shell/federation";

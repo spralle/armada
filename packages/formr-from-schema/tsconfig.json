@@ -17,8 +17,5 @@
   },
   "include": ["src"],
   "exclude": ["src/**/__tests__", "src/**/*.test.ts"],
-  "references": [
-    { "path": "../formr-core" },
-    { "path": "../schema-core" }
-  ]
+  "references": [{ "path": "../formr-core" }]
 }

@@ -1,22 +1,22 @@
+import { createAgenda } from "./agenda.js";
+import { createAlphaNetwork } from "./alpha-network.js";
 import type {
-  SessionConfig,
-  RuleSession,
-  ProductionRule,
-  FiringResult,
   CompiledRule,
+  FiringResult,
+  ProductionRule,
+  RuleSession,
+  SessionConfig,
   SubscriptionCallback,
   Unsubscribe,
-} from './contracts.js';
-import { createScopeManager } from './scope.js';
-import { createAlphaNetwork } from './alpha-network.js';
-import { createAgenda } from './agenda.js';
-import { createTms } from './tms.js';
-import { createOperatorRegistry } from './expression-operators.js';
-import { compileRule } from './rule-compiler.js';
-import { validatePath } from './path-utils.js';
-import { ArbiterError, ArbiterErrorCode } from './errors.js';
-import { fireCycle, evaluateCondition } from './fire-cycle.js';
-import type { FireContext, FireLimits } from './fire-cycle.js';
+} from "./contracts.js";
+import { ArbiterError, ArbiterErrorCode } from "./errors.js";
+import { createOperatorRegistry } from "./expression-operators.js";
+import type { FireContext, FireLimits } from "./fire-cycle.js";
+import { fireCycle } from "./fire-cycle.js";
+import { validatePath } from "./path-utils.js";
+import { compileRule } from "./rule-compiler.js";
+import { createScopeManager } from "./scope.js";
+import { createTms } from "./tms.js";
 
 // ---------------------------------------------------------------------------
 // Factory
@@ -47,17 +47,20 @@ export function createSession(config?: SessionConfig): RuleSession {
 
   function assertNotDisposed(): void {
     if (disposed) {
-      throw new ArbiterError(
-        ArbiterErrorCode.SESSION_DISPOSED,
-        'Session has been disposed',
-      );
+      throw new ArbiterError(ArbiterErrorCode.SESSION_DISPOSED, "Session has been disposed");
     }
   }
 
   function buildContext(): FireContext {
     const ctx: FireContext = {
-      scope, network, agenda, tms,
-      compiledRules, operators, limits, ruleConditionState,
+      scope,
+      network,
+      agenda,
+      tms,
+      compiledRules,
+      operators,
+      limits,
+      ruleConditionState,
     };
     if (config?.thenOperators) {
       return { ...ctx, thenOperators: config.thenOperators };
@@ -92,13 +95,13 @@ export function createSession(config?: SessionConfig): RuleSession {
   function assertPath(path: string, value: unknown): void {
     assertNotDisposed();
     validatePath(path);
-    scope.set(path, value, '__assert__');
+    scope.set(path, value, "__assert__");
   }
 
   function retract(path: string): void {
     assertNotDisposed();
     validatePath(path);
-    scope.unset(path, '__assert__');
+    scope.unset(path, "__assert__");
   }
 
   function fire(): FiringResult {
@@ -127,7 +130,9 @@ export function createSession(config?: SessionConfig): RuleSession {
       subscriptions.set(path, set);
     }
     set.add(callback);
-    return () => { set.delete(callback); };
+    return () => {
+      set.delete(callback);
+    };
   }
 
   function update(path: string, value: unknown): FiringResult {

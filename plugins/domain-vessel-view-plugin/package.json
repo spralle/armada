@@ -21,13 +21,21 @@
           "id": "domain.vessel-view.open",
           "title": "Open Vessel View",
           "intent": "domain.entity.open",
-          "when": { "entityType": { "$eq": "vessel" } }
+          "when": {
+            "entityType": {
+              "$eq": "vessel"
+            }
+          }
         },
         {
           "id": "domain.vessel-view.inspect",
           "title": "Inspect Vessel Details",
           "intent": "domain.entity.inspect",
-          "when": { "entityType": { "$eq": "vessel" } }
+          "when": {
+            "entityType": {
+              "$eq": "vessel"
+            }
+          }
         }
       ],
       "selection": [

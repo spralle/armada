@@ -1,20 +1,17 @@
-import type { ProductionRule, CompiledRule } from './contracts.js';
-import { compile } from '@ghost-shell/predicate/compile';
-import { ArbiterError, ArbiterErrorCode } from './errors.js';
-import { compileThenActions } from './then-compiler.js';
+import { compile } from "@ghost-shell/predicate/compile";
+import type { CompiledRule, ProductionRule } from "./contracts.js";
+import { ArbiterError, ArbiterErrorCode } from "./errors.js";
+import { compileThenActions } from "./then-compiler.js";
 
 /**
  * Compiles a ProductionRule into a CompiledRule ready for the engine.
  */
 export function compileRule(rule: ProductionRule): CompiledRule {
   if (!rule.name) {
-    throw new ArbiterError(
-      ArbiterErrorCode.RULE_COMPILATION_FAILED,
-      'Rule must have a name',
-    );
+    throw new ArbiterError(ArbiterErrorCode.RULE_COMPILATION_FAILED, "Rule must have a name");
   }
 
-  if (!rule.when || typeof rule.when !== 'object') {
+  if (!rule.when || typeof rule.when !== "object") {
     throw new ArbiterError(
       ArbiterErrorCode.RULE_COMPILATION_FAILED,
       `Rule "${rule.name}" must have a "when" condition`,
@@ -41,7 +38,7 @@ export function compileRule(rule: ProductionRule): CompiledRule {
     elseActions,
     salience: rule.salience ?? 0,
     activationGroup: rule.activationGroup,
-    onConflict: rule.onConflict ?? 'warn',
+    onConflict: rule.onConflict ?? "warn",
     enabled: rule.enabled ?? true,
     hasTms: rule.else === undefined,
     source: rule,

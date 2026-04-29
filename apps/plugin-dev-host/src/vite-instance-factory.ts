@@ -24,10 +24,8 @@ export interface ManagedViteInstance {
  * - `server.hmr.server` to share the gateway HTTP server
  * - `server.hmr.path` to a unique WebSocket path per plugin
  */
-export async function createPluginViteInstance(
-  options: ViteInstanceOptions,
-): Promise<ManagedViteInstance> {
-  const { pluginId, configPath, pluginDir, gatewayPort, httpServer } = options;
+export async function createPluginViteInstance(options: ViteInstanceOptions): Promise<ManagedViteInstance> {
+  const { pluginId, configPath, pluginDir, gatewayPort: _gatewayPort, httpServer: _httpServer } = options;
 
   const viteServer = await createServer({
     configFile: configPath,
@@ -52,20 +50,13 @@ export async function createPluginViteInstance(
 /**
  * Gracefully closes all managed Vite instances.
  */
-export async function closeAllViteInstances(
-  instances: readonly ManagedViteInstance[],
-): Promise<void> {
-  const closeResults = await Promise.allSettled(
-    instances.map((instance) => instance.viteServer.close()),
-  );
+export async function closeAllViteInstances(instances: readonly ManagedViteInstance[]): Promise<void> {
+  const closeResults = await Promise.allSettled(instances.map((instance) => instance.viteServer.close()));
 
   for (let index = 0; index < closeResults.length; index++) {
     const result = closeResults[index];
     if (result.status === "rejected") {
-      console.error(
-        `[plugin-dev-host] failed to close Vite instance for ${instances[index].pluginId}:`,
-        result.reason,
-      );
+      console.error(`[plugin-dev-host] failed to close Vite instance for ${instances[index].pluginId}:`, result.reason);
     }
   }
 }

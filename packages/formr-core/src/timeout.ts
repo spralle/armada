@@ -1,4 +1,4 @@
-import { FormrError } from './errors.js';
+import { FormrError } from "./errors.js";
 
 // ADR section 11.2 — Runtime constraints
 
@@ -15,15 +15,11 @@ export const DEFAULT_RUNTIME_CONSTRAINTS: RuntimeConstraints = {
 };
 
 /** Race a promise against a timeout, throwing FORMR_TIMEOUT on expiry. */
-export async function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  errorMessage: string,
-): Promise<T> {
+export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout>;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
-      reject(new FormrError('FORMR_TIMEOUT', errorMessage));
+      reject(new FormrError("FORMR_TIMEOUT", errorMessage));
     }, timeoutMs);
   });
 

@@ -1,29 +1,29 @@
 // Public types — rule definitions
-export type {
-  ProductionRule,
-  ThenStage,
-  ThenValue,
-  ThenOperatorHandler,
-  ThenOperatorRegistry,
-} from './contracts.js';
-
 // Public types — session configuration
+// Public types — session API
+// Public types — results & diagnostics
 export type {
+  ArbiterWarning,
+  FiringResult,
+  OperatorFunction,
+  OperatorRegistryConfig,
+  ProductionRule,
+  RuleSession,
   SessionConfig,
   SessionLimits,
+  StateChange,
+  SubscriptionCallback,
+  ThenOperatorHandler,
+  ThenOperatorRegistry,
+  ThenStage,
+  ThenValue,
   TmsConfig,
-  OperatorRegistryConfig,
-  OperatorFunction,
-} from './contracts.js';
-
-// Public types — session API
-export type { RuleSession, SubscriptionCallback, Unsubscribe } from './contracts.js';
-
-// Public types — results & diagnostics
-export type { FiringResult, StateChange, ArbiterWarning, WriteRecord } from './contracts.js';
+  Unsubscribe,
+  WriteRecord,
+} from "./contracts.js";
 
 // Error types
-export { ArbiterError, ArbiterErrorCode } from './errors.js';
+export { ArbiterError, ArbiterErrorCode } from "./errors.js";
 
 // Session factory
-export { createSession } from './session.js';
+export { createSession } from "./session.js";

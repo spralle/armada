@@ -1,24 +1,22 @@
-import type {
-  PluginLayerSurfaceContribution,
-  LayerSurfaceContext,
-  ElementTransitionHook,
-} from "@ghost-shell/contracts";
-import { evaluateContributionPredicate } from "@ghost-shell/plugin-system";
-import {
-  HOOK_REGISTRY_SERVICE_ID,
-  ELEMENT_TRANSITION_HOOK_ID,
-} from "@ghost-shell/contracts";
+import type { ElementTransitionHook, PluginLayerSurfaceContribution } from "@ghost-shell/contracts";
+import { ELEMENT_TRANSITION_HOOK_ID, HOOK_REGISTRY_SERVICE_ID } from "@ghost-shell/contracts";
 import type { LayerRegistry } from "@ghost-shell/layer";
+import {
+  computeExclusiveZones,
+  createFocusGrabManager,
+  createKeyboardExclusiveManager,
+  createSessionLockManager,
+  type FocusGrabManager,
+  type KeyboardExclusiveManager,
+  type SessionLockManager,
+} from "@ghost-shell/layer";
+import { evaluateContributionPredicate } from "@ghost-shell/plugin-system";
 import type { ShellRuntime } from "../app/types.js";
+import { safeUnmount } from "../federation-mount-utils.js";
 import type { ShellFederationRuntime } from "../federation-runtime.js";
-import { safeUnmount, type MountCleanup } from "../federation-mount-utils.js";
+import type { HookRegistry } from "../hook-registry.js";
 import { composeSurfaceKey, type MountSurfaceComponentFn } from "./surface-mount-utils.js";
-import { computeExclusiveZones } from "@ghost-shell/layer";
-import { type KeyboardExclusiveManager, createKeyboardExclusiveManager } from "@ghost-shell/layer";
-import { type FocusGrabManager, createFocusGrabManager } from "@ghost-shell/layer";
-import { type SessionLockManager, createSessionLockManager } from "@ghost-shell/layer";
-import { reconcileLayerContainer, type ReconcilerContext } from "./surface-reconciler.js";
-import { type HookRegistry } from "../hook-registry.js";
+import { type ReconcilerContext, reconcileLayerContainer } from "./surface-reconciler.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,9 +55,7 @@ export interface LayerSurfaceRenderer {
   readonly keyboardExclusiveManager: KeyboardExclusiveManager;
 }
 
-export function createLayerSurfaceRenderer(
-  options: LayerSurfaceRendererOptions,
-): LayerSurfaceRenderer {
+export function createLayerSurfaceRenderer(options: LayerSurfaceRendererOptions): LayerSurfaceRenderer {
   const { federationRuntime, layerRegistry, layerHost } = options;
   const onSurfaceMounted = options.onSurfaceMounted;
   const onSurfaceMountError = options.onSurfaceMountError;
@@ -142,7 +138,9 @@ export function createLayerSurfaceRenderer(
       federationRuntime,
       focusGrabManager,
       pluginSnapshotMap,
-      get generation() { return generation; },
+      get generation() {
+        return generation;
+      },
       cleanupSurfaceBehaviors,
       maybeActivateSurfaceBehaviors,
       onSurfaceMounted,
@@ -160,8 +158,8 @@ export function createLayerSurfaceRenderer(
         if (!hookReg) return;
         const hooks = hookReg.getHooks<ElementTransitionHook>(ELEMENT_TRANSITION_HOOK_ID);
         const exitPromises = hooks
-          .filter(h => typeof h.onExit === "function")
-          .map(h => h.onExit!(el, { type: "surface", id: _surfaceId }));
+          .filter((h) => typeof h.onExit === "function")
+          .map((h) => h.onExit?.(el, { type: "surface", id: _surfaceId }));
         if (exitPromises.length > 0) {
           await Promise.all(exitPromises);
         }
@@ -246,9 +244,7 @@ export function filterByWhenCondition(
   surfaces: Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }>,
   facts: Record<string, unknown> = {},
 ): Array<{ pluginId: string; surface: PluginLayerSurfaceContribution }> {
-  return surfaces.filter((entry) =>
-    evaluateContributionPredicate(entry.surface.when, facts),
-  );
+  return surfaces.filter((entry) => evaluateContributionPredicate(entry.surface.when, facts));
 }
 
 // ---------------------------------------------------------------------------

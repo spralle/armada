@@ -5,12 +5,7 @@
  * and each function under 50 lines.
  */
 import type { PartialThemePalette, TerminalPalette, ThemeMode } from "@ghost-shell/contracts/theme";
-import {
-  adjustLightness,
-  blendWithBackground,
-  desaturate,
-  withAlpha,
-} from "./color-utils.js";
+import { adjustLightness, blendWithBackground, desaturate, withAlpha } from "./color-utils.js";
 
 // ---------------------------------------------------------------------------
 // Fallback constants (co-located with the helpers that use them)
@@ -54,10 +49,7 @@ export interface CoreTokens {
 }
 
 /** Resolve all core tokens from partial input + optional terminal palette. */
-export function resolveCoreTokens(
-  input: PartialThemePalette,
-  terminal: TerminalPalette | undefined,
-): CoreTokens {
+export function resolveCoreTokens(input: PartialThemePalette, terminal: TerminalPalette | undefined): CoreTokens {
   const mode: ThemeMode = input.mode ?? "dark";
   const isDark = mode === "dark";
   const sign = isDark ? 1 : -1;
@@ -77,19 +69,30 @@ export function resolveCoreTokens(
   const border = input.border ?? adjustLightness(input.background, sign * 15);
 
   const opacityActive = input.opacityActive ?? input.opacity ?? 0.97;
-  const opacityInactive =
-    input.opacityInactive ?? (input.opacity != null ? input.opacity * 0.93 : 0.90);
+  const opacityInactive = input.opacityInactive ?? (input.opacity != null ? input.opacity * 0.93 : 0.9);
 
   return {
-    mode, isDark, sign, primary, accent, secondary,
-    surface, overlay, muted, border,
+    mode,
+    isDark,
+    sign,
+    primary,
+    accent,
+    secondary,
+    surface,
+    overlay,
+    muted,
+    border,
     ring: input.ring ?? primary,
     cursor: input.cursor ?? input.foreground,
     selectionBackground: input.selectionBackground ?? primary,
     radius: input.radius ?? FALLBACK_RADIUS,
     opacity: input.opacity ?? 1.0,
-    error, warning, success, info,
-    opacityActive, opacityInactive,
+    error,
+    warning,
+    success,
+    info,
+    opacityActive,
+    opacityInactive,
     borderActive: input.borderActive ?? accent,
     borderInactive: input.borderInactive ?? border,
     borderSize: input.borderSize ?? "1px",
@@ -104,7 +107,13 @@ export function resolveCoreTokens(
 export function deriveSurfaceVariants(
   surface: string,
   sign: number,
-): { surfaceElevated: string; surfaceHover: string; surfaceInset: string; surfaceInsetDeep: string; surfaceOverlay: string } {
+): {
+  surfaceElevated: string;
+  surfaceHover: string;
+  surfaceInset: string;
+  surfaceInsetDeep: string;
+  surfaceOverlay: string;
+} {
   return {
     surfaceElevated: adjustLightness(surface, sign * 6),
     surfaceHover: adjustLightness(surface, sign * 3),
@@ -142,9 +151,12 @@ export function deriveBorderVariants(
 }
 
 /** Derive primary glow/overlay effect tokens using alpha blending. */
-export function derivePrimaryEffects(
-  primary: string,
-): { primaryGlowSubtle: string; primaryGlow: string; primaryBorderSemi: string; primaryOverlay: string } {
+export function derivePrimaryEffects(primary: string): {
+  primaryGlowSubtle: string;
+  primaryGlow: string;
+  primaryBorderSemi: string;
+  primaryOverlay: string;
+} {
   return {
     primaryGlowSubtle: withAlpha(primary, 0.2),
     primaryGlow: withAlpha(primary, 0.27),

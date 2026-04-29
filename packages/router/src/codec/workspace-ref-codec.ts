@@ -1,4 +1,4 @@
-import type { UrlCodecStrategy, UrlCodecState, DecodedShellState } from "./codec-types.js";
+import type { DecodedShellState, UrlCodecState, UrlCodecStrategy } from "./codec-types.js";
 
 const PATH_PREFIX = "/w/";
 const TAB_PARAM = "tab";

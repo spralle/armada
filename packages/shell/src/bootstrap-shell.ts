@@ -1,27 +1,23 @@
-import type { ShellCoreApi } from "./app/contracts.js";
-import type { ShellRuntime } from "./app/types.js";
-import type { PluginActivationTriggerType } from "./plugin-registry.js";
 import type { WindowBridgeEvent } from "@ghost-shell/bridge";
-import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
+import type { ShellCoreApi } from "./app/contracts.js";
+import type { ShellMigrationFlags } from "./app/migration-flags.js";
+import { selectShellTransportPath } from "./app/migration-flags.js";
 import { createShellCoreApi } from "./app/shell-core.js";
+import type { ShellRuntime } from "./app/types.js";
+import { createShellFederationRuntime } from "./federation-runtime.js";
+import { createLayerSurfaceRenderer } from "./layer/surface-renderer.js";
+import { createDefaultEdgeSlotsLayout } from "./layout.js";
+import type { PluginActivationTriggerType } from "./plugin-registry.js";
+import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
 import {
   initializeReactPanels,
-  renderPanels as renderPanelsView,
   renderContextControlsPanel as renderContextControlsPanelView,
+  renderPanels as renderPanelsView,
   renderParts as renderPartsView,
   renderSyncStatus as renderSyncStatusView,
 } from "./shell-runtime/runtime-render.js";
-import {
-  mountMainWindow,
-  mountPopout,
-  getLayerRegistry,
-} from "./ui/shell-mount.js";
 import { createEdgeSlotRenderer } from "./ui/edge-slot-renderer.js";
-import { createLayerSurfaceRenderer } from "./layer/surface-renderer.js";
-import { createShellFederationRuntime } from "./federation-runtime.js";
-import { createDefaultEdgeSlotsLayout } from "./layout.js";
-import type { ShellMigrationFlags } from "./app/migration-flags.js";
-import { selectShellTransportPath } from "./app/migration-flags.js";
+import { getLayerRegistry, mountMainWindow, mountPopout } from "./ui/shell-mount.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,7 +127,15 @@ export function createShellBootstrap(
     renderContextControlsPanel: (viewRoot, viewRuntime) => renderContextControlsPanelView(viewRoot, viewRuntime),
     renderEdgeSlots: (viewRoot, viewRuntime) => edgeSlotRenderer.renderEdgeSlots(viewRoot, viewRuntime),
     renderLayerSurfaces: (viewRoot, viewRuntime) => {
-      renderLayerSurfacesLazy(viewRoot, viewRuntime, federationRuntime, () => layerSurfaceRendererInstance, (r) => { layerSurfaceRendererInstance = r; });
+      renderLayerSurfacesLazy(
+        viewRoot,
+        viewRuntime,
+        federationRuntime,
+        () => layerSurfaceRendererInstance,
+        (r) => {
+          layerSurfaceRendererInstance = r;
+        },
+      );
     },
   };
 
@@ -142,10 +146,7 @@ export function createShellBootstrap(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function buildEffectsPort(
-  deps: ShellBootstrapDeps,
-  getBootstrap: () => ShellBootstrap,
-) {
+function buildEffectsPort(deps: ShellBootstrapDeps, getBootstrap: () => ShellBootstrap) {
   return {
     activatePluginForBoundary: (options: {
       pluginId: string;
@@ -155,7 +156,7 @@ function buildEffectsPort(
     announce: (message: string) => deps.announce(message),
     publishWithDegrade: (event: WindowBridgeEvent) => deps.publishWithDegrade(event),
     renderContextControlsPanel: () => {
-      const b = getBootstrap();
+      const _b = getBootstrap();
       // Delegate to the bootstrap's own render method — but we need root+runtime.
       // The deps callback already closes over root+runtime from the caller.
       deps.renderContextControlsPanel();
@@ -166,11 +167,7 @@ function buildEffectsPort(
   };
 }
 
-function buildPanelDeps(
-  deps: ShellBootstrapDeps,
-  core: ShellCoreApi,
-  effects: ReturnType<typeof buildEffectsPort>,
-) {
+function buildPanelDeps(deps: ShellBootstrapDeps, core: ShellCoreApi, effects: ReturnType<typeof buildEffectsPort>) {
   return {
     activatePluginForBoundary: (options: {
       pluginId: string;

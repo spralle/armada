@@ -17,8 +17,8 @@ import {
   SHELL_PERSISTENCE_SCHEMA_VERSION,
   WORKSPACE_SCHEMA_VERSION,
 } from "./envelope.js";
-import { sanitizeDockTreeStateWithReport } from "./sanitize-dock-tree.js";
 import { sanitizeContextState, sanitizeWorkspaceEnvelope } from "./sanitize.js";
+import { sanitizeDockTreeStateWithReport } from "./sanitize-dock-tree.js";
 import { isRecord } from "./utils.js";
 
 export function createLocalStorageContextStatePersistence(
@@ -128,7 +128,6 @@ function joinWarnings(first: string | null, second: string | null): string | nul
   return first ?? second;
 }
 
-
 export function createLocalStorageWorkspacePersistence(
   storage: StorageLike | undefined,
   options: ContextStatePersistenceOptions,
@@ -181,9 +180,10 @@ export function createLocalStorageWorkspacePersistence(
       for (const id of workspaceManager.workspaceOrder) {
         const ws = workspaceManager.workspaces[id];
         if (!ws) continue;
-        const contextState = id === workspaceManager.activeWorkspaceId
-          ? sanitizeContextState(liveContextState, createInitialShellContextState())
-          : sanitizeContextState(ws.contextState, createInitialShellContextState());
+        const contextState =
+          id === workspaceManager.activeWorkspaceId
+            ? sanitizeContextState(liveContextState, createInitialShellContextState())
+            : sanitizeContextState(ws.contextState, createInitialShellContextState());
         workspaces.push({
           id: ws.id,
           name: ws.name,

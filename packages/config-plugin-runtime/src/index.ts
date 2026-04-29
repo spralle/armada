@@ -1,30 +1,28 @@
 export { armadaWeaver } from "./armada-layers.js";
-
 export {
-  type PluginConfigInput,
-  type IncrementalSchemaRegistryAdapter,
-  type IncrementalPluginSchemaRegistry,
-  collectPluginSchemaDeclarations,
-  buildSchemaMap,
-  createIncrementalSchemaRegistryAdapter,
-  createIncrementalPluginSchemaRegistry,
-} from "./plugin-schema-bridge.js";
-
-export {
+  type ConfigurationLifecycleHooks,
+  type ConfigurationLifecycleOptions,
   createConfigurationLifecycleHooks,
-  createPluginConfigurationLifecycleHooks,
-  createInMemorySchemaRegistry,
   createInMemoryPluginSchemaRegistry,
+  createInMemorySchemaRegistry,
+  createPluginConfigurationLifecycleHooks,
   type PluginConfigLifecycleEvent,
   type PluginConfigLifecycleResult,
   type PluginConfigLifecycleStateContainer,
-  type ConfigurationLifecycleHooks,
-  type ConfigurationLifecycleOptions,
-  type PromoteOptions,
-  type SchemaRegistry,
   type PluginConfigurationLifecycleHooks,
   type PluginConfigurationLifecycleOptions,
   type PluginPromoteOptions,
   type PluginSchemaRegistry,
+  type PromoteOptions,
+  type SchemaRegistry,
   type SchemaRegistryMutationResult,
 } from "./plugin-config-lifecycle-hooks.js";
+export {
+  buildSchemaMap,
+  collectPluginSchemaDeclarations,
+  createIncrementalPluginSchemaRegistry,
+  createIncrementalSchemaRegistryAdapter,
+  type IncrementalPluginSchemaRegistry,
+  type IncrementalSchemaRegistryAdapter,
+  type PluginConfigInput,
+} from "./plugin-schema-bridge.js";

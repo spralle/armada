@@ -66,16 +66,14 @@ export const SHELL_KEYBOARD_ACTION_IDS = [
   "shell.popout",
 ] as const;
 
-export type ShellKeyboardActionId = typeof SHELL_KEYBOARD_ACTION_IDS[number];
+export type ShellKeyboardActionId = (typeof SHELL_KEYBOARD_ACTION_IDS)[number];
 
 /**
  * Action IDs that are registered (for user override bindings) but permanently
  * unavailable in the browser shell runtime. They have no default keybindings
  * to avoid silently consuming keypresses.
  */
-export const SHELL_UNAVAILABLE_ACTION_IDS = [
-  "shell.window.mode.toggle",
-] as const;
+export const SHELL_UNAVAILABLE_ACTION_IDS = ["shell.window.mode.toggle"] as const;
 
 export interface ShellDefaultKeybinding {
   action: ShellKeyboardActionId;
@@ -148,9 +146,7 @@ export const RESERVED_BROWSER_SHORTCUTS = new Set([
 ]);
 
 /** Action IDs that are registered but hidden from UI (action palette, keybinding panel). */
-const HIDDEN_ACTION_IDS = new Set<string>([
-  "shell.elevatedSession.activate",
-]);
+const HIDDEN_ACTION_IDS = new Set<string>(["shell.elevatedSession.activate"]);
 
 export function createDefaultShellKeybindingContract(): PluginContract {
   const allActionIds = [...SHELL_KEYBOARD_ACTION_IDS, ...SHELL_UNAVAILABLE_ACTION_IDS];

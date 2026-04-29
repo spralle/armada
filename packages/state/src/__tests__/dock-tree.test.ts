@@ -1,16 +1,16 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
   createInitialDockTree,
   ensureTabRegisteredInDockTree,
   removeTabFromDockTree,
 } from "../dock-tree-register-remove.js";
-import type { DockTreeState, DockStackNode, DockSplitNode } from "../dock-tree-types.js";
+import type { DockStackNode, DockTreeState } from "../dock-tree-types.js";
 
 describe("createInitialDockTree", () => {
   test("creates a tree with a single stack containing the tab", () => {
     const tree = createInitialDockTree("tab-1");
     expect(tree.root).not.toBeNull();
-    expect(tree.root!.kind).toBe("stack");
+    expect(tree.root?.kind).toBe("stack");
     const stack = tree.root as DockStackNode;
     expect(stack.tabIds).toEqual(["tab-1"]);
     expect(stack.activeTabId).toBe("tab-1");
@@ -105,7 +105,7 @@ describe("removeTabFromDockTree", () => {
     const result = removeTabFromDockTree(splitTree, "tab-2");
     // Should collapse to just the remaining stack
     expect(result.root).not.toBeNull();
-    expect(result.root!.kind).toBe("stack");
+    expect(result.root?.kind).toBe("stack");
     expect((result.root as DockStackNode).tabIds).toEqual(["tab-1"]);
   });
 });

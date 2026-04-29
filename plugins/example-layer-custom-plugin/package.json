@@ -20,7 +20,10 @@
           "component": "ClockWidgetSurface",
           "layer": "widgets",
           "anchor": 10,
-          "size": { "width": 200, "height": 200 },
+          "size": {
+            "width": 200,
+            "height": 200
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "on_demand"
         }

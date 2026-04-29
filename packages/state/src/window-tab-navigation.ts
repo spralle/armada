@@ -1,9 +1,9 @@
+import { findActiveOrFirstStack } from "./dock-tree-helpers.js";
 import { reorderTabInStack } from "./dock-tree-window-actions.js";
-import { setActiveTab } from "./tabs-groups.js";
-import type { ShellContextState } from "./types.js";
 import type { PlacementStrategyRegistry } from "./placement-strategy/registry.js";
 import type { PlacementConfig } from "./placement-strategy/types.js";
-import { findActiveOrFirstStack } from "./dock-tree-helpers.js";
+import { setActiveTab } from "./tabs-groups.js";
+import type { ShellContextState } from "./types.js";
 import { findStackByTabId } from "./window-spatial-commands.js";
 
 export function cycleTabInActiveStack(
@@ -37,10 +37,7 @@ export function cycleTabInActiveStack(
   };
 }
 
-export function cycleTabGroup(
-  state: ShellContextState,
-  step: 1 | -1,
-): { state: ShellContextState; changed: boolean } {
+export function cycleTabGroup(state: ShellContextState, step: 1 | -1): { state: ShellContextState; changed: boolean } {
   const activeTabId = state.activeTabId;
   const activeGroupId = activeTabId ? state.tabs[activeTabId]?.groupId : null;
   if (!activeGroupId) {

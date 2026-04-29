@@ -1,7 +1,4 @@
-import type {
-  TenantPluginDescriptor,
-  TenantPluginManifestResponse,
-} from "./types.js";
+import type { TenantPluginDescriptor, TenantPluginManifestResponse } from "./types.js";
 
 export function escapeHtml(value: string): string {
   return value

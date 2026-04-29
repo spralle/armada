@@ -12,9 +12,7 @@ import type { ComponentType } from "react";
  * typically declare specific props. Using the widened form is acceptable since
  * plugin authors own both the manifest and the component types.
  */
-export function defineReactParts<
-  const M extends { contributes?: { parts?: ReadonlyArray<{ id: string }> } },
->(
+export function defineReactParts<const M extends { contributes?: { parts?: ReadonlyArray<{ id: string }> } }>(
   manifest: M,
   components: Record<ExtractPartIds<M, string>, ComponentType<never>>,
 ): ReactPartsModule {

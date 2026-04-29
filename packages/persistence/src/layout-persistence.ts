@@ -1,11 +1,7 @@
-import {
-  createDefaultLayoutState,
-  sanitizeLayoutState,
-  type PartialLayoutState,
-} from "@ghost-shell/state";
+import { createDefaultLayoutState, type PartialLayoutState, sanitizeLayoutState } from "@ghost-shell/state";
 import type {
-  LayoutPersistenceOptions,
   LayoutEnvelopeV1,
+  LayoutPersistenceOptions,
   ShellLayoutPersistence,
   StorageLike,
   UnifiedShellPersistenceEnvelopeV1,

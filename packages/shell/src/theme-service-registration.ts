@@ -5,15 +5,15 @@
 // builtin plugin capability through the PluginRegistry.
 
 import type {
-  ThemeService,
-  ThemeInfo,
   BackgroundInfo,
-  ThemeBackgroundEntry,
   PluginContract,
+  ThemeBackgroundEntry,
+  ThemeInfo,
+  ThemeService,
 } from "@ghost-shell/contracts";
 import { THEME_SERVICE_ID } from "@ghost-shell/contracts";
-import type { ThemeRegistry } from "./theme-registry.js";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
+import type { ThemeRegistry } from "./theme-registry.js";
 
 export const THEME_SERVICE_PLUGIN_ID = "ghost.shell.theme-service";
 
@@ -25,10 +25,7 @@ export const THEME_SERVICE_PLUGIN_ID = "ghost.shell.theme-service";
  * Create a ThemeService adapter from a ThemeRegistry and register it
  * as a builtin plugin capability on the plugin registry.
  */
-export function registerThemeServiceCapability(
-  registry: ShellPluginRegistry,
-  themeRegistry: ThemeRegistry,
-): void {
+export function registerThemeServiceCapability(registry: ShellPluginRegistry, themeRegistry: ThemeRegistry): void {
   const themeService: ThemeService = {
     listThemes(): ThemeInfo[] {
       return themeRegistry.getAvailableThemes();
@@ -79,9 +76,7 @@ export function registerThemeServiceCapability(
     },
     contributes: {
       capabilities: {
-        services: [
-          { id: THEME_SERVICE_ID, version: "1.0.0" },
-        ],
+        services: [{ id: THEME_SERVICE_ID, version: "1.0.0" }],
       },
     },
   };

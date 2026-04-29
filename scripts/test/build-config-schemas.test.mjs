@@ -1,5 +1,4 @@
 import { describe, it } from "node:test";
-import assert from "node:assert/strict";
 
 // build-config-schemas imports from packages/config-engine which was removed.
 // These tests are skipped until the engine is restored or replaced.

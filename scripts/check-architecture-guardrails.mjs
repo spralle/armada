@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -46,10 +46,7 @@ async function collectGuardTargets() {
 }
 
 // Scopes allowed to use the bare @ghost-shell/contracts barrel import.
-const bareContractsAllowedPrefixes = [
-  "apps/shell/",
-  "packages/federation/",
-];
+const bareContractsAllowedPrefixes = ["apps/shell/", "packages/federation/"];
 
 // Directories to scan for bare @ghost-shell/contracts imports.
 const bareContractsScanRoots = ["plugins", "packages", "apps"];
@@ -61,7 +58,7 @@ async function collectAllSourceFiles(roots) {
   for (const root of roots) {
     const absolutePath = path.resolve(repoRoot, root);
     const stat = await safeStat(absolutePath);
-    if (!stat || !stat.isDirectory()) continue;
+    if (!stat?.isDirectory()) continue;
     for (const entry of await walkFiles(absolutePath)) {
       const relative = path.relative(repoRoot, entry).replace(/\\/g, "/");
       if (isScriptFile(relative)) {
@@ -73,9 +70,7 @@ async function collectAllSourceFiles(roots) {
 }
 
 function isAllowedBareContractsImport(filePath) {
-  return bareContractsAllowedPrefixes.some((prefix) =>
-    filePath.startsWith(prefix),
-  );
+  return bareContractsAllowedPrefixes.some((prefix) => filePath.startsWith(prefix));
 }
 
 async function checkBareContractsImports() {
@@ -96,15 +91,11 @@ async function checkBareContractsImports() {
   }
 
   if (!warnings.length) {
-    console.log(
-      "[architecture-guardrails] OK: no bare @ghost-shell/contracts imports outside allowed scopes.",
-    );
+    console.log("[architecture-guardrails] OK: no bare @ghost-shell/contracts imports outside allowed scopes.");
     return;
   }
 
-  console.warn(
-    "[architecture-guardrails] WARN: bare @ghost-shell/contracts imports found outside allowed scopes:",
-  );
+  console.warn("[architecture-guardrails] WARN: bare @ghost-shell/contracts imports found outside allowed scopes:");
   for (const w of warnings) {
     console.warn(
       `  ${w.file} — use sub-path imports (e.g. @ghost-shell/contracts/plugin, @ghost-shell/contracts/services)`,

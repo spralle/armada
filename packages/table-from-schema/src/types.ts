@@ -1,17 +1,10 @@
-import type { SchemaFieldType, SchemaMetadata } from '@ghost-shell/schema-core';
+import type { SchemaFieldType, SchemaMetadata } from "@ghost-shell/schema-core";
 
 /** Responsive column visibility tier */
-export type ColumnPriority = 'essential' | 'default' | 'optional';
+export type ColumnPriority = "essential" | "default" | "optional";
 
 /** Filter variant hints for table fields */
-export type FilterVariant =
-  | 'text'
-  | 'number'
-  | 'range'
-  | 'select'
-  | 'multiSelect'
-  | 'boolean'
-  | 'date';
+export type FilterVariant = "text" | "number" | "range" | "select" | "multiSelect" | "boolean" | "date";
 
 /** Framework-agnostic table field descriptor */
 export interface TableFieldDescriptor {
@@ -26,7 +19,7 @@ export interface TableFieldDescriptor {
   /** Display order (lower = first) */
   readonly order: number;
   /** Column alignment hint */
-  readonly align?: 'left' | 'center' | 'right';
+  readonly align?: "left" | "center" | "right";
   /** Format hint for rendering (e.g. "currency", "date", "badge") */
   readonly format?: string;
   /** Format options from schema meta */
@@ -44,7 +37,7 @@ export interface TableFieldDescriptor {
   /** Responsive column visibility tier */
   readonly priority: ColumnPriority;
   /** Pinned position */
-  readonly pinned?: 'left' | 'right' | false;
+  readonly pinned?: "left" | "right" | false;
   /** Width hint */
   readonly width?: number | string;
   /** Filter min for range filters */
@@ -56,7 +49,7 @@ export interface TableFieldDescriptor {
   /** Allow text wrapping in this column. Default: false (text truncates). */
   readonly wrap?: boolean;
   /** Card view: which dock slot this column renders in */
-  readonly cardSlot?: 'header' | 'leading' | 'body' | 'trailing' | 'footer';
+  readonly cardSlot?: "header" | "leading" | "body" | "trailing" | "footer";
 }
 
 /** Info about a filterable field */
@@ -81,13 +74,13 @@ export interface TableFieldOverride {
   readonly label?: string;
   readonly format?: string;
   readonly formatOptions?: Record<string, unknown>;
-  readonly pinned?: 'left' | 'right' | false;
+  readonly pinned?: "left" | "right" | false;
   readonly sortable?: boolean;
   readonly filterable?: boolean;
   readonly filterVariant?: FilterVariant;
   readonly hidden?: boolean;
   readonly width?: number | string;
-  readonly align?: 'left' | 'center' | 'right';
+  readonly align?: "left" | "center" | "right";
   readonly order?: number;
   readonly priority?: ColumnPriority;
   /** Minimum width in pixels (column can grow). Used with wrap to prevent too-narrow columns. */
@@ -95,7 +88,7 @@ export interface TableFieldOverride {
   /** Allow text wrapping in this column. Default: false (text truncates). */
   readonly wrap?: boolean;
   /** Card view: which dock slot this column renders in */
-  readonly cardSlot?: 'header' | 'leading' | 'body' | 'trailing' | 'footer';
+  readonly cardSlot?: "header" | "leading" | "body" | "trailing" | "footer";
 }
 
 /** Options for compileTableFields */

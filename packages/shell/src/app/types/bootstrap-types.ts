@@ -1,11 +1,11 @@
-import type { PluginContract, ConfigurationService } from "@ghost-shell/contracts";
-import type { ShellPluginRegistry } from "../../plugin-registry.js";
-import type { ThemeRegistry } from "../../theme-registry.js";
-import type { PluginConfigSyncConfigurationService } from "../../plugin-config-sync-controller.js";
-import type { GhostApiFactoryDependencies } from "../../plugin-api/ghost-api-factory.js";
-import type { SyncStatusServiceDeps } from "../../sync-status-service-registration.js";
+import type { ConfigurationService, PluginContract } from "@ghost-shell/contracts";
 import type { ContextServiceDeps } from "../../context-service-registration.js";
 import type { KeybindingServiceDeps } from "../../keybinding-service-registration.js";
+import type { GhostApiFactoryDependencies } from "../../plugin-api/ghost-api-factory.js";
+import type { PluginConfigSyncConfigurationService } from "../../plugin-config-sync-controller.js";
+import type { ShellPluginRegistry } from "../../plugin-registry.js";
+import type { SyncStatusServiceDeps } from "../../sync-status-service-registration.js";
+import type { ThemeRegistry } from "../../theme-registry.js";
 
 export type { ConfigurationService } from "@ghost-shell/contracts";
 

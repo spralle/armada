@@ -1,6 +1,6 @@
 import { resolveIntentWithTrace } from "@ghost-shell/intents";
-import { createCatalog, createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
+import { createCatalog, createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 
 export function registerIntentRuntimeTraceOperatorsSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;

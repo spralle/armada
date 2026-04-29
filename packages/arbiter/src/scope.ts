@@ -1,26 +1,21 @@
-import type { WriteRecord } from './contracts.js';
-import { validatePath, splitPath } from './path-utils.js';
-import { ArbiterError, ArbiterErrorCode } from './errors.js';
+import type { WriteRecord } from "./contracts.js";
+import { ArbiterError, ArbiterErrorCode } from "./errors.js";
+import { splitPath, validatePath } from "./path-utils.js";
 
 // ---------------------------------------------------------------------------
 // Namespace types and routing
 // ---------------------------------------------------------------------------
 
-export type Namespace = 'root' | '$ui' | '$state' | '$meta' | '$contributions';
+export type Namespace = "root" | "$ui" | "$state" | "$meta" | "$contributions";
 
 const NAMESPACE_PREFIXES: readonly { readonly prefix: string; readonly namespace: Namespace }[] = [
-  { prefix: '$contributions.', namespace: '$contributions' },
-  { prefix: '$state.', namespace: '$state' },
-  { prefix: '$meta.', namespace: '$meta' },
-  { prefix: '$ui.', namespace: '$ui' },
+  { prefix: "$contributions.", namespace: "$contributions" },
+  { prefix: "$state.", namespace: "$state" },
+  { prefix: "$meta.", namespace: "$meta" },
+  { prefix: "$ui.", namespace: "$ui" },
 ];
 
-const BARE_NAMESPACES: ReadonlySet<string> = new Set([
-  '$ui',
-  '$state',
-  '$meta',
-  '$contributions',
-]);
+const BARE_NAMESPACES: ReadonlySet<string> = new Set(["$ui", "$state", "$meta", "$contributions"]);
 
 export interface ScopeManager {
   readonly get: (path: string) => unknown;
@@ -49,15 +44,15 @@ function resolveNamespace(path: string): { namespace: Namespace; localPath: stri
     }
   }
   if (BARE_NAMESPACES.has(path)) {
-    return { namespace: path as Namespace, localPath: '' };
+    return { namespace: path as Namespace, localPath: "" };
   }
-  return { namespace: 'root', localPath: path };
+  return { namespace: "root", localPath: path };
 }
 
 function deepGet(obj: Record<string, unknown>, segments: readonly string[]): unknown {
   let current: unknown = obj;
   for (const seg of segments) {
-    if (current === null || current === undefined || typeof current !== 'object') {
+    if (current === null || current === undefined || typeof current !== "object") {
       return undefined;
     }
     current = (current as Record<string, unknown>)[seg];
@@ -70,7 +65,7 @@ function deepSet(obj: Record<string, unknown>, segments: readonly string[], valu
   for (let i = 0; i < segments.length - 1; i++) {
     const seg = segments[i]!;
     const next = current[seg];
-    if (next === null || next === undefined || typeof next !== 'object' || Array.isArray(next)) {
+    if (next === null || next === undefined || typeof next !== "object" || Array.isArray(next)) {
       const created: Record<string, unknown> = {};
       current[seg] = created;
       current = created;
@@ -86,7 +81,7 @@ function deepDelete(obj: Record<string, unknown>, segments: readonly string[]): 
   for (let i = 0; i < segments.length - 1; i++) {
     const seg = segments[i]!;
     const next = current[seg];
-    if (next === null || next === undefined || typeof next !== 'object') {
+    if (next === null || next === undefined || typeof next !== "object") {
       return;
     }
     current = next as Record<string, unknown>;
@@ -107,11 +102,9 @@ function safeClone(value: unknown): unknown {
 // Factory
 // ---------------------------------------------------------------------------
 
-export function createScopeManager(
-  initialState?: Readonly<Record<string, unknown>>,
-): ScopeManager {
+export function createScopeManager(initialState?: Readonly<Record<string, unknown>>): ScopeManager {
   const stores: Record<Namespace, Record<string, unknown>> = {
-    root: initialState ? structuredClone(initialState) as Record<string, unknown> : {},
+    root: initialState ? (structuredClone(initialState) as Record<string, unknown>) : {},
     $ui: {},
     $state: {},
     $meta: {},
@@ -128,14 +121,12 @@ export function createScopeManager(
   function readPath(path: string): unknown {
     validatePath(path);
     const { namespace, localPath } = resolveNamespace(path);
-    if (localPath === '') return getStore(namespace);
+    if (localPath === "") return getStore(namespace);
     return deepGet(getStore(namespace), splitPath(localPath));
   }
 
-  function recordWrite(
-    path: string, value: unknown, snapshotValue: unknown, ruleName: string,
-  ): WriteRecord {
-    const record: WriteRecord = { path, value, snapshotValue, ruleName };
+  function recordWrite(path: string, value: unknown, snapshotValue: unknown, ruleName: string): WriteRecord {
+    const _record: WriteRecord = { path, value, snapshotValue, ruleName };
     const key = snapshotKey(ruleName, path);
     if (!snapshots.has(key)) {
       snapshots.set(key, safeClone(snapshotValue));
@@ -156,12 +147,10 @@ export function createScopeManager(
     return finalRecord;
   }
 
-  function writePath(
-    path: string, value: unknown, ruleName: string,
-  ): WriteRecord | undefined {
+  function writePath(path: string, value: unknown, ruleName: string): WriteRecord | undefined {
     validatePath(path);
     const { namespace, localPath } = resolveNamespace(path);
-    if (localPath === '') return undefined;
+    if (localPath === "") return undefined;
     const segments = splitPath(localPath);
     const prev = deepGet(getStore(namespace), segments);
     deepSet(getStore(namespace), segments, value);
@@ -171,19 +160,17 @@ export function createScopeManager(
   function unsetPath(path: string, ruleName: string): WriteRecord | undefined {
     validatePath(path);
     const { namespace, localPath } = resolveNamespace(path);
-    if (localPath === '') return undefined;
+    if (localPath === "") return undefined;
     const segments = splitPath(localPath);
     const prev = deepGet(getStore(namespace), segments);
     deepDelete(getStore(namespace), segments);
     return recordWrite(path, undefined, prev, ruleName);
   }
 
-  function pushPath(
-    path: string, value: unknown, ruleName: string,
-  ): WriteRecord | undefined {
+  function pushPath(path: string, value: unknown, ruleName: string): WriteRecord | undefined {
     validatePath(path);
     const { namespace, localPath } = resolveNamespace(path);
-    if (localPath === '') return undefined;
+    if (localPath === "") return undefined;
     const segments = splitPath(localPath);
     const store = getStore(namespace);
     const current = deepGet(store, segments);
@@ -193,47 +180,41 @@ export function createScopeManager(
     return recordWrite(path, arr, prev, ruleName);
   }
 
-  function incPath(
-    path: string, amount: unknown, ruleName: string,
-  ): WriteRecord | undefined {
+  function incPath(path: string, amount: unknown, ruleName: string): WriteRecord | undefined {
     validatePath(path);
-    if (typeof amount !== 'number') {
+    if (typeof amount !== "number") {
       throw new ArbiterError(
         ArbiterErrorCode.EXPRESSION_EVAL_FAILED,
         `inc requires a numeric amount, got ${typeof amount}`,
       );
     }
     const { namespace, localPath } = resolveNamespace(path);
-    if (localPath === '') return undefined;
+    if (localPath === "") return undefined;
     const segments = splitPath(localPath);
     const store = getStore(namespace);
     const current = deepGet(store, segments);
     const prev = current;
-    const base = typeof current === 'number' ? current : 0;
+    const base = typeof current === "number" ? current : 0;
     const newVal = base + amount;
     deepSet(store, segments, newVal);
     return recordWrite(path, newVal, prev, ruleName);
   }
 
-  function mergePath(
-    path: string, value: unknown, ruleName: string,
-  ): WriteRecord | undefined {
+  function mergePath(path: string, value: unknown, ruleName: string): WriteRecord | undefined {
     validatePath(path);
-    if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-      throw new ArbiterError(
-        ArbiterErrorCode.EXPRESSION_EVAL_FAILED,
-        'merge requires a plain object value',
-      );
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+      throw new ArbiterError(ArbiterErrorCode.EXPRESSION_EVAL_FAILED, "merge requires a plain object value");
     }
     const { namespace, localPath } = resolveNamespace(path);
-    if (localPath === '') return undefined;
+    if (localPath === "") return undefined;
     const segments = splitPath(localPath);
     const store = getStore(namespace);
     const current = deepGet(store, segments);
     const prev = safeClone(current);
-    const base = (current !== null && typeof current === 'object' && !Array.isArray(current))
-      ? current as Record<string, unknown>
-      : {};
+    const base =
+      current !== null && typeof current === "object" && !Array.isArray(current)
+        ? (current as Record<string, unknown>)
+        : {};
     const merged = { ...base, ...(value as Record<string, unknown>) };
     deepSet(store, segments, merged);
     return recordWrite(path, merged, prev, ruleName);
@@ -249,7 +230,7 @@ export function createScopeManager(
     const paths: string[] = [];
     for (const record of records) {
       const { namespace, localPath } = resolveNamespace(record.path);
-      if (localPath === '') continue;
+      if (localPath === "") continue;
       const segments = splitPath(localPath);
       if (record.snapshotValue === undefined) {
         deepDelete(getStore(namespace), segments);
@@ -279,7 +260,7 @@ export function createScopeManager(
 
   function getState(): Readonly<Record<string, unknown>> {
     const result: Record<string, unknown> = { ...structuredClone(stores.root) };
-    for (const ns of ['$ui', '$state', '$meta', '$contributions'] as const) {
+    for (const ns of ["$ui", "$state", "$meta", "$contributions"] as const) {
       if (Object.keys(stores[ns]).length > 0) {
         result[ns] = structuredClone(stores[ns]);
       }
@@ -293,7 +274,7 @@ export function createScopeManager(
 
   function getReadView(): Readonly<Record<string, unknown>> {
     const result: Record<string, unknown> = { ...stores.root };
-    for (const ns of ['$ui', '$state', '$meta', '$contributions'] as const) {
+    for (const ns of ["$ui", "$state", "$meta", "$contributions"] as const) {
       if (Object.keys(stores[ns]).length > 0) {
         result[ns] = stores[ns];
       }

@@ -1,18 +1,20 @@
-import type { ActivationContext, Disposable, GhostApi } from "@ghost-shell/contracts";
+import type { ActivationContext, GhostApi } from "@ghost-shell/contracts";
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import {
-  createGhostApi,
-  createActivationContext,
-  type GhostApiFactoryDependencies,
-} from "./ghost-api-factory.js";
+import { createActivationContext, createGhostApi, type GhostApiFactoryDependencies } from "./ghost-api-factory.js";
 
-function createTestApiDeps(
-  overrides: Partial<GhostApiFactoryDependencies> = {},
-): GhostApiFactoryDependencies {
+function createTestApiDeps(overrides: Partial<GhostApiFactoryDependencies> = {}): GhostApiFactoryDependencies {
   return {
     getActionSurface: () => ({ actions: [], menus: [], keybindings: [] }),
     getActionContext: () => ({}),
-    getIntentRuntime: () => ({ async resolve() { return { kind: "no-match" as const, feedback: "", trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] } }; } }),
+    getIntentRuntime: () => ({
+      async resolve() {
+        return {
+          kind: "no-match" as const,
+          feedback: "",
+          trace: { intentType: "", evaluatedAt: 0, actions: [], matched: [] },
+        };
+      },
+    }),
     activatePlugin: async () => true,
     getWindowId: () => "win-test",
     getIsPopout: () => false,
@@ -26,8 +28,12 @@ function createTestApiDeps(
       openPartInstance: () => "tab-test",
     },
     workspaceServiceDeps: {
-      getRuntime: () => { throw new Error("not wired in test"); },
-      getWorkspaceSwitchDeps: () => { throw new Error("not wired in test"); },
+      getRuntime: () => {
+        throw new Error("not wired in test");
+      },
+      getWorkspaceSwitchDeps: () => {
+        throw new Error("not wired in test");
+      },
     },
     ...overrides,
   };
@@ -61,9 +67,7 @@ export function registerGhostApiFactorySpecs(harness: SpecHarness): void {
   });
 
   test("ghost-api-factory: window service reflects correct windowId", () => {
-    const { api } = createGhostApi(
-      createTestApiDeps({ getWindowId: () => "win-42" }),
-    );
+    const { api } = createGhostApi(createTestApiDeps({ getWindowId: () => "win-42" }));
 
     assertEqual(api.window.windowId, "win-42", "windowId should match deps");
   });
@@ -84,8 +88,16 @@ export function registerGhostApiFactorySpecs(harness: SpecHarness): void {
     let disposed1 = false;
     let disposed2 = false;
 
-    ctx.subscriptions.push({ dispose: () => { disposed1 = true; } });
-    ctx.subscriptions.push({ dispose: () => { disposed2 = true; } });
+    ctx.subscriptions.push({
+      dispose: () => {
+        disposed1 = true;
+      },
+    });
+    ctx.subscriptions.push({
+      dispose: () => {
+        disposed2 = true;
+      },
+    });
 
     assertEqual(ctx.subscriptions.length, 2, "should have 2 subscriptions");
 
@@ -112,9 +124,7 @@ export function registerGhostApiFactorySpecs(harness: SpecHarness): void {
       receivedApi = a;
       receivedCtx = c;
       // Plugin registers a runtime action
-      c.subscriptions.push(
-        a.actions.registerAction("test.runtime.action", () => "result"),
-      );
+      c.subscriptions.push(a.actions.registerAction("test.runtime.action", () => "result"));
     };
 
     activate(api, ctx);
@@ -124,7 +134,7 @@ export function registerGhostApiFactorySpecs(harness: SpecHarness): void {
     assertEqual(ctx.subscriptions.length, 1, "should have 1 subscription from activate");
 
     // Verify the registered action works
-    const result = await api.actions.executeAction("test.runtime.action");
+    const _result = await api.actions.executeAction("test.runtime.action");
     // Runtime action returns the value, but executeAction's generic makes it T
     assertTruthy(true, "runtime action should execute without error");
   });

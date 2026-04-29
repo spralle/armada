@@ -1,9 +1,4 @@
-import {
-  cloneDockNode,
-  collapseDockNode,
-  findActiveOrFirstStack,
-  hasTabInDockNode,
-} from "./dock-tree-helpers.js";
+import { cloneDockNode, collapseDockNode, findActiveOrFirstStack, hasTabInDockNode } from "./dock-tree-helpers.js";
 import type { DockNode, DockTreeState } from "./dock-tree-types.js";
 
 export function createInitialDockTree(tabId: string): DockTreeState {

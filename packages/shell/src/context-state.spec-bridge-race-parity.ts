@@ -1,20 +1,14 @@
-import type { ShellRuntime } from "./app/types.js";
 import type {
   AsyncWindowBridge,
   AsyncWindowBridgeHealth,
   AsyncWindowBridgePublishResult,
-} from "@ghost-shell/bridge";
-import type { SpecHarness } from "./context-state.spec-harness.js";
-import {
-  bindBridgeSync,
-  publishWithDegrade,
-  requestSyncProbe,
-} from "./shell-runtime/bridge-sync-handlers.js";
-import type {
   WindowBridge,
   WindowBridgeEvent,
   WindowBridgeHealth,
 } from "@ghost-shell/bridge";
+import type { ShellRuntime } from "./app/types.js";
+import type { SpecHarness } from "./context-state.spec-harness.js";
+import { bindBridgeSync, publishWithDegrade, requestSyncProbe } from "./shell-runtime/bridge-sync-handlers.js";
 
 class StubWindowBridge implements WindowBridge {
   available = true;
@@ -225,13 +219,18 @@ export function registerBridgeRaceAndParitySpecs(harness: SpecHarness): void {
       reason: "channel-error",
     };
 
-    publishWithDegrade(root, runtime, {
-      type: "selection",
-      selectedPartId: "tab-a",
-      selectedPartTitle: "Tab A",
-      selectionByEntityType: {},
-      sourceWindowId: runtime.windowId,
-    }, bindings);
+    publishWithDegrade(
+      root,
+      runtime,
+      {
+        type: "selection",
+        selectedPartId: "tab-a",
+        selectedPartTitle: "Tab A",
+        selectionByEntityType: {},
+        sourceWindowId: runtime.windowId,
+      },
+      bindings,
+    );
 
     assertEqual(runtime.syncDegraded, false, "publish callback should not run until async rejection settles");
     await flushMicrotasks();
@@ -341,6 +340,10 @@ export function registerBridgeRaceAndParitySpecs(harness: SpecHarness): void {
     assertEqual(runtime.selectedPartId, null, "same-window selection event should be ignored by boundary guard");
     assertEqual(runtime.syncDegraded, false, "same-window selection should not degrade sync state");
     assertEqual(counters.renderSyncStatusCalls, 0, "same-window selection should not trigger sync render");
-    assertEqual(counters.renderContextControlsPanelCalls, 0, "same-window selection should not trigger context controls render");
+    assertEqual(
+      counters.renderContextControlsPanelCalls,
+      0,
+      "same-window selection should not trigger context controls render",
+    );
   });
 }

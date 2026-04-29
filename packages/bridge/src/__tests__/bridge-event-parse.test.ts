@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { parseBridgeEvent } from "../window-bridge-parse.js";
 
 describe("parseBridgeEvent", () => {
@@ -24,7 +24,7 @@ describe("parseBridgeEvent", () => {
     };
     const result = parseBridgeEvent(event);
     expect(result).not.toBeNull();
-    expect(result!.type).toBe("tab-close");
+    expect(result?.type).toBe("tab-close");
   });
 
   test("rejects tab-close with missing fields", () => {
@@ -40,7 +40,7 @@ describe("parseBridgeEvent", () => {
     };
     const result = parseBridgeEvent(event);
     expect(result).not.toBeNull();
-    expect(result!.type).toBe("sync-probe");
+    expect(result?.type).toBe("sync-probe");
   });
 
   test("parses sync-ack event", () => {
@@ -52,7 +52,7 @@ describe("parseBridgeEvent", () => {
     };
     const result = parseBridgeEvent(event);
     expect(result).not.toBeNull();
-    expect(result!.type).toBe("sync-ack");
+    expect(result?.type).toBe("sync-ack");
   });
 
   test("rejects sync-ack with missing targetWindowId", () => {
@@ -73,14 +73,16 @@ describe("parseBridgeEvent", () => {
     };
     const result = parseBridgeEvent(event);
     expect(result).not.toBeNull();
-    expect(result!.type).toBe("popout-restore-request");
+    expect(result?.type).toBe("popout-restore-request");
   });
 
   test("rejects popout-restore-request with missing fields", () => {
-    expect(parseBridgeEvent({
-      type: "popout-restore-request",
-      sourceWindowId: "win-1",
-    })).toBeNull();
+    expect(
+      parseBridgeEvent({
+        type: "popout-restore-request",
+        sourceWindowId: "win-1",
+      }),
+    ).toBeNull();
   });
 
   test("parses dnd-session-upsert event", () => {
@@ -92,7 +94,7 @@ describe("parseBridgeEvent", () => {
     };
     const result = parseBridgeEvent(event);
     expect(result).not.toBeNull();
-    expect(result!.type).toBe("dnd-session-upsert");
+    expect(result?.type).toBe("dnd-session-upsert");
   });
 
   test("parses dnd-session-delete event", () => {
@@ -103,7 +105,7 @@ describe("parseBridgeEvent", () => {
     };
     const result = parseBridgeEvent(event);
     expect(result).not.toBeNull();
-    expect(result!.type).toBe("dnd-session-delete");
+    expect(result?.type).toBe("dnd-session-delete");
   });
 
   test("parses selection event with valid selectionByEntityType", () => {
@@ -118,7 +120,7 @@ describe("parseBridgeEvent", () => {
     };
     const result = parseBridgeEvent(event);
     expect(result).not.toBeNull();
-    expect(result!.type).toBe("selection");
+    expect(result?.type).toBe("selection");
   });
 
   test("rejects selection event with invalid selectionByEntityType", () => {
@@ -141,6 +143,6 @@ describe("parseBridgeEvent", () => {
     };
     const result = parseBridgeEvent(event);
     expect(result).not.toBeNull();
-    expect(result!.type).toBe("context");
+    expect(result?.type).toBe("context");
   });
 });

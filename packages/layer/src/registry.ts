@@ -3,18 +3,67 @@ import type {
   PluginLayerDefinition,
   PluginLayerSurfaceContribution,
 } from "@ghost-shell/contracts/layer";
-import { KeyboardInteractivity, InputBehavior } from "@ghost-shell/contracts/layer";
+import { InputBehavior, KeyboardInteractivity } from "@ghost-shell/contracts/layer";
 import { createLayerContainer, removeLayerContainer } from "./layer-dom.js";
 
 /** The 7 built-in layers with generous z-order gaps for plugin insertion. */
 export const BUILTIN_LAYERS: readonly LayerDefinition[] = [
-  { name: "background", zOrder: 0, defaultKeyboard: KeyboardInteractivity.None, defaultPointer: InputBehavior.Passthrough, supportsSessionLock: false, pluginContributable: true },
-  { name: "bottom", zOrder: 100, defaultKeyboard: KeyboardInteractivity.None, defaultPointer: InputBehavior.Opaque, supportsSessionLock: false, pluginContributable: true },
-  { name: "main", zOrder: 200, defaultKeyboard: KeyboardInteractivity.OnDemand, defaultPointer: InputBehavior.Opaque, supportsSessionLock: false, pluginContributable: false },
-  { name: "floating", zOrder: 300, defaultKeyboard: KeyboardInteractivity.OnDemand, defaultPointer: InputBehavior.Opaque, supportsSessionLock: false, pluginContributable: true },
-  { name: "notification", zOrder: 400, defaultKeyboard: KeyboardInteractivity.None, defaultPointer: InputBehavior.ContentAware, supportsSessionLock: false, pluginContributable: true },
-  { name: "modal", zOrder: 500, defaultKeyboard: KeyboardInteractivity.Exclusive, defaultPointer: InputBehavior.Opaque, supportsSessionLock: false, pluginContributable: true },
-  { name: "overlay", zOrder: 600, defaultKeyboard: KeyboardInteractivity.Exclusive, defaultPointer: InputBehavior.Opaque, supportsSessionLock: true, pluginContributable: true },
+  {
+    name: "background",
+    zOrder: 0,
+    defaultKeyboard: KeyboardInteractivity.None,
+    defaultPointer: InputBehavior.Passthrough,
+    supportsSessionLock: false,
+    pluginContributable: true,
+  },
+  {
+    name: "bottom",
+    zOrder: 100,
+    defaultKeyboard: KeyboardInteractivity.None,
+    defaultPointer: InputBehavior.Opaque,
+    supportsSessionLock: false,
+    pluginContributable: true,
+  },
+  {
+    name: "main",
+    zOrder: 200,
+    defaultKeyboard: KeyboardInteractivity.OnDemand,
+    defaultPointer: InputBehavior.Opaque,
+    supportsSessionLock: false,
+    pluginContributable: false,
+  },
+  {
+    name: "floating",
+    zOrder: 300,
+    defaultKeyboard: KeyboardInteractivity.OnDemand,
+    defaultPointer: InputBehavior.Opaque,
+    supportsSessionLock: false,
+    pluginContributable: true,
+  },
+  {
+    name: "notification",
+    zOrder: 400,
+    defaultKeyboard: KeyboardInteractivity.None,
+    defaultPointer: InputBehavior.ContentAware,
+    supportsSessionLock: false,
+    pluginContributable: true,
+  },
+  {
+    name: "modal",
+    zOrder: 500,
+    defaultKeyboard: KeyboardInteractivity.Exclusive,
+    defaultPointer: InputBehavior.Opaque,
+    supportsSessionLock: false,
+    pluginContributable: true,
+  },
+  {
+    name: "overlay",
+    zOrder: 600,
+    defaultKeyboard: KeyboardInteractivity.Exclusive,
+    defaultPointer: InputBehavior.Opaque,
+    supportsSessionLock: true,
+    pluginContributable: true,
+  },
 ] as const;
 
 export class LayerRegistry {
@@ -67,7 +116,10 @@ export class LayerRegistry {
       }
       if (zConflict) {
         const owner = zConflict.pluginId ? `plugin '${zConflict.pluginId}'` : "built-in";
-        denied.push({ name: def.name, reason: `z-order ${def.zOrder} conflicts with ${owner} layer '${zConflict.name}'` });
+        denied.push({
+          name: def.name,
+          reason: `z-order ${def.zOrder} conflicts with ${owner} layer '${zConflict.name}'`,
+        });
         continue;
       }
 
@@ -127,10 +179,7 @@ export class LayerRegistry {
     return { removedLayers, affectedSurfaceIds };
   }
 
-  registerSurface(
-    pluginId: string,
-    surface: PluginLayerSurfaceContribution,
-  ): { success: boolean; reason?: string } {
+  registerSurface(pluginId: string, surface: PluginLayerSurfaceContribution): { success: boolean; reason?: string } {
     const validation = this.validateSurfaceContribution(surface);
     if (!validation.valid) {
       return { success: false, reason: validation.reason };
@@ -157,9 +206,7 @@ export class LayerRegistry {
     return removed;
   }
 
-  validateSurfaceContribution(
-    surface: PluginLayerSurfaceContribution,
-  ): { valid: boolean; reason?: string } {
+  validateSurfaceContribution(surface: PluginLayerSurfaceContribution): { valid: boolean; reason?: string } {
     const layer = this.layers.get(surface.layer);
     if (!layer) {
       return { valid: false, reason: `Layer '${surface.layer}' does not exist` };
@@ -171,7 +218,10 @@ export class LayerRegistry {
       return { valid: false, reason: `Layer '${surface.layer}' does not support session lock` };
     }
     if (this.sessionLockCheck && !this.sessionLockCheck(layer.zOrder)) {
-      return { valid: false, reason: `Session lock active — cannot add surface to layer '${surface.layer}' at z-order ${layer.zOrder}` };
+      return {
+        valid: false,
+        reason: `Session lock active — cannot add surface to layer '${surface.layer}' at z-order ${layer.zOrder}`,
+      };
     }
     return { valid: true };
   }

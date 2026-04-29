@@ -67,7 +67,7 @@ async function main() {
   } catch {
     violations.push("config/ directory does not exist");
   }
-  if (!configStat || !configStat.isDirectory()) {
+  if (!configStat?.isDirectory()) {
     violations.push("config/ is not a directory");
     return report();
   }

@@ -1,5 +1,4 @@
-import type { LayoutMiddleware } from '@ghost-shell/formr-from-schema';
-import type { LayoutNode } from '@ghost-shell/formr-from-schema';
+import type { LayoutMiddleware, LayoutNode } from "@ghost-shell/formr-from-schema";
 
 interface WeaverExtensionData {
   readonly changePolicy?: unknown;
@@ -15,20 +14,18 @@ interface WeaverExtensionData {
  */
 export function createGovernanceMiddleware(): LayoutMiddleware {
   return (node, context) => {
-    if (node.type !== 'field') {
+    if (node.type !== "field") {
       return node;
     }
 
-    const weaver = context.fieldInfo?.metadata?.extensions?.['weaver'] as
-      | WeaverExtensionData
-      | undefined;
+    const weaver = context.fieldInfo?.metadata?.extensions?.["weaver"] as WeaverExtensionData | undefined;
 
     if (weaver === undefined) {
       return node;
     }
 
     const wrapper: LayoutNode = {
-      type: 'governance-field',
+      type: "governance-field",
       id: `governance-${node.id}`,
       children: [node],
       props: {

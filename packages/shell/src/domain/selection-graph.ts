@@ -1,12 +1,5 @@
-import type {
-  PluginContract,
-  PluginSelectionContribution,
-} from "@ghost-shell/contracts";
-import {
-  type DerivedLaneDefinition,
-  type SelectionPropagationRule,
-  type ShellContextState,
-} from "../context-state.js";
+import type { SelectionSyncEvent } from "@ghost-shell/bridge";
+import type { PluginContract, PluginSelectionContribution } from "@ghost-shell/contracts";
 import type {
   RuntimeDerivedLaneContribution,
   SelectionGraphExtensions,
@@ -14,8 +7,13 @@ import type {
   SelectionWrite,
   ShellRuntime,
 } from "../app/types.js";
-import { applySelectionUpdate, getTabGroupId, readEntityTypeSelection, type RevisionMeta } from "../context-state.js";
-import type { SelectionSyncEvent } from "@ghost-shell/bridge";
+import type { DerivedLaneDefinition, SelectionPropagationRule, ShellContextState } from "../context-state.js";
+import {
+  applySelectionUpdate,
+  getTabGroupId,
+  type RevisionMeta,
+  type readEntityTypeSelection,
+} from "../context-state.js";
 
 type SelectionInterestDescriptor = {
   sourceEntityType: string;
@@ -29,15 +27,12 @@ type SelectionInterestAdapterInput = {
   sourceSelection: ReturnType<typeof readEntityTypeSelection>;
 };
 
-type SelectionInterestAdapter = (
-  input: SelectionInterestAdapterInput,
-) => {
+type SelectionInterestAdapter = (input: SelectionInterestAdapterInput) => {
   selectedIds: string[];
   priorityId?: string | null;
 } | null;
 
-const selectionInterestAdapters: Readonly<Record<string, SelectionInterestAdapter>> = {
-};
+const selectionInterestAdapters: Readonly<Record<string, SelectionInterestAdapter>> = {};
 
 const passthroughSelectionInterestAdapter: SelectionInterestAdapter = ({ sourceSelection }) => ({
   selectedIds: sourceSelection.selectedIds,
@@ -56,16 +51,20 @@ export function applySelectionPropagation(
   const failures: string[] = [];
 
   for (const write of writes) {
-    const result = applySelectionUpdate(next, {
-      entityType: write.entityType,
-      selectedIds: write.selectedIds,
-      priorityId: write.priorityId,
-      revision,
-    }, {
-      propagationRules,
-      derivedLanes,
-      derivedGroupId,
-    });
+    const result = applySelectionUpdate(
+      next,
+      {
+        entityType: write.entityType,
+        selectedIds: write.selectedIds,
+        priorityId: write.priorityId,
+        revision,
+      },
+      {
+        propagationRules,
+        derivedLanes,
+        derivedGroupId,
+      },
+    );
     next = result.state;
     failures.push(...result.derivedLaneFailures);
   }
@@ -112,9 +111,7 @@ export function resolveSelectionGraphExtensions(runtime: ShellRuntime): Selectio
       }
 
       for (const interest of readSelectionContributionInterests(contribution)) {
-        propagationRules.push(
-          createSelectionPropagationRule(plugin.id, contribution, receiverEntityType, interest),
-        );
+        propagationRules.push(createSelectionPropagationRule(plugin.id, contribution, receiverEntityType, interest));
       }
     }
 
@@ -211,9 +208,7 @@ function readSelectionReceiverEntityType(contribution: PluginSelectionContributi
   return typeof receiver === "string" && receiver.length > 0 ? receiver : null;
 }
 
-function readSelectionContributionInterests(
-  contribution: PluginSelectionContribution,
-): SelectionInterestDescriptor[] {
+function readSelectionContributionInterests(contribution: PluginSelectionContribution): SelectionInterestDescriptor[] {
   const rawInterests = (contribution as PluginSelectionContribution & { interests?: unknown }).interests;
   if (Array.isArray(rawInterests) && rawInterests.length > 0) {
     const parsed = rawInterests

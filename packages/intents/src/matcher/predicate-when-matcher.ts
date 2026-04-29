@@ -1,6 +1,4 @@
-import { compileShorthand } from "@ghost-shell/predicate";
-import { evaluateWithTrace } from "@ghost-shell/predicate";
-import { evaluate } from "@ghost-shell/predicate";
+import { compileShorthand, evaluateWithTrace } from "@ghost-shell/predicate";
 import type {
   IntentFactBag,
   IntentWhenMatcher,
@@ -15,10 +13,7 @@ export function createPredicateWhenMatcher(): IntentWhenMatcher {
   };
 }
 
-function evaluatePredicate(
-  when: Record<string, unknown>,
-  facts: IntentFactBag,
-): PredicateEvaluationResult {
+function evaluatePredicate(when: Record<string, unknown>, facts: IntentFactBag): PredicateEvaluationResult {
   const ast = compileShorthand(when);
   const { result, traces } = evaluateWithTrace(ast, facts);
 

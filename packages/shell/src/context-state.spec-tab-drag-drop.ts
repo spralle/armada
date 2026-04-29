@@ -1,5 +1,4 @@
-import { DRAG_INLINE_PREFIX } from "./app/constants.js";
-import { TAB_DOCK_DRAG_MIME } from "./app/constants.js";
+import { DRAG_INLINE_PREFIX, TAB_DOCK_DRAG_MIME } from "./app/constants.js";
 import type { ShellRuntime } from "./app/types.js";
 import {
   createIncomingTransferJournal,
@@ -30,9 +29,10 @@ class FakeTabButton {
   }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const normalized = typeof listener === "function"
-      ? (listener as DragListener)
-      : ((event: DragEvent) => listener.handleEvent(event as unknown as Event));
+    const normalized =
+      typeof listener === "function"
+        ? (listener as DragListener)
+        : (event: DragEvent) => listener.handleEvent(event as unknown as Event);
     const existing = this.listeners.get(type) ?? [];
     existing.push(normalized);
     this.listeners.set(type, existing);
@@ -50,14 +50,18 @@ class FakeTabItem {
   draggable = false;
   private readonly listeners = new Map<string, DragListener[]>();
 
-  constructor(tabId: string, private readonly tabButton: FakeTabButton) {
+  constructor(
+    tabId: string,
+    private readonly tabButton: FakeTabButton,
+  ) {
     this.dataset = { tabItem: tabId };
   }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const normalized = typeof listener === "function"
-      ? (listener as DragListener)
-      : ((event: DragEvent) => listener.handleEvent(event as unknown as Event));
+    const normalized =
+      typeof listener === "function"
+        ? (listener as DragListener)
+        : (event: DragEvent) => listener.handleEvent(event as unknown as Event);
     const existing = this.listeners.get(type) ?? [];
     existing.push(normalized);
     this.listeners.set(type, existing);
@@ -105,9 +109,10 @@ class FakeRoot {
   constructor(private readonly tabItems: FakeTabItem[]) {}
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const normalized = typeof listener === "function"
-      ? (listener as DragListener)
-      : ((event: DragEvent) => listener.handleEvent(event as unknown as Event));
+    const normalized =
+      typeof listener === "function"
+        ? (listener as DragListener)
+        : (event: DragEvent) => listener.handleEvent(event as unknown as Event);
     const existing = this.listeners.get(type) ?? [];
     existing.push(normalized);
     this.listeners.set(type, existing);
@@ -219,13 +224,11 @@ function createTabHarness(tabIds: string[]): {
   };
 }
 
-function wireWithMoved(
-  runtime: ShellRuntime,
-  tabHarness: ReturnType<typeof createTabHarness>,
-  moved: string[],
-): void {
+function wireWithMoved(runtime: ShellRuntime, tabHarness: ReturnType<typeof createTabHarness>, moved: string[]): void {
   wireTabStripDragDrop(tabHarness.root as unknown as HTMLElement, runtime, {
-    onTabMoved(tabId) { moved.push(tabId); },
+    onTabMoved(tabId) {
+      moved.push(tabId);
+    },
     onStateChange() {},
   });
 }
@@ -244,13 +247,16 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     wireWithMoved(runtime, tabHarness, moved);
 
     const dragTransfer = new MemoryDataTransfer();
-    tabHarness.tabButtons.get("tab-c")!.dispatch(
-      "dragstart",
-      createDragEvent(dragTransfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
-    );
-    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(dragTransfer));
+    tabHarness.tabButtons
+      .get("tab-c")
+      ?.dispatch("dragstart", createDragEvent(dragTransfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)));
+    tabHarness.tabItems.get("tab-b")?.dispatch("drop", createDragEvent(dragTransfer));
 
-    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "drop should deterministically reorder tab order");
+    assertEqual(
+      runtime.contextState.tabOrder.join(","),
+      "tab-a,tab-c,tab-b",
+      "drop should deterministically reorder tab order",
+    );
     assertEqual(runtime.contextState.activeTabId, "tab-c", "drop should activate moved tab");
     assertEqual(moved.join(","), "tab-c", "drop callback should run for moved tab");
   });
@@ -263,8 +269,8 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     wireWithMoved(runtime, tabHarness, moved);
 
     const transfer = new MemoryDataTransfer();
-    transfer.setData("text/plain", `${DRAG_INLINE_PREFIX}{\"kind\":\"invalid\"}`);
-    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+    transfer.setData("text/plain", `${DRAG_INLINE_PREFIX}{"kind":"invalid"}`);
+    tabHarness.tabItems.get("tab-b")?.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState, before, "invalid payload should not mutate context state");
     assertEqual(moved.length, 0, "invalid payload should not trigger move callback");
@@ -280,13 +286,21 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     const transfer = new MemoryDataTransfer();
     transfer.setData(
       "text/plain",
-      `${DRAG_INLINE_PREFIX}{\"kind\":\"shell-tab-dnd\",\"tabId\":\"tab-c\",\"sourceWindowId\":\"window-b\"}`,
+      `${DRAG_INLINE_PREFIX}{"kind":"shell-tab-dnd","tabId":"tab-c","sourceWindowId":"window-b"}`,
     );
-    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+    tabHarness.tabItems.get("tab-b")?.dispatch("drop", createDragEvent(transfer));
 
-    assertEqual(runtime.contextState, before, "cross-window payload without transfer session should not mutate context state");
+    assertEqual(
+      runtime.contextState,
+      before,
+      "cross-window payload without transfer session should not mutate context state",
+    );
     assertEqual(moved.length, 0, "cross-window payload should not trigger move callback");
-    assertEqual(runtime.notice, "Cross-window tab drag payload is invalid.", "cross-window inline payload without transfer session should surface invalid payload notice");
+    assertEqual(
+      runtime.notice,
+      "Cross-window tab drag payload is invalid.",
+      "cross-window inline payload without transfer session should surface invalid payload notice",
+    );
   });
 
   test("cross-window tab drop applies through transfer transaction when enabled", async () => {
@@ -309,10 +323,18 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
 
     const transfer = new MemoryDataTransfer();
     transfer.setData("text/plain", "ghost-dnd-ref:session-cross-tab");
-    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+    tabHarness.tabItems.get("tab-b")?.dispatch("drop", createDragEvent(transfer));
 
-    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "enabled cross-window tab drop should insert via incoming transaction");
-    assertEqual(runtime.contextState.activeTabId, "tab-c", "enabled cross-window tab drop should activate incoming tab");
+    assertEqual(
+      runtime.contextState.tabOrder.join(","),
+      "tab-a,tab-c,tab-b",
+      "enabled cross-window tab drop should insert via incoming transaction",
+    );
+    assertEqual(
+      runtime.contextState.activeTabId,
+      "tab-c",
+      "enabled cross-window tab drop should activate incoming tab",
+    );
     assertEqual(moved.join(","), "tab-c", "enabled cross-window tab drop should run move callback");
     assertEqual(commits.join(","), "session-cross-tab", "enabled cross-window tab drop should commit transfer session");
     assertEqual(runtime.notice, "", "enabled cross-window tab drop should clear rejection notice");
@@ -338,11 +360,19 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
 
     const transfer = new MemoryDataTransfer();
     transfer.setData("text/plain", "ghost-dnd-ref:session-cross-disabled");
-    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+    tabHarness.tabItems.get("tab-b")?.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState, before, "disabled cross-window tab drop should preserve same-window-only state");
-    assertEqual(runtime.notice, "Cross-window tab drag is disabled by current settings.", "disabled cross-window tab drop should show clear rejection notice");
-    assertEqual(aborts.join(","), "session-cross-disabled", "disabled cross-window tab drop should abort transfer session");
+    assertEqual(
+      runtime.notice,
+      "Cross-window tab drag is disabled by current settings.",
+      "disabled cross-window tab drop should show clear rejection notice",
+    );
+    assertEqual(
+      aborts.join(","),
+      "session-cross-disabled",
+      "disabled cross-window tab drop should abort transfer session",
+    );
   });
 
   test("tab drop reorders using dock MIME payload fallback", async () => {
@@ -353,7 +383,7 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
 
     const transfer = new MemoryDataTransfer();
     transfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({ tabId: "tab-c", sourceWindowId: "window-a" }));
-    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+    tabHarness.tabItems.get("tab-b")?.dispatch("drop", createDragEvent(transfer));
 
     assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "dock MIME fallback should reorder tabs");
     assertEqual(runtime.contextState.activeTabId, "tab-c", "dock MIME fallback should activate dragged tab");
@@ -367,15 +397,21 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     wireWithMoved(runtime, tabHarness, moved);
 
     const dragStartTransfer = new MemoryDataTransfer();
-    tabHarness.tabButtons.get("tab-c")!.dispatch(
-      "dragstart",
-      createDragEvent(dragStartTransfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
-    );
+    tabHarness.tabButtons
+      .get("tab-c")
+      ?.dispatch(
+        "dragstart",
+        createDragEvent(dragStartTransfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
+      );
 
     const emptyReadTransfer = new EmptyReadDataTransfer();
-    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(emptyReadTransfer));
+    tabHarness.tabItems.get("tab-b")?.dispatch("drop", createDragEvent(emptyReadTransfer));
 
-    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "active payload fallback should reorder tabs");
+    assertEqual(
+      runtime.contextState.tabOrder.join(","),
+      "tab-a,tab-c,tab-b",
+      "active payload fallback should reorder tabs",
+    );
     assertEqual(runtime.contextState.activeTabId, "tab-c", "active payload fallback should activate dragged tab");
     assertEqual(moved.join(","), "tab-c", "active payload fallback should trigger move callback");
   });
@@ -387,15 +423,18 @@ export function registerTabDragDropSpecs(harness: SpecHarness): void {
     wireWithMoved(runtime, tabHarness, moved);
 
     const transfer = new MemoryDataTransfer();
-    tabHarness.tabButtons.get("tab-c")!.dispatch(
-      "dragstart",
-      createDragEvent(transfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)),
-    );
-    tabHarness.tabButtons.get("tab-c")!.dispatch("dragend", createDragEvent(transfer));
-    tabHarness.tabItems.get("tab-b")!.dispatch("drop", createDragEvent(transfer));
+    tabHarness.tabButtons
+      .get("tab-c")
+      ?.dispatch("dragstart", createDragEvent(transfer, createButtonTarget(tabHarness.tabButtons.get("tab-c")!)));
+    tabHarness.tabButtons.get("tab-c")?.dispatch("dragend", createDragEvent(transfer));
+    tabHarness.tabItems.get("tab-b")?.dispatch("drop", createDragEvent(transfer));
     await flushTimers();
 
-    assertEqual(runtime.contextState.tabOrder.join(","), "tab-a,tab-c,tab-b", "drop after premature dragend should reorder tabs");
+    assertEqual(
+      runtime.contextState.tabOrder.join(","),
+      "tab-a,tab-c,tab-b",
+      "drop after premature dragend should reorder tabs",
+    );
     assertEqual(runtime.contextState.activeTabId, "tab-c", "drop after premature dragend should activate dragged tab");
     assertEqual(moved.join(","), "tab-c", "drop after premature dragend should trigger move callback");
   });

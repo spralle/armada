@@ -1,8 +1,4 @@
-import type {
-  ContextLaneValue,
-  EntityTypeSelection,
-  RevisionMeta,
-} from "@ghost-shell/state";
+import type { ContextLaneValue, EntityTypeSelection, RevisionMeta } from "@ghost-shell/state";
 import { isRecord } from "./utils.js";
 
 export function sanitizeNestedLaneMap(
@@ -51,14 +47,15 @@ function sanitizeLaneValue(input: unknown): ContextLaneValue | null {
     return null;
   }
 
-  const sourceSelection = isRecord(input.sourceSelection)
-    && typeof input.sourceSelection.entityType === "string"
-    && sanitizeRevision(input.sourceSelection.revision)
-    ? {
-      entityType: input.sourceSelection.entityType,
-      revision: sanitizeRevision(input.sourceSelection.revision) as RevisionMeta,
-    }
-    : undefined;
+  const sourceSelection =
+    isRecord(input.sourceSelection) &&
+    typeof input.sourceSelection.entityType === "string" &&
+    sanitizeRevision(input.sourceSelection.revision)
+      ? {
+          entityType: input.sourceSelection.entityType,
+          revision: sanitizeRevision(input.sourceSelection.revision) as RevisionMeta,
+        }
+      : undefined;
 
   return {
     value: input.value,
@@ -111,9 +108,7 @@ function sanitizeSelection(input: unknown): EntityTypeSelection | null {
   }
   const selectedIds = normalizeIds(input.selectedIds);
   const rawPriority = typeof input.priorityId === "string" ? input.priorityId : null;
-  const priorityId = rawPriority && selectedIds.includes(rawPriority)
-    ? rawPriority
-    : (selectedIds[0] ?? null);
+  const priorityId = rawPriority && selectedIds.includes(rawPriority) ? rawPriority : (selectedIds[0] ?? null);
 
   return {
     selectedIds,
@@ -137,8 +132,13 @@ function cloneNestedLaneMap(
   return Object.fromEntries(Object.entries(input).map(([key, value]) => [key, { ...value }]));
 }
 function cloneSelectionMap(input: Record<string, EntityTypeSelection>): Record<string, EntityTypeSelection> {
-  return Object.fromEntries(Object.entries(input).map(([entityType, selection]) => [entityType, {
-    selectedIds: [...selection.selectedIds],
-    priorityId: selection.priorityId,
-  }]));
+  return Object.fromEntries(
+    Object.entries(input).map(([entityType, selection]) => [
+      entityType,
+      {
+        selectedIds: [...selection.selectedIds],
+        priorityId: selection.priorityId,
+      },
+    ]),
+  );
 }

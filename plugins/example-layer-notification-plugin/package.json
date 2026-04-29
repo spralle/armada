@@ -12,11 +12,20 @@
           "component": "NotificationSurface",
           "layer": "notification",
           "anchor": 9,
-          "size": { "width": 320, "height": 80 },
-          "margin": { "top": 16, "right": 16 },
+          "size": {
+            "width": 320,
+            "height": 80
+          },
+          "margin": {
+            "top": 16,
+            "right": 16
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
-          "autoStack": { "direction": "down", "gap": 8 },
+          "autoStack": {
+            "direction": "down",
+            "gap": 8
+          },
           "order": 0
         },
         {
@@ -24,11 +33,20 @@
           "component": "NotificationSurface",
           "layer": "notification",
           "anchor": 9,
-          "size": { "width": 320, "height": 80 },
-          "margin": { "top": 16, "right": 16 },
+          "size": {
+            "width": 320,
+            "height": 80
+          },
+          "margin": {
+            "top": 16,
+            "right": 16
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
-          "autoStack": { "direction": "down", "gap": 8 },
+          "autoStack": {
+            "direction": "down",
+            "gap": 8
+          },
           "order": 1
         },
         {
@@ -36,11 +54,20 @@
           "component": "NotificationSurface",
           "layer": "notification",
           "anchor": 9,
-          "size": { "width": 320, "height": 80 },
-          "margin": { "top": 16, "right": 16 },
+          "size": {
+            "width": 320,
+            "height": 80
+          },
+          "margin": {
+            "top": 16,
+            "right": 16
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "none",
-          "autoStack": { "direction": "down", "gap": 8 },
+          "autoStack": {
+            "direction": "down",
+            "gap": 8
+          },
           "order": 2
         }
       ]

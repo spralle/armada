@@ -40,9 +40,17 @@ export function registerContextStateInstanceWindowIndependenceSpecs(harness: Spe
       revision: { timestamp: 11, writer: "window-a" },
     });
 
-    assertEqual(state.tabOrder.join(","), "orders.instance-a,orders.instance-b", "duplicate definition instances should coexist in tab order");
+    assertEqual(
+      state.tabOrder.join(","),
+      "orders.instance-a,orders.instance-b",
+      "duplicate definition instances should coexist in tab order",
+    );
     assertEqual(state.tabs["orders.instance-a"]?.label, "Orders", "first instance should keep shared definition label");
-    assertEqual(state.tabs["orders.instance-b"]?.label, "Orders", "second instance should keep shared definition label");
+    assertEqual(
+      state.tabs["orders.instance-b"]?.label,
+      "Orders",
+      "second instance should keep shared definition label",
+    );
     assertEqual(
       state.subcontextsByTab["orders.instance-a"]?.["part.args"]?.value,
       '{"voyage":"A1"}',
@@ -85,7 +93,11 @@ export function registerContextStateInstanceWindowIndependenceSpecs(harness: Spe
     });
 
     assertEqual(nextWindowA.tabs["orders.instance-b"], undefined, "window A should apply local close lifecycle");
-    assertEqual(windowB.tabs["orders.instance-c"]?.id, "orders.instance-c", "window B topology should remain unchanged");
+    assertEqual(
+      windowB.tabs["orders.instance-c"]?.id,
+      "orders.instance-c",
+      "window B topology should remain unchanged",
+    );
     assertEqual(
       windowB.subcontextsByTab["orders.instance-c"]?.["part.args"]?.value,
       '{"voyage":"B-window"}',

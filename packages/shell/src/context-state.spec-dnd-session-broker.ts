@@ -1,9 +1,5 @@
+import type { WindowBridge, WindowBridgeEvent, WindowBridgeHealth } from "@ghost-shell/bridge";
 import { createDragSessionBroker } from "@ghost-shell/bridge";
-import type {
-  WindowBridge,
-  WindowBridgeEvent,
-  WindowBridgeHealth,
-} from "@ghost-shell/bridge";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 
 class FakeBridge implements WindowBridge {
@@ -159,8 +155,8 @@ export function registerDndSessionBrokerSpecs(harness: SpecHarness): void {
       const consumeResult = broker.consume({ id: "non-existent" });
       assertEqual(consumeResult, null, "consume miss should still trigger stale prune");
 
-      const deleteCount = bridge.published.filter((event) =>
-        event.type === "dnd-session-delete" && event.id === created.id
+      const deleteCount = bridge.published.filter(
+        (event) => event.type === "dnd-session-delete" && event.id === created.id,
       ).length;
       assertEqual(deleteCount, 1, "expired owned session should publish exactly one delete event");
     } finally {

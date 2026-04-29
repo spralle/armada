@@ -1,8 +1,8 @@
 // ADR section 10 — Three transform phases
 
-import type { DeepKeys, DeepValue } from './type-utils.js';
+import type { DeepKeys, DeepValue } from "./type-utils.js";
 
-export type TransformPhase = 'ingress' | 'field' | 'egress';
+export type TransformPhase = "ingress" | "field" | "egress";
 
 export interface TransformDefinition<TData = unknown> {
   readonly id: string;
@@ -11,7 +11,7 @@ export interface TransformDefinition<TData = unknown> {
   transform(value: unknown, context: TransformContext<TData>): unknown;
 }
 
-export interface TransformContext<TData = unknown> {
+export interface TransformContext<_TData = unknown> {
   readonly phase: TransformPhase;
   readonly path?: string;
   readonly state: unknown;
@@ -22,7 +22,7 @@ export function runTransforms(
   transforms: readonly TransformDefinition[],
   phase: TransformPhase,
   value: unknown,
-  context: Omit<TransformContext, 'phase'>,
+  context: Omit<TransformContext, "phase">,
 ): unknown {
   let result = value;
   for (const t of transforms) {
@@ -36,8 +36,8 @@ export function runTransforms(
 /** Built-in: Date objects → ISO string for canonical storage. */
 export function createDateTransform(): TransformDefinition {
   return {
-    id: 'formr:date-transform',
-    phase: 'field',
+    id: "formr:date-transform",
+    phase: "field",
     transform(value: unknown): unknown {
       if (value instanceof Date) {
         return value.toISOString();
@@ -50,8 +50,8 @@ export function createDateTransform(): TransformDefinition {
 /** Built-in: ISO date strings pass through unchanged in egress. */
 export function createDateEgressTransform(): TransformDefinition {
   return {
-    id: 'formr:date-egress-transform',
-    phase: 'egress',
+    id: "formr:date-egress-transform",
+    phase: "egress",
     transform(value: unknown): unknown {
       return value;
     },
@@ -59,7 +59,7 @@ export function createDateEgressTransform(): TransformDefinition {
 }
 
 /** Output format for configurable date egress transform */
-export type DateEgressFormat = 'iso' | 'timestamp' | 'custom';
+export type DateEgressFormat = "iso" | "timestamp" | "custom";
 
 export interface DateEgressOptions {
   /** Output format: 'iso' (default), 'timestamp' (Unix ms), or 'custom' */
@@ -71,15 +71,13 @@ export interface DateEgressOptions {
 }
 
 /** Configurable date egress transform — converts ISO date strings to desired output format */
-export function createConfigurableDateEgressTransform(
-  options?: DateEgressOptions,
-): TransformDefinition {
-  const format = options?.format ?? 'iso';
+export function createConfigurableDateEgressTransform(options?: DateEgressOptions): TransformDefinition {
+  const format = options?.format ?? "iso";
   const targetPaths = options?.paths ? new Set(options.paths) : undefined;
 
   return {
-    id: 'formr:configurable-date-egress',
-    phase: 'egress',
+    id: "formr:configurable-date-egress",
+    phase: "egress",
     transform(value: unknown, context: TransformContext): unknown {
       if (targetPaths && context.path && !targetPaths.has(context.path)) {
         return value;
@@ -89,31 +87,23 @@ export function createConfigurableDateEgressTransform(
   };
 }
 
-function transformDateValue(
-  value: unknown,
-  format: DateEgressFormat,
-  formatter?: (date: Date) => unknown,
-): unknown {
+function transformDateValue(value: unknown, format: DateEgressFormat, formatter?: (date: Date) => unknown): unknown {
   if (value instanceof Date) {
     return applyDateFormat(value, format, formatter);
   }
-  if (typeof value === 'string' && isIsoDateString(value)) {
+  if (typeof value === "string" && isIsoDateString(value)) {
     return applyDateFormat(new Date(value), format, formatter);
   }
   return value;
 }
 
-function applyDateFormat(
-  date: Date,
-  format: DateEgressFormat,
-  formatter?: (date: Date) => unknown,
-): unknown {
+function applyDateFormat(date: Date, format: DateEgressFormat, formatter?: (date: Date) => unknown): unknown {
   switch (format) {
-    case 'iso':
+    case "iso":
       return date.toISOString();
-    case 'timestamp':
+    case "timestamp":
       return date.getTime();
-    case 'custom':
+    case "custom":
       if (!formatter) return date.toISOString();
       return formatter(date);
   }

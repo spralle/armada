@@ -1,6 +1,6 @@
-import type { ShellRuntime } from "../app/types.js";
+import { LayerRegistry } from "@ghost-shell/layer";
 import { DEFAULT_DARK_PALETTE, injectThemeVariables } from "@ghost-shell/theme";
-import { LayerRegistry, BUILTIN_LAYERS } from "@ghost-shell/layer";
+import type { ShellRuntime } from "../app/types.js";
 
 /** CSS rules shared between main window and popout mounts. */
 function getSharedStyles(): string {

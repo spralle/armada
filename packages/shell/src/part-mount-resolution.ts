@@ -4,9 +4,9 @@
  */
 
 import { resolveModuleMountFn } from "@ghost-shell/contracts";
-import type { ComposedShellPart } from "./ui/parts-rendering.js";
 import type { ShellRuntime } from "./app/types.js";
 import type { MountCleanup } from "./federation-mount-utils.js";
+import type { ComposedShellPart } from "./ui/parts-rendering.js";
 
 export type MountPartFn = (
   target: HTMLElement,
@@ -20,11 +20,7 @@ export type MountPartFn = (
 ) => MountCleanup | Promise<MountCleanup>;
 
 export function resolvePartMount(moduleValue: unknown, part: ComposedShellPart): MountPartFn | null {
-  const keys = [
-    resolvePartDefinitionId(part),
-    part.id,
-    ...(part.component ? [part.component] : []),
-  ];
+  const keys = [resolvePartDefinitionId(part), part.id, ...(part.component ? [part.component] : [])];
 
   const fn = resolveModuleMountFn(moduleValue, {
     topLevelNames: ["mountPart"],

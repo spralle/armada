@@ -10,7 +10,11 @@
   "scripts": {
     "test:formr": "bun test packages/formr-core/src packages/predicate/src packages/formr-from-schema/src packages/formr-react/src",
     "test:conformance": "bun test --test-name-pattern F[0-9] packages/formr-core/src packages/predicate/src packages/formr-from-schema/src",
-    "lint": "npm run check:architecture-guardrails --silent && npm run check:code-principles --silent && npm run check:config-schema --silent && npm run check:change-policies --silent && tsc --pretty false -p tsconfig.json --noEmit",
+    "lint": "biome check --diagnostic-level=error . && npm run check:architecture-guardrails --silent && npm run check:code-principles --silent && npm run check:config-schema --silent && npm run check:change-policies --silent && npm run check:ghost-tokens --silent && tsc --pretty false -p tsconfig.json --noEmit",
+    "format": "biome format --write .",
+    "format:check": "biome format . --diagnostic-level=error",
+    "lint:biome": "biome check --diagnostic-level=error .",
+    "check:ghost-tokens": "node scripts/check-ghost-tokens.mjs",
     "typecheck": "tsc --pretty false -p tsconfig.json --noEmit",
     "test": "npm run build --silent && tsc --pretty false -p apps/shell/tsconfig.test.json && tsc --pretty false -p apps/backend/tsconfig.test.json && node --test packages/*/test/*.test.mjs apps/shell/test/*.test.mjs apps/shell/src/*.integration.test.mjs apps/shell/dist-test/src/context-state.spec.js apps/shell/dist-test/src/window-bridge.spec.js apps/backend/test/*.test.mjs scripts/test/*.test.mjs && node --test --import ./apps/backend/test/register-ts-hooks.mjs apps/backend/test/*.test-hooked.mjs",
     "build": "tsc -b --pretty false",
@@ -28,10 +32,15 @@
     "scaffold:plugin": "node ./scripts/scaffold-plugin.mjs",
     "generate:config-schema": "node ./scripts/build-config-schemas.mjs",
     "build:dist": "bun run --filter './packages/*' build:dist",
-    "sync-manifests": "bun run scripts/sync-manifests.ts"
+    "sync-manifests": "bun run scripts/sync-manifests.ts",
+    "biome": "biome",
+    "knip": "knip",
+    "knip:report": "knip --reporter compact"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.13",
     "concurrently": "^9.2.1",
+    "knip": "6.8.0",
     "tsup": "8.5.1",
     "typescript": "^5.8.3",
     "vite": "^5.4.19"

@@ -1,15 +1,9 @@
-import {
-  pickComponentModuleExport,
-  pickServiceModuleExport,
-} from "./capability-registry.js";
+import type { CapabilityRegistry } from "./capability-registry.js";
+import { pickComponentModuleExport, pickServiceModuleExport } from "./capability-registry.js";
+import type { PluginLoadStrategy } from "./plugin-loader.js";
 import { readCapabilityComponents, readCapabilityServices } from "./plugin-registry-contract.js";
 import { pushDiagnostic } from "./plugin-registry-diagnostics.js";
-import type {
-  PluginRegistryDiagnostic,
-  PluginRuntimeState,
-} from "./plugin-registry-types.js";
-import type { CapabilityRegistry } from "./capability-registry.js";
-import type { PluginLoadStrategy } from "./plugin-loader.js";
+import type { PluginRegistryDiagnostic, PluginRuntimeState } from "./plugin-registry-types.js";
 
 export async function resolveComponentCapabilityFromStates(
   requesterPluginId: string,
@@ -29,8 +23,8 @@ export async function resolveComponentCapabilityFromStates(
       level: "warn",
       code: "COMPONENT_CAPABILITY_UNRESOLVED",
       message:
-        `Plugin '${requesterPluginId}' requested component capability '${capabilityId}', `
-        + "but no explicitly enabled provider is active.",
+        `Plugin '${requesterPluginId}' requested component capability '${capabilityId}', ` +
+        "but no explicitly enabled provider is active.",
     });
     return null;
   }
@@ -50,8 +44,8 @@ export async function resolveComponentCapabilityFromStates(
       level: "warn",
       code: "COMPONENT_CAPABILITY_UNRESOLVED",
       message:
-        `Plugin '${requesterPluginId}' requested component capability '${capabilityId}', `
-        + `but provider '${provider.providerPluginId}' no longer declares it in contract.`,
+        `Plugin '${requesterPluginId}' requested component capability '${capabilityId}', ` +
+        `but provider '${provider.providerPluginId}' no longer declares it in contract.`,
     });
     return null;
   }
@@ -68,8 +62,8 @@ export async function resolveComponentCapabilityFromStates(
       level: "warn",
       code: "COMPONENT_EXPORT_MISSING",
       message:
-        `Provider '${provider.providerPluginId}' does not export component capability '${capabilityId}' `
-        + "from './pluginComponents'.",
+        `Provider '${provider.providerPluginId}' does not export component capability '${capabilityId}' ` +
+        "from './pluginComponents'.",
     });
     return null;
   }
@@ -95,8 +89,8 @@ export async function resolveServiceCapabilityFromStates(
       level: "warn",
       code: "SERVICE_CAPABILITY_UNRESOLVED",
       message:
-        `Plugin '${requesterPluginId}' requested service capability '${capabilityId}', `
-        + "but no explicitly enabled provider is active.",
+        `Plugin '${requesterPluginId}' requested service capability '${capabilityId}', ` +
+        "but no explicitly enabled provider is active.",
     });
     return null;
   }
@@ -116,8 +110,8 @@ export async function resolveServiceCapabilityFromStates(
       level: "warn",
       code: "SERVICE_CAPABILITY_UNRESOLVED",
       message:
-        `Plugin '${requesterPluginId}' requested service capability '${capabilityId}', `
-        + `but provider '${provider.providerPluginId}' no longer declares it in contract.`,
+        `Plugin '${requesterPluginId}' requested service capability '${capabilityId}', ` +
+        `but provider '${provider.providerPluginId}' no longer declares it in contract.`,
     });
     return null;
   }
@@ -139,8 +133,8 @@ export async function resolveServiceCapabilityFromStates(
       level: "warn",
       code: "SERVICE_EXPORT_MISSING",
       message:
-        `Provider '${provider.providerPluginId}' does not export service capability '${capabilityId}' `
-        + "from './pluginServices'.",
+        `Provider '${provider.providerPluginId}' does not export service capability '${capabilityId}' ` +
+        "from './pluginServices'.",
     });
     return null;
   }

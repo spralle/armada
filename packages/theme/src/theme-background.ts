@@ -9,9 +9,7 @@ const THEME_BACKGROUND_ID = "ghost-theme-background";
  * Create, update, or remove a fullscreen background image div behind all content.
  * When `backgrounds` is empty or undefined, the div is removed entirely.
  */
-export function manageBackgroundImage(
-  backgrounds: ThemeBackgroundEntry[] | undefined,
-): void {
+export function manageBackgroundImage(backgrounds: ThemeBackgroundEntry[] | undefined): void {
   if (typeof document === "undefined") {
     return;
   }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Schema registry build script — discovers, composes, and generates config schema artifacts
 
-import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { discoverViewConfigs } from "./discover-config.mjs";
@@ -34,9 +34,7 @@ async function findConfigPlugins(repoRoot, scanDirs) {
         continue;
       }
       const pkgJson = JSON.parse(raw);
-      const hasConfig =
-        pkgJson.ghost?.configuration !== undefined ||
-        pkgJson.contributes?.configuration !== undefined;
+      const hasConfig = pkgJson.ghost?.configuration !== undefined || pkgJson.contributes?.configuration !== undefined;
       if (hasConfig) {
         results.push({ pkgJson, dir: join(scanRoot, entry.name) });
       }
@@ -52,12 +50,8 @@ async function findConfigPlugins(repoRoot, scanDirs) {
 export async function buildConfigSchemas(options) {
   const { repoRoot, outputDir, scanDirs = PLUGIN_DIRS } = options;
 
-  const {
-    composeConfigurationSchemas,
-    deriveContractFromPackageJson,
-    generateJsonSchema,
-    generateZodSchemaSource,
-  } = await import("../packages/config-engine/dist/index.js");
+  const { composeConfigurationSchemas, deriveContractFromPackageJson, generateJsonSchema, generateZodSchemaSource } =
+    await import("../packages/config-engine/dist/index.js");
 
   // 1. Find plugin packages with config declarations
   const configPlugins = await findConfigPlugins(repoRoot, scanDirs);
@@ -67,8 +61,7 @@ export async function buildConfigSchemas(options) {
   const declarations = [];
   for (const { pkgJson } of configPlugins) {
     const contract = deriveContractFromPackageJson(pkgJson);
-    const properties =
-      pkgJson.ghost?.configuration ?? pkgJson.contributes?.configuration ?? {};
+    const properties = pkgJson.ghost?.configuration ?? pkgJson.contributes?.configuration ?? {};
     declarations.push({
       ownerId: contract.pluginId,
       namespace: contract.namespace,
@@ -96,10 +89,7 @@ export async function buildConfigSchemas(options) {
 
   // 6. Write outputs
   await mkdir(outputDir, { recursive: true });
-  await writeFile(
-    join(outputDir, "config-schema.json"),
-    JSON.stringify(jsonSchema, null, 2) + "\n",
-  );
+  await writeFile(join(outputDir, "config-schema.json"), `${JSON.stringify(jsonSchema, null, 2)}\n`);
   await writeFile(join(outputDir, "config-schemas.generated.ts"), zodSource);
 
   return {
@@ -111,8 +101,7 @@ export async function buildConfigSchemas(options) {
 
 // CLI entry point
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
-const isDirectRun =
-  import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}`;
+const isDirectRun = import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}`;
 
 if (isDirectRun) {
   const repoRoot = resolve(__dirname, "..");
@@ -128,9 +117,7 @@ if (isDirectRun) {
         process.exitCode = 1;
         return;
       }
-      console.log(
-        `[build-config-schemas] OK: ${result.schemaCount} schema(s) composed.`,
-      );
+      console.log(`[build-config-schemas] OK: ${result.schemaCount} schema(s) composed.`);
       if (result.viewConfigCount > 0) {
         console.log(`  View configs discovered: ${result.viewConfigCount}`);
       }

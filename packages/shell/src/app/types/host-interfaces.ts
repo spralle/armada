@@ -1,17 +1,15 @@
-import type { PluginServices } from "@ghost-shell/contracts";
-import { createDragSessionBroker } from "@ghost-shell/bridge";
 import type {
   AsyncWindowBridge,
   AsyncWindowBridgeRejectReason,
+  createDragSessionBroker,
   WindowBridge,
 } from "@ghost-shell/bridge";
-import type {
-  IntentActionMatch,
-  IntentResolutionTrace,
-  IntentRuntime,
-  IntentSession,
-} from "@ghost-shell/intents";
+import type { KeybindingOverrideManager } from "@ghost-shell/commands";
+import type { PluginServices } from "@ghost-shell/contracts";
+import type { IntentActionMatch, IntentResolutionTrace, IntentRuntime, IntentSession } from "@ghost-shell/intents";
 import type { WorkspaceManagerState } from "@ghost-shell/state";
+import type { ActionSurface } from "../../action-surface.js";
+import type { IncomingTransferJournal, ShellContextState } from "../../context-state.js";
 import type { ShellLayoutState } from "../../layout.js";
 import type {
   ShellContextStatePersistence,
@@ -21,14 +19,8 @@ import type {
 } from "../../persistence.js";
 import type { ShellPluginRegistry } from "../../plugin-registry.js";
 import type { ThemeRegistry } from "../../theme-registry.js";
-import type {
-  IncomingTransferJournal,
-  ShellContextState,
-} from "../../context-state.js";
-import type { ActionSurface } from "../../action-surface.js";
-import type { KeybindingOverrideManager } from "@ghost-shell/commands";
-import type { ShellTransportPath } from "../migration-flags.js";
 import type { DndDiagnosticPath } from "../dnd-diagnostics.js";
+import type { ShellTransportPath } from "../migration-flags.js";
 import type { SourceTabTransferPendingState } from "./dnd-types.js";
 
 export interface LayoutHost {

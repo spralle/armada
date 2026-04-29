@@ -1,21 +1,13 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 const SHELL_DEV_PORT = 5173;
 const BACKEND_DEV_PORT = 8787;
-const PLUGIN_CONTRACTS_SOURCE = fileURLToPath(
-  new URL("../../packages/plugin-contracts/src/index.ts", import.meta.url),
-);
-const PREDICATE_SOURCE = fileURLToPath(
-  new URL("../../packages/predicate/src/index.ts", import.meta.url),
-);
-const UI_SOURCE = fileURLToPath(
-  new URL("../../packages/ui/src/index.ts", import.meta.url),
-);
-const UI_SRC_ROOT = fileURLToPath(
-  new URL("../../packages/ui/src", import.meta.url),
-);
+const PLUGIN_CONTRACTS_SOURCE = fileURLToPath(new URL("../../packages/plugin-contracts/src/index.ts", import.meta.url));
+const PREDICATE_SOURCE = fileURLToPath(new URL("../../packages/predicate/src/index.ts", import.meta.url));
+const UI_SOURCE = fileURLToPath(new URL("../../packages/ui/src/index.ts", import.meta.url));
+const UI_SRC_ROOT = fileURLToPath(new URL("../../packages/ui/src", import.meta.url));
 
 export default defineConfig({
   plugins: [react()],

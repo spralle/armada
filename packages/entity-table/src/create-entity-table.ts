@@ -1,11 +1,8 @@
-import type { SortingState, VisibilityState } from '@tanstack/react-table';
-import { createTableConfig } from '@ghost-shell/table-from-schema';
-import type { CompileTableFieldsOptions, TableFieldDescriptor } from '@ghost-shell/table-from-schema';
-import { toColumnDefs } from './to-column-defs.js';
-import type {
-  EntityTableResult,
-  FilterableColumnInfo,
-} from './entity-list-types.js';
+import type { CompileTableFieldsOptions, TableFieldDescriptor } from "@ghost-shell/table-from-schema";
+import { createTableConfig } from "@ghost-shell/table-from-schema";
+import type { SortingState, VisibilityState } from "@tanstack/react-table";
+import type { EntityTableResult, FilterableColumnInfo } from "./entity-list-types.js";
+import { toColumnDefs } from "./to-column-defs.js";
 
 /**
  * Creates the full entity table configuration from a schema.
@@ -33,9 +30,7 @@ export function createEntityTable<TData>(
 }
 
 /** Build visibility state: hidden fields → false */
-function deriveVisibility(
-  fields: readonly TableFieldDescriptor[],
-): VisibilityState {
+function deriveVisibility(fields: readonly TableFieldDescriptor[]): VisibilityState {
   const visibility: VisibilityState = {};
   for (const field of fields) {
     if (!field.visible) {

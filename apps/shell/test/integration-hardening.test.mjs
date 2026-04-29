@@ -1,19 +1,14 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  composeVisibleParts,
-} from "../dist/part-composition.js";
-import {
-  composeRuntimeCommands,
-  executeKeybinding,
-} from "../dist/command-runtime.js";
+import test from "node:test";
 import { createActivationRuntime } from "../dist/activation-runtime.js";
 import { bootstrapShellWithTenantManifest } from "../dist/app/bootstrap.js";
-import { closeTabThroughRuntime } from "../dist/ui/parts-controller.js";
-import { moveDockTabThroughRuntime } from "../dist/ui/dock-tab-dnd.js";
-import { renderDockTree } from "../dist/ui/parts-rendering.js";
-import { createInitialShellContextState, registerTab } from "../dist/context-state.js";
+import { composeRuntimeCommands, executeKeybinding } from "../dist/command-runtime.js";
 import { createInitialWorkspaceManagerState } from "../dist/context-state/workspace.js";
+import { createInitialShellContextState, registerTab } from "../dist/context-state.js";
+import { composeVisibleParts } from "../dist/part-composition.js";
+import { moveDockTabThroughRuntime } from "../dist/ui/dock-tab-dnd.js";
+import { closeTabThroughRuntime } from "../dist/ui/parts-controller.js";
+import { renderDockTree } from "../dist/ui/parts-rendering.js";
 
 const DOMAIN_UNPLANNED = {
   id: "ghost.domain.unplanned-orders",
@@ -37,8 +32,20 @@ const DOMAIN_VESSEL = {
 
 test("plugin-composed parts follow plugin enablement in runtime snapshot", () => {
   const parts = [
-    { id: "domain.unplanned-orders.part", title: "Unplanned Orders", slot: "master", ownerPluginId: DOMAIN_UNPLANNED.id, render: () => "" },
-    { id: "domain.vessel-view.part", title: "Vessel View", slot: "secondary", ownerPluginId: DOMAIN_VESSEL.id, render: () => "" },
+    {
+      id: "domain.unplanned-orders.part",
+      title: "Unplanned Orders",
+      slot: "master",
+      ownerPluginId: DOMAIN_UNPLANNED.id,
+      render: () => "",
+    },
+    {
+      id: "domain.vessel-view.part",
+      title: "Vessel View",
+      slot: "secondary",
+      ownerPluginId: DOMAIN_VESSEL.id,
+      render: () => "",
+    },
     { id: "workbench.side.navigator", title: "Navigator", slot: "side", alwaysVisible: true, render: () => "" },
   ];
 
@@ -52,10 +59,7 @@ test("plugin-composed parts follow plugin enablement in runtime snapshot", () =>
   };
 
   let visible = composeVisibleParts(parts, emptySnapshot);
-  assert.deepEqual(
-    visible.map((part) => part.id).sort(),
-    ["workbench.side.navigator"],
-  );
+  assert.deepEqual(visible.map((part) => part.id).sort(), ["workbench.side.navigator"]);
 
   visible = composeVisibleParts(parts, {
     ...emptySnapshot,
@@ -64,10 +68,7 @@ test("plugin-composed parts follow plugin enablement in runtime snapshot", () =>
       { id: DOMAIN_VESSEL.id, enabled: false },
     ],
   });
-  assert.deepEqual(
-    visible.map((part) => part.id).sort(),
-    ["domain.unplanned-orders.part", "workbench.side.navigator"],
-  );
+  assert.deepEqual(visible.map((part) => part.id).sort(), ["domain.unplanned-orders.part", "workbench.side.navigator"]);
 
   visible = composeVisibleParts(parts, {
     ...emptySnapshot,
@@ -76,10 +77,11 @@ test("plugin-composed parts follow plugin enablement in runtime snapshot", () =>
       { id: DOMAIN_VESSEL.id, enabled: true },
     ],
   });
-  assert.deepEqual(
-    visible.map((part) => part.id).sort(),
-    ["domain.unplanned-orders.part", "domain.vessel-view.part", "workbench.side.navigator"],
-  );
+  assert.deepEqual(visible.map((part) => part.id).sort(), [
+    "domain.unplanned-orders.part",
+    "domain.vessel-view.part",
+    "workbench.side.navigator",
+  ]);
 });
 
 test("context-gated command visibility and enablement are resolved from runtime context", () => {
@@ -189,11 +191,7 @@ test("lazy activation triggers activate plugin once and track latest trigger", a
       version: "0.1.0",
     },
     contributes: {
-      activationEvents: [
-        "onCommand:domain.open-order",
-        "onView:domain.vessel.view",
-        "onIntent:domain.order.focus",
-      ],
+      activationEvents: ["onCommand:domain.open-order", "onView:domain.vessel.view", "onIntent:domain.order.focus"],
     },
   });
 
@@ -608,7 +606,7 @@ test("recursive dock-tree renderer emits nested stacks with local tab scopes", (
   const html = renderDockTree(contextState.dockTree.root, visibleParts, runtime);
   assert.match(html, /dock-node-split-horizontal/, "root split should render horizontal class");
   assert.match(html, /dock-node-split-vertical/, "nested split should render vertical class");
-  assert.match(html, /data-tab-scope=\"stack:stack-left\"/, "left stack should render local tab scope");
-  assert.match(html, /data-tab-scope=\"stack:stack-top-right\"/, "top-right stack should render local tab scope");
-  assert.match(html, /data-tab-scope=\"stack:stack-bottom-right\"/, "bottom-right stack should render local tab scope");
+  assert.match(html, /data-tab-scope="stack:stack-left"/, "left stack should render local tab scope");
+  assert.match(html, /data-tab-scope="stack:stack-top-right"/, "top-right stack should render local tab scope");
+  assert.match(html, /data-tab-scope="stack:stack-bottom-right"/, "bottom-right stack should render local tab scope");
 });

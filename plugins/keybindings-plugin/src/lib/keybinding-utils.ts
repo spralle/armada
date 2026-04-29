@@ -3,8 +3,15 @@
 import type { KeybindingEntry } from "@ghost-shell/contracts/services";
 
 export const RESERVED_BROWSER_SHORTCUTS = new Set([
-  "ctrl+w", "ctrl+t", "ctrl+n", "ctrl+l", "ctrl+r", "ctrl+tab", "ctrl+shift+tab",
-  "alt+left", "alt+right",
+  "ctrl+w",
+  "ctrl+t",
+  "ctrl+n",
+  "ctrl+l",
+  "ctrl+r",
+  "ctrl+tab",
+  "ctrl+shift+tab",
+  "alt+left",
+  "alt+right",
 ]);
 
 const MODIFIER_ORDER = ["ctrl", "shift", "alt", "meta"] as const;
@@ -58,8 +65,15 @@ export function pickJsonFile(): Promise<string> {
     input.accept = ".json,application/json";
     input.onchange = async () => {
       const file = input.files?.[0];
-      if (!file) { reject(new Error("No file selected")); return; }
-      try { resolve(await file.text()); } catch { reject(new Error("Could not read file")); }
+      if (!file) {
+        reject(new Error("No file selected"));
+        return;
+      }
+      try {
+        resolve(await file.text());
+      } catch {
+        reject(new Error("Could not read file"));
+      }
     };
     input.click();
   });

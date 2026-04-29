@@ -2,8 +2,8 @@ import {
   cloneDockNode,
   collapseDockNode,
   createUniqueNodeId,
-  replaceNodeAtPath,
   type DockPathSegment,
+  replaceNodeAtPath,
 } from "./dock-tree-helpers.js";
 import { ensureTabRegisteredInDockTree, removeTabFromDockTree } from "./dock-tree-register-remove.js";
 import type {
@@ -28,8 +28,9 @@ export function applyDockTabDrop(tree: DockTreeState, input: DockTabDropInput): 
   const sourceTarget = locateStackByTabId(tree.root, input.targetTabId);
   const removed = removeTabFromDockTree(tree, input.tabId);
   const withoutMovedRoot = cloneDockNode(removed.root);
-  const target = locateStackByTabId(withoutMovedRoot, input.targetTabId)
-    ?? resolveSelfDropTarget(withoutMovedRoot, sourceTarget, input);
+  const target =
+    locateStackByTabId(withoutMovedRoot, input.targetTabId) ??
+    resolveSelfDropTarget(withoutMovedRoot, sourceTarget, input);
   if (!target) {
     return ensureTabRegisteredInDockTree(removed, input.tabId);
   }
@@ -88,9 +89,7 @@ function locateStackByTabId(node: DockNode | null, targetTabId: string): DockLoc
   }
 
   if (node.kind === "stack") {
-    return node.tabIds.includes(targetTabId)
-      ? { stack: node, path: [] }
-      : null;
+    return node.tabIds.includes(targetTabId) ? { stack: node, path: [] } : null;
   }
 
   const inFirst = locateStackByTabId(node.first, targetTabId);

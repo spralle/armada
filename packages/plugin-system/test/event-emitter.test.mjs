@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { createEventEmitter } from "../dist/index.js";
 
 test("subscribe and receive fired events", () => {

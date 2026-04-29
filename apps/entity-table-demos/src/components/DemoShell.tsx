@@ -1,5 +1,5 @@
-import { Badge } from '@ghost-shell/ui';
-import { CodeBlock } from './CodeBlock';
+import { Badge } from "@ghost-shell/ui";
+import { CodeBlock } from "./CodeBlock";
 
 interface CodeBlockEntry {
   readonly title: string;

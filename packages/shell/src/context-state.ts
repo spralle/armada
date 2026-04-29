@@ -1,4 +1,5 @@
 export type {
+  ClosedTabHistoryEntry,
   ContextGroup,
   ContextLaneValue,
   ContextTab,
@@ -6,9 +7,21 @@ export type {
   ContextTabCloseability,
   ContextTabClosePolicy,
   ContextTabSlot,
-  ClosedTabHistoryEntry,
   DerivedLaneDefinition,
+  DockDirection,
+  DockDropZone,
+  DockNode,
+  DockOrientation,
+  DockSplitNode,
+  DockStackNode,
+  DockTabDropInput,
+  DockTreeState,
   EntityTypeSelection,
+  IncomingTransferJournal,
+  IncomingTransferTab,
+  IncomingTransferTarget,
+  IncomingTransferTransactionInput,
+  IncomingTransferTransactionResult,
   PanelId,
   RevisionMeta,
   SelectionPropagationRule,
@@ -18,101 +31,57 @@ export type {
   ShellContextState,
   TabInstanceId,
 } from "@ghost-shell/state";
-
-export type {
-  DockDirection,
-  DockDropZone,
-  DockNode,
-  DockOrientation,
-  DockSplitNode,
-  DockStackNode,
-  DockTabDropInput,
-  DockTreeState,
-} from "@ghost-shell/state";
-
 export {
-  applyDockTabDrop,
   activateTabInDockTree,
-  createInitialDockTree,
-  deriveDeterministicActiveTabId,
-  ensureTabRegisteredInDockTree,
-  moveTabWithinDockTree,
-  readDockSplitRatio,
-  removeTabFromDockTree,
-  setDockSplitRatioById,
-} from "@ghost-shell/state";
-
-export { setDockSplitRatio } from "@ghost-shell/state";
-
-export {
-  focusActiveTabInDirection,
-  focusAdjacentTabInActiveStack,
-  moveActiveTabInDirection,
-  moveActiveTabToDirectionalGroup,
-  resizeNearestSplitInDirection,
-  swapActiveTabInDirection,
-} from "@ghost-shell/state";
-
-export { createInitialShellContextState } from "@ghost-shell/state";
-
-export {
   addEntityTypeSelectionId,
-  moveEntityTypeSelectionId,
-  readEntityTypeSelection,
-  removeEntityTypeSelectionId,
-  setEntityTypePriority,
-  setEntityTypeSelection,
-} from "@ghost-shell/state";
-
-export { applySelectionUpdate } from "@ghost-shell/state";
-
-export {
-  closeTab,
-  moveTabInDockTree,
-  moveTabBeforeTab,
-  moveTabToGroup,
-  openPartInstance,
-  closeTabWithHistory,
-  canReopenClosedTab,
-  reopenMostRecentlyClosedTab,
-  registerTab,
-  setActiveTab,
-} from "@ghost-shell/state";
-
-export {
-  cycleTabGroup,
-  cycleTabInActiveStack,
-  equalizeSplits,
-  focusTabInDirection,
-  gotoTabByIndex,
-  moveTabInDirection,
-  resizeInDirection,
-  swapTabInDirection,
-} from "@ghost-shell/state";
-
-export type {
-  IncomingTransferJournal,
-  IncomingTransferTab,
-  IncomingTransferTarget,
-  IncomingTransferTransactionInput,
-  IncomingTransferTransactionResult,
-} from "@ghost-shell/state";
-
-export {
+  applyDockTabDrop,
   applyIncomingTransferTransaction,
-  createIncomingTransferJournal,
-} from "@ghost-shell/state";
-
-export {
+  applySelectionUpdate,
+  canReopenClosedTab,
+  closeTab,
   closeTabIfAllowed,
   closeTabIfAllowedWithHistory,
+  closeTabWithHistory,
+  createIncomingTransferJournal,
+  createInitialDockTree,
+  createInitialShellContextState,
+  cycleTabGroup,
+  cycleTabInActiveStack,
+  deriveDeterministicActiveTabId,
+  ensureTabRegisteredInDockTree,
+  equalizeSplits,
+  focusActiveTabInDirection,
+  focusAdjacentTabInActiveStack,
+  focusTabInDirection,
   getTabCloseability,
   getTabGroupId,
-} from "@ghost-shell/state";
-
-export {
+  gotoTabByIndex,
+  moveActiveTabInDirection,
+  moveActiveTabToDirectionalGroup,
+  moveEntityTypeSelectionId,
+  moveTabBeforeTab,
+  moveTabInDirection,
+  moveTabInDockTree,
+  moveTabToGroup,
+  moveTabWithinDockTree,
+  openPartInstance,
+  readDockSplitRatio,
+  readEntityTypeSelection,
   readGlobalLane,
   readGroupLaneForTab,
+  registerTab,
+  removeEntityTypeSelectionId,
+  removeTabFromDockTree,
+  reopenMostRecentlyClosedTab,
+  resizeInDirection,
+  resizeNearestSplitInDirection,
+  setActiveTab,
+  setDockSplitRatio,
+  setDockSplitRatioById,
+  setEntityTypePriority,
+  setEntityTypeSelection,
+  swapActiveTabInDirection,
+  swapTabInDirection,
   writeGlobalLane,
   writeGroupLaneByGroup,
   writeGroupLaneByTab,

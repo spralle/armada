@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { createPartModuleHostRuntime } from "../dist-test/src/part-module-host.js";
 
 function createRoot(parts) {

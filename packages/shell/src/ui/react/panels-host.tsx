@@ -1,18 +1,17 @@
+import type { IntentActionMatch } from "@ghost-shell/intents";
 import { useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import type { ShellRuntime } from "../../app/types.js";
+import { toPrettyJson } from "../../app/utils.js";
 import {
-  collectLaneMetadata,
   CORE_GLOBAL_SELECTION_KEY,
   CORE_GROUP_CONTEXT_KEY,
+  collectLaneMetadata,
   readGlobalContext,
   readGroupSelectionContext,
 } from "../../context/runtime-state.js";
 import { getBridgeWarningMessage } from "../../sync/bridge-degraded.js";
-import type { IntentActionMatch } from "@ghost-shell/intents";
-import type { ShellRuntime } from "../../app/types.js";
-import { toPrettyJson } from "../../app/utils.js";
 import { applyPendingFocus } from "../pending-focus.js";
-
 
 type PanelsHostBindings = {
   onApplyContextValue: (value: string) => void;
@@ -26,7 +25,10 @@ type PanelsHost = {
   unmount: () => void;
 };
 
-interface PanelsHostRootEntry { container: HTMLElement; root: Root; }
+interface PanelsHostRootEntry {
+  container: HTMLElement;
+  root: Root;
+}
 
 export function createReactPanelsHost(
   rootNode: HTMLElement,
@@ -40,7 +42,10 @@ export function createReactPanelsHost(
     if (!container) return null;
     const existing = roots.get(containerId);
     if (existing && existing.container === container) return existing.root;
-    if (existing) { existing.root.unmount(); roots.delete(containerId); }
+    if (existing) {
+      existing.root.unmount();
+      roots.delete(containerId);
+    }
     const createdRoot = createRoot(container);
     roots.set(containerId, { container, root: createdRoot });
     return createdRoot;
@@ -58,7 +63,11 @@ export function createReactPanelsHost(
             groupContext={readGroupSelectionContext(runtime)}
             intentNotice={runtime.intentNotice}
             notice={runtime.notice}
-            selectionPriorities={Object.entries(runtime.contextState.selectionByEntityType).map(([et, s]) => `${et}:${s.priorityId ?? "none"}`).join(", ") || "none"}
+            selectionPriorities={
+              Object.entries(runtime.contextState.selectionByEntityType)
+                .map(([et, s]) => `${et}:${s.priorityId ?? "none"}`)
+                .join(", ") || "none"
+            }
             pendingFocusSelector={runtime.pendingFocusSelector}
             selectedPartTitle={runtime.selectedPartTitle}
             warningMessage={getBridgeWarningMessage(runtime)}
@@ -80,7 +89,6 @@ export function createReactPanelsHost(
           />,
         );
       }
-
     },
     unmount() {
       for (const entry of roots.values()) {
@@ -118,12 +126,26 @@ function SyncStatusPanel(props: {
     <>
       <h2>Cross-window sync</h2>
       {props.warningMessage ? <div className="bridge-warning">{props.warningMessage}</div> : null}
-      <p className="runtime-note"><strong>Selected part:</strong> {props.selectedPartTitle ?? "none"}</p>
-      <p className="runtime-note"><strong>Selection priorities:</strong> {props.selectionPriorities}</p>
-      <p className="runtime-note"><strong>Group context:</strong> {CORE_GROUP_CONTEXT_KEY} = {props.groupContext}</p>
-      <p className="runtime-note"><strong>Global lane:</strong> {CORE_GLOBAL_SELECTION_KEY} = {props.globalContext}</p>
-      <p className="runtime-note"><strong>Window ID:</strong> {props.windowId}</p>
-      {props.intentNotice ? <p className="runtime-note"><strong>Intent runtime:</strong> {props.intentNotice}</p> : null}
+      <p className="runtime-note">
+        <strong>Selected part:</strong> {props.selectedPartTitle ?? "none"}
+      </p>
+      <p className="runtime-note">
+        <strong>Selection priorities:</strong> {props.selectionPriorities}
+      </p>
+      <p className="runtime-note">
+        <strong>Group context:</strong> {CORE_GROUP_CONTEXT_KEY} = {props.groupContext}
+      </p>
+      <p className="runtime-note">
+        <strong>Global lane:</strong> {CORE_GLOBAL_SELECTION_KEY} = {props.globalContext}
+      </p>
+      <p className="runtime-note">
+        <strong>Window ID:</strong> {props.windowId}
+      </p>
+      {props.intentNotice ? (
+        <p className="runtime-note">
+          <strong>Intent runtime:</strong> {props.intentNotice}
+        </p>
+      ) : null}
       {props.chooserMatches.length > 0 ? (
         <section aria-label="Intent action chooser" className="intent-chooser">
           <h3 style={{ margin: "0 0 6px" }}>Choose action</h3>
@@ -144,11 +166,7 @@ function SyncStatusPanel(props: {
               </button>
             ))}
           </div>
-          <button
-            onClick={props.onDismiss}
-            style={{ marginTop: 6, width: "100%" }}
-            type="button"
-          >
+          <button onClick={props.onDismiss} style={{ marginTop: 6, width: "100%" }} type="button">
             Dismiss chooser
           </button>
         </section>
@@ -158,7 +176,6 @@ function SyncStatusPanel(props: {
   );
 }
 
-
 function DevContextInspectorPanel(props: {
   contextState: ShellRuntime["contextState"];
   laneMetadata: ReturnType<typeof collectLaneMetadata>;
@@ -167,8 +184,13 @@ function DevContextInspectorPanel(props: {
   return (
     <div className="dev-inspector">
       <h2>Dev context inspector</h2>
-      <p className="runtime-note"><strong>Mode:</strong> development only</p>
-      <p className="runtime-note"><strong>Intent trace:</strong> {props.trace ? `${props.trace.intentType} (${props.trace.matched.length} matches)` : "none yet"}</p>
+      <p className="runtime-note">
+        <strong>Mode:</strong> development only
+      </p>
+      <p className="runtime-note">
+        <strong>Intent trace:</strong>{" "}
+        {props.trace ? `${props.trace.intentType} (${props.trace.matched.length} matches)` : "none yet"}
+      </p>
       <details>
         <summary>Current context snapshot</summary>
         <pre>{toPrettyJson(props.contextState)}</pre>
@@ -176,32 +198,48 @@ function DevContextInspectorPanel(props: {
       <details>
         <summary>Revision/source metadata</summary>
         <ul>
-          {props.laneMetadata.length > 0 ? props.laneMetadata.map((item) => (
-            <li key={`${item.scope}:${item.key}:${item.revision.timestamp}:${item.revision.writer}`}>
-              <strong>{item.scope}</strong> {item.key} = {item.value}
-              <br />
-              <small>
-                revision={item.revision.timestamp}:{item.revision.writer}
-                {item.sourceSelection
-                  ? ` | source=${item.sourceSelection.entityType}@${item.sourceSelection.revision.timestamp}:${item.sourceSelection.revision.writer}`
-                  : ""}
-              </small>
-            </li>
-          )) : <li>No lanes written yet.</li>}
+          {props.laneMetadata.length > 0 ? (
+            props.laneMetadata.map((item) => (
+              <li key={`${item.scope}:${item.key}:${item.revision.timestamp}:${item.revision.writer}`}>
+                <strong>{item.scope}</strong> {item.key} = {item.value}
+                <br />
+                <small>
+                  revision={item.revision.timestamp}:{item.revision.writer}
+                  {item.sourceSelection
+                    ? ` | source=${item.sourceSelection.entityType}@${item.sourceSelection.revision.timestamp}:${item.sourceSelection.revision.writer}`
+                    : ""}
+                </small>
+              </li>
+            ))
+          ) : (
+            <li>No lanes written yet.</li>
+          )}
         </ul>
       </details>
       <details>
         <summary>Intent/action matching traces</summary>
-        {props.trace ? props.trace.actions.map((action) => (
-          <details key={`${action.pluginId}.${action.actionId}`}>
-            <summary>
-              {action.pluginId}.{action.actionId} — {action.intentTypeMatch && action.predicateMatched ? "matched" : "not matched"}
-            </summary>
-            {action.failedPredicates.length > 0 ? <pre>{toPrettyJson(action.failedPredicates)}</pre> : <p className="runtime-note">No predicate failures.</p>}
-          </details>
-        )) : <p className="runtime-note">No intent evaluations recorded.</p>}
         {props.trace ? (
-          <p className="runtime-note"><strong>Matched actions:</strong> {props.trace.matched.map((item) => `${item.pluginId}.${item.actionId}`).join(", ") || "none"}</p>
+          props.trace.actions.map((action) => (
+            <details key={`${action.pluginId}.${action.actionId}`}>
+              <summary>
+                {action.pluginId}.{action.actionId} —{" "}
+                {action.intentTypeMatch && action.predicateMatched ? "matched" : "not matched"}
+              </summary>
+              {action.failedPredicates.length > 0 ? (
+                <pre>{toPrettyJson(action.failedPredicates)}</pre>
+              ) : (
+                <p className="runtime-note">No predicate failures.</p>
+              )}
+            </details>
+          ))
+        ) : (
+          <p className="runtime-note">No intent evaluations recorded.</p>
+        )}
+        {props.trace ? (
+          <p className="runtime-note">
+            <strong>Matched actions:</strong>{" "}
+            {props.trace.matched.map((item) => `${item.pluginId}.${item.actionId}`).join(", ") || "none"}
+          </p>
         ) : null}
       </details>
     </div>

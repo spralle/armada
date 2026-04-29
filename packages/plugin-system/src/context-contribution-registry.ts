@@ -1,9 +1,9 @@
-import type { Disposable } from "@ghost-shell/contracts/plugin";
 import type {
   ContextContribution,
   ContextContributionRegistry,
   ProviderContribution,
 } from "@ghost-shell/contracts/context";
+import type { Disposable } from "@ghost-shell/contracts/plugin";
 
 interface ContextEntry {
   readonly contribution: ContextContribution<unknown>;
@@ -48,10 +48,7 @@ export function createContextContributionRegistry(): ContextContributionRegistry
     return set;
   }
 
-  function contribute<T>(
-    contribution: ContextContribution<T>,
-    pluginId = "",
-  ): Disposable {
+  function contribute<T>(contribution: ContextContribution<T>, pluginId = ""): Disposable {
     const id = contribution.id;
     entries.set(id, {
       contribution: contribution as ContextContribution<unknown>,
@@ -96,10 +93,7 @@ export function createContextContributionRegistry(): ContextContributionRegistry
     };
   }
 
-  function contributeProvider(
-    contribution: ProviderContribution,
-    pluginId = "",
-  ): Disposable {
+  function contributeProvider(contribution: ProviderContribution, pluginId = ""): Disposable {
     const entry: ProviderEntry = { contribution, pluginId };
     providers.push(entry);
     providers.sort((a, b) => a.contribution.order - b.contribution.order);

@@ -1,16 +1,7 @@
-import {
-  createDefaultLayoutState,
-  sanitizeLayoutState,
-} from "./layout.js";
-import {
-  createLocalStorageContextStatePersistence,
-  createLocalStorageLayoutPersistence,
-} from "./persistence.js";
-import {
-  createInitialShellContextState,
-  writeGlobalLane,
-} from "./context-state.js";
+import { createInitialShellContextState, writeGlobalLane } from "./context-state.js";
 import { MemoryStorage, type SpecHarness } from "./context-state.spec-harness.js";
+import { createDefaultLayoutState, sanitizeLayoutState } from "./layout.js";
+import { createLocalStorageContextStatePersistence, createLocalStorageLayoutPersistence } from "./persistence.js";
 
 export function registerContextPersistenceUnifiedSpecs(harness: SpecHarness): void {
   const { test, assertEqual, assertTruthy } = harness;
@@ -63,20 +54,23 @@ export function registerContextPersistenceUnifiedSpecs(harness: SpecHarness): vo
     const storage = new MemoryStorage();
     const userId = "spec-user";
     const unifiedKey = `ghost.shell.persistence.v1.${userId}`;
-    storage.setItem(unifiedKey, JSON.stringify({
-      version: 1,
-      layout: {
+    storage.setItem(
+      unifiedKey,
+      JSON.stringify({
         version: 1,
-        state: {
-          sideSize: 0.31,
-          secondarySize: 0.41,
+        layout: {
+          version: 1,
+          state: {
+            sideSize: 0.31,
+            secondarySize: 0.41,
+          },
         },
-      },
-      context: {
-        version: 99,
-        contextState: {},
-      },
-    }));
+        context: {
+          version: 99,
+          contextState: {},
+        },
+      }),
+    );
 
     const layoutPersistence = createLocalStorageLayoutPersistence(storage, { userId });
     const contextPersistence = createLocalStorageContextStatePersistence(storage, { userId });
@@ -95,37 +89,40 @@ export function registerContextPersistenceUnifiedSpecs(harness: SpecHarness): vo
     const storage = new MemoryStorage();
     const userId = "spec-user";
     const unifiedKey = `ghost.shell.persistence.v1.${userId}`;
-    storage.setItem(unifiedKey, JSON.stringify({
-      version: 1,
-      layout: {
-        version: 99,
-        state: {
-          sideSize: 0.99,
+    storage.setItem(
+      unifiedKey,
+      JSON.stringify({
+        version: 1,
+        layout: {
+          version: 99,
+          state: {
+            sideSize: 0.99,
+          },
         },
-      },
-      context: {
-        version: 2,
-        contextState: {
-          groups: {
-            "group-main": { id: "group-main", color: "blue" },
-          },
-          tabs: {
-            "tab-main": { id: "tab-main", groupId: "group-main" },
-          },
-          tabOrder: ["tab-main"],
-          activeTabId: "tab-main",
-          globalLanes: {
-            "shell.selection": {
-              value: "from-context",
-              revision: { timestamp: 1, writer: "writer-a" },
+        context: {
+          version: 2,
+          contextState: {
+            groups: {
+              "group-main": { id: "group-main", color: "blue" },
             },
+            tabs: {
+              "tab-main": { id: "tab-main", groupId: "group-main" },
+            },
+            tabOrder: ["tab-main"],
+            activeTabId: "tab-main",
+            globalLanes: {
+              "shell.selection": {
+                value: "from-context",
+                revision: { timestamp: 1, writer: "writer-a" },
+              },
+            },
+            groupLanes: {},
+            subcontextsByTab: {},
+            selectionByEntityType: {},
           },
-          groupLanes: {},
-          subcontextsByTab: {},
-          selectionByEntityType: {},
         },
-      },
-    }));
+      }),
+    );
 
     const layoutPersistence = createLocalStorageLayoutPersistence(storage, { userId });
     const contextPersistence = createLocalStorageContextStatePersistence(storage, { userId });

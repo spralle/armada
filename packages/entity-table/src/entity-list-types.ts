@@ -1,3 +1,5 @@
+import type { MenuService } from "@ghost-shell/contracts";
+import type { FilterVariant, SchemaMetadata } from "@ghost-shell/table-from-schema";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -5,11 +7,8 @@ import type {
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
-import type { SchemaMetadata } from "@ghost-shell/table-from-schema";
-import type { FilterVariant } from "@ghost-shell/table-from-schema";
-import type { CellRendererRegistry } from "./cell-registry.js";
 import type { ReactNode } from "react";
-import type { MenuService } from "@ghost-shell/contracts";
+import type { CellRendererRegistry } from "./cell-registry.js";
 
 /** Result from createEntityTable — all config needed to render */
 export interface EntityTableResult<TData> {

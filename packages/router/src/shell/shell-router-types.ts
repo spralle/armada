@@ -1,4 +1,4 @@
-import type { NavigationHints, NavigationTarget, NavigationResult } from "../core/types.js";
+import type { NavigationHints, NavigationResult, NavigationTarget } from "../core/types.js";
 
 /**
  * Hint about what kind of state change triggered the observer notification.
@@ -21,7 +21,12 @@ export type StateChangeHint =
  * package decoupled from the shell app.
  */
 export interface ShellContextStateSnapshot {
-  readonly tabs: Readonly<Record<string, { readonly definitionId: string; readonly args: Readonly<Record<string, string>>; readonly label: string }>>;
+  readonly tabs: Readonly<
+    Record<
+      string,
+      { readonly definitionId: string; readonly args: Readonly<Record<string, string>>; readonly label: string }
+    >
+  >;
   readonly activeTabId: string | null;
   readonly dockTree: unknown; // Opaque to router — codec serializes it
   readonly tabOrder: readonly string[];
@@ -38,16 +43,9 @@ export interface ShellContextStateSnapshot {
  * ```
  */
 export interface ShellStateObserver {
-  onContextStateChanged(
-    prev: ShellContextStateSnapshot,
-    next: ShellContextStateSnapshot,
-    hint: StateChangeHint,
-  ): void;
+  onContextStateChanged(prev: ShellContextStateSnapshot, next: ShellContextStateSnapshot, hint: StateChangeHint): void;
 
-  onWorkspaceSwitched?(
-    workspaceId: string,
-    contextState: ShellContextStateSnapshot,
-  ): void;
+  onWorkspaceSwitched?(workspaceId: string, contextState: ShellContextStateSnapshot): void;
 }
 
 /**
@@ -59,10 +57,12 @@ export interface ShellRouterConfig {
   /** Default navigation hints when none are provided. */
   readonly defaultHints?: NavigationHints | undefined;
   /** Link-open policy configuration. */
-  readonly linkOpen?: {
-    readonly defaultPolicy?: "new-instance" | undefined; // "reuse" and "auto" reserved for future
-    readonly probeTimeoutMs?: number | undefined;
-  } | undefined;
+  readonly linkOpen?:
+    | {
+        readonly defaultPolicy?: "new-instance" | undefined; // "reuse" and "auto" reserved for future
+        readonly probeTimeoutMs?: number | undefined;
+      }
+    | undefined;
 }
 
 /**

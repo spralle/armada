@@ -1,8 +1,8 @@
+import { switchWorkspace } from "@ghost-shell/state";
 import type { ShellRuntime } from "../app/types.js";
 import { reconcileActiveTab } from "../context/runtime-state.js";
-import { switchWorkspace } from "@ghost-shell/state";
-import type { PartsControllerDeps } from "./parts-controller-types.js";
 import { renderParts } from "./parts-controller.js";
+import type { PartsControllerDeps } from "./parts-controller-types.js";
 
 /**
  * Options required to perform a workspace switch.
@@ -26,18 +26,11 @@ export interface WorkspaceSwitchDeps {
  *
  * Edge slot components are unaffected — they live outside `#dock-tree-root`.
  */
-export function performWorkspaceSwitch(
-  targetWorkspaceId: string,
-  deps: WorkspaceSwitchDeps,
-): boolean {
+export function performWorkspaceSwitch(targetWorkspaceId: string, deps: WorkspaceSwitchDeps): boolean {
   const { root, runtime, partsDeps } = deps;
 
   // --- Step 1: Pure state switch -------------------------------------------
-  const result = switchWorkspace(
-    runtime.workspaceManager,
-    targetWorkspaceId,
-    runtime.contextState,
-  );
+  const result = switchWorkspace(runtime.workspaceManager, targetWorkspaceId, runtime.contextState);
 
   if (!result.changed) {
     return false;
@@ -58,10 +51,7 @@ export function performWorkspaceSwitch(
   // --- Step 5: Swap state --------------------------------------------------
   runtime.workspaceManager = result.state;
   runtime.contextState = result.activeContextState;
-  runtime.stateObserver?.onWorkspaceSwitched?.(
-    runtime.workspaceManager.activeWorkspaceId,
-    runtime.contextState,
-  );
+  runtime.stateObserver?.onWorkspaceSwitched?.(runtime.workspaceManager.activeWorkspaceId, runtime.contextState);
 
   // --- Step 6: Re-render dock tree and mount parts -------------------------
   renderParts(root, runtime, partsDeps, { teardownMode: true });

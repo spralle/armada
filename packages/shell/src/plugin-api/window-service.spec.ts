@@ -1,13 +1,8 @@
 import type { QuickPickItem } from "@ghost-shell/contracts";
 import type { SpecHarness } from "../context-state.spec-harness.js";
-import {
-  createWindowService,
-  type WindowServiceDependencies,
-} from "./window-service.js";
+import { createWindowService, type WindowServiceDependencies } from "./window-service.js";
 
-function createTestDeps(
-  overrides: Partial<WindowServiceDependencies> = {},
-): WindowServiceDependencies {
+function createTestDeps(overrides: Partial<WindowServiceDependencies> = {}): WindowServiceDependencies {
   return {
     getWindowId: () => "win-main",
     getIsPopout: () => false,
@@ -26,9 +21,7 @@ export function registerWindowServiceSpecs(harness: SpecHarness): void {
   // ─── windowId / isPopout ───
 
   test("window-service: windowId returns correct value", () => {
-    const { service } = createWindowService(
-      createTestDeps({ getWindowId: () => "win-42" }),
-    );
+    const { service } = createWindowService(createTestDeps({ getWindowId: () => "win-42" }));
     assertEqual(service.windowId, "win-42", "windowId should match deps");
   });
 
@@ -38,9 +31,7 @@ export function registerWindowServiceSpecs(harness: SpecHarness): void {
   });
 
   test("window-service: isPopout returns true for popout window", () => {
-    const { service } = createWindowService(
-      createTestDeps({ getIsPopout: () => true }),
-    );
+    const { service } = createWindowService(createTestDeps({ getIsPopout: () => true }));
     assertEqual(service.isPopout, true, "isPopout should be true for popout");
   });
 
@@ -63,9 +54,7 @@ export function registerWindowServiceSpecs(harness: SpecHarness): void {
     popouts.set("win-pop-1", {} as Window);
     popouts.set("win-pop-2", {} as Window);
 
-    const { service } = createWindowService(
-      createTestDeps({ getPopoutHandles: () => popouts }),
-    );
+    const { service } = createWindowService(createTestDeps({ getPopoutHandles: () => popouts }));
 
     const windows = service.getWindows();
     assertEqual(windows.length, 3, "should return 3 windows (1 host + 2 popouts)");
@@ -87,10 +76,7 @@ export function registerWindowServiceSpecs(harness: SpecHarness): void {
   // ─── showQuickPick() ───
 
   test("window-service: showQuickPick resolves with selected item on accept", async () => {
-    const items: QuickPickItem[] = [
-      { label: "Alpha" },
-      { label: "Beta" },
-    ];
+    const items: QuickPickItem[] = [{ label: "Alpha" }, { label: "Beta" }];
 
     const { service } = createWindowService(
       createTestDeps({
@@ -114,10 +100,7 @@ export function registerWindowServiceSpecs(harness: SpecHarness): void {
   });
 
   test("window-service: showQuickPick resolves with undefined on hide", async () => {
-    const items: QuickPickItem[] = [
-      { label: "Alpha" },
-      { label: "Beta" },
-    ];
+    const items: QuickPickItem[] = [{ label: "Alpha" }, { label: "Beta" }];
 
     const { service } = createWindowService(
       createTestDeps({

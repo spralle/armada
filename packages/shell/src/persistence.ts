@@ -8,14 +8,9 @@ export type {
   WorkspaceManagerLoadResult,
   WorkspaceManagerSaveResult,
 } from "@ghost-shell/persistence";
-
 export {
   createLocalStorageContextStatePersistence,
-  createLocalStorageWorkspacePersistence,
-} from "@ghost-shell/persistence";
-export {
   createLocalStorageKeybindingPersistence,
-} from "@ghost-shell/persistence";
-export {
   createLocalStorageLayoutPersistence,
+  createLocalStorageWorkspacePersistence,
 } from "@ghost-shell/persistence";

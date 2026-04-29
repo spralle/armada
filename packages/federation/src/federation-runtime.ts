@@ -1,13 +1,10 @@
-import {
-  createInstance,
-  type ModuleFederation,
-} from "@module-federation/enhanced/runtime";
 import * as pluginContracts from "@ghost-shell/contracts";
+import * as ghostReact from "@ghost-shell/react";
 import * as ghostUi from "@ghost-shell/ui";
+import { createInstance, type ModuleFederation } from "@module-federation/enhanced/runtime";
 import * as react from "react";
 import * as reactDom from "react-dom";
 import * as reactDomClient from "react-dom/client";
-import * as ghostReact from "@ghost-shell/react";
 
 type RuntimeCreateOptions = Parameters<typeof createInstance>[0];
 
@@ -106,9 +103,7 @@ export function createShellFederationRuntime(): ShellFederationRuntime {
       ]);
     },
     async loadRemoteModule(remoteId, exposeKey) {
-      const normalizedExposeKey = exposeKey.startsWith("./")
-        ? exposeKey.slice(2)
-        : exposeKey;
+      const normalizedExposeKey = exposeKey.startsWith("./") ? exposeKey.slice(2) : exposeKey;
       return host.loadRemote<unknown>(`${remoteId}/${normalizedExposeKey}`);
     },
     async loadPluginContract(remoteId) {

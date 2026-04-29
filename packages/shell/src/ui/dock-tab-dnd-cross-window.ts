@@ -1,6 +1,6 @@
 import type { ShellRuntime } from "../app/types.js";
-import { applyIncomingTransferTransaction, type DockDropZone } from "../context-state.js";
 import { updateContextState } from "../context/runtime-state.js";
+import { applyIncomingTransferTransaction, type DockDropZone } from "../context-state.js";
 
 export interface CrossWindowDockDropInput {
   tabId: string;

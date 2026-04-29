@@ -1,21 +1,18 @@
+import type { StateChangeHint } from "@ghost-shell/router";
+import { DEFAULT_GROUP_COLOR, DEFAULT_GROUP_ID } from "../app/constants.js";
+import type { DevLaneMetadata, RenderTabMetadata, ShellRuntime } from "../app/types.js";
 import {
   getTabCloseability,
   getTabGroupId,
+  type RevisionMeta,
   readGlobalLane,
   readGroupLaneForTab,
   registerTab,
+  type ShellContextState,
   setActiveTab,
   writeGlobalLane,
   writeGroupLaneByTab,
-  type RevisionMeta,
-  type ShellContextState,
 } from "../context-state.js";
-import {
-  DEFAULT_GROUP_COLOR,
-  DEFAULT_GROUP_ID,
-} from "../app/constants.js";
-import type { DevLaneMetadata, RenderTabMetadata, ShellRuntime } from "../app/types.js";
-import type { StateChangeHint } from "@ghost-shell/router";
 
 export const CORE_GROUP_CONTEXT_KEY = "shell.group-context";
 export const CORE_GLOBAL_SELECTION_KEY = "shell.selection";
@@ -80,23 +77,29 @@ export function writeGroupSelectionContext(runtime: ShellRuntime, value: string)
     return;
   }
 
-  updateContextState(runtime, writeGroupLaneByTab(runtime.contextState, {
-    tabId: activeTabId,
-    key: CORE_GROUP_CONTEXT_KEY,
-    value,
-    revision: createRevision(runtime.windowId),
-  }));
+  updateContextState(
+    runtime,
+    writeGroupLaneByTab(runtime.contextState, {
+      tabId: activeTabId,
+      key: CORE_GROUP_CONTEXT_KEY,
+      value,
+      revision: createRevision(runtime.windowId),
+    }),
+  );
 }
 
 export function writeGlobalSelectionLane(
   runtime: ShellRuntime,
   input: { selectedPartId: string; selectedPartTitle: string; revision?: RevisionMeta },
 ): void {
-  updateContextState(runtime, writeGlobalLane(runtime.contextState, {
-    key: CORE_GLOBAL_SELECTION_KEY,
-    value: `${input.selectedPartId}|${input.selectedPartTitle}`,
-    revision: input.revision ?? createRevision(runtime.windowId),
-  }));
+  updateContextState(
+    runtime,
+    writeGlobalLane(runtime.contextState, {
+      key: CORE_GLOBAL_SELECTION_KEY,
+      value: `${input.selectedPartId}|${input.selectedPartTitle}`,
+      revision: input.revision ?? createRevision(runtime.windowId),
+    }),
+  );
 }
 
 export function updateContextState(runtime: ShellRuntime, nextState: ShellContextState, hint?: StateChangeHint): void {

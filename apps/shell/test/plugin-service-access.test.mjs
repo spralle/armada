@@ -1,8 +1,8 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
+import { THEME_SERVICE_ID } from "../../../packages/plugin-contracts/dist/index.js";
 import { createShellPluginRegistry } from "../dist-test/src/plugin-registry.js";
 import { createPluginServicesBridge } from "../dist-test/src/plugin-service-bridge.js";
-import { THEME_SERVICE_ID } from "../../../packages/plugin-contracts/dist/index.js";
 
 // ---------------------------------------------------------------------------
 // Helper — register a builtin plugin with a service instance
@@ -54,9 +54,7 @@ test("bridge.getService returns registered builtin service instance", () => {
 
   const themeService = bridge.getService(THEME_SERVICE_ID);
   assert.ok(themeService, "getService should return the registered service");
-  assert.deepEqual(themeService.listThemes(), [
-    { id: "default", name: "Default", mode: "dark" },
-  ]);
+  assert.deepEqual(themeService.listThemes(), [{ id: "default", name: "Default", mode: "dark" }]);
   assert.equal(themeService.getActiveThemeId(), "default");
 });
 

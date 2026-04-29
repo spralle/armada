@@ -1,14 +1,13 @@
+export type {
+  AutoStackConfig,
+  FocusGrabConfig,
+  LayerDefinition,
+  LayerSurfaceContext,
+  PluginLayerDefinition,
+  PluginLayerSurfaceContribution,
+} from "./layer-types.js";
 export {
   AnchorEdge,
-  KeyboardInteractivity,
   InputBehavior,
-} from "./layer-types.js";
-
-export type {
-  LayerDefinition,
-  FocusGrabConfig,
-  AutoStackConfig,
-  PluginLayerSurfaceContribution,
-  PluginLayerDefinition,
-  LayerSurfaceContext,
+  KeyboardInteractivity,
 } from "./layer-types.js";

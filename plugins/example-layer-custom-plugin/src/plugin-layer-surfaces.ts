@@ -10,10 +10,7 @@ import type { LayerSurfaceContext } from "@ghost-shell/contracts/layer";
  * - Cascade removal: disabling this plugin removes the "widgets" layer
  *   AND this surface automatically
  */
-export function mount(
-  target: HTMLDivElement,
-  _context: LayerSurfaceContext,
-): (() => void) | void {
+export function mount(target: HTMLDivElement, _context: LayerSurfaceContext): (() => void) | undefined {
   const container = document.createElement("div");
   Object.assign(container.style, {
     width: "100%",

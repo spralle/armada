@@ -1,4 +1,4 @@
-import type { GhostApi, WorkspaceService, WorkspaceInfo } from "@ghost-shell/contracts";
+import type { GhostApi, WorkspaceInfo, WorkspaceService } from "@ghost-shell/contracts";
 
 let activeCloseHandler: ((e: MouseEvent) => void) | null = null;
 let activeEscapeHandler: ((e: KeyboardEvent) => void) | null = null;
@@ -84,10 +84,7 @@ export function showWorkspaceContextMenu(
       const items = menu.querySelectorAll("[data-menu-item]");
       const current = menu.querySelector("[data-menu-item]:focus");
       const idx = current ? Array.from(items).indexOf(current) : -1;
-      const next =
-        e.key === "ArrowDown"
-          ? items[idx + 1] ?? items[0]
-          : items[idx - 1] ?? items[items.length - 1];
+      const next = e.key === "ArrowDown" ? (items[idx + 1] ?? items[0]) : (items[idx - 1] ?? items[items.length - 1]);
       (next as HTMLElement)?.focus();
     }
   });
@@ -159,10 +156,7 @@ export async function deleteWorkspaceViaActionOrFallback(
   }
 }
 
-async function executeActionSafely(
-  api: GhostApi,
-  actionId: string,
-): Promise<boolean> {
+async function executeActionSafely(api: GhostApi, actionId: string): Promise<boolean> {
   try {
     await api.actions.executeAction(actionId);
     return true;

@@ -10,10 +10,7 @@ export function collectStacks(node: DockNode, path: ReadonlyArray<"first" | "sec
     return [{ stack: node, path }];
   }
 
-  return [
-    ...collectStacks(node.first, [...path, "first"]),
-    ...collectStacks(node.second, [...path, "second"]),
-  ];
+  return [...collectStacks(node.first, [...path, "first"]), ...collectStacks(node.second, [...path, "second"])];
 }
 
 export function findStackByTabId(root: DockNode | null, tabId: string): StackRef | null {
@@ -54,16 +51,15 @@ export function directionalDistance(
     return null;
   }
 
-  const expectedOrientation: DockOrientation = direction === "left" || direction === "right"
-    ? "horizontal"
-    : "vertical";
+  const expectedOrientation: DockOrientation =
+    direction === "left" || direction === "right" ? "horizontal" : "vertical";
   if (split.orientation !== expectedOrientation) {
     return null;
   }
 
   if (
-    (direction === "left" || direction === "up") && fromBranch === "second" && toBranch === "first"
-    || (direction === "right" || direction === "down") && fromBranch === "first" && toBranch === "second"
+    ((direction === "left" || direction === "up") && fromBranch === "second" && toBranch === "first") ||
+    ((direction === "right" || direction === "down") && fromBranch === "first" && toBranch === "second")
   ) {
     return fromPath.length - divergence;
   }

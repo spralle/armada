@@ -84,7 +84,11 @@ export function registerContextStateCoreSelectionGraphSpecs(harness: SpecHarness
     });
 
     const selection = readEntityTypeSelection(state, "order");
-    assertEqual(selection.selectedIds.join(","), "o-3,o-2,o-1", "ordered operations should maintain deterministic order");
+    assertEqual(
+      selection.selectedIds.join(","),
+      "o-3,o-2,o-1",
+      "ordered operations should maintain deterministic order",
+    );
     assertEqual(selection.priorityId, "o-3", "priority should remain explicit unless invalidated");
   });
 

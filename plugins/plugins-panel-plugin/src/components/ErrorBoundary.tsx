@@ -1,6 +1,6 @@
-import { Component } from "react";
-import type { ReactNode, ErrorInfo } from "react";
 import { Alert, Button } from "@ghost-shell/ui";
+import type { ErrorInfo, ReactNode } from "react";
+import { Component } from "react";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -29,12 +29,7 @@ export class PluginsPanelErrorBoundary extends Component<ErrorBoundaryProps, Err
             <div className="font-semibold mb-1">Plugins panel encountered an error</div>
             <p className="text-muted-foreground">{this.state.error.message}</p>
           </Alert>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => this.setState({ error: null })}
-            className="self-start"
-          >
+          <Button size="sm" variant="outline" onClick={() => this.setState({ error: null })} className="self-start">
             Retry
           </Button>
         </div>

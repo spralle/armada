@@ -7,13 +7,13 @@
  * Fallback: if config service is unavailable, falls back to localStorage.
  */
 
-import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
 import type { ConfigurationService } from "@ghost-shell/contracts";
+import type { ConfigurationPropertySchema } from "@ghost-shell/contracts/plugin";
 import {
   createDefaultLayoutState,
-  sanitizeLayoutState,
   type PartialLayoutState,
   type ShellLayoutState,
+  sanitizeLayoutState,
 } from "@ghost-shell/state";
 import type { ShellLayoutPersistence, StorageLike } from "./contracts.js";
 import {
@@ -83,9 +83,7 @@ export interface LayoutConfigBridgeOptions {
 // Factory
 // ---------------------------------------------------------------------------
 
-export function createLayoutConfigBridge(
-  options: LayoutConfigBridgeOptions,
-): LayoutConfigBridge {
+export function createLayoutConfigBridge(options: LayoutConfigBridgeOptions): LayoutConfigBridge {
   const { configService, storage, userId } = options;
   const configKey = options.configKey ?? LAYOUT_CONFIG_KEY;
   const storageKey = getUnifiedStorageKey(userId);
@@ -144,8 +142,7 @@ export function createLayoutConfigBridge(
       const fromStorage = loadFromStorage(storage, storageKey);
       const defaults = createDefaultLayoutState();
       const isDefault =
-        fromStorage.sideSize === defaults.sideSize &&
-        fromStorage.secondarySize === defaults.secondarySize;
+        fromStorage.sideSize === defaults.sideSize && fromStorage.secondarySize === defaults.secondarySize;
 
       if (isDefault) {
         // Nothing meaningful to migrate
@@ -171,9 +168,7 @@ export function createLayoutConfigBridge(
 // by the config bridge so callers like ShellRuntime can use it directly.
 // ---------------------------------------------------------------------------
 
-export function createConfigBackedLayoutPersistence(
-  options: LayoutConfigBridgeOptions,
-): ShellLayoutPersistence {
+export function createConfigBackedLayoutPersistence(options: LayoutConfigBridgeOptions): ShellLayoutPersistence {
   const bridge = createLayoutConfigBridge(options);
   return {
     load: () => bridge.loadLayout(),
@@ -185,10 +180,7 @@ export function createConfigBackedLayoutPersistence(
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function loadFromStorage(
-  storage: StorageLike | undefined,
-  storageKey: string,
-): ShellLayoutState {
+function loadFromStorage(storage: StorageLike | undefined, storageKey: string): ShellLayoutState {
   if (!storage) {
     return createDefaultLayoutState();
   }
@@ -204,11 +196,7 @@ function loadFromStorage(
   return createDefaultLayoutState();
 }
 
-function saveToStorage(
-  storage: StorageLike | undefined,
-  storageKey: string,
-  state: ShellLayoutState,
-): void {
+function saveToStorage(storage: StorageLike | undefined, storageKey: string, state: ShellLayoutState): void {
   if (!storage) {
     return;
   }

@@ -1,17 +1,14 @@
 import type { ShellEdgeSlot, ShellEdgeSlotPosition } from "@ghost-shell/contracts";
-import {
-  composeEnabledPluginContributions,
-  type ComposedPluginSlotContribution,
-} from "@ghost-shell/plugin-system";
+import { type ComposedPluginSlotContribution, composeEnabledPluginContributions } from "@ghost-shell/plugin-system";
 import type { ShellRuntime } from "../app/types.js";
-import type { ShellFederationRuntime } from "../federation-runtime.js";
 import {
+  ensureRemoteRegistered,
   type MountCleanup,
   normalizeCleanup,
   safeUnmount,
   toRecord,
-  ensureRemoteRegistered,
 } from "../federation-mount-utils.js";
+import type { ShellFederationRuntime } from "../federation-runtime.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -168,10 +165,7 @@ export function createEdgeSlotRenderer(options: EdgeSlotRendererOptions): EdgeSl
     }
   }
 
-  function pruneStaleChildren(
-    container: HTMLElement,
-    contributions: ComposedPluginSlotContribution[],
-  ): void {
+  function pruneStaleChildren(container: HTMLElement, contributions: ComposedPluginSlotContribution[]): void {
     const desiredIds = new Set(contributions.map((c) => c.id));
     for (const child of Array.from(container.children) as HTMLElement[]) {
       const contentId = child.dataset.slotContentFor;
@@ -191,13 +185,11 @@ export function createEdgeSlotRenderer(options: EdgeSlotRendererOptions): EdgeSl
     contribution: ComposedPluginSlotContribution,
     previousElement: Element | null,
   ): HTMLElement {
-    let target = container.querySelector<HTMLElement>(
-      `[data-slot-content-for="${contribution.id}"]`,
-    );
+    let target = container.querySelector<HTMLElement>(`[data-slot-content-for="${contribution.id}"]`);
     if (!target) {
       target = document.createElement("div");
       target.dataset.slotContentFor = contribution.id;
-      if (previousElement && previousElement.nextSibling) {
+      if (previousElement?.nextSibling) {
         container.insertBefore(target, previousElement.nextSibling);
       } else if (!previousElement && container.firstChild) {
         container.insertBefore(target, container.firstChild);
@@ -284,10 +276,7 @@ export function createEdgeSlotRenderer(options: EdgeSlotRendererOptions): EdgeSl
     );
 
     try {
-      const remoteModule = await federationRuntime.loadRemoteModule(
-        contribution.pluginId,
-        "./pluginSlots",
-      );
+      const remoteModule = await federationRuntime.loadRemoteModule(contribution.pluginId, "./pluginSlots");
       if (generation !== expectedGeneration) {
         return;
       }
@@ -381,10 +370,7 @@ function resolveSlotMount(
 // Utilities
 // ---------------------------------------------------------------------------
 
-function createSlotMountKey(
-  contribution: ComposedPluginSlotContribution,
-  runtime: ShellRuntime,
-): string {
+function createSlotMountKey(contribution: ComposedPluginSlotContribution, runtime: ShellRuntime): string {
   const snapshot = runtime.registry.getSnapshot();
   const pluginSnapshot = snapshot.plugins.find((p) => p.id === contribution.pluginId);
   if (!pluginSnapshot) {

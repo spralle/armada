@@ -1,12 +1,11 @@
-import type { GhostApiFactoryDependencies } from "./ghost-api-factory.js";
 import type { ShellRuntime } from "../app/types.js";
-import type { QuickPickBridge } from "../ui/quick-pick/quick-pick-bridge.js";
-import type { WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
+import { updateContextState } from "../context/runtime-state.js";
+import { openPartInstanceWithArgs } from "../part-instance-flow.js";
 import { toActionContext } from "../shell-runtime/action-context.js";
 import { getVisiblePartDefinitions } from "../ui/parts-rendering.js";
-import { openPartInstanceWithArgs } from "../part-instance-flow.js";
-import { updateContextState } from "../context/runtime-state.js";
-
+import type { QuickPickBridge } from "../ui/quick-pick/quick-pick-bridge.js";
+import type { WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
+import type { GhostApiFactoryDependencies } from "./ghost-api-factory.js";
 
 /**
  * Construct GhostApiFactoryDependencies from the ShellRuntime and QuickPickBridge.
@@ -24,8 +23,7 @@ export function createGhostApiDeps(
     getActionSurface: () => runtime.actionSurface,
     getActionContext: () => toActionContext(runtime),
     getIntentRuntime: () => runtime.intentRuntime,
-    activatePlugin: (pluginId, triggerId) =>
-      runtime.registry.activateByAction(pluginId, triggerId),
+    activatePlugin: (pluginId, triggerId) => runtime.registry.activateByAction(pluginId, triggerId),
     runtimeActionRegistry: runtime.runtimeActionRegistry,
 
     getWindowId: () => runtime.windowId,
@@ -56,9 +54,11 @@ export function createGhostApiDeps(
 
     workspaceServiceDeps: {
       getRuntime: () => runtime,
-      getWorkspaceSwitchDeps: options?.getWorkspaceSwitchDeps ?? (() => {
-        throw new Error("WorkspaceSwitchDeps not configured — workspace switching unavailable");
-      }),
+      getWorkspaceSwitchDeps:
+        options?.getWorkspaceSwitchDeps ??
+        (() => {
+          throw new Error("WorkspaceSwitchDeps not configured — workspace switching unavailable");
+        }),
     },
 
     menuServiceDeps: {

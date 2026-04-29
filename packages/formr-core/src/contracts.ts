@@ -1,14 +1,13 @@
-import type { CanonicalPath } from './path.js';
-import type { FormState, ValidationIssue, SubmitContext } from './state.js';
-import type { ExprNode, ExpressionDefinition, EvaluationScope } from '@ghost-shell/predicate';
-import type { TransformDefinition } from './transforms.js';
-import type { DeepKeys, DeepValue, ArrayElement } from './type-utils.js';
-import type { StandardSchemaLike } from './standard-schema.js';
-
-export type { ExprNode, ExpressionDefinition, EvaluationScope };
+import type { EvaluationScope, ExpressionDefinition, ExprNode } from "@ghost-shell/predicate";
+import type { CanonicalPath } from "./path.js";
+import type { StandardSchemaLike } from "./standard-schema.js";
+import type { FormState, SubmitContext, ValidationIssue } from "./state.js";
+import type { TransformDefinition } from "./transforms.js";
+import type { ArrayElement, DeepKeys, DeepValue } from "./type-utils.js";
 
 // Re-export arbiter types for consumers
-export type { ProductionRule, RuleSession, SessionConfig as ArbiterSessionConfig } from '@ghost-shell/arbiter';
+export type { ProductionRule, RuleSession, SessionConfig as ArbiterSessionConfig } from "@ghost-shell/arbiter";
+export type { EvaluationScope, ExpressionDefinition, ExprNode };
 
 /**
  * ADR section 10 — Transform is the config-time type alias.
@@ -32,9 +31,7 @@ export type ValidatorFn<TData = unknown, TUi = unknown> = (
 ) => readonly ValidationIssue[];
 
 /** A validator can be a function OR a Standard Schema object (auto-detected and wrapped) */
-export type SchemaValidator<TData = unknown, TUi = unknown> =
-  | ValidatorFn<TData, TUi>
-  | StandardSchemaLike;
+export type SchemaValidator<TData = unknown, TUi = unknown> = ValidatorFn<TData, TUi> | StandardSchemaLike;
 
 /** Async validator config — function + metadata for scheduling */
 export interface AsyncValidatorConfig<TData = unknown, TUi = unknown> {
@@ -49,7 +46,7 @@ export interface AsyncValidatorConfig<TData = unknown, TUi = unknown> {
   /** Debounce in ms. Default: 300. */
   readonly debounceMs?: number;
   /** Event trigger. Default: 'onChange'. */
-  readonly trigger?: 'onChange' | 'onBlur';
+  readonly trigger?: "onChange" | "onBlur";
   /** Dedup label. Auto-generated from fields if omitted. */
   readonly label?: string;
 }
@@ -58,14 +55,12 @@ export interface AsyncValidatorConfig<TData = unknown, TUi = unknown> {
 export interface RuleWriteIntent {
   readonly path: string;
   readonly value: unknown;
-  readonly mode: 'set' | 'delete';
+  readonly mode: "set" | "delete";
   readonly ruleId: string;
 }
 
 /** ADR section 9 — Middleware decision for veto-capable hooks */
-export type MiddlewareDecision =
-  | { readonly action: 'continue' }
-  | { readonly action: 'veto'; readonly reason: string };
+export type MiddlewareDecision = { readonly action: "continue" } | { readonly action: "veto"; readonly reason: string };
 
 /** Shared middleware context — action + current state snapshot */
 export interface ActionStateContext<TData = unknown, TUi = unknown> {
@@ -185,7 +180,7 @@ export interface FormDispatchResult {
 }
 
 /** When an issue becomes visible to the user */
-export type ValidationTrigger = 'onChange' | 'onBlur' | 'onSubmit' | 'onMount';
+export type ValidationTrigger = "onChange" | "onBlur" | "onSubmit" | "onMount";
 
 /** Per-field validation gating config */
 export interface FieldValidationTriggers {
@@ -246,8 +241,7 @@ export interface ArrayFieldHelpers<TValue> {
 }
 
 /** FieldApi with array helpers when the field value is an array. */
-export type FieldApiWithArray<TData, TUi, TPath extends string> =
-  FieldApi<TData, TUi, TPath> &
+export type FieldApiWithArray<TData, TUi, TPath extends string> = FieldApi<TData, TUi, TPath> &
   (NonNullable<DeepValue<TData, TPath>> extends readonly unknown[]
     ? ArrayFieldHelpers<DeepValue<TData, TPath>>
     : unknown);

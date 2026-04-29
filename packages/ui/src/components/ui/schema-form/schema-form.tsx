@@ -1,25 +1,23 @@
-"use client"
+"use client";
 
-import { useCallback, useMemo } from "react"
-import { useSchemaForm } from "@ghost-shell/formr-react"
-import type { UseSchemaFormOptions } from "@ghost-shell/formr-react"
-import { renderLayoutTree } from "@ghost-shell/formr-react"
-import type { RendererRegistry } from "@ghost-shell/formr-react"
-import { cn } from "../../../lib/utils"
-import { Button } from "../button"
-import { SchemaFormProvider } from "./schema-form-context"
-import { createGhostRegistry } from "./ghost-renderers"
-import type { WidgetOverrides } from "./widget-overrides"
+import type { RendererRegistry, UseSchemaFormOptions } from "@ghost-shell/formr-react";
+import { renderLayoutTree, useSchemaForm } from "@ghost-shell/formr-react";
+import { useCallback, useMemo } from "react";
+import { cn } from "../../../lib/utils";
+import { Button } from "../button";
+import { createGhostRegistry } from "./ghost-renderers";
+import { SchemaFormProvider } from "./schema-form-context";
+import type { WidgetOverrides } from "./widget-overrides";
 
 export interface SchemaFormProps {
-  readonly schema: unknown
-  readonly initialData?: Record<string, unknown>
-  readonly onSubmit?: (data: unknown) => void | Promise<void>
-  readonly className?: string
-  readonly children?: React.ReactNode
-  readonly options?: Omit<UseSchemaFormOptions<unknown, unknown>, "initialData">
-  readonly registry?: RendererRegistry
-  readonly overrides?: WidgetOverrides
+  readonly schema: unknown;
+  readonly initialData?: Record<string, unknown>;
+  readonly onSubmit?: (data: unknown) => void | Promise<void>;
+  readonly className?: string;
+  readonly children?: React.ReactNode;
+  readonly options?: Omit<UseSchemaFormOptions<unknown, unknown>, "initialData">;
+  readonly registry?: RendererRegistry;
+  readonly overrides?: WidgetOverrides;
 }
 
 export function SchemaForm({
@@ -35,20 +33,20 @@ export function SchemaForm({
   const { form, fields, layout, fieldStates } = useSchemaForm(schema, {
     ...options,
     initialData: initialData as never,
-  })
+  });
 
-  const resolvedRegistry = useMemo(() => registry ?? createGhostRegistry(), [registry])
+  const resolvedRegistry = useMemo(() => registry ?? createGhostRegistry(), [registry]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault()
-      const result = await form.submit()
+      e.preventDefault();
+      const result = await form.submit();
       if (result.ok && onSubmit) {
-        await onSubmit(form.getState().data)
+        await onSubmit(form.getState().data);
       }
     },
     [form, onSubmit],
-  )
+  );
 
   return (
     <SchemaFormProvider value={{ form, fields, overrides, registry: resolvedRegistry, fieldStates }}>
@@ -61,5 +59,5 @@ export function SchemaForm({
         )}
       </form>
     </SchemaFormProvider>
-  )
+  );
 }

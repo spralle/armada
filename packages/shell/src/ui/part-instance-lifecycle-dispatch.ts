@@ -1,15 +1,11 @@
 import type { ShellRuntime } from "../app/types.js";
+import { openPopout, requestPopoutFromHostShim, restorePart } from "./part-instance-popout-lifecycle.js";
 import {
   activateTabInstance,
   closeTabThroughRuntime,
-  reopenMostRecentlyClosedTabThroughRuntime,
   type PartLifecycleDeps,
+  reopenMostRecentlyClosedTabThroughRuntime,
 } from "./part-instance-tab-lifecycle.js";
-import {
-  openPopout,
-  requestPopoutFromHostShim,
-  restorePart,
-} from "./part-instance-popout-lifecycle.js";
 
 type LocalLifecycleActionId =
   | "part-instance.open"

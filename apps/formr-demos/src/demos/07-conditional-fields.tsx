@@ -1,62 +1,67 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSchemaForm } from '@ghost-shell/formr-react';
-import type { SchemaFieldInfo } from '@ghost-shell/schema-core';
-import type { FormApi } from '@ghost-shell/formr-core';
-import { Card, CardContent, CardHeader, CardTitle, cn } from '@ghost-shell/ui';
-import { DemoShell } from '../renderers/DemoShell';
-import { DemoFormField } from '../renderers/DemoFormField';
+import type { FormApi } from "@ghost-shell/formr-core";
+import type { SchemaFieldInfo } from "@ghost-shell/formr-from-schema";
+import { useSchemaForm } from "@ghost-shell/formr-react";
+import { Card, CardContent, CardHeader, CardTitle, cn } from "@ghost-shell/ui";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { DemoFormField } from "../renderers/DemoFormField";
+import { DemoShell } from "../renderers/DemoShell";
 
 const schema = {
-  type: 'object',
-  required: ['employmentStatus'],
+  type: "object",
+  required: ["employmentStatus"],
   properties: {
     employmentStatus: {
-      type: 'string',
-      title: 'Employment Status',
-      enum: ['Employed', 'Self-Employed', 'Student', 'Retired', 'Unemployed'],
+      type: "string",
+      title: "Employment Status",
+      enum: ["Employed", "Self-Employed", "Student", "Retired", "Unemployed"],
     },
-    companyName: { type: 'string', title: 'Company Name', description: 'Your employer' },
-    jobTitle: { type: 'string', title: 'Job Title' },
-    businessName: { type: 'string', title: 'Business Name' },
+    companyName: { type: "string", title: "Company Name", description: "Your employer" },
+    jobTitle: { type: "string", title: "Job Title" },
+    businessName: { type: "string", title: "Business Name" },
     businessType: {
-      type: 'string',
-      title: 'Business Type',
-      enum: ['Sole Proprietorship', 'LLC', 'Corporation', 'Partnership'],
+      type: "string",
+      title: "Business Type",
+      enum: ["Sole Proprietorship", "LLC", "Corporation", "Partnership"],
     },
-    schoolName: { type: 'string', title: 'School / University' },
-    fieldOfStudy: { type: 'string', title: 'Field of Study' },
-    annualIncome: { type: 'number', title: 'Annual Income', minimum: 0 },
+    schoolName: { type: "string", title: "School / University" },
+    fieldOfStudy: { type: "string", title: "Field of Study" },
+    annualIncome: { type: "number", title: "Annual Income", minimum: 0 },
     hasHealthInsurance: {
-      type: 'boolean',
-      title: 'Health Insurance',
-      description: 'Do you have health insurance?',
+      type: "boolean",
+      title: "Health Insurance",
+      description: "Do you have health insurance?",
     },
   },
 };
 
 const VISIBILITY_RULES: Record<string, readonly string[]> = {
-  Employed: ['companyName', 'jobTitle', 'annualIncome', 'hasHealthInsurance'],
-  'Self-Employed': ['businessName', 'businessType', 'annualIncome', 'hasHealthInsurance'],
-  Student: ['schoolName', 'fieldOfStudy', 'hasHealthInsurance'],
-  Retired: ['annualIncome', 'hasHealthInsurance'],
-  Unemployed: ['hasHealthInsurance'],
+  Employed: ["companyName", "jobTitle", "annualIncome", "hasHealthInsurance"],
+  "Self-Employed": ["businessName", "businessType", "annualIncome", "hasHealthInsurance"],
+  Student: ["schoolName", "fieldOfStudy", "hasHealthInsurance"],
+  Retired: ["annualIncome", "hasHealthInsurance"],
+  Unemployed: ["hasHealthInsurance"],
 };
 
 function getSectionTitle(status: string): string {
-  if (status === 'Employed') return 'Employment Details';
-  if (status === 'Self-Employed') return 'Business Details';
-  if (status === 'Student') return 'Education Details';
-  return 'Details';
+  if (status === "Employed") return "Employment Details";
+  if (status === "Self-Employed") return "Business Details";
+  if (status === "Student") return "Education Details";
+  return "Details";
 }
 
-function ConditionalForm({ form, fieldMap, onChange, status }: {
+function ConditionalForm({
+  form,
+  fieldMap,
+  onChange,
+  status,
+}: {
   form: FormApi;
   fieldMap: Map<string, SchemaFieldInfo>;
   onChange: (path: string, value: unknown) => void;
   status: string;
 }) {
   const visiblePaths = VISIBILITY_RULES[status] ?? [];
-  const statusField = fieldMap.get('employmentStatus');
+  const statusField = fieldMap.get("employmentStatus");
 
   return (
     <div className="flex flex-col gap-4">
@@ -64,9 +69,7 @@ function ConditionalForm({ form, fieldMap, onChange, status }: {
 
       {status && (
         <div className="flex flex-col gap-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">
-          <h3 className="text-sm font-semibold text-foreground">
-            {getSectionTitle(status)}
-          </h3>
+          <h3 className="text-sm font-semibold text-foreground">{getSectionTitle(status)}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {visiblePaths.map((path) => {
               const field = fieldMap.get(path);
@@ -78,10 +81,12 @@ function ConditionalForm({ form, fieldMap, onChange, status }: {
       )}
 
       {!status && (
-        <p className={cn(
-          'text-sm text-muted-foreground italic p-4 rounded-md',
-          'border border-border-muted bg-surface-inset',
-        )}>
+        <p
+          className={cn(
+            "text-sm text-muted-foreground italic p-4 rounded-md",
+            "border border-border-muted bg-surface-inset",
+          )}
+        >
           Select an employment status to see relevant fields
         </p>
       )}
@@ -91,7 +96,7 @@ function ConditionalForm({ form, fieldMap, onChange, status }: {
 
 export function ConditionalFieldsDemo() {
   const { form, fields } = useSchemaForm(schema, { initialData: {} as Record<string, unknown> });
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState("");
 
   const fieldMap = useMemo(() => {
     const map = new Map<string, SchemaFieldInfo>();
@@ -99,13 +104,10 @@ export function ConditionalFieldsDemo() {
     return map;
   }, [fields]);
 
-  const handleChange = useCallback(
-    (path: string, value: unknown) => {
-      if (path === 'employmentStatus') setStatus(String(value ?? ''));
-      console.log('change', path, value);
-    },
-    [],
-  );
+  const handleChange = useCallback((path: string, value: unknown) => {
+    if (path === "employmentStatus") setStatus(String(value ?? ""));
+    console.log("change", path, value);
+  }, []);
 
   const [formData, setFormData] = useState<Record<string, unknown>>({});
 
@@ -120,7 +122,7 @@ export function ConditionalFieldsDemo() {
       title="Conditional Fields"
       description="Sections dynamically show/hide based on the Employment Status selection. Only relevant fields appear for each status. This demonstrates UI-level visibility rules driven by form state."
       motivation="Shows dynamic form behavior — fields appear/disappear based on user selection. This is the most requested enterprise form feature: context-sensitive forms that don't overwhelm users with irrelevant fields."
-      features={['Show/Hide Sections', 'Dynamic Visibility', 'RadioGroup', 'Responsive Grid', 'State-Driven UI']}
+      features={["Show/Hide Sections", "Dynamic Visibility", "RadioGroup", "Responsive Grid", "State-Driven UI"]}
       schema={schema}
     >
       <div className="flex flex-col gap-4">

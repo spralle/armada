@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { createShellPluginRegistry } from "../dist-test/src/plugin-registry.js";
 
 function createDescriptor(id) {
@@ -26,7 +26,6 @@ test("registry maps remote invalid contracts to INVALID_CONTRACT", async () => {
     pluginLoader: {
       name: "remote-manifest",
       async loadPluginContract(descriptor) {
-
         const { createRuntimeFirstPluginLoader } = await import("../dist-test/src/plugin-loader.js");
         const loader = createRuntimeFirstPluginLoader({
           federationRuntime: {

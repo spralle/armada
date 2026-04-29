@@ -1,9 +1,7 @@
-import type { FormState } from './state.js';
-import { Transaction, type StateStrategy, defaultStrategy } from './transaction.js';
+import type { FormState } from "./state.js";
+import { defaultStrategy, type StateStrategy, Transaction } from "./transaction.js";
 
-export type StateListener<TData, TUi> = (
-  state: FormState<TData, TUi>,
-) => void;
+export type StateListener<TData, TUi> = (state: FormState<TData, TUi>) => void;
 
 /** Synchronous reactive store with transactional semantics — only one transaction active at a time. */
 export class FormStore<TData, TUi> {
@@ -25,7 +23,7 @@ export class FormStore<TData, TUi> {
   /** Clone current state into a mutable draft context. Only one transaction may be active at a time. */
   beginTransaction(): Transaction<TData, TUi> {
     if (this._activeTransaction) {
-      throw new Error('Cannot begin transaction while another is active');
+      throw new Error("Cannot begin transaction while another is active");
     }
     this._activeTransaction = new Transaction<TData, TUi>(this._state, this._strategy);
     return this._activeTransaction;
@@ -34,7 +32,7 @@ export class FormStore<TData, TUi> {
   /** Apply draft state and notify subscribers if state was mutated. */
   commitTransaction(tx: Transaction<TData, TUi>): void {
     if (tx !== this._activeTransaction) {
-      throw new Error('Transaction does not belong to this store');
+      throw new Error("Transaction does not belong to this store");
     }
     const nextState = tx.commit();
     this._activeTransaction = null;
@@ -50,7 +48,7 @@ export class FormStore<TData, TUi> {
   /** Discard draft state without notifying subscribers. */
   rollbackTransaction(tx: Transaction<TData, TUi>): void {
     if (tx !== this._activeTransaction) {
-      throw new Error('Transaction does not belong to this store');
+      throw new Error("Transaction does not belong to this store");
     }
     tx.rollback();
     this._activeTransaction = null;
@@ -67,7 +65,7 @@ export class FormStore<TData, TUi> {
   /** Clear all subscriptions and roll back an active transaction. */
   dispose(): void {
     this._listeners.clear();
-    if (this._activeTransaction && this._activeTransaction.status === 'active') {
+    if (this._activeTransaction && this._activeTransaction.status === "active") {
       this._activeTransaction.rollback();
     }
     this._activeTransaction = null;

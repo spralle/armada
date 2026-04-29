@@ -1,10 +1,6 @@
 // activity-status-service-registration.ts — ActivityStatusService implementation and shell registration.
 
-import type {
-  ActivityStatusService,
-  ActivityToken,
-  PluginContract,
-} from "@ghost-shell/contracts";
+import type { ActivityStatusService, ActivityToken, PluginContract } from "@ghost-shell/contracts";
 import { ACTIVITY_STATUS_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
@@ -16,9 +12,7 @@ const LEAK_TIMEOUT_MS = 60_000;
 // Implementation + registration
 // ---------------------------------------------------------------------------
 
-export function registerActivityStatusServiceCapability(
-  registry: ShellPluginRegistry,
-): void {
+export function registerActivityStatusServiceCapability(registry: ShellPluginRegistry): void {
   const activeTokens = new Map<symbol, string>();
   const listeners = new Set<(count: number) => void>();
 
@@ -90,9 +84,7 @@ export function registerActivityStatusServiceCapability(
     },
     contributes: {
       capabilities: {
-        services: [
-          { id: ACTIVITY_STATUS_SERVICE_ID, version: "1.0.0" },
-        ],
+        services: [{ id: ACTIVITY_STATUS_SERVICE_ID, version: "1.0.0" }],
       },
     },
   };

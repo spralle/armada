@@ -1,13 +1,13 @@
-import type { ShellRouter, ShellRouterConfig } from "./shell-router-types.js";
+import { createActiveViewCodec } from "../codec/active-view-codec.js";
+import { createUrlCodecRegistry } from "../codec/codec-registry.js";
 import type { UrlCodecRegistry, UrlCodecStrategy } from "../codec/codec-types.js";
+import { createWorkspaceHintCodec } from "../codec/workspace-hint-codec.js";
+import { createWorkspaceRefCodec } from "../codec/workspace-ref-codec.js";
 import type { HistoryAdapter } from "./history-adapter.js";
+import { createBrowserHistoryAdapter } from "./history-adapter.js";
 import type { NavigationDelegate } from "./navigation-runtime-types.js";
 import { createShellRouter } from "./shell-router.js";
-import { createUrlCodecRegistry } from "../codec/codec-registry.js";
-import { createWorkspaceHintCodec } from "../codec/workspace-hint-codec.js";
-import { createActiveViewCodec } from "../codec/active-view-codec.js";
-import { createWorkspaceRefCodec } from "../codec/workspace-ref-codec.js";
-import { createBrowserHistoryAdapter } from "./history-adapter.js";
+import type { ShellRouter, ShellRouterConfig } from "./shell-router-types.js";
 
 /**
  * Options for initializing the Ghost router system.

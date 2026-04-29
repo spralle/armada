@@ -3,24 +3,17 @@
  * action contributions, and registry subscription.
  */
 
-import type { ShellRuntime } from "./app/types.js";
-import {
-  readGroupSelectionContext,
-  writeGroupSelectionContext,
-} from "./context/runtime-state.js";
-import { createDefaultShellKeybindingContract } from "./shell-runtime/default-shell-keybindings.js";
 import { bootstrapShellWithTenantManifest } from "./app/bootstrap.js";
+import type { ShellRuntime } from "./app/types.js";
 import { getShellBootstrap } from "./bootstrap-shell.js";
 import { registerConfigurationServiceCapability } from "./config-service-registration.js";
 import { createShellConfigService, runPersistenceMigrations } from "./config-service-setup.js";
-import { createPluginServicesBridge } from "./plugin-service-bridge.js";
-import { createQuickPickBridge } from "./ui/quick-pick/quick-pick-bridge.js";
+import { readGroupSelectionContext, writeGroupSelectionContext } from "./context/runtime-state.js";
 import { createGhostApiDeps } from "./plugin-api/ghost-api-deps-factory.js";
-import {
-  createWorkspaceSwitchDeps,
-  refreshActionContributions,
-  renderParts,
-} from "./shell-wiring.js";
+import { createPluginServicesBridge } from "./plugin-service-bridge.js";
+import { createDefaultShellKeybindingContract } from "./shell-runtime/default-shell-keybindings.js";
+import { createWorkspaceSwitchDeps, refreshActionContributions, renderParts } from "./shell-wiring.js";
+import { createQuickPickBridge } from "./ui/quick-pick/quick-pick-bridge.js";
 
 export interface HydrateOptions {
   readonly tenantId: string;
@@ -88,9 +81,13 @@ export async function hydratePluginRegistry(
 }
 
 function applyHydratedState(
-  root: HTMLElement,
+  _root: HTMLElement,
   runtime: ShellRuntime,
-  state: { registry: ShellRuntime["registry"]; disposePluginConfigSync?: (() => void) | null; themeRegistry?: ShellRuntime["themeRegistry"] },
+  state: {
+    registry: ShellRuntime["registry"];
+    disposePluginConfigSync?: (() => void) | null;
+    themeRegistry?: ShellRuntime["themeRegistry"];
+  },
   configService: Awaited<ReturnType<typeof createShellConfigService>>["configService"],
 ): void {
   runtime.registry = state.registry;
@@ -112,11 +109,7 @@ function applyHydratedState(
   refreshActionContributions(runtime);
 }
 
-function subscribeToRegistryChanges(
-  root: HTMLElement,
-  runtime: ShellRuntime,
-  isActive: () => boolean,
-): void {
+function subscribeToRegistryChanges(root: HTMLElement, runtime: ShellRuntime, isActive: () => boolean): void {
   let renderPending = false;
   const registrySub = runtime.registry.subscribe(() => {
     if (renderPending) return;

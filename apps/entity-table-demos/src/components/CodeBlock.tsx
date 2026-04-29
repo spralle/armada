@@ -11,7 +11,7 @@ export function CodeBlock({ title, code, defaultOpen = false }: CodeBlockProps) 
         {title}
       </summary>
       <pre className="mt-2 rounded-md bg-surface-inset p-3 text-xs text-code-foreground overflow-auto max-h-80 border border-border-muted font-mono">
-        {typeof code === 'string' ? code : JSON.stringify(code, null, 2)}
+        {typeof code === "string" ? code : JSON.stringify(code, null, 2)}
       </pre>
     </details>
   );

@@ -1,13 +1,13 @@
 import {
+  closeTab,
   createInitialShellContextState,
+  type DockNode,
   moveTabInDockTree,
   readDockSplitRatio,
   registerTab,
+  setActiveTab,
   setDockSplitRatio,
   setDockSplitRatioById,
-  setActiveTab,
-  closeTab,
-  type DockNode,
 } from "./context-state.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 
@@ -27,7 +27,11 @@ export function registerDockTreeStateSpecs(harness: SpecHarness): void {
 
     const root = state.dockTree.root as DockNode;
     assertEqual(root.kind, "stack", "center drop should keep stack root when no split exists");
-    assertEqual((root.kind === "stack" ? root.tabIds.join(",") : ""), "tab-a,tab-c,tab-b", "center drop should insert after target tab");
+    assertEqual(
+      root.kind === "stack" ? root.tabIds.join(",") : "",
+      "tab-a,tab-c,tab-b",
+      "center drop should insert after target tab",
+    );
     assertEqual(state.activeTabId, "tab-c", "moved tab should be active after center drop");
   });
 
@@ -60,7 +64,10 @@ export function registerDockTreeStateSpecs(harness: SpecHarness): void {
 
       assertEqual(root.orientation, entry.orientation, `${entry.zone} drop should map to expected orientation`);
       const movedBranch = entry.movedBranch === "first" ? root.first : root.second;
-      assertTruthy(movedBranch.kind === "stack", `${entry.zone} drop should place moved tab in ${entry.movedBranch} branch stack`);
+      assertTruthy(
+        movedBranch.kind === "stack",
+        `${entry.zone} drop should place moved tab in ${entry.movedBranch} branch stack`,
+      );
       if (movedBranch.kind === "stack") {
         assertEqual(movedBranch.tabIds.join(","), "tab-b", `${entry.zone} drop branch should contain moved tab only`);
         assertEqual(movedBranch.activeTabId, "tab-b", `${entry.zone} drop branch should activate moved tab`);
@@ -98,7 +105,10 @@ export function registerDockTreeStateSpecs(harness: SpecHarness): void {
 
       assertEqual(root.orientation, entry.orientation, `${entry.zone} self-drop should map to expected orientation`);
       const movedBranch = entry.movedBranch === "first" ? root.first : root.second;
-      assertTruthy(movedBranch.kind === "stack", `${entry.zone} self-drop should place moved stack in ${entry.movedBranch} branch`);
+      assertTruthy(
+        movedBranch.kind === "stack",
+        `${entry.zone} self-drop should place moved stack in ${entry.movedBranch} branch`,
+      );
       if (movedBranch.kind === "stack") {
         assertEqual(movedBranch.tabIds.join(","), "tab-a", `${entry.zone} self-drop branch should contain tab`);
         assertEqual(movedBranch.activeTabId, "tab-a", `${entry.zone} self-drop branch should activate tab`);
@@ -106,7 +116,11 @@ export function registerDockTreeStateSpecs(harness: SpecHarness): void {
       const siblingBranch = entry.movedBranch === "first" ? root.second : root.first;
       assertTruthy(siblingBranch.kind === "stack", `${entry.zone} self-drop should keep sibling stack`);
       if (siblingBranch.kind === "stack") {
-        assertEqual(siblingBranch.tabIds.join(","), "tab-b", `${entry.zone} self-drop should retain remaining tabs in sibling stack`);
+        assertEqual(
+          siblingBranch.tabIds.join(","),
+          "tab-b",
+          `${entry.zone} self-drop should retain remaining tabs in sibling stack`,
+        );
       }
       assertEqual(state.activeTabId, "tab-a", `${entry.zone} self-drop should keep tab active`);
     }
@@ -198,12 +212,19 @@ export function registerDockTreeStateSpecs(harness: SpecHarness): void {
 
     state = closeTab(state, "tab-c");
     const collapsed = state.dockTree.root;
-    assertTruthy(collapsed && collapsed.kind === "split", "closing bottom stack tab should collapse nested empty branch");
+    assertTruthy(
+      collapsed && collapsed.kind === "split",
+      "closing bottom stack tab should collapse nested empty branch",
+    );
 
     state = setActiveTab(state, "tab-b");
     state = closeTab(state, "tab-b");
 
-    assertEqual(state.activeTabId, "tab-a", "closing active split branch should fallback deterministically to remaining tab");
+    assertEqual(
+      state.activeTabId,
+      "tab-a",
+      "closing active split branch should fallback deterministically to remaining tab",
+    );
     assertTruthy(state.dockTree.root?.kind === "stack", "single remaining tab should collapse to stack root");
   });
 

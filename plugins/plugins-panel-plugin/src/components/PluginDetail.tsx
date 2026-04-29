@@ -1,6 +1,4 @@
-import type {
-  PluginRegistryEntry,
-} from "@ghost-shell/contracts";
+import type { PluginRegistryEntry } from "@ghost-shell/contracts";
 import { Alert, Button, cn } from "@ghost-shell/ui";
 import { ContributionsList } from "./ContributionsList.js";
 import { DependencyRow } from "./DependencyRow.js";
@@ -15,12 +13,8 @@ export function PluginDetail({ plugin, onRetry }: PluginDetailProps) {
     <div className="flex flex-col gap-3 text-xs @lg:grid @lg:grid-cols-2 @lg:gap-x-4">
       <ContributionsList contributions={plugin.contributions} />
       <DependenciesSection plugin={plugin} />
-      {plugin.reverseDependencies.length > 0 && (
-        <ReverseDependenciesSection reverseDeps={plugin.reverseDependencies} />
-      )}
-      {plugin.failure && (
-        <FailureSection failure={plugin.failure} onRetry={onRetry} className="@lg:col-span-2" />
-      )}
+      {plugin.reverseDependencies.length > 0 && <ReverseDependenciesSection reverseDeps={plugin.reverseDependencies} />}
+      {plugin.failure && <FailureSection failure={plugin.failure} onRetry={onRetry} className="@lg:col-span-2" />}
       <LifecycleSection plugin={plugin} className="@lg:col-span-2" />
     </div>
   );
@@ -49,11 +43,7 @@ function DependenciesSection({ plugin }: { plugin: PluginRegistryEntry }) {
   );
 }
 
-function ReverseDependenciesSection({
-  reverseDeps,
-}: {
-  reverseDeps: PluginRegistryEntry["reverseDependencies"];
-}) {
+function ReverseDependenciesSection({ reverseDeps }: { reverseDeps: PluginRegistryEntry["reverseDependencies"] }) {
   return (
     <div>
       <h4 className="font-semibold mb-1 text-foreground">Depended on by</h4>
@@ -83,12 +73,7 @@ function FailureSection({ failure, onRetry, className }: FailureSectionProps) {
       <div className="font-semibold mb-1">Failed: {failure.code}</div>
       <p className="text-muted-foreground">{failure.message}</p>
       {failure.retryable && onRetry && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="mt-1.5 h-6 text-[10px]"
-          onClick={onRetry}
-        >
+        <Button size="sm" variant="outline" className="mt-1.5 h-6 text-[10px]" onClick={onRetry}>
           Retry
         </Button>
       )}
@@ -98,7 +83,7 @@ function FailureSection({ failure, onRetry, className }: FailureSectionProps) {
 
 function formatTransitionTime(value: string): string {
   const date = new Date(value);
-  if (isNaN(date.getTime())) return "Unknown";
+  if (Number.isNaN(date.getTime())) return "Unknown";
   return date.toLocaleTimeString();
 }
 
@@ -112,9 +97,7 @@ function LifecycleSection({ plugin, className }: { plugin: PluginRegistryEntry; 
           Triggered by: {lifecycle.lastTrigger.type} — {lifecycle.lastTrigger.id}
         </div>
       )}
-      {activationEvents.length > 0 && (
-        <div>Activation events: {activationEvents.join(", ")}</div>
-      )}
+      {activationEvents.length > 0 && <div>Activation events: {activationEvents.join(", ")}</div>}
     </div>
   );
 }

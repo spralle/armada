@@ -4,7 +4,7 @@
  */
 
 /** Cleanup returned by a mount function — can be a function, object with unmount()/dispose(), or void. */
-export type MountCleanup = (() => void) | { unmount?: () => void } | { dispose?: () => void } | void;
+export type MountCleanup = (() => void) | { unmount?: () => void } | { dispose?: () => void } | undefined;
 
 /** Normalize a mount cleanup into a plain function or null. */
 export function normalizeCleanup(cleanup: MountCleanup): (() => void) | null {
@@ -15,11 +15,15 @@ export function normalizeCleanup(cleanup: MountCleanup): (() => void) | null {
   if (cleanup && typeof cleanup === "object") {
     if ("dispose" in cleanup && typeof cleanup.dispose === "function") {
       const dispose = cleanup.dispose;
-      return () => { dispose(); };
+      return () => {
+        dispose();
+      };
     }
     if ("unmount" in cleanup && typeof cleanup.unmount === "function") {
       const unmount = cleanup.unmount;
-      return () => { unmount(); };
+      return () => {
+        unmount();
+      };
     }
   }
 

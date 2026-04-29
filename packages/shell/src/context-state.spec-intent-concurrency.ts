@@ -1,15 +1,18 @@
 import {
   createIntentRuntime,
-  type IntentResolutionDelegate,
   type IntentActionMatch,
+  type IntentResolutionDelegate,
   type ShellIntent,
-  type IntentResolutionTrace,
 } from "@ghost-shell/intents";
-import { createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
+import { createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 
 function createMockDelegate(overrides: Partial<IntentResolutionDelegate> = {}): IntentResolutionDelegate & {
-  calls: { activatePlugin: { pluginId: string; trigger: { type: string; id: string } }[]; announce: string[]; showChooser: number };
+  calls: {
+    activatePlugin: { pluginId: string; trigger: { type: string; id: string } }[];
+    announce: string[];
+    showChooser: number;
+  };
 } {
   const calls = {
     activatePlugin: [] as { pluginId: string; trigger: { type: string; id: string } }[],
@@ -102,7 +105,7 @@ function createSnapshotDeps(plugins: ReturnType<typeof createPlugins> | ReturnTy
 }
 
 export function registerIntentConcurrencySpecs(harness: SpecHarness): void {
-  const { test, assertEqual, assertTruthy } = harness;
+  const { test, assertEqual } = harness;
 
   // Scenario 1: Two concurrent resolve() calls both complete
   test("concurrency: two concurrent resolves with different intents both complete", async () => {
@@ -138,7 +141,7 @@ export function registerIntentConcurrencySpecs(harness: SpecHarness): void {
     });
 
     const delegate1 = createMockDelegate({
-      showChooser(matches) {
+      showChooser(_matches) {
         // Hang until resolved externally
         return chooserPromise;
       },
@@ -158,7 +161,7 @@ export function registerIntentConcurrencySpecs(harness: SpecHarness): void {
     assertEqual(outcome2.kind, "executed", "second resolve completes while first is in chooser");
 
     // Now resolve the chooser
-    resolveChooser!(null);
+    resolveChooser?.(null);
     const outcome1 = await promise1;
 
     assertEqual(outcome1.kind, "cancelled", "first resolve completes after chooser dismissal");

@@ -1,14 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const thisDir = fileURLToPath(new URL(".", import.meta.url));
-const workspaceMenuPath = resolve(
-  thisDir,
-  "../../../plugins/topbar-widgets-plugin/src/workspace-menu.ts",
-);
+const workspaceMenuPath = resolve(thisDir, "../../../plugins/topbar-widgets-plugin/src/workspace-menu.ts");
 
 test("workspace switch action path falls back to direct switch", async () => {
   const source = await readFile(workspaceMenuPath, "utf8");

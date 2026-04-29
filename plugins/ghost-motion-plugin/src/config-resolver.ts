@@ -1,5 +1,5 @@
-import type { AnimationEntry, AnimationName, AnimationTreeNode, GhostMotionConfig } from "./config-types.js";
 import { ANIMATION_TREE } from "./animation-tree.js";
+import type { AnimationEntry, AnimationName, AnimationTreeNode, GhostMotionConfig } from "./config-types.js";
 
 /** Fallback when no overrides exist at a given level. */
 const GLOBAL_DEFAULT: Required<AnimationEntry> = {
@@ -14,10 +14,7 @@ const GLOBAL_DEFAULT: Required<AnimationEntry> = {
  * Resolve a single animation entry by walking the tree from child to root,
  * then merging overrides root-first so the child's values win.
  */
-export function resolveEntry(
-  name: AnimationName,
-  config: GhostMotionConfig,
-): Required<AnimationEntry> {
+export function resolveEntry(name: AnimationName, config: GhostMotionConfig): Required<AnimationEntry> {
   // Build override chain from child to root
   const chain: AnimationEntry[] = [];
   let current: string | null = name;

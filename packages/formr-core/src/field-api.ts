@@ -1,10 +1,10 @@
-import type { CanonicalPath } from './path.js';
-import type { FormState, ValidationIssue, FieldMetaEntry } from './state.js';
-import type { FieldApi, FieldConfig, FormDispatchResult } from './contracts.js';
-import type { DeepValue } from './type-utils.js';
-import { structuredEqual } from './equality.js';
-import { shouldShowIssues } from './trigger-filter.js';
-import { createArrayHelpers } from './array-helpers.js';
+import { createArrayHelpers } from "./array-helpers.js";
+import type { FieldApi, FieldConfig, FormDispatchResult } from "./contracts.js";
+import { structuredEqual } from "./equality.js";
+import type { CanonicalPath } from "./path.js";
+import type { FieldMetaEntry, FormState, ValidationIssue } from "./state.js";
+import { shouldShowIssues } from "./trigger-filter.js";
+import type { DeepValue } from "./type-utils.js";
 
 /** Resolve a value from a nested object by walking canonical path segments */
 function resolveValue(root: unknown, segments: readonly (string | number)[]): unknown {
@@ -37,10 +37,7 @@ export interface CreateFieldApiParams<TData, TUi> {
  * 3-tier merge: schema defaults (tier 1, future) < form-level defaults (tier 2) < field-level overrides (tier 3).
  * Later tiers override earlier ones for defined (non-undefined) properties.
  */
-export function mergeFieldConfig(
-  formDefaults?: FieldConfig,
-  fieldOverrides?: FieldConfig,
-): FieldConfig | undefined {
+export function mergeFieldConfig(formDefaults?: FieldConfig, fieldOverrides?: FieldConfig): FieldConfig | undefined {
   if (!formDefaults && !fieldOverrides) return undefined;
   if (!formDefaults) return fieldOverrides;
   if (!fieldOverrides) return formDefaults;
@@ -57,7 +54,7 @@ function stripUndefined(obj: FieldConfig): Partial<FieldConfig> {
 
 /** ADR §9.1 — create a FieldApi that delegates to the parent form */
 export function createFieldApi<TData, TUi>(params: CreateFieldApiParams<TData, TUi>): FieldApi<TData, TUi, string> {
-  const pathKey = params.path.segments.join('.');
+  const pathKey = params.path.segments.join(".");
 
   const fieldApi: FieldApi<TData, TUi, string> = {
     path: params.path,
@@ -65,7 +62,7 @@ export function createFieldApi<TData, TUi>(params: CreateFieldApiParams<TData, T
     // Justified: resolveValue walks the actual data structure; cast bridges runtime to static type
     get(): DeepValue<TData, string> {
       const state = params.getState();
-      const root = params.path.namespace === 'ui' ? state.uiState : state.data;
+      const root = params.path.namespace === "ui" ? state.uiState : state.data;
       return resolveValue(root, params.path.segments) as DeepValue<TData, string>;
     },
 

@@ -12,7 +12,10 @@
           "component": "ModalSurface",
           "layer": "modal",
           "anchor": 0,
-          "size": { "width": 480, "height": 320 },
+          "size": {
+            "width": 480,
+            "height": 320
+          },
           "inputBehavior": "opaque",
           "keyboardInteractivity": "exclusive",
           "focusGrab": {

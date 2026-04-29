@@ -1,7 +1,6 @@
-import type { ValidationIssue } from '@ghost-shell/formr-core';
-import type { JsonSchema } from '@ghost-shell/schema-core';
-import { isObject, checkType } from '@ghost-shell/schema-core';
-import { makeIssue } from './utils.js';
+import type { ValidationIssue } from "@ghost-shell/formr-core";
+import type { JsonSchema } from "./adapters/json-schema-types.js";
+import { checkType, isObject, makeIssue } from "./utils.js";
 
 /**
  * ADR section 6.4 — Conditional required field resolution.
@@ -20,7 +19,7 @@ interface ConditionalRequiredInput {
 }
 
 function isEmpty(value: unknown): boolean {
-  return value === undefined || value === null || value === '';
+  return value === undefined || value === null || value === "";
 }
 
 /**
@@ -42,7 +41,7 @@ function evaluateIfSchema(ifSchema: JsonSchema, data: Record<string, unknown>): 
       if (propSchema.enum && !propSchema.enum.includes(value)) {
         return false;
       }
-      if (propSchema.type && typeof propSchema.type === 'string') {
+      if (propSchema.type && typeof propSchema.type === "string") {
         if (!checkType(propSchema.type, value)) return false;
       }
     }
@@ -55,9 +54,7 @@ function evaluateIfSchema(ifSchema: JsonSchema, data: Record<string, unknown>): 
  * Resolve conditional required fields from if/then/else.
  * Evaluates the `if` schema; applies `then` or `else` required fields.
  */
-export function resolveIfThenElseRequired(
-  input: ConditionalRequiredInput,
-): readonly ValidationIssue[] {
+export function resolveIfThenElseRequired(input: ConditionalRequiredInput): readonly ValidationIssue[] {
   const { schema, data, stage } = input;
   if (!schema.if) return [];
 
@@ -70,13 +67,15 @@ export function resolveIfThenElseRequired(
   if (branch.required) {
     for (const field of branch.required) {
       if (isEmpty(data[field])) {
-        issues.push(makeIssue(
-          'CONDITIONAL_REQUIRED',
-          `Field "${field}" is required (conditional: if/${conditionMet ? 'then' : 'else'})`,
-          [field],
-          stage,
-          'json-schema-adapter',
-        ));
+        issues.push(
+          makeIssue(
+            "CONDITIONAL_REQUIRED",
+            `Field "${field}" is required (conditional: if/${conditionMet ? "then" : "else"})`,
+            [field],
+            stage,
+            "json-schema-adapter",
+          ),
+        );
       }
     }
   }
@@ -93,9 +92,7 @@ export function resolveIfThenElseRequired(
  * Resolve conditional required fields from dependentRequired.
  * If field X has a value, fields Y,Z become required.
  */
-export function resolveDependentRequired(
-  input: ConditionalRequiredInput,
-): readonly ValidationIssue[] {
+export function resolveDependentRequired(input: ConditionalRequiredInput): readonly ValidationIssue[] {
   const { schema, data, stage } = input;
   if (!schema.dependentRequired) return [];
 
@@ -104,13 +101,15 @@ export function resolveDependentRequired(
     if (!isEmpty(data[trigger])) {
       for (const dep of deps) {
         if (isEmpty(data[dep])) {
-          issues.push(makeIssue(
-            'DEPENDENT_REQUIRED',
-            `Field "${dep}" is required when "${trigger}" is present`,
-            [dep],
-            stage,
-            'json-schema-adapter',
-          ));
+          issues.push(
+            makeIssue(
+              "DEPENDENT_REQUIRED",
+              `Field "${dep}" is required when "${trigger}" is present`,
+              [dep],
+              stage,
+              "json-schema-adapter",
+            ),
+          );
         }
       }
     }
@@ -129,7 +128,7 @@ function matchesOneOfBranch(branch: JsonSchema, data: Record<string, unknown>): 
     const value = data[key];
     if (value === undefined || value === null) continue;
     if (propSchema.enum && !propSchema.enum.includes(value)) return false;
-    if (propSchema.type && typeof propSchema.type === 'string') {
+    if (propSchema.type && typeof propSchema.type === "string") {
       if (!checkType(propSchema.type, value)) return false;
     }
   }
@@ -140,9 +139,7 @@ function matchesOneOfBranch(branch: JsonSchema, data: Record<string, unknown>): 
  * Resolve required fields from oneOf (discriminated unions).
  * Finds the matching branch and applies its required fields.
  */
-export function resolveOneOfRequired(
-  input: ConditionalRequiredInput,
-): readonly ValidationIssue[] {
+export function resolveOneOfRequired(input: ConditionalRequiredInput): readonly ValidationIssue[] {
   const { schema, data, stage } = input;
   if (!schema.oneOf || schema.oneOf.length === 0) return [];
 
@@ -152,13 +149,15 @@ export function resolveOneOfRequired(
   const issues: ValidationIssue[] = [];
   for (const field of matchingBranch.required) {
     if (isEmpty(data[field])) {
-      issues.push(makeIssue(
-        'ONEOF_REQUIRED',
-        `Field "${field}" is required by matching oneOf branch`,
-        [field],
-        stage,
-        'json-schema-adapter',
-      ));
+      issues.push(
+        makeIssue(
+          "ONEOF_REQUIRED",
+          `Field "${field}" is required by matching oneOf branch`,
+          [field],
+          stage,
+          "json-schema-adapter",
+        ),
+      );
     }
   }
   return issues;
@@ -168,18 +167,14 @@ export function resolveOneOfRequired(
  * Stub for expression-based conditional requiredness.
  * Returns empty — actual integration happens when expression engine is wired.
  */
-export function resolveExpressionRequired(
-  _input: ConditionalRequiredInput,
-): readonly ValidationIssue[] {
+export function resolveExpressionRequired(_input: ConditionalRequiredInput): readonly ValidationIssue[] {
   return [];
 }
 
 /**
  * Resolve all conditional required fields from a schema and data.
  */
-export function resolveAllConditionalRequired(
-  input: ConditionalRequiredInput,
-): readonly ValidationIssue[] {
+export function resolveAllConditionalRequired(input: ConditionalRequiredInput): readonly ValidationIssue[] {
   return [
     ...resolveIfThenElseRequired(input),
     ...resolveDependentRequired(input),

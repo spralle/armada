@@ -32,19 +32,11 @@ export function sanitizeLayoutState(
 ): ShellLayoutState {
   return {
     sideSize: sanitizeRatio(value.sideSize, fallback.sideSize, MIN_SIDE, MAX_SIDE),
-    secondarySize: sanitizeRatio(
-      value.secondarySize,
-      fallback.secondarySize,
-      MIN_SECONDARY,
-      MAX_SECONDARY,
-    ),
+    secondarySize: sanitizeRatio(value.secondarySize, fallback.secondarySize, MIN_SECONDARY, MAX_SECONDARY),
   };
 }
 
-export function applyPaneResize(
-  current: ShellLayoutState,
-  request: PaneResizeRequest,
-): ShellLayoutState {
+export function applyPaneResize(current: ShellLayoutState, request: PaneResizeRequest): ShellLayoutState {
   const base = request.containerPx <= 0 ? 1 : request.containerPx;
   const deltaRatio = request.deltaPx / base;
 
@@ -57,11 +49,7 @@ export function applyPaneResize(
 
   return {
     ...current,
-    secondarySize: clamp(
-      current.secondarySize + deltaRatio,
-      MIN_SECONDARY,
-      MAX_SECONDARY,
-    ),
+    secondarySize: clamp(current.secondarySize + deltaRatio, MIN_SECONDARY, MAX_SECONDARY),
   };
 }
 
@@ -91,12 +79,7 @@ export function createDefaultEdgeSlotsLayout(): ShellEdgeSlotsLayout {
   };
 }
 
-function sanitizeRatio(
-  value: unknown,
-  fallback: number,
-  min: number,
-  max: number,
-): number {
+function sanitizeRatio(value: unknown, fallback: number, min: number, max: number): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return fallback;
   }

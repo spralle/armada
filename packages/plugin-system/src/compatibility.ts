@@ -68,8 +68,7 @@ export function evaluateShellPluginCompatibility(
     return {
       compatible: false,
       code: "MAJOR_MISMATCH",
-      message:
-        "Incompatible major versions: shell and plugin declarations target different semver major lines.",
+      message: "Incompatible major versions: shell and plugin declarations target different semver major lines.",
     };
   }
 
@@ -81,9 +80,7 @@ export function evaluateShellPluginCompatibility(
   };
 }
 
-function parseSemVerDeclaration(
-  declaration: string,
-):
+function parseSemVerDeclaration(declaration: string):
   | {
       success: true;
       range: SemVerRange;
@@ -130,9 +127,7 @@ function parseSemVerDeclaration(
   };
 }
 
-function parseTokenToRange(
-  token: string,
-):
+function parseTokenToRange(token: string):
   | {
       success: true;
       range: SemVerRange;
@@ -240,8 +235,7 @@ function parseTokenToRange(
 
   return {
     success: false,
-    error:
-      "unsupported semver declaration format; supported: exact x.y.z, ^x.y.z, ~x.y.z, and comparator tokens",
+    error: "unsupported semver declaration format; supported: exact x.y.z, ^x.y.z, ~x.y.z, and comparator tokens",
   };
 }
 

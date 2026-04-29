@@ -1,12 +1,12 @@
 import { describe, expect, it } from "bun:test";
+import type { ContextContribution, ProviderContribution } from "@ghost-shell/contracts/context";
 import type { Disposable } from "@ghost-shell/contracts/plugin";
-import type {
-  ContextContribution,
-  ProviderContribution,
-} from "@ghost-shell/contracts/context";
 import { createContextContributionRegistry } from "../context-contribution-registry.js";
 
-function makeContribution<T>(id: string, initialValue: T): {
+function makeContribution<T>(
+  id: string,
+  initialValue: T,
+): {
   contribution: ContextContribution<T>;
   setValue: (v: T) => void;
 } {

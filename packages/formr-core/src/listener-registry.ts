@@ -1,6 +1,6 @@
 export interface ListenerEntry {
   readonly path: string;
-  readonly trigger: 'change' | 'blur';
+  readonly trigger: "change" | "blur";
 }
 
 export function createListenerRegistry() {
@@ -13,15 +13,15 @@ export function createListenerRegistry() {
     ): void {
       for (const source of triggers.onChangeListenTo ?? []) {
         if (!registry.has(source)) registry.set(source, new Set());
-        registry.get(source)!.add({ path: fieldPath, trigger: 'change' });
+        registry.get(source)?.add({ path: fieldPath, trigger: "change" });
       }
       for (const source of triggers.onBlurListenTo ?? []) {
         if (!registry.has(source)) registry.set(source, new Set());
-        registry.get(source)!.add({ path: fieldPath, trigger: 'blur' });
+        registry.get(source)?.add({ path: fieldPath, trigger: "blur" });
       }
     },
 
-    getListeners(sourcePath: string, trigger: 'change' | 'blur'): readonly ListenerEntry[] {
+    getListeners(sourcePath: string, trigger: "change" | "blur"): readonly ListenerEntry[] {
       const entries = registry.get(sourcePath);
       if (!entries) return [];
       return [...entries].filter((e) => e.trigger === trigger);

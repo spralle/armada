@@ -1,9 +1,6 @@
 // context-service-registration.ts — ContextService adapter and shell registration.
 
-import type {
-  ContextService,
-  PluginContract,
-} from "@ghost-shell/contracts";
+import type { ContextService, PluginContract } from "@ghost-shell/contracts";
 import { CONTEXT_SERVICE_ID } from "@ghost-shell/contracts";
 import type { ShellPluginRegistry } from "./plugin-registry-types.js";
 
@@ -22,10 +19,7 @@ export interface ContextServiceDeps {
 // Adapter factory + registration
 // ---------------------------------------------------------------------------
 
-export function registerContextServiceCapability(
-  registry: ShellPluginRegistry,
-  deps: ContextServiceDeps,
-): void {
+export function registerContextServiceCapability(registry: ShellPluginRegistry, deps: ContextServiceDeps): void {
   const service: ContextService = {
     getGroupSelectionContext(): Record<string, string> {
       return { selection: deps.getGroupSelectionContext() };
@@ -44,9 +38,7 @@ export function registerContextServiceCapability(
     },
     contributes: {
       capabilities: {
-        services: [
-          { id: CONTEXT_SERVICE_ID, version: "1.0.0" },
-        ],
+        services: [{ id: CONTEXT_SERVICE_ID, version: "1.0.0" }],
       },
     },
   };

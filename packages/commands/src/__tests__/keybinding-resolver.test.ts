@@ -1,8 +1,8 @@
-import { describe, test, expect } from "bun:test";
-import { resolveKeybindingSequence, resolveKeybindingMatch } from "../keybinding-resolver.js";
-import type { RegisteredKeybindingRecord } from "../keybinding-resolver.js";
-import { normalizeConfiguredChord, normalizeConfiguredSequence } from "../keybinding-normalizer.js";
+import { describe, expect, test } from "bun:test";
 import type { ActionSurfaceContext } from "../action-surface.js";
+import { normalizeConfiguredChord, normalizeConfiguredSequence } from "../keybinding-normalizer.js";
+import type { RegisteredKeybindingRecord } from "../keybinding-resolver.js";
+import { resolveKeybindingMatch, resolveKeybindingSequence } from "../keybinding-resolver.js";
 
 function makeRecord(
   actionId: string,
@@ -41,7 +41,7 @@ describe("resolveKeybindingSequence", () => {
     const chord = normalizeConfiguredChord("ctrl+s")!;
     const result = resolveKeybindingSequence(records, [chord], emptyContext, alwaysTrueMatcher as any);
     expect(result.kind).toBe("exact");
-    expect(result.match!.action.id).toBe("save");
+    expect(result.match?.action.id).toBe("save");
   });
 
   test("returns 'none' when no chord matches", () => {
@@ -64,18 +64,15 @@ describe("resolveKeybindingSequence", () => {
     const chords = [normalizeConfiguredChord("ctrl+k")!, normalizeConfiguredChord("ctrl+s")!];
     const result = resolveKeybindingSequence(records, chords, emptyContext, alwaysTrueMatcher as any);
     expect(result.kind).toBe("exact");
-    expect(result.match!.action.id).toBe("special");
+    expect(result.match?.action.id).toBe("special");
   });
 
   test("first matching record wins", () => {
-    const records = [
-      makeRecord("first", "ctrl+s"),
-      makeRecord("second", "ctrl+s"),
-    ];
+    const records = [makeRecord("first", "ctrl+s"), makeRecord("second", "ctrl+s")];
     const chord = normalizeConfiguredChord("ctrl+s")!;
     const result = resolveKeybindingSequence(records, [chord], emptyContext, alwaysTrueMatcher as any);
     expect(result.kind).toBe("exact");
-    expect(result.match!.action.id).toBe("first");
+    expect(result.match?.action.id).toBe("first");
   });
 });
 
@@ -85,7 +82,7 @@ describe("resolveKeybindingMatch", () => {
     const chord = normalizeConfiguredChord("ctrl+o")!;
     const result = resolveKeybindingMatch(records, chord, emptyContext, alwaysTrueMatcher as any);
     expect(result).not.toBeNull();
-    expect(result!.action.id).toBe("open");
+    expect(result?.action.id).toBe("open");
   });
 
   test("returns null when no match", () => {

@@ -5,11 +5,10 @@ import type {
   ShellContextState,
   WorkspaceManagerState,
 } from "@ghost-shell/state";
-import { isRecord } from "./utils.js";
 import type { WorkspacePersistenceEnvelopeV1 } from "./contracts.js";
 import { sanitizeDockTreeState } from "./sanitize-dock-tree.js";
 import { sanitizeLaneMap, sanitizeNestedLaneMap, sanitizeSelectionMap } from "./sanitize-lanes.js";
-
+import { isRecord } from "./utils.js";
 
 function sanitizeTabArgs(input: unknown): Record<string, string> {
   if (!isRecord(input)) {
@@ -107,18 +106,22 @@ function sanitizeClosedTabHistoryEntry(input: unknown): ClosedTabHistoryEntry | 
     return null;
   }
   if (
-    typeof input.tabId !== "string" || input.tabId.length === 0
-    || typeof input.groupId !== "string" || input.groupId.length === 0
-    || typeof input.label !== "string" || input.label.length === 0
-    || (input.closePolicy !== "fixed" && input.closePolicy !== "closeable")
-    || (input.slot !== "main" && input.slot !== "secondary" && input.slot !== "side")
+    typeof input.tabId !== "string" ||
+    input.tabId.length === 0 ||
+    typeof input.groupId !== "string" ||
+    input.groupId.length === 0 ||
+    typeof input.label !== "string" ||
+    input.label.length === 0 ||
+    (input.closePolicy !== "fixed" && input.closePolicy !== "closeable") ||
+    (input.slot !== "main" && input.slot !== "secondary" && input.slot !== "side")
   ) {
     return null;
   }
 
-  const orderIndex = typeof input.orderIndex === "number" && Number.isFinite(input.orderIndex)
-    ? Math.max(0, Math.trunc(input.orderIndex))
-    : undefined;
+  const orderIndex =
+    typeof input.orderIndex === "number" && Number.isFinite(input.orderIndex)
+      ? Math.max(0, Math.trunc(input.orderIndex))
+      : undefined;
 
   return {
     tabId: input.tabId,
@@ -154,10 +157,7 @@ function sanitizeGroups(input: unknown, fallback: Record<string, ContextGroup>):
   return Object.keys(next).length > 0 ? next : { ...fallback };
 }
 
-function sanitizeTabs(
-  input: unknown,
-  fallback: Record<string, ContextTab>,
-): Record<string, ContextTab> {
+function sanitizeTabs(input: unknown, fallback: Record<string, ContextTab>): Record<string, ContextTab> {
   if (!isRecord(input)) {
     return { ...fallback };
   }
@@ -169,12 +169,10 @@ function sanitizeTabs(
     const id = typeof raw.id === "string" && raw.id ? raw.id : key;
     const definitionId = typeof raw.definitionId === "string" && raw.definitionId ? raw.definitionId : id;
     const groupId = typeof raw.groupId === "string" && raw.groupId ? raw.groupId : "group-main";
-    const partDefinitionId = typeof raw.partDefinitionId === "string" && raw.partDefinitionId
-      ? raw.partDefinitionId
-      : definitionId;
-    const label = typeof raw.label === "string" && raw.label
-      ? raw.label
-      : (typeof raw.name === "string" && raw.name ? raw.name : id);
+    const partDefinitionId =
+      typeof raw.partDefinitionId === "string" && raw.partDefinitionId ? raw.partDefinitionId : definitionId;
+    const label =
+      typeof raw.label === "string" && raw.label ? raw.label : typeof raw.name === "string" && raw.name ? raw.name : id;
     const closePolicy = raw.closePolicy === "fixed" ? "fixed" : "closeable";
     const args = sanitizeTabArgs(raw.args);
     next[id] = { id, definitionId, partDefinitionId, groupId, label, closePolicy, args };
@@ -183,11 +181,7 @@ function sanitizeTabs(
   return Object.keys(next).length > 0 ? next : { ...fallback };
 }
 
-function sanitizeTabOrder(
-  input: unknown,
-  tabs: Record<string, ContextTab>,
-  fallback: string[],
-): string[] {
+function sanitizeTabOrder(input: unknown, tabs: Record<string, ContextTab>, fallback: string[]): string[] {
   const validTabIds = new Set(Object.keys(tabs));
   if (!Array.isArray(input)) {
     return normalizeTabOrderAgainstTabs(fallback, validTabIds);
@@ -289,4 +283,3 @@ export function sanitizeWorkspaceEnvelope(
     workspaceOrder,
   };
 }
-

@@ -13,9 +13,7 @@ export function updateWindowReadOnlyState(root: HTMLElement, runtime: BridgeHost
 
   for (const node of shellNode.querySelectorAll<HTMLElement>("button, input, select, textarea")) {
     const mutatingControl =
-      node.id === "context-apply"
-      || node.id === "context-value-input"
-      || node.dataset.action === "select";
+      node.id === "context-apply" || node.id === "context-value-input" || node.dataset.action === "select";
     if (syncReadOnly) {
       if (mutatingControl) {
         node.setAttribute("disabled", "disabled");

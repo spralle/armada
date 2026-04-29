@@ -1,21 +1,21 @@
-import { createKeybindingService, type KeybindingService } from "@ghost-shell/commands";
-import type { ActionKeybinding, ActionSurface } from "../action-surface.js";
-import { DEFAULT_SHELL_KEYBINDING_PLUGIN_ID } from "./default-shell-keybindings.js";
-import type { BridgeHost, ShellRuntime } from "../app/types.js";
-import type { IntentActionMatch, ShellIntent } from "@ghost-shell/intents";
-import type { PluginActivationTriggerType } from "../plugin-registry.js";
 import type { NormalizedKeybindingChord } from "@ghost-shell/commands";
+import { createKeybindingService, type KeybindingService } from "@ghost-shell/commands";
+import type { IntentActionMatch, ShellIntent } from "@ghost-shell/intents";
+import type { ActionKeybinding, ActionSurface } from "../action-surface.js";
+import type { BridgeHost, ShellRuntime } from "../app/types.js";
+import type { PluginActivationTriggerType } from "../plugin-registry.js";
 import type { WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
-import {
-  readSequenceTimeoutMs,
-  createSequenceStateManager,
-  startSequenceTimeout,
-  type SequenceStateManager,
-} from "./keyboard-sequence-state.js";
+import { DEFAULT_SHELL_KEYBINDING_PLUGIN_ID } from "./default-shell-keybindings.js";
 import { dispatchExactMatch } from "./keyboard-action-dispatcher.js";
-import { handleDegradedKeydown } from "./keyboard-degraded-handler.js";
-import { handleTabLifecycleShortcut, handleTabScopeNavigation } from "./keyboard-tab-navigation.js";
 import { handleChooserKeyboardEvent } from "./keyboard-chooser-handler.js";
+import { handleDegradedKeydown } from "./keyboard-degraded-handler.js";
+import {
+  createSequenceStateManager,
+  readSequenceTimeoutMs,
+  type SequenceStateManager,
+  startSequenceTimeout,
+} from "./keyboard-sequence-state.js";
+import { handleTabLifecycleShortcut, handleTabScopeNavigation } from "./keyboard-tab-navigation.js";
 
 export { dismissIntentChooser } from "./keyboard-chooser-handler.js";
 
@@ -41,8 +41,7 @@ export interface KeyboardBindings {
 }
 
 const DEBUG_KEYBINDINGS =
-  typeof localStorage !== "undefined" &&
-  localStorage.getItem("ghost.debug.keybindings") === "true";
+  typeof localStorage !== "undefined" && localStorage.getItem("ghost.debug.keybindings") === "true";
 
 function computeOverrideFingerprint(overrides: ActionKeybinding[]): string {
   if (overrides.length === 0) return "";
@@ -72,7 +71,7 @@ async function handleChordResolution(
   if (resolution.kind === "exact") {
     sequenceManager.clear();
     event.preventDefault();
-    await dispatchExactMatch(root, runtime, bindings, keybindingService, chords, context, resolution.match!.action);
+    await dispatchExactMatch(root, runtime, bindings, keybindingService, chords, context, resolution.match?.action);
     return true;
   }
 
@@ -85,7 +84,7 @@ async function handleChordResolution(
     });
     startSequenceTimeout(sequenceManager, keybindingService, bindings, DEBUG_KEYBINDINGS);
     keybindingService.fireKeySequencePending({
-      pressedChords: chords.map(c => c.value),
+      pressedChords: chords.map((c) => c.value),
       candidateCount: resolution.prefixCount ?? 0,
     });
     bindings.renderSyncStatus();
@@ -94,7 +93,7 @@ async function handleChordResolution(
 
   // kind === "none" — cancel any pending sequence
   if (sequenceState) {
-    const cancelledChords = sequenceState.pressedChords.map(c => c.value);
+    const cancelledChords = sequenceState.pressedChords.map((c) => c.value);
     sequenceManager.clear();
     keybindingService.fireKeySequenceCancelled({ chords: cancelledChords, reason: "no_match" });
     bindings.renderSyncStatus();
@@ -144,7 +143,7 @@ export function bindKeyboardShortcuts(
 
     if (sequenceState && event.key === "Escape") {
       event.preventDefault();
-      const cancelledChords = sequenceState.pressedChords.map(c => c.value);
+      const cancelledChords = sequenceState.pressedChords.map((c) => c.value);
       sequenceManager.clear();
       keybindingService.fireKeySequenceCancelled({ chords: cancelledChords, reason: "escape" });
       bindings.renderSyncStatus();
@@ -159,7 +158,13 @@ export function bindKeyboardShortcuts(
     const normalizedChord = keybindingService.normalizeEvent(event);
     if (normalizedChord) {
       const handled = await handleChordResolution(
-        event, normalizedChord, root, runtime, bindings, keybindingService, sequenceManager,
+        event,
+        normalizedChord,
+        root,
+        runtime,
+        bindings,
+        keybindingService,
+        sequenceManager,
       );
       if (handled) return;
     }

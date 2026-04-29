@@ -1,14 +1,14 @@
-import type { ValidationIssue } from '@ghost-shell/formr-core';
+import type { ValidationIssue } from "@ghost-shell/formr-core";
 
-const DEFAULT_FIELD_PREFIX = 'field';
+const DEFAULT_FIELD_PREFIX = "field";
 
 /** ARIA props for a form field */
 export interface FieldA11yProps {
   readonly id: string;
-  readonly 'aria-invalid'?: boolean;
-  readonly 'aria-describedby'?: string;
-  readonly 'aria-required'?: boolean;
-  readonly 'aria-errormessage'?: string;
+  readonly "aria-invalid"?: boolean;
+  readonly "aria-describedby"?: string;
+  readonly "aria-required"?: boolean;
+  readonly "aria-errormessage"?: string;
 }
 
 /** Label props for semantic association */
@@ -19,12 +19,15 @@ export interface LabelA11yProps {
 /** Description/error message props */
 export interface DescriptionA11yProps {
   readonly id: string;
-  readonly role?: 'alert';
+  readonly role?: "alert";
 }
 
 /** Generate a deterministic field ID from path */
 export function fieldId(path: string, prefix: string = DEFAULT_FIELD_PREFIX): string {
-  return `${prefix}-${path.replace(/[.\[\]\/]/g, '-').replace(/-+/g, '-').replace(/-$/, '')}`;
+  return `${prefix}-${path
+    .replace(/[.[\]/]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/-$/, "")}`;
 }
 
 /** Generate description element ID */
@@ -47,7 +50,7 @@ export function getFieldProps(
   },
 ): FieldA11yProps {
   const id = fieldId(path);
-  const hasErrors = options?.issues?.some(i => i.severity === 'error') ?? false;
+  const hasErrors = options?.issues?.some((i) => i.severity === "error") ?? false;
 
   const describedBy: string[] = [];
   if (options?.hasDescription) describedBy.push(descriptionId(path));
@@ -55,10 +58,10 @@ export function getFieldProps(
 
   const props: FieldA11yProps = {
     id,
-    ...(hasErrors ? { 'aria-invalid': true as const } : {}),
-    ...(describedBy.length > 0 ? { 'aria-describedby': describedBy.join(' ') } : {}),
-    ...(options?.required ? { 'aria-required': true as const } : {}),
-    ...(hasErrors ? { 'aria-errormessage': errorId(path) } : {}),
+    ...(hasErrors ? { "aria-invalid": true as const } : {}),
+    ...(describedBy.length > 0 ? { "aria-describedby": describedBy.join(" ") } : {}),
+    ...(options?.required ? { "aria-required": true as const } : {}),
+    ...(hasErrors ? { "aria-errormessage": errorId(path) } : {}),
   };
 
   return props;
@@ -76,14 +79,14 @@ export function getDescriptionProps(path: string): DescriptionA11yProps {
 
 /** Get error message props */
 export function getErrorProps(path: string): DescriptionA11yProps {
-  return { id: errorId(path), role: 'alert' };
+  return { id: errorId(path), role: "alert" };
 }
 
 /** Find the first field path with errors (for focus management) */
 export function findFirstErrorPath(issues: readonly ValidationIssue[]): string | undefined {
-  const firstError = issues.find(i => i.severity === 'error');
+  const firstError = issues.find((i) => i.severity === "error");
   if (!firstError) return undefined;
-  return firstError.path.segments.join('.');
+  return firstError.path.segments.join(".");
 }
 
 /** Focus the first error field after submit (browser-only) */
@@ -91,7 +94,7 @@ export function focusFirstError(issues: readonly ValidationIssue[]): boolean {
   const path = findFirstErrorPath(issues);
   if (!path) return false;
 
-  if (typeof document === 'undefined') return false;
+  if (typeof document === "undefined") return false;
 
   const id = fieldId(path);
   const element = document.getElementById(id);

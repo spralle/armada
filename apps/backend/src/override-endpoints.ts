@@ -1,9 +1,9 @@
 // Override status and audit query endpoints
 
-import type { Route } from "./router.js";
-import { jsonResponse } from "./router.js";
 import { validateTenantId } from "./config-loader.js";
 import type { ConfigAuditLog, OverrideTracker } from "./config-stubs.js";
+import type { Route } from "./router.js";
+import { jsonResponse } from "./router.js";
 
 export interface OverrideRouteOptions {
   auditLog: ConfigAuditLog;
@@ -59,10 +59,7 @@ export function createOverrideRoutes(options: OverrideRouteOptions): Route[] {
 
         const body = (await request.body()) as { regularizedBy?: string } | null;
         if (body === null || typeof body !== "object" || typeof body.regularizedBy !== "string") {
-          return jsonResponse(
-            { error: "invalid_body", message: "Body must contain { regularizedBy: string }" },
-            400,
-          );
+          return jsonResponse({ error: "invalid_body", message: "Body must contain { regularizedBy: string }" }, 400);
         }
 
         const result = await overrideTracker.regularize(overrideId, body.regularizedBy);
@@ -92,7 +89,7 @@ export function createOverrideRoutes(options: OverrideRouteOptions): Route[] {
         const limitStr = searchParams.get("limit");
         const limit = limitStr !== null ? parseInt(limitStr, 10) : undefined;
 
-        let entries;
+        let entries: unknown;
         if (key !== undefined) {
           entries = await auditLog.queryByKey(key);
         } else if (from !== undefined && to !== undefined) {

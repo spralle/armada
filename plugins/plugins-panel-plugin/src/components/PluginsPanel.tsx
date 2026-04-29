@@ -1,21 +1,21 @@
-import { useSyncExternalStore, useState, useCallback, useMemo } from "react";
 import type {
-  PluginMountContext,
-  PluginRegistryService,
   PluginManagementService,
-  SyncStatusService,
+  PluginMountContext,
   PluginRegistryEntry,
+  PluginRegistryService,
+  SyncStatusService,
 } from "@ghost-shell/contracts";
 import {
-  PLUGIN_REGISTRY_SERVICE_ID,
   PLUGIN_MANAGEMENT_SERVICE_ID,
+  PLUGIN_REGISTRY_SERVICE_ID,
   SYNC_STATUS_SERVICE_ID,
 } from "@ghost-shell/contracts";
-import { Input, Tabs, TabsList, TabsTrigger, ScrollArea, Badge } from "@ghost-shell/ui";
-import { PluginCard } from "./PluginCard.js";
+import { Badge, Input, ScrollArea, Tabs, TabsList, TabsTrigger } from "@ghost-shell/ui";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { DiagnosticsSection } from "./DiagnosticsSection.js";
-import { PluginsProvider } from "./PluginsContext.js";
 import { PluginsPanelErrorBoundary } from "./ErrorBoundary.js";
+import { PluginCard } from "./PluginCard.js";
+import { PluginsProvider } from "./PluginsContext.js";
 
 const STATUS_FILTERS = [
   { value: "all", label: "All", match: () => true },
@@ -64,11 +64,7 @@ interface PluginsPanelInnerProps {
   syncStatusService: SyncStatusService;
 }
 
-function PluginsPanelInner({
-  registryService,
-  managementService,
-  syncStatusService,
-}: PluginsPanelInnerProps) {
+function PluginsPanelInner({ registryService, managementService, syncStatusService }: PluginsPanelInnerProps) {
   const subscribe = useCallback(
     (callback: () => void) => {
       const sub = registryService.subscribe(callback);
@@ -104,11 +100,7 @@ function PluginsPanelInner({
             aria-label="Search plugins"
           />
         </div>
-        {notice && (
-          <div className="text-xs px-2 py-1.5 rounded bg-muted text-muted-foreground">
-            {notice}
-          </div>
-        )}
+        {notice && <div className="text-xs px-2 py-1.5 rounded bg-muted text-muted-foreground">{notice}</div>}
         <Tabs
           value={statusFilter}
           onValueChange={(v) => {
@@ -141,9 +133,7 @@ function PluginsPanelInner({
             )}
           </div>
         </ScrollArea>
-        {snapshot.diagnostics.length > 0 && (
-          <DiagnosticsSection diagnostics={snapshot.diagnostics} />
-        )}
+        {snapshot.diagnostics.length > 0 && <DiagnosticsSection diagnostics={snapshot.diagnostics} />}
       </div>
     </PluginsProvider>
   );
@@ -161,8 +151,16 @@ function PanelHeader({ counts }: { counts: StatusCounts }) {
     <div className="flex items-center justify-between">
       <h2 className="text-sm font-semibold">Plugins</h2>
       <div className="flex items-center gap-1.5">
-        {counts.active > 0 && <Badge variant="default" className="text-[10px] px-1.5 py-0">{counts.active} active</Badge>}
-        {counts.failed > 0 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{counts.failed} failed</Badge>}
+        {counts.active > 0 && (
+          <Badge variant="default" className="text-[10px] px-1.5 py-0">
+            {counts.active} active
+          </Badge>
+        )}
+        {counts.failed > 0 && (
+          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+            {counts.failed} failed
+          </Badge>
+        )}
       </div>
     </div>
   );
@@ -194,9 +192,7 @@ function filterPlugins(
   }
   if (search.trim()) {
     const q = search.toLowerCase();
-    result = result.filter(
-      (p) => p.pluginId.toLowerCase().includes(q) || p.name.toLowerCase().includes(q),
-    );
+    result = result.filter((p) => p.pluginId.toLowerCase().includes(q) || p.name.toLowerCase().includes(q));
   }
   return result;
 }

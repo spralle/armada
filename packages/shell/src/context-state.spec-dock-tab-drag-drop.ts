@@ -1,6 +1,4 @@
-import type { SpecHarness } from "./context-state.spec-harness.js";
-import { moveDockTabThroughRuntime, wireDockTabDragDrop } from "./ui/dock-tab-dnd.js";
-import { setActiveDockDragPayload } from "./ui/dock-drag-session.js";
+import { DRAG_INLINE_PREFIX, TAB_DOCK_DRAG_MIME } from "./app/constants.js";
 import {
   createDockZone,
   createDragEvent,
@@ -12,8 +10,9 @@ import {
   FakeOverlay,
   MemoryDataTransfer,
 } from "./context-state.spec-dock-tab-drag-drop-fixtures.js";
-
-import { DRAG_INLINE_PREFIX, TAB_DOCK_DRAG_MIME } from "./app/constants.js";
+import type { SpecHarness } from "./context-state.spec-harness.js";
+import { setActiveDockDragPayload } from "./ui/dock-drag-session.js";
+import { moveDockTabThroughRuntime, wireDockTabDragDrop } from "./ui/dock-tab-dnd.js";
 
 export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
@@ -115,7 +114,11 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
 
     assertEqual(runtime.contextState.activeTabId, beforeActive, "cross-window dock payload should be ignored");
     assertEqual(renderPartsCalls, 0, "cross-window dock payload should not trigger rerender");
-    assertEqual(runtime.notice, "Cross-window tab drag is disabled by current settings.", "cross-window dock rejection should expose clear disabled-mode notice");
+    assertEqual(
+      runtime.notice,
+      "Cross-window tab drag is disabled by current settings.",
+      "cross-window dock rejection should expose clear disabled-mode notice",
+    );
   });
 
   test("dock cross-window payload applies through transfer transaction when enabled", () => {
@@ -147,9 +150,17 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     transfer.setData("text/plain", "ghost-dnd-ref:session-cross-dock");
     zone.dispatch("drop", createDragEvent(transfer));
 
-    assertEqual(runtime.contextState.activeTabId, "tab-b", "enabled cross-window dock drop should activate incoming tab");
+    assertEqual(
+      runtime.contextState.activeTabId,
+      "tab-b",
+      "enabled cross-window dock drop should activate incoming tab",
+    );
     assertEqual(renderPartsCalls, 1, "enabled cross-window dock drop should rerender parts");
-    assertEqual(commits.join(","), "session-cross-dock", "enabled cross-window dock drop should commit transfer session");
+    assertEqual(
+      commits.join(","),
+      "session-cross-dock",
+      "enabled cross-window dock drop should commit transfer session",
+    );
     assertEqual(runtime.notice, "", "enabled cross-window dock drop should clear rejection notice");
   });
 
@@ -181,9 +192,21 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     transfer.setData("text/plain", "ghost-dnd-ref:session-cross-dock-kill");
     zone.dispatch("drop", createDragEvent(transfer));
 
-    assertEqual(runtime.contextState, before, "kill-switch cross-window dock drop should preserve same-window behavior");
-    assertEqual(runtime.notice, "Cross-window tab drag is disabled by current settings.", "kill-switch cross-window dock drop should show clear rejection notice");
-    assertEqual(aborts.join(","), "session-cross-dock-kill", "kill-switch cross-window dock drop should abort transfer session");
+    assertEqual(
+      runtime.contextState,
+      before,
+      "kill-switch cross-window dock drop should preserve same-window behavior",
+    );
+    assertEqual(
+      runtime.notice,
+      "Cross-window tab drag is disabled by current settings.",
+      "kill-switch cross-window dock drop should show clear rejection notice",
+    );
+    assertEqual(
+      aborts.join(","),
+      "session-cross-dock-kill",
+      "kill-switch cross-window dock drop should abort transfer session",
+    );
   });
 
   test("degraded mode still permits same-window dock moves", () => {
@@ -218,20 +241,24 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     let renderPartsCalls = 0;
     let renderSyncCalls = 0;
 
-    const moved = moveDockTabThroughRuntime(runtime, {
-      renderContextControls() {},
-      renderParts() {
-        renderPartsCalls += 1;
+    const moved = moveDockTabThroughRuntime(
+      runtime,
+      {
+        renderContextControls() {},
+        renderParts() {
+          renderPartsCalls += 1;
+        },
+        renderSyncStatus() {
+          renderSyncCalls += 1;
+        },
       },
-      renderSyncStatus() {
-        renderSyncCalls += 1;
+      {
+        tabId: "tab-b",
+        sourceWindowId: "window-a",
+        targetTabId: "tab-a",
+        zone: "left",
       },
-    }, {
-      tabId: "tab-b",
-      sourceWindowId: "window-a",
-      targetTabId: "tab-a",
-      zone: "left",
-    });
+    );
 
     assertEqual(moved, true, "same-window dock move should not be blocked by degraded mode");
     assertEqual(runtime.contextState.activeTabId, "tab-b", "same-window move should still activate moved tab");
@@ -308,11 +335,18 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
     const transfer = new MemoryDataTransfer();
     transfer.setData(TAB_DOCK_DRAG_MIME, JSON.stringify({ tabId: "tab-b", sourceWindowId: "window-a" }));
     leftZone.dispatch("dragover", createDragEvent(transfer));
-    leftZone.dispatch("dragleave", createDragEventWithOptions({ dataTransfer: transfer, relatedTarget: rightZone as unknown as EventTarget }));
+    leftZone.dispatch(
+      "dragleave",
+      createDragEventWithOptions({ dataTransfer: transfer, relatedTarget: rightZone as unknown as EventTarget }),
+    );
 
     root.dispatch("dragend", createDragEvent(transfer));
 
-    assertEqual(runtime.contextState.activeTabId, "tab-b", "in-overlay dragleave should preserve armed drop target for fallback move");
+    assertEqual(
+      runtime.contextState.activeTabId,
+      "tab-b",
+      "in-overlay dragleave should preserve armed drop target for fallback move",
+    );
   });
 
   test("drop without dataTransfer still applies active payload fallback", () => {
@@ -336,7 +370,11 @@ export function registerDockTabDragDropSpecs(harness: SpecHarness): void {
 
     zone.dispatch("drop", createDragEventWithOptions({ dataTransfer: null }));
 
-    assertEqual(runtime.contextState.activeTabId, "tab-b", "null dataTransfer drop should still move tab via active payload");
+    assertEqual(
+      runtime.contextState.activeTabId,
+      "tab-b",
+      "null dataTransfer drop should still move tab via active payload",
+    );
     assertEqual(renderPartsCalls, 1, "null dataTransfer fallback move should rerender parts");
   });
 }

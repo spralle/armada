@@ -7,35 +7,31 @@
  * call-sites continue to compile without changes.
  */
 
-import {
-  buildActionSurface,
-} from "./action-surface.js";
-import {
-  DEFAULT_SHELL_KEYBINDINGS,
-  DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
-  USER_KEYBINDING_OVERRIDE_PLUGIN_ID,
-} from "./shell-runtime/default-shell-keybindings.js";
-import {
-  getShellBootstrap,
-} from "./bootstrap-shell.js";
-import type { ShellRuntime } from "./app/types.js";
-import type { PluginActivationTriggerType } from "./plugin-registry.js";
 import type { WindowBridgeEvent } from "@ghost-shell/bridge";
+import { buildActionSurface } from "./action-surface.js";
+import type { ShellRuntime } from "./app/types.js";
+import { createWindowId } from "./app/utils.js";
+import { getShellBootstrap } from "./bootstrap-shell.js";
+import type { PluginActivationTriggerType } from "./plugin-registry.js";
 import {
   summarizeSelectionPriorities as summarizeSelectionPrioritiesImpl,
   toActionContext,
 } from "./shell-runtime/action-context.js";
 import {
-  bindBridgeSync as bindBridgeSyncHandlers,
   announce as announceImpl,
+  bindBridgeSync as bindBridgeSyncHandlers,
   publishWithDegrade,
 } from "./shell-runtime/bridge-sync-handlers.js";
-import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
+import {
+  DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+  DEFAULT_SHELL_KEYBINDINGS,
+  USER_KEYBINDING_OVERRIDE_PLUGIN_ID,
+} from "./shell-runtime/default-shell-keybindings.js";
 import {
   bindKeyboardShortcuts as bindKeyboardHandlers,
   dismissIntentChooser as dismissIntentChooserState,
 } from "./shell-runtime/keyboard-handlers.js";
-import { createWindowId } from "./app/utils.js";
+import { createRuntimeEventHandlers } from "./shell-runtime/runtime-event-handlers.js";
 
 // ---------------------------------------------------------------------------
 // ShellWiringContext — cached binding container
@@ -52,10 +48,12 @@ export class ShellWiringContext {
   ) {}
 
   get runtimeEventHandlerBindings() {
+    // biome-ignore lint/suspicious/noAssignInExpressions: lazy-init getter pattern
     return (this._runtimeEventHandlerBindings ??= createRuntimeEventHandlerBindings(this.root, this.runtime));
   }
 
   get runtimeEventHandlers() {
+    // biome-ignore lint/suspicious/noAssignInExpressions: lazy-init getter pattern
     return (this._runtimeEventHandlers ??= createRuntimeEventHandlers(
       this.root,
       this.runtime,
@@ -64,6 +62,7 @@ export class ShellWiringContext {
   }
 
   get bridgeBindings() {
+    // biome-ignore lint/suspicious/noAssignInExpressions: lazy-init getter pattern
     return (this._bridgeBindings ??= createBridgeBindingsFromHandlers(
       this.root,
       this.runtime,
@@ -101,9 +100,7 @@ export class ShellWiringContext {
     return bindKeyboardShortcuts(this.root, this.runtime);
   }
 
-  createWorkspaceSwitchDeps(
-    applySelectionOverride?: ReturnType<typeof createRuntimeEventHandlers>["applySelection"],
-  ) {
+  createWorkspaceSwitchDeps(applySelectionOverride?: ReturnType<typeof createRuntimeEventHandlers>["applySelection"]) {
     return createWorkspaceSwitchDeps(this.root, this.runtime, applySelectionOverride);
   }
 
@@ -135,8 +132,7 @@ export function summarizeSelectionPriorities(runtime: ShellRuntime): string {
 export function refreshActionContributions(runtime: ShellRuntime): void {
   const contracts = runtime.registry
     .getSnapshot()
-    .plugins
-    .filter((plugin) => plugin.enabled && plugin.contract !== null)
+    .plugins.filter((plugin) => plugin.enabled && plugin.contract !== null)
     .map((plugin) => plugin.contract)
     .filter((plugin): plugin is NonNullable<typeof plugin> => plugin !== null);
 
@@ -210,16 +206,18 @@ export function bindKeyboardShortcuts(root: HTMLElement, runtime: ShellRuntime):
     renderParts: () => renderParts(root, runtime),
     renderSyncStatus: () => renderSyncStatus(root, runtime),
     toActionContext: () => toActionContext(runtime),
-    getDefaultKeybindings: () => DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
-      action: entry.action,
-      keybinding: entry.keybinding,
-      pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
-    })),
-    getUserOverrideKeybindings: () => runtime.keybindingPersistence.load().map((entry) => ({
-      action: entry.action,
-      keybinding: entry.keybinding,
-      pluginId: USER_KEYBINDING_OVERRIDE_PLUGIN_ID,
-    })),
+    getDefaultKeybindings: () =>
+      DEFAULT_SHELL_KEYBINDINGS.map((entry) => ({
+        action: entry.action,
+        keybinding: entry.keybinding,
+        pluginId: DEFAULT_SHELL_KEYBINDING_PLUGIN_ID,
+      })),
+    getUserOverrideKeybindings: () =>
+      runtime.keybindingPersistence.load().map((entry) => ({
+        action: entry.action,
+        keybinding: entry.keybinding,
+        pluginId: USER_KEYBINDING_OVERRIDE_PLUGIN_ID,
+      })),
     getWorkspaceSwitchDeps: () => createWorkspaceSwitchDeps(root, runtime, handlers.applySelection),
   });
 }
@@ -249,18 +247,19 @@ export function createWorkspaceSwitchDeps(
 export async function primeEnabledPluginActivations(root: HTMLElement, runtime: ShellRuntime): Promise<void> {
   const snapshot = runtime.registry.getSnapshot();
   const activations = snapshot.plugins
-    .filter((plugin) =>
-      plugin.enabled
-      && plugin.lifecycle.state !== "active"
-      && plugin.lifecycle.state !== "activating"
-      && plugin.lifecycle.state !== "failed"
+    .filter(
+      (plugin) =>
+        plugin.enabled &&
+        plugin.lifecycle.state !== "active" &&
+        plugin.lifecycle.state !== "activating" &&
+        plugin.lifecycle.state !== "failed",
     )
     .map((plugin) =>
       activatePluginForBoundary(root, runtime, {
         pluginId: plugin.id,
         triggerType: "view",
         triggerId: "shell.render",
-      })
+      }),
     );
 
   if (activations.length === 0) {

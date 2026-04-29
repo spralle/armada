@@ -1,5 +1,5 @@
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { rewriteManifestPublicPath } from "../src/manifest-rewrite.ts";
 
 const BASE = "http://127.0.0.1:41337/ghost.theme.default/";
@@ -22,9 +22,7 @@ describe("rewriteManifestPublicPath", () => {
       shared: [{ assets: { js: { sync: ["__federation_shared.js"], async: [] } } }],
     };
     const result = rewriteManifestPublicPath(manifest, BASE);
-    assert.deepEqual(result.shared[0].assets.js.sync, [
-      `${BASE}__federation_shared.js`,
-    ]);
+    assert.deepEqual(result.shared[0].assets.js.sync, [`${BASE}__federation_shared.js`]);
   });
 
   it("prefixes relative paths in exposes[].assets.css.async", () => {
@@ -32,9 +30,7 @@ describe("rewriteManifestPublicPath", () => {
       exposes: [{ assets: { css: { sync: [], async: ["styles/main.css"] } } }],
     };
     const result = rewriteManifestPublicPath(manifest, BASE);
-    assert.deepEqual(result.exposes[0].assets.css.async, [
-      `${BASE}styles/main.css`,
-    ]);
+    assert.deepEqual(result.exposes[0].assets.css.async, [`${BASE}styles/main.css`]);
   });
 
   it("does not double-prefix already-absolute URLs", () => {
@@ -42,9 +38,7 @@ describe("rewriteManifestPublicPath", () => {
       shared: [{ assets: { js: { sync: ["http://other.host/lib.js"], async: [] } } }],
     };
     const result = rewriteManifestPublicPath(manifest, BASE);
-    assert.deepEqual(result.shared[0].assets.js.sync, [
-      "http://other.host/lib.js",
-    ]);
+    assert.deepEqual(result.shared[0].assets.js.sync, ["http://other.host/lib.js"]);
   });
 
   it("handles manifests with no shared or exposes", () => {
@@ -63,12 +57,14 @@ describe("rewriteManifestPublicPath", () => {
 
   it("rewrites both js and css asset types together", () => {
     const manifest = {
-      exposes: [{
-        assets: {
-          js: { sync: ["entry.js"], async: ["chunk.js"] },
-          css: { sync: ["style.css"], async: ["lazy.css"] },
+      exposes: [
+        {
+          assets: {
+            js: { sync: ["entry.js"], async: ["chunk.js"] },
+            css: { sync: ["style.css"], async: ["lazy.css"] },
+          },
         },
-      }],
+      ],
     };
     const result = rewriteManifestPublicPath(manifest, BASE);
     assert.deepEqual(result.exposes[0].assets.js.sync, [`${BASE}entry.js`]);

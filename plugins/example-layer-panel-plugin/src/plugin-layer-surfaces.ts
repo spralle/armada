@@ -10,10 +10,7 @@ import type { LayerSurfaceContext } from "@ghost-shell/contracts/layer";
  * - On-demand keyboard interactivity
  * - Toggle visibility via context API
  */
-export function mount(
-  target: HTMLDivElement,
-  context: LayerSurfaceContext,
-): (() => void) | void {
+export function mount(target: HTMLDivElement, context: LayerSurfaceContext): (() => void) | undefined {
   const container = document.createElement("div");
   Object.assign(container.style, {
     width: "100%",

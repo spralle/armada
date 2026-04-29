@@ -46,7 +46,11 @@ export function registerDockTreeCommandSpecs(harness: SpecHarness): void {
     if (root?.kind === "split") {
       assertTruthy(root.second.kind === "stack", "move right should keep active tab in right branch stack");
       if (root.second.kind === "stack") {
-        assertEqual(root.second.tabIds.includes("tab-a"), true, "move right should relocate active tab into target branch");
+        assertEqual(
+          root.second.tabIds.includes("tab-a"),
+          true,
+          "move right should relocate active tab into target branch",
+        );
       }
     }
     assertEqual(moved.activeTabId, "tab-a", "move direction should keep moved tab active");

@@ -1,5 +1,5 @@
 import { areEqualSelections, cloneContextState, normalizePriorityId, normalizeSelectionIds } from "./helpers.js";
-import { EntityTypeSelection, ShellContextState } from "./types.js";
+import type { EntityTypeSelection, ShellContextState } from "./types.js";
 
 export function setEntityTypeSelection(
   state: ShellContextState,
@@ -49,12 +49,12 @@ export function removeEntityTypeSelectionId(
   input: { entityType: string; id: string },
 ): ShellContextState {
   const current = state.selectionByEntityType[input.entityType];
-  if (!current || !current.selectedIds.includes(input.id)) {
+  if (!current?.selectedIds.includes(input.id)) {
     return state;
   }
 
   const nextIds = current.selectedIds.filter((itemId) => itemId !== input.id);
-  const priorityId = current.priorityId === input.id ? nextIds[0] ?? null : current.priorityId;
+  const priorityId = current.priorityId === input.id ? (nextIds[0] ?? null) : current.priorityId;
   return setEntityTypeSelection(state, {
     entityType: input.entityType,
     selectedIds: nextIds,
@@ -108,10 +108,7 @@ export function setEntityTypePriority(
   });
 }
 
-export function readEntityTypeSelection(
-  state: ShellContextState,
-  entityType: string,
-): EntityTypeSelection {
+export function readEntityTypeSelection(state: ShellContextState, entityType: string): EntityTypeSelection {
   const current = state.selectionByEntityType[entityType];
   if (!current) {
     return {

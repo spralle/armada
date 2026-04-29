@@ -2,8 +2,8 @@
 // Accumulate node — maintains running aggregates over typed facts (L2).
 // ---------------------------------------------------------------------------
 
-import type { Fact } from './fact-memory.js';
-import { getAccumulateFn } from './accumulate-functions.js';
+import { getAccumulateFn } from "./accumulate-functions.js";
+import type { Fact } from "./fact-memory.js";
 
 export interface AccumulateConfig {
   readonly factType: string;
@@ -23,10 +23,7 @@ export interface AccumulateNode {
   readonly getTrackedFactIds: () => readonly string[];
 }
 
-function matchesFilter(
-  data: Readonly<Record<string, unknown>>,
-  filter: Record<string, unknown>,
-): boolean {
+function matchesFilter(data: Readonly<Record<string, unknown>>, filter: Record<string, unknown>): boolean {
   for (const key of Object.keys(filter)) {
     if (data[key] !== filter[key]) return false;
   }
@@ -41,13 +38,13 @@ function matchesFact(fact: Fact, config: AccumulateConfig): boolean {
 
 function extractValue(fact: Fact, field: string): number | undefined {
   const raw = fact.data[field];
-  return typeof raw === 'number' ? raw : undefined;
+  return typeof raw === "number" ? raw : undefined;
 }
 
 export function createAccumulateNode(config: AccumulateConfig): AccumulateNode {
   const aggFn = getAccumulateFn(config.fn);
   const tracked = new Map<string, number>();
-  const isCount = config.fn === '$count';
+  const isCount = config.fn === "$count";
 
   const addFact = (fact: Fact): void => {
     if (!matchesFact(fact, config)) return;

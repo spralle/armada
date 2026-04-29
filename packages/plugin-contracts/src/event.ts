@@ -20,5 +20,3 @@ export interface EventEmitter<T> extends Disposable {
   /** Fire the event, notifying all subscribers. */
   fire(data: T): void;
 }
-
-

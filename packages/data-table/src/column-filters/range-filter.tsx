@@ -1,5 +1,5 @@
-import type { Column, FilterFn } from "@tanstack/react-table";
 import { Input } from "@ghost-shell/ui";
+import type { Column, FilterFn } from "@tanstack/react-table";
 
 type RangeValue = [number | undefined, number | undefined];
 

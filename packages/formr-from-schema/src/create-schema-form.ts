@@ -1,12 +1,10 @@
-import type { ValidatorFn } from '@ghost-shell/formr-core';
-import { isStandardSchemaLike, createStandardSchemaValidator } from '@ghost-shell/formr-core';
-import { ingestSchema, isJsonSchema } from '@ghost-shell/schema-core';
-import type { SchemaFieldInfo, SchemaMetadata, JsonSchema } from '@ghost-shell/schema-core';
-import type { LayoutNode } from './layout/layout-types.js';
-import { compileLayout } from './layout/layout-compiler.js';
-import { createJsonSchemaValidator } from './adapters/json-schema-validator.js';
-import type { LayoutMiddleware } from './layout-middleware.js';
-import { applyLayoutMiddleware } from './layout-middleware.js';
+import type { ValidatorFn } from "@ghost-shell/formr-core";
+import { createStandardSchemaValidator, isStandardSchemaLike } from "@ghost-shell/formr-core";
+import { createJsonSchemaValidator, isJsonSchema } from "./adapters/json-schema-validator.js";
+import { ingestSchema } from "./ingest.js";
+import { compileLayout } from "./layout/layout-compiler.js";
+import type { LayoutNode } from "./layout/layout-types.js";
+import type { SchemaFieldInfo, SchemaMetadata } from "./types.js";
 
 export interface CreateSchemaFormOptions {
   /** Additional validators to include beyond the auto-detected schema validator */
@@ -28,17 +26,12 @@ export interface SchemaFormResult {
  * Pure schema preparation: ingest + compile layout + create validators.
  * Framework-agnostic — use directly or wrap in framework lifecycle (useSchemaForm for React).
  */
-export function createSchemaForm(
-  schema: unknown,
-  options?: CreateSchemaFormOptions,
-): SchemaFormResult {
+export function createSchemaForm(schema: unknown, options?: CreateSchemaFormOptions): SchemaFormResult {
   const result = ingestSchema(schema);
   let layout = options?.layoutOverride ?? compileLayout(result);
 
   if (options?.layoutMiddleware?.length) {
-    const fieldInfoMap = new Map<string, SchemaFieldInfo>(
-      result.fields.map((f: SchemaFieldInfo) => [f.path, f]),
-    );
+    const fieldInfoMap = new Map<string, SchemaFieldInfo>(result.fields.map((f: SchemaFieldInfo) => [f.path, f]));
     layout = applyLayoutMiddleware(layout, options.layoutMiddleware, fieldInfoMap);
   }
 

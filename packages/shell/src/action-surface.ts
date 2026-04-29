@@ -1,13 +1,13 @@
 export type {
+  ActionKeybinding,
+  ActionMenuItem,
+  ActionSurface,
   ActionSurfaceContext,
   InvokableAction,
-  ActionMenuItem,
-  ActionKeybinding,
-  ActionSurface,
 } from "@ghost-shell/commands";
 
 export {
   buildActionSurface,
-  resolveMenuActions,
   dispatchAction,
+  resolveMenuActions,
 } from "@ghost-shell/commands";

@@ -13,7 +13,9 @@ export function DependencyRow({ id, type, linkable = false }: DependencyRowProps
 
   return (
     <div className="flex items-center gap-1.5">
-      <Badge variant="outline" className="text-[9px] px-1 py-0">{type}</Badge>
+      <Badge variant="outline" className="text-[9px] px-1 py-0">
+        {type}
+      </Badge>
       {exists ? (
         <button
           type="button"

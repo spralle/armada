@@ -1,14 +1,11 @@
 import type { WorkspaceInfo, WorkspaceService } from "@ghost-shell/contracts";
-import type { ShellRuntime } from "../app/types.js";
 import {
   createWorkspace as createWorkspacePure,
   deleteWorkspace as deleteWorkspacePure,
   renameWorkspace as renameWorkspacePure,
 } from "@ghost-shell/state";
-import {
-  performWorkspaceSwitch,
-  type WorkspaceSwitchDeps,
-} from "../ui/workspace-switch.js";
+import type { ShellRuntime } from "../app/types.js";
+import { performWorkspaceSwitch, type WorkspaceSwitchDeps } from "../ui/workspace-switch.js";
 
 // ---------------------------------------------------------------------------
 // Dependencies
@@ -44,9 +41,7 @@ export interface WorkspaceServiceWithEmitter {
  * Create a WorkspaceService wrapping the shell's workspace state
  * and side-effectful switch logic.
  */
-export function createWorkspaceService(
-  deps: WorkspaceServiceDependencies,
-): WorkspaceServiceWithEmitter {
+export function createWorkspaceService(deps: WorkspaceServiceDependencies): WorkspaceServiceWithEmitter {
   function persistAndSignal(runtime: ShellRuntime): void {
     const result = runtime.workspacePersistence.save(runtime.workspaceManager, runtime.contextState);
     if (result.warning) {
@@ -87,8 +82,7 @@ export function createWorkspaceService(
       if (result.changed) {
         runtime.workspaceManager = result.state;
         // Find the newly created workspace (last in order)
-        const newId =
-          result.state.workspaceOrder[result.state.workspaceOrder.length - 1];
+        const newId = result.state.workspaceOrder[result.state.workspaceOrder.length - 1];
         const ws = result.state.workspaces[newId];
         persistAndSignal(runtime);
         return { id: ws.id, name: ws.name };
@@ -100,10 +94,7 @@ export function createWorkspaceService(
     deleteWorkspace(workspaceId: string): boolean {
       const runtime = deps.getRuntime();
       const wasActive = runtime.workspaceManager.activeWorkspaceId;
-      const result = deleteWorkspacePure(
-        runtime.workspaceManager,
-        workspaceId,
-      );
+      const result = deleteWorkspacePure(runtime.workspaceManager, workspaceId);
       if (result.changed) {
         // If deleting the active workspace, switch BEFORE applying delete state
         // so performWorkspaceSwitch can see targetId !== activeWorkspaceId
@@ -120,11 +111,7 @@ export function createWorkspaceService(
 
     renameWorkspace(workspaceId: string, name: string): boolean {
       const runtime = deps.getRuntime();
-      const result = renameWorkspacePure(
-        runtime.workspaceManager,
-        workspaceId,
-        name,
-      );
+      const result = renameWorkspacePure(runtime.workspaceManager, workspaceId, name);
       if (result.changed) {
         runtime.workspaceManager = result.state;
         persistAndSignal(runtime);

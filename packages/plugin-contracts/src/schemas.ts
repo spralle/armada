@@ -1,25 +1,26 @@
 import { z } from "zod";
 
-import {
-  partialThemePaletteSchema,
-  terminalPaletteSchema,
-} from "./theme-types.js";
+import { partialThemePaletteSchema, terminalPaletteSchema } from "./theme-types.js";
 
 /** Configuration property schema validator (JSON Schema subset). */
-const configurationPropertySchemaSchema: z.ZodType<Record<string, unknown>> = z.lazy(
-  () => z.object({
-    type: z.union([z.string(), z.array(z.string()).readonly()]).optional(),
-    title: z.string().optional(),
-    description: z.string().optional(),
-    default: z.unknown().optional(),
-    enum: z.array(z.unknown()).readonly().optional(),
-    format: z.string().optional(),
-    pattern: z.string().optional(),
-    properties: z.record(z.string(), configurationPropertySchemaSchema).optional(),
-    items: z.union([configurationPropertySchemaSchema, z.array(configurationPropertySchemaSchema).readonly()]).optional(),
-    oneOf: z.array(configurationPropertySchemaSchema).readonly().optional(),
-    anyOf: z.array(configurationPropertySchemaSchema).readonly().optional(),
-  }).passthrough(),
+const configurationPropertySchemaSchema: z.ZodType<Record<string, unknown>> = z.lazy(() =>
+  z
+    .object({
+      type: z.union([z.string(), z.array(z.string()).readonly()]).optional(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      default: z.unknown().optional(),
+      enum: z.array(z.unknown()).readonly().optional(),
+      format: z.string().optional(),
+      pattern: z.string().optional(),
+      properties: z.record(z.string(), configurationPropertySchemaSchema).optional(),
+      items: z
+        .union([configurationPropertySchemaSchema, z.array(configurationPropertySchemaSchema).readonly()])
+        .optional(),
+      oneOf: z.array(configurationPropertySchemaSchema).readonly().optional(),
+      anyOf: z.array(configurationPropertySchemaSchema).readonly().optional(),
+    })
+    .passthrough(),
 );
 
 const nonEmptyString = z.string().trim().min(1);

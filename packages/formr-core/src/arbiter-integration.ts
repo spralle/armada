@@ -1,8 +1,8 @@
-import type { ProductionRule, RuleSession, FiringResult } from '@ghost-shell/arbiter';
-import { createSession } from '@ghost-shell/arbiter';
-import type { FormState } from './state.js';
-import type { RuleWriteIntent } from './contracts.js';
-import { isArbiterInternalPath } from './expression-integration.js';
+import type { FiringResult, ProductionRule, RuleSession } from "@ghost-shell/arbiter";
+import { createSession } from "@ghost-shell/arbiter";
+import type { RuleWriteIntent } from "./contracts.js";
+import { isArbiterInternalPath } from "./expression-integration.js";
+import type { FormState } from "./state.js";
 
 export interface ArbiterFormAdapter {
   readonly session: RuleSession;
@@ -14,10 +14,7 @@ export interface ArbiterFormAdapter {
  * Sync FormState into arbiter session scope, fire, and return writes.
  * Form data fields go to root namespace. $ui fields go to $ui namespace.
  */
-function syncAndFireImpl(
-  session: RuleSession,
-  state: FormState<unknown, unknown>,
-): readonly RuleWriteIntent[] {
+function syncAndFireImpl(session: RuleSession, state: FormState<unknown, unknown>): readonly RuleWriteIntent[] {
   const data = (state.data ?? {}) as Readonly<Record<string, unknown>>;
   const uiState = (state.uiState ?? {}) as Readonly<Record<string, unknown>>;
 
@@ -37,11 +34,11 @@ function syncAndFireImpl(
   return result.changes
     .filter((change) => !isArbiterInternalPath(change.path))
     .map((change) => ({
-    path: change.path,
-    value: change.newValue,
-    mode: (change.newValue === undefined ? 'delete' : 'set') as 'set' | 'delete',
-    ruleId: change.ruleName,
-  }));
+      path: change.path,
+      value: change.newValue,
+      mode: (change.newValue === undefined ? "delete" : "set") as "set" | "delete",
+      ruleId: change.ruleName,
+    }));
 }
 
 /** Create adapter from ProductionRule[] — creates internal session */
@@ -62,9 +59,7 @@ export function createArbiterAdapter(
 }
 
 /** Create adapter from pre-configured RuleSession */
-export function createArbiterAdapterFromSession(
-  session: RuleSession,
-): ArbiterFormAdapter {
+export function createArbiterAdapterFromSession(session: RuleSession): ArbiterFormAdapter {
   return {
     session,
     syncAndFire: (state: FormState<unknown, unknown>) => syncAndFireImpl(session, state),

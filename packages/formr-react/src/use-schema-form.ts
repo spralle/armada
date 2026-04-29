@@ -1,15 +1,11 @@
-import { useMemo } from 'react';
-import { createSchemaForm } from '@ghost-shell/formr-from-schema';
-import type { LayoutNode } from '@ghost-shell/formr-from-schema';
-import type { SchemaFieldInfo, SchemaMetadata } from '@ghost-shell/schema-core';
-import { useForm } from './use-form.js';
-import type { UseFormOptions } from './use-form.js';
-import type { FormApi, ValidatorFn } from '@ghost-shell/formr-core';
-import { useFormSelector } from './use-form-selector.js';
-import { resolveFieldStates, pruneHiddenFields } from './resolve-field-state.js';
-import type { ResolvedFieldState } from './resolve-field-state.js';
+import type { FormApi, ValidatorFn } from "@ghost-shell/formr-core";
+import type { LayoutNode, SchemaFieldInfo, SchemaMetadata } from "@ghost-shell/formr-from-schema";
+import { createSchemaForm } from "@ghost-shell/formr-from-schema";
+import { useMemo } from "react";
+import type { UseFormOptions } from "./use-form.js";
+import { useForm } from "./use-form.js";
 
-export interface UseSchemaFormOptions<TData, TUi> extends Omit<UseFormOptions<TData, TUi>, 'validators'> {
+export interface UseSchemaFormOptions<TData, TUi> extends Omit<UseFormOptions<TData, TUi>, "validators"> {
   readonly validators?: readonly ValidatorFn[];
   readonly layoutOverride?: LayoutNode;
 }
@@ -26,10 +22,7 @@ export interface UseSchemaFormResult<TData, TUi> {
 const EMPTY_UI_STATE: Readonly<Record<string, unknown>> = Object.freeze({});
 
 /** Shallow comparison for string-keyed records to stabilize uiState references */
-function shallowEqualRecord(
-  a: Readonly<Record<string, unknown>>,
-  b: Readonly<Record<string, unknown>>,
-): boolean {
+function shallowEqualRecord(a: Readonly<Record<string, unknown>>, b: Readonly<Record<string, unknown>>): boolean {
   if (a === b) return true;
   const keysA = Object.keys(a);
   const keysB = Object.keys(b);
@@ -50,11 +43,12 @@ export function useSchemaForm<TData, TUi>(
   options?: UseSchemaFormOptions<TData, TUi>,
 ): UseSchemaFormResult<TData, TUi> {
   const prepared = useMemo(
-    () => createSchemaForm(schema, {
-      layoutOverride: options?.layoutOverride,
-      validators: options?.validators,
-    }),
-    [schema, options?.layoutOverride],
+    () =>
+      createSchemaForm(schema, {
+        layoutOverride: options?.layoutOverride,
+        validators: options?.validators,
+      }),
+    [schema, options?.layoutOverride, options?.validators],
   );
 
   const form = useForm<TData, TUi>({
@@ -63,10 +57,7 @@ export function useSchemaForm<TData, TUi>(
     validators: prepared.validators,
   });
 
-  const fieldPaths = useMemo(
-    () => prepared.fields.map((f: SchemaFieldInfo) => f.path),
-    [prepared.fields],
-  );
+  const fieldPaths = useMemo(() => prepared.fields.map((f: SchemaFieldInfo) => f.path), [prepared.fields]);
 
   // Select uiState with shallow equality to avoid recomputing fieldStates every render.
   // FormState.uiState is typed as TUi; we treat it as a string-keyed record for arbiter lookups.
@@ -76,10 +67,7 @@ export function useSchemaForm<TData, TUi>(
     shallowEqualRecord,
   );
 
-  const fieldStates = useMemo(
-    () => resolveFieldStates(uiState, fieldPaths),
-    [uiState, fieldPaths],
-  );
+  const fieldStates = useMemo(() => resolveFieldStates(uiState, fieldPaths), [uiState, fieldPaths]);
 
   const layout = useMemo(
     () => pruneHiddenFields(prepared.layout, fieldStates) ?? { ...prepared.layout, children: [] },

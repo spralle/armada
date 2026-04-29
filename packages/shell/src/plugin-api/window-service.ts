@@ -56,9 +56,7 @@ export interface WindowServiceWithEmitter {
  *
  * Returns the service plus shell-side wiring hooks.
  */
-export function createWindowService(
-  deps: WindowServiceDependencies,
-): WindowServiceWithEmitter {
+export function createWindowService(deps: WindowServiceDependencies): WindowServiceWithEmitter {
   const windowsEmitter = createEventEmitter<void>();
 
   const service: WindowService = {
@@ -97,10 +95,7 @@ export function createWindowService(
 
     onDidChangeWindows: windowsEmitter.event,
 
-    showQuickPick<T extends QuickPickItem>(
-      items: T[],
-      options?: QuickPickOptions,
-    ): Promise<T | undefined> {
+    showQuickPick<T extends QuickPickItem>(items: T[], options?: QuickPickOptions): Promise<T | undefined> {
       return new Promise<T | undefined>((resolve) => {
         const controller = createQuickPickController<T>();
 
@@ -145,10 +140,7 @@ export function createWindowService(
       return undefined;
     },
 
-    showNotification(
-      message: string,
-      type?: "info" | "warning" | "error",
-    ): void {
+    showNotification(message: string, type?: "info" | "warning" | "error"): void {
       console.warn(`[GhostShell] showNotification is not yet implemented: [${type ?? "info"}] ${message}`);
     },
   };

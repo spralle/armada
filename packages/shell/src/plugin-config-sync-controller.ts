@@ -33,7 +33,10 @@ export function deriveNamespace(pluginId: string): string {
     return `${kebabToCamel(scope)}.${kebabToCamel(name)}`;
   }
 
-  return pluginId.split(".").map((segment) => kebabToCamel(segment)).join(".");
+  return pluginId
+    .split(".")
+    .map((segment) => kebabToCamel(segment))
+    .join(".");
 }
 
 type PluginKeyBinding = {
@@ -78,12 +81,16 @@ export function createPluginConfigSyncController(
     start(): () => void {
       const disposers: Array<() => void> = [];
       for (const binding of bindings) {
-        disposers.push(options.configurationService.onChange(binding.objectKey, () => {
-          void applyForPlugin(binding.pluginId);
-        }));
-        disposers.push(options.configurationService.onChange(binding.leafKey, () => {
-          void applyForPlugin(binding.pluginId);
-        }));
+        disposers.push(
+          options.configurationService.onChange(binding.objectKey, () => {
+            void applyForPlugin(binding.pluginId);
+          }),
+        );
+        disposers.push(
+          options.configurationService.onChange(binding.leafKey, () => {
+            void applyForPlugin(binding.pluginId);
+          }),
+        );
       }
 
       let disposed = false;
@@ -100,10 +107,7 @@ export function createPluginConfigSyncController(
   };
 }
 
-function createBinding(
-  pluginId: string,
-  deriveNamespace: (pluginId: string) => string,
-): PluginKeyBinding {
+function createBinding(pluginId: string, deriveNamespace: (pluginId: string) => string): PluginKeyBinding {
   const namespace = deriveNamespace(pluginId);
   const objectKey = `ghost.plugins.${namespace}`;
   const leafKey = `${objectKey}.enabled`;

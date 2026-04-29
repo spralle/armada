@@ -132,7 +132,7 @@ export function relativeLuminance(hex: string): number {
   const rgb = hexToRgb(hex);
   const linearize = (c: number): number => {
     const sRgb = c / 255;
-    return sRgb <= 0.03928 ? sRgb / 12.92 : Math.pow((sRgb + 0.055) / 1.055, 2.4);
+    return sRgb <= 0.03928 ? sRgb / 12.92 : ((sRgb + 0.055) / 1.055) ** 2.4;
   };
   return 0.2126 * linearize(rgb.r) + 0.7152 * linearize(rgb.g) + 0.0722 * linearize(rgb.b);
 }

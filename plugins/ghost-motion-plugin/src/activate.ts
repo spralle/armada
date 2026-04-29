@@ -1,5 +1,5 @@
-import type { GhostMotionConfig } from "./config-types.js";
 import { DEFAULT_MOTION_CONFIG } from "./config-defaults.js";
+import type { GhostMotionConfig } from "./config-types.js";
 import { generateMotionCss } from "./css-generator.js";
 import { loadMotionPreference, saveMotionPreference } from "./motion-persistence.js";
 

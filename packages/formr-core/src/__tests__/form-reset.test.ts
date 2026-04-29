@@ -1,29 +1,33 @@
-import { describe, it, expect } from 'bun:test';
-import { createForm } from '../create-form.js';
+import { describe, expect, it } from "bun:test";
+import { createForm } from "../create-form.js";
 
-describe('form.reset()', () => {
-  it('restores data to initial values', () => {
-    const form = createForm({ initialData: { name: 'Alice' } });
-    form.setValue('name', 'Bob');
-    expect((form.getState().data as Record<string, unknown>).name).toBe('Bob');
+describe("form.reset()", () => {
+  it("restores data to initial values", () => {
+    const form = createForm({ initialData: { name: "Alice" } });
+    form.setValue("name", "Bob");
+    expect((form.getState().data as Record<string, unknown>).name).toBe("Bob");
 
     form.reset();
-    expect((form.getState().data as Record<string, unknown>).name).toBe('Alice');
+    expect((form.getState().data as Record<string, unknown>).name).toBe("Alice");
     form.dispose();
   });
 
-  it('clears all validation issues', () => {
+  it("clears all validation issues", () => {
     const form = createForm({
-      initialData: { name: '' },
-      validators: [() => [{
-          code: 'required',
-          message: 'Required',
-          severity: 'error' as const,
-          path: { namespace: 'data' as const, segments: ['name'], canonical: 'name' },
-          source: { origin: 'function-validator' as const, validatorId: 'v1' },
-        }]],
+      initialData: { name: "" },
+      validators: [
+        () => [
+          {
+            code: "required",
+            message: "Required",
+            severity: "error" as const,
+            path: { namespace: "data" as const, segments: ["name"], canonical: "name" },
+            source: { origin: "function-validator" as const, validatorId: "v1" },
+          },
+        ],
+      ],
     });
-    form.setValue('name', 'x');
+    form.setValue("name", "x");
     expect(form.getState().issues.length).toBeGreaterThan(0);
 
     form.reset();
@@ -31,9 +35,9 @@ describe('form.reset()', () => {
     form.dispose();
   });
 
-  it('clears fieldMeta (touched/dirty flags reset)', () => {
-    const form = createForm({ initialData: { name: 'Alice' } });
-    form.setValue('name', 'Bob');
+  it("clears fieldMeta (touched/dirty flags reset)", () => {
+    const form = createForm({ initialData: { name: "Alice" } });
+    form.setValue("name", "Bob");
     expect(Object.keys(form.getState().fieldMeta).length).toBeGreaterThan(0);
 
     form.reset();
@@ -41,8 +45,8 @@ describe('form.reset()', () => {
     form.dispose();
   });
 
-  it('clears submitted flag', async () => {
-    const form = createForm({ initialData: { name: 'Alice' } });
+  it("clears submitted flag", async () => {
+    const form = createForm({ initialData: { name: "Alice" } });
     await form.submit();
     expect(form.getState().meta.submitted).toBe(true);
 
@@ -51,9 +55,9 @@ describe('form.reset()', () => {
     form.dispose();
   });
 
-  it('notifies subscribers', () => {
-    const form = createForm({ initialData: { name: 'Alice' } });
-    form.setValue('name', 'Bob');
+  it("notifies subscribers", () => {
+    const form = createForm({ initialData: { name: "Alice" } });
+    form.setValue("name", "Bob");
 
     const notifications: unknown[] = [];
     form.subscribe((state) => notifications.push(state));
@@ -63,51 +67,51 @@ describe('form.reset()', () => {
     form.dispose();
   });
 
-  it('reset({data: newData}) resets to new initial values', () => {
-    const form = createForm({ initialData: { name: 'Alice' } });
-    form.setValue('name', 'Bob');
+  it("reset({data: newData}) resets to new initial values", () => {
+    const form = createForm({ initialData: { name: "Alice" } });
+    form.setValue("name", "Bob");
 
-    form.reset({ data: { name: 'Charlie' } });
-    expect((form.getState().data as Record<string, unknown>).name).toBe('Charlie');
+    form.reset({ data: { name: "Charlie" } });
+    expect((form.getState().data as Record<string, unknown>).name).toBe("Charlie");
     form.dispose();
   });
 
-  it('after reset({data: newData}), isDirty() uses new baseline', () => {
-    const form = createForm({ initialData: { name: 'Alice' } });
-    form.reset({ data: { name: 'Charlie' } });
+  it("after reset({data: newData}), isDirty() uses new baseline", () => {
+    const form = createForm({ initialData: { name: "Alice" } });
+    form.reset({ data: { name: "Charlie" } });
 
-    const field = form.field('name');
+    const field = form.field("name");
     expect(field.isDirty()).toBe(false);
 
-    form.setValue('name', 'Dave');
+    form.setValue("name", "Dave");
     expect(field.isDirty()).toBe(true);
 
-    form.setValue('name', 'Charlie');
+    form.setValue("name", "Charlie");
     expect(field.isDirty()).toBe(false);
     form.dispose();
   });
 
-  it('after reset(), field.isTouched() returns false', () => {
-    const form = createForm({ initialData: { name: 'Alice' } });
-    const field = form.field('name');
+  it("after reset(), field.isTouched() returns false", () => {
+    const form = createForm({ initialData: { name: "Alice" } });
+    const field = form.field("name");
     field.markTouched();
     expect(field.isTouched()).toBe(true);
 
     form.reset();
     // Field cache cleared, get fresh field
-    const field2 = form.field('name');
+    const field2 = form.field("name");
     expect(field2.isTouched()).toBe(false);
     form.dispose();
   });
 
-  it('after reset(), field.isDirty() returns false', () => {
-    const form = createForm({ initialData: { name: 'Alice' } });
-    form.setValue('name', 'Bob');
-    const field = form.field('name');
+  it("after reset(), field.isDirty() returns false", () => {
+    const form = createForm({ initialData: { name: "Alice" } });
+    form.setValue("name", "Bob");
+    const field = form.field("name");
     expect(field.isDirty()).toBe(true);
 
     form.reset();
-    const field2 = form.field('name');
+    const field2 = form.field("name");
     expect(field2.isDirty()).toBe(false);
     form.dispose();
   });

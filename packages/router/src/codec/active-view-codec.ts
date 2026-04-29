@@ -1,13 +1,11 @@
-import type { UrlCodecStrategy, UrlCodecState, DecodedShellState } from "./codec-types.js";
+import type { DecodedShellState, UrlCodecState, UrlCodecStrategy } from "./codec-types.js";
 
 const STATE_PARAM = "_s";
 
 /** Base64url encode a string, resilient to missing `btoa`. */
 function encodeBase64Url(data: string): string {
   try {
-    const base64 = typeof btoa === "function"
-      ? btoa(data)
-      : Buffer.from(data, "utf-8").toString("base64");
+    const base64 = typeof btoa === "function" ? btoa(data) : Buffer.from(data, "utf-8").toString("base64");
     return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   } catch {
     return "";
@@ -19,9 +17,7 @@ function decodeBase64Url(encoded: string): string | null {
   try {
     const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
     const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
-    return typeof atob === "function"
-      ? atob(padded)
-      : Buffer.from(padded, "base64").toString("utf-8");
+    return typeof atob === "function" ? atob(padded) : Buffer.from(padded, "base64").toString("utf-8");
   } catch {
     return null;
   }
@@ -47,13 +43,13 @@ export function createActiveViewCodec(): UrlCodecStrategy {
 
     encode(state: UrlCodecState, baseUrl: URL): URL {
       if (!state.activeDefinitionId) {
-        const url = new URL(baseUrl.origin + "/");
+        const url = new URL(`${baseUrl.origin}/`);
         const compressed = encodeCompressedState(state);
         if (compressed) url.searchParams.set(STATE_PARAM, compressed);
         return url;
       }
 
-      const url = new URL(baseUrl.origin + "/" + state.activeDefinitionId);
+      const url = new URL(`${baseUrl.origin}/${state.activeDefinitionId}`);
 
       for (const [key, value] of Object.entries(state.activeArgs)) {
         url.searchParams.set(key, value);
@@ -79,7 +75,7 @@ export function createActiveViewCodec(): UrlCodecStrategy {
       }
 
       const stateParam = url.searchParams.get(STATE_PARAM);
-      let fullState: DecodedShellState["fullState"] | undefined;
+      let _fullState: DecodedShellState["fullState"] | undefined;
       let workspaceId: string | undefined;
 
       if (stateParam) {

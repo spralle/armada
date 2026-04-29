@@ -1,12 +1,12 @@
-import type { SchemaIngestionResult } from './types.js';
-import { isStandardSchema, isZodSchema, isZodV4Schema } from './detect.js';
-import { extractFromZod } from './adapters/zod-extractor.js';
-import { extractFromZodV4 } from './adapters/zod4-extractor.js';
-import { extractFromJsonSchema } from './adapters/json-schema-extractor.js';
-import { isJsonSchema } from './adapters/json-schema-detect.js';
-import { SchemaError } from './errors.js';
-import type { JsonSchema } from './adapters/json-schema-types.js';
-import { findExtractor, createValidationOnlyResult } from './extractor-registry.js';
+import { extractFromJsonSchema } from "./adapters/json-schema-extractor.js";
+import type { JsonSchema } from "./adapters/json-schema-types.js";
+import { isJsonSchema } from "./adapters/json-schema-validator.js";
+import { extractFromZod } from "./adapters/zod-extractor.js";
+import { extractFromZodV4 } from "./adapters/zod4-extractor.js";
+import { isStandardSchema, isZodSchema, isZodV4Schema } from "./detect.js";
+import { FromSchemaError } from "./errors.js";
+import { createValidationOnlyResult, findExtractor } from "./extractor-registry.js";
+import type { SchemaIngestionResult } from "./types.js";
 
 export function ingestSchema(schema: unknown): SchemaIngestionResult {
   if (isStandardSchema(schema) && isZodSchema(schema)) {
@@ -17,7 +17,7 @@ export function ingestSchema(schema: unknown): SchemaIngestionResult {
     const extractor = findExtractor(schema);
     if (extractor) {
       const fields = extractor.extract(schema);
-      return { fields, metadata: { vendor: schema['~standard'].vendor } };
+      return { fields, metadata: { vendor: schema["~standard"].vendor } };
     }
     return createValidationOnlyResult(schema);
   }
@@ -26,5 +26,5 @@ export function ingestSchema(schema: unknown): SchemaIngestionResult {
     return extractFromJsonSchema(schema as JsonSchema);
   }
 
-  throw new SchemaError('SCHEMA_UNSUPPORTED', 'Schema does not conform to Standard Schema v1 or JSON Schema');
+  throw new FromSchemaError("FORMR_SCHEMA_UNSUPPORTED", "Schema does not conform to Standard Schema v1 or JSON Schema");
 }

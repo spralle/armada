@@ -6,12 +6,7 @@ export const linkRenderer: CellRendererFn = (value, _row, props) => {
   const label = (props?.label as string) ?? str;
   const href = str.includes("@") && !str.startsWith("mailto:") ? `mailto:${str}` : str;
   return (
-    <a
-      href={href}
-      className="text-primary underline"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
+    <a href={href} className="text-primary underline" target="_blank" rel="noopener noreferrer">
       {label}
     </a>
   );

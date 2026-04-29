@@ -1,9 +1,9 @@
-import type { ValidatorFn, ValidationIssue } from '@ghost-shell/formr-core';
-import type { JsonSchema } from '@ghost-shell/schema-core';
-import { dereferenceSchema, isObject, checkType } from '@ghost-shell/schema-core';
-import { makeIssue as makeIssueBase } from '../utils.js';
+import type { ValidationIssue, ValidatorFn } from "@ghost-shell/formr-core";
+import { checkType, isObject, makeIssue as makeIssueBase } from "../utils.js";
+import { dereferenceSchema } from "./json-schema-deref.js";
+import type { JsonSchema } from "./json-schema-types.js";
 
-const ADAPTER_ORIGIN = 'json-schema-adapter' as const;
+const ADAPTER_ORIGIN = "json-schema-adapter" as const;
 
 function makeIssue(
   code: string,
@@ -14,9 +14,31 @@ function makeIssue(
   return makeIssueBase(code, message, segments, stage, ADAPTER_ORIGIN);
 }
 
-export function createJsonSchemaValidator(
-  rawSchema: JsonSchema,
-): ValidatorFn {
+/** Detect if an unknown value looks like a JSON Schema object */
+export function isJsonSchema(value: unknown): value is JsonSchema {
+  if (typeof value !== "object" || value === null) return false;
+  const obj = value as Record<string, unknown>;
+
+  const hasSchemaMarker = "$schema" in obj;
+  const hasProperties = "properties" in obj && typeof obj["properties"] === "object";
+  const hasItems = "items" in obj && typeof obj["items"] === "object";
+  const hasEnum = "enum" in obj && Array.isArray(obj["enum"]);
+  const hasType = "type" in obj && (typeof obj["type"] === "string" || Array.isArray(obj["type"]));
+
+  if (hasSchemaMarker) return true;
+  if (hasProperties) return true;
+  if (hasItems) return true;
+  if (hasEnum) return true;
+  if (hasType && typeof obj["type"] === "string") {
+    const knownTypes = ["string", "number", "integer", "boolean", "object", "array", "null"];
+    if (knownTypes.includes(obj["type"] as string)) return true;
+  }
+  if (hasType && Array.isArray(obj["type"])) return true;
+
+  return false;
+}
+
+export function createJsonSchemaValidator(rawSchema: JsonSchema): ValidatorFn {
   const schema = dereferenceSchema(rawSchema);
   return (input) => {
     const issues: ValidationIssue[] = [];
@@ -71,7 +93,7 @@ function validateType(
   const type = schema.type as string;
   const valid = checkType(type, data);
   if (!valid) {
-    issues.push(makeIssue('INVALID_TYPE', `Expected type "${type}"`, segments, stage));
+    issues.push(makeIssue("INVALID_TYPE", `Expected type "${type}"`, segments, stage));
   }
 }
 
@@ -82,14 +104,12 @@ function validateArrayType(
   stage: string | undefined,
   issues: ValidationIssue[],
 ): void {
-  if (data === null && types.includes('null')) return;
+  if (data === null && types.includes("null")) return;
   const matched = types.some((t) => checkType(t, data));
   if (!matched) {
-    issues.push(makeIssue('INVALID_TYPE', `Expected one of types: ${types.join(', ')}`, segments, stage));
+    issues.push(makeIssue("INVALID_TYPE", `Expected one of types: ${types.join(", ")}`, segments, stage));
   }
 }
-
-
 
 function validateEnum(
   schema: JsonSchema,
@@ -100,7 +120,7 @@ function validateEnum(
 ): void {
   if (!schema.enum) return;
   if (!schema.enum.includes(data)) {
-    issues.push(makeIssue('INVALID_ENUM', `Value must be one of: ${schema.enum.join(', ')}`, segments, stage));
+    issues.push(makeIssue("INVALID_ENUM", `Value must be one of: ${schema.enum.join(", ")}`, segments, stage));
   }
 }
 
@@ -113,7 +133,7 @@ function validateConst(
 ): void {
   if (schema.const === undefined) return;
   if (!deepEqual(schema.const, data)) {
-    issues.push(makeIssue('INVALID_CONST', `Value must equal: ${JSON.stringify(schema.const)}`, segments, stage));
+    issues.push(makeIssue("INVALID_CONST", `Value must equal: ${JSON.stringify(schema.const)}`, segments, stage));
   }
 }
 
@@ -121,7 +141,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (typeof a !== typeof b) return false;
   if (a === null || b === null) return false;
-  if (typeof a !== 'object') return false;
+  if (typeof a !== "object") return false;
   if (Array.isArray(a) !== Array.isArray(b)) return false;
 
   const aObj = a as Record<string, unknown>;
@@ -139,10 +159,10 @@ function validateConstraints(
   stage: string | undefined,
   issues: ValidationIssue[],
 ): void {
-  if (typeof data === 'number') {
+  if (typeof data === "number") {
     validateNumericConstraints(schema, data, segments, stage, issues);
   }
-  if (typeof data === 'string') {
+  if (typeof data === "string") {
     validateStringConstraints(schema, data, segments, stage, issues);
   }
 }
@@ -155,16 +175,16 @@ function validateNumericConstraints(
   issues: ValidationIssue[],
 ): void {
   if (schema.minimum !== undefined && value < schema.minimum) {
-    issues.push(makeIssue('TOO_SMALL', `Value must be >= ${schema.minimum}`, segments, stage));
+    issues.push(makeIssue("TOO_SMALL", `Value must be >= ${schema.minimum}`, segments, stage));
   }
   if (schema.maximum !== undefined && value > schema.maximum) {
-    issues.push(makeIssue('TOO_LARGE', `Value must be <= ${schema.maximum}`, segments, stage));
+    issues.push(makeIssue("TOO_LARGE", `Value must be <= ${schema.maximum}`, segments, stage));
   }
   if (schema.exclusiveMinimum !== undefined && value <= schema.exclusiveMinimum) {
-    issues.push(makeIssue('TOO_SMALL', `Value must be > ${schema.exclusiveMinimum}`, segments, stage));
+    issues.push(makeIssue("TOO_SMALL", `Value must be > ${schema.exclusiveMinimum}`, segments, stage));
   }
   if (schema.exclusiveMaximum !== undefined && value >= schema.exclusiveMaximum) {
-    issues.push(makeIssue('TOO_LARGE', `Value must be < ${schema.exclusiveMaximum}`, segments, stage));
+    issues.push(makeIssue("TOO_LARGE", `Value must be < ${schema.exclusiveMaximum}`, segments, stage));
   }
 }
 
@@ -176,13 +196,13 @@ function validateStringConstraints(
   issues: ValidationIssue[],
 ): void {
   if (schema.minLength !== undefined && value.length < schema.minLength) {
-    issues.push(makeIssue('TOO_SHORT', `String must be at least ${schema.minLength} characters`, segments, stage));
+    issues.push(makeIssue("TOO_SHORT", `String must be at least ${schema.minLength} characters`, segments, stage));
   }
   if (schema.maxLength !== undefined && value.length > schema.maxLength) {
-    issues.push(makeIssue('TOO_LONG', `String must be at most ${schema.maxLength} characters`, segments, stage));
+    issues.push(makeIssue("TOO_LONG", `String must be at most ${schema.maxLength} characters`, segments, stage));
   }
   if (schema.pattern !== undefined && !new RegExp(schema.pattern).test(value)) {
-    issues.push(makeIssue('PATTERN_MISMATCH', `String must match pattern: ${schema.pattern}`, segments, stage));
+    issues.push(makeIssue("PATTERN_MISMATCH", `String must match pattern: ${schema.pattern}`, segments, stage));
   }
 }
 
@@ -197,7 +217,7 @@ function validateRequiredFields(
   if (!schema.required) return;
   for (const field of schema.required) {
     if (!(field in data) || data[field] === undefined) {
-      issues.push(makeIssue('REQUIRED', `Field "${field}" is required`, [...segments, field], stage));
+      issues.push(makeIssue("REQUIRED", `Field "${field}" is required`, [...segments, field], stage));
     }
   }
 }
@@ -250,12 +270,14 @@ function validateDependentRequired(
     if (trigger in data && data[trigger] !== undefined) {
       for (const dep of deps) {
         if (!(dep in data) || data[dep] === undefined) {
-          issues.push(makeIssue(
-            'DEPENDENT_REQUIRED',
-            `Field "${dep}" is required when "${trigger}" is present`,
-            [...segments, dep],
-            stage,
-          ));
+          issues.push(
+            makeIssue(
+              "DEPENDENT_REQUIRED",
+              `Field "${dep}" is required when "${trigger}" is present`,
+              [...segments, dep],
+              stage,
+            ),
+          );
         }
       }
     }
@@ -263,11 +285,11 @@ function validateDependentRequired(
 }
 
 function validateFormatDate(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !isNaN(Date.parse(value));
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
 }
 
 function validateFormatDateTime(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) && !isNaN(Date.parse(value));
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) && !Number.isNaN(Date.parse(value));
 }
 
 export { validateFormatDate, validateFormatDateTime };

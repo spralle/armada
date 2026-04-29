@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { createPluginConfigSyncController } from "../dist-test/src/plugin-config-sync-controller.js";
 
 function createRegistry(pluginIds) {
@@ -63,9 +63,10 @@ function createConfigService(initial = {}) {
 }
 
 function deriveNamespace(pluginId) {
-  return pluginId.split(".").map((segment) =>
-    segment.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
-  ).join(".");
+  return pluginId
+    .split(".")
+    .map((segment) => segment.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()))
+    .join(".");
 }
 
 test("applySnapshot respects config enable flags", async () => {

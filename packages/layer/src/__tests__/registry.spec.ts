@@ -1,6 +1,5 @@
-import { LayerRegistry, BUILTIN_LAYERS } from "../registry.js";
-import { KeyboardInteractivity, InputBehavior } from "@ghost-shell/contracts/layer";
 import type { PluginLayerSurfaceContribution } from "@ghost-shell/contracts/layer";
+import { LayerRegistry } from "../registry.js";
 
 type TestCase = { name: string; run: () => void };
 const tests: TestCase[] = [];
@@ -54,7 +53,11 @@ test("built-in layers have correct names in order", () => {
   const reg = new LayerRegistry();
   reg.registerBuiltinLayers();
   const names = reg.getOrderedLayers().map((l) => l.name);
-  assertDeepEqual(names, ["background", "bottom", "main", "floating", "notification", "modal", "overlay"], "names should match");
+  assertDeepEqual(
+    names,
+    ["background", "bottom", "main", "floating", "notification", "modal", "overlay"],
+    "names should match",
+  );
 });
 
 // --- Plugin layer registration ---
@@ -74,7 +77,7 @@ test("registerPluginLayers denies name conflicts with built-ins", () => {
   const result = reg.registerPluginLayers("plugin-a", [{ name: "main", zOrder: 999 }]);
   assertEqual(result.registered.length, 0, "should register 0 layers");
   assertEqual(result.denied.length, 1, "should deny 1 layer");
-  assertEqual(result.denied[0]!.name, "main", "denied name should be 'main'");
+  assertEqual(result.denied[0]?.name, "main", "denied name should be 'main'");
 });
 
 test("registerPluginLayers denies name conflicts with other plugins", () => {
@@ -93,8 +96,8 @@ test("registerPluginLayers denies z-order conflicts with built-ins", () => {
   const result = reg.registerPluginLayers("plugin-a", [{ name: "custom", zOrder: 200 }]);
   assertEqual(result.registered.length, 0, "should register 0 layers");
   assertEqual(result.denied.length, 1, "should deny 1 layer");
-  assertEqual(result.denied[0]!.reason.includes("z-order 200"), true, "reason should mention z-order");
-  assertEqual(result.denied[0]!.reason.includes("main"), true, "reason should mention conflicting layer");
+  assertEqual(result.denied[0]?.reason.includes("z-order 200"), true, "reason should mention z-order");
+  assertEqual(result.denied[0]?.reason.includes("main"), true, "reason should mention conflicting layer");
 });
 
 test("registerPluginLayers denies z-order conflicts with other plugins", () => {
@@ -104,8 +107,8 @@ test("registerPluginLayers denies z-order conflicts with other plugins", () => {
   const result = reg.registerPluginLayers("plugin-b", [{ name: "custom-b", zOrder: 150 }]);
   assertEqual(result.registered.length, 0, "should register 0 layers");
   assertEqual(result.denied.length, 1, "should deny 1 layer");
-  assertEqual(result.denied[0]!.reason.includes("z-order 150"), true, "reason should mention z-order");
-  assertEqual(result.denied[0]!.reason.includes("custom-a"), true, "reason should mention conflicting layer");
+  assertEqual(result.denied[0]?.reason.includes("z-order 150"), true, "reason should mention z-order");
+  assertEqual(result.denied[0]?.reason.includes("custom-a"), true, "reason should mention conflicting layer");
 });
 
 // --- getOrderedLayers sorting ---
@@ -116,7 +119,7 @@ test("getOrderedLayers includes plugin layers sorted by zOrder", () => {
   reg.registerPluginLayers("plugin-a", [{ name: "custom", zOrder: 150 }]);
   const layers = reg.getOrderedLayers();
   assertEqual(layers.length, 8, "should have 8 layers");
-  assertEqual(layers[2]!.name, "custom", "custom layer at z=150 should be third");
+  assertEqual(layers[2]?.name, "custom", "custom layer at z=150 should be third");
 });
 
 // --- Cascade removal ---
@@ -201,7 +204,7 @@ test("getSurfacesForLayer returns matching surfaces", () => {
   reg.registerSurface("plugin-a", makeSurface({ id: "s2", layer: "notification" }));
   const surfaces = reg.getSurfacesForLayer("floating");
   assertEqual(surfaces.length, 1, "should have 1 surface on floating");
-  assertEqual(surfaces[0]!.surface.id, "s1", "should be s1");
+  assertEqual(surfaces[0]?.surface.id, "s1", "should be s1");
 });
 
 // --- Session lock check integration ---
@@ -238,7 +241,9 @@ test("onSurfacesRemoved fires on unregisterPluginLayers", () => {
   reg.registerSurface("plugin-b", makeSurface({ id: "s2", layer: "custom" }));
 
   const removedEntries: Array<{ surfaceId: string; pluginId: string }> = [];
-  reg.setOnSurfacesRemoved((entries) => { removedEntries.push(...entries); });
+  reg.setOnSurfacesRemoved((entries) => {
+    removedEntries.push(...entries);
+  });
 
   reg.unregisterPluginLayers("plugin-a");
   assertEqual(removedEntries.length, 2, "should fire callback with 2 entries");
@@ -251,11 +256,13 @@ test("onSurfacesRemoved fires on unregisterSurfaces", () => {
   reg.registerSurface("plugin-a", makeSurface({ id: "s2", layer: "notification" }));
 
   const removedEntries: Array<{ surfaceId: string; pluginId: string }> = [];
-  reg.setOnSurfacesRemoved((entries) => { removedEntries.push(...entries); });
+  reg.setOnSurfacesRemoved((entries) => {
+    removedEntries.push(...entries);
+  });
 
   reg.unregisterSurfaces("plugin-a");
   assertEqual(removedEntries.length, 2, "should fire callback with 2 entries");
-  assertEqual(removedEntries[0]!.pluginId, "plugin-a", "pluginId should match");
+  assertEqual(removedEntries[0]?.pluginId, "plugin-a", "pluginId should match");
 });
 
 test("no onSurfacesRemoved callback set — no error on unregister", () => {

@@ -11,12 +11,12 @@
  * ```
  */
 export type PlacementHint =
-  | "tab"              // New tab in active stack
-  | "tab-background"   // New tab, don't activate
-  | "replace"          // Replace current tab content
-  | "split"            // New split pane
-  | "window"           // Pop-out window
-  | "auto";            // Let shell decide based on context
+  | "tab" // New tab in active stack
+  | "tab-background" // New tab, don't activate
+  | "replace" // Replace current tab content
+  | "split" // New split pane
+  | "window" // Pop-out window
+  | "auto"; // Let shell decide based on context
 
 /**
  * Navigation target — either a direct route reference or an intent for cross-plugin resolution.
@@ -70,10 +70,10 @@ export interface NavigationHints {
  * "reuse" and "new-workspace" are reserved for future BroadcastChannel-based resolution.
  */
 export type LinkOpenPolicy =
-  | "reuse"           // Find existing Ghost window, navigate there (future)
-  | "new-workspace"   // Open new workspace in existing Ghost window (future)
-  | "new-instance"    // Open new browser tab with fresh Ghost instance
-  | "auto";           // Try reuse → fall back to new-instance (future)
+  | "reuse" // Find existing Ghost window, navigate there (future)
+  | "new-workspace" // Open new workspace in existing Ghost window (future)
+  | "new-instance" // Open new browser tab with fresh Ghost instance
+  | "auto"; // Try reuse → fall back to new-instance (future)
 
 /**
  * Result of a navigation operation.

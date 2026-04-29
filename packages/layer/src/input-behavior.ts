@@ -45,10 +45,7 @@ export function applyInputBehavior(element: HTMLDivElement, inputBehavior: Input
  * - `exclusive`: surface auto-focuses and should be paired with
  *   `pushExclusive` from the keyboard exclusive manager
  */
-export function applyKeyboardInteractivity(
-  element: HTMLDivElement,
-  keyboard: KeyboardInteractivity,
-): void {
+export function applyKeyboardInteractivity(element: HTMLDivElement, keyboard: KeyboardInteractivity): void {
   switch (keyboard) {
     case KeyboardInteractivity.None:
       element.setAttribute("tabindex", "-1");

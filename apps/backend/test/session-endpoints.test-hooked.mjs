@@ -1,14 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-
-import { createSessionRoutes } from "../dist-test/src/session-endpoints.js";
+import test from "node:test";
 import { createOverrideSessionProvider } from "@weaver/config-sessions";
+import { createSessionRoutes } from "../dist-test/src/session-endpoints.js";
 
 /** Helper to invoke a route handler by matching against the route list. */
 async function callRoute(routes, method, pathname, bodyValue, headers = {}) {
-  const body = bodyValue !== undefined
-    ? () => Promise.resolve(bodyValue)
-    : () => Promise.resolve(null);
+  const body = bodyValue !== undefined ? () => Promise.resolve(bodyValue) : () => Promise.resolve(null);
   for (const route of routes) {
     const match = pathname.match(route.pattern);
     if (!match || route.method !== method) continue;

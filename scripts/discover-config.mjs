@@ -2,25 +2,15 @@
 // Standalone discovery scanner for *.config.ts view configuration files
 
 import { readdir } from "node:fs/promises";
-import { join, relative, basename, sep } from "node:path";
+import { basename, join, relative, sep } from "node:path";
 
 /**
  * @typedef {{ filePath: string, relativePath: string, viewId: string }} DiscoveredViewConfig
  */
 
-const EXCLUDED_DIRS = new Set([
-  "node_modules",
-  "dist",
-  "dist-test",
-  ".git",
-  ".beads",
-]);
+const EXCLUDED_DIRS = new Set(["node_modules", "dist", "dist-test", ".git", ".beads"]);
 
-const EXCLUDED_FILES = new Set([
-  "vite.config.ts",
-  "vitest.config.ts",
-  "tailwind.config.ts",
-]);
+const EXCLUDED_FILES = new Set(["vite.config.ts", "vitest.config.ts", "tailwind.config.ts"]);
 
 /**
  * Discover *.config.ts files recursively, excluding tool configs.
@@ -39,9 +29,7 @@ export async function discoverViewConfigs(rootDirs, options = {}) {
     try {
       entries = await readdir(rootDir, { withFileTypes: true });
     } catch {
-      console.warn(
-        `[discover-config] Warning: directory not found, skipping: ${rootDir}`,
-      );
+      console.warn(`[discover-config] Warning: directory not found, skipping: ${rootDir}`);
       continue;
     }
     await scanDir(rootDir, rootDir, entries, suffix, results);

@@ -1,16 +1,18 @@
 import {
   createIntentRuntime,
   type IntentResolutionDelegate,
-  type IntentActionMatch,
-  type ShellIntent,
-  type IntentResolutionTrace,
   type IntentResolutionOutcome,
+  type ShellIntent,
 } from "@ghost-shell/intents";
-import { createCatalog, createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
+import { type createCatalog, createContract } from "./context-state.spec-intent-runtime-fixtures.js";
 
 function createMockDelegate(overrides: Partial<IntentResolutionDelegate> = {}): IntentResolutionDelegate & {
-  calls: { activatePlugin: { pluginId: string; trigger: { type: string; id: string } }[]; announce: string[]; showChooser: number };
+  calls: {
+    activatePlugin: { pluginId: string; trigger: { type: string; id: string } }[];
+    announce: string[];
+    showChooser: number;
+  };
 } {
   const calls = {
     activatePlugin: [] as { pluginId: string; trigger: { type: string; id: string } }[],
@@ -336,7 +338,7 @@ export function registerIntentRuntimeIntegrationSpecs(harness: SpecHarness): voi
     const tankerTrace = outcome.trace.actions.find((a) => a.actionId === "orders.assign-tanker");
     assertTruthy(tankerTrace, "tanker action present in trace");
     assertEqual(tankerTrace?.predicateMatched, false, "tanker predicate did not match");
-    assertTruthy(tankerTrace?.failedPredicates.length ?? 0 > 0, "tanker has failed predicates in trace");
+    assertTruthy((tankerTrace?.failedPredicates.length ?? 0) > 0, "tanker has failed predicates in trace");
 
     assertTracePopulated(harness, outcome, "domain.orders.assign", "scenario6");
     assertEqual(outcome.trace.matched.length, 1, "trace.matched has exactly one entry");

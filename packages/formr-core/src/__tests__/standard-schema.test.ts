@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'bun:test';
-import { createForm } from '../create-form.js';
-import { isStandardSchemaLike, createStandardSchemaValidator } from '../standard-schema.js';
-import type { StandardSchemaLike } from '../standard-schema.js';
+import { describe, expect, it } from "bun:test";
+import { createForm } from "../create-form.js";
+import type { StandardSchemaLike } from "../standard-schema.js";
+import { createStandardSchemaValidator, isStandardSchemaLike } from "../standard-schema.js";
 
 /** Create a mock Standard Schema that validates synchronously */
 function mockStandardSchema(
@@ -11,122 +11,124 @@ function mockStandardSchema(
   },
 ): StandardSchemaLike {
   return {
-    '~standard': {
+    "~standard": {
       version: 1,
-      vendor: 'test',
+      vendor: "test",
       validate: validateFn,
     },
   };
 }
 
-describe('isStandardSchemaLike', () => {
-  it('detects valid Standard Schema objects', () => {
+describe("isStandardSchemaLike", () => {
+  it("detects valid Standard Schema objects", () => {
     const schema = mockStandardSchema(() => ({ value: {} }));
     expect(isStandardSchemaLike(schema)).toBe(true);
   });
 
-  it('rejects non-schema values', () => {
+  it("rejects non-schema values", () => {
     expect(isStandardSchemaLike(null)).toBe(false);
     expect(isStandardSchemaLike(42)).toBe(false);
     expect(isStandardSchemaLike({})).toBe(false);
-    expect(isStandardSchemaLike({ '~standard': {} })).toBe(false);
+    expect(isStandardSchemaLike({ "~standard": {} })).toBe(false);
     expect(isStandardSchemaLike(() => {})).toBe(false);
   });
 });
 
-describe('createStandardSchemaValidator', () => {
-  it('returns empty issues for valid data', () => {
+describe("createStandardSchemaValidator", () => {
+  it("returns empty issues for valid data", () => {
     const schema = mockStandardSchema(() => ({ value: {} }));
     const validator = createStandardSchemaValidator(schema);
-    const issues = validator({ data: { name: 'test' }, uiState: {} });
+    const issues = validator({ data: { name: "test" }, uiState: {} });
     expect(issues).toEqual([]);
   });
 
-  it('maps schema issues to ValidationIssue format', () => {
+  it("maps schema issues to ValidationIssue format", () => {
     const schema = mockStandardSchema(() => ({
       issues: [
-        { message: 'Name required', path: ['name'] },
-        { message: 'Age too low', path: ['age'] },
+        { message: "Name required", path: ["name"] },
+        { message: "Age too low", path: ["age"] },
       ],
     }));
     const validator = createStandardSchemaValidator(schema);
     const issues = validator({ data: {}, uiState: {} });
     expect(issues).toHaveLength(2);
     expect(issues[0]).toMatchObject({
-      code: 'SCHEMA_VALIDATION',
-      message: 'Name required',
-      path: { namespace: 'data', segments: ['name'] },
-      severity: 'error',
-      source: { origin: 'standard-schema' },
+      code: "SCHEMA_VALIDATION",
+      message: "Name required",
+      path: { namespace: "data", segments: ["name"] },
+      severity: "error",
+      source: { origin: "standard-schema" },
     });
-    expect(issues[1]).toMatchObject({ message: 'Age too low' });
+    expect(issues[1]).toMatchObject({ message: "Age too low" });
   });
 
-  it('handles nested paths', () => {
+  it("handles nested paths", () => {
     const schema = mockStandardSchema(() => ({
-      issues: [{ message: 'Bad', path: ['address', 'city'] }],
+      issues: [{ message: "Bad", path: ["address", "city"] }],
     }));
     const validator = createStandardSchemaValidator(schema);
     const issues = validator({ data: {}, uiState: {} });
-    expect(issues[0]?.path).toEqual({ namespace: 'data', segments: ['address', 'city'] });
+    expect(issues[0]?.path).toEqual({ namespace: "data", segments: ["address", "city"] });
   });
 
-  it('handles issues with no path', () => {
+  it("handles issues with no path", () => {
     const schema = mockStandardSchema(() => ({
-      issues: [{ message: 'Form invalid' }],
+      issues: [{ message: "Form invalid" }],
     }));
     const validator = createStandardSchemaValidator(schema);
     const issues = validator({ data: {}, uiState: {} });
-    expect(issues[0]?.path).toEqual({ namespace: 'data', segments: [] });
+    expect(issues[0]?.path).toEqual({ namespace: "data", segments: [] });
   });
 
-  it('throws on async validate', () => {
+  it("throws on async validate", () => {
     const schema: StandardSchemaLike = {
-      '~standard': {
+      "~standard": {
         version: 1,
-        vendor: 'async-vendor',
+        vendor: "async-vendor",
         validate: () => Promise.resolve({ value: {} }),
       },
     };
     const validator = createStandardSchemaValidator(schema);
-    expect(() => validator({ data: {}, uiState: {} })).toThrow('async-vendor');
+    expect(() => validator({ data: {}, uiState: {} })).toThrow("async-vendor");
   });
 });
 
-describe('createForm with Standard Schema validator', () => {
-  it('auto-detects and wraps Standard Schema in validators array', () => {
+describe("createForm with Standard Schema validator", () => {
+  it("auto-detects and wraps Standard Schema in validators array", () => {
     const schema = mockStandardSchema((data) => {
       const d = data as Record<string, unknown>;
-      if (!d['name']) return { issues: [{ message: 'Name required', path: ['name'] }] };
+      if (!d["name"]) return { issues: [{ message: "Name required", path: ["name"] }] };
       return { value: data };
     });
 
     const form = createForm({
-      initialData: { name: '' },
+      initialData: { name: "" },
       validators: [schema],
     });
 
     const issues = form.validate();
     expect(issues.length).toBeGreaterThan(0);
-    expect(issues[0]?.message).toBe('Name required');
+    expect(issues[0]?.message).toBe("Name required");
   });
 
-  it('works with mixed validators (schema + function)', () => {
+  it("works with mixed validators (schema + function)", () => {
     const schema = mockStandardSchema(() => ({ value: {} }));
-    const customValidator = () => [{
-      code: 'CUSTOM',
-      message: 'Custom issue',
-      severity: 'error' as const,
-      path: { namespace: 'data' as const, segments: ['field'] },
-      source: { origin: 'function-validator' as const, validatorId: 'custom' },
-    }];
+    const customValidator = () => [
+      {
+        code: "CUSTOM",
+        message: "Custom issue",
+        severity: "error" as const,
+        path: { namespace: "data" as const, segments: ["field"] },
+        source: { origin: "function-validator" as const, validatorId: "custom" },
+      },
+    ];
 
     const form = createForm({
-      initialData: { name: '' },
+      initialData: { name: "" },
       validators: [schema, customValidator],
     });
 
     const issues = form.validate();
-    expect(issues.some((i) => i.code === 'CUSTOM')).toBe(true);
+    expect(issues.some((i) => i.code === "CUSTOM")).toBe(true);
   });
 });

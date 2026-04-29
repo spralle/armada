@@ -1,6 +1,6 @@
-import { useMemo, useRef } from 'react';
-import type { FormApi, FieldApi, FieldConfig, FieldMetaEntry } from '@ghost-shell/formr-core';
-import { useFormSelector } from './use-form-selector.js';
+import type { FieldApi, FieldConfig, FieldMetaEntry, FormApi } from "@ghost-shell/formr-core";
+import { useMemo, useRef } from "react";
+import { useFormSelector } from "./use-form-selector.js";
 
 interface FieldSnapshot {
   readonly value: unknown;
@@ -30,12 +30,16 @@ export function useField<TData, TUi, P extends string>(
   const field = useMemo(() => form.fieldDynamic(path, stableConfig), [form, path, stableConfig]);
 
   // Subscribe to field value and touched state to trigger re-renders
-  useFormSelector(form, () => {
-    const state = form.getState();
-    const pathKey = field.path.segments.join('.');
-    const meta = (state.fieldMeta as Readonly<Record<string, FieldMetaEntry>>)[pathKey];
-    return { value: field.get(), meta } as FieldSnapshot;
-  }, fieldSnapshotEqual);
+  useFormSelector(
+    form,
+    () => {
+      const state = form.getState();
+      const pathKey = field.path.segments.join(".");
+      const meta = (state.fieldMeta as Readonly<Record<string, FieldMetaEntry>>)[pathKey];
+      return { value: field.get(), meta } as FieldSnapshot;
+    },
+    fieldSnapshotEqual,
+  );
 
   return field as FieldApi<TData, TUi, P>;
 }

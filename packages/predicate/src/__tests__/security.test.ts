@@ -1,95 +1,99 @@
-import { describe, expect, it } from 'bun:test';
-import { assertSafeSegment } from '../safe-path.js';
-import { evaluate } from '../evaluator.js';
-import { compile } from '../compile.js';
-import type { ExprNode } from '../ast.js';
-import { PredicateError } from '../errors.js';
+import { describe, expect, it } from "bun:test";
+import type { ExprNode } from "../ast.js";
+import { compile } from "../compile.js";
+import { PredicateError } from "../errors.js";
+import { evaluate } from "../evaluator.js";
+import { assertSafeSegment } from "../safe-path.js";
 
-function makeScope(data: Record<string, unknown> = {}, uiState: unknown = {}, meta: unknown = {}): Record<string, unknown> {
+function makeScope(
+  data: Record<string, unknown> = {},
+  uiState: unknown = {},
+  meta: unknown = {},
+): Record<string, unknown> {
   return { ...data, $ui: uiState, $meta: meta };
 }
 
 function path(p: string): ExprNode {
-  return { kind: 'path', path: p };
+  return { kind: "path", path: p };
 }
 
 function op(name: string, ...args: ExprNode[]): ExprNode {
-  return { kind: 'op', op: name, args };
+  return { kind: "op", op: name, args };
 }
 
 function lit(value: string | number | boolean | null): ExprNode {
-  return { kind: 'literal', value };
+  return { kind: "literal", value };
 }
 
-describe('prototype pollution prevention', () => {
-  describe('assertSafeSegment', () => {
-    it('rejects __proto__', () => {
-      expect(() => assertSafeSegment('__proto__')).toThrow(PredicateError);
+describe("prototype pollution prevention", () => {
+  describe("assertSafeSegment", () => {
+    it("rejects __proto__", () => {
+      expect(() => assertSafeSegment("__proto__")).toThrow(PredicateError);
     });
 
-    it('rejects constructor', () => {
-      expect(() => assertSafeSegment('constructor')).toThrow(PredicateError);
+    it("rejects constructor", () => {
+      expect(() => assertSafeSegment("constructor")).toThrow(PredicateError);
     });
 
-    it('rejects prototype', () => {
-      expect(() => assertSafeSegment('prototype')).toThrow(PredicateError);
+    it("rejects prototype", () => {
+      expect(() => assertSafeSegment("prototype")).toThrow(PredicateError);
     });
 
-    it('allows normal segments', () => {
-      expect(() => assertSafeSegment('name')).not.toThrow();
-      expect(() => assertSafeSegment('foo')).not.toThrow();
+    it("allows normal segments", () => {
+      expect(() => assertSafeSegment("name")).not.toThrow();
+      expect(() => assertSafeSegment("foo")).not.toThrow();
     });
   });
 
-  describe('evaluate path resolution', () => {
-    it('rejects __proto__ in path', () => {
-      const scope = makeScope({ safe: 'ok' });
-      expect(() => evaluate(path('__proto__.polluted'), scope)).toThrow('prototype pollution');
+  describe("evaluate path resolution", () => {
+    it("rejects __proto__ in path", () => {
+      const scope = makeScope({ safe: "ok" });
+      expect(() => evaluate(path("__proto__.polluted"), scope)).toThrow("prototype pollution");
     });
 
-    it('rejects constructor.prototype path', () => {
+    it("rejects constructor.prototype path", () => {
       const scope = makeScope({});
-      expect(() => evaluate(path('constructor.prototype'), scope)).toThrow('prototype pollution');
+      expect(() => evaluate(path("constructor.prototype"), scope)).toThrow("prototype pollution");
     });
 
-    it('resolves normal paths after hardening', () => {
-      const scope = makeScope({ user: { name: 'Alice' } });
-      expect(evaluate(path('user.name'), scope)).toBe('Alice');
+    it("resolves normal paths after hardening", () => {
+      const scope = makeScope({ user: { name: "Alice" } });
+      expect(evaluate(path("user.name"), scope)).toBe("Alice");
     });
   });
 
-  describe('compile path validation via shorthand', () => {
-    it('compiles normal paths via shorthand', () => {
-      const ast = compile({ 'user.name': 'Alice' });
-      expect(ast.kind).toBe('op');
+  describe("compile path validation via shorthand", () => {
+    it("compiles normal paths via shorthand", () => {
+      const ast = compile({ "user.name": "Alice" });
+      expect(ast.kind).toBe("op");
     });
   });
 });
 
-describe('recursion depth guard', () => {
+describe("recursion depth guard", () => {
   function buildDeepAst(depth: number): ExprNode {
     let node: ExprNode = lit(true);
     for (let i = 0; i < depth; i++) {
-      node = op('$not', node);
+      node = op("$not", node);
     }
     return node;
   }
 
-  it('evaluates within default depth limit', () => {
+  it("evaluates within default depth limit", () => {
     const node = buildDeepAst(100);
     const scope = makeScope();
     expect(() => evaluate(node, scope)).not.toThrow();
   });
 
-  it('throws when exceeding depth limit', () => {
+  it("throws when exceeding depth limit", () => {
     const node = buildDeepAst(300);
     const scope = makeScope();
-    expect(() => evaluate(node, scope)).toThrow('exceeded maximum depth');
+    expect(() => evaluate(node, scope)).toThrow("exceeded maximum depth");
   });
 
-  it('respects custom maxDepth', () => {
+  it("respects custom maxDepth", () => {
     const node = buildDeepAst(10);
     const scope = makeScope();
-    expect(() => evaluate(node, scope, { maxDepth: 5 })).toThrow('exceeded maximum depth');
+    expect(() => evaluate(node, scope, { maxDepth: 5 })).toThrow("exceeded maximum depth");
   });
 });

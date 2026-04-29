@@ -1,13 +1,13 @@
-import type { Query } from './compile.js';
-import type { TypedQuery } from './typed-query.js';
-import type { CompileFilterOptions, FilterFn } from './filter-compiler.js';
-import { compileFilter } from './filter-compiler.js';
-import { PredicateError } from './errors.js';
-import { applySorting } from './sort-utils.js';
+import type { Query } from "./compile.js";
+import { PredicateError } from "./errors.js";
+import type { CompileFilterOptions, FilterFn } from "./filter-compiler.js";
+import { compileFilter } from "./filter-compiler.js";
+import { applySorting } from "./sort-utils.js";
+import type { TypedQuery } from "./typed-query.js";
 
 /** Options for constructing a Predicate instance. */
 export interface PredicateOptions {
-  readonly registry?: CompileFilterOptions['registry'];
+  readonly registry?: CompileFilterOptions["registry"];
 }
 
 /** Compiled query that can test documents and find matches in collections. */
@@ -55,7 +55,10 @@ export class Predicate<T = Record<string, unknown>> {
       let skipped = 0;
       for (const item of collection) {
         if (this._filter(item)) {
-          if (skipped < skip) { skipped++; continue; }
+          if (skipped < skip) {
+            skipped++;
+            continue;
+          }
           results.push(item);
           if (results.length >= limit) break;
         }
@@ -63,9 +66,7 @@ export class Predicate<T = Record<string, unknown>> {
       return results;
     }
 
-    let results = collection.filter(
-      (item) => this._filter(item),
-    );
+    let results = collection.filter((item) => this._filter(item));
 
     if (this._sort) {
       results = applySorting(results, this._sort);
@@ -93,10 +94,7 @@ export class Predicate<T = Record<string, unknown>> {
       }
     }
     if (count !== 1) {
-      throw new PredicateError(
-        'PREDICATE_FIND_ONE',
-        `findOne returned ${count === 0 ? '0' : 'multiple'} results`,
-      );
+      throw new PredicateError("PREDICATE_FIND_ONE", `findOne returned ${count === 0 ? "0" : "multiple"} results`);
     }
     return found!;
   }

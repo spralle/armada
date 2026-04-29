@@ -1,11 +1,11 @@
-import { assertSafeSegment } from '@ghost-shell/predicate/safe-path';
-import { ArbiterError, ArbiterErrorCode } from './errors.js';
+import { assertSafeSegment } from "@ghost-shell/predicate/safe-path";
+import { ArbiterError, ArbiterErrorCode } from "./errors.js";
 
 /**
  * Splits a dot-delimited path into segments.
  */
 export function splitPath(path: string): readonly string[] {
-  return path.split('.');
+  return path.split(".");
 }
 
 /**
@@ -13,8 +13,8 @@ export function splitPath(path: string): readonly string[] {
  * Throws ArbiterError on invalid or dangerous paths.
  */
 export function validatePath(path: string): void {
-  if (typeof path !== 'string' || path.length === 0) {
-    throw new ArbiterError(ArbiterErrorCode.INVALID_PATH, 'Path must be a non-empty string');
+  if (typeof path !== "string" || path.length === 0) {
+    throw new ArbiterError(ArbiterErrorCode.INVALID_PATH, "Path must be a non-empty string");
   }
 
   const segments = splitPath(path);
@@ -34,7 +34,7 @@ export function validatePath(path: string): void {
  * Returns true if the path contains wildcard `*` segments.
  */
 export function isWildcardPath(path: string): boolean {
-  return splitPath(path).includes('*');
+  return splitPath(path).includes("*");
 }
 
 /**
@@ -47,9 +47,7 @@ export function matchWildcardPath(pattern: string, concrete: string): boolean {
 
   if (patternSegments.length !== concreteSegments.length) return false;
 
-  return patternSegments.every(
-    (seg, i) => seg === '*' || seg === concreteSegments[i],
-  );
+  return patternSegments.every((seg, i) => seg === "*" || seg === concreteSegments[i]);
 }
 
 /**
@@ -57,9 +55,9 @@ export function matchWildcardPath(pattern: string, concrete: string): boolean {
  * indicating it's an expression rather than a literal.
  */
 export function isExpression(value: unknown): boolean {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
     return false;
   }
   const keys = Object.keys(value as Record<string, unknown>);
-  return keys.length > 0 && keys.some((k) => k.startsWith('$'));
+  return keys.length > 0 && keys.some((k) => k.startsWith("$"));
 }

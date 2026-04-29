@@ -1,15 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
+import { readShellMigrationFlags, selectCrossWindowDnd, selectShellTransportPath } from "../src/app/migration-flags.ts";
 import {
+  MIGRATION_FLAG_KEYS,
   migrationFlagSchemas,
   readMigrationFlagsFromConfig,
-  MIGRATION_FLAG_KEYS,
 } from "../src/app/migration-flags-config.ts";
-import {
-  readShellMigrationFlags,
-  selectShellTransportPath,
-  selectCrossWindowDnd,
-} from "../src/app/migration-flags.ts";
 
 // ---------------------------------------------------------------------------
 // Stub ConfigurationService — minimal mock that satisfies the adapter
@@ -24,15 +20,27 @@ function createStubConfigService(entries = {}) {
       const v = entries[key];
       return v !== undefined ? v : defaultValue;
     },
-    getAtLayer() { return undefined; },
-    getForScope() { return undefined; },
+    getAtLayer() {
+      return undefined;
+    },
+    getForScope() {
+      return undefined;
+    },
     inspect(key) {
       return { key, effectiveValue: entries[key], effectiveLayer: undefined };
     },
-    set() { throw new Error("stub: set not supported"); },
-    remove() { throw new Error("stub: remove not supported"); },
-    onChange() { return () => {}; },
-    getNamespace() { return {}; },
+    set() {
+      throw new Error("stub: set not supported");
+    },
+    remove() {
+      throw new Error("stub: remove not supported");
+    },
+    onChange() {
+      return () => {};
+    },
+    getNamespace() {
+      return {};
+    },
   };
 }
 
@@ -49,15 +57,11 @@ test("migrationFlagSchemas declares a schema for every ShellMigrationFlags key",
   for (const flagName of Object.keys(defaultFlags)) {
     const configKey = MIGRATION_FLAG_KEYS[flagName];
     assert.ok(configKey, `MIGRATION_FLAG_KEYS should have entry for "${flagName}"`);
-    assert.ok(
-      schemaKeys.has(configKey),
-      `migrationFlagSchemas should declare schema for "${configKey}"`,
-    );
+    assert.ok(schemaKeys.has(configKey), `migrationFlagSchemas should declare schema for "${configKey}"`);
   }
 
   // Every schema key should map to a flag
-  assert.equal(schemaKeys.size, Object.keys(defaultFlags).length,
-    "Schema count should match flag count");
+  assert.equal(schemaKeys.size, Object.keys(defaultFlags).length, "Schema count should match flag count");
   assert.deepEqual(schemaKeys, expectedKeys);
 });
 
@@ -130,10 +134,12 @@ test("config-provided flags match legacy flags for non-default scenario", () => 
     new URLSearchParams("shellAsyncScompAdapter=true&shellLegacyBridgeKillSwitch=1"),
     null,
   );
-  const configFlags = readMigrationFlagsFromConfig(createStubConfigService({
-    "ghost.shell.migration.enableAsyncScompAdapter": true,
-    "ghost.shell.migration.forceLegacyBridge": true,
-  }));
+  const configFlags = readMigrationFlagsFromConfig(
+    createStubConfigService({
+      "ghost.shell.migration.enableAsyncScompAdapter": true,
+      "ghost.shell.migration.forceLegacyBridge": true,
+    }),
+  );
 
   assert.equal(configFlags.enableAsyncScompAdapter, legacyFlags.enableAsyncScompAdapter);
   assert.equal(configFlags.forceLegacyBridge, legacyFlags.forceLegacyBridge);
@@ -152,9 +158,11 @@ test("selectShellTransportPath: default config flags produce legacy-bridge", () 
 });
 
 test("selectShellTransportPath: async adapter enabled via config", () => {
-  const flags = readMigrationFlagsFromConfig(createStubConfigService({
-    "ghost.shell.migration.enableAsyncScompAdapter": true,
-  }));
+  const flags = readMigrationFlagsFromConfig(
+    createStubConfigService({
+      "ghost.shell.migration.enableAsyncScompAdapter": true,
+    }),
+  );
   const decision = selectShellTransportPath(flags);
 
   assert.equal(decision.path, "async-scomp-adapter");
@@ -162,10 +170,12 @@ test("selectShellTransportPath: async adapter enabled via config", () => {
 });
 
 test("selectShellTransportPath: kill switch via config forces legacy", () => {
-  const flags = readMigrationFlagsFromConfig(createStubConfigService({
-    "ghost.shell.migration.enableAsyncScompAdapter": true,
-    "ghost.shell.migration.forceLegacyBridge": true,
-  }));
+  const flags = readMigrationFlagsFromConfig(
+    createStubConfigService({
+      "ghost.shell.migration.enableAsyncScompAdapter": true,
+      "ghost.shell.migration.forceLegacyBridge": true,
+    }),
+  );
   const decision = selectShellTransportPath(flags);
 
   assert.equal(decision.path, "legacy-bridge");
@@ -182,9 +192,11 @@ test("selectCrossWindowDnd: default config flags produce cross-window-bridge", (
 });
 
 test("selectCrossWindowDnd: kill switch via config forces same-window", () => {
-  const flags = readMigrationFlagsFromConfig(createStubConfigService({
-    "ghost.shell.migration.forceDisableCrossWindowDnd": true,
-  }));
+  const flags = readMigrationFlagsFromConfig(
+    createStubConfigService({
+      "ghost.shell.migration.forceDisableCrossWindowDnd": true,
+    }),
+  );
   const decision = selectCrossWindowDnd(flags);
 
   assert.equal(decision.enabled, false);
@@ -199,9 +211,7 @@ test("selectCrossWindowDnd: kill switch via config forces same-window", () => {
 test("schema default values match readMigrationFlagsFromConfig fallback defaults", () => {
   const emptyFlags = readMigrationFlagsFromConfig(createStubConfigService({}));
   for (const schema of migrationFlagSchemas) {
-    const flagName = Object.entries(MIGRATION_FLAG_KEYS).find(
-      ([, key]) => key === schema.key,
-    )?.[0];
+    const flagName = Object.entries(MIGRATION_FLAG_KEYS).find(([, key]) => key === schema.key)?.[0];
     assert.ok(flagName, `Should find flag name for schema key "${schema.key}"`);
     assert.equal(
       schema.default,

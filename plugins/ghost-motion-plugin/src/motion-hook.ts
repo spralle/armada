@@ -16,16 +16,23 @@ export function createMotionTransitionHook(): ElementTransitionHook {
       if (!config.enabled) return;
 
       el.setAttribute(DATA_MOTION_ENTER, "");
-      el.addEventListener("animationend", () => {
-        el.removeAttribute(DATA_MOTION_ENTER);
-      }, { once: true });
+      el.addEventListener(
+        "animationend",
+        () => {
+          el.removeAttribute(DATA_MOTION_ENTER);
+        },
+        { once: true },
+      );
 
       // Safety cleanup — remove stale attribute if animation never fires
       const resolved = resolveEntry("layers", config);
       const cleanupMs = resolved.speed * 100 * 2;
-      setTimeout(() => {
-        el.removeAttribute(DATA_MOTION_ENTER);
-      }, Math.max(cleanupMs, 200));
+      setTimeout(
+        () => {
+          el.removeAttribute(DATA_MOTION_ENTER);
+        },
+        Math.max(cleanupMs, 200),
+      );
     },
 
     async onExit(el: HTMLElement, _context: TransitionContext): Promise<void> {
@@ -38,15 +45,22 @@ export function createMotionTransitionHook(): ElementTransitionHook {
       const durationMs = resolved.speed * 100;
 
       return new Promise<void>((resolve) => {
-        el.addEventListener("animationend", () => {
-          el.removeAttribute(DATA_MOTION_EXIT);
-          resolve();
-        }, { once: true });
+        el.addEventListener(
+          "animationend",
+          () => {
+            el.removeAttribute(DATA_MOTION_EXIT);
+            resolve();
+          },
+          { once: true },
+        );
 
-        setTimeout(() => {
-          el.removeAttribute(DATA_MOTION_EXIT);
-          resolve();
-        }, Math.max(durationMs * 2, 200));
+        setTimeout(
+          () => {
+            el.removeAttribute(DATA_MOTION_EXIT);
+            resolve();
+          },
+          Math.max(durationMs * 2, 200),
+        );
       });
     },
   };

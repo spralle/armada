@@ -1,13 +1,12 @@
 export {
-  type ShellFederationRuntime,
-  createShellFederationRuntime,
-  isModuleFederationRuntimeInstance,
-} from "./federation-runtime.js";
-
-export {
+  ensureRemoteRegistered,
   type MountCleanup,
   normalizeCleanup,
   safeUnmount,
   toRecord,
-  ensureRemoteRegistered,
 } from "./federation-mount-utils.js";
+export {
+  createShellFederationRuntime,
+  isModuleFederationRuntimeInstance,
+  type ShellFederationRuntime,
+} from "./federation-runtime.js";

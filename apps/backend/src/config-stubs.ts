@@ -2,8 +2,15 @@
 // All types are structural duplicates; all runtime exports are no-ops.
 
 export type ConfigurationRole =
-  | "platform-ops" | "tenant-admin" | "scope-admin" | "integrator"
-  | "user" | "support" | "system" | "service" | "platform-service";
+  | "platform-ops"
+  | "tenant-admin"
+  | "scope-admin"
+  | "integrator"
+  | "user"
+  | "support"
+  | "system"
+  | "service"
+  | "platform-service";
 
 export interface PolicyEvaluationContext {
   userId: string;
@@ -113,14 +120,6 @@ function warnOnce(name: string): void {
 
 /** @deprecated No-op stub — @weaver/config-providers removed. Always returns empty data. */
 export class FileSystemStorageProvider {
-  constructor(_opts: {
-    id: string;
-    layer: string;
-    filePath: string;
-    writable?: boolean;
-    environmentOverlayPath?: string;
-  }) {}
-
   async load(): Promise<StorageLoadResult> {
     warnOnce("FileSystemStorageProvider.load");
     return { entries: {} };
@@ -147,9 +146,9 @@ export function evaluateChangePolicy(
 }
 
 /** @deprecated No-op stub — @weaver/config-engine removed. Merges layers left-to-right. */
-export function resolveConfiguration(opts: {
-  layers: ConfigurationLayerEntry[];
-}): { entries: Record<string, unknown> } {
+export function resolveConfiguration(opts: { layers: ConfigurationLayerEntry[] }): {
+  entries: Record<string, unknown>;
+} {
   warnOnce("resolveConfiguration");
   const entries: Record<string, unknown> = {};
   for (const layer of opts.layers) {
@@ -159,10 +158,7 @@ export function resolveConfiguration(opts: {
 }
 
 /** @deprecated No-op stub — @weaver/config-engine removed. */
-export function inspectKey(
-  opts: { layers: ConfigurationLayerEntry[] },
-  key: string,
-): { effectiveValue: unknown } {
+export function inspectKey(opts: { layers: ConfigurationLayerEntry[] }, key: string): { effectiveValue: unknown } {
   warnOnce("inspectKey");
   let effectiveValue: unknown;
   for (const layer of opts.layers) {
@@ -178,9 +174,15 @@ export function createInMemoryAuditLog(): ConfigAuditLog {
   warnOnce("createInMemoryAuditLog");
   return {
     async append() {},
-    async queryByKey() { return []; },
-    async queryByTimeRange() { return []; },
-    async getRecent() { return []; },
+    async queryByKey() {
+      return [];
+    },
+    async queryByTimeRange() {
+      return [];
+    },
+    async getRecent() {
+      return [];
+    },
   };
 }
 
@@ -189,9 +191,15 @@ export function createInMemoryOverrideTracker(): OverrideTracker {
   warnOnce("createInMemoryOverrideTracker");
   return {
     async create() {},
-    async listActive() { return []; },
-    async listOverdue() { return []; },
-    async regularize() { return undefined; },
+    async listActive() {
+      return [];
+    },
+    async listOverdue() {
+      return [];
+    },
+    async regularize() {
+      return undefined;
+    },
   };
 }
 
@@ -199,31 +207,43 @@ export function createInMemoryOverrideTracker(): OverrideTracker {
 export function createOverrideSessionProvider(): OverrideSessionController {
   warnOnce("createOverrideSessionProvider");
   return {
-    isActive() { return false; },
-    activate(_data: unknown) { return { active: true }; },
-    deactivate() { return { active: false }; },
-    getSession() { return null; },
+    isActive() {
+      return false;
+    },
+    activate(_data: unknown) {
+      return { active: true };
+    },
+    deactivate() {
+      return { active: false };
+    },
+    getSession() {
+      return null;
+    },
   };
 }
 
 /** @deprecated No-op stub — returns a config service that stores nothing. */
-export async function createConfigurationService(
-  _opts: unknown,
-): Promise<ConfigurationService> {
+export async function createConfigurationService(_opts: unknown): Promise<ConfigurationService> {
   warnOnce("createConfigurationService");
   return {
-    get() { return undefined; },
+    get() {
+      return undefined;
+    },
     set() {},
-    onChange() { return () => {}; },
+    onChange() {
+      return () => {};
+    },
   };
 }
 
 /** @deprecated No-op stub — returns a service config that always returns undefined. */
-export function createServiceConfigurationService(
-  _opts: unknown,
-): ServiceConfigurationService {
+export function createServiceConfigurationService(_opts: unknown): ServiceConfigurationService {
   warnOnce("createServiceConfigurationService");
-  return { get() { return undefined; } };
+  return {
+    get() {
+      return undefined;
+    },
+  };
 }
 
 export const sessionActivationRequestSchema = {

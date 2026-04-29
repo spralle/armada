@@ -134,9 +134,7 @@ function readAllBackgroundPreferences(): Record<string, BackgroundPreference> {
 }
 
 /** Internal: write the entire background preferences map to localStorage. */
-function writeAllBackgroundPreferences(
-  prefs: Record<string, BackgroundPreference>,
-): void {
+function writeAllBackgroundPreferences(prefs: Record<string, BackgroundPreference>): void {
   try {
     if (typeof window === "undefined" || !window.localStorage) {
       return;
@@ -150,9 +148,7 @@ function writeAllBackgroundPreferences(
 /**
  * Read per-theme background preference. Returns null if no preference stored.
  */
-export function readBackgroundPreference(
-  themeId: string,
-): BackgroundPreference | null {
+export function readBackgroundPreference(themeId: string): BackgroundPreference | null {
   const all = readAllBackgroundPreferences();
   return all[themeId] ?? null;
 }
@@ -160,10 +156,7 @@ export function readBackgroundPreference(
 /**
  * Write per-theme background preference.
  */
-export function writeBackgroundPreference(
-  themeId: string,
-  pref: BackgroundPreference,
-): void {
+export function writeBackgroundPreference(themeId: string, pref: BackgroundPreference): void {
   const all = readAllBackgroundPreferences();
   all[themeId] = pref;
   writeAllBackgroundPreferences(all);

@@ -1,29 +1,16 @@
-import type { PluginHost, ShellRuntime } from "./app/types.js";
-import {
-  createShellFederationRuntime,
-  type ShellFederationRuntime,
-} from "./federation-runtime.js";
+import type { PartRenderer, PartRendererRegistry, PartRenderHandle } from "@ghost-shell/contracts";
 import type { ShellPartHostAdapter } from "./app/contracts.js";
-import type { ComposedShellPart } from "./ui/parts-rendering.js";
+import type { PluginHost, ShellRuntime } from "./app/types.js";
+import { ensureRemoteRegistered, normalizeCleanup, safeUnmount } from "./federation-mount-utils.js";
+import { createShellFederationRuntime, type ShellFederationRuntime } from "./federation-runtime.js";
 import {
-  type MountCleanup,
-  normalizeCleanup,
-  safeUnmount,
-  ensureRemoteRegistered,
-} from "./federation-mount-utils.js";
-import type {
-  PartRenderer,
-  PartRendererRegistry,
-  PartRenderHandle,
-} from "@ghost-shell/contracts";
-import { createPartRendererRegistry } from "./part-renderer-registry.js";
-import {
-  type MountPartFn,
-  resolvePartMount,
-  resolvePartInstanceId,
-  resolvePartDefinitionId,
   resolvePartArgs,
+  resolvePartDefinitionId,
+  resolvePartInstanceId,
+  resolvePartMount,
 } from "./part-mount-resolution.js";
+import { createPartRendererRegistry } from "./part-renderer-registry.js";
+import type { ComposedShellPart } from "./ui/parts-rendering.js";
 
 interface PartModuleHostEntry {
   target: HTMLElement;
@@ -172,7 +159,7 @@ async function mountPart(options: MountPartOptions): Promise<void> {
   }
 
   try {
-    const remoteModule = builtinModule ?? await federationRuntime.loadRemoteModule(part.pluginId, "./pluginParts");
+    const remoteModule = builtinModule ?? (await federationRuntime.loadRemoteModule(part.pluginId, "./pluginParts"));
 
     if (!isCurrent()) {
       return;
@@ -268,9 +255,8 @@ function createPartMountKey(
     return `${part.pluginId}|missing`;
   }
 
-  const enabledState = typeof pluginSnapshot.enabled === "boolean"
-    ? (pluginSnapshot.enabled ? "enabled" : "disabled")
-    : "enabled:unknown";
+  const enabledState =
+    typeof pluginSnapshot.enabled === "boolean" ? (pluginSnapshot.enabled ? "enabled" : "disabled") : "enabled:unknown";
   const lifecycleState = pluginSnapshot.lifecycle?.state ?? "lifecycle:unknown";
   const lifecycleTransition = pluginSnapshot.lifecycle?.lastTransitionAt ?? "transition:none";
   const failureCode = pluginSnapshot.failure?.code ?? "failure:none";
@@ -289,9 +275,7 @@ function collectTargetsByPart(
   root: HTMLElement,
   datasetKey: "partContentFor" | "partFallbackFor",
 ): Map<string, HTMLElement> {
-  const selector = datasetKey === "partContentFor"
-    ? "[data-part-content-for]"
-    : "[data-part-fallback-for]";
+  const selector = datasetKey === "partContentFor" ? "[data-part-content-for]" : "[data-part-fallback-for]";
   const map = new Map<string, HTMLElement>();
 
   for (const element of root.querySelectorAll<HTMLElement>(selector)) {

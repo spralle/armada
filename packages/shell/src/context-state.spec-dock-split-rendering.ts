@@ -35,42 +35,48 @@ export function registerDockSplitRenderingSpecs(harness: SpecHarness): void {
   const { test, assertEqual } = harness;
 
   test("dock split rendering uses ratio-based horizontal columns", () => {
-    const style = renderDockSplitTrackStyle(createSplitNode({
-      id: "split-horizontal",
-      orientation: "horizontal",
-      ratio: 0.3,
-    }));
+    const style = renderDockSplitTrackStyle(
+      createSplitNode({
+        id: "split-horizontal",
+        orientation: "horizontal",
+        ratio: 0.3,
+      }),
+    );
 
     assertEqual(
       style,
-      " style=\"grid-template-columns: minmax(0, 0.3fr) var(--dock-splitter-size, 8px) minmax(0, 0.7fr);\"",
+      ' style="grid-template-columns: minmax(0, 0.3fr) var(--dock-splitter-size, 8px) minmax(0, 0.7fr);"',
       "horizontal split should emit ratio columns",
     );
   });
 
   test("dock split rendering uses ratio-based vertical rows", () => {
-    const style = renderDockSplitTrackStyle(createSplitNode({
-      id: "split-vertical",
-      orientation: "vertical",
-      ratio: 0.65,
-    }));
+    const style = renderDockSplitTrackStyle(
+      createSplitNode({
+        id: "split-vertical",
+        orientation: "vertical",
+        ratio: 0.65,
+      }),
+    );
 
     assertEqual(
       style,
-      " style=\"grid-template-rows: minmax(0, 0.65fr) var(--dock-splitter-size, 8px) minmax(0, 0.35fr);\"",
+      ' style="grid-template-rows: minmax(0, 0.65fr) var(--dock-splitter-size, 8px) minmax(0, 0.35fr);"',
       "vertical split should emit ratio rows",
     );
   });
 
   test("dock split rendering defaults to 50/50 when ratio missing", () => {
-    const style = renderDockSplitTrackStyle(createSplitNode({
-      id: "split-default-ratio",
-      orientation: "horizontal",
-    }));
+    const style = renderDockSplitTrackStyle(
+      createSplitNode({
+        id: "split-default-ratio",
+        orientation: "horizontal",
+      }),
+    );
 
     assertEqual(
       style,
-      " style=\"grid-template-columns: minmax(0, 0.5fr) var(--dock-splitter-size, 8px) minmax(0, 0.5fr);\"",
+      ' style="grid-template-columns: minmax(0, 0.5fr) var(--dock-splitter-size, 8px) minmax(0, 0.5fr);"',
       "missing ratio should fall back to equal columns",
     );
   });

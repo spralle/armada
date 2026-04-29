@@ -1,8 +1,4 @@
-import {
-  applySelectionUpdate,
-  createInitialShellContextState,
-  readEntityTypeSelection,
-} from "./context-state.js";
+import { applySelectionUpdate, createInitialShellContextState, readEntityTypeSelection } from "./context-state.js";
 import type { SpecHarness } from "./context-state.spec-harness.js";
 
 export function registerContextStateCorePropagationSpecs(harness: SpecHarness): void {

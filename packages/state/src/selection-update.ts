@@ -1,12 +1,7 @@
 import { compareDeterministicKeys, normalizePriorityId, normalizeSelectionIds } from "./helpers.js";
 import { writeGlobalLane, writeGroupLaneByGroup } from "./lanes.js";
 import { readEntityTypeSelection, setEntityTypeSelection } from "./selection.js";
-import {
-  SelectionUpdateOptions,
-  SelectionUpdateResult,
-  SelectionWriteInput,
-  ShellContextState,
-} from "./types.js";
+import type { SelectionUpdateOptions, SelectionUpdateResult, SelectionWriteInput, ShellContextState } from "./types.js";
 
 type PropagationRule = NonNullable<SelectionUpdateOptions["propagationRules"]>[number];
 type DerivedLane = NonNullable<SelectionUpdateOptions["derivedLanes"]>[number];
@@ -16,18 +11,23 @@ export function applySelectionUpdate(
   input: SelectionWriteInput,
   options?: SelectionUpdateOptions,
 ): SelectionUpdateResult {
-  const propagationRules = [...(options?.propagationRules ?? [])].sort((a, b) =>
-    compareDeterministicKeys(a.id, b.id),
-  );
+  const propagationRules = [...(options?.propagationRules ?? [])].sort((a, b) => compareDeterministicKeys(a.id, b.id));
   const derivedLanes = [...(options?.derivedLanes ?? [])].sort((a, b) =>
     compareDeterministicKeys(`${a.scope}:${a.key}`, `${b.scope}:${b.key}`),
   );
 
-  const { next: propagatedState, changedEntityTypes, revisionByEntityType } =
-    propagateSelections(state, input, propagationRules);
+  const {
+    next: propagatedState,
+    changedEntityTypes,
+    revisionByEntityType,
+  } = propagateSelections(state, input, propagationRules);
 
-  const { next: finalState, derivedLaneFailures } =
-    applyDerivedLanes(propagatedState, derivedLanes, revisionByEntityType, options?.derivedGroupId);
+  const { next: finalState, derivedLaneFailures } = applyDerivedLanes(
+    propagatedState,
+    derivedLanes,
+    revisionByEntityType,
+    options?.derivedGroupId,
+  );
 
   return {
     state: finalState,
@@ -124,10 +124,7 @@ function enqueuePropagatedSelections(
     const targetCurrent = readEntityTypeSelection(state, propagated.entityType);
     const targetNext = {
       selectedIds: normalizeSelectionIds(propagated.selectedIds),
-      priorityId: normalizePriorityId(
-        normalizeSelectionIds(propagated.selectedIds),
-        propagated.priorityId ?? null,
-      ),
+      priorityId: normalizePriorityId(normalizeSelectionIds(propagated.selectedIds), propagated.priorityId ?? null),
     };
 
     if (
