@@ -10,6 +10,13 @@ import {
   type ConfigurationService,
 } from "@ghost-shell/contracts";
 import { useService } from "@ghost-shell/react";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@ghost-shell/ui";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,97 +31,6 @@ interface GroupedEntries {
   readonly namespace: string;
   readonly entries: readonly ConfigEntry[];
 }
-
-// ---------------------------------------------------------------------------
-// Styles (ghost tokens only)
-// ---------------------------------------------------------------------------
-
-const inspectorStyle: React.CSSProperties = {
-  padding: "var(--ghost-spacing-md, 12px)",
-  background: "var(--ghost-background)",
-  color: "var(--ghost-foreground)",
-  fontFamily: "var(--ghost-font-mono, monospace)",
-  fontSize: "var(--ghost-font-size-sm, 13px)",
-};
-
-const headingStyle: React.CSSProperties = {
-  margin: "0 0 var(--ghost-spacing-md, 12px)",
-  fontSize: "var(--ghost-font-size-lg, 16px)",
-  color: "var(--ghost-foreground)",
-  fontFamily: "var(--ghost-font-sans, sans-serif)",
-};
-
-const namespaceStyle: React.CSSProperties = {
-  marginBottom: "var(--ghost-spacing-md, 12px)",
-  border: "1px solid var(--ghost-border)",
-  borderRadius: "var(--ghost-radius-sm, 4px)",
-  overflow: "hidden",
-};
-
-const namespaceHeaderStyle: React.CSSProperties = {
-  padding: "var(--ghost-spacing-xs, 4px) var(--ghost-spacing-sm, 8px)",
-  background: "var(--ghost-surface-elevated)",
-  color: "var(--ghost-foreground)",
-  fontWeight: 600,
-  fontSize: "var(--ghost-font-size-sm, 13px)",
-  borderBottom: "1px solid var(--ghost-border)",
-};
-
-const entryRowStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "baseline",
-  gap: "var(--ghost-spacing-sm, 8px)",
-  padding: "var(--ghost-spacing-xs, 4px) var(--ghost-spacing-sm, 8px)",
-  borderBottom: "1px solid var(--ghost-border-subtle, var(--ghost-border))",
-};
-
-const keyStyle: React.CSSProperties = {
-  flex: "1 1 auto",
-  color: "var(--ghost-foreground)",
-  fontWeight: 500,
-  minWidth: 0,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const valueStyle: React.CSSProperties = {
-  flex: "0 0 auto",
-  maxWidth: "50%",
-  color: "var(--ghost-muted-foreground)",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const expandBtnStyle: React.CSSProperties = {
-  background: "none",
-  border: "none",
-  cursor: "pointer",
-  color: "var(--ghost-muted-foreground)",
-  fontSize: "var(--ghost-font-size-xs, 11px)",
-  padding: "0 4px",
-};
-
-const detailStyle: React.CSSProperties = {
-  padding: "var(--ghost-spacing-xs, 4px) var(--ghost-spacing-md, 12px)",
-  background: "var(--ghost-surface)",
-  color: "var(--ghost-muted-foreground)",
-  fontSize: "var(--ghost-font-size-xs, 11px)",
-  borderBottom: "1px solid var(--ghost-border-subtle, var(--ghost-border))",
-};
-
-const unavailableStyle: React.CSSProperties = {
-  padding: "var(--ghost-spacing-md, 12px)",
-  color: "var(--ghost-muted-foreground)",
-  fontSize: "var(--ghost-font-size-sm, 13px)",
-};
-
-const emptyStyle: React.CSSProperties = {
-  padding: "var(--ghost-spacing-sm, 8px)",
-  color: "var(--ghost-muted-foreground)",
-  fontStyle: "italic",
-};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -158,25 +74,33 @@ function ConfigEntryRow({ entry }: { readonly entry: ConfigEntry }) {
 
   return (
     <>
-      <div style={entryRowStyle}>
-        <button
-          type="button"
-          style={expandBtnStyle}
+      <div className="flex items-baseline gap-2 px-3 py-1 border-b">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 text-xs shrink-0"
           onClick={toggle}
           aria-expanded={expanded}
           aria-label={`Toggle details for ${entry.key}`}
         >
           {expanded ? "▼" : "▶"}
-        </button>
-        <span style={keyStyle} title={entry.key}>
+        </Button>
+        <span className="flex-1 truncate font-medium" title={entry.key}>
           {entry.key}
         </span>
-        <span style={valueStyle} title={formatValue(entry.value)}>
+        <span
+          className="shrink-0 max-w-[50%] truncate text-muted-foreground"
+          title={formatValue(entry.value)}
+        >
           {formatValue(entry.value)}
         </span>
       </div>
       {expanded && (
-        <div style={detailStyle} role="region" aria-label={`Details for ${entry.key}`}>
+        <div
+          className="px-3 py-1 bg-muted/30 text-xs text-muted-foreground border-b"
+          role="region"
+          aria-label={`Details for ${entry.key}`}
+        >
           <div>
             <strong>Effective value:</strong> {formatValue(entry.value)}
           </div>
@@ -187,7 +111,7 @@ function ConfigEntryRow({ entry }: { readonly entry: ConfigEntry }) {
             <strong>Source:</strong>{" "}
             {/* TODO: Use service.inspect(key) for per-layer provenance once
                 the extended ConfigurationService interface exposes it. */}
-            <span style={{ color: "var(--ghost-text-info, var(--ghost-foreground))" }}>
+            <span className="text-info">
               resolved (service.get)
             </span>
           </div>
@@ -203,12 +127,16 @@ function ConfigEntryRow({ entry }: { readonly entry: ConfigEntry }) {
 
 function NamespaceGroup({ group }: { readonly group: GroupedEntries }) {
   return (
-    <div style={namespaceStyle}>
-      <div style={namespaceHeaderStyle}>{group.namespace}</div>
-      {group.entries.map((entry) => (
-        <ConfigEntryRow key={entry.key} entry={entry} />
-      ))}
-    </div>
+    <Card className="mb-3">
+      <CardHeader className="py-2 px-3 bg-muted/50">
+        <CardTitle className="text-sm font-semibold">{group.namespace}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {group.entries.map((entry) => (
+          <ConfigEntryRow key={entry.key} entry={entry} />
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -296,20 +224,28 @@ function InspectorPanel({
 
   if (groups.length === 0) {
     return (
-      <section style={inspectorStyle} aria-label="Config tree inspector">
-        <h2 style={headingStyle}>Config Tree Inspector</h2>
-        <p style={emptyStyle}>No configuration entries found.</p>
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Config Tree Inspector</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="p-2 text-muted-foreground italic">No configuration entries found.</p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <section style={inspectorStyle} aria-label="Config tree inspector">
-      <h2 style={headingStyle}>Config Tree Inspector</h2>
-      {groups.map((group) => (
-        <NamespaceGroup key={group.namespace} group={group} />
-      ))}
-    </section>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Config Tree Inspector</CardTitle>
+      </CardHeader>
+      <CardContent className="font-mono text-sm">
+        {groups.map((group) => (
+          <NamespaceGroup key={group.namespace} group={group} />
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -326,13 +262,14 @@ export function ConfigTreeInspector({
 
   if (!configService) {
     return (
-      <div style={unavailableStyle} role="status">
-        <p>No configuration service available.</p>
-        <p>
-          The config tree inspector requires the ConfigurationService to be
-          registered.
-        </p>
-      </div>
+      <Card>
+        <CardContent className="p-6" role="status">
+          <p className="text-sm text-muted-foreground">No configuration service available.</p>
+          <p className="text-sm text-muted-foreground">
+            The config tree inspector requires the ConfigurationService to be registered.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 

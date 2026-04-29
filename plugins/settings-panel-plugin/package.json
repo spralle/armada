@@ -24,6 +24,16 @@
           "versionRange": "^1.0.0",
           "optional": true
         }
+      ],
+      "plugins": [
+        {
+          "pluginId": "ghost.ui",
+          "versionRange": "^1.0.0"
+        },
+        {
+          "pluginId": "ghost.shadcn.theme-bridge",
+          "versionRange": "^1.0.0"
+        }
       ]
     }
   },
@@ -47,6 +57,8 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "@tailwindcss/vite": "^4.0.0",
+    "tailwindcss": "^4.0.0",
     "vite": "^5.4.19"
   }
 }

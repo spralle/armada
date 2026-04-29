@@ -22,5 +22,15 @@ export const pluginManifest = definePlugin({
         optional: true,
       },
     ],
+    plugins: [
+      {
+        pluginId: "ghost.ui",
+        versionRange: "^1.0.0",
+      },
+      {
+        pluginId: "ghost.shadcn.theme-bridge",
+        versionRange: "^1.0.0",
+      },
+    ],
   },
 });

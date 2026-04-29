@@ -1,3 +1,4 @@
+import tailwindcss from "@tailwindcss/vite";
 import { federation } from "@module-federation/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -5,6 +6,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     federation({
       name: "ghost.settings-panel",
       filename: "remoteEntry.js",
@@ -22,6 +24,11 @@ export default defineConfig({
         },
         "@ghost-shell/react": {
           singleton: true,
+          requiredVersion: "^0.0.0",
+        },
+        "@ghost-shell/ui": {
+          singleton: true,
+          import: false,
           requiredVersion: "^0.0.0",
         },
         react: {

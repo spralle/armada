@@ -37,6 +37,14 @@ import {
 import type { LayoutRendererProps, NodeRenderer } from "@ghost-shell/formr-react";
 import { createSchemaForm } from "@ghost-shell/formr-from-schema";
 import type { ProductionRule } from "@ghost-shell/formr-core";
+import {
+  Button,
+  Badge,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@ghost-shell/ui";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -114,50 +122,6 @@ function buildInitialData(
   }
   return data;
 }
-
-// ---------------------------------------------------------------------------
-// Styles (ghost tokens only)
-// ---------------------------------------------------------------------------
-
-const panelStyle: React.CSSProperties = {
-  padding: "var(--ghost-spacing-md, 12px)",
-  background: "var(--ghost-background)",
-  color: "var(--ghost-foreground)",
-};
-
-const headingStyle: React.CSSProperties = {
-  margin: "0 0 var(--ghost-spacing-sm, 8px)",
-  fontSize: "var(--ghost-font-size-lg, 16px)",
-  color: "var(--ghost-foreground)",
-};
-
-const layerBadgeStyle: React.CSSProperties = {
-  display: "inline-block",
-  padding: "2px 8px",
-  borderRadius: "var(--ghost-radius-sm, 4px)",
-  fontSize: "var(--ghost-font-size-xs, 11px)",
-  background: "var(--ghost-surface-elevated)",
-  color: "var(--ghost-muted-foreground)",
-  border: "1px solid var(--ghost-border)",
-  marginBottom: "var(--ghost-spacing-sm, 8px)",
-};
-
-const submitBtnStyle: React.CSSProperties = {
-  marginTop: "var(--ghost-spacing-md, 12px)",
-  padding: "6px 16px",
-  background: "var(--ghost-primary)",
-  color: "var(--ghost-primary-foreground)",
-  border: "1px solid var(--ghost-border)",
-  borderRadius: "var(--ghost-radius-sm, 4px)",
-  cursor: "pointer",
-  fontSize: "var(--ghost-font-size-sm, 13px)",
-};
-
-const unavailableStyle: React.CSSProperties = {
-  padding: "var(--ghost-spacing-md, 12px)",
-  color: "var(--ghost-muted-foreground)",
-  fontSize: "var(--ghost-font-size-sm, 13px)",
-};
 
 // ---------------------------------------------------------------------------
 // Internal editor (has service + schema)
@@ -300,23 +264,28 @@ function SettingsEditorForm({
   );
 
   return (
-    <section style={panelStyle} aria-label={`Settings for ${pluginId}`}>
-      <h2 style={headingStyle}>Settings: {pluginId}</h2>
-      <span style={layerBadgeStyle}>Layer: {editingLayer}</span>
-      <form onSubmit={handleSubmit} noValidate>
-        {(layout.children?.map((node) =>
-          renderLayoutTree(node, registry),
-        ) ?? []) as React.ReactNode}
-        <button
-          type="submit"
-          style={submitBtnStyle}
-          disabled={submitting || !form.canSubmit()}
-          aria-busy={submitting}
-        >
-          {submitting ? "Saving…" : "Save Settings"}
-        </button>
-      </form>
-    </section>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Settings: {pluginId}</CardTitle>
+        <Badge variant="outline" className="w-fit">Layer: {editingLayer}</Badge>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} noValidate aria-label={`Settings for ${pluginId}`}>
+          {(layout.children?.map((node) =>
+            renderLayoutTree(node, registry),
+          ) ?? []) as React.ReactNode}
+          <Button
+            type="submit"
+            size="sm"
+            className="mt-3"
+            disabled={submitting || !form.canSubmit()}
+            aria-busy={submitting}
+          >
+            {submitting ? "Saving…" : "Save Settings"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -354,13 +323,14 @@ export function PluginSettingsEditor({
 
   if (!configService) {
     return (
-      <div style={unavailableStyle} role="status">
-        <p>No configuration service available.</p>
-        <p>
-          The settings editor requires the ConfigurationService to be
-          registered.
-        </p>
-      </div>
+      <Card>
+        <CardContent className="p-6" role="status">
+          <p className="text-sm text-muted-foreground">No configuration service available.</p>
+          <p className="text-sm text-muted-foreground">
+            The settings editor requires the ConfigurationService to be registered.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
